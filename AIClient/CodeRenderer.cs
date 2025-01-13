@@ -29,12 +29,28 @@ public class CodeContext
 
 public class CodeRenderer : CodeBlockRenderer
 {
+    public ThemeName ThemeName { get; set; } = ThemeName.Light;
+
+    private readonly RegistryOptions _options;
+
+    private readonly Registry _registry;
+
+    readonly TextMateSharp.Themes.Theme _theme;
+
+    public CodeRenderer()
+    {
+        _options = new RegistryOptions(this.ThemeName);
+        _options.LoadFromLocalDir("Grammars");
+        _registry = new Registry(_options);
+        _theme = _registry.GetTheme();
+    }
+
     protected override void Write(WpfRenderer renderer, CodeBlock obj)
     {
         var blockUiContainer = new BlockUIContainer();
         var contentControl = new ContentControl();
         contentControl.SetResourceReference(FrameworkElement.StyleProperty,
-            (object)MarkdownStyles.CodeBlockHeaderStyleKey);
+            MarkdownStyles.CodeBlockHeaderStyleKey);
         ((IAddChild)blockUiContainer).AddChild(contentControl);
         renderer.Push(blockUiContainer);
         renderer.Pop();
@@ -48,14 +64,11 @@ public class CodeRenderer : CodeBlockRenderer
             contentControl.Content = new CodeContext(extension, fencedCodeBlock.Lines);
             if (extension != null)
             {
-                var options = new ExtendedRegistryOptions(ThemeName.Light);
-                var registry = new Registry(options);
-                var theme = registry.GetTheme();
-                var grammar = registry.LoadGrammar(options.GetScopeByExtension("." + extension));
+                var grammar = _registry.LoadGrammar(_options.GetScopeByExtension("." + extension));
                 if (grammar != null)
                 {
                     written = true;
-                    Program.TextMateColor(renderer, fencedCodeBlock, grammar, theme);
+                    Program.TextMateColor(renderer, fencedCodeBlock, grammar, _theme);
                 }
             }
         }

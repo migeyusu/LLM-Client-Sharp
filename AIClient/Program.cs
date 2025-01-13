@@ -26,8 +26,7 @@ public class Program
         app.InitializeComponent();
         app.Run();
     }
-
-    //todo:验证linebreak重用
+    
     public static void TextMateColor(WpfRenderer renderer, FencedCodeBlock block, IGrammar grammar, Theme theme)
     {
         IStateStack? ruleStack = null;
