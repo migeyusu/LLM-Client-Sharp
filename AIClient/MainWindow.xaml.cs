@@ -27,6 +27,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
     }
 
+    public ObservableCollection<DialogViewModel> DialogViewModels { get; set; } =
+        new ObservableCollection<DialogViewModel>();
+
     public DialogViewModel PreDialog { get; set; } = new DialogViewModel();
     public event PropertyChangedEventHandler? PropertyChanged;
 

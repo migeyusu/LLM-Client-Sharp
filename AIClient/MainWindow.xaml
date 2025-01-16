@@ -9,7 +9,27 @@
         Style="{StaticResource MaterialDesignWindow}"
         Title="MainWindow" Height="850" Width="1600"
         d:DataContext="{d:DesignInstance local:MainWindow}">
-    <local:DialogView VerticalAlignment="Stretch"
-                      HorizontalAlignment="Stretch"
-                      DataContext="{Binding PreDialog,Mode=OneWay}"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <ListBox SelectedItem="{Binding PreDialog,Mode=OneWayToSource}"
+                 ItemsSource="{Binding DialogViewModels,Mode=OneWay}">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type local:DialogView}">
+                    
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        
+        <local:DialogView Grid.Row="0"
+                          Grid.Column="1" VerticalAlignment="Stretch"
+                          HorizontalAlignment="Stretch"
+                          DataContext="{Binding PreDialog,Mode=OneWay}" />
+    </Grid>
 </Window>

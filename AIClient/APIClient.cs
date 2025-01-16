@@ -7,6 +7,8 @@ namespace LLMClient;
 public interface ILLMEndpoint
 {
     ILLMClient CreateClient();
+
+    IEnumerable<ILLMModel> AvailableModels();
 }
 
 //为了尽可能抽象，要求单个方法就传递一次会话所需要的所有参数，防止文本生成、图像生成等任务类型的不相容
@@ -14,9 +16,15 @@ public interface ILLMClient
 {
     bool IsResponsing { get; }
     string PreResponse { get; }
+    ILLMModel CurrentModel { get; }
 
     Task<string> SendRequest(IEnumerable<DialogItem> dialogItems, string prompt, string? systemPrompt = null,
         CancellationToken cancellationToken = default);
+}
+
+public interface ILLMModel
+{
+    string Name { get; }
 }
 
 public class AzureOption : BaseViewModel, ILLMEndpoint
