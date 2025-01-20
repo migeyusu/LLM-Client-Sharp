@@ -8,28 +8,61 @@
         mc:Ignorable="d"
         Style="{StaticResource MaterialDesignWindow}"
         Title="MainWindow" Height="850" Width="1600"
-        d:DataContext="{d:DesignInstance local:MainWindow}">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition />
-        </Grid.ColumnDefinitions>
-        <ListBox SelectedItem="{Binding PreDialog,Mode=OneWayToSource}"
-                 ItemsSource="{Binding DialogViewModels,Mode=OneWay}">
-            <ListBox.ItemTemplate>
-                <DataTemplate DataType="{x:Type local:DialogView}">
-                    
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-        
-        <local:DialogView Grid.Row="0"
-                          Grid.Column="1" VerticalAlignment="Stretch"
-                          HorizontalAlignment="Stretch"
-                          DataContext="{Binding PreDialog,Mode=OneWay}" />
-    </Grid>
+        Loaded="MainWindow_OnLoaded"
+        d:DataContext="{d:DesignInstance local:MainViewModel}">
+    <materialDesign:DialogHost DialogContentUniformCornerRadius="20"
+                               DialogTheme="Inherit">
+        <materialDesign:DialogHost.Resources>
+            <DataTemplate DataType="{x:Type local:ModelSelectionViewModel}">
+                <local:CreateModelView Width="600"
+                                       Height="400" />
+            </DataTemplate>
+        </materialDesign:DialogHost.Resources>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <ListBox SelectedItem="{Binding PreDialog,Mode=OneWayToSource}"
+                     Width="200"
+                     BorderThickness="0,0,1,0"
+                     ItemsSource="{Binding DialogViewModels,Mode=OneWay}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type local:DialogViewModel}">
+                        <DockPanel>
+                            <Image DockPanel.Dock="Left"
+                                   Width="30"
+                                   Height="30"
+                                   Source="{Binding Model.Icon,Mode=OneWay}" />
+                            <TextBlock DockPanel.Dock="Right"
+                                       Text="{Binding Topic,Mode=OneWay}" />
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <Button Grid.Row="0" Grid.Column="0"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
+                    ToolTip="创建"
+                    Margin="10"
+                    Command="{Binding SelectModelCommand}"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Left">
+                <materialDesign:PackIcon Width="14"
+                                         Height="14"
+                                         Kind="Plus" />
+            </Button>
+            <ContentControl Grid.Row="0" Grid.Column="1"
+                            Content="{Binding PreDialog,Mode=OneWay}">
+                <ContentControl.Resources>
+                    <DataTemplate DataType="{x:Type local:DialogViewModel}">
+                        <local:DialogView HorizontalAlignment="Stretch" />
+                    </DataTemplate>
+                </ContentControl.Resources>
+            </ContentControl>
+        </Grid>
+    </materialDesign:DialogHost>
 </Window>

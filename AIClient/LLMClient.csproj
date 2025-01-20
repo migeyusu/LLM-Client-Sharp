@@ -13,6 +13,9 @@
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
         <PackageReference Include="MaterialDesignThemes" Version="5.1.1-ci859"/>
         <PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" Version="9.0.1-preview.1.24570.5"/>
+        <PackageReference Include="SkiaSharp" Version="3.118.0-preview.2.3" />
+        <PackageReference Include="Svg.Skia" Version="2.0.0.4" />
+        <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
         <PackageReference Include="TextMateSharp" Version="1.0.65"/>
         <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.0" />
     </ItemGroup>
@@ -35,6 +38,9 @@
         </None>
         <None Update="Grammars\sqlite\package.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Azure\Models\models.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 

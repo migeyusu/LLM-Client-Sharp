@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
 using Azure.Core;
+using LLMClient.Azure;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
