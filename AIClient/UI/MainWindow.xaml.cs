@@ -2,6 +2,8 @@
 
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Input;
+using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.UI;
 
@@ -17,6 +19,17 @@ public partial class MainWindow : Window
         this._mainViewModel = mainViewModel;
         this.DataContext = mainViewModel;
         InitializeComponent();
+    }
+
+    private async void CommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is DialogViewModel dialogViewModel)
+        {
+            if ((await DialogHost.Show(new ConfirmView() { Header = "删除该会话吗？" })) is true)
+            {
+                _mainViewModel.DeleteDialog(dialogViewModel);
+            }
+        }
     }
 
     private bool _savingEnsured = false;

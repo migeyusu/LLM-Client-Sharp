@@ -120,13 +120,139 @@
                          BorderThickness="0,1,1,0"
                          BorderBrush="Gainsboro"
                          ItemsSource="{Binding DialogViewModels,Mode=OneWay}">
+                    <ListBox.CommandBindings>
+                        <CommandBinding Command="Delete" Executed="CommandBinding_OnExecuted" />
+                    </ListBox.CommandBindings>
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="{x:Type ListBoxItem}"
                                BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                            <Setter Property="Height"
+                                    Value="80" />
                             <Setter Property="BorderThickness"
                                     Value="0,0,0,1" />
+                            <Setter Property="Padding"
+                                    Value="4" />
                             <Setter Property="BorderBrush"
                                     Value="DimGray" />
+                            <Setter Property="VerticalContentAlignment"
+                                    Value="Stretch" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                        <Border Margin="{TemplateBinding Margin}"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                ClipToBounds="{TemplateBinding ClipToBounds}">
+                                            <VisualStateManager.VisualStateGroups>
+                                                <VisualStateGroup Name="CommonStates">
+                                                    <VisualStateGroup.Transitions>
+                                                        <VisualTransition GeneratedDuration="0:0:0.3" To="Normal">
+                                                            <VisualTransition.GeneratedEasingFunction>
+                                                                <CircleEase EasingMode="EaseOut" />
+                                                            </VisualTransition.GeneratedEasingFunction>
+                                                        </VisualTransition>
+                                                    </VisualStateGroup.Transitions>
+                                                    <VisualState Name="Normal" />
+                                                    <VisualState Name="MouseOver">
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="MouseOverBorder"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             To="1"
+                                                                             Duration="0" />
+                                                        </Storyboard>
+                                                    </VisualState>
+                                                    <VisualState Name="Disabled" />
+                                                </VisualStateGroup>
+                                                <VisualStateGroup Name="SelectionStates">
+                                                    <VisualStateGroup.Transitions>
+                                                        <VisualTransition GeneratedDuration="0:0:0.6" />
+                                                    </VisualStateGroup.Transitions>
+                                                    <VisualState Name="Selected">
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="SelectedBorder"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             To="1"
+                                                                             Duration="0" />
+                                                        </Storyboard>
+                                                    </VisualState>
+                                                    <VisualState Name="Unselected" />
+                                                    <VisualState Name="SelectedUnfocused">
+                                                        <Storyboard>
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetName="SelectedUnfocusedBorder"
+                                                                Storyboard.TargetProperty="Opacity"
+                                                                To="1"
+                                                                Duration="0" />
+                                                        </Storyboard>
+                                                    </VisualState>
+                                                </VisualStateGroup>
+                                            </VisualStateManager.VisualStateGroups>
+                                            <Grid>
+                                                <Border x:Name="MouseOverBorder"
+                                                        Background="{Binding Path=(materialDesign:ListBoxItemAssist.HoverBackground), RelativeSource={RelativeSource TemplatedParent}}"
+                                                        Opacity="0" />
+                                                <Border x:Name="SelectedBorder"
+                                                        Background="{Binding Path=(materialDesign:ListBoxItemAssist.SelectedFocusedBackground), RelativeSource={RelativeSource TemplatedParent}}"
+                                                        Opacity="0" />
+                                                <Border x:Name="SelectedUnfocusedBorder"
+                                                        Background="{Binding Path=(materialDesign:ListBoxItemAssist.SelectedUnfocusedBackground), RelativeSource={RelativeSource TemplatedParent}}"
+                                                        Opacity="0" />
+                                                <materialDesign:Ripple x:Name="Ripple"
+                                                                       Padding="{TemplateBinding Padding}"
+                                                                       HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                       VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                       Content="{TemplateBinding Content}"
+                                                                       ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                       ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                                                       Feedback="{TemplateBinding Foreground, Converter={x:Static materialDesign:BrushRoundConverter.Instance}}"
+                                                                       Focusable="False"
+                                                                       RecognizesAccessKey="False"
+                                                                       SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                                <Button CommandParameter="{Binding}"
+                                                        Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                                                        x:Name="DeleteButton"
+                                                        Command="Delete"
+                                                        Height="30"
+                                                        Width="30"
+                                                        Margin="10,0"
+                                                        Visibility="Collapsed"
+                                                        HorizontalAlignment="Right"
+                                                        VerticalAlignment="Center"
+                                                        Style="{StaticResource MaterialDesignIconButton}">
+                                                    <materialDesign:PackIcon Kind="DeleteOutline"
+                                                                             Width="18"
+                                                                             Height="18" />
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value=".56" />
+                                            </Trigger>
+                                            <DataTrigger
+                                                Binding="{Binding RelativeSource={RelativeSource Self}, Path=(materialDesign:ListBoxItemAssist.ShowSelection)}"
+                                                Value="False">
+                                                <Setter TargetName="MouseOverBorder" Property="Visibility"
+                                                        Value="Collapsed" />
+                                                <Setter TargetName="Ripple" Property="Feedback" Value="Transparent" />
+                                                <Setter TargetName="SelectedBorder" Property="Visibility"
+                                                        Value="Collapsed" />
+                                                <Setter TargetName="SelectedUnfocusedBorder" Property="Visibility"
+                                                        Value="Collapsed" />
+                                            </DataTrigger>
+                                            <Trigger Property="IsMouseOver"
+                                                     Value="True">
+                                                <Trigger.Setters>
+                                                    <Setter TargetName="DeleteButton"
+                                                            Property="Visibility"
+                                                            Value="Visible" />
+                                                </Trigger.Setters>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
                         </Style>
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
@@ -135,11 +261,36 @@
                                 <Image DockPanel.Dock="Left"
                                        Width="30"
                                        Height="30"
+                                       Margin="10,0"
+                                       VerticalAlignment="Center"
                                        Source="{Binding Model.Icon,Mode=OneWay}" />
-                                <TextBlock DockPanel.Dock="Right"
-                                           Margin="10,0,0,0"
-                                           VerticalAlignment="Center"
-                                           Text="{Binding Topic,Mode=OneWay}" />
+                                <Grid DockPanel.Dock="Right">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="{Binding Model.Name}"
+                                               Margin="0,0,0,5"
+                                               Foreground="DimGray"
+                                               TextWrapping="NoWrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Top"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               HorizontalAlignment="Left"
+                                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                               Grid.Row="1"
+                                               Text="{Binding Topic,Mode=OneWay}" />
+                                    <TextBlock Grid.Row="2"
+                                               Text="{Binding Shortcut,Mode=OneTime}"
+                                               Foreground="DimGray"
+                                               VerticalAlignment="Bottom"
+                                               TextWrapping="NoWrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                </Grid>
+
                             </DockPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

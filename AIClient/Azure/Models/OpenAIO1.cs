@@ -1,4 +1,6 @@
 ﻿using System.ClientModel;
+using Azure;
+using Azure.AI.TextAnalytics;
 using Microsoft.Extensions.AI;
 using OpenAI;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;

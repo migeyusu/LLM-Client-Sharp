@@ -67,37 +67,45 @@ public static class Extension
 
     public static ImageSource? LoadSvgFromHttp(string logoUrl)
     {
-        using (var message = new HttpClient().GetAsync($"https://github.com{logoUrl}").GetAwaiter().GetResult())
+        try
         {
-            if (message.StatusCode == HttpStatusCode.OK)
+            using (var message = new HttpClient().GetAsync($"https://github.com{logoUrl}").GetAwaiter().GetResult())
             {
-                using (var stream = message.Content.ReadAsStream())
+                if (message.StatusCode == HttpStatusCode.OK)
                 {
-                    var skBitmap = new SKBitmap();
-                    var skCanvas = new SKCanvas(skBitmap);
-                    var skSvg = new SKSvg();
-                    skSvg.Load(stream);
-                    skCanvas.DrawPicture(skSvg.Picture);
-                    using (var asStream = new MemoryStream())
+                    using (var stream = message.Content.ReadAsStream())
                     {
-                        skSvg.Save(asStream, SKColor.Empty);
-                        stream.Position = 0;
-                        var image = new BitmapImage();
-                        image.BeginInit();
-                        image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
-                        image.CacheOption = BitmapCacheOption.OnLoad;
-                        image.UriSource = null;
-                        image.StreamSource = asStream;
-                        image.EndInit();
-                        image.Freeze();
-                        return image;
+                        var skBitmap = new SKBitmap();
+                        var skCanvas = new SKCanvas(skBitmap);
+                        var skSvg = new SKSvg();
+                        skSvg.Load(stream);
+                        skCanvas.DrawPicture(skSvg.Picture);
+                        using (var asStream = new MemoryStream())
+                        {
+                            skSvg.Save(asStream, SKColor.Empty);
+                            stream.Position = 0;
+                            var image = new BitmapImage();
+                            image.BeginInit();
+                            image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+                            image.CacheOption = BitmapCacheOption.OnLoad;
+                            image.UriSource = null;
+                            image.StreamSource = asStream;
+                            image.EndInit();
+                            image.Freeze();
+                            return image;
+                        }
                     }
                 }
             }
-
+        }
+        catch (Exception)
+        {
             return null;
         }
+
+        return null;
     }
+
 
     public static ImageSource LoadSvgFromBase64(string src)
     {

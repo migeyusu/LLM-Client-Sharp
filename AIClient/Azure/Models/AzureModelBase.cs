@@ -5,6 +5,7 @@ using System.Windows.Media;
 using AutoMapper;
 using Azure;
 using Azure.AI.Inference;
+using Azure.AI.TextAnalytics;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -208,7 +209,6 @@ public class AzureModelBase : BaseViewModel, ILLMModel
                     }
                 }
             }
-
             return cachedPreResponse.ToString();
         }
         finally

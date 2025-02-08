@@ -242,9 +242,20 @@
                             <DataTemplate DataType="{x:Type ui:RequestViewItem}">
                                 <materialDesign:Card Padding="8"
                                                      HorizontalAlignment="Right"
+                                                     UniformCornerRadius="8"
                                                      BorderThickness="0"
                                                      Background="{DynamicResource MaterialDesign.Brush.Primary}"
                                                      Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}">
+                                    <materialDesign:Card.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="复制"
+                                                      Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                                      CommandParameter="{Binding MessageContent,Mode=OneTime}" />
+                                            <MenuItem Header="删除"
+                                                      Command="Delete"
+                                                      CommandParameter="{Binding}" />
+                                        </ContextMenu>
+                                    </materialDesign:Card.ContextMenu>
                                     <TextBlock Text="{Binding MessageContent,Mode=OneTime}" />
                                 </materialDesign:Card>
                             </DataTemplate>
@@ -254,14 +265,25 @@
                         <local:DataTemplateTypePair.Template>
                             <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
                                 <materialDesign:Card Padding="8"
+                                                     UniformCornerRadius="8"
                                                      BorderThickness="0"
                                                      Style="{StaticResource MaterialDesignOutlinedCard}">
+                                    <materialDesign:Card.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="复制"
+                                                      Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                                      CommandParameter="{Binding Raw,Mode=OneTime}" />
+                                            <MenuItem Header="删除"
+                                                      Command="Delete"
+                                                      CommandParameter="{Binding}" />
+                                        </ContextMenu>
+                                    </materialDesign:Card.ContextMenu>
                                     <StackPanel>
                                         <RichTextBox BorderThickness="0"
                                                      IsDocumentEnabled="True"
+                                                     IsReadOnly="True"
                                                      Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
                                                      local:RichTextBoxHelper.DocumentXaml="{Binding Document,Mode=OneTime}" />
-                                        <!--   -->
                                         <TextBlock Text="{Binding ErrorMessage,Mode=OneTime}"
                                                    Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                                     </StackPanel>
@@ -329,6 +351,10 @@
                             Value="0,10" />
                 </Style>
             </ListBox.ItemContainerStyle>
+            <ListBox.CommandBindings>
+                <CommandBinding Command="Delete"
+                                Executed="OnDeleteExecuted" />
+            </ListBox.CommandBindings>
         </ListBox>
         <!-- </ScrollViewer> -->
     </Grid>

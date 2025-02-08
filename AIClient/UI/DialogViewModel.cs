@@ -88,7 +88,16 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public ICommand ExportCommand => new ActionCommand((o => { }));
+    public string? Shortcut
+    {
+        get { return Dialog.FirstOrDefault(item => { return item is ResponseViewItem; })?.Message?.Text; }
+    }
+
+    public ICommand ExportCommand => new ActionCommand((o =>
+    {
+        
+        
+    }));
 
     public ICommand ClearContextCommand => new ActionCommand((o =>
     {
@@ -195,4 +204,13 @@ public class DialogViewModel : BaseViewModel
     }));
 
     public ICommand CancelCommand => new ActionCommand((async o => { _requestTokenSource?.Cancel(); }));
+
+    public void DeleteItem(IDialogViewItem item)
+    {
+        this.Dialog.Remove(item);
+        if (ScrollViewItem == item)
+        {
+            ScrollViewItem = this.Dialog.LastOrDefault();
+        }
+    }
 }

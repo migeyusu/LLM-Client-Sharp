@@ -34,7 +34,7 @@ public class MainViewModel : BaseViewModel
         try
         {
             IsInitializing = true;
-            await Persist();
+            await SaveToLocal();
         }
         catch (Exception e)
         {
@@ -51,7 +51,7 @@ public class MainViewModel : BaseViewModel
         try
         {
             IsInitializing = true;
-            await Persist();
+            await SaveToLocal();
         }
         finally
         {
@@ -113,7 +113,7 @@ public class MainViewModel : BaseViewModel
     {
         try
         {
-            await Persist();
+            await SaveToLocal();
         }
         catch (Exception e)
         {
@@ -151,7 +151,7 @@ public class MainViewModel : BaseViewModel
         {
             return;
         }
-        
+
         foreach (var fileInfo in directoryInfo.GetFiles())
         {
             await using (var openRead = fileInfo.OpenRead())
@@ -166,14 +166,20 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-    public async Task Persist(string folder = DialogSaveFolder)
+    private IDictionary<string, FileInfo> LocalDialogFiles(string folder = DialogSaveFolder)
     {
         var dirPath = Path.GetFullPath(folder);
         var directoryInfo = new DirectoryInfo(dirPath);
         if (!directoryInfo.Exists)
             directoryInfo.Create();
-        var fileInfos = directoryInfo.GetFiles()
+        return directoryInfo.GetFiles()
             .ToDictionary((f) => Path.GetFileNameWithoutExtension(f.Name), (f) => f);
+    }
+
+    public async Task SaveToLocal(string folder = DialogSaveFolder)
+    {
+        var dirPath = Path.GetFullPath(folder);
+        var fileInfos = LocalDialogFiles();
         foreach (var dialogViewModel in DialogViewModels)
         {
             var dialogModel = _mapper.Map<DialogViewModel, DialogModel>(dialogViewModel);
@@ -191,6 +197,17 @@ public class MainViewModel : BaseViewModel
             {
                 await JsonSerializer.SerializeAsync(fileStream, dialogModel);
             }
+        }
+    }
+
+    public async void DeleteDialog(DialogViewModel dialogViewModel)
+    {
+        this.DialogViewModels.Remove(dialogViewModel);
+        this.PreDialog = this.DialogViewModels.FirstOrDefault();
+        var fileInfos = LocalDialogFiles();
+        if (fileInfos.TryGetValue(dialogViewModel.DialogId.ToString(), out var fileInfo))
+        {
+            fileInfo.Delete();
         }
     }
 
