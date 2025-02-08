@@ -1,4 +1,6 @@
-﻿namespace LLMClient.UI;
+﻿using LLMClient.Azure.Models;
+
+namespace LLMClient.UI;
 
 /// <summary>
 /// 用于持久化
@@ -7,7 +9,7 @@ public class DialogModel
 {
     public Guid DialogId { get; set; }
 
-    public DialogViewItem[]? DialogItems { get; set; }
+    public IDialogViewItem[]? DialogItems { get; set; }
 
     public string Topic { get; set; } = string.Empty;
 
@@ -16,4 +18,6 @@ public class DialogModel
     public string? Model { get; set; }
 
     public string? PromptString { get; set; }
+
+    public IModelParams? Params { get; set; }
 }

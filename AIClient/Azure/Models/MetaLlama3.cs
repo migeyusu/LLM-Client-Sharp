@@ -39,9 +39,9 @@ public class MetaLlama3 : AzureTextModelBase
         this.TopP = 0.1f;
     }
 
-    protected override ChatCompletionsOptions CreateChatOptions()
+    protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
-        var chatCompletionsOptions = base.CreateChatOptions();
+        var chatCompletionsOptions = base.CreateChatOptions(messages);
         chatCompletionsOptions.FrequencyPenalty = FrequencyPenalty;
         chatCompletionsOptions.PresencePenalty = PresencePenalty;
         return chatCompletionsOptions;

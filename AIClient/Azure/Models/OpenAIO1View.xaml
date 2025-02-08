@@ -4,28 +4,19 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:LLMClient.Azure.Models"
-             xmlns:llmClient="clr-namespace:LLMClient"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:OpenAIO1}"
              d:DesignHeight="300" d:DesignWidth="300">
     <StackPanel>
-        <llmClient:ParamView PropertyName="Max Tokens"
-                             Margin="0,10,0,0"
-                             Value="{Binding MaxTokens,Mode=TwoWay}"
-                             Description="Limit the maximum output tokens for the model response."
-                             Max="{Binding  ModelInfo.MaxOutputTokens,Mode=OneTime}"
-                             Min="100" />
-        <llmClient:ParamView PropertyName="Temperature"
-                             Value="{Binding Temperature,Mode=TwoWay}"
-                             Description="Controls randomness in the response, use lower to be more deterministic."
-                             Max="1"
-                             Min="0"
-                             TickFrequency="0.01" />
-        <llmClient:ParamView PropertyName="Top P"
-                             Value="{Binding TopP,Mode=TwoWay}"
-                             Description="Controls text diversity by selecting the most probable words until a set probability is reached."
-                             TickFrequency="0.01"
-                             Max="1"
-                             Min="0.01" />
+        <TextBox Text="{Binding SystemPrompt,Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                 MaxHeight="300"
+                 Height="200"
+                 materialDesign:HintAssist.Hint="System prompt"
+                 TextWrapping="Wrap"
+                 AcceptsReturn="True"
+                 VerticalScrollBarVisibility="Auto"
+                 SpellCheck.IsEnabled="True"
+                 Style="{StaticResource MaterialDesignOutlinedTextBox}" />
     </StackPanel>
 </UserControl>

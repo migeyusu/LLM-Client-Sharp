@@ -13,7 +13,6 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogModel>,
         this._service = service;
     }
 
-
     public DialogModel Convert(DialogViewModel source, DialogModel destination, ResolutionContext context)
     {
         return new DialogModel()
@@ -24,6 +23,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogModel>,
             EndPoint = source.Endpoint?.Name,
             Model = source.Model?.Name,
             PromptString = source.PromptString,
+            Params = source.Model?.Serialize(),
         };
     }
 
@@ -38,7 +38,8 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogModel>,
         var sourceDialogItems = source.DialogItems;
         if (sourceDialogItems != null)
         {
-            dialogViewModel.Dialog = new ObservableCollection<DialogViewItem>(sourceDialogItems);
+            dialogViewModel.Dialog =
+                new ObservableCollection<IDialogViewItem>(sourceDialogItems.Where(item => item is not ILLMModel));
         }
 
         var llmEndpoint = _service.AvailableEndpoints.FirstOrDefault((endpoint => endpoint.Name == source.EndPoint));
@@ -49,6 +50,11 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogModel>,
             if (llmModel != null)
             {
                 dialogViewModel.Model = llmModel;
+                var sourceJsonModel = source.Params;
+                if (sourceJsonModel != null)
+                {
+                    llmModel.Deserialize(sourceJsonModel);
+                }
             }
         }
 

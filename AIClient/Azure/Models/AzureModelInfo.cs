@@ -1,9 +1,13 @@
-﻿using System.Net;
+﻿using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json.Serialization;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using SkiaSharp;
 using Svg;
+using Svg.Skia;
 
 namespace LLMClient.Azure.Models;
 
@@ -108,7 +112,7 @@ public class AzureModelInfo
                 return null;
             if (_darkModeIconBrush == null)
             {
-                _darkModeIconBrush = Extension.LoadImage(DarkModeIconString);
+                _darkModeIconBrush = Extension.LoadSvgFromBase64(DarkModeIconString);
             }
 
             return _darkModeIconBrush;
@@ -131,22 +135,12 @@ public class AzureModelInfo
 
             if (!string.IsNullOrEmpty(LightModeIconString))
             {
-                _lightModeIconBrush = Extension.LoadImage(LightModeIconString);
+                _lightModeIconBrush = Extension.LoadSvgFromBase64(LightModeIconString);
             }
-            
-            /*if (LogoUrl != null)
+            else if (LogoUrl != null)
             {
-                if (_lightModeIconBrush == null)
-                {
-                    var message = new HttpClient().GetAsync($"https://github.com{LogoUrl}").GetAwaiter().GetResult();
-                    if (message.StatusCode==HttpStatusCode.OK)
-                    {
-                        message.Content
-                        _lightModeIconBrush =
-                    }
-
-                }
-            }*/
+                _lightModeIconBrush = Extension.LoadSvgFromHttp(LogoUrl);
+            }
 
             return _lightModeIconBrush;
         }

@@ -12,38 +12,34 @@ namespace LLMClient.UI;
 [JsonDerivedType(typeof(EraseViewItem), "erase")]
 [JsonDerivedType(typeof(RequestViewItem), "request")]
 [JsonDerivedType(typeof(ResponseViewItem), "response")]
-public abstract class DialogViewItem
+public interface IDialogViewItem
 {
-    public DialogViewItem()
-    {
-    }
+    [JsonIgnore] ChatMessage? Message { get; }
 
-    [JsonIgnore] public abstract ChatRequestMessage? Message { get; }
+    bool IsEnable { get; }
 }
 
-public class EraseViewItem : DialogViewItem
+public class EraseViewItem : IDialogViewItem
 {
-    [JsonIgnore] public override ChatRequestMessage? Message { get; } = null;
+    [JsonIgnore] public ChatMessage? Message { get; } = null;
+
+    public bool IsEnable { get; } = false;
 }
 
-public class RequestViewItem : DialogViewItem
+public class RequestViewItem : IDialogViewItem
 {
     public RequestViewItem() : base()
     {
     }
 
-    [JsonIgnore]
-    public ChatRequestUserMessage? UserMessage
-    {
-        get { return new ChatRequestUserMessage(MessageContent); }
-    }
-
     public string MessageContent { get; set; } = string.Empty;
 
-    [JsonIgnore] public override ChatRequestMessage? Message => UserMessage;
+    [JsonIgnore] public ChatMessage? Message => new ChatMessage(ChatRole.User, MessageContent);
+
+    public bool IsEnable { get; set; } = true;
 }
 
-public class ResponseViewItem : DialogViewItem
+public class ResponseViewItem : IDialogViewItem
 {
     /// <summary>
     /// 是否中断
@@ -78,13 +74,12 @@ public class ResponseViewItem : DialogViewItem
 
     public ResponseViewItem()
     {
-        
     }
 
-    private ChatRequestAssistantMessage? _assistantMessage;
+    private ChatMessage? _assistantMessage;
 
     [JsonIgnore]
-    public ChatRequestAssistantMessage? AssistantMessage
+    public ChatMessage? AssistantMessage
     {
         get
         {
@@ -95,12 +90,17 @@ public class ResponseViewItem : DialogViewItem
 
             if (_assistantMessage == null)
             {
-                _assistantMessage = new ChatRequestAssistantMessage(Raw);
+                _assistantMessage = new ChatMessage(ChatRole.Assistant, Raw);
             }
 
             return _assistantMessage;
         }
     }
 
-    [JsonIgnore] public override ChatRequestMessage? Message => AssistantMessage;
+    [JsonIgnore] public ChatMessage? Message => AssistantMessage;
+
+    public bool IsEnable
+    {
+        get { return !IsInterrupt; }
+    }
 }

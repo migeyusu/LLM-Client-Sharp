@@ -1,5 +1,8 @@
-﻿using Azure.AI.Inference;
+﻿using System.ClientModel;
 using Microsoft.Extensions.AI;
+using OpenAI;
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
+using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
 namespace LLMClient.Azure.Models;
 
@@ -22,31 +25,19 @@ public class OpenAIO1 : AzureModelBase
     {
     }
 
-    protected override void OnChatCompletionsClientChanged(ChatCompletionsClient client)
+    public override IChatClient CreateClient(AzureEndPoint endpoint)
     {
-        base.OnChatCompletionsClientChanged(client);
-        client.UpgradeAPIVersion();
+        var openAiClient = new OpenAIClient(new ApiKeyCredential(endpoint.APIToken),
+            new OpenAIClientOptions() { Endpoint = new Uri(endpoint.URL) });
+        return new OpenAIChatClient(openAiClient, this.Id);
     }
 
-    protected override ChatCompletionsOptions CreateChatOptions()
+    protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
-        new ChatCompletionsOptions()
+        messages.Add(new ChatMessage(new ChatRole("developer"), string.Empty));
+        return new ChatOptions()
         {
-            Model = this.Id,
-            /*AdditionalProperties =
-            {
-                {
-                    "api_version", new BinaryData("2024-12-01-preview")
-                }
-            }*/
+            ModelId = this.Id,
         };
-    }
-}
-
-public class ChatRequestDeveloperMessage : ChatRequestMessage
-{
-    public ChatRequestDeveloperMessage()
-    {
-        
     }
 }

@@ -50,7 +50,7 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public DialogViewItem? ScrollViewItem
+    public IDialogViewItem? ScrollViewItem
     {
         get => _scrollViewItem;
         set
@@ -61,7 +61,7 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public ObservableCollection<DialogViewItem> Dialog { get; set; } = new ObservableCollection<DialogViewItem>();
+    public ObservableCollection<IDialogViewItem> Dialog { get; set; } = new ObservableCollection<IDialogViewItem>();
 
     private ILLMModel? _model;
 
@@ -109,7 +109,7 @@ public class DialogViewModel : BaseViewModel
     private string? _promptString;
     private string _topic = string.Empty;
     private ILLMEndpoint? _endpoint;
-    private DialogViewItem? _scrollViewItem;
+    private IDialogViewItem? _scrollViewItem;
     private int _promptTokensCount;
 
     private const string Testmd =
@@ -118,6 +118,8 @@ public class DialogViewModel : BaseViewModel
     public DialogViewModel()
     {
     }
+
+    private CancellationTokenSource? _requestTokenSource;
 
     public ICommand SendRequestCommand => new ActionCommand((async o =>
     {
@@ -131,7 +133,8 @@ public class DialogViewModel : BaseViewModel
             return;
         }
 
-        Dialog.Add(new RequestViewItem() { MessageContent = PromptString });
+        var requestViewItem = new RequestViewItem() { MessageContent = PromptString };
+        Dialog.Add(requestViewItem);
 #if TESTMODE
         for (int i = 0; i < 1000; i++)
         {
@@ -143,18 +146,53 @@ public class DialogViewModel : BaseViewModel
 #endif
 
 #pragma warning disable CS0162 // 检测到不可到达的代码
+
+        Dialog.Add(Model);
+        ScrollViewItem = Dialog.Last();
+        var dialogViewItems = new Stack<IDialogViewItem>();
+        for (int i = Dialog.Count - 1; i >= 0; i--)
+        {
+            var dialogViewItem = Dialog[i];
+            if (dialogViewItem is EraseViewItem)
+            {
+                break;
+            }
+
+            dialogViewItems.Push(dialogViewItem);
+        }
+
+        var list = new List<IDialogViewItem>();
+        while (dialogViewItems.TryPop(out var dialogViewItem))
+        {
+            list.Add(dialogViewItem);
+        }
+
         try
         {
-            var response = await Model.SendRequest(this.Dialog, PromptString);
+            _requestTokenSource = new CancellationTokenSource();
+            var response = await Model.SendRequest(list, PromptString, _requestTokenSource.Token);
             Dialog.Add(new ResponseViewItem() { Raw = response });
+            this.PromptString = string.Empty;
+        }
+        catch (OperationCanceledException)
+        {
+            Dialog.Remove(Dialog.Last(item => item is RequestViewItem));
         }
         catch (Exception exception)
         {
+            requestViewItem.IsEnable = false;
             var errorMessage = exception.Message;
             Dialog.Add(new ResponseViewItem() { IsInterrupt = true, ErrorMessage = errorMessage });
+        }
+        finally
+        {
+            Dialog.Remove(Dialog.Last(item => item is ILLMModel));
+            _requestTokenSource?.Dispose();
         }
 
         ScrollViewItem = Dialog.Last();
 #pragma warning restore CS0162 // 检测到不可到达的代码
     }));
+
+    public ICommand CancelCommand => new ActionCommand((async o => { _requestTokenSource?.Cancel(); }));
 }

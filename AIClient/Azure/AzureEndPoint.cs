@@ -91,6 +91,7 @@ public class AzureEndPoint : AzureOption, ILLMEndpoint
         var baseModel = new ModelCreation<AzureTextModelBase>();
         var llama3 = new ModelCreation<MetaLlama3>();
         var o1 = new ModelCreation<OpenAIO1>();
+        var empty = new ModelCreation<AzureModelBase>();
         _availableModels = new Dictionary<string, ModelCreation>()
         {
             { "OpenAI GPT-4o", baseModel },
@@ -112,9 +113,9 @@ public class AzureEndPoint : AzureOption, ILLMEndpoint
             { "Meta-Llama-3-70B-Instruct", llama3 },
 
             { "OpenAI o1", o1 },
-            { "OpenAI o1-mini", o1 },
+            { "OpenAI o1-mini", empty },
             { "OpenAI o3-mini", o1 },
-            { "OpenAI o1-preview", o1 },
+            { "OpenAI o1-preview", empty },
             
             { "DeepSeek-R1", new ModelCreation<DeepSeekR1>() }
         };

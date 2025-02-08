@@ -1,11 +1,10 @@
-﻿using Azure.AI.Inference;
-using Microsoft.Extensions.AI;
+﻿using Microsoft.Extensions.AI;
 
 namespace LLMClient.Azure.Models;
 
 public class DeepSeekR1 : AzureModelBase
 {
-    private int _maxTokens;
+    private int _maxTokens = 2048;
 
     public int MaxTokens
     {
@@ -22,10 +21,10 @@ public class DeepSeekR1 : AzureModelBase
     {
     }
 
-    protected override ChatCompletionsOptions CreateChatOptions()
+    protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
-        var chatCompletionsOptions = base.CreateChatOptions();
-        chatCompletionsOptions.MaxTokens = MaxTokens;
+        var chatCompletionsOptions = base.CreateChatOptions(messages);
+        chatCompletionsOptions.MaxOutputTokens = MaxTokens;
         return chatCompletionsOptions;
     }
 }

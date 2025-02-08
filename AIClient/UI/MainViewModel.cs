@@ -21,7 +21,7 @@ public class MainViewModel : BaseViewModel
     {
         try
         {
-            await LoadFromLocal();
+            Initialize();
         }
         catch (Exception e)
         {
@@ -55,12 +55,7 @@ public class MainViewModel : BaseViewModel
         }
         finally
         {
-            await Task.Run(() => { 
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    ((Window)o).Close();
-                }); 
-            });
+            await Task.Run(() => { Application.Current.Dispatcher.Invoke(() => { ((Window)o).Close(); }); });
         }
     });
 
@@ -156,7 +151,7 @@ public class MainViewModel : BaseViewModel
         {
             return;
         }
-
+        
         foreach (var fileInfo in directoryInfo.GetFiles())
         {
             await using (var openRead = fileInfo.OpenRead())
@@ -165,8 +160,7 @@ public class MainViewModel : BaseViewModel
                 if (dialogModel != null)
                 {
                     var viewModel = _mapper.Map<DialogModel, DialogViewModel>(dialogModel);
-                    var checkAccess2 = Dispatcher.CurrentDispatcher.CheckAccess();
-                    this.DialogViewModels.Add(viewModel);
+                    DialogViewModels.Add(viewModel);
                 }
             }
         }

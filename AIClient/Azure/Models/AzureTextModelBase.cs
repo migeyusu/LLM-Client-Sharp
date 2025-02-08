@@ -1,5 +1,6 @@
 ﻿using Azure.AI.Inference;
 using Microsoft.Extensions.AI;
+using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
 namespace LLMClient.Azure.Models;
 
@@ -63,18 +64,18 @@ public class AzureTextModelBase : AzureModelBase
         }
     }
 
-    protected override ChatCompletionsOptions CreateChatOptions()
+    protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
-        var options = new ChatCompletionsOptions()
+        var options = new ChatOptions()
         {
-            Model = this.Id,
+            ModelId = this.Id,
             Temperature = this.Temperature,
-            MaxTokens = this.MaxTokens,
-            NucleusSamplingFactor = this.TopP
+            MaxOutputTokens = this.MaxTokens,
+            TopP = this.TopP
         };
         if (!string.IsNullOrEmpty(SystemPrompt))
         {
-            options.Messages.Add(new ChatRequestSystemMessage(SystemPrompt));
+            messages.Add(new ChatMessage(ChatRole.System, SystemPrompt));
         }
 
         return options;

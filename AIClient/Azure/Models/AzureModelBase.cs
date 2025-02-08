@@ -1,20 +1,34 @@
 ﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
+using System.Diagnostics;
 using System.Text;
-using System.Windows.Documents;
 using System.Windows.Media;
+using AutoMapper;
 using Azure;
 using Azure.AI.Inference;
-using Azure.AI.OpenAI;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
-using OpenAI.Chat;
-using ChatRole = Microsoft.Extensions.AI.ChatRole;
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Azure.Models;
 
 public class AzureModelBase : BaseViewModel, ILLMModel
 {
+    private static readonly Mapper Mapper = new Mapper((new MapperConfiguration((expression =>
+    {
+        // expression.AddMaps(typeof(AzureModelBase).Assembly);
+        expression.CreateMap<AzureModelBase, AzureJsonModel>();
+        expression.CreateMap<AzureTextModelBase, AzureJsonModel>();
+        expression.CreateMap<OpenAIO1, AzureJsonModel>();
+        expression.CreateMap<MetaLlama3, AzureJsonModel>();
+        expression.CreateMap<DeepSeekR1, AzureJsonModel>();
+
+        expression.CreateMap<AzureJsonModel, AzureModelBase>();
+        expression.CreateMap<AzureJsonModel, AzureTextModelBase>();
+        expression.CreateMap<AzureJsonModel, OpenAIO1>();
+        expression.CreateMap<AzureJsonModel, MetaLlama3>();
+        expression.CreateMap<AzureJsonModel, DeepSeekR1>();
+    }))));
+
     public AzureModelInfo ModelInfo { get; }
 
     public string Name
@@ -22,7 +36,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
         get { return ModelInfo.Name; }
     }
 
-    public string? Id
+    public string Id
     {
         get { return ModelInfo.OriginalName; }
     }
@@ -32,6 +46,9 @@ public class AzureModelBase : BaseViewModel, ILLMModel
         get { return UITheme.IsDarkMode ? ModelInfo.DarkModeIcon : ModelInfo.LightModeIcon; }
     }
 
+    public ChatMessage? Message { get; } = null;
+    public bool IsEnable { get; } = false;
+
     protected readonly AzureEndPoint Endpoint;
 
     private ObservableCollection<string> _preResponse = new ObservableCollection<string>();
@@ -39,6 +56,18 @@ public class AzureModelBase : BaseViewModel, ILLMModel
     public object Info
     {
         get { return ModelInfo; }
+    }
+
+    public virtual void Deserialize(IModelParams info)
+    {
+        Mapper.Map(info, this);
+    }
+
+    public virtual IModelParams Serialize()
+    {
+        var azureJsonModel = new AzureJsonModel();
+        Mapper.Map(this, azureJsonModel);
+        return azureJsonModel;
     }
 
     public ObservableCollection<string> PreResponse
@@ -102,73 +131,40 @@ public class AzureModelBase : BaseViewModel, ILLMModel
     private int _promptTokens;
     private int _totalTokens;
 
-    ChatCompletionsClient Client
+    public virtual IChatClient CreateClient(AzureEndPoint endpoint)
     {
-        get
-        {
-            if (_client == null)
-            {
-                _client = new ChatCompletionsClient(new Uri(Endpoint.URL), _credential,
-                    new AzureAIInferenceClientOptions());
-                OnChatCompletionsClientChanged(_client);
-            }
-
-            return _client;
-        }
+        var credential = new AzureKeyCredential(endpoint.APIToken);
+        var chatCompletionsClient = new ChatCompletionsClient(new Uri(Endpoint.URL), credential,
+            new AzureAIInferenceClientOptions());
+        return new AzureAIInferenceChatClient(chatCompletionsClient);
     }
-
-    private ChatCompletionsClient? _client;
-    private readonly AzureKeyCredential _credential;
 
     public AzureModelBase(AzureEndPoint endpoint, AzureModelInfo modelInfo)
     {
         ModelInfo = modelInfo;
         UITheme.ModeChanged += UIThemeOnModeChanged;
         Endpoint = endpoint;
-        endpoint.PropertyChanged += EndpointOnPropertyChanged;
-        _credential = new AzureKeyCredential(endpoint.APIToken);
     }
 
     ~AzureModelBase()
     {
         UITheme.ModeChanged -= UIThemeOnModeChanged;
-        Endpoint.PropertyChanged -= EndpointOnPropertyChanged;
     }
-
-    protected virtual void OnChatCompletionsClientChanged(ChatCompletionsClient client)
-    {
-    }
-
-    private void EndpointOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        switch (e.PropertyName)
-        {
-            case "APIToken":
-                _credential.Update(Endpoint.APIToken);
-                break;
-            case "URL":
-                _client = new ChatCompletionsClient(new Uri(Endpoint.URL), _credential,
-                    new AzureAIInferenceClientOptions());
-                OnChatCompletionsClientChanged(_client);
-                break;
-        }
-    }
-
 
     private void UIThemeOnModeChanged(bool obj)
     {
         this.OnPropertyChanged(nameof(Icon));
     }
 
-    protected virtual ChatCompletionsOptions CreateChatOptions()
+    protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
-        return new ChatCompletionsOptions()
+        return new ChatOptions()
         {
-            Model = this.Id,
+            ModelId = this.Id,
         };
     }
 
-    public async Task<string> SendRequest(IEnumerable<DialogViewItem> dialogItems, string prompt,
+    public virtual async Task<string> SendRequest(IEnumerable<IDialogViewItem> dialogItems, string prompt,
         CancellationToken cancellationToken = default)
     {
         var cachedPreResponse = new StringBuilder();
@@ -178,31 +174,38 @@ public class AzureModelBase : BaseViewModel, ILLMModel
             cachedPreResponse.Clear();
             // PreResponse = "正在生成文档。。。。。";
             IsResponsing = true;
-            var requestOptions = this.CreateChatOptions();
-            foreach (var dialogItem in dialogItems)
+            List<ChatMessage> messages = new List<ChatMessage>();
+            var requestOptions = this.CreateChatOptions(messages);
+            foreach (var dialogItem in dialogItems.Where((item => item.IsEnable)))
             {
                 if (dialogItem.Message != null)
                 {
-                    requestOptions.Messages.Add(dialogItem.Message);
+                    messages.Add(dialogItem.Message);
                 }
             }
 
-            using (var streamingResponse =
-                   await Client.CompleteStreamingAsync(requestOptions, cancellationToken))
+            await foreach (var update in CreateClient(Endpoint)
+                               .CompleteStreamingAsync(messages, requestOptions, cancellationToken))
             {
-                await foreach (var update in streamingResponse.EnumerateValues().WithCancellation(cancellationToken))
+                var updateContents = update.Contents;
+                foreach (var content in updateContents)
                 {
-                    var usage = update.Usage;
-                    if (usage != null)
+                    switch (content)
                     {
-                        this.TotalTokens = usage.TotalTokens;
-                        this.PromptTokens = usage.PromptTokens;
-                        this.CompletionTokens = usage.CompletionTokens;
+                        case UsageContent usageContent:
+                            var details = usageContent.Details;
+                            this.TotalTokens = details.TotalTokenCount ?? 0;
+                            this.PromptTokens = details.InputTokenCount ?? 0;
+                            this.CompletionTokens = details.OutputTokenCount ?? 0;
+                            break;
+                        case TextContent textContent:
+                            PreResponse.Add(textContent.Text);
+                            cachedPreResponse.Append(textContent.Text);
+                            break;
+                        default:
+                            Trace.Write("unsupported content");
+                            break;
                     }
-
-                    var updateContentUpdate = update.ContentUpdate;
-                    cachedPreResponse.Append(updateContentUpdate);
-                    PreResponse.Add(updateContentUpdate);
                 }
             }
 
