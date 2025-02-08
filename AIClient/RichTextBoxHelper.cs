@@ -1,7 +1,9 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 
 namespace LLMClient;
@@ -30,7 +32,14 @@ public class RichTextBoxHelper : DependencyObject
                 {
                     var richTextBox = (RichTextBox)obj;
                     var xaml = GetDocumentXaml(richTextBox);
-                    richTextBox.Document = xaml;
+                    if (xaml != null)
+                    {
+                        richTextBox.Document = xaml;
+                    }
+                    else
+                    {
+                        richTextBox.Document = new FlowDocument();
+                    }
                 }
             });
 }

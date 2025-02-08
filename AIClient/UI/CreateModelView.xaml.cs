@@ -1,0 +1,31 @@
+﻿using System.Windows;
+using System.Windows.Controls;
+using LLMClient.Azure.Models;
+
+namespace LLMClient.UI;
+
+public partial class CreateModelView : UserControl
+{
+    public CreateModelView()
+    {
+        InitializeComponent();
+    }
+
+    ModelSelectionViewModel? ViewModel
+    {
+        get { return DataContext as ModelSelectionViewModel; }
+    }
+
+    private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        var newValue = e.NewValue;
+        if (newValue is AzureModelInfo modelInfo)
+        {
+            if (ViewModel != null) ViewModel.SelectedModelName = modelInfo.Name;
+        }
+        else if (newValue is ILLMEndpoint endpoint)
+        {
+            if (ViewModel != null) ViewModel.SelectedEndpoint = endpoint;
+        }
+    }
+}

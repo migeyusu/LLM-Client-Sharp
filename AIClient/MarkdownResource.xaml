@@ -2,7 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
                     xmlns:llmClient="clr-namespace:LLMClient"
-                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:render="clr-namespace:LLMClient.Render">
     <!-- Document styles -->
     <Style TargetType="{x:Type FlowDocument}" x:Key="{x:Static markdig:Styles.DocumentStyleKey}">
         <Setter Property="FontFamily" Value="Calibri" />
@@ -15,7 +16,7 @@
                 Value="Stretch" />
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type llmClient:CodeContext}">
+                <DataTemplate DataType="{x:Type render:CodeContext}">
                     <Grid>
                         <Rectangle Fill="Azure"
                                    HorizontalAlignment="Stretch"

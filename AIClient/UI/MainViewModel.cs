@@ -1,0 +1,227 @@
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Threading;
+using AutoMapper;
+using MaterialDesignThemes.Wpf;
+using Microsoft.Xaml.Behaviors.Core;
+
+namespace LLMClient.UI;
+
+public class MainViewModel : BaseViewModel
+{
+    private readonly IMapper _mapper;
+    public IEndpointService ConfigureViewModel { get; set; }
+
+    public ICommand LoadCommand => new ActionCommand((async o =>
+    {
+        try
+        {
+            await LoadFromLocal();
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }));
+
+    public ICommand SaveCommand => new ActionCommand((async o =>
+    {
+        try
+        {
+            IsInitializing = true;
+            await Persist();
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            IsInitializing = false;
+        }
+    }));
+
+    public ICommand QuitCommand => new ActionCommand(async o =>
+    {
+        try
+        {
+            IsInitializing = true;
+            await Persist();
+        }
+        finally
+        {
+            await Task.Run(() => { 
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ((Window)o).Close();
+                }); 
+            });
+        }
+    });
+
+    public ICommand SelectModelCommand => new ActionCommand((async o =>
+    {
+        var selectionViewModel = new ModelSelectionViewModel()
+            { AvailableEndpoints = ConfigureViewModel.AvailableEndpoints };
+        if (await DialogHost.Show(selectionViewModel) is true)
+        {
+            if (selectionViewModel.SelectedModelName == null)
+            {
+                return;
+            }
+
+            if (selectionViewModel.SelectedEndpoint == null)
+            {
+                return;
+            }
+
+            var model = selectionViewModel.SelectedEndpoint.GetModel(selectionViewModel.SelectedModelName);
+            if (model == null)
+            {
+                MessageBox.Show("No model created!");
+                return;
+            }
+
+            var dialogViewModel = new DialogViewModel()
+            {
+                Topic = selectionViewModel.DialogName,
+                Model = model,
+                Endpoint = selectionViewModel.SelectedEndpoint
+            };
+            PreDialog = dialogViewModel;
+            this.DialogViewModels.Add(dialogViewModel);
+        }
+    }));
+
+    public ObservableCollection<DialogViewModel> DialogViewModels { get; set; } =
+        new ObservableCollection<DialogViewModel>();
+
+    public DialogViewModel? PreDialog
+    {
+        get => _preDialog;
+        set
+        {
+            if (Equals(value, _preDialog)) return;
+            _preDialog = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private readonly DispatcherTimer _timer;
+
+    private async void UpdateCallback(object? state, EventArgs eventArgs)
+    {
+        try
+        {
+            await Persist();
+        }
+        catch (Exception e)
+        {
+            Trace.Write(e);
+        }
+    }
+
+    private DialogViewModel? _preDialog;
+    private bool _isInitializing;
+
+    public MainViewModel(IEndpointService configureViewModel, IMapper mapper)
+    {
+        _mapper = mapper;
+        ConfigureViewModel = configureViewModel;
+        _timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
+        {
+            Interval = TimeSpan.FromMinutes(5)
+        };
+        _timer.Tick += UpdateCallback;
+        _timer.Start();
+    }
+
+    ~MainViewModel()
+    {
+        _timer.Stop();
+    }
+
+    private const string DialogSaveFolder = "Dialogs";
+
+    public async Task LoadFromLocal(string dirPath = DialogSaveFolder)
+    {
+        var path = Path.GetFullPath(dirPath);
+        var directoryInfo = new DirectoryInfo(path);
+        if (!directoryInfo.Exists)
+        {
+            return;
+        }
+
+        foreach (var fileInfo in directoryInfo.GetFiles())
+        {
+            await using (var openRead = fileInfo.OpenRead())
+            {
+                var dialogModel = await JsonSerializer.DeserializeAsync<DialogModel>(openRead);
+                if (dialogModel != null)
+                {
+                    var viewModel = _mapper.Map<DialogModel, DialogViewModel>(dialogModel);
+                    var checkAccess2 = Dispatcher.CurrentDispatcher.CheckAccess();
+                    this.DialogViewModels.Add(viewModel);
+                }
+            }
+        }
+    }
+
+    public async Task Persist(string folder = DialogSaveFolder)
+    {
+        var dirPath = Path.GetFullPath(folder);
+        var directoryInfo = new DirectoryInfo(dirPath);
+        if (!directoryInfo.Exists)
+            directoryInfo.Create();
+        var fileInfos = directoryInfo.GetFiles()
+            .ToDictionary((f) => Path.GetFileNameWithoutExtension(f.Name), (f) => f);
+        foreach (var dialogViewModel in DialogViewModels)
+        {
+            var dialogModel = _mapper.Map<DialogViewModel, DialogModel>(dialogViewModel);
+            var dialogId = dialogModel.DialogId;
+            if (fileInfos.TryGetValue(dialogId.ToString(), out var fileInfo))
+            {
+                fileInfo.Delete();
+            }
+            else
+            {
+                fileInfo = new FileInfo(Path.Combine(dirPath, $"{dialogId}.json"));
+            }
+
+            using (var fileStream = fileInfo.OpenWrite())
+            {
+                await JsonSerializer.SerializeAsync(fileStream, dialogModel);
+            }
+        }
+    }
+
+    public bool IsInitializing
+    {
+        get => _isInitializing;
+        set
+        {
+            if (value == _isInitializing) return;
+            _isInitializing = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public async void Initialize()
+    {
+        IsInitializing = true;
+        await LoadFromLocal(DialogSaveFolder);
+        if (DialogViewModels.Any())
+        {
+            this.PreDialog = DialogViewModels.First();
+        }
+
+        IsInitializing = false;
+    }
+
+    public ProgressViewModel LoadingProgress { get; } = new ProgressViewModel("Loading...");
+}

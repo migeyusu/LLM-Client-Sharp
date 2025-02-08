@@ -1,12 +1,20 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Text;
+using System.Windows.Documents;
 using System.Windows.Media;
+using Azure;
+using Azure.AI.Inference;
+using Azure.AI.OpenAI;
+using LLMClient.UI;
+using Microsoft.Extensions.AI;
+using OpenAI.Chat;
+using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
 namespace LLMClient.Azure.Models;
 
 public class AzureModelBase : BaseViewModel, ILLMModel
 {
-    private AzureClient? _client;
-
     public AzureModelInfo ModelInfo { get; }
 
     public string Name
@@ -16,7 +24,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
 
     public string? Id
     {
-        get { return ModelInfo.Id; }
+        get { return ModelInfo.OriginalName; }
     }
 
     public ImageSource? Icon
@@ -24,94 +32,185 @@ public class AzureModelBase : BaseViewModel, ILLMModel
         get { return UITheme.IsDarkMode ? ModelInfo.DarkModeIcon : ModelInfo.LightModeIcon; }
     }
 
-    public AzureModelBase(AzureClient? client, AzureModelInfo modelInfo)
+    protected readonly AzureEndPoint Endpoint;
+
+    private ObservableCollection<string> _preResponse = new ObservableCollection<string>();
+
+    public object Info
     {
-        _client = client;
+        get { return ModelInfo; }
+    }
+
+    public ObservableCollection<string> PreResponse
+    {
+        get => _preResponse;
+        set
+        {
+            if (value == _preResponse) return;
+            _preResponse = value;
+            OnPropertyChangedAsync();
+        }
+    }
+
+    private bool _isResponsing = false;
+
+    public bool IsResponsing
+    {
+        get => _isResponsing;
+        set
+        {
+            if (value == _isResponsing) return;
+            _isResponsing = value;
+            OnPropertyChangedAsync();
+        }
+    }
+
+    public int TotalTokens
+    {
+        get => _totalTokens;
+        set
+        {
+            if (value == _totalTokens) return;
+            _totalTokens = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int PromptTokens
+    {
+        get => _promptTokens;
+        set
+        {
+            if (value == _promptTokens) return;
+            _promptTokens = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int CompletionTokens
+    {
+        get => _completionTokens;
+        set
+        {
+            if (value == _completionTokens) return;
+            _completionTokens = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private int _completionTokens;
+    private int _promptTokens;
+    private int _totalTokens;
+
+    ChatCompletionsClient Client
+    {
+        get
+        {
+            if (_client == null)
+            {
+                _client = new ChatCompletionsClient(new Uri(Endpoint.URL), _credential,
+                    new AzureAIInferenceClientOptions());
+                OnChatCompletionsClientChanged(_client);
+            }
+
+            return _client;
+        }
+    }
+
+    private ChatCompletionsClient? _client;
+    private readonly AzureKeyCredential _credential;
+
+    public AzureModelBase(AzureEndPoint endpoint, AzureModelInfo modelInfo)
+    {
         ModelInfo = modelInfo;
         UITheme.ModeChanged += UIThemeOnModeChanged;
+        Endpoint = endpoint;
+        endpoint.PropertyChanged += EndpointOnPropertyChanged;
+        _credential = new AzureKeyCredential(endpoint.APIToken);
     }
 
     ~AzureModelBase()
     {
         UITheme.ModeChanged -= UIThemeOnModeChanged;
+        Endpoint.PropertyChanged -= EndpointOnPropertyChanged;
     }
+
+    protected virtual void OnChatCompletionsClientChanged(ChatCompletionsClient client)
+    {
+    }
+
+    private void EndpointOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case "APIToken":
+                _credential.Update(Endpoint.APIToken);
+                break;
+            case "URL":
+                _client = new ChatCompletionsClient(new Uri(Endpoint.URL), _credential,
+                    new AzureAIInferenceClientOptions());
+                OnChatCompletionsClientChanged(_client);
+                break;
+        }
+    }
+
 
     private void UIThemeOnModeChanged(bool obj)
     {
         this.OnPropertyChanged(nameof(Icon));
     }
 
-    public ILLMClient GetClient()
+    protected virtual ChatCompletionsOptions CreateChatOptions()
     {
-        return _client ?? throw new NullReferenceException();
-    }
-}
-
-public class AzureModelInfo
-{
-    [JsonPropertyName("friendly_name")] public string Name { get; set; }
-
-    [JsonPropertyName("name")] public string? Id { get; set; }
-
-    [JsonPropertyName("max_input_tokens")] public ulong? MaxInputTokens { get; set; }
-
-    [JsonPropertyName("max_output_tokens")]
-    public ulong? MaxOutputTokens { get; set; }
-
-    [JsonPropertyName("original_name")] public string? OriginalName { get; set; }
-
-    [JsonPropertyName("model_family")] public string? ModelFamily { get; set; }
-
-    [JsonPropertyName("description")] public string? Description { get; set; }
-
-    [JsonPropertyName("notes")] public string? Notes { get; set; }
-
-    [JsonPropertyName("evaluation")] public string? Evaluation { get; set; }
-
-    [JsonPropertyName("dark_mode_icon")] public string? DarkModeIconString { get; set; }
-
-    private ImageSource? _darkModeIconBrush = null;
-
-    [JsonIgnore]
-    public ImageSource? DarkModeIcon
-    {
-        get
+        return new ChatCompletionsOptions()
         {
-            if (string.IsNullOrEmpty(DarkModeIconString))
-                return null;
-            if (_darkModeIconBrush == null)
+            Model = this.Id,
+        };
+    }
+
+    public async Task<string> SendRequest(IEnumerable<DialogViewItem> dialogItems, string prompt,
+        CancellationToken cancellationToken = default)
+    {
+        var cachedPreResponse = new StringBuilder();
+        try
+        {
+            PreResponse.Clear();
+            cachedPreResponse.Clear();
+            // PreResponse = "正在生成文档。。。。。";
+            IsResponsing = true;
+            var requestOptions = this.CreateChatOptions();
+            foreach (var dialogItem in dialogItems)
             {
-                _darkModeIconBrush = Extension.LoadImage(DarkModeIconString);
+                if (dialogItem.Message != null)
+                {
+                    requestOptions.Messages.Add(dialogItem.Message);
+                }
             }
 
-            return _darkModeIconBrush;
-        }
-    }
-
-    [JsonPropertyName("light_mode_icon")] public string? LightModeIconString { get; set; }
-
-    private ImageSource? _lightModeIconBrush = null;
-
-    [JsonIgnore]
-    public ImageSource? LightModeIcon
-    {
-        get
-        {
-            if (string.IsNullOrEmpty(LightModeIconString))
-                return null;
-            if (_lightModeIconBrush == null)
+            using (var streamingResponse =
+                   await Client.CompleteStreamingAsync(requestOptions, cancellationToken))
             {
-                _lightModeIconBrush = Extension.LoadImage(LightModeIconString);
+                await foreach (var update in streamingResponse.EnumerateValues().WithCancellation(cancellationToken))
+                {
+                    var usage = update.Usage;
+                    if (usage != null)
+                    {
+                        this.TotalTokens = usage.TotalTokens;
+                        this.PromptTokens = usage.PromptTokens;
+                        this.CompletionTokens = usage.CompletionTokens;
+                    }
+
+                    var updateContentUpdate = update.ContentUpdate;
+                    cachedPreResponse.Append(updateContentUpdate);
+                    PreResponse.Add(updateContentUpdate);
+                }
             }
 
-            return _lightModeIconBrush;
+            return cachedPreResponse.ToString();
+        }
+        finally
+        {
+            IsResponsing = false;
         }
     }
-
-    [JsonPropertyName("training_data_date")]
-    public string? TrainingDataDate { get; set; }
-
-    [JsonPropertyName("summary")] public string? Summery { get; set; }
-
-    [JsonPropertyName("model_version")] public string? ModelVersion { get; set; }
 }

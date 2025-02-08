@@ -1,0 +1,57 @@
+﻿using System.Collections.ObjectModel;
+using AutoMapper;
+
+namespace LLMClient.UI;
+
+public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogModel>,
+    ITypeConverter<DialogModel, DialogViewModel>
+{
+    private readonly IEndpointService _service;
+
+    public ModelTypeConverter(IEndpointService service)
+    {
+        this._service = service;
+    }
+
+
+    public DialogModel Convert(DialogViewModel source, DialogModel destination, ResolutionContext context)
+    {
+        return new DialogModel()
+        {
+            DialogId = source.DialogId,
+            DialogItems = source.Dialog.ToArray(),
+            Topic = source.Topic,
+            EndPoint = source.Endpoint?.Name,
+            Model = source.Model?.Name,
+            PromptString = source.PromptString,
+        };
+    }
+
+    public DialogViewModel Convert(DialogModel source, DialogViewModel destination, ResolutionContext context)
+    {
+        var dialogViewModel = new DialogViewModel()
+        {
+            Topic = source.Topic,
+            DialogId = source.DialogId,
+            PromptString = source.PromptString,
+        };
+        var sourceDialogItems = source.DialogItems;
+        if (sourceDialogItems != null)
+        {
+            dialogViewModel.Dialog = new ObservableCollection<DialogViewItem>(sourceDialogItems);
+        }
+
+        var llmEndpoint = _service.AvailableEndpoints.FirstOrDefault((endpoint => endpoint.Name == source.EndPoint));
+        if (llmEndpoint != null)
+        {
+            dialogViewModel.Endpoint = llmEndpoint;
+            var llmModel = llmEndpoint.GetModel(source.Model ?? string.Empty);
+            if (llmModel != null)
+            {
+                dialogViewModel.Model = llmModel;
+            }
+        }
+
+        return dialogViewModel;
+    }
+}

@@ -3,10 +3,116 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:LLMClient"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             StartupUri="MainWindow.xaml">
+             xmlns:system="clr-namespace:System;assembly=System.Runtime"
+             xmlns:ui="clr-namespace:LLMClient.UI"
+             ShutdownMode="OnLastWindowClose">
     <Application.Resources>
         <ResourceDictionary>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <materialDesign:InvertBooleanConverter x:Key="InvertBooleanConverter" />
+            <ui:SiYuanFont x:Key="DefaultFontFamily" />
+            <Style TargetType="{x:Type local:ParamView}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type local:ParamView}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{TemplateBinding PropertyName}"
+                                           VerticalAlignment="Bottom"
+                                           FontWeight="Black"
+                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="1"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Bottom"
+                                           Style="{StaticResource MaterialDesignOverlineTextBlock}"
+                                           Text="{TemplateBinding Description}" />
+                                <TextBox Grid.Row="1" Grid.Column="0"
+                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                         Padding="4"
+                                         Margin="0,10"
+                                         BorderBrush="Gainsboro"
+                                         Width="100"
+                                         Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Value, Mode=TwoWay}"
+                                         TextWrapping="NoWrap"
+                                         FontSize="16" />
+                                <Slider Grid.Row="1" Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Margin="20,0,0,0"
+                                        Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path= Value,Mode=TwoWay}"
+                                        TickFrequency="{TemplateBinding TickFrequency}"
+                                        Maximum="{TemplateBinding Max}"
+                                        Minimum="{TemplateBinding Min}" />
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="CloseButtonStyle"
+                   TargetType="{x:Type Button}"
+                   BasedOn="{StaticResource MaterialDesignIconButton}">
+                <Setter Property="Height"
+                        Value="26" />
+                <Setter Property="Width"
+                        Value="26" />
+                <Setter Property="Padding"
+                        Value="0" />
+                <Setter Property="Command"
+                        Value="{x:Static materialDesign:DialogHost.CloseDialogCommand}" />
+                <Setter Property="HorizontalContentAlignment"
+                        Value="Center" />
+                <Setter Property="VerticalContentAlignment"
+                        Value="Center" />
+                <Setter Property="CommandParameter">
+                    <Setter.Value>
+                        <system:Boolean>False</system:Boolean>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Content">
+                    <Setter.Value>
+                        <materialDesign:PackIcon Kind="CloseThick"
+                                                 Width="16"
+                                                 Height="16" />
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="DialogContentControlStyle"
+                   TargetType="{x:Type HeaderedContentControl}">
+                <Setter Property="Padding"
+                        Value="20,0,20,20" />
+                <Setter Property="HeaderTemplate">
+                    <Setter.Value>
+                        <DataTemplate>
+                            <Grid Height="30">
+                                <TextBlock Text="{Binding}"
+                                           Margin="16,0"
+                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                           VerticalAlignment="Center" />
+                                <Button Style="{StaticResource CloseButtonStyle}"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top" />
+                            </Grid>
+                        </DataTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type HeaderedContentControl}">
+                            <StackPanel>
+                                <ContentPresenter ContentSource="Header" />
+                                <ContentPresenter Margin="{TemplateBinding Padding}" />
+                            </StackPanel>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="MarkdownResource.xaml" />
                 <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Indigo" SecondaryColor="DeepOrange" />

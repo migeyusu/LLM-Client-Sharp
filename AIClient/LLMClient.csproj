@@ -10,21 +10,30 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AutoMapper" Version="13.0.1" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
         <PackageReference Include="MaterialDesignThemes" Version="5.1.1-ci859"/>
-        <PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" Version="9.0.1-preview.1.24570.5"/>
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.1.0-preview.1.25064.3" />
+        <PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" Version="9.1.0-preview.1.25064.3" />
+        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.1.0-preview.1.25064.3" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
         <PackageReference Include="SkiaSharp" Version="3.118.0-preview.2.3" />
         <PackageReference Include="Svg.Skia" Version="2.0.0.4" />
         <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
+        <PackageReference Include="System.Runtime.WindowsRuntime.UI.Xaml" Version="5.0.0-preview.5.20278.1" />
         <PackageReference Include="TextMateSharp" Version="1.0.65"/>
         <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="Grammars\qml\syntaxes\qml.tmLanguage.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="Grammars\qml\language-configuration.json">
+        <Content Include="Grammars\*.*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Grammars\**\*.*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <!--<None Update="Grammars\qml\language-configuration.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="Grammars\qml\package.json">
@@ -38,7 +47,7 @@
         </None>
         <None Update="Grammars\sqlite\package.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
+        </None>-->
         <None Update="Azure\Models\models.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
@@ -47,6 +56,51 @@
     <ItemGroup>
         <Content Include="Grammars\verilog\syntaxes\bsv.g4"/>
         <Content Include="Grammars\vhdl\syntaxes\bsv.g4"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Page Update="Azure\AzureOptionView.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <XamlRuntime>Wpf</XamlRuntime>
+        <SubType>Designer</SubType>
+      </Page>
+      <Page Update="UI\DialogView.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <XamlRuntime>Wpf</XamlRuntime>
+        <SubType>Designer</SubType>
+      </Page>
+      <Page Update="UI\CreateModelView.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <XamlRuntime>Wpf</XamlRuntime>
+        <SubType>Designer</SubType>
+      </Page>
+      <Page Update="UI\EndpointConfigureView.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <XamlRuntime>Wpf</XamlRuntime>
+        <SubType>Designer</SubType>
+      </Page>
+      <Page Update="UI\MainWindow.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <XamlRuntime>Wpf</XamlRuntime>
+        <SubType>Designer</SubType>
+      </Page>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Bold.otf" />
+      <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Bold.otf" />
+      <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-ExtraLight.otf" />
+      <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-ExtraLight.otf" />
+      <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Heavy.otf" />
+      <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Heavy.otf" />
+      <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Light.otf" />
+      <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Light.otf" />
+      <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Medium.otf" />
+      <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Medium.otf" />
+      <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf" />
+      <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf" />
+      <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
+      <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
     </ItemGroup>
 
 </Project>

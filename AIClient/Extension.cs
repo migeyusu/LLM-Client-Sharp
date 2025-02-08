@@ -1,6 +1,12 @@
 ﻿using System.IO;
+using System.Reflection;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Azure.AI.Inference;
+using LLMClient.Render;
+using Markdig;
+using Markdig.Wpf;
 using SkiaSharp;
 using Svg.Skia;
 
@@ -35,6 +41,28 @@ public static class UITheme
 
 public static class Extension
 {
+    private static readonly CustomRenderer Renderer = new CustomRenderer();
+
+    private static readonly MarkdownPipeline DefaultPipeline =
+        new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
+
+    static Extension()
+    {
+        Renderer.Initialize();
+        DefaultPipeline.Setup(Renderer);
+    }
+
+    public static void UpgradeAPIVersion(this ChatCompletionsClient client, string apiVersion = "2024-12-01-preview")
+    {
+        var propertyInfo = client.GetType().GetField("_apiVersion", BindingFlags.Instance | BindingFlags.NonPublic);
+        propertyInfo?.SetValue(client, apiVersion);
+    }
+
+    public static FlowDocument ToFlowDocument(this string Raw)
+    {
+        return Markdig.Wpf.Markdown.ToFlowDocument(Raw, DefaultPipeline, Renderer);
+    }
+
     public static ImageSource LoadImage(string src)
     {
         //data:image/svg;base64,

@@ -1,4 +1,8 @@
-﻿using System.Windows.Media;
+﻿using System.Collections.ObjectModel;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Windows.Media;
+using LLMClient.UI;
 
 namespace LLMClient;
 
@@ -9,16 +13,12 @@ public interface ILLMEndpoint
     IList<string> AvailableModels { get; }
 
     ILLMModel? GetModel(string modelName);
-}
 
-public interface ILLMClient
-{
-    bool IsResponsing { get; }
-    string PreResponse { get; }
+    Task Initialize();
 
-    //为了尽可能抽象，要求单个方法就传递一次会话所需要的所有参数，防止文本生成、图像生成等任务类型的不相容
-    Task<string> SendRequest(IEnumerable<DialogItem> dialogItems, string prompt, string? systemPrompt = null,
-        CancellationToken cancellationToken = default);
+    void UpdateConfig(JsonNode document);
+    
+    void ReloadConfig(JsonNode document);
 }
 
 public interface ILLMModel
@@ -28,8 +28,14 @@ public interface ILLMModel
     string? Id { get; }
 
     ImageSource? Icon { get; }
+    
+    bool IsResponsing { get; }
+    
+    object Info { get; }
+    
+    ObservableCollection<string> PreResponse { get; }
 
-    ILLMClient GetClient();
-
-    // string GroupName { get; }
+    //为了尽可能抽象，要求单个方法就传递一次会话所需要的所有参数，防止文本生成、图像生成等任务类型的不相容
+    Task<string> SendRequest(IEnumerable<DialogViewItem> dialogItems, string prompt, 
+        CancellationToken cancellationToken = default);
 }
