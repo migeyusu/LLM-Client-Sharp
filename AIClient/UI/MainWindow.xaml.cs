@@ -10,10 +10,10 @@ namespace LLMClient.UI;
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
-public partial class MainWindow : Window
+public partial class MainWindow : ExtendedWindow
 {
     MainViewModel _mainViewModel;
-    
+
     GlobalConfig _globalConfig;
 
     public MainWindow(MainViewModel mainViewModel, GlobalConfig globalConfig)

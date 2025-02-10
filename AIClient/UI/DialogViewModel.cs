@@ -127,7 +127,6 @@ public class DialogViewModel : BaseViewModel
 
     public ICommand SendRequestCommand => new ActionCommand((async o =>
     {
-        
         if (string.IsNullOrEmpty(PromptString))
         {
             return;

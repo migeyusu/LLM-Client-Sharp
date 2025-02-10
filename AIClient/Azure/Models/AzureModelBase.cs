@@ -8,6 +8,8 @@ using Azure.AI.Inference;
 using Azure.AI.TextAnalytics;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Text;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Azure.Models;

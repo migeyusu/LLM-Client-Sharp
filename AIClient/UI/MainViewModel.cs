@@ -17,6 +17,17 @@ public class MainViewModel : BaseViewModel
 {
     private readonly IMapper _mapper;
     public IEndpointService ConfigureViewModel { get; set; }
+    
+    public bool IsInitializing
+    {
+        get => _isInitializing;
+        set
+        {
+            if (value == _isInitializing) return;
+            _isInitializing = value;
+            OnPropertyChanged();
+        }
+    }
 
     public ICommand LoadCommand => new ActionCommand((async o =>
     {
@@ -29,7 +40,7 @@ public class MainViewModel : BaseViewModel
             MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }));
-    
+
     public ICommand SaveCommand => new ActionCommand((async o =>
     {
         try
@@ -59,6 +70,24 @@ public class MainViewModel : BaseViewModel
             await Task.Run(() => { Application.Current.Dispatcher.Invoke(() => { ((Window)o).Close(); }); });
         }
     });
+
+    private bool _isDarkTheme;
+
+    public bool IsDarkTheme
+    {
+        get => _isDarkTheme;
+        set
+        {
+            if (_isDarkTheme == value)
+            {
+                return;
+            }
+            _isDarkTheme = value;
+            OnPropertyChanged();
+            ModifyTheme(theme => theme.SetBaseTheme(value ? BaseTheme.Dark : BaseTheme.Light));
+        }
+    }
+
 
     public ICommand SelectModelCommand => new ActionCommand((async o =>
     {
@@ -135,6 +164,26 @@ public class MainViewModel : BaseViewModel
         };
         _timer.Tick += UpdateCallback;
         _timer.Start();
+        var paletteHelper = new PaletteHelper();
+        Theme theme = paletteHelper.GetTheme();
+        IsDarkTheme = theme.GetBaseTheme() == BaseTheme.Dark;
+        /*if (theme is Theme internalTheme)
+        {
+            _isColorAdjusted = internalTheme.ColorAdjustment is not null;
+
+            var colorAdjustment = internalTheme.ColorAdjustment ?? new ColorAdjustment();
+            _desiredContrastRatio = colorAdjustment.DesiredContrastRatio;
+            _contrastValue = colorAdjustment.Contrast;
+            _colorSelectionValue = colorAdjustment.Colors;
+        }*/
+
+        if (paletteHelper.GetThemeManager() is { } themeManager)
+        {
+            themeManager.ThemeChanged += (_, e) =>
+            {
+                IsDarkTheme = e.NewTheme?.GetBaseTheme() == BaseTheme.Dark;
+            };
+        }
     }
 
     ~MainViewModel()
@@ -212,16 +261,6 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-    public bool IsInitializing
-    {
-        get => _isInitializing;
-        set
-        {
-            if (value == _isInitializing) return;
-            _isInitializing = value;
-            OnPropertyChanged();
-        }
-    }
 
     public async void Initialize()
     {
@@ -236,4 +275,12 @@ public class MainViewModel : BaseViewModel
     }
 
     public ProgressViewModel LoadingProgress { get; } = new ProgressViewModel("Loading...");
+    
+    private static void ModifyTheme(Action<Theme> modificationAction)
+    {
+        var paletteHelper = new PaletteHelper();
+        Theme theme = paletteHelper.GetTheme();
+        modificationAction?.Invoke(theme);
+        paletteHelper.SetTheme(theme);
+    }
 }

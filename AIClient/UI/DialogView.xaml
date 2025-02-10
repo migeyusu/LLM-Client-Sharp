@@ -316,11 +316,21 @@
                         <local:DataTemplateTypePair.Template>
                             <DataTemplate DataType="{x:Type ui:EraseViewItem}">
                                 <Grid Height="30">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
                                     <Separator HorizontalAlignment="Stretch"
                                                Height="1"
+                                               Margin="50,0"
                                                Foreground="Black" />
-                                    <TextBlock Text="上下文已清除"
-                                               Background="White"
+                                    <Separator Grid.Column="1"
+                                               HorizontalAlignment="Stretch"
+                                               Margin="50,0"
+                                               Height="1"
+                                               Foreground="Black" />
+                                    <TextBlock Grid.Column="0" Text="上下文已清除"
+                                               Grid.ColumnSpan="2"
                                                Padding="10,5"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
@@ -370,7 +380,7 @@
                     <Setter Property="HorizontalContentAlignment"
                             Value="Stretch" />
                     <Setter Property="Margin"
-                            Value="0,10" />
+                            Value="0,10,0,0" />
                 </Style>
             </ListBox.ItemContainerStyle>
             <ListBox.CommandBindings>
