@@ -10,11 +10,13 @@ public class Program
     [STAThread]
     static void Main(string[] args)
     {
+        var config = GlobalConfig.LoadOrCreate();
         var serviceCollection = new ServiceCollection();
         var collection = serviceCollection.AddSingleton<MainViewModel>()
             .AddSingleton<MainWindow>()
             .AddSingleton<AzureEndPoint>()
             .AddTransient<ModelTypeConverter>()
+            .AddSingleton(config)
             .AddSingleton<IEndpointService, EndpointConfigureViewModel>();
         collection.AddAutoMapper(((provider, expression) =>
         {

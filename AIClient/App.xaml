@@ -86,14 +86,15 @@
             <Style x:Key="DialogContentControlStyle"
                    TargetType="{x:Type HeaderedContentControl}">
                 <Setter Property="Padding"
-                        Value="20,0,20,20" />
+                        Value="16,0,16,16" />
                 <Setter Property="HeaderTemplate">
                     <Setter.Value>
                         <DataTemplate>
-                            <Grid Height="30">
+                            <Grid>
                                 <TextBlock Text="{Binding}"
-                                           Margin="16,0"
-                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                           Margin="16"
+                                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                           FontWeight="Black"
                                            VerticalAlignment="Center" />
                                 <Button Style="{StaticResource CloseButtonStyle}"
                                         HorizontalAlignment="Right"

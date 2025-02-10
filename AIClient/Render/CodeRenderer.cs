@@ -29,17 +29,15 @@ public class CodeContext
 
 public class CodeRenderer : CodeBlockRenderer
 {
-    public ThemeName ThemeName { get; set; } = ThemeName.Light;
-
     private readonly RegistryOptions _options;
 
     private readonly Registry _registry;
 
     readonly TextMateSharp.Themes.Theme _theme;
 
-    public CodeRenderer()
+    public CodeRenderer(ThemeName themeName = ThemeName.Light)
     {
-        _options = new RegistryOptions(this.ThemeName);
+        _options = new RegistryOptions(themeName);
         _options.LoadFromLocalDir("Grammars");
         _registry = new Registry(_options);
         _theme = _registry.GetTheme();

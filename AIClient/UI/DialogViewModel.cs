@@ -92,12 +92,7 @@ public class DialogViewModel : BaseViewModel
     {
         get { return Dialog.FirstOrDefault(item => { return item is ResponseViewItem; })?.Message?.Text; }
     }
-
-    public ICommand ExportCommand => new ActionCommand((o =>
-    {
-        
-        
-    }));
+    
 
     public ICommand ClearContextCommand => new ActionCommand((o =>
     {
@@ -132,6 +127,7 @@ public class DialogViewModel : BaseViewModel
 
     public ICommand SendRequestCommand => new ActionCommand((async o =>
     {
+        
         if (string.IsNullOrEmpty(PromptString))
         {
             return;
@@ -182,6 +178,7 @@ public class DialogViewModel : BaseViewModel
             var response = await Model.SendRequest(list, PromptString, _requestTokenSource.Token);
             Dialog.Add(new ResponseViewItem() { Raw = response });
             this.PromptString = string.Empty;
+            OnPropertyChangedAsync(nameof(Shortcut));
         }
         catch (OperationCanceledException)
         {

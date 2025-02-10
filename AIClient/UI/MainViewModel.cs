@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using AutoMapper;
 using MaterialDesignThemes.Wpf;
@@ -28,7 +29,7 @@ public class MainViewModel : BaseViewModel
             MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }));
-
+    
     public ICommand SaveCommand => new ActionCommand((async o =>
     {
         try

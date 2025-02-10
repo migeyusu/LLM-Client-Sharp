@@ -10,10 +10,76 @@
         xmlns:models="clr-namespace:LLMClient.Azure.Models"
         mc:Ignorable="d"
         FontFamily="Microsoft YaHei UI"
-        Style="{StaticResource MaterialDesignWindow}"
-        Title="MainWindow" Height="850" Width="1600"
+        Title="LLM Client"
+        WindowStartupLocation="CenterScreen"
+        Height="850"
+        Width="1600"
         Closing="MainWindow_OnClosing"
         d:DataContext="{d:DesignInstance ui:MainViewModel}">
+    <Window.Style>
+        <Style TargetType="{x:Type ui:MainWindow}"
+               BasedOn="{StaticResource MaterialDesignWindow}">
+            <Setter Property="WindowChrome.WindowChrome">
+                <Setter.Value>
+                    <WindowChrome ResizeBorderThickness="5"
+                                  CaptionHeight="52"
+                                  CornerRadius="16"
+                                  GlassFrameThickness="17,53,17,17" />
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ui:MainWindow}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="52" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal"
+                                        Margin="24,0,0,0"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="RobotHappyOutline"
+                                                         Width="35"
+                                                         Height="35"
+                                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                                         Margin="0,0,16,0"
+                                                         VerticalAlignment="Center" />
+                                <!--<Image Source="{TemplateBinding Icon}"
+                                       Width="35"
+                                       Height="35"
+                                       Margin="16,0"
+                                       VerticalAlignment="Center"
+                                       WindowChrome.IsHitTestVisibleInChrome="True" />-->
+                                <TextBlock Text="{TemplateBinding Title}"
+                                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                           VerticalAlignment="Center" />
+                                <Button VerticalAlignment="Center"
+                                        Width="32"
+                                        Height="32"
+                                        Margin="20,0,0,0"
+                                        ToolTip="打开配置"
+                                        Click="OpenConfig_OnClick"
+                                        WindowChrome.IsHitTestVisibleInChrome="True"
+                                        Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                                        Style="{StaticResource MaterialDesignIconButton}">
+                                    <materialDesign:PackIcon Kind="CogOutline"
+                                                             Width="20"
+                                                             Height="20"
+                                                             RenderOptions.BitmapScalingMode="HighQuality" />
+                                </Button>
+                            </StackPanel>
+                            <Border Grid.Row="1"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="8">
+                                <ContentPresenter Content="{TemplateBinding Content}" />
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Style>
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Loaded">
             <b:CallMethodAction TargetObject="{Binding}" MethodName="Initialize" />
@@ -65,238 +131,238 @@
                     <models:AzureModelInfoView />
                 </HeaderedContentControl>
             </DataTemplate>
-
+            <DataTemplate DataType="{x:Type local:GlobalConfig}">
+                <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                        Header="软件配置">
+                    <ui:GlobalConfigView />
+                </HeaderedContentControl>
+            </DataTemplate>
         </materialDesign:DialogHost.Resources>
         <Grid Margin="10"
               IsEnabled="{Binding IsInitializing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
             <Grid.RowDefinitions>
-                <RowDefinition />
                 <RowDefinition Height="Auto" />
+                <RowDefinition />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="220" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <DockPanel>
-                <StackPanel Orientation="Horizontal"
-                            DockPanel.Dock="Top">
-                    <Button Style="{StaticResource MaterialDesignOutlinedDarkButton}"
-                            Padding="8,2"
-                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                            CommandParameter="{Binding ConfigureViewModel,Mode=OneTime}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Connection" />
-                            <TextBlock Text="配置"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource MaterialDesignOutlinedDarkButton}"
-                            Padding="8,2"
-                            Margin="10,0,0,0"
-                            Command="{Binding SaveCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="ContentSave" />
-                            <TextBlock Text="保存"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource MaterialDesignOutlinedDarkButton}"
-                            Padding="8,2"
-                            Margin="10,0,0,0"
-                            Command="{Binding LoadCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Reload" />
-                            <TextBlock Text="重载"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-                <ListBox SelectedItem="{Binding PreDialog,Mode=TwoWay}"
-                         DockPanel.Dock="Bottom"
-                         Margin="0,10,0,0"
-                         BorderThickness="0,1,1,0"
-                         BorderBrush="Gainsboro"
-                         ItemsSource="{Binding DialogViewModels,Mode=OneWay}">
-                    <ListBox.CommandBindings>
-                        <CommandBinding Command="Delete" Executed="CommandBinding_OnExecuted" />
-                    </ListBox.CommandBindings>
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="{x:Type ListBoxItem}"
-                               BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                            <Setter Property="Height"
-                                    Value="80" />
-                            <Setter Property="BorderThickness"
-                                    Value="0,0,0,1" />
-                            <Setter Property="Padding"
-                                    Value="4" />
-                            <Setter Property="BorderBrush"
-                                    Value="DimGray" />
-                            <Setter Property="VerticalContentAlignment"
-                                    Value="Stretch" />
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                        <Border Margin="{TemplateBinding Margin}"
-                                                Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                ClipToBounds="{TemplateBinding ClipToBounds}">
-                                            <VisualStateManager.VisualStateGroups>
-                                                <VisualStateGroup Name="CommonStates">
-                                                    <VisualStateGroup.Transitions>
-                                                        <VisualTransition GeneratedDuration="0:0:0.3" To="Normal">
-                                                            <VisualTransition.GeneratedEasingFunction>
-                                                                <CircleEase EasingMode="EaseOut" />
-                                                            </VisualTransition.GeneratedEasingFunction>
-                                                        </VisualTransition>
-                                                    </VisualStateGroup.Transitions>
-                                                    <VisualState Name="Normal" />
-                                                    <VisualState Name="MouseOver">
-                                                        <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetName="MouseOverBorder"
-                                                                             Storyboard.TargetProperty="Opacity"
-                                                                             To="1"
-                                                                             Duration="0" />
-                                                        </Storyboard>
-                                                    </VisualState>
-                                                    <VisualState Name="Disabled" />
-                                                </VisualStateGroup>
-                                                <VisualStateGroup Name="SelectionStates">
-                                                    <VisualStateGroup.Transitions>
-                                                        <VisualTransition GeneratedDuration="0:0:0.6" />
-                                                    </VisualStateGroup.Transitions>
-                                                    <VisualState Name="Selected">
-                                                        <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetName="SelectedBorder"
-                                                                             Storyboard.TargetProperty="Opacity"
-                                                                             To="1"
-                                                                             Duration="0" />
-                                                        </Storyboard>
-                                                    </VisualState>
-                                                    <VisualState Name="Unselected" />
-                                                    <VisualState Name="SelectedUnfocused">
-                                                        <Storyboard>
-                                                            <DoubleAnimation
-                                                                Storyboard.TargetName="SelectedUnfocusedBorder"
-                                                                Storyboard.TargetProperty="Opacity"
-                                                                To="1"
-                                                                Duration="0" />
-                                                        </Storyboard>
-                                                    </VisualState>
-                                                </VisualStateGroup>
-                                            </VisualStateManager.VisualStateGroups>
-                                            <Grid>
-                                                <Border x:Name="MouseOverBorder"
-                                                        Background="{Binding Path=(materialDesign:ListBoxItemAssist.HoverBackground), RelativeSource={RelativeSource TemplatedParent}}"
-                                                        Opacity="0" />
-                                                <Border x:Name="SelectedBorder"
-                                                        Background="{Binding Path=(materialDesign:ListBoxItemAssist.SelectedFocusedBackground), RelativeSource={RelativeSource TemplatedParent}}"
-                                                        Opacity="0" />
-                                                <Border x:Name="SelectedUnfocusedBorder"
-                                                        Background="{Binding Path=(materialDesign:ListBoxItemAssist.SelectedUnfocusedBackground), RelativeSource={RelativeSource TemplatedParent}}"
-                                                        Opacity="0" />
-                                                <materialDesign:Ripple x:Name="Ripple"
-                                                                       Padding="{TemplateBinding Padding}"
-                                                                       HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                                       VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                                       Content="{TemplateBinding Content}"
-                                                                       ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                                       ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                                                                       Feedback="{TemplateBinding Foreground, Converter={x:Static materialDesign:BrushRoundConverter.Instance}}"
-                                                                       Focusable="False"
-                                                                       RecognizesAccessKey="False"
-                                                                       SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                                <Button CommandParameter="{Binding}"
-                                                        Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
-                                                        x:Name="DeleteButton"
-                                                        Command="Delete"
-                                                        Height="30"
-                                                        Width="30"
-                                                        Margin="10,0"
-                                                        Visibility="Collapsed"
-                                                        HorizontalAlignment="Right"
-                                                        VerticalAlignment="Center"
-                                                        Style="{StaticResource MaterialDesignIconButton}">
-                                                    <materialDesign:PackIcon Kind="DeleteOutline"
-                                                                             Width="18"
-                                                                             Height="18" />
-                                                </Button>
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value=".56" />
-                                            </Trigger>
-                                            <DataTrigger
-                                                Binding="{Binding RelativeSource={RelativeSource Self}, Path=(materialDesign:ListBoxItemAssist.ShowSelection)}"
-                                                Value="False">
-                                                <Setter TargetName="MouseOverBorder" Property="Visibility"
-                                                        Value="Collapsed" />
-                                                <Setter TargetName="Ripple" Property="Feedback" Value="Transparent" />
-                                                <Setter TargetName="SelectedBorder" Property="Visibility"
-                                                        Value="Collapsed" />
-                                                <Setter TargetName="SelectedUnfocusedBorder" Property="Visibility"
-                                                        Value="Collapsed" />
-                                            </DataTrigger>
-                                            <Trigger Property="IsMouseOver"
-                                                     Value="True">
-                                                <Trigger.Setters>
-                                                    <Setter TargetName="DeleteButton"
-                                                            Property="Visibility"
-                                                            Value="Visible" />
-                                                </Trigger.Setters>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate DataType="{x:Type ui:DialogViewModel}">
-                            <DockPanel>
-                                <Image DockPanel.Dock="Left"
-                                       Width="30"
-                                       Height="30"
-                                       Margin="10,0"
-                                       VerticalAlignment="Center"
-                                       Source="{Binding Model.Icon,Mode=OneWay}" />
-                                <Grid DockPanel.Dock="Right">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition />
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Text="{Binding Model.Name}"
-                                               Margin="0,0,0,5"
-                                               Foreground="DimGray"
-                                               TextWrapping="NoWrap"
-                                               TextTrimming="CharacterEllipsis"
-                                               VerticalAlignment="Top"
-                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
-                                    <TextBlock VerticalAlignment="Center"
-                                               HorizontalAlignment="Left"
-                                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                               Grid.Row="1"
-                                               Text="{Binding Topic,Mode=OneWay}" />
-                                    <TextBlock Grid.Row="2"
-                                               Text="{Binding Shortcut,Mode=OneTime}"
-                                               Foreground="DimGray"
-                                               VerticalAlignment="Bottom"
-                                               TextWrapping="NoWrap"
-                                               TextTrimming="CharacterEllipsis"
-                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
-                                </Grid>
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource MaterialDesignOutlinedDarkButton}"
+                        Padding="8,2"
+                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                        CommandParameter="{Binding ConfigureViewModel,Mode=OneTime}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Connection" />
+                        <TextBlock Text="配置"
+                                   Margin="5,0,0,0"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource MaterialDesignOutlinedDarkButton}"
+                        Padding="8,2"
+                        Margin="10,0,0,0"
+                        Command="{Binding SaveCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ContentSave" />
+                        <TextBlock Text="保存"
+                                   Margin="5,0,0,0"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource MaterialDesignOutlinedDarkButton}"
+                        Padding="8,2"
+                        Margin="10,0,0,0"
+                        Command="{Binding LoadCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Reload" />
+                        <TextBlock Text="重载"
+                                   Margin="5,0,0,0"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+            <ListBox Grid.Row="1" Grid.Column="0" SelectedItem="{Binding PreDialog,Mode=TwoWay}"
+                     Margin="0,10,6,0"
+                     BorderThickness="0"
+                     ItemsSource="{Binding DialogViewModels,Mode=OneWay}">
+                <ListBox.CommandBindings>
+                    <CommandBinding Command="Delete" Executed="CommandBinding_OnExecuted" />
+                </ListBox.CommandBindings>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}"
+                           BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                        <Setter Property="Height"
+                                Value="80" />
+                        <Setter Property="BorderThickness"
+                                Value="0,0,0,1" />
+                        <Setter Property="Padding"
+                                Value="4" />
+                        <Setter Property="BorderBrush"
+                                Value="DimGray" />
+                        <Setter Property="VerticalContentAlignment"
+                                Value="Stretch" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <Border Margin="{TemplateBinding Margin}"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            ClipToBounds="{TemplateBinding ClipToBounds}">
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup Name="CommonStates">
+                                                <VisualStateGroup.Transitions>
+                                                    <VisualTransition GeneratedDuration="0:0:0.3" To="Normal">
+                                                        <VisualTransition.GeneratedEasingFunction>
+                                                            <CircleEase EasingMode="EaseOut" />
+                                                        </VisualTransition.GeneratedEasingFunction>
+                                                    </VisualTransition>
+                                                </VisualStateGroup.Transitions>
+                                                <VisualState Name="Normal" />
+                                                <VisualState Name="MouseOver">
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetName="MouseOverBorder"
+                                                                         Storyboard.TargetProperty="Opacity"
+                                                                         To="1"
+                                                                         Duration="0" />
+                                                    </Storyboard>
+                                                </VisualState>
+                                                <VisualState Name="Disabled" />
+                                            </VisualStateGroup>
+                                            <VisualStateGroup Name="SelectionStates">
+                                                <VisualStateGroup.Transitions>
+                                                    <VisualTransition GeneratedDuration="0:0:0.6" />
+                                                </VisualStateGroup.Transitions>
+                                                <VisualState Name="Selected">
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetName="SelectedBorder"
+                                                                         Storyboard.TargetProperty="Opacity"
+                                                                         To="1"
+                                                                         Duration="0" />
+                                                    </Storyboard>
+                                                </VisualState>
+                                                <VisualState Name="Unselected" />
+                                                <VisualState Name="SelectedUnfocused">
+                                                    <Storyboard>
+                                                        <DoubleAnimation
+                                                            Storyboard.TargetName="SelectedUnfocusedBorder"
+                                                            Storyboard.TargetProperty="Opacity"
+                                                            To="1"
+                                                            Duration="0" />
+                                                    </Storyboard>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                        <Grid>
+                                            <Border x:Name="MouseOverBorder"
+                                                    Background="{Binding Path=(materialDesign:ListBoxItemAssist.HoverBackground), RelativeSource={RelativeSource TemplatedParent}}"
+                                                    Opacity="0" />
+                                            <Border x:Name="SelectedBorder"
+                                                    Background="{Binding Path=(materialDesign:ListBoxItemAssist.SelectedFocusedBackground), RelativeSource={RelativeSource TemplatedParent}}"
+                                                    Opacity="0" />
+                                            <Border x:Name="SelectedUnfocusedBorder"
+                                                    Background="{Binding Path=(materialDesign:ListBoxItemAssist.SelectedUnfocusedBackground), RelativeSource={RelativeSource TemplatedParent}}"
+                                                    Opacity="0" />
+                                            <materialDesign:Ripple x:Name="Ripple"
+                                                                   Padding="{TemplateBinding Padding}"
+                                                                   HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                   Content="{TemplateBinding Content}"
+                                                                   ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                   ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                                                   Feedback="{TemplateBinding Foreground, Converter={x:Static materialDesign:BrushRoundConverter.Instance}}"
+                                                                   Focusable="False"
+                                                                   RecognizesAccessKey="False"
+                                                                   SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                            <Button CommandParameter="{Binding}"
+                                                    Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                                                    x:Name="DeleteButton"
+                                                    Command="Delete"
+                                                    Height="30"
+                                                    Width="30"
+                                                    Margin="10,0"
+                                                    Visibility="Collapsed"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"
+                                                    Style="{StaticResource MaterialDesignIconButton}">
+                                                <materialDesign:PackIcon Kind="DeleteOutline"
+                                                                         Width="18"
+                                                                         Height="18" />
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value=".56" />
+                                        </Trigger>
+                                        <DataTrigger
+                                            Binding="{Binding RelativeSource={RelativeSource Self}, Path=(materialDesign:ListBoxItemAssist.ShowSelection)}"
+                                            Value="False">
+                                            <Setter TargetName="MouseOverBorder" Property="Visibility"
+                                                    Value="Collapsed" />
+                                            <Setter TargetName="Ripple" Property="Feedback" Value="Transparent" />
+                                            <Setter TargetName="SelectedBorder" Property="Visibility"
+                                                    Value="Collapsed" />
+                                            <Setter TargetName="SelectedUnfocusedBorder" Property="Visibility"
+                                                    Value="Collapsed" />
+                                        </DataTrigger>
+                                        <Trigger Property="IsMouseOver"
+                                                 Value="True">
+                                            <Trigger.Setters>
+                                                <Setter TargetName="DeleteButton"
+                                                        Property="Visibility"
+                                                        Value="Visible" />
+                                            </Trigger.Setters>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type ui:DialogViewModel}">
+                        <DockPanel>
+                            <Image DockPanel.Dock="Left"
+                                   Width="30"
+                                   Height="30"
+                                   Margin="10,0"
+                                   VerticalAlignment="Center"
+                                   Source="{Binding Model.Icon,Mode=OneWay}" />
+                            <Grid DockPanel.Dock="Right">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="{Binding Model.Name}"
+                                           Margin="0,0,0,5"
+                                           Foreground="DimGray"
+                                           TextWrapping="NoWrap"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Top"
+                                           Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                <TextBlock VerticalAlignment="Center"
+                                           HorizontalAlignment="Left"
+                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                           Grid.Row="1"
+                                           Text="{Binding Topic,Mode=OneWay}" />
+                                <TextBlock Grid.Row="2"
+                                           Text="{Binding Shortcut,Mode=OneTime}"
+                                           Foreground="DimGray"
+                                           VerticalAlignment="Bottom"
+                                           TextWrapping="NoWrap"
+                                           TextTrimming="CharacterEllipsis"
+                                           Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                            </Grid>
 
-                            </DockPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </DockPanel>
-            <Button Grid.Row="0" Grid.Column="0"
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <Button Grid.Row="1" Grid.Column="0"
                     Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
                     ToolTip="创建"
                     Margin="10"
@@ -308,6 +374,7 @@
                                          Kind="Plus" />
             </Button>
             <ContentControl Grid.Row="0" Grid.Column="1"
+                            Grid.RowSpan="2"
                             Content="{Binding PreDialog,Mode=OneWay}">
                 <ContentControl.Resources>
                     <DataTemplate DataType="{x:Type ui:DialogViewModel}">
@@ -331,6 +398,13 @@
                                Text="{Binding Message,Mode=OneTime}" />
                 </StackPanel>
             </materialDesign:Card>
+            <GridSplitter Grid.Row="0" Grid.Column="0"
+                          VerticalAlignment="Stretch"
+                          HorizontalAlignment="Right"
+                          Background="DarkGray"
+                          Grid.RowSpan="2"
+                          Margin="0,20"
+                          Width="3" />
         </Grid>
     </materialDesign:DialogHost>
 </Window>

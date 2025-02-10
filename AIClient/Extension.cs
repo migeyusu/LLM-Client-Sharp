@@ -43,13 +43,15 @@ public static class UITheme
 
 public static class Extension
 {
-    private static readonly CustomRenderer Renderer = new CustomRenderer();
+    private static readonly CustomRenderer Renderer;
 
     private static readonly MarkdownPipeline DefaultPipeline =
         new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
 
     static Extension()
     {
+        var config = GlobalConfig.LoadOrCreate();
+        Renderer = new CustomRenderer() { ThemeName = config.ThemeName };
         Renderer.Initialize();
         DefaultPipeline.Setup(Renderer);
     }

@@ -13,10 +13,13 @@ namespace LLMClient.UI;
 public partial class MainWindow : Window
 {
     MainViewModel _mainViewModel;
+    
+    GlobalConfig _globalConfig;
 
-    public MainWindow(MainViewModel mainViewModel)
+    public MainWindow(MainViewModel mainViewModel, GlobalConfig globalConfig)
     {
         this._mainViewModel = mainViewModel;
+        this._globalConfig = globalConfig;
         this.DataContext = mainViewModel;
         InitializeComponent();
     }
@@ -39,5 +42,10 @@ public partial class MainWindow : Window
         e.Cancel = !_savingEnsured;
         _mainViewModel.QuitCommand.Execute(this);
         _savingEnsured = true;
+    }
+
+    private async void OpenConfig_OnClick(object sender, RoutedEventArgs e)
+    {
+        await this.ShowDialog(_globalConfig);
     }
 }
