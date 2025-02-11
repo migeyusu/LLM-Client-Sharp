@@ -12,7 +12,9 @@ public partial class DialogView : UserControl
 
     private void OnDeleteExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        var dialogViewModel = this.DataContext as DialogViewModel;
-        dialogViewModel.DeleteItem(e.Parameter as IDialogViewItem);
+        if (this.DataContext is DialogViewModel dialogViewModel && e.Parameter is IDialogViewItem dialogViewItem)
+        {
+            dialogViewModel.DeleteItem(dialogViewItem);
+        }
     }
 }

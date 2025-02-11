@@ -147,7 +147,7 @@
                 <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                         Header="Model Info"
                                         Width="800">
-                    <models:AzureModelInfoView Height="600"/>
+                    <models:AzureModelInfoView Height="600" />
                 </HeaderedContentControl>
             </DataTemplate>
             <DataTemplate DataType="{x:Type local:GlobalConfig}">
@@ -169,7 +169,7 @@
                 <ColumnDefinition MinWidth="200" />
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
-                <Button Style="{StaticResource MaterialDesignOutlinedDarkButton}"
+                <Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
                         Padding="8,2"
                         Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                         CommandParameter="{Binding ConfigureViewModel,Mode=OneTime}">
@@ -180,7 +180,7 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource MaterialDesignOutlinedDarkButton}"
+                <Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
                         Padding="8,2"
                         Margin="10,0,0,0"
                         Command="{Binding SaveCommand}">
@@ -191,7 +191,7 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource MaterialDesignOutlinedDarkButton}"
+                <Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
                         Padding="8,2"
                         Margin="10,0,0,0"
                         Command="{Binding LoadCommand}">
@@ -423,7 +423,7 @@
                           HorizontalAlignment="Right"
                           Background="DarkGray"
                           Grid.RowSpan="2"
-                          Margin="0,20"
+                          Margin="0,60"
                           Width="3" />
         </Grid>
     </materialDesign:DialogHost>

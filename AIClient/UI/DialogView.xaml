@@ -13,7 +13,7 @@
              d:DesignWidth="1000">
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="70" />
             <RowDefinition MinHeight="60" />
             <RowDefinition Height="100"
                            MinHeight="60" />
@@ -51,8 +51,7 @@
                                                 <ColumnDefinition />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Foreground="Black"
-                                                       TextWrapping="NoWrap"
+                                            <TextBlock TextWrapping="Wrap"
                                                        VerticalAlignment="Center"
                                                        Padding="16,0"
                                                        MaxHeight="{Binding RelativeSource={RelativeSource Self},Path=LineHeight,Mode=OneTime}"
@@ -123,7 +122,7 @@
                             Width="36"
                             Height="36"
                             ToolTip="清空对话"
-                            Command="{Binding ClearDialog}">
+                            Command="{Binding ClearDialogCommand}">
                         <materialDesign:PackIcon
                             Kind="Delete"
                             Width="20"
@@ -142,6 +141,7 @@
                     <materialDesign:ColorZone Margin="16,0,0,0"
                                               Padding="8,4,8,4"
                                               Panel.ZIndex="1"
+                                              VerticalAlignment="Center"
                                               materialDesign:ElevationAssist.Elevation="Dp2"
                                               CornerRadius="6"
                                               Mode="Standard">
@@ -239,6 +239,7 @@
                             <DataTemplate DataType="{x:Type ui:RequestViewItem}">
                                 <materialDesign:Card Padding="8"
                                                      HorizontalAlignment="Right"
+                                                     Margin="16,0,0,0"
                                                      UniformCornerRadius="8"
                                                      BorderThickness="0"
                                                      Background="{DynamicResource MaterialDesign.Brush.Primary}"
@@ -261,7 +262,8 @@
                                             </MenuItem>
                                         </ContextMenu>
                                     </materialDesign:Card.ContextMenu>
-                                    <TextBlock Text="{Binding MessageContent,Mode=OneTime}" />
+                                    <TextBlock Text="{Binding MessageContent,Mode=OneTime}"
+                                               TextWrapping="Wrap" />
                                 </materialDesign:Card>
                             </DataTemplate>
                         </local:DataTemplateTypePair.Template>
@@ -271,6 +273,7 @@
                             <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
                                 <materialDesign:Card Padding="8"
                                                      UniformCornerRadius="8"
+                                                     HorizontalAlignment="Left"
                                                      BorderThickness="0"
                                                      Style="{StaticResource MaterialDesignOutlinedCard}">
                                     <materialDesign:Card.ContextMenu>
@@ -316,6 +319,17 @@
                         <local:DataTemplateTypePair.Template>
                             <DataTemplate DataType="{x:Type ui:EraseViewItem}">
                                 <Grid Height="30">
+                                    <Grid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="删除"
+                                                      Command="Delete"
+                                                      CommandParameter="{Binding}">
+                                                <MenuItem.Icon>
+                                                    <materialDesign:PackIcon Kind="DeleteOutline" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </Grid.ContextMenu>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition />
                                         <ColumnDefinition />

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
@@ -92,7 +93,7 @@ public class DialogViewModel : BaseViewModel
     {
         get { return Dialog.FirstOrDefault(item => { return item is ResponseViewItem; })?.Message?.Text; }
     }
-    
+
 
     public ICommand ClearContextCommand => new ActionCommand((o =>
     {
@@ -103,12 +104,13 @@ public class DialogViewModel : BaseViewModel
 
     public ICommand SearchCommand => new ActionCommand((o => { }));
 
-    public ICommand ClearDialog => new ActionCommand((o =>
+    public ICommand ClearDialogCommand => new ActionCommand(async o =>
     {
-        if (MessageBox.Show("清空当前对话历史？", "", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-            return;
-        Dialog.Clear();
-    }));
+        if ((await DialogHost.Show(new ConfirmView() { Header = "清空会话？" })) is true)
+        {
+            Dialog.Clear();
+        }
+    });
 
     private string? _promptString;
     private string _topic = string.Empty;
@@ -199,7 +201,7 @@ public class DialogViewModel : BaseViewModel
 #pragma warning restore CS0162 // 检测到不可到达的代码
     }));
 
-    public ICommand CancelCommand => new ActionCommand((async o => { _requestTokenSource?.Cancel(); }));
+    public ICommand CancelCommand => new ActionCommand(( o => { _requestTokenSource?.Cancel(); }));
 
     public void DeleteItem(IDialogViewItem item)
     {

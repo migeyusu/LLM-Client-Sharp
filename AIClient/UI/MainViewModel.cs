@@ -29,7 +29,7 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-    public ICommand LoadCommand => new ActionCommand((async o =>
+    public ICommand LoadCommand => new ActionCommand((o =>
     {
         try
         {
@@ -250,7 +250,7 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-    public async void DeleteDialog(DialogViewModel dialogViewModel)
+    public  void DeleteDialog(DialogViewModel dialogViewModel)
     {
         this.DialogViewModels.Remove(dialogViewModel);
         this.PreDialog = this.DialogViewModels.FirstOrDefault();

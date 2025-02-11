@@ -9,16 +9,15 @@
              d:DesignHeight="300" d:DesignWidth="300">
     <StackPanel Margin="16">
         <TextBlock x:Name="HeaderTextBlock"
-                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"/>
+                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
         <StackPanel
             HorizontalAlignment="Right"
             Orientation="Horizontal">
-            <Button
-                Margin="0,8,8,0"
-                Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-                Content="ACCEPT"
-                IsDefault="True"
-                Style="{StaticResource MaterialDesignFlatButton}">
+            <Button Margin="0,8,8,0"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Content="YES"
+                    IsDefault="True"
+                    Style="{StaticResource MaterialDesignFlatButton}">
                 <Button.CommandParameter>
                     <system:Boolean
                         xmlns:system="clr-namespace:System;assembly=mscorlib">
@@ -26,12 +25,11 @@
                     </system:Boolean>
                 </Button.CommandParameter>
             </Button>
-            <Button
-                Margin="0,8,0,0"
-                Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-                Content="CANCEL"
-                IsCancel="True"
-                Style="{StaticResource MaterialDesignFlatButton}">
+            <Button Margin="0,8,0,0"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Content="CANCEL"
+                    IsCancel="True"
+                    Style="{StaticResource MaterialDesignFlatButton}">
                 <Button.CommandParameter>
                     <system:Boolean
                         xmlns:system="clr-namespace:System;assembly=mscorlib">
