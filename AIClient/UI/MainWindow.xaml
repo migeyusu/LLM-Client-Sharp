@@ -95,7 +95,7 @@
                        Margin="10,0,0,0" />
             <ToggleButton Margin="8,0,16,0" IsChecked="{Binding IsDarkTheme,Mode=TwoWay}"
                           WindowChrome.IsHitTestVisibleInChrome="True" />
-            <TextBlock VerticalAlignment="Center" Text="Dark" />
+            <TextBlock VerticalAlignment="Center" Text="Dark"/>
         </StackPanel>
     </local:ExtendedWindow.Banner>
     <b:Interaction.Triggers>
@@ -377,7 +377,6 @@
                                            TextTrimming="CharacterEllipsis"
                                            Style="{StaticResource MaterialDesignCaptionTextBlock}" />
                             </Grid>
-
                         </DockPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -418,6 +417,62 @@
                                Text="{Binding Message,Mode=OneTime}" />
                 </StackPanel>
             </materialDesign:Card>
+            <!--<WrapPanel Grid.Row="0" Grid.Column="1"
+                       Grid.RowSpan="2"
+                       Background="DimGray">
+                <WrapPanel.Resources>
+                    <Style TargetType="{x:Type Rectangle}">
+                        <Setter Property="Width"
+                                Value="40" />
+                        <Setter Property="Height"
+                                Value="40" />
+                        <Setter Property="Margin"
+                                Value="10"/>
+                    </Style>
+                </WrapPanel.Resources>
+                <TextBlock Text="MaterialDesign.Brush.Background" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Background}" />
+                <TextBlock Text="MaterialDesign.Brush.Foreground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                <TextBlock Text="MaterialDesign.Brush.ForegroundLight" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                <TextBlock Text="MaterialDesign.Brush.Card.Background" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Card.Background}" />
+                <TextBlock Text="MaterialDesign.Brush.Chip.Background" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.Background}" />
+                <TextBlock Text="MaterialDesign.Brush.ColorZone.DarkBackground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.ColorZone.DarkBackground}" />
+                <TextBlock Text="MaterialDesign.Brush.ColorZone.DarkForeground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.ColorZone.DarkForeground}" />
+                <TextBlock Text="MaterialDesign.Brush.ColorZone.LightBackground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.ColorZone.LightBackground}" />
+                <TextBlock Text="MaterialDesign.Brush.ColorZone.LightForeground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.ColorZone.LightForeground}" />
+                <TextBlock Text="MaterialDesign.Brush.Header.Foreground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Header.Foreground}" />
+                <TextBlock Text="MaterialDesign.Brush.Secondary.Foreground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Secondary.Foreground}" />
+                <TextBlock Text="MaterialDesign.Brush.Separator.Background" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Separator.Background}" />
+                <TextBlock Text="MaterialDesign.Brush.TabControl.Divider" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.TabControl.Divider}" />
+                <TextBlock Text="MaterialDesign.Brush.GridSplitter.Background" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.GridSplitter.Background}" />
+                <TextBlock Text="MaterialDesign.Brush.Chip.Background" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.Background}" />
+                <TextBlock Text="MaterialDesign.Brush.Chip.OutlineBorder" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.OutlineBorder}" />
+                <TextBlock Text="MaterialDesign.Brush.Badged.DarkBackground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Badged.DarkBackground}" />
+                <TextBlock Text="MaterialDesign.Brush.Badged.DarkForeground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Badged.DarkForeground}" />
+                <TextBlock Text="MaterialDesign.Brush.Badged.LightBackground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Badged.LightBackground}" />
+                <TextBlock Text="MaterialDesign.Brush.Badged.LightForeground" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Badged.LightForeground}" />
+                <TextBlock Text="MaterialDesign.Brush.Card.Border" />
+                <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Card.Border}" />
+            </WrapPanel>-->
             <GridSplitter Grid.Row="0" Grid.Column="0"
                           VerticalAlignment="Stretch"
                           HorizontalAlignment="Right"

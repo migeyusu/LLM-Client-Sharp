@@ -14,33 +14,6 @@ using Svg.Skia;
 
 namespace LLMClient;
 
-public static class UITheme
-{
-    private static bool _isDarkMode = false;
-
-    public static bool IsDarkMode
-    {
-        get => _isDarkMode;
-        set
-        {
-            if (value == _isDarkMode)
-            {
-                return;
-            }
-
-            _isDarkMode = value;
-            OnModeChanged(value);
-        }
-    }
-
-    public static event Action<bool>? ModeChanged;
-
-    private static void OnModeChanged(bool obj)
-    {
-        ModeChanged?.Invoke(obj);
-    }
-}
-
 public static class Extension
 {
     private static readonly CustomRenderer Renderer;
@@ -50,8 +23,7 @@ public static class Extension
 
     static Extension()
     {
-        var config = GlobalConfig.LoadOrCreate();
-        Renderer = new CustomRenderer() { ThemeName = config.ThemeName };
+        Renderer = new CustomRenderer();
         Renderer.Initialize();
         DefaultPipeline.Setup(Renderer);
     }

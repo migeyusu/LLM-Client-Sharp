@@ -273,7 +273,7 @@
                             <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
                                 <materialDesign:Card Padding="8"
                                                      UniformCornerRadius="8"
-                                                     HorizontalAlignment="Left"
+                                                     HorizontalAlignment="Stretch"
                                                      BorderThickness="0"
                                                      Style="{StaticResource MaterialDesignOutlinedCard}">
                                     <materialDesign:Card.ContextMenu>
@@ -303,11 +303,12 @@
                                         </ContextMenu>
                                     </materialDesign:Card.ContextMenu>
                                     <StackPanel>
-                                        <RichTextBox BorderThickness="0"
-                                                     IsDocumentEnabled="True"
-                                                     IsReadOnly="True"
-                                                     Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
-                                                     local:RichTextBoxHelper.DocumentXaml="{Binding Document,Mode=OneTime}" />
+                                        <!--IsDocumentEnabled="True"
+                                                     IsReadOnly="True"-->
+                                        <ui:FlowDocumentScrollViewerEx BorderThickness="0"
+                                                                    Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
+                                                                    Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
+                                                                    Document="{Binding Document,Mode=OneTime}" />
                                         <TextBlock Text="{Binding ErrorMessage,Mode=OneTime}"
                                                    Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                                     </StackPanel>

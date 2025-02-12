@@ -8,6 +8,30 @@
              ShutdownMode="OnLastWindowClose">
     <Application.Resources>
         <ResourceDictionary>
+            <Style TargetType="{x:Type FlowDocumentScrollViewer}"
+                   x:Key="ExFlowDocumentScrollViewerStyle">
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Background" Value="{DynamicResource RegionBrush}"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                <Setter Property="KeyboardNavigation.TabNavigation" Value="Local"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type FlowDocumentScrollViewer}">
+                            <Border BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                    Background="{TemplateBinding Background}"
+                                    Margin="{TemplateBinding Padding}">
+                                <ui:ScrollViewerEx x:Name="PART_ContentHost" CanContentScroll="True" 
+                                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <materialDesign:InvertBooleanConverter x:Key="InvertBooleanConverter" />
             <ui:SiYuanFont x:Key="DefaultFontFamily" />

@@ -22,6 +22,7 @@ public partial class MainWindow : ExtendedWindow
         this._globalConfig = globalConfig;
         this.DataContext = mainViewModel;
         InitializeComponent();
+        // GlobalConfig.UpdateResource(globalConfig.ThemeName);
     }
 
     private async void CommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
@@ -48,4 +49,5 @@ public partial class MainWindow : ExtendedWindow
     {
         await this.ShowDialog(_globalConfig);
     }
+    
 }

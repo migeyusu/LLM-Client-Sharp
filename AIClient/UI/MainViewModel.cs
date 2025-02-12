@@ -17,7 +17,7 @@ public class MainViewModel : BaseViewModel
 {
     private readonly IMapper _mapper;
     public IEndpointService ConfigureViewModel { get; set; }
-    
+
     public bool IsInitializing
     {
         get => _isInitializing;
@@ -82,9 +82,11 @@ public class MainViewModel : BaseViewModel
             {
                 return;
             }
+
             _isDarkTheme = value;
             OnPropertyChanged();
             ModifyTheme(theme => theme.SetBaseTheme(value ? BaseTheme.Dark : BaseTheme.Light));
+            UITheme.IsDarkMode = value;
         }
     }
 
@@ -179,10 +181,7 @@ public class MainViewModel : BaseViewModel
 
         if (paletteHelper.GetThemeManager() is { } themeManager)
         {
-            themeManager.ThemeChanged += (_, e) =>
-            {
-                IsDarkTheme = e.NewTheme?.GetBaseTheme() == BaseTheme.Dark;
-            };
+            themeManager.ThemeChanged += (_, e) => { IsDarkTheme = e.NewTheme?.GetBaseTheme() == BaseTheme.Dark; };
         }
     }
 
@@ -250,7 +249,7 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-    public  void DeleteDialog(DialogViewModel dialogViewModel)
+    public void DeleteDialog(DialogViewModel dialogViewModel)
     {
         this.DialogViewModels.Remove(dialogViewModel);
         this.PreDialog = this.DialogViewModels.FirstOrDefault();
@@ -275,7 +274,7 @@ public class MainViewModel : BaseViewModel
     }
 
     public ProgressViewModel LoadingProgress { get; } = new ProgressViewModel("Loading...");
-    
+
     private static void ModifyTheme(Action<Theme> modificationAction)
     {
         var paletteHelper = new PaletteHelper();

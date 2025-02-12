@@ -64,7 +64,6 @@ public class ResponseViewItem : IDialogViewItem
             {
                 _flowDocument = this.Raw.ToFlowDocument();
             }
-
             return _flowDocument;
         }
     }
