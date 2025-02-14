@@ -121,28 +121,17 @@ public class AzureModelInfo
 
     [JsonPropertyName("light_mode_icon")] public string? LightModeIconString { get; set; }
 
-    private ImageSource? _lightModeIconBrush = null;
+    [JsonIgnore] public ImageSource? LightModeIcon { get; set; }
 
-    [JsonIgnore]
-    public ImageSource? LightModeIcon
+    public async Task InitializeAsync()
     {
-        get
+        if (!string.IsNullOrEmpty(LightModeIconString))
         {
-            if (_lightModeIconBrush != null)
-            {
-                return _lightModeIconBrush;
-            }
-
-            if (!string.IsNullOrEmpty(LightModeIconString))
-            {
-                _lightModeIconBrush = Extension.LoadSvgFromBase64(LightModeIconString);
-            }
-            else if (LogoUrl != null)
-            {
-                _lightModeIconBrush = Extension.LoadSvgFromHttp(LogoUrl);
-            }
-
-            return _lightModeIconBrush;
+            LightModeIcon = Extension.LoadSvgFromBase64(LightModeIconString);
+        }
+        else if (LogoUrl != null)
+        {
+            LightModeIcon = await Extension.LoadSvgFromHttp(LogoUrl);
         }
     }
 

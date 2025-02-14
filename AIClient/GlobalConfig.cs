@@ -13,35 +13,6 @@ namespace LLMClient;
 
 public class GlobalConfig : BaseViewModel
 {
-    private const string ThemeColorResourceKey = "CodeBlock.TextMateSharp.Theme";
-
-    private ThemeName _themeName = ThemeName.Light;
-
-    public ThemeName ThemeName
-    {
-        get => _themeName;
-        set
-        {
-            if (value == _themeName) return;
-            _themeName = value;
-            OnPropertyChanged();
-            UITheme.ThemeName = TextMateCodeRenderer.GetTheme(value);
-            // UpdateResource(value);
-        }
-    }
-
-    public static void UpdateResource(ThemeName themeName)
-    {
-        var application = Application.Current;
-        if (application == null)
-        {
-            return;
-        }
-
-        var sourceDictionary = application.Resources;
-        sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
-    }
-
     private const string DEFAULT_GLOBAL_CONFIG_FILE = "globalconfig.json";
 
     [JsonIgnore]

@@ -8,8 +8,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using AutoMapper;
+using LLMClient.Render;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
+using TextMateSharp.Grammars;
 
 namespace LLMClient.UI;
 
@@ -87,7 +89,36 @@ public class MainViewModel : BaseViewModel
             OnPropertyChanged();
             ModifyTheme(theme => theme.SetBaseTheme(value ? BaseTheme.Dark : BaseTheme.Light));
             UITheme.IsDarkMode = value;
+            this.ThemeName = value ? ThemeName.DarkPlus : ThemeName.Light;
         }
+    }
+
+    private const string ThemeColorResourceKey = "CodeBlock.TextMateSharp.Theme";
+
+    private ThemeName _themeName = ThemeName.Light;
+
+    public ThemeName ThemeName
+    {
+        get => _themeName;
+        set
+        {
+            if (value == _themeName) return;
+            _themeName = value;
+            OnPropertyChanged();
+            UpdateResource(value);
+        }
+    }
+
+    public static void UpdateResource(ThemeName themeName)
+    {
+        var application = Application.Current;
+        if (application == null)
+        {
+            return;
+        }
+
+        var sourceDictionary = application.Resources;
+        sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
     }
 
 
@@ -270,6 +301,7 @@ public class MainViewModel : BaseViewModel
             this.PreDialog = DialogViewModels.First();
         }
 
+        UpdateResource(_themeName);
         IsInitializing = false;
     }
 

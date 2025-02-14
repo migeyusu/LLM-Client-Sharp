@@ -9,6 +9,8 @@
                       xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
                       xmlns:models="clr-namespace:LLMClient.Azure.Models"
                       xmlns:ui1="clr-namespace:LLMClient.UI"
+                      xmlns:grammars="clr-namespace:TextMateSharp.Grammars;assembly=TextMateSharp.Grammars"
+                      xmlns:System="clr-namespace:System;assembly=System.Runtime"
                       mc:Ignorable="d"
                       FontFamily="Microsoft YaHei UI"
                       Title="LLM Client"
@@ -77,6 +79,14 @@
     <local:ExtendedWindow.Banner>
         <StackPanel Orientation="Horizontal"
                     IsEnabled="{Binding ElementName=MainDialogHost, Path=IsOpen,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+            <StackPanel.Resources>
+                <ObjectDataProvider x:Key="DataFromEnum" MethodName="GetValues"
+                                    ObjectType="{x:Type System:Enum}">
+                    <ObjectDataProvider.MethodParameters>
+                        <x:Type TypeName="grammars:ThemeName" />
+                    </ObjectDataProvider.MethodParameters>
+                </ObjectDataProvider>
+            </StackPanel.Resources>
             <Button VerticalAlignment="Center"
                     Width="32"
                     Height="32"
@@ -95,7 +105,15 @@
                        Margin="10,0,0,0" />
             <ToggleButton Margin="8,0,16,0" IsChecked="{Binding IsDarkTheme,Mode=TwoWay}"
                           WindowChrome.IsHitTestVisibleInChrome="True" />
-            <TextBlock VerticalAlignment="Center" Text="Dark"/>
+            <TextBlock VerticalAlignment="Center" Text="Dark"
+                       Margin="0,0,16,0" />
+            <ComboBox ItemsSource="{Binding Source={StaticResource DataFromEnum}}"
+                      SelectedItem="{Binding ThemeName,Mode=TwoWay}"
+                      Margin="0,0,16,0" 
+                      WindowChrome.IsHitTestVisibleInChrome="True"/>
+            <TextBlock Text="代码高亮主题："
+                       VerticalAlignment="Center"
+                       Margin="0,0,16,0" />
         </StackPanel>
     </local:ExtendedWindow.Banner>
     <b:Interaction.Triggers>

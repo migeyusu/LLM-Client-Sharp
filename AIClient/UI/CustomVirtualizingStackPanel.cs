@@ -1,9 +1,7 @@
 ﻿using System.Collections;
-using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
 
@@ -11,15 +9,12 @@ namespace LLMClient.UI;
 
 public class CustomVirtualizingStackPanel : VirtualizingStackPanel
 {
-    // IRecyclingItemContainerGenerator
-
-
     protected override void OnCleanUpVirtualizedItem(CleanUpVirtualizedItemEventArgs e)
     {
         base.OnCleanUpVirtualizedItem(e);
-        if (e.Value is ResponseViewItem viewItem)
+        if (e.Value is ResponseViewItem)
         {
-            var richTextBox = FindRichTextBoxInContainer(e.UIElement);
+            var richTextBox = FindControlInContainer<FlowDocumentScrollViewer>(e.UIElement);
             if (richTextBox is { Document: not null })
             {
                 richTextBox.Document = new FlowDocument(); // 清除 FlowDocument 的引用
@@ -41,7 +36,7 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
 
             foreach (ListBoxItem item in value)
             {
-                var richTextBox = FindRichTextBoxInContainer(item);
+                var richTextBox = FindControlInContainer<FlowDocumentScrollViewer>(item);
                 if (richTextBox is { Document: not null })
                 {
                     richTextBox.Document = new FlowDocument(); // 清除 FlowDocument 的引用
@@ -55,18 +50,18 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
     /// <summary>
     /// 从 ListBoxItem 中查找 RichTextBox 控件
     /// </summary>
-    private RichTextBox? FindRichTextBoxInContainer(DependencyObject container)
+    private T? FindControlInContainer<T>(DependencyObject container) where T : DependencyObject
     {
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(container); i++)
         {
             var child = VisualTreeHelper.GetChild(container, i);
 
-            if (child is RichTextBox richTextBox)
+            if (child is T richTextBox)
             {
                 return richTextBox;
             }
 
-            var result = FindRichTextBoxInContainer(child);
+            var result = FindControlInContainer<T>(child);
             if (result != null) return result;
         }
 

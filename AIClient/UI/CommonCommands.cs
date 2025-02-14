@@ -18,7 +18,14 @@ public class CommonCommands
             {
                 if (o is string text && !string.IsNullOrEmpty(text))
                 {
-                    Clipboard.SetText(text);
+                    try
+                    {
+                        Clipboard.SetText(text);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                    }
                 }
             }));
         }
@@ -36,7 +43,7 @@ public class CommonCommands
                 {
                     var fileDialog = new SaveFileDialog()
                     {
-                        AddExtension = true, 
+                        AddExtension = true,
                         OverwritePrompt = true, DefaultExt = ".md", Filter = "Markdown files (*.md)|*.md"
                     };
                     if (fileDialog.ShowDialog() == true)
@@ -49,7 +56,7 @@ public class CommonCommands
                             }
                         }
                     }
-                } 
+                }
             }));
         }
     }

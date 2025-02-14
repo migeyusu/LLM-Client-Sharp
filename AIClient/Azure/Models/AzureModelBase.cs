@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Windows.Media;
 using AutoMapper;
 using Azure;
@@ -32,6 +33,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
         expression.CreateMap<AzureJsonModel, DeepSeekR1>();
     }))));
 
+    [JsonIgnore]
     public AzureModelInfo ModelInfo { get; }
 
     public string Name
@@ -73,6 +75,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
         return azureJsonModel;
     }
 
+    [JsonIgnore]
     public ObservableCollection<string> PreResponse
     {
         get => _preResponse;
@@ -83,9 +86,10 @@ public class AzureModelBase : BaseViewModel, ILLMModel
             OnPropertyChangedAsync();
         }
     }
-
+    
     private bool _isResponsing = false;
 
+    [JsonIgnore]
     public bool IsResponsing
     {
         get => _isResponsing;
@@ -167,7 +171,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
         };
     }
 
-    public virtual async Task<string> SendRequest(IEnumerable<IDialogViewItem> dialogItems, string prompt,
+    public virtual async Task<string> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default)
     {
         var cachedPreResponse = new StringBuilder();
@@ -211,6 +215,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
                     }
                 }
             }
+
             return cachedPreResponse.ToString();
         }
         finally

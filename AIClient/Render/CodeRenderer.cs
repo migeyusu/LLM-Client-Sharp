@@ -39,7 +39,8 @@ public class TextMateCodeRenderer : CodeBlockRenderer
 
     private static readonly RegistryOptions Options;
 
-    static Dictionary<ThemeName, TextMateThemeColors> Themes = new Dictionary<ThemeName, TextMateThemeColors>();
+    static readonly Dictionary<ThemeName, TextMateThemeColors>
+        Themes = new Dictionary<ThemeName, TextMateThemeColors>();
 
     public static TextMateThemeColors GetTheme(ThemeName themeName)
     {
@@ -64,9 +65,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
     {
         Options.LoadFromLocalDir("Grammars");
         _registry = new Registry(Options);
-        
     }
-
 
     protected override void Write(WpfRenderer renderer, CodeBlock obj)
     {
@@ -108,6 +107,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
         {
             renderer.WriteLeafRawLines(obj);
         }
+
         paragraph.EndInit();
         renderer.Pop();
     }
@@ -160,9 +160,9 @@ public class TextmateColoredRun : Run
 
     private static void ThemePropertyChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is TextmateColoredRun textmateRun)
+        if (d is TextmateColoredRun textmateRun && e.NewValue is TextMateThemeColors themeColors)
         {
-            // textmateRun.Color();
+            textmateRun.Color(themeColors);
         }
     }
 
@@ -176,29 +176,17 @@ public class TextmateColoredRun : Run
     {
         Token = token;
     }
-    
+
     public TextmateColoredRun(string text, IToken token) : base(text)
     {
         Token = token;
-        UITheme.OnThemeChanged+= UIThemeOnOnThemeChanged;
     }
 
-    private void UIThemeOnOnThemeChanged(TextMateThemeColors obj)
-    {
-        Color(obj);
-    }
-
-    ~TextmateColoredRun()
-    {
-        UITheme.OnThemeChanged -= UIThemeOnOnThemeChanged;
-    }
-        
     protected override void OnInitialized(EventArgs e)
     {
-        Color(UITheme.ThemeName);
         base.OnInitialized(e);
+        this.Color(this.ThemeColors);
     }
-
 
     private void Color(TextMateThemeColors textMateThemeColors)
     {
@@ -206,7 +194,7 @@ public class TextmateColoredRun : Run
         // var background = -1;
         // var textMateThemeColors = this.ThemeColors;
         var themeColorsTheme = textMateThemeColors.Theme;
-        var fontStyle = TextMateSharp.Themes.FontStyle.NotSet;
+        var fontStyle = TextMateSharp.Themes.FontStyle.None;
         var rules = themeColorsTheme.Match(this.Token.Scopes);
         foreach (var themeRule in rules)
         {
@@ -216,47 +204,50 @@ public class TextmateColoredRun : Run
             /*if (background == -1 && themeRule.background > 0)
                 background = themeRule.background;*/
 
-            if (fontStyle == TextMateSharp.Themes.FontStyle.NotSet && themeRule.fontStyle > 0)
-                fontStyle = themeRule.fontStyle;
+            if (themeRule.fontStyle > 0)
+                fontStyle |= themeRule.fontStyle;
         }
-        
+
         // var backgroundColor = textMateThemeColors.GetBrush(background);
         var foregroundColor = textMateThemeColors.GetBrush(foreground);
         if (foregroundColor != null)
         {
             this.Foreground = foregroundColor;
         }
+        else
+        {
+            this.ClearValue(ForegroundProperty);
+        }
 
         /*if (backgroundColor != null)
         {
             this.Background = backgroundColor;
         }*/
-
-        switch (fontStyle)
+        this.ClearValue(TextDecorationsProperty);
+        this.ClearValue(FontWeightProperty);
+        this.ClearValue(FontStyleProperty);
+        if (fontStyle != TextMateSharp.Themes.FontStyle.NotSet && fontStyle != TextMateSharp.Themes.FontStyle.None)
         {
-            case TextMateSharp.Themes.FontStyle.Italic:
+            if (fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Italic))
+            {
                 this.FontStyle = FontStyles.Italic;
-                break;
-            case TextMateSharp.Themes.FontStyle.Bold:
-                this.FontWeight = FontWeights.Bold;
-                break;
-            case TextMateSharp.Themes.FontStyle.Underline:
-                this.TextDecorations = System.Windows.TextDecorations.Underline;
-                break;
-            case TextMateSharp.Themes.FontStyle.Strikethrough:
-                this.TextDecorations = System.Windows.TextDecorations.Strikethrough;
-                break;
-            case TextMateSharp.Themes.FontStyle.NotSet:
-            case TextMateSharp.Themes.FontStyle.None:
-            default:
-                break;
-        }
-    }
+            }
 
-    private static void ColorInline(Run run, int foreground, int background,
-        FontStyle fontStyle,
-        TextMateThemeColors theme)
-    {
+            if (fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Bold))
+            {
+                this.FontWeight = FontWeights.Bold;
+            }
+
+            if (fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Underline))
+            {
+                this.TextDecorations = System.Windows.TextDecorations.Underline;
+            }
+
+            if (fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Strikethrough))
+            {
+                this.TextDecorations = System.Windows.TextDecorations.Strikethrough;
+            }
+        }
     }
 }
 

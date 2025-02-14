@@ -37,11 +37,11 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <!--<Style TargetType="{x:Type render:TextmateColoredRun}" 
+    <Style TargetType="{x:Type render:TextmateColoredRun}" 
            x:Key="{x:Static render:TextMateCodeRenderer.TokenStyleKey}">
         <Setter Property="ThemeColors"
                 Value="{DynamicResource CodeBlock.TextMateSharp.Theme}" />
-    </Style>-->
+    </Style>
     <Style TargetType="{x:Type List}">
         <Setter Property="Margin" Value="40,0,0,0" />
         <Setter Property="Padding" Value="0,0,0,0" />
@@ -70,22 +70,22 @@
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading1StyleKey}">
         <Setter Property="FontSize" Value="42" />
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="FontWeight" Value="Bold" />
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading2StyleKey}">
         <Setter Property="FontSize" Value="20" />
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="FontWeight" Value="Bold" />
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading3StyleKey}">
         <Setter Property="FontSize" Value="18" />
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="FontWeight" Value="Bold" />
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading4StyleKey}">
         <Setter Property="FontSize" Value="18" />
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="FontWeight" Value="Light" />
         <Setter Property="TextDecorations" Value="Underline" />
     </Style>

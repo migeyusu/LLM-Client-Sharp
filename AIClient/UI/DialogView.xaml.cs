@@ -13,11 +13,29 @@ public partial class DialogView : UserControl
         InitializeComponent();
     }
 
+    DialogViewModel ViewModel => (DialogViewModel)DataContext;
+
     private void OnDeleteExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (this.DataContext is DialogViewModel dialogViewModel && e.Parameter is IDialogViewItem dialogViewItem)
+        if (e.Parameter is IDialogViewItem dialogViewItem)
         {
-            dialogViewModel.DeleteItem(dialogViewItem);
+            ViewModel.DeleteItem(dialogViewItem);
+        }
+    }
+
+    private void OnRedoExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is RequestViewItem requestViewItem)
+        {
+            ViewModel.ReSend(requestViewItem);
+        }
+    }
+
+    private void OnRefreshExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is RequestViewItem requestViewItem)
+        {
+            ViewModel.InsertClearContextItem(requestViewItem);
         }
     }
 }

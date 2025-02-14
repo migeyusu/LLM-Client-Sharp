@@ -11,12 +11,6 @@
              d:DataContext="{d:DesignInstance llmClient:GlobalConfig}"
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
-        <ObjectDataProvider x:Key="DataFromEnum" MethodName="GetValues"
-                            ObjectType="{x:Type System:Enum}">
-            <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="grammars:ThemeName" />
-            </ObjectDataProvider.MethodParameters>
-        </ObjectDataProvider>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -27,11 +21,6 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
-        <ComboBox Grid.Column="1" ItemsSource="{Binding Source={StaticResource DataFromEnum}}"
-                  SelectedItem="{Binding ThemeName,Mode=TwoWay}" />
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="代码高亮主题："
-                   VerticalAlignment="Center"
-                   Margin="0,0,16,0" />
         <Button Grid.Row="1"
                 Grid.Column="1"
                 Command="{Binding SaveCommand}"

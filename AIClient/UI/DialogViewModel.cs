@@ -94,7 +94,6 @@ public class DialogViewModel : BaseViewModel
         get { return Dialog.FirstOrDefault(item => { return item is ResponseViewItem; })?.Message?.Text; }
     }
 
-
     public ICommand ClearContextCommand => new ActionCommand((o =>
     {
         var item = new EraseViewItem();
@@ -155,28 +154,11 @@ public class DialogViewModel : BaseViewModel
 
         Dialog.Add(Model);
         ScrollViewItem = Dialog.Last();
-        var dialogViewItems = new Stack<IDialogViewItem>();
-        for (int i = Dialog.Count - 1; i >= 0; i--)
-        {
-            var dialogViewItem = Dialog[i];
-            if (dialogViewItem is EraseViewItem)
-            {
-                break;
-            }
-
-            dialogViewItems.Push(dialogViewItem);
-        }
-
-        var list = new List<IDialogViewItem>();
-        while (dialogViewItems.TryPop(out var dialogViewItem))
-        {
-            list.Add(dialogViewItem);
-        }
-
         try
         {
+            var list = GenerateHistory(Dialog);
             _requestTokenSource = new CancellationTokenSource();
-            var response = await Model.SendRequest(list, PromptString, _requestTokenSource.Token);
+            var response = await Model.SendRequest(list, _requestTokenSource.Token);
             Dialog.Add(new ResponseViewItem() { Raw = response });
             this.PromptString = string.Empty;
             OnPropertyChangedAsync(nameof(Shortcut));
@@ -201,7 +183,7 @@ public class DialogViewModel : BaseViewModel
 #pragma warning restore CS0162 // 检测到不可到达的代码
     }));
 
-    public ICommand CancelCommand => new ActionCommand(( o => { _requestTokenSource?.Cancel(); }));
+    public ICommand CancelCommand => new ActionCommand((o => { _requestTokenSource?.Cancel(); }));
 
     public void DeleteItem(IDialogViewItem item)
     {
@@ -210,5 +192,80 @@ public class DialogViewModel : BaseViewModel
         {
             ScrollViewItem = this.Dialog.LastOrDefault();
         }
+    }
+
+    public async void ReSend(RequestViewItem redoItem)
+    {
+        if (Model == null)
+        {
+            return;
+        }
+
+        var dialogViewItems = GenerateHistory(Dialog);
+        var indexOf = dialogViewItems.IndexOf(redoItem);
+        if (indexOf < 0)
+        {
+            return;
+        }
+
+        var removingItems = dialogViewItems.Take(new Range(indexOf + 1, dialogViewItems.Count() - 1)).ToArray();
+        var requestItems = dialogViewItems.Take(indexOf + 1);
+        try
+        {
+            _requestTokenSource = new CancellationTokenSource();
+            var response = await Model.SendRequest(requestItems, _requestTokenSource.Token);
+            foreach (var removingItem in removingItems)
+            {
+                Dialog.Remove(removingItem);
+            }
+
+            Dialog.Add(new ResponseViewItem() { Raw = response });
+            OnPropertyChangedAsync(nameof(Shortcut));
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            var errorMessage = exception.Message;
+            Dialog.Add(new ResponseViewItem() { IsInterrupt = true, ErrorMessage = errorMessage });
+        }
+        finally
+        {
+            Dialog.Remove(Dialog.Last(item => item is ILLMModel));
+            _requestTokenSource?.Dispose();
+        }
+
+        ScrollViewItem = Dialog.Last();
+    }
+
+    private IList<IDialogViewItem> GenerateHistory(IList<IDialogViewItem> source)
+    {
+        var dialogViewItems = new Stack<IDialogViewItem>();
+        for (int i = source.Count - 1; i >= 0; i--)
+        {
+            var dialogViewItem = source[i];
+            if (dialogViewItem is EraseViewItem)
+            {
+                break;
+            }
+
+            dialogViewItems.Push(dialogViewItem);
+        }
+
+        var list = new List<IDialogViewItem>();
+        while (dialogViewItems.TryPop(out var dialogViewItem))
+        {
+            list.Add(dialogViewItem);
+        }
+
+        return list;
+    }
+
+    public void InsertClearContextItem(IDialogViewItem item)
+    {
+        var indexOf = Dialog.IndexOf(item);
+        Dialog.Insert(indexOf, new EraseViewItem());
     }
 }

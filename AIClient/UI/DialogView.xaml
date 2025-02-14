@@ -225,8 +225,8 @@
                  Margin="0,0,5,5"
                  VirtualizingPanel.IsVirtualizing="True"
                  VirtualizingPanel.VirtualizationMode="Recycling"
-                 VirtualizingPanel.CacheLengthUnit="Item"
-                 VirtualizingPanel.CacheLength="5"
+                 VirtualizingPanel.CacheLengthUnit="Page"
+                 VirtualizingPanel.CacheLength="10"
                  VirtualizingPanel.ScrollUnit="Pixel"
                  VirtualizingPanel.IsContainerVirtualizable="True"
                  materialDesign:ListBoxItemAssist.ShowSelection="False"
@@ -251,6 +251,22 @@
                                                       CommandParameter="{Binding MessageContent,Mode=OneTime}">
                                                 <MenuItem.Icon>
                                                     <materialDesign:PackIcon Kind="ContentCopy" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="排除之前上下文"
+                                                      ToolTip="将之前的对话清出上下文"
+                                                      Command="Refresh"
+                                                      CommandParameter="{Binding}">
+                                                <MenuItem.Icon>
+                                                    <materialDesign:PackIcon Kind="FormatAlignTop" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="重发"
+                                                      Command="Redo"
+                                                      ToolTip="从此条消息起重发，将删除所有之后的消息（对已清空上下文的无效）"
+                                                      CommandParameter="{Binding}">
+                                                <MenuItem.Icon>
+                                                    <materialDesign:PackIcon Kind="Redo" />
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="删除"
@@ -306,9 +322,9 @@
                                         <!--IsDocumentEnabled="True"
                                                      IsReadOnly="True"-->
                                         <ui:FlowDocumentScrollViewerEx BorderThickness="0"
-                                                                    Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
-                                                                    Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
-                                                                    Document="{Binding Document,Mode=OneTime}" />
+                                                                       Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
+                                                                       Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
+                                                                       Document="{Binding Document,Mode=OneTime}" />
                                         <TextBlock Text="{Binding ErrorMessage,Mode=OneTime}"
                                                    Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                                     </StackPanel>
@@ -401,6 +417,10 @@
             <ListBox.CommandBindings>
                 <CommandBinding Command="Delete"
                                 Executed="OnDeleteExecuted" />
+                <CommandBinding Command="Redo"
+                                Executed="OnRedoExecuted" />
+                <CommandBinding Command="Refresh"
+                                Executed="OnRefreshExecuted" />
             </ListBox.CommandBindings>
         </ListBox>
         <!-- </ScrollViewer> -->
