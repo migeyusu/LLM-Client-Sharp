@@ -7,6 +7,7 @@
              xmlns:local="clr-namespace:LLMClient"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:models="clr-namespace:LLMClient.Azure.Models"
+             xmlns:component="clr-namespace:LLMClient.UI.Component"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:DialogViewModel}"
              d:DesignHeight="600"
@@ -39,12 +40,12 @@
                 <ContentControl Grid.Column="1"
                                 Content="{Binding Model,Mode=OneWay}">
                     <ContentControl.ContentTemplateSelector>
-                        <local:TypeBasedDataTemplateSelector>
-                            <local:TypeBasedDataTemplateSelector.EmptyTemplate>
+                        <component:TypeBasedDataTemplateSelector>
+                            <component:TypeBasedDataTemplateSelector.EmptyTemplate>
                                 <DataTemplate DataType="{x:Type models:AzureModelBase}" />
-                            </local:TypeBasedDataTemplateSelector.EmptyTemplate>
-                            <local:DataTemplateTypePair>
-                                <local:DataTemplateTypePair.Template>
+                            </component:TypeBasedDataTemplateSelector.EmptyTemplate>
+                            <component:DataTemplateTypePair>
+                                <component:DataTemplateTypePair.Template>
                                     <DataTemplate DataType="{x:Type models:AzureModelBase}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -76,9 +77,9 @@
                                             </TextBlock>
                                         </Grid>
                                     </DataTemplate>
-                                </local:DataTemplateTypePair.Template>
-                            </local:DataTemplateTypePair>
-                        </local:TypeBasedDataTemplateSelector>
+                                </component:DataTemplateTypePair.Template>
+                            </component:DataTemplateTypePair>
+                        </component:TypeBasedDataTemplateSelector>
                     </ContentControl.ContentTemplateSelector>
                 </ContentControl>
                 <!--<Button Grid.Column="1"
@@ -230,12 +231,12 @@
                  VirtualizingPanel.ScrollUnit="Pixel"
                  VirtualizingPanel.IsContainerVirtualizable="True"
                  materialDesign:ListBoxItemAssist.ShowSelection="False"
-                 ui:AutoScrollIntoView.ScrollToItem="{Binding  ScrollViewItem,Mode=OneWay}"
+                 component:AutoScrollIntoView.ScrollToItem="{Binding  ScrollViewItem,Mode=OneWay}"
                  ItemsSource="{Binding Dialog,Mode=OneWay}">
             <ListBox.ItemTemplateSelector>
-                <local:TypeBasedDataTemplateSelector>
-                    <local:DataTemplateTypePair>
-                        <local:DataTemplateTypePair.Template>
+                <component:TypeBasedDataTemplateSelector>
+                    <component:DataTemplateTypePair>
+                        <component:DataTemplateTypePair.Template>
                             <DataTemplate DataType="{x:Type ui:RequestViewItem}">
                                 <materialDesign:Card Padding="8"
                                                      HorizontalAlignment="Right"
@@ -266,10 +267,10 @@
                                                TextWrapping="Wrap" />
                                 </materialDesign:Card>
                             </DataTemplate>
-                        </local:DataTemplateTypePair.Template>
-                    </local:DataTemplateTypePair>
-                    <local:DataTemplateTypePair>
-                        <local:DataTemplateTypePair.Template>
+                        </component:DataTemplateTypePair.Template>
+                    </component:DataTemplateTypePair>
+                    <component:DataTemplateTypePair>
+                        <component:DataTemplateTypePair.Template>
                             <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
                                 <materialDesign:Card Padding="8"
                                                      UniformCornerRadius="8"
@@ -305,7 +306,7 @@
                                     <StackPanel>
                                         <!--IsDocumentEnabled="True"
                                                      IsReadOnly="True"-->
-                                        <ui:FlowDocumentScrollViewerEx BorderThickness="0"
+                                        <component:FlowDocumentScrollViewerEx BorderThickness="0"
                                                                     Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
                                                                     Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
                                                                     Document="{Binding Document,Mode=OneTime}" />
@@ -314,10 +315,10 @@
                                     </StackPanel>
                                 </materialDesign:Card>
                             </DataTemplate>
-                        </local:DataTemplateTypePair.Template>
-                    </local:DataTemplateTypePair>
-                    <local:DataTemplateTypePair>
-                        <local:DataTemplateTypePair.Template>
+                        </component:DataTemplateTypePair.Template>
+                    </component:DataTemplateTypePair>
+                    <component:DataTemplateTypePair>
+                        <component:DataTemplateTypePair.Template>
                             <DataTemplate DataType="{x:Type ui:EraseViewItem}">
                                 <Grid Height="30">
                                     <Grid.ContextMenu>
@@ -352,10 +353,10 @@
                                                Style="{DynamicResource MaterialDesignSubtitle2TextBlock}" />
                                 </Grid>
                             </DataTemplate>
-                        </local:DataTemplateTypePair.Template>
-                    </local:DataTemplateTypePair>
-                    <local:DataTemplateTypePair>
-                        <local:DataTemplateTypePair.Template>
+                        </component:DataTemplateTypePair.Template>
+                    </component:DataTemplateTypePair>
+                    <component:DataTemplateTypePair>
+                        <component:DataTemplateTypePair.Template>
                             <DataTemplate DataType="{x:Type models:AzureModelBase}">
                                 <GroupBox
                                     Visibility="{Binding IsResponsing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -378,13 +379,13 @@
                                     </Grid>
                                 </GroupBox>
                             </DataTemplate>
-                        </local:DataTemplateTypePair.Template>
-                    </local:DataTemplateTypePair>
-                </local:TypeBasedDataTemplateSelector>
+                        </component:DataTemplateTypePair.Template>
+                    </component:DataTemplateTypePair>
+                </component:TypeBasedDataTemplateSelector>
             </ListBox.ItemTemplateSelector>
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <ui:CustomVirtualizingStackPanel IsItemsHost="True" />
+                    <component:CustomVirtualizingStackPanel IsItemsHost="True" />
                 </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
             <ListBox.ItemContainerStyle>

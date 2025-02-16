@@ -2,9 +2,8 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using MaterialDesignThemes.Wpf.Converters;
 
-namespace LLMClient.UI;
+namespace LLMClient.UI.Component;
 
 public class AutoScrollIntoView
 {

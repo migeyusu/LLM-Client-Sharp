@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Threading;
 
-namespace LLMClient;
+namespace LLMClient.UI;
 
 public class BaseViewModel : INotifyPropertyChanged
 {

@@ -1,7 +1,6 @@
 ﻿using LLMClient.Render;
-using TextMateSharp.Grammars;
 
-namespace LLMClient;
+namespace LLMClient.UI.Component;
 
 public static class UITheme
 {
@@ -36,13 +35,11 @@ public static class UITheme
             }
 
             _themeName = value;
-            OnThemeChanged?.Invoke(value);
         }
     }
 
     public static event Action<bool>? ModeChanged;
-
-    public static event Action<TextMateThemeColors>? OnThemeChanged;
+    
 
     private static void OnModeChanged(bool obj)
     {

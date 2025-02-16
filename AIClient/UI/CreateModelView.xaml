@@ -9,6 +9,7 @@
              xmlns:models="clr-namespace:LLMClient.Azure.Models"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:llmClient="clr-namespace:LLMClient"
+             xmlns:component="clr-namespace:LLMClient.UI.Component"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:ModelSelectionViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">
@@ -65,15 +66,15 @@
             <ContentControl Grid.Column="1"
                             Content="{Binding ElementName=EndpointsTreeView,Path=SelectedItem}">
                 <ContentControl.ContentTemplateSelector>
-                    <llmClient:TypeBasedDataTemplateSelector>
-                        <llmClient:DataTemplateTypePair>
-                            <llmClient:DataTemplateTypePair.Template>
+                    <component:TypeBasedDataTemplateSelector>
+                        <component:DataTemplateTypePair>
+                            <component:DataTemplateTypePair.Template>
                                 <DataTemplate DataType="{x:Type models:AzureModelInfo}">
                                     <models:AzureModelInfoView Margin="10" />
                                 </DataTemplate>
-                            </llmClient:DataTemplateTypePair.Template>
-                        </llmClient:DataTemplateTypePair>
-                    </llmClient:TypeBasedDataTemplateSelector>
+                            </component:DataTemplateTypePair.Template>
+                        </component:DataTemplateTypePair>
+                    </component:TypeBasedDataTemplateSelector>
                 </ContentControl.ContentTemplateSelector>
             </ContentControl>
         </Grid>

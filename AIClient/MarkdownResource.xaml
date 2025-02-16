@@ -9,7 +9,7 @@
         <Setter Property="FontFamily" Value="Calibri" />
         <Setter Property="TextAlignment" Value="Left" />
     </Style>
-    <Style TargetType="{x:Type ContentControl}" x:Key="{x:Static llmClient:MarkdownStyles.CodeBlockHeaderStyleKey}">
+    <Style TargetType="{x:Type ContentControl}" x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockHeaderStyleKey}">
         <Setter Property="Height"
                 Value="40" />
         <Setter Property="HorizontalAlignment"
@@ -37,11 +37,11 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <!--<Style TargetType="{x:Type render:TextmateColoredRun}" 
+    <Style TargetType="{x:Type render:TextmateColoredRun}" 
            x:Key="{x:Static render:TextMateCodeRenderer.TokenStyleKey}">
         <Setter Property="ThemeColors"
                 Value="{DynamicResource CodeBlock.TextMateSharp.Theme}" />
-    </Style>-->
+    </Style>
     <Style TargetType="{x:Type List}">
         <Setter Property="Margin" Value="40,0,0,0" />
         <Setter Property="Padding" Value="0,0,0,0" />
@@ -70,22 +70,22 @@
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading1StyleKey}">
         <Setter Property="FontSize" Value="42" />
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="FontWeight" Value="Bold" />
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading2StyleKey}">
         <Setter Property="FontSize" Value="20" />
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="FontWeight" Value="Bold" />
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading3StyleKey}">
         <Setter Property="FontSize" Value="18" />
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="FontWeight" Value="Bold" />
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading4StyleKey}">
         <Setter Property="FontSize" Value="18" />
-        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="FontWeight" Value="Light" />
         <Setter Property="TextDecorations" Value="Underline" />
     </Style>
@@ -111,12 +111,12 @@
         <Setter Property="Padding" Value="16,0,0,0" />
     </Style>
     <Style TargetType="{x:Type Table}" x:Key="{x:Static markdig:Styles.TableStyleKey}">
-        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.DataGrid.Border}" />
         <Setter Property="BorderThickness" Value="0,0,1,1" />
         <Setter Property="CellSpacing" Value="0" />
     </Style>
     <Style TargetType="{x:Type TableCell}" x:Key="{x:Static markdig:Styles.TableCellStyleKey}">
-        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.ListView.Separator}" />
         <Setter Property="BorderThickness" Value="1,1,0,0" />
     </Style>
     <Style TargetType="{x:Type TableRow}" x:Key="{x:Static markdig:Styles.TableHeaderStyleKey}">

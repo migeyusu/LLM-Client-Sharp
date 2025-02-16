@@ -3,7 +3,9 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
+using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
+using TextMateSharp.Grammars;
 
 namespace LLMClient.UI;
 
@@ -22,7 +24,7 @@ public partial class MainWindow : ExtendedWindow
         this._globalConfig = globalConfig;
         this.DataContext = mainViewModel;
         InitializeComponent();
-        // GlobalConfig.UpdateResource(globalConfig.ThemeName);
+        MainViewModel.UpdateResource(ThemeName.Light);
     }
 
     private async void CommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)

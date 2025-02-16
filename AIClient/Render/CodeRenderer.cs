@@ -1,10 +1,12 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
+using LLMClient.UI.Component;
 using Markdig.Helpers;
 using Markdig.Renderers;
 using Markdig.Renderers.Wpf;
@@ -35,7 +37,10 @@ public class CodeContext
 public class TextMateCodeRenderer : CodeBlockRenderer
 {
     public static ComponentResourceKey TokenStyleKey { get; } =
-        new ComponentResourceKey(typeof(Styles), (object)nameof(TokenStyleKey));
+        new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(TokenStyleKey));
+    
+    public static ComponentResourceKey CodeBlockHeaderStyleKey { get; } =
+        new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(CodeBlockHeaderStyleKey));
 
     private static readonly RegistryOptions Options;
 
@@ -72,8 +77,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
     {
         var blockUiContainer = new BlockUIContainer();
         var contentControl = new ContentControl();
-        contentControl.SetResourceReference(FrameworkElement.StyleProperty,
-            MarkdownStyles.CodeBlockHeaderStyleKey);
+        contentControl.SetResourceReference(FrameworkElement.StyleProperty, CodeBlockHeaderStyleKey);
         ((IAddChild)blockUiContainer).AddChild(contentControl);
         renderer.Push(blockUiContainer);
         renderer.Pop();
@@ -99,7 +103,6 @@ public class TextMateCodeRenderer : CodeBlockRenderer
                 {
                     written = true;
                     Tokenize(renderer, fencedCodeBlock, grammar);
-                    // CodeHighlight.TextMateColor(renderer, fencedCodeBlock, grammar, _theme);
                 }
             }
         }
@@ -160,9 +163,9 @@ public class TextmateColoredRun : Run
 
     private static void ThemePropertyChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is TextmateColoredRun textmateRun)
+        if (d is TextmateColoredRun textmateRun && e.NewValue is TextMateThemeColors themeColors)
         {
-            // textmateRun.Color();
+            textmateRun.Color(themeColors);
         }
     }
 
@@ -180,18 +183,8 @@ public class TextmateColoredRun : Run
     public TextmateColoredRun(string text, IToken token) : base(text)
     {
         Token = token;
-        UITheme.OnThemeChanged+= UIThemeOnOnThemeChanged;
     }
-
-    private void UIThemeOnOnThemeChanged(TextMateThemeColors obj)
-    {
-        Color(obj);
-    }
-
-    ~TextmateColoredRun()
-    {
-        UITheme.OnThemeChanged -= UIThemeOnOnThemeChanged;
-    }
+    
         
     protected override void OnInitialized(EventArgs e)
     {
@@ -226,7 +219,10 @@ public class TextmateColoredRun : Run
         {
             this.Foreground = foregroundColor;
         }
-
+        else
+        {
+            this.ClearValue(ForegroundProperty);
+        }
         /*if (backgroundColor != null)
         {
             this.Background = backgroundColor;

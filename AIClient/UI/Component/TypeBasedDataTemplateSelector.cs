@@ -2,7 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Markup;
 
-namespace LLMClient;
+namespace LLMClient.UI.Component;
 
 public class DataTemplateTypePair
 {

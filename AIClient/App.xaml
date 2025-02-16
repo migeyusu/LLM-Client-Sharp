@@ -5,6 +5,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:system="clr-namespace:System;assembly=System.Runtime"
              xmlns:ui="clr-namespace:LLMClient.UI"
+             xmlns:component="clr-namespace:LLMClient.UI.Component"
              ShutdownMode="OnLastWindowClose">
     <Application.Resources>
         <ResourceDictionary>
@@ -24,7 +25,7 @@
                                     BorderThickness="{TemplateBinding BorderThickness}" 
                                     Background="{TemplateBinding Background}"
                                     Margin="{TemplateBinding Padding}">
-                                <ui:ScrollViewerEx x:Name="PART_ContentHost" CanContentScroll="True" 
+                                <component:ScrollViewerEx x:Name="PART_ContentHost" CanContentScroll="True" 
                                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
                                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                             </Border>
@@ -34,11 +35,11 @@
             </Style>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <materialDesign:InvertBooleanConverter x:Key="InvertBooleanConverter" />
-            <ui:SiYuanFont x:Key="DefaultFontFamily" />
-            <Style TargetType="{x:Type local:ParamView}">
+            <component:SiYuanFont x:Key="DefaultFontFamily" />
+            <Style TargetType="{x:Type component:ParamView}">
                 <Setter Property="Template">
                     <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type local:ParamView}">
+                        <ControlTemplate TargetType="{x:Type component:ParamView}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />

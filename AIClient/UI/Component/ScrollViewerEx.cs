@@ -1,10 +1,9 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Documents;
 using System.Windows.Input;
 
-namespace LLMClient.UI;
+namespace LLMClient.UI.Component;
 
 public class ScrollViewerEx : ScrollViewer
 {

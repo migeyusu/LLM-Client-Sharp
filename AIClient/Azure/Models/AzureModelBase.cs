@@ -7,6 +7,7 @@ using Azure;
 using Azure.AI.Inference;
 using Azure.AI.TextAnalytics;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Text;

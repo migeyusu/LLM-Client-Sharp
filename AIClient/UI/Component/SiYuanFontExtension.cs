@@ -1,8 +1,7 @@
-﻿namespace LLMClient.UI;
-using System;
-using System.Linq;
-using System.Windows.Markup;
+﻿using System.Windows.Markup;
 using System.Windows.Media;
+
+namespace LLMClient.UI.Component;
 
 /// <summary>
 /// 用于字体的示例代码
