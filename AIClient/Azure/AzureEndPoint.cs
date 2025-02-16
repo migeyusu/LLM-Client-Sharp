@@ -117,12 +117,12 @@ public class AzureEndPoint : AzureOption, ILLMEndpoint
             { "OpenAI o1-mini", empty },
             { "OpenAI o3-mini", o1 },
             { "OpenAI o1-preview", empty },
-            
+
             { "DeepSeek-R1", new ModelCreation<DeepSeekR1>() }
         };
     }
 
-    public async Task Initialize()
+    public async Task InitializeAsync()
     {
         //load models
         var path = Path.GetFullPath(Path.Combine("Azure", "Models", "models.json"));
@@ -145,6 +145,7 @@ public class AzureEndPoint : AzureOption, ILLMEndpoint
 
                 if (_availableModels.ContainsKey(modelInfo.Name))
                 {
+                    await modelInfo.InitializeAsync();
                     _availableModelInfos.Add(modelInfo.Name, modelInfo);
                 }
             }

@@ -254,6 +254,22 @@
                                                     <materialDesign:PackIcon Kind="ContentCopy" />
                                                 </MenuItem.Icon>
                                             </MenuItem>
+                                            <MenuItem Header="排除之前上下文"
+                                                      ToolTip="将之前的对话清出上下文"
+                                                      Command="Refresh"
+                                                      CommandParameter="{Binding}">
+                                                <MenuItem.Icon>
+                                                    <materialDesign:PackIcon Kind="FormatAlignTop" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="重发"
+                                                      Command="Redo"
+                                                      ToolTip="从此条消息起重发，将删除所有之后的消息（对已清空上下文的无效）"
+                                                      CommandParameter="{Binding}">
+                                                <MenuItem.Icon>
+                                                    <materialDesign:PackIcon Kind="Redo" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
                                             <MenuItem Header="删除"
                                                       Command="Delete"
                                                       CommandParameter="{Binding}">
@@ -402,6 +418,10 @@
             <ListBox.CommandBindings>
                 <CommandBinding Command="Delete"
                                 Executed="OnDeleteExecuted" />
+                <CommandBinding Command="Redo"
+                                Executed="OnRedoExecuted" />
+                <CommandBinding Command="Refresh"
+                                Executed="OnRefreshExecuted" />
             </ListBox.CommandBindings>
         </ListBox>
         <!-- </ScrollViewer> -->

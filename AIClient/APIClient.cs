@@ -14,7 +14,7 @@ public interface ILLMEndpoint
 
     ILLMModel? GetModel(string modelName);
 
-    Task Initialize();
+    Task InitializeAsync();
 
     void UpdateConfig(JsonNode document);
 
@@ -40,6 +40,6 @@ public interface ILLMModel : IDialogViewItem
     ObservableCollection<string> PreResponse { get; }
 
     //为了尽可能抽象，要求单个方法就传递一次会话所需要的所有参数，防止文本生成、图像生成等任务类型的不相容
-    Task<string> SendRequest(IEnumerable<IDialogViewItem> dialogItems, string prompt,
+    Task<string> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default);
 }

@@ -101,7 +101,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
     {
         foreach (var availableEndpoint in AvailableEndpoints)
         {
-            await availableEndpoint.Initialize();
+            await availableEndpoint.InitializeAsync();
         }
 
         var node = await LoadEndpointsNode();

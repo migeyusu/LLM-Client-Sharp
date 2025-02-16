@@ -5,19 +5,16 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI;
 
 public class CustomVirtualizingStackPanel : VirtualizingStackPanel
 {
-    // IRecyclingItemContainerGenerator
-
-
     protected override void OnCleanUpVirtualizedItem(CleanUpVirtualizedItemEventArgs e)
     {
         base.OnCleanUpVirtualizedItem(e);
         if (e.Value is ResponseViewItem)
         {
-            var richTextBox = FindTypeInContainer<FlowDocumentScrollViewer>(e.UIElement);
+            var richTextBox = FindControlInContainer<FlowDocumentScrollViewer>(e.UIElement);
             if (richTextBox is { Document: not null })
             {
                 richTextBox.Document = new FlowDocument(); // 清除 FlowDocument 的引用
@@ -39,7 +36,7 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
 
             foreach (ListBoxItem item in value)
             {
-                var richTextBox = FindTypeInContainer<FlowDocumentScrollViewer>(item);
+                var richTextBox = FindControlInContainer<FlowDocumentScrollViewer>(item);
                 if (richTextBox is { Document: not null })
                 {
                     richTextBox.Document = new FlowDocument(); // 清除 FlowDocument 的引用
@@ -53,7 +50,7 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
     /// <summary>
     /// 从 ListBoxItem 中查找 RichTextBox 控件
     /// </summary>
-    private T? FindTypeInContainer<T>(DependencyObject container) where T:class
+    private T? FindControlInContainer<T>(DependencyObject container) where T : DependencyObject
     {
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(container); i++)
         {
@@ -64,7 +61,7 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
                 return richTextBox;
             }
 
-            var result = FindTypeInContainer<T>(child);
+            var result = FindControlInContainer<T>(child);
             if (result != null) return result;
         }
 

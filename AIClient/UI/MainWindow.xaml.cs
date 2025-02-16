@@ -24,7 +24,6 @@ public partial class MainWindow : ExtendedWindow
         this._globalConfig = globalConfig;
         this.DataContext = mainViewModel;
         InitializeComponent();
-        MainViewModel.UpdateResource(ThemeName.Light);
     }
 
     private async void CommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)

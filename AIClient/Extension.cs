@@ -1,7 +1,9 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -39,45 +41,71 @@ public static class Extension
         return Markdig.Wpf.Markdown.ToFlowDocument(Raw, DefaultPipeline, Renderer);
     }
 
-    public static ImageSource? LoadSvgFromHttp(string logoUrl)
+    public static async Task<ImageSource?> LoadSvgFromHttp(string logoUrl)
     {
         try
         {
-            using (var message = new HttpClient().GetAsync($"https://github.com{logoUrl}").GetAwaiter().GetResult())
+            var requestUri = $"https://github.com{logoUrl}";
+            var fileInfo = HttpFileCache.Instance.GetFile(requestUri);
+            if (fileInfo != null)
             {
-                if (message.StatusCode == HttpStatusCode.OK)
+                await using (var fileStream = fileInfo.OpenRead())
                 {
-                    using (var stream = message.Content.ReadAsStream())
+                    return fileStream.ToImageSource();
+                }
+            }
+
+            using (var cancellationTokenSource = new CancellationTokenSource(5000))
+            {
+                var cancellationToken = cancellationTokenSource.Token;
+                using (var message = await new HttpClient().GetAsync(requestUri, cancellationToken))
+                {
+                    if (message.StatusCode == HttpStatusCode.OK)
                     {
-                        var skBitmap = new SKBitmap();
-                        var skCanvas = new SKCanvas(skBitmap);
-                        var skSvg = new SKSvg();
-                        skSvg.Load(stream);
-                        skCanvas.DrawPicture(skSvg.Picture);
-                        using (var asStream = new MemoryStream())
+                        using (var stream = await message.Content.ReadAsStreamAsync(CancellationToken.None))
                         {
-                            skSvg.Save(asStream, SKColor.Empty);
-                            stream.Position = 0;
-                            var image = new BitmapImage();
-                            image.BeginInit();
-                            image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
-                            image.CacheOption = BitmapCacheOption.OnLoad;
-                            image.UriSource = null;
-                            image.StreamSource = asStream;
-                            image.EndInit();
-                            image.Freeze();
-                            return image;
+                            var imageSource = stream.ToImageSource();
+                            stream.Seek(0, SeekOrigin.Begin);
+                            HttpFileCache.Instance.SaveContent(requestUri, stream);
+                            return imageSource;
                         }
                     }
                 }
             }
         }
-        catch (Exception)
+        catch (OperationCanceledException)
         {
-            return null;
+            Trace.Write($"read from {logoUrl} timeout");
+        }
+        catch (Exception e)
+        {
+            Trace.Write($"read from {logoUrl} exception: {e}");
         }
 
         return null;
+    }
+
+    private static ImageSource ToImageSource(this Stream stream)
+    {
+        var skBitmap = new SKBitmap();
+        var skCanvas = new SKCanvas(skBitmap);
+        var skSvg = new SKSvg();
+        skSvg.Load(stream);
+        skCanvas.DrawPicture(skSvg.Picture);
+        using (var asStream = new MemoryStream())
+        {
+            skSvg.Save(asStream, SKColor.Empty);
+            stream.Position = 0;
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.UriSource = null;
+            image.StreamSource = asStream;
+            image.EndInit();
+            image.Freeze();
+            return image;
+        }
     }
 
 
@@ -87,25 +115,7 @@ public static class Extension
         byte[] binaryData = Convert.FromBase64String(src);
         using (var mem = new MemoryStream(binaryData))
         {
-            var skBitmap = new SKBitmap();
-            var skCanvas = new SKCanvas(skBitmap);
-            var skSvg = new SKSvg();
-            skSvg.Load(mem);
-            skCanvas.DrawPicture(skSvg.Picture);
-            using (var asStream = new MemoryStream())
-            {
-                skSvg.Save(asStream, SKColor.Empty);
-                mem.Position = 0;
-                var image = new BitmapImage();
-                image.BeginInit();
-                image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.UriSource = null;
-                image.StreamSource = asStream;
-                image.EndInit();
-                image.Freeze();
-                return image;
-            }
+            return mem.ToImageSource();
         }
     }
 }

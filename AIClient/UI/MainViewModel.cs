@@ -29,34 +29,6 @@ public class MainViewModel : BaseViewModel
             OnPropertyChanged();
         }
     }
-    
-    private const string ThemeColorResourceKey = "CodeBlock.TextMateSharp.Theme";
-
-    private ThemeName _themeName = ThemeName.Light;
-
-    public ThemeName ThemeName
-    {
-        get => _themeName;
-        set
-        {
-            if (value == _themeName) return;
-            _themeName = value;
-            OnPropertyChanged();
-            UpdateResource(value);
-        }
-    }
-
-    public static void UpdateResource(ThemeName themeName)
-    {
-        var application = Application.Current;
-        if (application == null)
-        {
-            return;
-        }
-
-        var sourceDictionary = application.Resources;
-        sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
-    }
 
     public ICommand LoadCommand => new ActionCommand((o =>
     {
@@ -118,6 +90,34 @@ public class MainViewModel : BaseViewModel
             UITheme.IsDarkMode = value;
             this.ThemeName=value? ThemeName.DarkPlus : ThemeName.LightPlus;
         }
+    }
+
+    private const string ThemeColorResourceKey = "CodeBlock.TextMateSharp.Theme";
+
+    private ThemeName _themeName = ThemeName.Light;
+
+    public ThemeName ThemeName
+    {
+        get => _themeName;
+        set
+        {
+            if (value == _themeName) return;
+            _themeName = value;
+            OnPropertyChanged();
+            UpdateResource(value);
+        }
+    }
+
+    public static void UpdateResource(ThemeName themeName)
+    {
+        var application = Application.Current;
+        if (application == null)
+        {
+            return;
+        }
+
+        var sourceDictionary = application.Resources;
+        sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
     }
 
 
@@ -300,6 +300,7 @@ public class MainViewModel : BaseViewModel
             this.PreDialog = DialogViewModels.First();
         }
 
+        UpdateResource(_themeName);
         IsInitializing = false;
     }
 
