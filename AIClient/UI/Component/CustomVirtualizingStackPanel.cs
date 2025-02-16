@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 
-namespace LLMClient.UI;
+namespace LLMClient.UI.Component;
 
 public class CustomVirtualizingStackPanel : VirtualizingStackPanel
 {
