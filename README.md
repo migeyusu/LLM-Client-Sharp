@@ -4,6 +4,8 @@
 
 A lightweight, open-source large language model (LLM) client built with `.NET` and `WPF`. This project provides an intuitive and feature-rich interaction tool for utilizing various LLM services. By default, it supports some GitHub Copilot service models (e.g., `GPT-4o`, `O1`, and `DeepSeek`), with planned extensions for other endpoints.
 
+![项目截图](images/model_selection.png)
+
 ## Key Features
 
 1. **Pure .NET WPF Implementation**
@@ -28,6 +30,10 @@ A lightweight, open-source large language model (LLM) client built with `.NET` a
 
 7. **Markdown Export**
    - Save chat history in Markdown format for sharing or archiving.
+
+## Project Screenshots
+![项目截图](images/darkmode.png)
+![项目截图](images/lightmode.png)
 
 ## Planned Features
 
@@ -62,9 +68,6 @@ This project is still in active development. You can contribute in the following
 2. **Become a Contributor**: Fork this repository and submit your changes through Pull Requests.
 3. **Contact the Author**: Reach out via [GitHub Issues](https://github.com/) for questions or collaboration opportunities.
 
-## Project Screenshots
-
-> To be added to showcase UI and features.
 
 ## Usage Instructions
 

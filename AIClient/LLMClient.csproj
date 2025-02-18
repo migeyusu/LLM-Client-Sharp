@@ -108,8 +108,4 @@
       <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="OpenAICompatible\" />
-    </ItemGroup>
-
 </Project>

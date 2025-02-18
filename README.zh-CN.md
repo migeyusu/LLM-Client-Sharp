@@ -4,6 +4,8 @@
 
 一个基于 `.NET` 和 `WPF` 技术实现的开源大语言模型 (LLM) 客户端项目，旨在提供一种轻量级、直观且功能丰富的交互工具，用于使用多种支持的 LLM 服务。本项目默认支持 GitHub Copilot 服务下提供的一些模型（如 `GPT-4o`、`O1` 和 `DeepSeek`），并可通过扩展支持其他服务终结点。
 
+![项目截图](images/model_selection.png)
+
 ## 主要特性
 
 1. **纯 .NET WPF 实现**
@@ -28,6 +30,10 @@
 
 7. **Markdown 导出**
    - 支持将对话记录以 Markdown 格式导出，便于存档和分享。
+
+## 项目截图
+![项目截图](images/darkmode.png)
+![项目截图](images/lightmode.png)
 
 ## 待完成特性
 
@@ -62,9 +68,6 @@
 2. 成为贡献者：直接 Fork 本项目，并发起 Pull Request。
 3. 联系作者：如果有任何问题或者合作意向，可以通过 [GitHub Issues](https://github.com/) 联系我。
 
-## 项目截图
-
-> 待补充截图展示 UI 界面和使用效果。
 
 ## 使用方法
 
