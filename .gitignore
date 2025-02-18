@@ -1,2 +1,5 @@
 ﻿bin/
 obj/
+/AIClient/.vs/AIClient
+/.vs
+/AIClient
