@@ -81,7 +81,7 @@ public class AzureTextModelBase : AzureModelBase
         return options;
     }
 
-    public AzureTextModelBase(GithubCopilotEndPoint endpoint, AzureModelInfo modelInfo) : base(endpoint, modelInfo)
+    public AzureTextModelBase(AzureOption endpoint, AzureModelInfo modelInfo) : base(endpoint, modelInfo)
     {
     }
 }

@@ -34,12 +34,12 @@ public interface ILLMModel : IDialogViewItem
     bool IsResponsing { get; }
 
     object Info { get; }
+    
+    ObservableCollection<string> PreResponse { get; }
 
     void Deserialize(IModelParams info);
 
     IModelParams Serialize();
-
-    ObservableCollection<string> PreResponse { get; }
 
     //为了尽可能抽象，要求单个方法就传递一次会话所需要的所有参数，防止文本生成、图像生成等任务类型的不相容
     Task<string> SendRequest(IEnumerable<IDialogViewItem> dialogItems,

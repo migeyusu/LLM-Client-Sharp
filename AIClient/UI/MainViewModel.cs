@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using AutoMapper;
 using LLMClient.Render;
@@ -27,6 +28,19 @@ public class MainViewModel : BaseViewModel
             if (value == _isInitializing) return;
             _isInitializing = value;
             OnPropertyChanged();
+        }
+    }
+
+    public ImageSource TestSource
+    {
+        get
+        {
+            var packIcon = new PackIcon(){Kind = PackIconKind.TestTube};
+            var packIconData = packIcon.Data;
+            var geometry = Geometry.Parse(packIconData);
+            var drawingImage = new DrawingImage(new GeometryDrawing(Brushes.Black,new Pen(Brushes.White, 0), geometry));
+            drawingImage.Freeze();
+            return drawingImage;
         }
     }
 

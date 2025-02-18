@@ -434,6 +434,13 @@
                                Text="{Binding Message,Mode=OneTime}" />
                 </StackPanel>
             </materialDesign:Card>
+            <Image Grid.Row="0" Grid.Column="1"
+                   Width="40"
+                   Height="40"
+                   Stretch="Uniform"
+                   Source="{Binding  TestSource,Mode=OneTime}">
+                
+            </Image>
             <!--<WrapPanel Grid.Row="0" Grid.Column="1"
                        Grid.RowSpan="2"
                        Background="DimGray">

@@ -1,20 +1,14 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Windows.Media;
 using AutoMapper;
 using Azure;
 using Azure.AI.Inference;
-using Azure.AI.TextAnalytics;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Text;
-using OpenAI.Chat;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using TextContent = Microsoft.Extensions.AI.TextContent;
 
@@ -58,25 +52,13 @@ public class AzureModelBase : BaseViewModel, ILLMModel
     public ChatMessage? Message { get; } = null;
     public bool IsEnable { get; } = false;
 
-    protected readonly GithubCopilotEndPoint Endpoint;
+    protected readonly AzureOption Endpoint;
 
     private ObservableCollection<string> _preResponse = new ObservableCollection<string>();
 
     public object Info
     {
         get { return ModelInfo; }
-    }
-
-    public virtual void Deserialize(IModelParams info)
-    {
-        Mapper.Map(info, this);
-    }
-
-    public virtual IModelParams Serialize()
-    {
-        var azureJsonModel = new AzureJsonModel();
-        Mapper.Map(this, azureJsonModel);
-        return azureJsonModel;
     }
 
     [JsonIgnore]
@@ -141,16 +123,8 @@ public class AzureModelBase : BaseViewModel, ILLMModel
     private int _completionTokens;
     private int _promptTokens;
     private int _totalTokens;
-
-    public virtual IChatClient CreateClient(GithubCopilotEndPoint endpoint)
-    {
-        var credential = new AzureKeyCredential(endpoint.APIToken);
-        var chatCompletionsClient = new ChatCompletionsClient(new Uri(Endpoint.URL), credential,
-            new AzureAIInferenceClientOptions());
-        return new AzureAIInferenceChatClient(chatCompletionsClient);
-    }
-
-    public AzureModelBase(GithubCopilotEndPoint endpoint, AzureModelInfo modelInfo)
+    
+    public AzureModelBase(AzureOption endpoint, AzureModelInfo modelInfo)
     {
         ModelInfo = modelInfo;
         UITheme.ModeChanged += UIThemeOnModeChanged;
@@ -162,6 +136,27 @@ public class AzureModelBase : BaseViewModel, ILLMModel
         UITheme.ModeChanged -= UIThemeOnModeChanged;
     }
 
+    public virtual IChatClient CreateClient(AzureOption endpoint)
+    {
+        var credential = new AzureKeyCredential(endpoint.APIToken);
+        var chatCompletionsClient = new ChatCompletionsClient(new Uri(Endpoint.URL), credential,
+            new AzureAIInferenceClientOptions());
+        return new AzureAIInferenceChatClient(chatCompletionsClient);
+    }
+
+    
+    public virtual void Deserialize(IModelParams info)
+    {
+        Mapper.Map(info, this);
+    }
+
+    public virtual IModelParams Serialize()
+    {
+        var azureJsonModel = new AzureJsonModel();
+        Mapper.Map(this, azureJsonModel);
+        return azureJsonModel;
+    }
+    
     private void UIThemeOnModeChanged(bool obj)
     {
         this.OnPropertyChanged(nameof(Icon));
@@ -227,21 +222,21 @@ public class AzureModelBase : BaseViewModel, ILLMModel
             IsResponsing = false;
         }
     }
-    
+#pragma warning disable SKEXP0010
     public static async void Test()
     {
-#pragma warning disable SKEXP0010
+
         
-        Kernel kernel = Kernel.CreateBuilder()
+        /*Kernel kernel = Kernel.CreateBuilder()
             .AddOpenAIChatCompletion(
                 modelId: "claude-3.5-sonnet",
                 apiKey: "",
                 endpoint: new Uri("https://api.individual.githubcopilot.com"))
-#pragma warning restore SKEXP0010
+
             .Build();
         var invokePromptAsync = await kernel.InvokePromptAsync("hello");
-        var s = invokePromptAsync.ToString();
-        
+        var s = invokePromptAsync.ToString();*/
+
         /*var credential = new AzureKeyCredential("");
         var chatCompletionsClient = new ChatCompletionsClient(new Uri("https://api.individual.githubcopilot.com"),
             credential,
@@ -257,4 +252,5 @@ public class AzureModelBase : BaseViewModel, ILLMModel
             var valueContent = completeAsync.Value.Content;
         }*/
     }
+#pragma warning restore SKEXP0010
 }

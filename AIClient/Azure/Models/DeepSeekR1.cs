@@ -17,7 +17,7 @@ public class DeepSeekR1 : AzureModelBase
         }
     }
 
-    public DeepSeekR1(GithubCopilotEndPoint endpoint, AzureModelInfo modelInfo) : base(endpoint, modelInfo)
+    public DeepSeekR1(AzureOption endpoint, AzureModelInfo modelInfo) : base(endpoint, modelInfo)
     {
     }
 

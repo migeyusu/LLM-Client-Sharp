@@ -227,7 +227,7 @@
                  VirtualizingPanel.IsVirtualizing="True"
                  VirtualizingPanel.VirtualizationMode="Recycling"
                  VirtualizingPanel.CacheLengthUnit="Item"
-                 VirtualizingPanel.CacheLength="5"
+                 VirtualizingPanel.CacheLength="10"
                  VirtualizingPanel.ScrollUnit="Pixel"
                  VirtualizingPanel.IsContainerVirtualizable="True"
                  materialDesign:ListBoxItemAssist.ShowSelection="False"
