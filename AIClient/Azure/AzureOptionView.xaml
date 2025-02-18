@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:LLMClient"
              xmlns:azure="clr-namespace:LLMClient.Azure"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance azure:AzureEndPoint}"
+             d:DataContext="{d:DesignInstance azure:GithubCopilotEndPoint}"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid Margin="10">
         <Grid.RowDefinitions>

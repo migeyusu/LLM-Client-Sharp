@@ -103,13 +103,13 @@
                                          RenderOptions.BitmapScalingMode="HighQuality" />
             </Button>
             <TextBlock VerticalAlignment="Center" Text="Light"
-                       Margin="10,0,0,0" />
-            <ToggleButton Margin="8,0,16,0" IsChecked="{Binding IsDarkTheme,Mode=TwoWay}"
+                       Margin="16,0,0,0" />
+            <ToggleButton Margin="6,0" IsChecked="{Binding IsDarkTheme,Mode=TwoWay}"
                           WindowChrome.IsHitTestVisibleInChrome="True" />
             <TextBlock VerticalAlignment="Center" Text="Dark"/>
             <TextBlock Text="Code Highlight:"
                        VerticalAlignment="Center"
-                       Margin="0,0,16,0" />
+                       Margin="16,0,8,0" />
             <ComboBox ItemsSource="{Binding Source={StaticResource DataFromEnum}}"
                       WindowChrome.IsHitTestVisibleInChrome="True"
                       SelectedItem="{Binding ThemeName,Mode=TwoWay}" />
@@ -125,7 +125,7 @@
                                DialogTheme="Inherit">
         <materialDesign:DialogHost.Resources>
             <DataTemplate DataType="{x:Type ui:ModelSelectionViewModel}">
-                <ui:CreateModelView Width="900"
+                <ui:ModelSelectionView Width="900"
                                     Height="600" />
             </DataTemplate>
             <DataTemplate DataType="{x:Type ui:EndpointConfigureViewModel}">

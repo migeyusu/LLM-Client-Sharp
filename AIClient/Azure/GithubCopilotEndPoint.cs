@@ -3,46 +3,16 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using AutoMapper;
 using LLMClient.Azure.Models;
-using LLMClient.UI;
-using Microsoft.Extensions.Configuration;
 
 namespace LLMClient.Azure;
 
-public class AzureOption : BaseViewModel
-{
-    private string _apiToken = "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";
-
-    public string APIToken
-    {
-        get => _apiToken;
-        set
-        {
-            if (value == _apiToken) return;
-            _apiToken = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private string _url = "https://models.inference.ai.azure.com";
-
-    public string URL
-    {
-        get => _url;
-        set
-        {
-            if (value == _url) return;
-            _url = value;
-            OnPropertyChanged();
-        }
-    }
-}
-
-public class AzureEndPoint : AzureOption, ILLMEndpoint
+public class GithubCopilotEndPoint : AzureOption, ILLMEndpoint
 {
     private readonly Dictionary<string, ModelCreation> _availableModels;
 
     private readonly Dictionary<string, AzureModelInfo> _availableModelInfos = new Dictionary<string, AzureModelInfo>();
 
+    public string DisplayName { get; } = "Github Copilot";
     public string Name { get; } = "Azure";
 
     public IList<string> AvailableModels
@@ -76,11 +46,22 @@ public class AzureEndPoint : AzureOption, ILLMEndpoint
 
     public void ReloadConfig(JsonNode document)
     {
-        var azureOption = document.GetValue<AzureOption>();
-        _mapper.Map<AzureOption, AzureEndPoint>(azureOption);
+        var jsonNode = document["AzureOptions"];
+        if (jsonNode == null)
+        {
+            return;
+        }
+
+        var azureOption = jsonNode.Deserialize<AzureOption>();
+        if (azureOption == null)
+        {
+            return;
+        }
+
+        _mapper.Map<AzureOption, GithubCopilotEndPoint>(azureOption, this);
     }
 
-    public AzureEndPoint(IMapper mapper)
+    public GithubCopilotEndPoint(IMapper mapper)
     {
         this._mapper = mapper;
         var mistral = new ModelCreation<AzureTextModelBase>(model =>
@@ -146,40 +127,10 @@ public class AzureEndPoint : AzureOption, ILLMEndpoint
                 if (_availableModels.ContainsKey(modelInfo.Name))
                 {
                     await modelInfo.InitializeAsync();
+                    modelInfo.Endpoint = this;
                     _availableModelInfos.Add(modelInfo.Name, modelInfo);
                 }
             }
         }
-    }
-}
-
-public abstract class ModelCreation
-{
-    public abstract AzureModelBase? CreateModel(AzureEndPoint endPoint, AzureModelInfo modelInfo);
-}
-
-public class ModelCreation<T> : ModelCreation where T : AzureModelBase
-{
-    public ModelCreation()
-    {
-    }
-
-    public ModelCreation(Action<T> initial)
-    {
-        Initial = initial;
-    }
-
-    private Action<T>? Initial { get; }
-
-    public override AzureModelBase? CreateModel(AzureEndPoint endPoint, AzureModelInfo modelInfo)
-    {
-        var instance = Activator.CreateInstance(typeof(T), endPoint, modelInfo);
-        if (instance is T model)
-        {
-            Initial?.Invoke(model);
-            return model;
-        }
-
-        return null;
     }
 }

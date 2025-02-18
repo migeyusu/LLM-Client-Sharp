@@ -52,7 +52,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     private ILLMEndpoint? _selectedEndpoint;
 
-    public EndpointConfigureViewModel(AzureEndPoint azureOption)
+    public EndpointConfigureViewModel(GithubCopilotEndPoint azureOption)
     {
         AvailableEndpoints.Add(azureOption);
     }

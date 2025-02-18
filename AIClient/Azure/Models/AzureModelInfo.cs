@@ -1,13 +1,6 @@
-﻿using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using SkiaSharp;
-using Svg;
-using Svg.Skia;
 
 namespace LLMClient.Azure.Models;
 
@@ -27,6 +20,8 @@ public class AzureModelInfo
     [JsonPropertyName("model_family")] public string? ModelFamily { get; set; }
 
     [JsonPropertyName("description")] public string? DescriptionRaw { get; set; }
+
+    [JsonIgnore] public ILLMEndpoint? Endpoint { get; set; }
 
     private FlowDocument? _description;
 

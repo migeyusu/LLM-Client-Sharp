@@ -8,6 +8,8 @@ namespace LLMClient;
 
 public interface ILLMEndpoint
 {
+    string DisplayName { get; }
+    
     string Name { get; }
 
     IList<string> AvailableModels { get; }

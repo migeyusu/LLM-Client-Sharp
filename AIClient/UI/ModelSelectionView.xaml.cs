@@ -4,9 +4,9 @@ using LLMClient.Azure.Models;
 
 namespace LLMClient.UI;
 
-public partial class CreateModelView : UserControl
+public partial class ModelSelectionView : UserControl
 {
-    public CreateModelView()
+    public ModelSelectionView()
     {
         InitializeComponent();
     }
@@ -21,11 +21,15 @@ public partial class CreateModelView : UserControl
         var newValue = e.NewValue;
         if (newValue is AzureModelInfo modelInfo)
         {
-            if (ViewModel != null) ViewModel.SelectedModelName = modelInfo.Name;
+            if (ViewModel != null)
+            {
+                ViewModel.SelectedModelName = modelInfo.Name;
+                ViewModel.SelectedEndpoint = modelInfo.Endpoint;
+            }
         }
-        else if (newValue is ILLMEndpoint endpoint)
+        /*else if (newValue is ILLMEndpoint endpoint)
         {
             if (ViewModel != null) ViewModel.SelectedEndpoint = endpoint;
-        }
+        }*/
     }
 }

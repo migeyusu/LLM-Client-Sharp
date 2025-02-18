@@ -27,7 +27,7 @@
                  MaxHeight="120"
                  BorderBrush="DarkGray"
                  BorderThickness="0,0,0,1"
-                 DisplayMemberPath="Name">
+                 DisplayMemberPath="DisplayName">
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel IsItemsHost="True" />
@@ -44,7 +44,7 @@
                         Margin="10,5"
                         Content="{Binding SelectedEndpoint,Mode=OneWay}">
             <ContentControl.Resources>
-                <DataTemplate DataType="{x:Type azure:AzureEndPoint}">
+                <DataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}">
                     <azure:AzureOptionView DataContext="{Binding}" />
                 </DataTemplate>
             </ContentControl.Resources>

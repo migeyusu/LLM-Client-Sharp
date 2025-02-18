@@ -23,11 +23,11 @@ public class OpenAIO1 : AzureModelBase
         }
     }
 
-    public OpenAIO1(AzureEndPoint endpoint, AzureModelInfo modelInfo) : base(endpoint, modelInfo)
+    public OpenAIO1(GithubCopilotEndPoint endpoint, AzureModelInfo modelInfo) : base(endpoint, modelInfo)
     {
     }
 
-    public override IChatClient CreateClient(AzureEndPoint endpoint)
+    public override IChatClient CreateClient(GithubCopilotEndPoint endpoint)
     {
         var openAiClient = new OpenAIClient(new ApiKeyCredential(endpoint.APIToken),
             new OpenAIClientOptions() { Endpoint = new Uri(endpoint.URL) });

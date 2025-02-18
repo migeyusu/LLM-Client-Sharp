@@ -32,7 +32,7 @@ public class MetaLlama3 : AzureTextModelBase
         }
     }
 
-    public MetaLlama3(AzureEndPoint endpoint, AzureModelInfo modelInfo) : base(endpoint, modelInfo)
+    public MetaLlama3(GithubCopilotEndPoint endpoint, AzureModelInfo modelInfo) : base(endpoint, modelInfo)
     {
         this.MaxTokens = 2048;
         this.Temperature = 0.8f;

@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Windows.Media;
@@ -10,9 +11,12 @@ using Azure.AI.TextAnalytics;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Text;
+using OpenAI.Chat;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
+using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Azure.Models;
 
@@ -34,8 +38,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
         expression.CreateMap<AzureJsonModel, DeepSeekR1>();
     }))));
 
-    [JsonIgnore]
-    public AzureModelInfo ModelInfo { get; }
+    [JsonIgnore] public AzureModelInfo ModelInfo { get; }
 
     public string Name
     {
@@ -55,7 +58,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
     public ChatMessage? Message { get; } = null;
     public bool IsEnable { get; } = false;
 
-    protected readonly AzureEndPoint Endpoint;
+    protected readonly GithubCopilotEndPoint Endpoint;
 
     private ObservableCollection<string> _preResponse = new ObservableCollection<string>();
 
@@ -87,7 +90,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
             OnPropertyChangedAsync();
         }
     }
-    
+
     private bool _isResponsing = false;
 
     [JsonIgnore]
@@ -139,7 +142,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
     private int _promptTokens;
     private int _totalTokens;
 
-    public virtual IChatClient CreateClient(AzureEndPoint endpoint)
+    public virtual IChatClient CreateClient(GithubCopilotEndPoint endpoint)
     {
         var credential = new AzureKeyCredential(endpoint.APIToken);
         var chatCompletionsClient = new ChatCompletionsClient(new Uri(Endpoint.URL), credential,
@@ -147,7 +150,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
         return new AzureAIInferenceChatClient(chatCompletionsClient);
     }
 
-    public AzureModelBase(AzureEndPoint endpoint, AzureModelInfo modelInfo)
+    public AzureModelBase(GithubCopilotEndPoint endpoint, AzureModelInfo modelInfo)
     {
         ModelInfo = modelInfo;
         UITheme.ModeChanged += UIThemeOnModeChanged;
@@ -182,7 +185,7 @@ public class AzureModelBase : BaseViewModel, ILLMModel
             cachedPreResponse.Clear();
             // PreResponse = "正在生成文档。。。。。";
             IsResponsing = true;
-            List<ChatMessage> messages = new List<ChatMessage>();
+            var messages = new List<ChatMessage>();
             var requestOptions = this.CreateChatOptions(messages);
             foreach (var dialogItem in dialogItems.Where((item => item.IsEnable)))
             {
@@ -223,5 +226,35 @@ public class AzureModelBase : BaseViewModel, ILLMModel
         {
             IsResponsing = false;
         }
+    }
+    
+    public static async void Test()
+    {
+#pragma warning disable SKEXP0010
+        
+        Kernel kernel = Kernel.CreateBuilder()
+            .AddOpenAIChatCompletion(
+                modelId: "claude-3.5-sonnet",
+                apiKey: "",
+                endpoint: new Uri("https://api.individual.githubcopilot.com"))
+#pragma warning restore SKEXP0010
+            .Build();
+        var invokePromptAsync = await kernel.InvokePromptAsync("hello");
+        var s = invokePromptAsync.ToString();
+        
+        /*var credential = new AzureKeyCredential("");
+        var chatCompletionsClient = new ChatCompletionsClient(new Uri("https://api.individual.githubcopilot.com"),
+            credential,
+            new AzureAIInferenceClientOptions());
+        var completeAsync = await chatCompletionsClient.CompleteAsync(
+            new ChatCompletionsOptions()
+            {
+                Model = "claude-3.5-sonne",
+                Messages = [new ChatRequestUserMessage("您好")]
+            });
+        if (completeAsync.HasValue)
+        {
+            var valueContent = completeAsync.Value.Content;
+        }*/
     }
 }

@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using LLMClient.Azure;
+﻿using LLMClient.Azure;
 using LLMClient.UI;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,7 +12,7 @@ public class Program
         var serviceCollection = new ServiceCollection();
         var collection = serviceCollection.AddSingleton<MainViewModel>()
             .AddSingleton<MainWindow>()
-            .AddSingleton<AzureEndPoint>()
+            .AddSingleton<GithubCopilotEndPoint>()
             .AddTransient<ModelTypeConverter>()
             .AddTransient<GlobalConfig>()
             .AddSingleton<IEndpointService, EndpointConfigureViewModel>();
@@ -21,7 +20,7 @@ public class Program
         {
             expression.CreateMap<DialogModel, DialogViewModel>().ConvertUsing<ModelTypeConverter>();
             expression.CreateMap<DialogViewModel, DialogModel>().ConvertUsing<ModelTypeConverter>();
-            expression.CreateMap<AzureOption, AzureEndPoint>();
+            expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
             expression.ConstructServicesUsing(provider.GetService);
         }), AppDomain.CurrentDomain.GetAssemblies());
         var serviceProvider = collection.BuildServiceProvider();
