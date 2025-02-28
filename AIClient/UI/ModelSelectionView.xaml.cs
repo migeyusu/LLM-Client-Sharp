@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using LLMClient.Azure.Models;
+using LLMClient.Endpoints.Azure.Models;
 
 namespace LLMClient.UI;
 

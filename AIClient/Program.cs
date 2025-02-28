@@ -1,4 +1,5 @@
-﻿using LLMClient.Azure;
+﻿
+using LLMClient.Endpoints.Azure;
 using LLMClient.UI;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,7 +21,7 @@ public class Program
         {
             expression.CreateMap<DialogModel, DialogViewModel>().ConvertUsing<ModelTypeConverter>();
             expression.CreateMap<DialogViewModel, DialogModel>().ConvertUsing<ModelTypeConverter>();
-            expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
+            // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
             expression.ConstructServicesUsing(provider.GetService);
         }), AppDomain.CurrentDomain.GetAssemblies());
         var serviceProvider = collection.BuildServiceProvider();

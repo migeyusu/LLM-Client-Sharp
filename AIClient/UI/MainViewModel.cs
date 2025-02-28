@@ -31,18 +31,7 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-    public ImageSource TestSource
-    {
-        get
-        {
-            var packIcon = new PackIcon(){Kind = PackIconKind.TestTube};
-            var packIconData = packIcon.Data;
-            var geometry = Geometry.Parse(packIconData);
-            var drawingImage = new DrawingImage(new GeometryDrawing(Brushes.Black,new Pen(Brushes.White, 0), geometry));
-            drawingImage.Freeze();
-            return drawingImage;
-        }
-    }
+
 
     public ICommand LoadCommand => new ActionCommand((o =>
     {

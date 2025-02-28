@@ -1,23 +1,29 @@
-﻿using System.IO;
-using System.Text.Json;
+﻿using System.Collections.ObjectModel;
 using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Input;
-using LLMClient.Azure;
-using MaterialDesignThemes.Wpf;
+using CommunityToolkit.Mvvm.Input;
+using LLMClient.Endpoints;
+using LLMClient.Endpoints.Azure;
+using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
 
 public interface IEndpointService
 {
-    IList<ILLMEndpoint> AvailableEndpoints { get; }
+    IReadOnlyList<ILLMEndpoint> AvailableEndpoints { get; }
 
     Task Initialize();
 }
 
+/// <summary>
+/// 作为终结点的配置中心
+/// </summary>
 public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 {
+    private readonly GithubCopilotEndPoint _githubCopilotEndPoint;
+
     public ILLMEndpoint? SelectedEndpoint
     {
         get => _selectedEndpoint;
@@ -29,85 +35,80 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
     }
 
-    public ICommand? SaveCommand => new ActionCommand(async o =>
+    public ICommand AddNewEndpointCommand => new ActionCommand((o => { Endpoints.Add(new APIEndPoint()); }));
+
+    public ICommand RemoveEndPointCommand => new RelayCommand<ILLMEndpoint?>((o =>
     {
-        if (SelectedEndpoint != null)
+        if (o is APIEndPoint endpoint)
         {
-            var node = await LoadEndpointsNode();
-            SelectedEndpoint.UpdateConfig(node);
-            await SaveEndpoints(node);
+            if (MessageBox.Show("Sure to remove the endpoint?" + endpoint.Name, "warning", MessageBoxButton.YesNo)
+                != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            Endpoints.Remove(endpoint);
         }
+    }), (endpoint => { return endpoint is not GithubCopilotEndPoint; }));
+
+    public ICommand SaveAllCommand => new ActionCommand(async o =>
+    {
+        var doc = await EndPointsConfiguration.LoadDoc();
+        //todo:
+        /*var endPointsObject = new JsonObject();
+        foreach (var endpoint in Endpoints)
+        {
+            endpoint.UpdateConfig(endPointsObject);
+        }
+
+        doc[EndPointsConfiguration.EndpointsNodeName] = endPointsObject;
+        await EndPointsConfiguration.SaveDoc(doc);*/
     });
 
-    public ICommand? ReloadCommand => new ActionCommand((async o =>
+    public ICommand ReloadSelectedCommand => new ActionCommand((async o =>
     {
         if (SelectedEndpoint != null)
         {
-            var loadEndpointsNode = await LoadEndpointsNode();
+            var loadEndpointsNode = await EndPointsConfiguration.LoadEndpointsNode();
             SelectedEndpoint.ReloadConfig(loadEndpointsNode);
         }
     }));
 
-    public IList<ILLMEndpoint> AvailableEndpoints { get; set; } = new List<ILLMEndpoint>();
+    public ObservableCollection<ILLMEndpoint> Endpoints { get; set; } = new ObservableCollection<ILLMEndpoint>();
+
+    public IReadOnlyList<ILLMEndpoint> AvailableEndpoints
+    {
+        get { return Endpoints.AsReadOnly(); }
+    }
 
     private ILLMEndpoint? _selectedEndpoint;
 
-    public EndpointConfigureViewModel(GithubCopilotEndPoint azureOption)
+    public EndpointConfigureViewModel(GithubCopilotEndPoint githubOption)
     {
-        AvailableEndpoints.Add(azureOption);
-    }
-
-    private const string EndPointsJsonFileName = "EndPoints.json";
-
-    private async Task<JsonNode> LoadEndpointsNode()
-    {
-        var fullPath = Path.GetFullPath(EndPointsJsonFileName);
-        var fileInfo = new FileInfo(fullPath);
-        if (fileInfo.Exists)
-        {
-            await using (var fileStream = fileInfo.OpenRead())
-            {
-                var jsonNode = await JsonNode.ParseAsync(fileStream);
-                if (jsonNode != null)
-                {
-                    return jsonNode;
-                }
-            }
-        }
-
-        return JsonNode.Parse("""{}""")!;
-    }
-
-    private async Task SaveEndpoints(JsonNode node)
-    {
-        var fullPath = Path.GetFullPath(EndPointsJsonFileName);
-        var fileInfo = new FileInfo(fullPath);
-        fileInfo.Directory?.Create();
-        if (fileInfo.Exists)
-        {
-            fileInfo.Delete();
-        }
-
-        await using (var fileStream = fileInfo.OpenWrite())
-        {
-            await using (var utf8JsonWriter = new Utf8JsonWriter(fileStream))
-            {
-                node.WriteTo(utf8JsonWriter);
-            }
-        }
+        _githubCopilotEndPoint = githubOption;
     }
 
     public async Task Initialize()
     {
-        foreach (var availableEndpoint in AvailableEndpoints)
+        var doc = await EndPointsConfiguration.LoadDoc();
+        var endPointsNode = doc.GetOrCreate(EndPointsConfiguration.EndpointsNodeName);
+        _githubCopilotEndPoint.ReloadConfig(endPointsNode);
+        Endpoints.Add(_githubCopilotEndPoint);
+        var apisNode = endPointsNode.GetOrCreate(APIEndPoint.KeyName);
+        var jsonArray = apisNode.AsArray();
+        foreach (var jsonNode in jsonArray)
         {
-            await availableEndpoint.InitializeAsync();
+            if (jsonNode is JsonObject jsonObject)
+            {
+                var apiEndPoint = new APIEndPoint();
+                apiEndPoint.UpdateConfig(jsonObject);
+                Endpoints.Add(apiEndPoint);
+            }
         }
 
-        var node = await LoadEndpointsNode();
-        foreach (var availableEndpoint in AvailableEndpoints)
+        foreach (var availableEndpoint in Endpoints)
         {
-            availableEndpoint.ReloadConfig(node);
+            await availableEndpoint.InitializeAsync();
         }
     }
 }

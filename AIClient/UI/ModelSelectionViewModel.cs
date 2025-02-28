@@ -11,7 +11,7 @@ public class ModelSelectionViewModel : BaseViewModel
     private ILLMEndpoint? _selectedEndpoint;
     private string _dialogName = "新建会话";
 
-    public IList<ILLMEndpoint>? AvailableEndpoints { get; set; }
+    public IEnumerable<ILLMEndpoint>? AvailableEndpoints { get; set; }
 
     public string DialogName
     {

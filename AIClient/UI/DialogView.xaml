@@ -6,8 +6,8 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:LLMClient"
              xmlns:ui="clr-namespace:LLMClient.UI"
-             xmlns:models="clr-namespace:LLMClient.Azure.Models"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
+             xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:DialogViewModel}"
              d:DesignHeight="600"
@@ -113,6 +113,7 @@
                             ToolTip="model信息"
                             Width="36"
                             Height="36"
+                            Visibility="{Binding Model.Info,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                             CommandParameter="{Binding Model.Info,Mode=OneWay}">
                         <materialDesign:PackIcon Kind="InformationOutline"
@@ -323,9 +324,9 @@
                                         <!--IsDocumentEnabled="True"
                                                      IsReadOnly="True"-->
                                         <component:FlowDocumentScrollViewerEx BorderThickness="0"
-                                                                    Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
-                                                                    Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
-                                                                    Document="{Binding Document,Mode=OneTime}" />
+                                                                              Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
+                                                                              Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
+                                                                              Document="{Binding Document,Mode=OneTime}" />
                                         <TextBlock Text="{Binding ErrorMessage,Mode=OneTime}"
                                                    Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                                     </StackPanel>

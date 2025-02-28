@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows.Media;
+using LLMClient.Endpoints;
 using LLMClient.UI;
 
 namespace LLMClient;
@@ -9,8 +10,10 @@ namespace LLMClient;
 public interface ILLMEndpoint
 {
     string DisplayName { get; }
-    
+
     string Name { get; }
+
+    IEndpointOption Option { get; }
 
     IList<string> AvailableModels { get; }
 
@@ -25,16 +28,17 @@ public interface ILLMEndpoint
 
 public interface ILLMModel : IDialogViewItem
 {
+    /// <summary>
+    /// 唯一名称
+    /// </summary>
     string Name { get; }
-
-    string Id { get; }
 
     ImageSource? Icon { get; }
 
     bool IsResponsing { get; }
 
-    object Info { get; }
-    
+    object? Info { get; }
+
     ObservableCollection<string> PreResponse { get; }
 
     void Deserialize(IModelParams info);

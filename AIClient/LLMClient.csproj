@@ -13,6 +13,7 @@
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="13.0.1" />
         <PackageReference Include="Azure.AI.TextAnalytics" Version="5.3.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
         <PackageReference Include="MaterialDesignThemes" Version="5.1.1-ci859"/>
         <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.1.0-preview.1.25064.3" />
@@ -56,6 +57,9 @@
         <None Update="Azure\Models\models.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="Endpoints\Azure\Models\models.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
@@ -85,6 +89,29 @@
         <SubType>Designer</SubType>
       </Page>
       <Page Update="UI\MainWindow.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <XamlRuntime>Wpf</XamlRuntime>
+        <SubType>Designer</SubType>
+      </Page>
+      <Page Update="Endpoints\Azure\Models\AzureModelBaseView.xaml">
+        <Generator>MSBuild:Compile</Generator>
+      </Page>
+      <Page Update="Endpoints\Azure\Models\AzureModelInfoView.xaml">
+        <Generator>MSBuild:Compile</Generator>
+      </Page>
+      <Page Update="Endpoints\Azure\Models\AzureTextModelBaseView.xaml">
+        <Generator>MSBuild:Compile</Generator>
+      </Page>
+      <Page Update="Endpoints\Azure\Models\DeepSeekR1View.xaml">
+        <Generator>MSBuild:Compile</Generator>
+      </Page>
+      <Page Update="Endpoints\Azure\Models\MetaLlama3View.xaml">
+        <Generator>MSBuild:Compile</Generator>
+      </Page>
+      <Page Update="Endpoints\Azure\Models\OpenAIO1View.xaml">
+        <Generator>MSBuild:Compile</Generator>
+      </Page>
+      <Page Update="Endpoints\OptionView.xaml">
         <Generator>MSBuild:Compile</Generator>
         <XamlRuntime>Wpf</XamlRuntime>
         <SubType>Designer</SubType>

@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Serialization;
-using LLMClient.Azure.Models;
+using LLMClient.Endpoints.Azure.Models;
 
 namespace LLMClient;
 

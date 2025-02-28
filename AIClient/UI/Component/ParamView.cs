@@ -65,3 +65,21 @@ public class ParamView : Control
         set { SetValue(DescriptionProperty, value); }
     }
 }
+
+
+public class ParamConfigView : ParamView
+{
+    static ParamConfigView()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(typeof(ParamConfigView), new FrameworkPropertyMetadata(typeof(ParamConfigView)));
+    }
+
+    public static readonly DependencyProperty AvailableProperty = DependencyProperty.Register(
+        nameof(Available), typeof(bool), typeof(ParamConfigView), new PropertyMetadata(default(bool)));
+
+    public bool Available
+    {
+        get { return (bool)GetValue(AvailableProperty); }
+        set { SetValue(AvailableProperty, value); }
+    }
+}

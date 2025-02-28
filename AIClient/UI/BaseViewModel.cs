@@ -10,7 +10,7 @@ public class BaseViewModel : INotifyPropertyChanged
     private readonly Lazy<Dispatcher> _dispatcherLazy =
         new Lazy<Dispatcher>((() => Application.Current.Dispatcher), (LazyThreadSafetyMode.PublicationOnly));
 
-    private Dispatcher Dispatcher => _dispatcherLazy.Value;
+    protected Dispatcher Dispatcher => _dispatcherLazy.Value;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -37,6 +37,26 @@ public class BaseViewModel : INotifyPropertyChanged
         {
             await Dispatcher.InvokeAsync(
                 () => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)));
+        }
+    }
+
+    public void Dispatch(Action action)
+    {
+        if (Dispatcher.CheckAccess())
+        {
+            action.Invoke();
+        }
+        else
+        {
+            Dispatcher.BeginInvoke(action);
+        }
+    }
+
+    public async Task DispatchAsync(Action action)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            await Dispatcher.InvokeAsync(action);
         }
     }
 }
