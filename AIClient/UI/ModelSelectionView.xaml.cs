@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using LLMClient.Endpoints.Azure.Models;
+using LLMClient.Endpoints.OpenAIAPI;
 
 namespace LLMClient.UI;
 
@@ -11,9 +12,9 @@ public partial class ModelSelectionView : UserControl
         InitializeComponent();
     }
 
-    ModelSelectionViewModel? ViewModel
+    ModelSelectionViewModel ViewModel
     {
-        get { return DataContext as ModelSelectionViewModel; }
+        get { return (DataContext as ModelSelectionViewModel)!; }
     }
 
     private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -21,11 +22,13 @@ public partial class ModelSelectionView : UserControl
         var newValue = e.NewValue;
         if (newValue is AzureModelInfo modelInfo)
         {
-            if (ViewModel != null)
-            {
-                ViewModel.SelectedModelName = modelInfo.Name;
-                ViewModel.SelectedEndpoint = modelInfo.Endpoint;
-            }
+            ViewModel.SelectedModelName = modelInfo.FriendlyName;
+            ViewModel.SelectedEndpoint = modelInfo.Endpoint;
+        }
+        else if (newValue is APIModelInfo apiModelInfo)
+        {
+            ViewModel.SelectedModelName = apiModelInfo.Name;
+            ViewModel.SelectedEndpoint = apiModelInfo.Endpoint;
         }
         /*else if (newValue is ILLMEndpoint endpoint)
         {

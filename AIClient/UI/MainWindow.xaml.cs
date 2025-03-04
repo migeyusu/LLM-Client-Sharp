@@ -36,14 +36,11 @@ public partial class MainWindow : ExtendedWindow
             }
         }
     }
-
-    private bool _savingEnsured = false;
+    
 
     private void MainWindow_OnClosing(object? sender, CancelEventArgs e)
     {
-        e.Cancel = !_savingEnsured;
-        _mainViewModel.QuitCommand.Execute(this);
-        _savingEnsured = true;
+        
     }
 
     private async void OpenConfig_OnClick(object sender, RoutedEventArgs e)

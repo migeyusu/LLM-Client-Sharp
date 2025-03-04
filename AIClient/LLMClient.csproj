@@ -111,7 +111,7 @@
       <Page Update="Endpoints\Azure\Models\OpenAIO1View.xaml">
         <Generator>MSBuild:Compile</Generator>
       </Page>
-      <Page Update="Endpoints\OptionView.xaml">
+      <Page Update="Endpoints\Azure\GithubCopilotEndPointView.xaml">
         <Generator>MSBuild:Compile</Generator>
         <XamlRuntime>Wpf</XamlRuntime>
         <SubType>Designer</SubType>

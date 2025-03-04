@@ -10,6 +10,7 @@
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:azure="clr-namespace:LLMClient.Endpoints.Azure"
              xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
+             xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:ModelSelectionViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">
@@ -39,7 +40,7 @@
                       ItemsSource="{Binding  AvailableEndpoints,Mode=OneTime}">
                 <TreeView.Resources>
                     <HierarchicalDataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}"
-                                              ItemsSource="{Binding AvailableModelsInfos, Mode=OneWay}">
+                                              ItemsSource="{Binding AvailableModelsInfos, Mode=OneTime}">
                         <TextBlock Margin="3,2"
                                    Text="{Binding DisplayName, Mode=OneTime}" />
                     </HierarchicalDataTemplate>
@@ -51,8 +52,16 @@
                                    Source="{Binding  LightModeIcon,Mode=OneTime}" />
                             <TextBlock Margin="10,2"
                                        VerticalAlignment="Center"
-                                       Text="{Binding Name,Mode=OneTime }" />
+                                       Text="{Binding FriendlyName,Mode=OneTime }" />
                         </DockPanel>
+                    </DataTemplate>
+                    <HierarchicalDataTemplate DataType="{x:Type openAiapi:APIEndPoint}"
+                                              ItemsSource="{Binding Models,Mode=OneWay}">
+                        <TextBlock Margin="3,2"
+                                   Text="{Binding DisplayName,Mode=OneWay}" />
+                    </HierarchicalDataTemplate>
+                    <DataTemplate DataType="{x:Type openAiapi:APIModelInfo}">
+                        <TextBlock Text="{Binding Name,Mode=OneWay}" />
                     </DataTemplate>
                 </TreeView.Resources>
             </TreeView>
@@ -62,7 +71,7 @@
                        Margin="0,20"
                        Width="1"
                        Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
-                       HorizontalAlignment="Right"  />
+                       HorizontalAlignment="Right" />
             <ContentControl Grid.Column="1"
                             Content="{Binding ElementName=EndpointsTreeView,Path=SelectedItem}">
                 <ContentControl.ContentTemplateSelector>
@@ -83,7 +92,8 @@
                     VerticalAlignment="Center"
                     Margin="10,0">
             <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}">
-                <Run Text="{Binding SelectedEndpoint.DisplayName, StringFormat=选择的服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
+                <Run
+                    Text="{Binding SelectedEndpoint.DisplayName, StringFormat=选择的服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
                 <Run Text="{Binding SelectedModelName,StringFormat=选择的模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
             </TextBlock>
         </StackPanel>

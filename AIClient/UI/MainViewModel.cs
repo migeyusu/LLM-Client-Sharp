@@ -20,18 +20,18 @@ public class MainViewModel : BaseViewModel
     private readonly IMapper _mapper;
     public IEndpointService ConfigureViewModel { get; set; }
 
-    public bool IsInitializing
+    public bool IsInitialized { get; private set; }
+
+    public bool IsProcessing
     {
-        get => _isInitializing;
+        get => _isProcessing;
         set
         {
-            if (value == _isInitializing) return;
-            _isInitializing = value;
+            if (value == _isProcessing) return;
+            _isProcessing = value;
             OnPropertyChanged();
         }
     }
-
-
 
     public ICommand LoadCommand => new ActionCommand((o =>
     {
@@ -49,7 +49,7 @@ public class MainViewModel : BaseViewModel
     {
         try
         {
-            IsInitializing = true;
+            IsProcessing = true;
             await SaveToLocal();
         }
         catch (Exception e)
@@ -58,22 +58,9 @@ public class MainViewModel : BaseViewModel
         }
         finally
         {
-            IsInitializing = false;
+            IsProcessing = false;
         }
     }));
-
-    public ICommand QuitCommand => new ActionCommand(async o =>
-    {
-        try
-        {
-            IsInitializing = true;
-            await SaveToLocal();
-        }
-        finally
-        {
-            await Task.Run(() => { Application.Current.Dispatcher.Invoke(() => { ((Window)o).Close(); }); });
-        }
-    });
 
     private bool _isDarkTheme;
 
@@ -91,7 +78,7 @@ public class MainViewModel : BaseViewModel
             OnPropertyChanged();
             ModifyTheme(theme => theme.SetBaseTheme(value ? BaseTheme.Dark : BaseTheme.Light));
             UITheme.IsDarkMode = value;
-            this.ThemeName=value? ThemeName.DarkPlus : ThemeName.LightPlus;
+            this.ThemeName = value ? ThemeName.DarkPlus : ThemeName.LightPlus;
         }
     }
 
@@ -172,33 +159,14 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-    private readonly DispatcherTimer _timer;
-
-    private async void UpdateCallback(object? state, EventArgs eventArgs)
-    {
-        try
-        {
-            await SaveToLocal();
-        }
-        catch (Exception e)
-        {
-            Trace.Write(e);
-        }
-    }
-
     private DialogViewModel? _preDialog;
-    private bool _isInitializing;
+
+    private bool _isProcessing;
 
     public MainViewModel(IEndpointService configureViewModel, IMapper mapper)
     {
         _mapper = mapper;
         ConfigureViewModel = configureViewModel;
-        _timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
-        {
-            Interval = TimeSpan.FromMinutes(5)
-        };
-        _timer.Tick += UpdateCallback;
-        _timer.Start();
         var paletteHelper = new PaletteHelper();
         Theme theme = paletteHelper.GetTheme();
         IsDarkTheme = theme.GetBaseTheme() == BaseTheme.Dark;
@@ -220,7 +188,6 @@ public class MainViewModel : BaseViewModel
 
     ~MainViewModel()
     {
-        _timer.Stop();
     }
 
     private const string DialogSaveFolder = "Dialogs";
@@ -236,14 +203,21 @@ public class MainViewModel : BaseViewModel
 
         foreach (var fileInfo in directoryInfo.GetFiles())
         {
-            await using (var openRead = fileInfo.OpenRead())
+            try
             {
-                var dialogModel = await JsonSerializer.DeserializeAsync<DialogModel>(openRead);
-                if (dialogModel != null)
+                await using (var openRead = fileInfo.OpenRead())
                 {
-                    var viewModel = _mapper.Map<DialogModel, DialogViewModel>(dialogModel);
-                    DialogViewModels.Add(viewModel);
+                    var dialogModel = await JsonSerializer.DeserializeAsync<DialogModel>(openRead);
+                    if (dialogModel != null)
+                    {
+                        var viewModel = _mapper.Map<DialogModel, DialogViewModel>(dialogModel);
+                        DialogViewModels.Add(viewModel);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine($"加载会话{fileInfo.FullName}失败：{e.Message}");
             }
         }
     }
@@ -264,6 +238,11 @@ public class MainViewModel : BaseViewModel
         var fileInfos = LocalDialogFiles();
         foreach (var dialogViewModel in DialogViewModels)
         {
+            if (dialogViewModel.IsDataChanged == false)
+            {
+                continue;
+            }
+
             var dialogModel = _mapper.Map<DialogViewModel, DialogModel>(dialogViewModel);
             var dialogId = dialogModel.DialogId;
             if (fileInfos.TryGetValue(dialogId.ToString(), out var fileInfo))
@@ -275,10 +254,12 @@ public class MainViewModel : BaseViewModel
                 fileInfo = new FileInfo(Path.Combine(dirPath, $"{dialogId}.json"));
             }
 
-            using (var fileStream = fileInfo.OpenWrite())
+            await using (var fileStream = fileInfo.OpenWrite())
             {
                 await JsonSerializer.SerializeAsync(fileStream, dialogModel);
             }
+
+            dialogViewModel.IsDataChanged = false;
         }
     }
 
@@ -293,10 +274,9 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-
     public async void Initialize()
     {
-        IsInitializing = true;
+        IsProcessing = true;
         await LoadFromLocal(DialogSaveFolder);
         if (DialogViewModels.Any())
         {
@@ -304,7 +284,8 @@ public class MainViewModel : BaseViewModel
         }
 
         UpdateResource(_themeName);
-        IsInitializing = false;
+        IsProcessing = false;
+        IsInitialized = true;
     }
 
     public ProgressViewModel LoadingProgress { get; } = new ProgressViewModel("Loading...");

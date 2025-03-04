@@ -130,8 +130,8 @@
                                        Height="600" />
             </DataTemplate>
             <DataTemplate DataType="{x:Type ui:EndpointConfigureViewModel}">
-                <ui:EndpointConfigureView Width="600"
-                                          Height="400" />
+                <ui:EndpointConfigureView Width="800"
+                                          Height="600" />
             </DataTemplate>
             <DataTemplate DataType="{x:Type models:AzureTextModelBase}">
                 <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"
@@ -183,7 +183,7 @@
             </DataTemplate>
         </materialDesign:DialogHost.Resources>
         <Grid Margin="10"
-              IsEnabled="{Binding IsInitializing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+              IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition />
@@ -429,7 +429,7 @@
             <materialDesign:Card Grid.Row="0" Grid.Column="0"
                                  Grid.RowSpan="2"
                                  Grid.ColumnSpan="2"
-                                 Visibility="{Binding IsInitializing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                 Visibility="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                  VerticalAlignment="Center"
                                  HorizontalAlignment="Center">
                 <StackPanel Margin="30" DataContext="{Binding LoadingProgress,Mode=OneTime}">
@@ -442,7 +442,18 @@
                                Text="{Binding Message,Mode=OneTime}" />
                 </StackPanel>
             </materialDesign:Card>
-            <!--<WrapPanel Grid.Row="0" Grid.Column="1"
+            <GridSplitter Grid.Row="0" Grid.Column="0"
+                          VerticalAlignment="Stretch"
+                          HorizontalAlignment="Right"
+                          Background="DarkGray"
+                          Grid.RowSpan="2"
+                          Margin="0,60"
+                          Width="3" />
+        </Grid>
+    </materialDesign:DialogHost>
+</component:ExtendedWindow>
+
+<!--<WrapPanel Grid.Row="0" Grid.Column="1"
                        Grid.RowSpan="2"
                        Background="DimGray">
                 <WrapPanel.Resources>
@@ -498,13 +509,3 @@
                 <TextBlock Text="MaterialDesign.Brush.Card.Border" />
                 <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Card.Border}" />
             </WrapPanel>-->
-            <GridSplitter Grid.Row="0" Grid.Column="0"
-                          VerticalAlignment="Stretch"
-                          HorizontalAlignment="Right"
-                          Background="DarkGray"
-                          Grid.RowSpan="2"
-                          Margin="0,60"
-                          Width="3" />
-        </Grid>
-    </materialDesign:DialogHost>
-</component:ExtendedWindow>

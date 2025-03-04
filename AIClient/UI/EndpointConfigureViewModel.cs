@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Input;
@@ -53,8 +54,18 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public ICommand SaveAllCommand => new ActionCommand(async o =>
     {
-        var doc = await EndPointsConfiguration.LoadDoc();
-        //todo:
+        var root = new JsonObject();
+        var endPointsNode = root.GetOrCreate(EndPointsConfiguration.EndpointsNodeName);
+        _githubCopilotEndPoint.UpdateConfig(endPointsNode);
+        JsonArray jArray = new JsonArray();
+        foreach (var apiEndPoint in Endpoints.Where((endpoint) => endpoint is APIEndPoint).Cast<APIEndPoint>())
+        {
+            var serialize = JsonSerializer.SerializeToNode(apiEndPoint);
+            jArray.Add(serialize);
+        }
+
+        endPointsNode[APIEndPoint.KeyName] = jArray;
+        await EndPointsConfiguration.SaveDoc(root);
         /*var endPointsObject = new JsonObject();
         foreach (var endpoint in Endpoints)
         {
@@ -65,13 +76,10 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         await EndPointsConfiguration.SaveDoc(doc);*/
     });
 
-    public ICommand ReloadSelectedCommand => new ActionCommand((async o =>
+    public ICommand ReloadCommand => new ActionCommand((async o =>
     {
-        if (SelectedEndpoint != null)
-        {
-            var loadEndpointsNode = await EndPointsConfiguration.LoadEndpointsNode();
-            SelectedEndpoint.ReloadConfig(loadEndpointsNode);
-        }
+        Endpoints.Clear();
+        await this.Initialize();
     }));
 
     public ObservableCollection<ILLMEndpoint> Endpoints { get; set; } = new ObservableCollection<ILLMEndpoint>();
@@ -83,28 +91,35 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     private ILLMEndpoint? _selectedEndpoint;
 
-    public EndpointConfigureViewModel(GithubCopilotEndPoint githubOption)
+    private readonly IServiceProvider _serviceProvider;
+
+    public EndpointConfigureViewModel(GithubCopilotEndPoint githubOption, IServiceProvider serviceProvider)
     {
         _githubCopilotEndPoint = githubOption;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task Initialize()
     {
-        var doc = await EndPointsConfiguration.LoadDoc();
-        var endPointsNode = doc.GetOrCreate(EndPointsConfiguration.EndpointsNodeName);
-        _githubCopilotEndPoint.ReloadConfig(endPointsNode);
+        var endPointsNode = await EndPointsConfiguration.LoadEndpointsNode();
+        _githubCopilotEndPoint.LoadConfig(endPointsNode);
         Endpoints.Add(_githubCopilotEndPoint);
-        var apisNode = endPointsNode.GetOrCreate(APIEndPoint.KeyName);
-        var jsonArray = apisNode.AsArray();
-        foreach (var jsonNode in jsonArray)
+        if (endPointsNode.AsObject().TryGetPropertyValue(APIEndPoint.KeyName, out var apisNode))
         {
-            if (jsonNode is JsonObject jsonObject)
+            var jsonArray = apisNode!.AsArray();
+            foreach (var jsonNode in jsonArray)
             {
-                var apiEndPoint = new APIEndPoint();
-                apiEndPoint.UpdateConfig(jsonObject);
-                Endpoints.Add(apiEndPoint);
+                if (jsonNode is JsonObject jsonObject)
+                {
+                    var endPoint = jsonObject.Deserialize<APIEndPoint>();
+                    if (endPoint != null)
+                    {
+                        Endpoints.Add(endPoint);
+                    }
+                }
             }
         }
+
 
         foreach (var availableEndpoint in Endpoints)
         {

@@ -8,6 +8,7 @@
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
+             xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:DialogViewModel}"
              d:DesignHeight="600"
@@ -182,15 +183,22 @@
                      Text="{Binding  PromptString,Mode=TwoWay}"
                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
                      TextWrapping="Wrap"
-                     VerticalScrollBarVisibility="Auto" />
-            <Button Command="{Binding SendRequestCommand}"
-                    Width="120"
-                    Height="30"
-                    Style="{StaticResource MaterialDesignFlatLightButton}"
-                    Content="发送"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Margin="10" />
+                     VerticalScrollBarVisibility="Auto">
+            </TextBox>
+            <StackPanel Orientation="Horizontal"
+                        Margin="0,0,16,8"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom">
+                <CheckBox Content="回车发送"
+                          IsChecked="{Binding IsKeyEnterCommandEnable,Mode=TwoWay}"
+                          materialDesign:CheckBoxAssist.CheckBoxSize="30" />
+                <Button Command="{Binding SendRequestCommand}"
+                        Width="80"
+                        Height="30"
+                        Margin="16,0,0,0"
+                        Style="{StaticResource MaterialDesignFlatLightButton}"
+                        Content="发送" />
+            </StackPanel>
         </Grid>
         <Button Grid.Row="2"
                 materialDesign:ButtonAssist.CornerRadius="18"
@@ -289,7 +297,7 @@
                     <component:DataTemplateTypePair>
                         <component:DataTemplateTypePair.Template>
                             <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
-                                <materialDesign:Card Padding="8"
+                                <materialDesign:Card Padding="0"
                                                      UniformCornerRadius="8"
                                                      HorizontalAlignment="Stretch"
                                                      BorderThickness="0"
@@ -374,7 +382,7 @@
                     </component:DataTemplateTypePair>
                     <component:DataTemplateTypePair>
                         <component:DataTemplateTypePair.Template>
-                            <DataTemplate DataType="{x:Type models:AzureModelBase}">
+                            <DataTemplate DataType="{x:Type endpoints:LLMModelbase}">
                                 <GroupBox
                                     Visibility="{Binding IsResponsing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                     materialDesign:ColorZoneAssist.Mode="Dark"
@@ -413,7 +421,7 @@
                     <Setter Property="HorizontalContentAlignment"
                             Value="Stretch" />
                     <Setter Property="Margin"
-                            Value="0,10,0,0" />
+                            Value="0,10,6,0" />
                 </Style>
             </ListBox.ItemContainerStyle>
             <ListBox.CommandBindings>

@@ -73,8 +73,8 @@
                                         Margin="20,0,0,0"
                                         Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path= Value,Mode=TwoWay}"
                                         TickFrequency="{TemplateBinding TickFrequency}"
-                                        Maximum="{TemplateBinding Max}"
-                                        Minimum="{TemplateBinding Min}" />
+                                        Maximum="{TemplateBinding Maximum}"
+                                        Minimum="{TemplateBinding Minimum}" />
                             </Grid>
                         </ControlTemplate>
                     </Setter.Value>
@@ -93,40 +93,36 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="{TemplateBinding PropertyName}"
-                                           VerticalAlignment="Bottom"
-                                           FontWeight="Black"
-                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
-                                <TextBlock Grid.Row="0"
+                                <CheckBox Grid.Row="0"
+                                          Grid.ColumnSpan="2"
+                                          IsChecked="{Binding RelativeSource={RelativeSource TemplatedParent},Path=Available,Mode=TwoWay}"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center"
+                                          Content="{TemplateBinding PropertyName}"
+                                          materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                                          Margin="0,0,0,6" />
+                                <TextBlock Grid.Row="1"
                                            Grid.Column="1"
                                            TextWrapping="Wrap"
-                                           VerticalAlignment="Bottom"
+                                           Padding="10,0,0,0"
+                                           VerticalAlignment="Center"
                                            Style="{StaticResource MaterialDesignOverlineTextBlock}"
                                            Text="{TemplateBinding Description}" />
-                                <ToggleButton Grid.Row="0" Grid.Column="1"
-                                              IsChecked="{Binding RelativeSource={RelativeSource TemplatedParent},Path=Available,Mode=TwoWay}"
-                                              Style="{StaticResource MaterialDesignSwitchLightToggleButton}"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Center"
-                                              Margin="0,0,8,0" />
                                 <TextBox Grid.Row="1" Grid.Column="0"
                                          IsEnabled="{TemplateBinding Available}"
+                                         HorizontalAlignment="Left"
                                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                          Padding="4"
                                          Margin="0,10"
                                          BorderBrush="Gainsboro"
                                          Width="100"
-                                         Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Value, Mode=TwoWay}"
                                          TextWrapping="NoWrap"
-                                         FontSize="16" />
-                                <Slider Grid.Row="1" Grid.Column="1"
-                                        VerticalAlignment="Center"
-                                        IsEnabled="{TemplateBinding Available}"
-                                        Margin="20,0,0,0"
-                                        Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path= Value,Mode=TwoWay}"
-                                        TickFrequency="{TemplateBinding TickFrequency}"
-                                        Maximum="{TemplateBinding Max}"
-                                        Minimum="{TemplateBinding Min}" />
+                                         FontSize="16">
+                                    <TextBox.Text>
+                                        <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Value"
+                                                 Mode="TwoWay" />
+                                    </TextBox.Text>
+                                </TextBox>
                             </Grid>
                         </ControlTemplate>
                     </Setter.Value>

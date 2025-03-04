@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Text.Json;
 
 namespace LLMClient;
@@ -56,13 +57,20 @@ public class HttpFileCache
         var fileInfo = new FileInfo(CacheConfigFilePath);
         if (fileInfo.Exists)
         {
-            using (var fileStream = fileInfo.OpenRead())
+            try
             {
-                var httpFileCache = JsonSerializer.Deserialize<HttpFileCache>(fileStream);
-                if (httpFileCache != null)
+                using (var fileStream = fileInfo.OpenRead())
                 {
-                    return httpFileCache;
+                    var httpFileCache = JsonSerializer.Deserialize<HttpFileCache>(fileStream);
+                    if (httpFileCache != null)
+                    {
+                        return httpFileCache;
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError(e.Message);
             }
         }
 

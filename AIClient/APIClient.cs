@@ -2,7 +2,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows.Media;
-using LLMClient.Endpoints;
 using LLMClient.UI;
 
 namespace LLMClient;
@@ -13,17 +12,11 @@ public interface ILLMEndpoint
 
     string Name { get; }
 
-    IEndpointOption Option { get; }
-
     IList<string> AvailableModels { get; }
 
     ILLMModel? GetModel(string modelName);
 
     Task InitializeAsync();
-
-    void UpdateConfig(JsonNode document);
-
-    void ReloadConfig(JsonNode document);
 }
 
 public interface ILLMModel : IDialogViewItem

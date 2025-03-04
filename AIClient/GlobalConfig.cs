@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
@@ -33,13 +34,20 @@ public class GlobalConfig : BaseViewModel
         var fileInfo = new FileInfo(DEFAULT_GLOBAL_CONFIG_FILE);
         if (fileInfo.Exists)
         {
-            using (var fileStream = fileInfo.OpenRead())
+            try
             {
-                var config = JsonSerializer.Deserialize<GlobalConfig>(fileStream);
-                if (config != null)
+                using (var fileStream = fileInfo.OpenRead())
                 {
-                    return config;
+                    var config = JsonSerializer.Deserialize<GlobalConfig>(fileStream);
+                    if (config != null)
+                    {
+                        return config;
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError(e.Message);
             }
         }
 

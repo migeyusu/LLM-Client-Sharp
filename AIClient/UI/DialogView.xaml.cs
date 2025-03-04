@@ -38,6 +38,7 @@ public partial class DialogView : UserControl
             ViewModel.InsertClearContextItem(requestViewItem);
         }
     }
+
 }
 
 /*public class FlowDocumentScrollViewerEx : ContentControl

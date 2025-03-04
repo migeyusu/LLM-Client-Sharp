@@ -24,7 +24,7 @@
         <!--Style="{StaticResource MaterialDesignChoiceChipListBox}"-->
         <ListBox Grid.Row="0"
                  Margin="10"
-                 ItemsSource="{Binding Endpoints,Mode=OneTime}"
+                 ItemsSource="{Binding Endpoints,Mode=OneWay}"
                  SelectionMode="Single"
                  Style="{StaticResource MaterialDesignChoiceChipPrimaryOutlineListBox}"
                  SelectedItem="{Binding SelectedEndpoint,Mode=OneWayToSource}"
@@ -73,29 +73,32 @@
                         Content="{Binding SelectedEndpoint,Mode=OneWay}">
             <ContentControl.Resources>
                 <DataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}">
-                    <endpoints:OptionView DataContext="{Binding Option,Mode=OneWay}" />
+                    <endpoints:GithubCopilotEndPointView />
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type openAiapi:APIEndPoint}">
                     <openAiapi:APIEndPointView />
                 </DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
+        <Separator Grid.Row="2"
+                   Background="Black"
+                   VerticalAlignment="Top"
+                   Margin="10,0" />
         <StackPanel Grid.Row="2"
                     Margin="10"
                     HorizontalAlignment="Right"
                     Orientation="Horizontal">
             <StackPanel Orientation="Horizontal"
                         Visibility="{Binding SelectedEndpoint,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
-                <Button Content="重置当前"
+                <Button Content="重置"
                         Margin="10,0,0,0"
-                        Command="{Binding ReloadSelectedCommand}" />
+                        Command="{Binding ReloadCommand}" />
                 <Button Content="移除"
                         Margin="10,0,0,0"
                         CommandParameter="{Binding SelectedEndpoint,Mode=OneWay}"
                         Command="{Binding RemoveEndPointCommand}" />
             </StackPanel>
             <Button Content="保存全部"
-                    Width="80"
                     Margin="10,0,0,0"
                     Command="{Binding SaveAllCommand}"
                     CommandParameter="{Binding ElementName=ControlRoot}" />
