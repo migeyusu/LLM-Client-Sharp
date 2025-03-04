@@ -92,8 +92,7 @@
                     VerticalAlignment="Center"
                     Margin="10,0">
             <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}">
-                <Run
-                    Text="{Binding SelectedEndpoint.DisplayName, StringFormat=选择的服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
+                <Run Text="{Binding SelectedEndpoint.DisplayName, StringFormat=选择的服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
                 <Run Text="{Binding SelectedModelName,StringFormat=选择的模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
             </TextBlock>
         </StackPanel>

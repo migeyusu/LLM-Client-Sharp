@@ -9,10 +9,16 @@
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+             xmlns:collections="clr-namespace:System.Collections;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:DialogViewModel}"
              d:DesignHeight="600"
              d:DesignWidth="1000">
+    <UserControl.Resources>
+        <KeyBinding x:Key="PromptKeyBinding"
+                    Key="Enter"
+                    Command="{Binding SendRequestCommand}" />
+    </UserControl.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="70" />
@@ -175,7 +181,8 @@
         </materialDesign:Card>
         <Grid Grid.Row="2"
               IsEnabled="{Binding Model.IsResponsing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
-            <TextBox materialDesign:HintAssist.Hint="输入Prompt"
+            <TextBox x:Name="PromptTextBox"
+                     materialDesign:HintAssist.Hint="输入Prompt"
                      AcceptsReturn="True"
                      VerticalAlignment="Stretch"
                      HorizontalAlignment="Stretch"
@@ -183,14 +190,14 @@
                      Text="{Binding  PromptString,Mode=TwoWay}"
                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
                      TextWrapping="Wrap"
-                     VerticalScrollBarVisibility="Auto">
-            </TextBox>
+                     VerticalScrollBarVisibility="Auto" />
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,16,8"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom">
                 <CheckBox Content="回车发送"
-                          IsChecked="{Binding IsKeyEnterCommandEnable,Mode=TwoWay}"
+                          Checked="EnterKeyInputBinding_OnChecked"
+                          Unchecked="EnterKeyInputBinding_OnUnchecked"
                           materialDesign:CheckBoxAssist.CheckBoxSize="30" />
                 <Button Command="{Binding SendRequestCommand}"
                         Width="80"
@@ -249,7 +256,7 @@
                             <DataTemplate DataType="{x:Type ui:RequestViewItem}">
                                 <materialDesign:Card Padding="8"
                                                      HorizontalAlignment="Right"
-                                                     Margin="16,0,0,0"
+                                                     Margin="50,0,0,0"
                                                      UniformCornerRadius="8"
                                                      BorderThickness="0"
                                                      Background="{DynamicResource MaterialDesign.Brush.Primary}"
@@ -302,42 +309,54 @@
                                                      HorizontalAlignment="Stretch"
                                                      BorderThickness="0"
                                                      Style="{StaticResource MaterialDesignOutlinedCard}">
-                                    <materialDesign:Card.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="复制"
-                                                      Command="{x:Static ui:CommonCommands.CopyCommand}"
-                                                      CommandParameter="{Binding Raw,Mode=OneTime}">
-                                                <MenuItem.Icon>
-                                                    <materialDesign:PackIcon Kind="ContentCopy" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="删除"
-                                                      Command="Delete"
-                                                      CommandParameter="{Binding}">
-                                                <MenuItem.Icon>
-                                                    <materialDesign:PackIcon Kind="DeleteOutline" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="导出"
-                                                      ToolTip="导出为Markdown"
-                                                      Command="{x:Static ui:CommonCommands.ExportCommand}"
-                                                      CommandParameter="{Binding Raw,Mode=OneTime}">
-                                                <MenuItem.Icon>
-                                                    <materialDesign:PackIcon Kind="Export" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                        </ContextMenu>
-                                    </materialDesign:Card.ContextMenu>
-                                    <StackPanel>
-                                        <!--IsDocumentEnabled="True"
-                                                     IsReadOnly="True"-->
+                                    <Grid>
                                         <component:FlowDocumentScrollViewerEx BorderThickness="0"
                                                                               Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
                                                                               Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
-                                                                              Document="{Binding Document,Mode=OneTime}" />
+                                                                              Document="{Binding Document,Mode=OneTime}">
+                                            <component:FlowDocumentScrollViewerEx.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Command="Copy"
+                                                              Header="复制选定">
+                                                        <MenuItem.Icon>
+                                                            <materialDesign:PackIcon Kind="ContentCopy" />
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
+                                                    <MenuItem Command="SelectAll"
+                                                              Header="全选">
+                                                        <MenuItem.Icon>
+                                                            <materialDesign:PackIcon Kind="SelectAll" />
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
+                                                    <Separator />
+                                                    <MenuItem Header="复制全部"
+                                                              Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                                              CommandParameter="{Binding Raw,Mode=OneTime}">
+                                                        <MenuItem.Icon>
+                                                            <materialDesign:PackIcon Kind="ContentCopy" />
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
+                                                    <MenuItem Header="删除"
+                                                              Command="Delete"
+                                                              CommandParameter="{Binding}">
+                                                        <MenuItem.Icon>
+                                                            <materialDesign:PackIcon Kind="DeleteOutline" />
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
+                                                    <MenuItem Header="导出"
+                                                              ToolTip="导出为Markdown"
+                                                              Command="{x:Static ui:CommonCommands.ExportCommand}"
+                                                              CommandParameter="{Binding Raw,Mode=OneTime}">
+                                                        <MenuItem.Icon>
+                                                            <materialDesign:PackIcon Kind="Export" />
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
+                                                </ContextMenu>
+                                            </component:FlowDocumentScrollViewerEx.ContextMenu>
+                                        </component:FlowDocumentScrollViewerEx>
                                         <TextBlock Text="{Binding ErrorMessage,Mode=OneTime}"
                                                    Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-                                    </StackPanel>
+                                    </Grid>
                                 </materialDesign:Card>
                             </DataTemplate>
                         </component:DataTemplateTypePair.Template>

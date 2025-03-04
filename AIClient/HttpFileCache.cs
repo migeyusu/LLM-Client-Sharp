@@ -49,10 +49,10 @@ public class HttpFileCache
 
     public static HttpFileCache Instance
     {
-        get { return _lazy.Value; }
+        get { return FileCacheLazy.Value; }
     }
 
-    static Lazy<HttpFileCache> _lazy = new Lazy<HttpFileCache>(() =>
+    private static readonly Lazy<HttpFileCache> FileCacheLazy = new Lazy<HttpFileCache>(() =>
     {
         var fileInfo = new FileInfo(CacheConfigFilePath);
         if (fileInfo.Exists)

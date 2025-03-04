@@ -2,15 +2,9 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using LLMClient.Render;
 using LLMClient.UI;
-using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
-using TextMateSharp.Grammars;
 
 namespace LLMClient;
 

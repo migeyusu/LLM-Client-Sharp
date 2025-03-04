@@ -39,6 +39,19 @@ public partial class DialogView : UserControl
         }
     }
 
+    private void EnterKeyInputBinding_OnChecked(object sender, RoutedEventArgs e)
+    {
+        if (this.FindResource("PromptKeyBinding") is InputBinding findResource)
+            PromptTextBox.InputBindings.Add(findResource);
+    }
+
+    private void EnterKeyInputBinding_OnUnchecked(object sender, RoutedEventArgs e)
+    {
+        if (this.FindResource("PromptKeyBinding") is InputBinding findResource)
+        {
+            PromptTextBox.InputBindings.Remove(findResource);
+        }
+    }
 }
 
 /*public class FlowDocumentScrollViewerEx : ContentControl
