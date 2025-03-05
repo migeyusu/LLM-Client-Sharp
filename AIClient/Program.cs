@@ -16,7 +16,7 @@ public class Program
     static void Main(string[] args)
     {
         // 尝试获得互斥量的所有权
-        if (!mutex.WaitOne(TimeSpan.Zero, true))
+        if (!Debugger.IsAttached && !mutex.WaitOne(TimeSpan.Zero, true))
         {
             // 如果获取失败，则表示已有实例在运行
             MessageBox.Show("程序已经在运行！", "提示");
@@ -32,6 +32,7 @@ public class Program
                 .AddSingleton<GithubCopilotEndPoint>()
                 .AddTransient<ModelTypeConverter>()
                 .AddTransient<GlobalConfig>()
+                .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>();
             collection.AddAutoMapper(((provider, expression) =>
             {
@@ -67,7 +68,10 @@ public class Program
         }
         finally
         {
-            mutex.ReleaseMutex();
+            if (!Debugger.IsAttached)
+            {
+                mutex.ReleaseMutex();
+            }
         }
     }
 }

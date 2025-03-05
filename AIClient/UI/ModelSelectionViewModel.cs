@@ -56,7 +56,7 @@ public class ModelSelectionViewModel : BaseViewModel
             return;
         }
 
-        var model = SelectedEndpoint.GetModel(SelectedModelName);
+        var model = SelectedEndpoint.NewClient(SelectedModelName);
         if (model == null)
         {
             MessageBox.Show("create model failed!");

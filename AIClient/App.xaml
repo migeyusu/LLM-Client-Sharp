@@ -101,6 +101,23 @@
                                           Content="{TemplateBinding PropertyName}"
                                           materialDesign:CheckBoxAssist.CheckBoxSize="30"
                                           Margin="0,0,0,6" />
+                                <StackPanel Grid.Row="0" Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text="Range："
+                                               Margin="0,0,6,0" />
+                                    <TextBox materialDesign:HintAssist.Hint="Min"
+                                             IsReadOnly="True"
+                                             VerticalAlignment="Center"
+                                             Text="{Binding RelativeSource={RelativeSource TemplatedParent},Path=Minimum,Mode=TwoWay}" />
+                                    <TextBlock Text="-"
+                                               Margin="6,0" />
+                                    <TextBox materialDesign:HintAssist.Hint="Max"
+                                             VerticalAlignment="Center"
+                                             IsReadOnly="{TemplateBinding MaximumEditable,Converter={StaticResource InvertBooleanConverter}}"
+                                             Text="{Binding RelativeSource={RelativeSource TemplatedParent},Path=Maximum,Mode=TwoWay}" />
+                                </StackPanel>
                                 <TextBlock Grid.Row="1"
                                            Grid.Column="1"
                                            TextWrapping="Wrap"
@@ -183,6 +200,51 @@
                                 <ContentPresenter ContentSource="Header" />
                                 <ContentPresenter Margin="{TemplateBinding Padding}" />
                             </StackPanel>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style TargetType="{x:Type materialDesign:Snackbar}"
+                   BasedOn="{StaticResource {x:Type materialDesign:Snackbar}}">
+                <Setter Property="Height"
+                        Value="48" />
+                <Setter Property="Padding"
+                        Value="20,0" />
+            </Style>
+            <Style TargetType="{x:Type materialDesign:SnackbarMessage}">
+                <Setter Property="Height"
+                        Value="48" />
+                <Setter Property="VerticalContentAlignment"
+                        Value="Center" />
+                <Setter Property="HorizontalContentAlignment"
+                        Value="Center" />
+                <Setter Property="Padding"
+                        Value="10,5" />
+                <Setter Property="Margin"
+                        Value="0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="materialDesign:SnackbarMessage">
+                            <Border CornerRadius="8"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <!-- will become a Panel to wrap a "pretend" button -->
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  MaxHeight="{Binding RelativeSource={RelativeSource AncestorType={x:Type materialDesign:Snackbar}}, Path=(materialDesign:SnackbarMessage.ContentMaxHeight)}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Content="{TemplateBinding Content}"
+                                                  ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}">
+                                    <ContentPresenter.Resources>
+                                        <DataTemplate DataType="{x:Type system:String}">
+                                            <TextBlock Text="{Binding}" />
+                                        </DataTemplate>
+                                    </ContentPresenter.Resources>
+                                </ContentPresenter>
+                            </Border>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>

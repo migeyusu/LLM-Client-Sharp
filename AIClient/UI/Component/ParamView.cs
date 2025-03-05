@@ -55,4 +55,13 @@ public class ParamConfigView : ParamView
         get { return (bool)GetValue(AvailableProperty); }
         set { SetValue(AvailableProperty, value); }
     }
+
+    public static readonly DependencyProperty MaximumEditableProperty = DependencyProperty.Register(
+        nameof(MaximumEditable), typeof(bool), typeof(ParamConfigView), new PropertyMetadata(default(bool)));
+
+    public bool MaximumEditable
+    {
+        get { return (bool)GetValue(MaximumEditableProperty); }
+        set { SetValue(MaximumEditableProperty, value); }
+    }
 }

@@ -21,193 +21,11 @@
     </UserControl.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="70" />
             <RowDefinition MinHeight="60" />
             <RowDefinition Height="100"
                            MinHeight="60" />
         </Grid.RowDefinitions>
-        <materialDesign:Card Margin="5"
-                             Padding="10">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBox Text="{Binding Topic,Mode=TwoWay}"
-                         Style="{StaticResource MaterialDesignFilledTextBox}"
-                         materialDesign:HintAssist.Hint="主题"
-                         HorizontalAlignment="Left"
-                         MaxHeight="40"
-                         Padding="6,10,6,0"
-                         VerticalScrollBarVisibility="Auto"
-                         MinWidth="100"
-                         MaxWidth="300"
-                         TextWrapping="Wrap" />
-                <ContentControl Grid.Column="1"
-                                Content="{Binding Model,Mode=OneWay}">
-                    <ContentControl.ContentTemplateSelector>
-                        <component:TypeBasedDataTemplateSelector>
-                            <component:TypeBasedDataTemplateSelector.EmptyTemplate>
-                                <DataTemplate DataType="{x:Type models:AzureModelBase}" />
-                            </component:TypeBasedDataTemplateSelector.EmptyTemplate>
-                            <component:DataTemplateTypePair>
-                                <component:DataTemplateTypePair.Template>
-                                    <DataTemplate DataType="{x:Type models:AzureModelBase}">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock TextWrapping="Wrap"
-                                                       VerticalAlignment="Center"
-                                                       Padding="16,0"
-                                                       MaxHeight="{Binding RelativeSource={RelativeSource Self},Path=LineHeight,Mode=OneTime}"
-                                                       TextTrimming="WordEllipsis"
-                                                       Text="{Binding SystemPrompt,Mode=OneWay,StringFormat=System Prompt：{0},TargetNullValue={}}"
-                                                       Style="{StaticResource MaterialDesignBody2TextBlock}" />
-                                            <TextBlock Grid.Column="1"
-                                                       MaxWidth="200"
-                                                       TextWrapping="Wrap"
-                                                       HorizontalAlignment="Right"
-                                                       Margin="16,0"
-                                                       VerticalAlignment="Center"
-                                                       Style="{StaticResource MaterialDesignOverlineTextBlock}">
-                                                <TextBlock.Text>
-                                                    <MultiBinding
-                                                        StringFormat="PromptTokens:{0}, CompletionTokens:{1}, TotalTokens:{2}">
-                                                        <Binding Path="PromptTokens" />
-                                                        <Binding Path="CompletionTokens" />
-                                                        <Binding Path="TotalTokens" />
-                                                    </MultiBinding>
-                                                </TextBlock.Text>
-                                            </TextBlock>
-                                        </Grid>
-                                    </DataTemplate>
-                                </component:DataTemplateTypePair.Template>
-                            </component:DataTemplateTypePair>
-                        </component:TypeBasedDataTemplateSelector>
-                    </ContentControl.ContentTemplateSelector>
-                </ContentControl>
-                <!--<Button Grid.Column="1"
-                        HorizontalAlignment="Stretch"
-                        Style="{StaticResource MaterialDesignFlatButton}"
-                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
-                    <Button.CommandParameter>
-                    </Button.CommandParameter>
-                </Button>-->
-                <StackPanel Grid.Column="2"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right">
-                    <Button Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                            CommandParameter="{Binding Model,Mode=OneWay}"
-                            Style="{StaticResource MaterialDesignRaisedLightButton}"
-                            Background="White"
-                            Margin="0,0,10,0"
-                            materialDesign:ButtonAssist.CornerRadius="15"
-                            Padding="10,5"
-                            ToolTip="配置模型">
-                        <DockPanel DataContext="{Binding Model,Mode=OneWay}">
-                            <Image Source="{Binding  Icon,Mode=OneWay}"
-                                   Width="20"
-                                   Height="20" />
-                            <TextBlock Text="{Binding Name,Mode=OneTime}"
-                                       VerticalAlignment="Center"
-                                       Margin="10,0,0,0" />
-                        </DockPanel>
-                    </Button>
-                    <Button Style="{StaticResource MaterialDesignIconButton}"
-                            ToolTip="model信息"
-                            Width="36"
-                            Height="36"
-                            Visibility="{Binding Model.Info,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
-                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                            CommandParameter="{Binding Model.Info,Mode=OneWay}">
-                        <materialDesign:PackIcon Kind="InformationOutline"
-                                                 Width="20"
-                                                 Height="20" />
-                    </Button>
-                    <Button Style="{StaticResource MaterialDesignIconButton}"
-                            Width="36"
-                            Height="36"
-                            ToolTip="清空对话"
-                            Command="{Binding ClearDialogCommand}">
-                        <materialDesign:PackIcon
-                            Kind="Delete"
-                            Width="20"
-                            Height="20" />
-                    </Button>
-                    <Button Style="{StaticResource MaterialDesignIconButton}"
-                            Width="36"
-                            Height="36"
-                            ToolTip="清空上下文"
-                            Command="{Binding ClearContextCommand}">
-                        <materialDesign:PackIcon
-                            Kind="Autorenew"
-                            Width="20"
-                            Height="20" />
-                    </Button>
-                    <materialDesign:ColorZone Margin="16,0,0,0"
-                                              Padding="8,4,8,4"
-                                              Panel.ZIndex="1"
-                                              VerticalAlignment="Center"
-                                              materialDesign:ElevationAssist.Elevation="Dp2"
-                                              CornerRadius="6"
-                                              Mode="Standard">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Button Style="{StaticResource MaterialDesignToolButton}"
-                                    Command="{Binding SearchCommand}"
-                                    CommandParameter="{Binding ElementName=SearchTextBox,Path=Text,Mode=OneWay}">
-                                <materialDesign:PackIcon
-                                    Kind="Search"
-                                    Opacity=".56" />
-                            </Button>
-                            <TextBox Grid.Column="1"
-                                     MinWidth="120"
-                                     x:Name="SearchTextBox"
-                                     Margin="8,0,0,0"
-                                     VerticalAlignment="Center"
-                                     materialDesign:HintAssist.Hint="Search"
-                                     materialDesign:TextFieldAssist.DecorationVisibility="Hidden"
-                                     BorderThickness="0" />
-                        </Grid>
-                    </materialDesign:ColorZone>
-                </StackPanel>
-            </Grid>
-        </materialDesign:Card>
-        <Grid Grid.Row="2"
-              IsEnabled="{Binding Model.IsResponsing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
-            <TextBox x:Name="PromptTextBox"
-                     materialDesign:HintAssist.Hint="输入Prompt"
-                     AcceptsReturn="True"
-                     VerticalAlignment="Stretch"
-                     HorizontalAlignment="Stretch"
-                     Margin="0,10,0,0"
-                     Text="{Binding  PromptString,Mode=TwoWay}"
-                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                     TextWrapping="Wrap"
-                     VerticalScrollBarVisibility="Auto" />
-            <StackPanel Orientation="Horizontal"
-                        Margin="0,0,16,8"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Bottom">
-                <CheckBox Content="回车发送"
-                          Checked="EnterKeyInputBinding_OnChecked"
-                          Unchecked="EnterKeyInputBinding_OnUnchecked"
-                          materialDesign:CheckBoxAssist.CheckBoxSize="30" />
-                <Button Command="{Binding SendRequestCommand}"
-                        Width="80"
-                        Height="30"
-                        Margin="16,0,0,0"
-                        Style="{StaticResource MaterialDesignFlatLightButton}"
-                        Content="发送" />
-            </StackPanel>
-        </Grid>
-        <Button Grid.Row="2"
+        <Button Grid.Row="1"
                 materialDesign:ButtonAssist.CornerRadius="18"
                 Height="36"
                 materialDesign:ElevationAssist.Elevation="Dp16"
@@ -227,17 +45,13 @@
                            Style="{StaticResource MaterialDesignBody1TextBlock}" />
             </StackPanel>
         </Button>
-        <!--<ScrollViewer Grid.Row="1"
-                      x:Name="ScrollViewer"
-                      Margin="0,10"
-                      Background="White">-->
-        <GridSplitter Grid.Row="1" Grid.Column="0"
+        <GridSplitter Grid.Row="0"
                       VerticalAlignment="Bottom"
                       HorizontalAlignment="Stretch"
                       Background="DarkGray"
                       Margin="20,0"
                       Height="3" />
-        <ListBox Grid.Row="1"
+        <ListBox Grid.Row="0"
                  x:Name="DialogListBox"
                  Margin="0,0,5,5"
                  VirtualizingPanel.IsVirtualizing="True"
@@ -401,7 +215,7 @@
                     </component:DataTemplateTypePair>
                     <component:DataTemplateTypePair>
                         <component:DataTemplateTypePair.Template>
-                            <DataTemplate DataType="{x:Type endpoints:LLMModelbase}">
+                            <DataTemplate DataType="{x:Type endpoints:LlmClientBase}">
                                 <GroupBox
                                     Visibility="{Binding IsResponsing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                     materialDesign:ColorZoneAssist.Mode="Dark"
@@ -452,6 +266,33 @@
                                 Executed="OnRefreshExecuted" />
             </ListBox.CommandBindings>
         </ListBox>
-        <!-- </ScrollViewer> -->
+        <Grid Grid.Row="1"
+              IsEnabled="{Binding Model.IsResponsing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+            <TextBox x:Name="PromptTextBox"
+                     materialDesign:HintAssist.Hint="输入Prompt"
+                     AcceptsReturn="True"
+                     VerticalAlignment="Stretch"
+                     HorizontalAlignment="Stretch"
+                     Margin="0,10,0,0"
+                     Text="{Binding  PromptString,Mode=TwoWay}"
+                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto" />
+            <StackPanel Orientation="Horizontal"
+                        Margin="0,0,16,8"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom">
+                <CheckBox Content="回车发送"
+                          Checked="EnterKeyInputBinding_OnChecked"
+                          Unchecked="EnterKeyInputBinding_OnUnchecked"
+                          materialDesign:CheckBoxAssist.CheckBoxSize="30" />
+                <Button Command="{Binding SendRequestCommand}"
+                        Width="80"
+                        Height="30"
+                        Margin="16,0,0,0"
+                        Style="{StaticResource MaterialDesignFlatLightButton}"
+                        Content="发送" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

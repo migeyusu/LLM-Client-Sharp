@@ -12,14 +12,14 @@ public interface ILLMEndpoint
 
     string Name { get; }
 
-    IList<string> AvailableModels { get; }
+    IList<string> AvailableModelNames { get; }
 
-    ILLMModel? GetModel(string modelName);
+    ILLMModelClient? NewClient(string modelName);
 
     Task InitializeAsync();
 }
 
-public interface ILLMModel : IDialogViewItem
+public interface ILLMModelClient : IDialogViewItem
 {
     /// <summary>
     /// 唯一名称
@@ -31,6 +31,12 @@ public interface ILLMModel : IDialogViewItem
     bool IsResponsing { get; }
 
     object? Info { get; }
+
+    int TotalTokens { get; }
+
+    int PromptTokens { get; }
+
+    int CompletionTokens { get; }
 
     ObservableCollection<string> PreResponse { get; }
 

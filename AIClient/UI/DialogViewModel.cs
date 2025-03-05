@@ -65,11 +65,11 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public ObservableCollection<IDialogViewItem> Dialog { get; set; } = new ObservableCollection<IDialogViewItem>();
+    public ObservableCollection<IDialogViewItem> Dialog { get; set; } = new();
 
-    private ILLMModel? _model;
+    private ILLMModelClient? _model;
 
-    public ILLMModel? Model
+    public ILLMModelClient? Model
     {
         get => _model;
         set
@@ -163,7 +163,7 @@ public class DialogViewModel : BaseViewModel
         }
         finally
         {
-            Dialog.Remove(Dialog.Last(item => item is ILLMModel));
+            Dialog.Remove(Dialog.Last(item => item is ILLMModelClient));
             _requestTokenSource?.Dispose();
         }
 
@@ -249,7 +249,7 @@ public class DialogViewModel : BaseViewModel
         }
         finally
         {
-            Dialog.Remove(Dialog.Last(item => item is ILLMModel));
+            Dialog.Remove(Dialog.Last(item => item is ILLMModelClient));
             _requestTokenSource?.Dispose();
         }
 

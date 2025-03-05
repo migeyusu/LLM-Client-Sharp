@@ -31,14 +31,29 @@ public class CodeContext
 
     public string? Extension { get; set; }
     public StringLineGroup CodeGroup { get; set; }
-    public ICommand CopyCommand => new ActionCommand(o => { Clipboard.SetText(CodeGroup.ToString()); });
+
+    public ICommand CopyCommand => new ActionCommand(o =>
+    {
+        var s = CodeGroup.ToString();
+        if (!string.IsNullOrEmpty(s))
+        {
+            try
+            {
+                Clipboard.SetText(s);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+    });
 }
 
 public class TextMateCodeRenderer : CodeBlockRenderer
 {
     public static ComponentResourceKey TokenStyleKey { get; } =
         new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(TokenStyleKey));
-    
+
     public static ComponentResourceKey CodeBlockHeaderStyleKey { get; } =
         new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(CodeBlockHeaderStyleKey));
 
@@ -179,13 +194,13 @@ public class TextmateColoredRun : Run
     {
         Token = token;
     }
-    
+
     public TextmateColoredRun(string text, IToken token) : base(text)
     {
         Token = token;
     }
-    
-        
+
+
     protected override void OnInitialized(EventArgs e)
     {
         base.OnInitialized(e);

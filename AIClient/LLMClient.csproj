@@ -93,13 +93,10 @@
         <XamlRuntime>Wpf</XamlRuntime>
         <SubType>Designer</SubType>
       </Page>
-      <Page Update="Endpoints\Azure\Models\AzureModelBaseView.xaml">
-        <Generator>MSBuild:Compile</Generator>
-      </Page>
       <Page Update="Endpoints\Azure\Models\AzureModelInfoView.xaml">
         <Generator>MSBuild:Compile</Generator>
       </Page>
-      <Page Update="Endpoints\Azure\Models\AzureTextModelBaseView.xaml">
+      <Page Update="Endpoints\Azure\Models\AzureTextClientBaseView.xaml">
         <Generator>MSBuild:Compile</Generator>
       </Page>
       <Page Update="Endpoints\Azure\Models\DeepSeekR1View.xaml">
@@ -133,6 +130,10 @@
       <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf" />
       <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
       <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Utility\" />
     </ItemGroup>
 
 </Project>

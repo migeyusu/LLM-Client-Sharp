@@ -39,14 +39,14 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogModel>,
         if (sourceDialogItems != null)
         {
             dialogViewModel.Dialog =
-                new ObservableCollection<IDialogViewItem>(sourceDialogItems.Where(item => item is not ILLMModel));
+                new ObservableCollection<IDialogViewItem>(sourceDialogItems.Where(item => item is not ILLMModelClient));
         }
 
         var llmEndpoint = _service.AvailableEndpoints.FirstOrDefault((endpoint => endpoint.Name == source.EndPoint));
         if (llmEndpoint != null)
         {
             dialogViewModel.Endpoint = llmEndpoint;
-            var llmModel = llmEndpoint.GetModel(source.Model ?? string.Empty);
+            var llmModel = llmEndpoint.NewClient(source.Model ?? string.Empty);
             if (llmModel != null)
             {
                 dialogViewModel.Model = llmModel;

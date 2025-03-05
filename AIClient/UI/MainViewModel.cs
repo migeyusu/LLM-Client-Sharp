@@ -4,8 +4,6 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Threading;
 using AutoMapper;
 using LLMClient.Render;
 using LLMClient.UI.Component;
@@ -18,7 +16,12 @@ namespace LLMClient.UI;
 public class MainViewModel : BaseViewModel
 {
     private readonly IMapper _mapper;
-    public IEndpointService ConfigureViewModel { get; set; }
+
+    public SnackbarMessageQueue MessageQueue { get; set; } = new SnackbarMessageQueue();
+
+    public IEndpointService ConfigureViewModel { get; }
+
+    public IPromptsResource PromptsResource { get; }
 
     public bool IsInitialized { get; private set; }
 
@@ -127,7 +130,7 @@ public class MainViewModel : BaseViewModel
                 return;
             }
 
-            var model = selectionViewModel.SelectedEndpoint.GetModel(selectionViewModel.SelectedModelName);
+            var model = selectionViewModel.SelectedEndpoint.NewClient(selectionViewModel.SelectedModelName);
             if (model == null)
             {
                 MessageBox.Show("No model created!");
@@ -163,9 +166,11 @@ public class MainViewModel : BaseViewModel
 
     private bool _isProcessing;
 
-    public MainViewModel(IEndpointService configureViewModel, IMapper mapper)
+    public MainViewModel(IEndpointService configureViewModel, IMapper mapper, IPromptsResource promptsResource)
     {
+        MessageEventBus.MessageReceived += s => this.MessageQueue.Enqueue(s);
         _mapper = mapper;
+        PromptsResource = promptsResource;
         ConfigureViewModel = configureViewModel;
         var paletteHelper = new PaletteHelper();
         Theme theme = paletteHelper.GetTheme();
@@ -284,6 +289,7 @@ public class MainViewModel : BaseViewModel
         }
 
         UpdateResource(_themeName);
+        await this.PromptsResource.Initialize();
         IsProcessing = false;
         IsInitialized = true;
     }
