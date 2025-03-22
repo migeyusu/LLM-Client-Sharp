@@ -36,8 +36,8 @@ public class Program
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>();
             collection.AddAutoMapper(((provider, expression) =>
             {
-                expression.CreateMap<DialogModel, DialogViewModel>().ConvertUsing<ModelTypeConverter>();
-                expression.CreateMap<DialogViewModel, DialogModel>().ConvertUsing<ModelTypeConverter>();
+                expression.CreateMap<DialogPersistanceModel, DialogViewModel>().ConvertUsing<ModelTypeConverter>();
+                expression.CreateMap<DialogViewModel, DialogPersistanceModel>().ConvertUsing<ModelTypeConverter>();
                 expression.CreateMap<APIEndPoint, APIEndPoint>();
                 expression.CreateMap<DefaultOption, DefaultOption>();
                 // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();

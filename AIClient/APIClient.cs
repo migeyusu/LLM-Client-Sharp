@@ -12,6 +12,8 @@ public interface ILLMEndpoint
 
     string Name { get; }
 
+    ImageSource? Icon { get; }
+
     IList<string> AvailableModelNames { get; }
 
     ILLMModelClient? NewClient(string modelName);
@@ -26,9 +28,11 @@ public interface ILLMModelClient : IDialogViewItem
     /// </summary>
     string Name { get; }
 
+    ILLMEndpoint Endpoint { get; }
+
     ImageSource? Icon { get; }
 
-    bool IsResponsing { get; }
+    bool IsResponding { get; }
 
     object? Info { get; }
 

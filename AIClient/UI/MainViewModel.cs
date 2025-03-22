@@ -87,7 +87,7 @@ public class MainViewModel : BaseViewModel
 
     private const string ThemeColorResourceKey = "CodeBlock.TextMateSharp.Theme";
 
-    private ThemeName _themeName = ThemeName.Light;
+    private ThemeName _themeName = ThemeName.LightPlus;
 
     public ThemeName ThemeName
     {
@@ -137,12 +137,8 @@ public class MainViewModel : BaseViewModel
                 return;
             }
 
-            var dialogViewModel = new DialogViewModel()
-            {
-                Topic = selectionViewModel.DialogName,
-                Model = model,
-                Endpoint = selectionViewModel.SelectedEndpoint
-            };
+            var dialogViewModel =
+                new DialogViewModel(selectionViewModel.DialogName, model);
             PreDialog = dialogViewModel;
             this.DialogViewModels.Add(dialogViewModel);
         }
@@ -212,11 +208,12 @@ public class MainViewModel : BaseViewModel
             {
                 await using (var openRead = fileInfo.OpenRead())
                 {
-                    var dialogModel = await JsonSerializer.DeserializeAsync<DialogModel>(openRead);
+                    var dialogModel = await JsonSerializer.DeserializeAsync<DialogPersistanceModel>(openRead);
                     if (dialogModel != null)
                     {
-                        var viewModel = _mapper.Map<DialogModel, DialogViewModel>(dialogModel);
+                        var viewModel = _mapper.Map<DialogPersistanceModel, DialogViewModel>(dialogModel);
                         DialogViewModels.Add(viewModel);
+                        viewModel.IsDataChanged = false;
                     }
                 }
             }
@@ -248,7 +245,7 @@ public class MainViewModel : BaseViewModel
                 continue;
             }
 
-            var dialogModel = _mapper.Map<DialogViewModel, DialogModel>(dialogViewModel);
+            var dialogModel = _mapper.Map<DialogViewModel, DialogPersistanceModel>(dialogViewModel);
             var dialogId = dialogModel.DialogId;
             if (fileInfos.TryGetValue(dialogId.ToString(), out var fileInfo))
             {

@@ -24,6 +24,7 @@
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.Amazon" Version="1.37.0-alpha" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.37.0" />
         <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.37.0" />
+        <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3124.44" />
         <PackageReference Include="SkiaSharp" Version="3.118.0-preview.2.3" />
         <PackageReference Include="Svg.Skia" Version="2.0.0.4" />
         <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
@@ -130,6 +131,21 @@
       <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf" />
       <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
       <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
+      <Resource Include="Resources\Images\github-copilot-icon.png" />
+      <None Remove="Resources\Images\azure-icon.png" />
+      <Resource Include="Resources\Images\azure-icon.png" />
+      <None Remove="Resources\Images\llm\chatgpt-icon.png" />
+      <Resource Include="Resources\Images\llm\chatgpt.png" />
+      <None Remove="Resources\Images\llm\claude-ai-icon.png" />
+      <Resource Include="Resources\Images\llm\claude.png" />
+      <None Remove="Resources\Images\llm\deepseek-logo-icon.png" />
+      <Resource Include="Resources\Images\llm\deepseek.png" />
+      <None Remove="Resources\Images\llm\google-gemini-icon.png" />
+      <Resource Include="Resources\Images\llm\gemini.png" />
+      <None Remove="Resources\Images\llm\grok-logo-icon.png" />
+      <Resource Include="Resources\Images\llm\grok.png" />
+      <None Remove="Resources\Images\llm\mistral-ai-icon.png" />
+      <Resource Include="Resources\Images\llm\mistral.png" />
     </ItemGroup>
 
     <ItemGroup>

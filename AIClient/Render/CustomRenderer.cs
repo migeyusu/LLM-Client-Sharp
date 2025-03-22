@@ -1,5 +1,6 @@
 ﻿using Markdig.Renderers;
 using TextMateSharp.Grammars;
+using Block = Markdig.Syntax.Block;
 
 namespace LLMClient.Render;
 

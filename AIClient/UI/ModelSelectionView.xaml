@@ -41,8 +41,14 @@
                 <TreeView.Resources>
                     <HierarchicalDataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}"
                                               ItemsSource="{Binding AvailableModelsInfos, Mode=OneTime}">
-                        <TextBlock Margin="3,2"
-                                   Text="{Binding DisplayName, Mode=OneTime}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding Icon,Mode=OneTime}"
+                                   Width="26"
+                                   Height="26" />
+                            <TextBlock Margin="10,0"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding DisplayName, Mode=OneTime}" />
+                        </StackPanel>
                     </HierarchicalDataTemplate>
                     <DataTemplate DataType="{x:Type models:AzureModelInfo}">
                         <DockPanel>
@@ -92,7 +98,8 @@
                     VerticalAlignment="Center"
                     Margin="10,0">
             <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}">
-                <Run Text="{Binding SelectedEndpoint.DisplayName, StringFormat=选择的服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
+                <Run
+                    Text="{Binding SelectedEndpoint.DisplayName, StringFormat=选择的服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
                 <Run Text="{Binding SelectedModelName,StringFormat=选择的模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
             </TextBlock>
         </StackPanel>

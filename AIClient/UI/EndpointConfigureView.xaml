@@ -30,8 +30,19 @@
                  SelectedItem="{Binding SelectedEndpoint,Mode=OneWayToSource}"
                  MaxHeight="120"
                  BorderBrush="DarkGray"
-                 DisplayMemberPath="DisplayName"
                  BorderThickness="0,0,0,1">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type local:ILLMEndpoint}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Width="20"
+                               Height="20"
+                               Source="{Binding Icon,Mode=OneWay}" />
+                        <TextBlock Text="{Binding DisplayName,Mode=OneWay}"
+                                   Margin="6,0,0,0"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel IsItemsHost="True" />

@@ -133,13 +133,15 @@ public class TextMateCodeRenderer : CodeBlockRenderer
     private static void Tokenize(WpfRenderer renderer, FencedCodeBlock block, IGrammar grammar)
     {
         IStateStack? ruleStack = null;
-        if (block.Lines.Lines == null)
+        var stringLineGroup = block.Lines;
+        if (stringLineGroup.Lines == null)
         {
             return;
         }
 
-        foreach (var blockLine in block.Lines.Lines)
+        for (var index = 0; index < stringLineGroup.Count; index++)
         {
+            var blockLine = stringLineGroup.Lines[index];
             var line = blockLine.Slice.ToString();
             if (blockLine.Slice.Length == 0 || string.IsNullOrEmpty(line))
             {

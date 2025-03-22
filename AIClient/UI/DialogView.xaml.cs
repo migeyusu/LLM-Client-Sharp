@@ -1,8 +1,10 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace LLMClient.UI;
 
@@ -51,6 +53,17 @@ public partial class DialogView : UserControl
         {
             PromptTextBox.InputBindings.Remove(findResource);
         }
+    }
+
+    private void ScrollToNext_OnClick(object sender, RoutedEventArgs e)
+    {
+        DialogListBox.ScrollToNextPage();
+        /*var all = DialogListBox.GetVisibleItemsOptimized().ToArray();
+        var lastOrDefault = all.LastOrDefault();
+        if (lastOrDefault != null)
+        {
+            this.ViewModel.ScrollNext(lastOrDefault);
+        }*/
     }
 }
 

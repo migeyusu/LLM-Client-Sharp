@@ -3,8 +3,8 @@ using AutoMapper;
 
 namespace LLMClient.UI;
 
-public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogModel>,
-    ITypeConverter<DialogModel, DialogViewModel>
+public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistanceModel>,
+    ITypeConverter<DialogPersistanceModel, DialogViewModel>
 {
     private readonly IEndpointService _service;
 
@@ -13,51 +13,49 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogModel>,
         this._service = service;
     }
 
-    public DialogModel Convert(DialogViewModel source, DialogModel destination, ResolutionContext context)
+    public DialogPersistanceModel Convert(DialogViewModel source, DialogPersistanceModel destination,
+        ResolutionContext context)
     {
-        return new DialogModel()
+        return new DialogPersistanceModel()
         {
             DialogId = source.DialogId,
             DialogItems = source.Dialog.ToArray(),
             Topic = source.Topic,
-            EndPoint = source.Endpoint?.Name,
+            EndPoint = source.Model?.Endpoint.Name,
             Model = source.Model?.Name,
             PromptString = source.PromptString,
             Params = source.Model?.Serialize(),
         };
     }
 
-    public DialogViewModel Convert(DialogModel source, DialogViewModel destination, ResolutionContext context)
+    public DialogViewModel Convert(DialogPersistanceModel source, DialogViewModel destination,
+        ResolutionContext context)
     {
-        var dialogViewModel = new DialogViewModel()
-        {
-            Topic = source.Topic,
-            DialogId = source.DialogId,
-            PromptString = source.PromptString,
-        };
         var sourceDialogItems = source.DialogItems;
         if (sourceDialogItems != null)
         {
-            dialogViewModel.Dialog =
-                new ObservableCollection<IDialogViewItem>(sourceDialogItems.Where(item => item is not ILLMModelClient));
+            sourceDialogItems = sourceDialogItems.Where(item => item is not ILLMModelClient).ToArray();
         }
 
         var llmEndpoint = _service.AvailableEndpoints.FirstOrDefault((endpoint => endpoint.Name == source.EndPoint));
+        ILLMModelClient? llmModelClient = null;
         if (llmEndpoint != null)
         {
-            dialogViewModel.Endpoint = llmEndpoint;
-            var llmModel = llmEndpoint.NewClient(source.Model ?? string.Empty);
-            if (llmModel != null)
+            llmModelClient = llmEndpoint.NewClient(source.Model ?? string.Empty);
+            if (llmModelClient != null)
             {
-                dialogViewModel.Model = llmModel;
                 var sourceJsonModel = source.Params;
                 if (sourceJsonModel != null)
                 {
-                    llmModel.Deserialize(sourceJsonModel);
+                    llmModelClient.Deserialize(sourceJsonModel);
                 }
             }
         }
 
-        return dialogViewModel;
+        return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
+        {
+            DialogId = source.DialogId,
+            PromptString = source.PromptString,
+        };
     }
 }

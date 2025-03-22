@@ -10,6 +10,7 @@
              xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              xmlns:collections="clr-namespace:System.Collections;assembly=System.Runtime"
+             xmlns:system="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:DialogViewModel}"
              d:DesignHeight="600"
@@ -32,7 +33,7 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Command="{Binding CancelCommand}"
-                Visibility="{Binding Model.IsResponsing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                Visibility="{Binding Model.IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                 Style="{StaticResource MaterialDesignRaisedDarkButton}">
             <StackPanel Orientation="Horizontal">
                 <ProgressBar IsIndeterminate="True"
@@ -217,7 +218,7 @@
                         <component:DataTemplateTypePair.Template>
                             <DataTemplate DataType="{x:Type endpoints:LlmClientBase}">
                                 <GroupBox
-                                    Visibility="{Binding IsResponsing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                     materialDesign:ColorZoneAssist.Mode="Dark"
                                     Style="{StaticResource MaterialDesignCardGroupBox}">
                                     <GroupBox.Header>
@@ -266,8 +267,30 @@
                                 Executed="OnRefreshExecuted" />
             </ListBox.CommandBindings>
         </ListBox>
+        <StackPanel Grid.Row="0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,26,10">
+            <StackPanel.Resources>
+                <Style TargetType="{x:Type Button}"
+                       BasedOn="{StaticResource MaterialDesignFloatingActionMiniDarkButton}">
+                    <Setter Property="Margin"
+                            Value="0,10,0,0" />
+                    <Setter Property="Width"
+                            Value="26" />
+                    <Setter Property="Height"
+                            Value="26" />
+                </Style>
+            </StackPanel.Resources>
+            <Button Click="ScrollToNext_OnClick">
+                <materialDesign:PackIcon Kind="ArrowDownBold" />
+            </Button>
+            <Button Command="{Binding ScrollToEndCommand}">
+                <materialDesign:PackIcon Kind="FormatVerticalAlignBottom" />
+            </Button>
+        </StackPanel>
         <Grid Grid.Row="1"
-              IsEnabled="{Binding Model.IsResponsing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+              IsEnabled="{Binding Model.IsResponding,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
             <TextBox x:Name="PromptTextBox"
                      materialDesign:HintAssist.Hint="输入Prompt"
                      AcceptsReturn="True"

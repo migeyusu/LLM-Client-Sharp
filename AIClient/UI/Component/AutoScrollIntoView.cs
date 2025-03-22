@@ -12,22 +12,6 @@ public class AutoScrollIntoView
         new FrameworkPropertyMetadata(default(object),
             new PropertyChangedCallback(ScrollToItemPropertyChangedCallback)));
 
-    public static T? FindParent<T>(DependencyObject child) where T : DependencyObject
-    {
-        //get parent item
-        DependencyObject? parentObject = VisualTreeHelper.GetParent(child);
-
-        //we've reached the end of the tree
-        if (parentObject == null) return null;
-
-        //check if the parent matches the type we're looking for
-        T? parent = parentObject as T;
-        if (parent != null)
-            return parent;
-        else
-            return FindParent<T>(parentObject);
-    }
-
     private static void ScrollToItemPropertyChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is ListBox listBox)

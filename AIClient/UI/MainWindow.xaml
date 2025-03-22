@@ -12,6 +12,7 @@
                           xmlns:grammars="clr-namespace:TextMateSharp.Grammars;assembly=TextMateSharp.Grammars"
                           xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                           xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
+                          xmlns:wpf="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -187,6 +188,14 @@
                                             Height="500" />
                 </HeaderedContentControl>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type openAiapi:APIModelInfo}">
+                <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                        Header="Model Description">
+                    <openAiapi:APIModelInfoView Width="800"
+                                                Height="500"
+                                                Uri="{Binding InfoUri,Mode=OneTime}"/>
+                </HeaderedContentControl>
+            </DataTemplate>
         </materialDesign:DialogHost.Resources>
         <Grid Margin="10"
               IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
@@ -195,7 +204,7 @@
                 <RowDefinition />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="230"
+                <ColumnDefinition Width="260"
                                   MaxWidth="600"
                                   MinWidth="230" />
                 <ColumnDefinition />
@@ -253,7 +262,7 @@
                 </Button>-->
             </StackPanel>
             <ListBox Grid.Row="1" Grid.Column="0" SelectedItem="{Binding PreDialog,Mode=TwoWay}"
-                     Margin="0,10,6,0"
+                     Margin="0,0,6,0"
                      BorderThickness="0"
                      ItemsSource="{Binding DialogViewModels,Mode=OneWay}">
                 <ListBox.CommandBindings>
@@ -393,40 +402,55 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type ui:DialogViewModel}">
-                        <DockPanel>
-                            <Image DockPanel.Dock="Left"
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Image Grid.RowSpan="3"
                                    Width="30"
                                    Height="30"
-                                   Margin="10,0"
+                                   Margin="10"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
                                    VerticalAlignment="Center"
                                    Source="{Binding Model.Icon,Mode=OneWay}" />
-                            <Grid DockPanel.Dock="Right">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition />
-                                </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Grid.Column="1"
+                                  VerticalAlignment="Top">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto"
+                                                      MaxWidth="120" />
+                                </Grid.ColumnDefinitions>
                                 <TextBlock Text="{Binding Model.Name}"
-                                           Margin="0,0,0,5"
                                            Foreground="DimGray"
                                            TextWrapping="NoWrap"
                                            TextTrimming="CharacterEllipsis"
-                                           VerticalAlignment="Top"
+                                           VerticalAlignment="Center"
                                            Style="{StaticResource MaterialDesignCaptionTextBlock}" />
-                                <TextBlock VerticalAlignment="Center"
-                                           HorizontalAlignment="Left"
-                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                           Grid.Row="1"
-                                           Text="{Binding Topic,Mode=OneWay}" />
-                                <TextBlock Grid.Row="2"
-                                           Text="{Binding Shortcut,Mode=OneTime}"
-                                           Foreground="DimGray"
-                                           VerticalAlignment="Bottom"
-                                           TextWrapping="NoWrap"
-                                           TextTrimming="CharacterEllipsis"
-                                           Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                <TextBlock Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding Model.Endpoint.DisplayName,Mode=OneTime}"
+                                           Margin="6,0,0,0" />
                             </Grid>
-                        </DockPanel>
+                            <TextBlock VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"
+                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                       Grid.Row="1"
+                                       Grid.Column="1"
+                                       Text="{Binding Topic,Mode=OneWay}" />
+                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                       Text="{Binding Shortcut,Mode=OneTime}"
+                                       Foreground="DimGray"
+                                       VerticalAlignment="Bottom"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                        </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -441,10 +465,12 @@
                                          Height="14"
                                          Kind="Plus" />
             </Button>
-            <materialDesign:Card Grid.Row="0" Grid.Column="1"
+            <materialDesign:Card Grid.Row="0"
+                                 Grid.Column="1"
                                  Margin="5"
-                                 Padding="10"
-                                 Height="70">
+                                 Padding="10,4"
+                                 Height="50"
+                                 Visibility="{Binding PreDialog,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -461,7 +487,33 @@
                              MinWidth="100"
                              MaxWidth="300"
                              TextWrapping="Wrap" />
-                    <Grid Grid.Column="1">
+                    <ComboBox Grid.Column="1"
+                              VirtualizingPanel.IsVirtualizing="False"
+                              ScrollViewer.CanContentScroll="False"
+                              x:Name="PromptsComboBox"
+                              VerticalAlignment="Bottom"
+                              Margin="10,0"
+                              ItemsSource="{Binding PromptsResource.SystemPrompts,Mode=OneWay}"
+                              materialDesign:TextFieldAssist.HasClearButton="True"
+                              MaxDropDownHeight="400"
+                              IsEditable="True"
+                              Text="{Binding  PreDialog.Model.SystemPrompt,Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type System:String}">
+                                <TextBlock TextWrapping="Wrap"
+                                           TextTrimming="WordEllipsis"
+                                           Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="{x:Type ComboBoxItem}"
+                                   BasedOn="{StaticResource MaterialDesignComboBoxItemStyle}">
+                                <Setter Property="MaxWidth"
+                                        Value="{Binding ElementName=PromptsComboBox,Path=ActualWidth,Mode=OneWay}" />
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                    </ComboBox>
+                    <!--<Grid Grid.Column="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition />
                             <ColumnDefinition Width="Auto" />
@@ -473,10 +525,21 @@
                                    TextTrimming="WordEllipsis"
                                    Text="{Binding SystemPrompt,Mode=OneWay,StringFormat=System Prompt：{0},TargetNullValue={}}"
                                    Style="{StaticResource MaterialDesignBody2TextBlock}" />
-                        <TextBlock Grid.Column="1"
-                                   MaxWidth="200"
+                    </Grid>-->
+                    <!--<Button Grid.Column="1"
+                        HorizontalAlignment="Stretch"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
+                    <Button.CommandParameter>
+                    </Button.CommandParameter>
+                </Button>-->
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                DataContext="{Binding PreDialog,Mode=OneWay}">
+                        <TextBlock MaxWidth="200"
                                    TextWrapping="Wrap"
-                                   DataContext="{Binding PreDialog.Model,Mode=OneWay}"
+                                   DataContext="{Binding Model,Mode=OneWay}"
                                    HorizontalAlignment="Right"
                                    Margin="16,0"
                                    VerticalAlignment="Center"
@@ -490,18 +553,6 @@
                                 </MultiBinding>
                             </TextBlock.Text>
                         </TextBlock>
-                    </Grid>
-                    <!--<Button Grid.Column="1"
-                        HorizontalAlignment="Stretch"
-                        Style="{StaticResource MaterialDesignFlatButton}"
-                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
-                    <Button.CommandParameter>
-                    </Button.CommandParameter>
-                </Button>-->
-                    <StackPanel Grid.Column="2"
-                                Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                DataContext="{Binding PreDialog,Mode=OneWay}">
                         <Button Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                 CommandParameter="{Binding Model,Mode=OneWay}"
                                 Style="{StaticResource MaterialDesignRaisedLightButton}"

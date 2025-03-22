@@ -52,6 +52,7 @@
                                 <TextBlock Text="{TemplateBinding PropertyName}"
                                            VerticalAlignment="Bottom"
                                            FontWeight="Black"
+                                           Grid.ColumnSpan="2"
                                            Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="1"
@@ -64,7 +65,7 @@
                                          Padding="4"
                                          Margin="0,10"
                                          BorderBrush="Gainsboro"
-                                         Width="100"
+                                         Width="120"
                                          Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Value, Mode=TwoWay}"
                                          TextWrapping="NoWrap"
                                          FontSize="16" />
