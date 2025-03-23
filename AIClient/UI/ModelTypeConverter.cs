@@ -19,6 +19,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersista
         return new DialogPersistanceModel()
         {
             DialogId = source.DialogId,
+            EditTime = source.EditTime,
             DialogItems = source.Dialog.ToArray(),
             Topic = source.Topic,
             EndPoint = source.Model?.Endpoint.Name,
@@ -54,6 +55,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersista
 
         return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
         {
+            EditTime = source.EditTime,
             DialogId = source.DialogId,
             PromptString = source.PromptString,
         };

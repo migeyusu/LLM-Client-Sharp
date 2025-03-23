@@ -63,8 +63,14 @@
                     </DataTemplate>
                     <HierarchicalDataTemplate DataType="{x:Type openAiapi:APIEndPoint}"
                                               ItemsSource="{Binding Models,Mode=OneWay}">
-                        <TextBlock Margin="3,2"
-                                   Text="{Binding DisplayName,Mode=OneWay}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding Icon,Mode=OneTime}"
+                                   Width="26"
+                                   Height="26" />
+                            <TextBlock Margin="10,0"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding DisplayName,Mode=OneWay}" />
+                        </StackPanel>
                     </HierarchicalDataTemplate>
                     <DataTemplate DataType="{x:Type openAiapi:APIModelInfo}">
                         <TextBlock Text="{Binding Name,Mode=OneWay}" />

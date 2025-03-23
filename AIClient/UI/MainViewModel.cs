@@ -1,4 +1,6 @@
 ﻿using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -139,8 +141,9 @@ public class MainViewModel : BaseViewModel
 
             var dialogViewModel =
                 new DialogViewModel(selectionViewModel.DialogName, model);
+            dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
             PreDialog = dialogViewModel;
-            this.DialogViewModels.Add(dialogViewModel);
+            this.DialogViewModels.Insert(0, dialogViewModel);
         }
     }));
 
@@ -206,21 +209,44 @@ public class MainViewModel : BaseViewModel
         {
             try
             {
+                var dialogViewModels = new List<DialogViewModel>();
                 await using (var openRead = fileInfo.OpenRead())
                 {
                     var dialogModel = await JsonSerializer.DeserializeAsync<DialogPersistanceModel>(openRead);
                     if (dialogModel != null)
                     {
                         var viewModel = _mapper.Map<DialogPersistanceModel, DialogViewModel>(dialogModel);
-                        DialogViewModels.Add(viewModel);
+                        dialogViewModels.Add(viewModel);
                         viewModel.IsDataChanged = false;
                     }
+                }
+
+                foreach (var dialogViewModel in dialogViewModels.OrderByDescending(model => model.EditTime))
+                {
+                    dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
+                    this.DialogViewModels.Add(dialogViewModel);
                 }
             }
             catch (Exception e)
             {
                 Trace.WriteLine($"加载会话{fileInfo.FullName}失败：{e.Message}");
             }
+        }
+    }
+
+    private void DialogOnEditTimeChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        var dialogViewModel = ((DialogViewModel)sender)!;
+        switch (e.PropertyName)
+        {
+            case nameof(DialogViewModel.EditTime):
+                var indexOf = this.DialogViewModels.IndexOf(dialogViewModel);
+                if (indexOf != 0)
+                {
+                    this.DialogViewModels.Move(indexOf, 0);
+                }
+
+                break;
         }
     }
 
@@ -267,6 +293,7 @@ public class MainViewModel : BaseViewModel
 
     public void DeleteDialog(DialogViewModel dialogViewModel)
     {
+        dialogViewModel.PropertyChanged -= DialogOnEditTimeChanged;
         this.DialogViewModels.Remove(dialogViewModel);
         this.PreDialog = this.DialogViewModels.FirstOrDefault();
         var fileInfos = LocalDialogFiles();
