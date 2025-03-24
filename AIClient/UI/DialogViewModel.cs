@@ -112,62 +112,15 @@ public class DialogViewModel : BaseViewModel
         }
     });
 
-    public ICommand SendRequestCommand => new ActionCommand((async o =>
+    public ICommand SendRequestCommand => new RelayCommand((() =>
     {
         if (string.IsNullOrEmpty(PromptString?.Trim()))
         {
             return;
         }
 
-        if (Model == null)
-        {
-            return;
-        }
-
-        var requestViewItem = new RequestViewItem() { MessageContent = PromptString };
-        Dialog.Add(requestViewItem);
-#if TESTMODE
-        for (int i = 0; i < 1000; i++)
-        {
-            Dialog.Add(new ResponseViewItem() { Raw = i.ToString() });
-        }
-
-        ScrollViewItem = Dialog.Last();
-        return;
-#endif
-
-#pragma warning disable CS0162 // 检测到不可到达的代码
-
-        Dialog.Add(Model);
-        ScrollViewItem = Dialog.Last();
-        try
-        {
-            var list = GenerateHistory(Dialog);
-            _requestTokenSource = new CancellationTokenSource();
-            var response = await Model.SendRequest(list, _requestTokenSource.Token);
-            Dialog.Add(new ResponseViewItem() { Raw = response });
-            this.PromptString = string.Empty;
-            OnPropertyChangedAsync(nameof(Shortcut));
-        }
-        catch (OperationCanceledException)
-        {
-            Dialog.Remove(Dialog.Last(item => item is RequestViewItem));
-        }
-        catch (Exception exception)
-        {
-            requestViewItem.IsEnable = false;
-            var errorMessage = exception.Message;
-            Dialog.Add(new ResponseViewItem() { IsInterrupt = true, ErrorMessage = errorMessage });
-        }
-        finally
-        {
-            Dialog.Remove(Dialog.Last(item => item is ILLMModelClient));
-            _requestTokenSource?.Dispose();
-        }
-
-        ScrollViewItem = Dialog.Last();
-#pragma warning restore CS0162 // 检测到不可到达的代码
-    }));
+        SendRequest(PromptString);
+    }), () => { return Model != null; });
 
     public ICommand CancelCommand => new ActionCommand((o => { _requestTokenSource?.Cancel(); }));
 
@@ -212,6 +165,7 @@ public class DialogViewModel : BaseViewModel
     {
         IsDataChanged = true;
         this.EditTime = DateTime.Now;
+        OnPropertyChangedAsync(nameof(Shortcut));
     }
 
     private void NotifyPropertyChangedOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -242,40 +196,47 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public async void ReSend(RequestViewItem redoItem)
+    public async void SendRequest(string prompt)
     {
-        if (Model == null)
+        var requestViewItem = new RequestViewItem() { MessageContent = prompt };
+        Dialog.Add(requestViewItem);
+#if TESTMODE
+        for (int i = 0; i < 1000; i++)
         {
-            return;
+            Dialog.Add(new ResponseViewItem() { Raw = i.ToString() });
         }
 
-        var dialogViewItems = GenerateHistory(Dialog);
-        var indexOf = dialogViewItems.IndexOf(redoItem);
-        if (indexOf < 0)
-        {
-            return;
-        }
+        ScrollViewItem = Dialog.Last();
+        return;
+#endif
 
-        var removingItems = dialogViewItems.Take(new Range(indexOf + 1, dialogViewItems.Count() - 1)).ToArray();
-        var requestItems = dialogViewItems.Take(indexOf + 1);
+        Dialog.Add(Model);
+        ScrollViewItem = Dialog.Last();
         try
         {
+            var list = GenerateHistory(Dialog);
+            var existTokens = list.Sum(item => item.Tokens);
             _requestTokenSource = new CancellationTokenSource();
-            var response = await Model.SendRequest(requestItems, _requestTokenSource.Token);
-            foreach (var removingItem in removingItems)
+            var response = await Model.SendRequest(list, _requestTokenSource.Token);
+            Dialog.Add(new ResponseViewItem()
             {
-                Dialog.Remove(removingItem);
+                Raw = response.Message,
+                Tokens = response.Usage.OutputTokenCount ?? 0
+            });
+            this.PromptString = string.Empty;
+            var inputTokenCount = response.Usage.InputTokenCount;
+            if (inputTokenCount != null)
+            {
+                requestViewItem.Tokens = inputTokenCount.Value - existTokens;
             }
-
-            Dialog.Add(new ResponseViewItem() { Raw = response });
-            OnPropertyChangedAsync(nameof(Shortcut));
         }
         catch (OperationCanceledException)
         {
-            return;
+            Dialog.Remove(Dialog.Last(item => item is RequestViewItem));
         }
         catch (Exception exception)
         {
+            requestViewItem.IsEnable = false;
             var errorMessage = exception.Message;
             Dialog.Add(new ResponseViewItem() { IsInterrupt = true, ErrorMessage = errorMessage });
         }
@@ -286,6 +247,27 @@ public class DialogViewModel : BaseViewModel
         }
 
         ScrollViewItem = Dialog.Last();
+    }
+
+
+    public void ReSend(RequestViewItem redoItem)
+    {
+        if (Model == null)
+        {
+            return;
+        }
+
+        //删除本请求及之后的所有记录
+        var indexOf = Dialog.IndexOf(redoItem);
+        var dialogCount = Dialog.Count;
+        for (int i = 0; i < dialogCount - indexOf; i++)
+        {
+            Dialog.RemoveAt(indexOf);
+        }
+
+        var message = redoItem.MessageContent;
+        PromptString = message;
+        SendRequest(message);
     }
 
     private IList<IDialogViewItem> GenerateHistory(IList<IDialogViewItem> source)
@@ -299,7 +281,10 @@ public class DialogViewModel : BaseViewModel
                 break;
             }
 
-            dialogViewItems.Push(dialogViewItem);
+            if (dialogViewItem is { IsEnable: true, Message: not null })
+            {
+                dialogViewItems.Push(dialogViewItem);
+            }
         }
 
         var list = new List<IDialogViewItem>();

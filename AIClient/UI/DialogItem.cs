@@ -17,6 +17,8 @@ public interface IDialogViewItem
     [JsonIgnore] ChatMessage? Message { get; }
 
     bool IsEnable { get; }
+
+    int Tokens { get; }
 }
 
 public class EraseViewItem : IDialogViewItem
@@ -24,10 +26,14 @@ public class EraseViewItem : IDialogViewItem
     [JsonIgnore] public ChatMessage? Message { get; } = null;
 
     public bool IsEnable { get; } = false;
+    
+    public int Tokens { get; } = 0;
 }
 
-public class RequestViewItem : IDialogViewItem
+public class RequestViewItem : BaseViewModel, IDialogViewItem
 {
+    private int _tokens;
+
     public RequestViewItem() : base()
     {
     }
@@ -37,6 +43,17 @@ public class RequestViewItem : IDialogViewItem
     [JsonIgnore] public ChatMessage? Message => new ChatMessage(ChatRole.User, MessageContent);
 
     public bool IsEnable { get; set; } = true;
+
+    public int Tokens
+    {
+        get => _tokens;
+        set
+        {
+            if (value == _tokens) return;
+            _tokens = value;
+            OnPropertyChanged();
+        }
+    }
 }
 
 public class ResponseViewItem : IDialogViewItem
@@ -45,6 +62,8 @@ public class ResponseViewItem : IDialogViewItem
     /// 是否中断
     /// </summary>
     public bool IsInterrupt { get; set; }
+
+    public int Tokens { get; set; }
 
     public string? ErrorMessage { get; set; }
 
@@ -64,6 +83,7 @@ public class ResponseViewItem : IDialogViewItem
             {
                 _flowDocument = this.Raw.ToFlowDocument();
             }
+
             return _flowDocument;
         }
     }

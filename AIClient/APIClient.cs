@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows.Media;
 using LLMClient.UI;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient;
 
@@ -21,6 +22,19 @@ public interface ILLMEndpoint
     Task InitializeAsync();
 }
 
+public class CompletedResult
+{
+    public CompletedResult(string message, UsageDetails usage)
+    {
+        Message = message;
+        Usage = usage;
+    }
+
+    public string Message { get; set; }
+
+    public UsageDetails Usage { get; set; }
+}
+
 public interface ILLMModelClient : IDialogViewItem
 {
     /// <summary>
@@ -36,11 +50,7 @@ public interface ILLMModelClient : IDialogViewItem
 
     object? Info { get; }
 
-    int TotalTokens { get; }
-
-    int PromptTokens { get; }
-
-    int CompletionTokens { get; }
+    int TokensConsumption { get; }
 
     ObservableCollection<string> PreResponse { get; }
 
@@ -49,6 +59,6 @@ public interface ILLMModelClient : IDialogViewItem
     IModelParams Serialize();
 
     //为了尽可能抽象，要求单个方法就传递一次会话所需要的所有参数，防止文本生成、图像生成等任务类型的不相容
-    Task<string> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
+    Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default);
 }

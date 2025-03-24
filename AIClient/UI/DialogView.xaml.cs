@@ -65,6 +65,11 @@ public partial class DialogView : UserControl
             this.ViewModel.ScrollNext(lastOrDefault);
         }*/
     }
+
+    private void Redo_OnCanExecute(object sender, CanExecuteRoutedEventArgs e)
+    {
+        e.CanExecute = ViewModel.Model != null;
+    }
 }
 
 /*public class FlowDocumentScrollViewerEx : ContentControl

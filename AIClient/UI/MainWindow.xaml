@@ -420,7 +420,8 @@
                                    VerticalAlignment="Center"
                                    Source="{Binding Model.Icon,Mode=OneWay}" />
                             <Grid Grid.Row="0" Grid.Column="1"
-                                  VerticalAlignment="Top">
+                                  VerticalAlignment="Top"
+                                  HorizontalAlignment="Stretch">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition />
                                     <ColumnDefinition Width="Auto"
@@ -546,17 +547,14 @@
                                    Style="{StaticResource MaterialDesignOverlineTextBlock}">
                             <TextBlock.Text>
                                 <MultiBinding
-                                    StringFormat="PromptTokens:{0}, CompletionTokens:{1}, TotalTokens:{2}">
-                                    <Binding Path="PromptTokens" />
-                                    <Binding Path="CompletionTokens" />
-                                    <Binding Path="TotalTokens" />
+                                    StringFormat="TokensConsumption:{0}">
+                                    <Binding Path="TokensConsumption" />
                                 </MultiBinding>
                             </TextBlock.Text>
                         </TextBlock>
                         <Button Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                 CommandParameter="{Binding Model,Mode=OneWay}"
-                                Style="{StaticResource MaterialDesignRaisedLightButton}"
-                                Background="White"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
                                 Margin="0,0,10,0"
                                 materialDesign:ButtonAssist.CornerRadius="15"
                                 Padding="10,5"
@@ -601,7 +599,7 @@
                                 Width="20"
                                 Height="20" />
                         </Button>
-                        <materialDesign:ColorZone Margin="16,0,0,0"
+                        <!--<materialDesign:ColorZone Margin="16,0,0,0"
                                                   Padding="8,4,8,4"
                                                   Panel.ZIndex="1"
                                                   VerticalAlignment="Center"
@@ -629,7 +627,7 @@
                                          materialDesign:TextFieldAssist.DecorationVisibility="Hidden"
                                          BorderThickness="0" />
                             </Grid>
-                        </materialDesign:ColorZone>
+                        </materialDesign:ColorZone>-->
                     </StackPanel>
                 </Grid>
             </materialDesign:Card>
