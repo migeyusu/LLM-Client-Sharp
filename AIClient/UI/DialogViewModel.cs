@@ -118,7 +118,7 @@ public class DialogViewModel : BaseViewModel
         {
             return;
         }
-
+        
         SendRequest(PromptString);
     }), () => { return Model != null; });
 
@@ -246,7 +246,7 @@ public class DialogViewModel : BaseViewModel
             _requestTokenSource?.Dispose();
         }
 
-        ScrollViewItem = Dialog.Last();
+        ScrollViewItem = Dialog.LastOrDefault();
     }
 
 

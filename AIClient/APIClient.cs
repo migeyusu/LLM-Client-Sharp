@@ -50,7 +50,7 @@ public interface ILLMModelClient : IDialogViewItem
 
     object? Info { get; }
 
-    int TokensConsumption { get; }
+    long TokensConsumption { get; }
 
     ObservableCollection<string> PreResponse { get; }
 

@@ -4,13 +4,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:local="clr-namespace:LLMClient"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
-             xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
-             xmlns:collections="clr-namespace:System.Collections;assembly=System.Runtime"
-             xmlns:system="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:DialogViewModel}"
              d:DesignHeight="600"
@@ -26,26 +22,6 @@
             <RowDefinition Height="100"
                            MinHeight="60" />
         </Grid.RowDefinitions>
-        <Button Grid.Row="1"
-                materialDesign:ButtonAssist.CornerRadius="18"
-                Height="36"
-                materialDesign:ElevationAssist.Elevation="Dp16"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Command="{Binding CancelCommand}"
-                Visibility="{Binding Model.IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                Style="{StaticResource MaterialDesignRaisedDarkButton}">
-            <StackPanel Orientation="Horizontal">
-                <ProgressBar IsIndeterminate="True"
-                             Foreground="White"
-                             Margin="-6,0,0,0"
-                             Style="{StaticResource MaterialDesignCircularProgressBar}"
-                             Value="0" />
-                <TextBlock Text="停止"
-                           Margin="10,0,0,0"
-                           Style="{StaticResource MaterialDesignBody1TextBlock}" />
-            </StackPanel>
-        </Button>
         <GridSplitter Grid.Row="0"
                       VerticalAlignment="Bottom"
                       HorizontalAlignment="Stretch"
@@ -233,14 +209,16 @@
                                     </GroupBox.Header>
                                     <Grid>
                                         <ScrollViewer>
-                                            <ItemsControl ItemsSource="{Binding PreResponse,Mode=OneWay}"
+                                            <component:MarkdownTextBlock
+                                                CollectionText="{Binding PreResponse,Mode=OneWay}" />
+                                            <!--<ItemsControl ItemsSource="{Binding PreResponse,Mode=OneWay}"
                                                           Padding="16">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
                                                         <WrapPanel IsItemsHost="True" />
                                                     </ItemsPanelTemplate>
                                                 </ItemsControl.ItemsPanel>
-                                            </ItemsControl>
+                                            </ItemsControl>-->
                                         </ScrollViewer>
                                     </Grid>
                                 </GroupBox>
@@ -270,7 +248,7 @@
                                 Executed="OnDeleteExecuted" />
                 <CommandBinding Command="Redo"
                                 Executed="OnRedoExecuted"
-                                CanExecute="Redo_OnCanExecute"/>
+                                CanExecute="Redo_OnCanExecute" />
                 <CommandBinding Command="Refresh"
                                 Executed="OnRefreshExecuted" />
             </ListBox.CommandBindings>
@@ -305,7 +283,7 @@
                      VerticalAlignment="Stretch"
                      HorizontalAlignment="Stretch"
                      Margin="0,10,0,0"
-                     Text="{Binding  PromptString,Mode=TwoWay}"
+                     Text="{Binding  PromptString,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto" />
@@ -325,5 +303,26 @@
                         Content="发送" />
             </StackPanel>
         </Grid>
+        <Button Grid.Row="1"
+                materialDesign:ButtonAssist.CornerRadius="18"
+                Height="36"
+                materialDesign:ElevationAssist.Elevation="Dp16"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,200,0"
+                Command="{Binding CancelCommand}"
+                Visibility="{Binding Model.IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+            <StackPanel Orientation="Horizontal">
+                <ProgressBar IsIndeterminate="True"
+                             Foreground="White"
+                             Margin="-6,0,0,0"
+                             Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             Value="0" />
+                <TextBlock Text="停止"
+                           Margin="10,0,0,0"
+                           Style="{StaticResource MaterialDesignBody1TextBlock}" />
+            </StackPanel>
+        </Button>
     </Grid>
 </UserControl>

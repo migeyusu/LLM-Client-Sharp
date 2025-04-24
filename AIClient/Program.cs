@@ -15,6 +15,7 @@ public class Program
     [STAThread]
     static void Main(string[] args)
     {
+        TestClass.Test();
         // 尝试获得互斥量的所有权
         if (!Debugger.IsAttached && !mutex.WaitOne(TimeSpan.Zero, true))
         {

@@ -18,7 +18,7 @@ public interface IDialogViewItem
 
     bool IsEnable { get; }
 
-    int Tokens { get; }
+    long Tokens { get; }
 }
 
 public class EraseViewItem : IDialogViewItem
@@ -27,12 +27,12 @@ public class EraseViewItem : IDialogViewItem
 
     public bool IsEnable { get; } = false;
     
-    public int Tokens { get; } = 0;
+    public long Tokens { get; } = 0;
 }
 
 public class RequestViewItem : BaseViewModel, IDialogViewItem
 {
-    private int _tokens;
+    private long _tokens;
 
     public RequestViewItem() : base()
     {
@@ -44,7 +44,7 @@ public class RequestViewItem : BaseViewModel, IDialogViewItem
 
     public bool IsEnable { get; set; } = true;
 
-    public int Tokens
+    public long Tokens
     {
         get => _tokens;
         set
@@ -63,7 +63,7 @@ public class ResponseViewItem : IDialogViewItem
     /// </summary>
     public bool IsInterrupt { get; set; }
 
-    public int Tokens { get; set; }
+    public long Tokens { get; set; }
 
     public string? ErrorMessage { get; set; }
 
