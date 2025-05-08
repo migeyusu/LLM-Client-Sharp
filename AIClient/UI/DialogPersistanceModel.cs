@@ -1,14 +1,10 @@
-﻿
-
-namespace LLMClient.UI;
+﻿namespace LLMClient.UI;
 
 /// <summary>
 /// 用于持久化
 /// </summary>
 public class DialogPersistanceModel
 {
-    public Guid DialogId { get; set; }
-
     public DateTime EditTime { get; set; }
 
     public IDialogViewItem[]? DialogItems { get; set; }
@@ -22,4 +18,6 @@ public class DialogPersistanceModel
     public string? PromptString { get; set; }
 
     public IModelParams? Params { get; set; }
+
+    public long TokensConsumption { get; set; }
 }

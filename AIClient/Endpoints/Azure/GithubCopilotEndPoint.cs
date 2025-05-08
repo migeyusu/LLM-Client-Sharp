@@ -53,11 +53,11 @@ public class GithubCopilotEndPoint : AzureEndPointBase
 
     public override ILLMModelClient? NewClient(string modelName)
     {
-        if (_predefinedModels.TryGetValue(modelName, out var availableModel) &&
+        if (_predefinedModels.TryGetValue(modelName, out var action) &&
             _loadedModelInfos.TryGetValue(modelName, out var availableModelInfo))
         {
-            AzureEndPointBase endPoint, AzureModelInfo modelInfo
-            return availableModel.CreateModel(this, availableModelInfo);
+            action(availableModelInfo);
+            return new AzureClientBase(this, availableModelInfo);
         }
 
         return null;
@@ -106,9 +106,23 @@ public class GithubCopilotEndPoint : AzureEndPointBase
             info.Temperature = 1;
             info.MaxTokens = 4096;
         };
-        var llama3 = new AzureModelCreation<MetaLlama3>();
-        var o1 = new AzureModelCreation<OpenAIO1>();
-        var empty = new AzureModelCreation<AzureClientBase>();
+
+        Action<AzureModelInfo> o1 = (info) => { info.SystemPromptEnable = true; };
+        Action<AzureModelInfo> llama3 = (info) =>
+        {
+            info.SystemPromptEnable = true;
+            info.TopPEnable = true;
+            info.TopP = 0.1f;
+            info.TemperatureEnable = true;
+            info.Temperature = 0.8f;
+            info.MaxTokens = 2048;
+            info.PresencePenaltyEnable = true;
+            info.PresencePenalty = 0;
+            info.FrequencyPenaltyEnable = true;
+            info.FrequencyPenalty = 0;
+        };
+        Action<AzureModelInfo> empty = (info) => { };
+        Action<AzureModelInfo> deepSeek = (info) => { info.MaxTokens = 2048; };
         _predefinedModels = new Dictionary<string, Action<AzureModelInfo>>()
         {
             { "OpenAI GPT-4o", baseModel },
@@ -134,7 +148,7 @@ public class GithubCopilotEndPoint : AzureEndPointBase
             { "OpenAI o3-mini", o1 },
             { "OpenAI o1-preview", empty },
 
-            { "DeepSeek-R1", new AzureModelCreation<DeepSeekR1>() }
+            { "DeepSeek-R1", deepSeek }
         };
     }
 

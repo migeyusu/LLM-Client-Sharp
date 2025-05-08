@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Serialization;
-using System.Windows.Media;
 using AutoMapper;
 using Azure;
 using Azure.AI.Inference;
+using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
@@ -18,17 +18,8 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
     private static readonly Mapper Mapper = new Mapper((new MapperConfiguration((expression =>
     {
         // expression.AddMaps(typeof(AzureModelBase).Assembly);
-        expression.CreateMap<AzureClientBase, AzureJsonModel>();
-        expression.CreateMap<AzureTextClientBase, AzureJsonModel>();
-        expression.CreateMap<OpenAIO1, AzureJsonModel>();
-        expression.CreateMap<MetaLlama3, AzureJsonModel>();
-        expression.CreateMap<DeepSeekR1, AzureJsonModel>();
-
-        expression.CreateMap<AzureJsonModel, AzureClientBase>();
-        expression.CreateMap<AzureJsonModel, AzureTextClientBase>();
-        expression.CreateMap<AzureJsonModel, OpenAIO1>();
-        expression.CreateMap<AzureJsonModel, MetaLlama3>();
-        expression.CreateMap<AzureJsonModel, DeepSeekR1>();
+        expression.CreateMap<AzureClientBase, DefaultModelParam>();
+        expression.CreateMap<DefaultModelParam, AzureClientBase>();
     }))));
 
     [JsonIgnore] public AzureModelInfo ModelInfo { get; }
@@ -47,16 +38,10 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
         get { return ModelInfo.OriginalName; }
     }
 
-    [JsonIgnore]
-    public override ImageSource? Icon
-    {
-        get { return ModelInfo.Icon; }
-    }
-
     protected readonly AzureOption Option;
 
     [JsonIgnore]
-    public override ILLMModel? Info
+    public override ILLMModel Info
     {
         get { return ModelInfo; }
     }
@@ -82,30 +67,11 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
         return new AzureAIInferenceChatClient(chatCompletionsClient);
     }
 
-    public override void Deserialize(IModelParams info)
-    {
-        Mapper.Map(info, this);
-    }
-
-    public override IModelParams Serialize()
-    {
-        var azureJsonModel = new AzureJsonModel();
-        Mapper.Map(this, azureJsonModel);
-        return azureJsonModel;
-    }
-
     private void UIThemeOnModeChanged(bool obj)
     {
         this.OnPropertyChanged(nameof(Icon));
     }
-
-    protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages)
-    {
-        return new ChatOptions()
-        {
-            ModelId = this.Id,
-        };
-    }
+    
 
     public override async Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default)
@@ -137,9 +103,7 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
                     switch (content)
                     {
                         case UsageContent usageContent:
-                            var details = usageContent.Details;
-                            this.TokensConsumption += details.TotalTokenCount ?? 0;
-                            usageDetails = details;
+                            usageDetails = usageContent.Details;;
                             break;
                         case TextContent textContent:
                             PreResponse.Add(textContent.Text);

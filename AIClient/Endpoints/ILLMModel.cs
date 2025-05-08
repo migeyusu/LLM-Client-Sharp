@@ -11,8 +11,6 @@ public interface ILLMModel : IModelParams
     /// </summary>
     string Name { get; }
 
-    bool Streaming { get; }
-
     ImageSource? Icon { get; }
 
     int MaxContextSize { get; }

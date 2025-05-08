@@ -18,14 +18,14 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersista
     {
         return new DialogPersistanceModel()
         {
-            DialogId = source.DialogId,
             EditTime = source.EditTime,
             DialogItems = source.DialogItems.ToArray(),
             Topic = source.Topic,
             EndPoint = source.Model?.Endpoint.Name,
             Model = source.Model?.Name,
             PromptString = source.PromptString,
-            Params = source.Model?.Serialize(),
+            Params = source.Model?.Parameters,
+            TokensConsumption = source.TokensConsumption,
         };
     }
 
@@ -48,17 +48,16 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersista
                 var sourceJsonModel = source.Params;
                 if (sourceJsonModel != null)
                 {
-                    llmModelClient.Deserialize(sourceJsonModel);
+                    llmModelClient.Parameters = sourceJsonModel;
                 }
             }
         }
-
-        var contextMapper = context.Mapper;
+        
         return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
         {
             EditTime = source.EditTime,
-            DialogId = source.DialogId,
             PromptString = source.PromptString,
+            TokensConsumption = source.TokensConsumption,
         };
     }
 }

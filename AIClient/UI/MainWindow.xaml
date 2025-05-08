@@ -133,39 +133,11 @@
                 <ui:EndpointConfigureView Width="800"
                                           Height="600" />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type models:AzureTextClientBase}">
-                <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"
-                                        Width="600"
-                                        Style="{StaticResource DialogContentControlStyle}">
-                    <models:AzureTextClientBaseView />
-                </HeaderedContentControl>
-            </DataTemplate>
             <DataTemplate DataType="{x:Type openAiapi:APIClient}">
                 <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"
                                         Width="600"
                                         Style="{StaticResource DialogContentControlStyle}">
-                    <openAiapi:APIModelView />
-                </HeaderedContentControl>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type models:MetaLlama3}">
-                <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"
-                                        Width="600"
-                                        Style="{StaticResource DialogContentControlStyle}">
-                    <models:MetaLlama3View />
-                </HeaderedContentControl>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type models:OpenAIO1}">
-                <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"
-                                        Width="600"
-                                        Style="{StaticResource DialogContentControlStyle}">
-                    <models:OpenAIO1View />
-                </HeaderedContentControl>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type models:DeepSeekR1}">
-                <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"
-                                        Width="600"
-                                        Style="{StaticResource DialogContentControlStyle}">
-                    <models:DeepSeekR1View />
+                    <openAiapi:LlmClientBaseView />
                 </HeaderedContentControl>
             </DataTemplate>
             <DataTemplate DataType="{x:Type models:AzureModelInfo}">
@@ -502,7 +474,7 @@
                               materialDesign:TextFieldAssist.HasClearButton="True"
                               MaxDropDownHeight="400"
                               IsEditable="True"
-                              Text="{Binding  PreDialog.Model.SystemPrompt,Mode=TwoWay}">
+                              Text="{Binding  PreDialog.Model.Parameters.SystemPrompt,Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type System:String}">
                                 <TextBlock TextWrapping="Wrap"
@@ -544,14 +516,12 @@
                                 DataContext="{Binding PreDialog,Mode=OneWay}">
                         <TextBlock MaxWidth="200"
                                    TextWrapping="Wrap"
-                                   DataContext="{Binding Model,Mode=OneWay}"
                                    HorizontalAlignment="Right"
                                    Margin="16,0"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource MaterialDesignOverlineTextBlock}">
                             <TextBlock.Text>
-                                <MultiBinding
-                                    StringFormat="TokensConsumption:{0}">
+                                <MultiBinding StringFormat="TokensConsumption:{0}">
                                     <Binding Path="TokensConsumption" />
                                 </MultiBinding>
                             </TextBlock.Text>

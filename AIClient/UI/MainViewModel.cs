@@ -248,7 +248,7 @@ public class MainViewModel : BaseViewModel
             }
 
             var dialogViewModel =
-                new DialogViewModel(selectionViewModel.DialogName, model);
+                new DialogViewModel(selectionViewModel.DialogName, model) { IsDataChanged = true };
             dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
             PreDialog = dialogViewModel;
             this.DialogViewModels.Insert(0, dialogViewModel);
@@ -313,32 +313,33 @@ public class MainViewModel : BaseViewModel
             return;
         }
 
+        var dialogViewModels = new List<DialogViewModel>();
         foreach (var fileInfo in directoryInfo.GetFiles())
         {
             try
             {
-                var dialogViewModels = new List<DialogViewModel>();
                 await using (var openRead = fileInfo.OpenRead())
                 {
                     var dialogModel = await JsonSerializer.DeserializeAsync<DialogPersistanceModel>(openRead);
                     if (dialogModel != null)
                     {
                         var viewModel = _mapper.Map<DialogPersistanceModel, DialogViewModel>(dialogModel);
+                        viewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
                         dialogViewModels.Add(viewModel);
                         viewModel.IsDataChanged = false;
                     }
-                }
-
-                foreach (var dialogViewModel in dialogViewModels.OrderByDescending(model => model.EditTime))
-                {
-                    dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
-                    this.DialogViewModels.Add(dialogViewModel);
                 }
             }
             catch (Exception e)
             {
                 Trace.WriteLine($"加载会话{fileInfo.FullName}失败：{e.Message}");
             }
+        }
+
+        foreach (var dialogViewModel in dialogViewModels.OrderByDescending(model => model.EditTime))
+        {
+            dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
+            this.DialogViewModels.Add(dialogViewModel);
         }
     }
 
@@ -380,14 +381,13 @@ public class MainViewModel : BaseViewModel
             }
 
             var dialogModel = _mapper.Map<DialogViewModel, DialogPersistanceModel>(dialogViewModel);
-            var dialogId = dialogModel.DialogId;
-            if (fileInfos.TryGetValue(dialogId.ToString(), out var fileInfo))
+            if (fileInfos.TryGetValue(dialogViewModel.FileName, out var fileInfo))
             {
                 fileInfo.Delete();
             }
             else
             {
-                fileInfo = new FileInfo(Path.Combine(dirPath, $"{dialogId}.json"));
+                fileInfo = new FileInfo(Path.Combine(dirPath, $"{Guid.NewGuid()}.json"));
             }
 
             await using (var fileStream = fileInfo.OpenWrite())
@@ -405,7 +405,12 @@ public class MainViewModel : BaseViewModel
         this.DialogViewModels.Remove(dialogViewModel);
         this.PreDialog = this.DialogViewModels.FirstOrDefault();
         var fileInfos = LocalDialogFiles();
-        if (fileInfos.TryGetValue(dialogViewModel.DialogId.ToString(), out var fileInfo))
+        if (string.IsNullOrEmpty(dialogViewModel.FileName))
+        {
+            return;
+        }
+
+        if (fileInfos.TryGetValue(dialogViewModel.FileName, out var fileInfo))
         {
             fileInfo.Delete();
         }

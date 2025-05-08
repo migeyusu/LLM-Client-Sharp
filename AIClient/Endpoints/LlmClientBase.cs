@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 using System.Windows.Media;
+using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 
@@ -16,7 +17,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
     public abstract string Name { get; }
 
     public abstract ILLMEndpoint Endpoint { get; }
-    public abstract ImageSource? Icon { get; }
+
+    [JsonIgnore]
+    public virtual ImageSource? Icon
+    {
+        get { return this.Info.Icon; }
+    }
 
     private bool _isResponding;
 
@@ -33,29 +39,66 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
     }
 
     [JsonIgnore]
-    public virtual ILLMModel? Info
+    public virtual ILLMModel Info
     {
         get { return null; }
     }
 
+    public IModelParams Parameters { get; set; } = new DefaultModelParam();
+
     [JsonIgnore] public virtual ObservableCollection<string> PreResponse { get; } = new ObservableCollection<string>();
 
-    public long TokensConsumption
+    protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
-        get => _totalTokens;
-        set
+        var modelInfo = this.Info;
+        var modelParams = this.Parameters;
+        if (modelInfo.SystemPromptEnable && !string.IsNullOrWhiteSpace(modelParams.SystemPrompt))
         {
-            if (value == _totalTokens) return;
-            _totalTokens = value;
-            OnPropertyChanged();
+            messages.Add(new ChatMessage(ChatRole.System, modelParams.SystemPrompt));
         }
+
+        var chatOptions = new ChatOptions()
+        {
+            ModelId = modelInfo.Id,
+        };
+
+        if (modelInfo.TopPEnable)
+        {
+            chatOptions.TopP = modelParams.TopP;
+        }
+
+        if (modelInfo.TopKEnable)
+        {
+            chatOptions.TopK = modelParams.TopK;
+        }
+
+        if (modelInfo.TemperatureEnable)
+        {
+            chatOptions.Temperature = modelParams.Temperature;
+        }
+
+        if (modelInfo.MaxTokensEnable)
+        {
+            chatOptions.MaxOutputTokens = modelParams.MaxTokens;
+        }
+
+        if (modelInfo.FrequencyPenaltyEnable)
+        {
+            chatOptions.FrequencyPenalty = modelParams.FrequencyPenalty;
+        }
+
+        if (modelInfo.PresencePenaltyEnable)
+        {
+            chatOptions.PresencePenalty = modelParams.PresencePenalty;
+        }
+
+        if (modelInfo.SeedEnable && modelParams.Seed.HasValue)
+        {
+            chatOptions.Seed = modelParams.Seed.Value;
+        }
+
+        return chatOptions;
     }
-
-    private long _totalTokens;
-
-    public abstract void Deserialize(IModelParams info);
-
-    public abstract IModelParams Serialize();
 
     public abstract Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default);

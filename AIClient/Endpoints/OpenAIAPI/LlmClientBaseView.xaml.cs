@@ -2,9 +2,9 @@
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
-public partial class APIModelView : UserControl
+public partial class LlmClientBaseView : UserControl
 {
-    public APIModelView()
+    public LlmClientBaseView()
     {
         InitializeComponent();
     }

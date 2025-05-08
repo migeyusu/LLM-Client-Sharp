@@ -17,7 +17,7 @@ public class AzureModelInfo : ILLMModel
         get { return FriendlyName; }
     }
 
-    [JsonIgnore] public bool Streaming { get; } = true;
+    [JsonIgnore] public bool Streaming { get; set; } = true;
 
     [JsonIgnore]
     public ImageSource? Icon

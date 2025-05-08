@@ -20,13 +20,9 @@ namespace LLMClient.Endpoints.OpenAIAPI;
 #pragma warning disable SKEXP0001
 public class APIClient : LlmClientBase
 {
-    private readonly DefaultOption _option;
-
     private static readonly Mapper Mapper = new Mapper((new MapperConfiguration((expression =>
     {
-        expression.CreateMap<DefaultModelParam, APIClient>();
-        expression.CreateMap<APIClient, DefaultModelParam>();
-        expression.CreateMap<APIModelInfo, APIClient>();
+        expression.CreateMap<APIModelInfo, IModelParams>();
     }))));
 
     public static ImageSource IconImageSource => IconImageLazy.Value;
@@ -42,20 +38,9 @@ public class APIClient : LlmClientBase
         return drawingImage;
     }));
 
-    public bool Streaming
-    {
-        get => _streaming;
-        set
-        {
-            if (value == _streaming) return;
-            _streaming = value;
-            OnPropertyChanged();
-        }
-    }
-
     public APIModelInfo ModelInfo { get; }
 
-    public override ILLMModel? Info
+    public override ILLMModel Info
     {
         get { return ModelInfo; }
     }
@@ -68,114 +53,10 @@ public class APIClient : LlmClientBase
 
     public override ILLMEndpoint Endpoint { get; }
 
-    public override ImageSource? Icon
-    {
-        get { return ModelInfo.Icon; }
-    }
-
-    public string? SystemPrompt
-    {
-        get => _systemPrompt;
-        set
-        {
-            if (value == _systemPrompt) return;
-            _systemPrompt = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public float TopP
-    {
-        get => _topP;
-        set
-        {
-            if (value.Equals(_topP)) return;
-            _topP = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public int TopK
-    {
-        get => _topK;
-        set
-        {
-            if (value == _topK) return;
-            _topK = value;
-            OnPropertyChanged();
-        }
-    }
-
-
-    public float Temperature
-    {
-        get => _temperature;
-        set
-        {
-            if (value.Equals(_temperature)) return;
-            _temperature = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public int MaxTokens
-    {
-        get => _maxTokens;
-        set
-        {
-            if (value == _maxTokens) return;
-            _maxTokens = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public float FrequencyPenalty
-    {
-        get => _frequencyPenalty;
-        set
-        {
-            if (value.Equals(_frequencyPenalty)) return;
-            _frequencyPenalty = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public float PresencePenalty
-    {
-        get => _presencePenalty;
-        set
-        {
-            if (value.Equals(_presencePenalty)) return;
-            _presencePenalty = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public long? Seed
-    {
-        get => _seed;
-        set
-        {
-            if (value == _seed) return;
-            _seed = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private string? _systemPrompt;
-
-    private float _topP;
-
-    private int _topK;
-    private float _frequencyPenalty;
-    private float _presencePenalty;
-    private long? _seed;
-    private float _temperature;
-    private int _maxTokens;
-
     private IChatClient _chatClient;
 
-    private bool _streaming = true;
+    private readonly DefaultOption _option;
+
 
     public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, DefaultOption option)
     {
@@ -185,7 +66,7 @@ public class APIClient : LlmClientBase
         ModelInfo = modelInfo;
         modelInfo.PropertyChanged += ModelInfoOnPropertyChanged;
         _chatClient = CreateChatClient(modelInfo, option);
-        Mapper.Map<APIModelInfo, APIClient>(modelInfo, this);
+        Mapper.Map<APIModelInfo, IModelParams>(modelInfo, this.Parameters);
     }
 
     private void ModelInfoOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -229,67 +110,6 @@ public class APIClient : LlmClientBase
         }*/
     }
 
-    public override void Deserialize(IModelParams info)
-    {
-        Mapper.Map(info, this);
-    }
-
-    public override IModelParams Serialize()
-    {
-        var defaultModelParam = new DefaultModelParam();
-        Mapper.Map(this, defaultModelParam);
-        return defaultModelParam;
-    }
-
-    protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages)
-    {
-        if (ModelInfo.SystemPromptEnable && !string.IsNullOrWhiteSpace(SystemPrompt))
-        {
-            messages.Add(new ChatMessage(ChatRole.System, SystemPrompt));
-        }
-
-        var chatOptions = new ChatOptions()
-        {
-            ModelId = this.ModelInfo.Id,
-        };
-        if (ModelInfo.TopPEnable)
-        {
-            chatOptions.TopP = this.TopP;
-        }
-
-        if (ModelInfo.TopKEnable)
-        {
-            chatOptions.TopK = this.TopK;
-        }
-
-        if (ModelInfo.TemperatureEnable)
-        {
-            chatOptions.Temperature = this.Temperature;
-        }
-
-        if (ModelInfo.MaxTokensEnable)
-        {
-            chatOptions.MaxOutputTokens = this.MaxTokens;
-        }
-
-        if (ModelInfo.FrequencyPenaltyEnable)
-        {
-            chatOptions.FrequencyPenalty = this.FrequencyPenalty;
-        }
-
-        if (ModelInfo.PresencePenaltyEnable)
-        {
-            chatOptions.PresencePenalty = this.PresencePenalty;
-        }
-
-        if (ModelInfo.SeedEnable && this.Seed.HasValue)
-        {
-            chatOptions.Seed = this.Seed.Value;
-        }
-
-        return chatOptions;
-    }
-
     public override async Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default)
     {
@@ -310,7 +130,7 @@ public class APIClient : LlmClientBase
                 }
             }
 
-            if (Streaming)
+            if (this.Parameters.Streaming)
             {
                 AdditionalPropertiesDictionary? dictionary = null;
                 UsageDetails? usageDetails = null;
@@ -380,10 +200,6 @@ public class APIClient : LlmClientBase
                 if (usageDetails == null)
                 {
                     Trace.Write("usage details not provided");
-                }
-                else
-                {
-                    this.TokensConsumption += usageDetails.TotalTokenCount ?? 0;
                 }
 
                 return new CompletedResult(cachedPreResponse.ToString(), usageDetails ?? new UsageDetails());

@@ -49,15 +49,11 @@ public interface ILLMModelClient : IDialogViewItem
 
     bool IsResponding { get; }
 
-    ILLMModel? Info { get; }
+    ILLMModel Info { get; }
 
-    long TokensConsumption { get; }
+    IModelParams Parameters { get; set; }
 
     ObservableCollection<string> PreResponse { get; }
-
-    void Deserialize(IModelParams info);
-
-    IModelParams Serialize();
 
     //为了尽可能抽象，要求单个方法就传递一次会话所需要的所有参数，防止文本生成、图像生成等任务类型的不相容
     Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
