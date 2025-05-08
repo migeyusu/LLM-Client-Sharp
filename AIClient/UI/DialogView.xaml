@@ -7,6 +7,7 @@
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+             xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:DialogViewModel}"
              d:DesignHeight="600"
@@ -28,18 +29,20 @@
                       Background="DarkGray"
                       Margin="20,0"
                       Height="3" />
-        <ListBox Grid.Row="0"
-                 x:Name="DialogListBox"
-                 Margin="0,0,5,5"
-                 VirtualizingPanel.IsVirtualizing="True"
-                 VirtualizingPanel.VirtualizationMode="Recycling"
-                 VirtualizingPanel.CacheLengthUnit="Item"
-                 VirtualizingPanel.CacheLength="10"
-                 VirtualizingPanel.ScrollUnit="Pixel"
-                 VirtualizingPanel.IsContainerVirtualizable="True"
-                 materialDesign:ListBoxItemAssist.ShowSelection="False"
-                 component:AutoScrollIntoView.ScrollToItem="{Binding  ScrollViewItem,Mode=OneWay}"
-                 ItemsSource="{Binding Dialog,Mode=OneWay}">
+        <component:ListBoxEx Grid.Row="0"
+                             x:Name="DialogListBox"
+                             Margin="0,0,5,5"
+                             VirtualizingPanel.IsVirtualizing="True"
+                             VirtualizingPanel.VirtualizationMode="Recycling"
+                             VirtualizingPanel.CacheLengthUnit="Item"
+                             VirtualizingPanel.CacheLength="10"
+                             VirtualizingPanel.ScrollUnit="Pixel"
+                             VirtualizingPanel.IsContainerVirtualizable="True"
+                             materialDesign:ListBoxItemAssist.ShowSelection="False"
+                             Style="{StaticResource {x:Type ListBox}}"
+                             CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"
+                             ItemsSource="{Binding DialogItems,Mode=OneWay}">
+            <!--component:ListBoxHelper.CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"-->
             <ListBox.ItemTemplateSelector>
                 <component:TypeBasedDataTemplateSelector>
                     <component:DataTemplateTypePair>
@@ -252,7 +255,7 @@
                 <CommandBinding Command="Refresh"
                                 Executed="OnRefreshExecuted" />
             </ListBox.CommandBindings>
-        </ListBox>
+        </component:ListBoxEx>
         <StackPanel Grid.Row="0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Bottom"
@@ -268,7 +271,7 @@
                             Value="26" />
                 </Style>
             </StackPanel.Resources>
-            <Button Click="ScrollToNext_OnClick">
+            <Button Command="{Binding ScrollToNextCommand}">
                 <materialDesign:PackIcon Kind="ArrowDownBold" />
             </Button>
             <Button Command="{Binding ScrollToEndCommand}">

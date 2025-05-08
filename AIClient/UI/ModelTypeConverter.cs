@@ -20,7 +20,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersista
         {
             DialogId = source.DialogId,
             EditTime = source.EditTime,
-            DialogItems = source.Dialog.ToArray(),
+            DialogItems = source.DialogItems.ToArray(),
             Topic = source.Topic,
             EndPoint = source.Model?.Endpoint.Name,
             Model = source.Model?.Name,
@@ -53,6 +53,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersista
             }
         }
 
+        var contextMapper = context.Mapper;
         return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
         {
             EditTime = source.EditTime,

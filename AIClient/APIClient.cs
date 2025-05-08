@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows.Media;
+using LLMClient.Endpoints;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 
@@ -48,7 +49,7 @@ public interface ILLMModelClient : IDialogViewItem
 
     bool IsResponding { get; }
 
-    object? Info { get; }
+    ILLMModel? Info { get; }
 
     long TokensConsumption { get; }
 

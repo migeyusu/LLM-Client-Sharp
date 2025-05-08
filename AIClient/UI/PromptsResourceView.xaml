@@ -1,0 +1,62 @@
+﻿<UserControl x:Class="LLMClient.UI.PromptsResourceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLMClient.UI"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:PromptsResourceViewModel}"
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ListBox x:Name="ListBox"
+                 Margin="10"
+                 VirtualizingPanel.IsVirtualizing="False"
+                 ScrollViewer.CanContentScroll="False"
+                 HorizontalAlignment="Stretch"
+                 HorizontalContentAlignment="Left"
+                 ItemsSource="{Binding PromptsSystem,Mode=OneWay}"
+                 MouseDoubleClick="ListBox_OnMouseDoubleClick">
+            <ListBox.CommandBindings>
+                <CommandBinding Command="Copy"
+                                Executed="CommandBinding_OnExecuted" />
+            </ListBox.CommandBindings>
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Command="Copy">
+                        <MenuItem.Icon>
+                            <materialDesign:PackIcon Kind="ContentCopy" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </ListBox.ContextMenu>
+        </ListBox>
+        <TextBox x:Name="PromptsTextBox"
+                 Grid.Row="1"
+                 Height="150"
+                 Margin="10"
+                 AcceptsReturn="True"
+                 AcceptsTab="True"
+                 materialDesign:HintAssist.Hint="请输入Prompt"
+                 Style="{StaticResource MaterialDesignFilledTextBox}" />
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="10">
+            <Button Content="移除"
+                    Command="{Binding RemoveCommand}"
+                    CommandParameter="{Binding ElementName=ListBox,Path=SelectedIndex,Mode=OneWay}" />
+            <Button Content="新增"
+                    Margin="10,0"
+                    Command="{Binding AddCommand}"
+                    CommandParameter="{Binding ElementName=PromptsTextBox,Mode=OneTime}" />
+            <Button Content="保存"
+                    Command="{Binding SaveCommand}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

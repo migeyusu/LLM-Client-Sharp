@@ -480,6 +480,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBox Text="{Binding  PreDialog.Topic,Mode=TwoWay}"
                              Style="{StaticResource MaterialDesignFilledTextBox}"
@@ -598,7 +599,7 @@
                                 ToolTip="清空上下文"
                                 Command="{Binding ClearContextCommand}">
                             <materialDesign:PackIcon
-                                Kind="Autorenew"
+                                Kind="Eraser"
                                 Width="20"
                                 Height="20" />
                         </Button>
@@ -631,6 +632,33 @@
                                          BorderThickness="0" />
                             </Grid>
                         </materialDesign:ColorZone>-->
+                    </StackPanel>
+                    <StackPanel Grid.Column="3"
+                                Orientation="Horizontal">
+                        <Button Style="{StaticResource MaterialDesignIconButton}" Width="36"
+                                Height="36"
+                                ToolTip="导出对话为Markdown"
+                                Command="{Binding ExportCommand}">
+                            <materialDesign:PackIcon
+                                Kind="FileExport"
+                                Width="20"
+                                Height="20" />
+                        </Button>
+                        <Button Style="{StaticResource MaterialDesignIconButton}" Width="36"
+                                Height="36"
+                                ToolTip="备份"
+                                Command="{Binding BackupCommand}">
+                            <materialDesign:PackIcon
+                                Kind="BackupRestore"
+                                Width="20"
+                                Height="20" />
+                        </Button>
+                        <Button Style="{StaticResource MaterialDesignIconButton}" Width="36"
+                                Height="36"
+                                ToolTip="更改模型"
+                                Command="{Binding ChangeModelCommand}">
+                            <materialDesign:PackIcon Kind="RefreshCircle" />
+                        </Button>
                     </StackPanel>
                 </Grid>
             </materialDesign:Card>

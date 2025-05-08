@@ -4,10 +4,15 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
+using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
@@ -66,7 +71,7 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public ObservableCollection<IDialogViewItem> Dialog { get; }
+    public ObservableCollection<IDialogViewItem> DialogItems { get; }
 
     private ILLMModelClient? _model;
 
@@ -91,16 +96,15 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-
     public string? Shortcut
     {
-        get { return Dialog.FirstOrDefault(item => { return item is ResponseViewItem; })?.Message?.Text; }
+        get { return DialogItems.FirstOrDefault(item => { return item is ResponseViewItem; })?.Message?.Text; }
     }
 
     public ICommand ClearContextCommand => new ActionCommand((o =>
     {
         var item = new EraseViewItem();
-        Dialog.Add(item);
+        DialogItems.Add(item);
         ScrollViewItem = item;
     }));
 
@@ -108,7 +112,7 @@ public class DialogViewModel : BaseViewModel
     {
         if ((await DialogHost.Show(new ConfirmView() { Header = "清空会话？" })) is true)
         {
-            Dialog.Clear();
+            DialogItems.Clear();
         }
     });
 
@@ -118,7 +122,7 @@ public class DialogViewModel : BaseViewModel
         {
             return;
         }
-        
+
         SendRequest(PromptString);
     }), () => { return Model != null; });
 
@@ -126,20 +130,41 @@ public class DialogViewModel : BaseViewModel
 
     public ICommand DeleteCommand => new ActionCommand((o => { this.DeleteItem((o as ResponseViewItem)!); }));
 
-    public ICommand ScrollToEndCommand => new ActionCommand((o =>
+    public ICommand ScrollToNextCommand => new ActionCommand(o =>
     {
-        if (!Dialog.Any())
+        if (DialogItems.Count == 0)
         {
             return;
         }
 
-        this.ScrollViewItem = Dialog.Last();
+        var scrollViewItem = this.ScrollViewItem;
+        if (scrollViewItem != null)
+        {
+            var indexOf = this.DialogItems.IndexOf(scrollViewItem);
+            if (indexOf != -1 && indexOf < this.DialogItems.Count - 1)
+            {
+                this.ScrollViewItem = this.DialogItems[indexOf + 1];
+            }
+        }
+        else
+        {
+            this.ScrollViewItem = this.DialogItems.FirstOrDefault();
+        }
+    });
+
+    public ICommand ScrollToEndCommand => new ActionCommand((o =>
+    {
+        if (!DialogItems.Any())
+        {
+            return;
+        }
+
+        this.ScrollViewItem = DialogItems.Last();
     }));
 
     private string? _promptString;
     private string _topic;
     private IDialogViewItem? _scrollViewItem;
-
     private CancellationTokenSource? _requestTokenSource;
     private DateTime _editTime = DateTime.Now;
 
@@ -150,15 +175,10 @@ public class DialogViewModel : BaseViewModel
         IList<IDialogViewItem>? items = null)
     {
         this._topic = topic;
-        this._model = modelClient;
-        if (modelClient is INotifyPropertyChanged notify)
-        {
-            notify.PropertyChanged += NotifyPropertyChangedOnPropertyChanged;
-        }
-
+        this.Model = modelClient;
         this.PropertyChanged += (_, __) => IsDataChanged = true;
-        Dialog = items == null ? [] : new ObservableCollection<IDialogViewItem>(items);
-        this.Dialog.CollectionChanged += DialogOnCollectionChanged;
+        DialogItems = items == null ? [] : new ObservableCollection<IDialogViewItem>(items);
+        this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
     }
 
     private void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -177,29 +197,29 @@ public class DialogViewModel : BaseViewModel
     {
         if (item is IDialogViewItem viewItem)
         {
-            var current = Dialog.IndexOf(viewItem);
-            if (current == Dialog.Count - 1)
+            var current = DialogItems.IndexOf(viewItem);
+            if (current == DialogItems.Count - 1)
             {
                 return;
             }
 
-            this.ScrollViewItem = Dialog[current + 1];
+            this.ScrollViewItem = DialogItems[current + 1];
         }
     }
 
     public void DeleteItem(IDialogViewItem item)
     {
-        this.Dialog.Remove(item);
+        this.DialogItems.Remove(item);
         if (ScrollViewItem == item)
         {
-            ScrollViewItem = this.Dialog.LastOrDefault();
+            ScrollViewItem = this.DialogItems.LastOrDefault();
         }
     }
 
     public async void SendRequest(string prompt)
     {
         var requestViewItem = new RequestViewItem() { MessageContent = prompt };
-        Dialog.Add(requestViewItem);
+        DialogItems.Add(requestViewItem);
 #if TESTMODE
         for (int i = 0; i < 1000; i++)
         {
@@ -210,15 +230,15 @@ public class DialogViewModel : BaseViewModel
         return;
 #endif
 
-        Dialog.Add(Model);
-        ScrollViewItem = Dialog.Last();
+        DialogItems.Add(Model);
+        ScrollViewItem = DialogItems.Last();
         try
         {
-            var list = GenerateHistory(Dialog);
+            var list = GenerateHistory(DialogItems);
             var existTokens = list.Sum(item => item.Tokens);
             _requestTokenSource = new CancellationTokenSource();
             var response = await Model.SendRequest(list, _requestTokenSource.Token);
-            Dialog.Add(new ResponseViewItem()
+            DialogItems.Add(new ResponseViewItem()
             {
                 Raw = response.Message,
                 Tokens = response.Usage.OutputTokenCount ?? 0
@@ -232,21 +252,21 @@ public class DialogViewModel : BaseViewModel
         }
         catch (OperationCanceledException)
         {
-            Dialog.Remove(Dialog.Last(item => item is RequestViewItem));
+            DialogItems.Remove(DialogItems.Last(item => item is RequestViewItem));
         }
         catch (Exception exception)
         {
             requestViewItem.IsEnable = false;
             var errorMessage = exception.Message;
-            Dialog.Add(new ResponseViewItem() { IsInterrupt = true, ErrorMessage = errorMessage });
+            DialogItems.Add(new ResponseViewItem() { IsInterrupt = true, ErrorMessage = errorMessage });
         }
         finally
         {
-            Dialog.Remove(Dialog.Last(item => item is ILLMModelClient));
+            DialogItems.Remove(DialogItems.Last(item => item is ILLMModelClient));
             _requestTokenSource?.Dispose();
         }
 
-        ScrollViewItem = Dialog.LastOrDefault();
+        ScrollViewItem = DialogItems.LastOrDefault();
     }
 
 
@@ -258,11 +278,11 @@ public class DialogViewModel : BaseViewModel
         }
 
         //删除本请求及之后的所有记录
-        var indexOf = Dialog.IndexOf(redoItem);
-        var dialogCount = Dialog.Count;
+        var indexOf = DialogItems.IndexOf(redoItem);
+        var dialogCount = DialogItems.Count;
         for (int i = 0; i < dialogCount - indexOf; i++)
         {
-            Dialog.RemoveAt(indexOf);
+            DialogItems.RemoveAt(indexOf);
         }
 
         var message = redoItem.MessageContent;
@@ -298,7 +318,7 @@ public class DialogViewModel : BaseViewModel
 
     public void InsertClearContextItem(IDialogViewItem item)
     {
-        var indexOf = Dialog.IndexOf(item);
-        Dialog.Insert(indexOf, new EraseViewItem());
+        var indexOf = DialogItems.IndexOf(item);
+        DialogItems.Insert(indexOf, new EraseViewItem());
     }
 }

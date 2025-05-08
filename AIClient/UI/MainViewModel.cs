@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
@@ -10,6 +11,7 @@ using AutoMapper;
 using LLMClient.Render;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 using TextMateSharp.Grammars;
 
@@ -115,6 +117,112 @@ public class MainViewModel : BaseViewModel
         sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
     }
 
+    public ICommand BackupCommand => new ActionCommand((async o =>
+    {
+        if (PreDialog == null)
+        {
+            return;
+        }
+
+        var saveFileDialog = new SaveFileDialog()
+        {
+            AddExtension = true, DefaultExt = ".json", CheckPathExists = true,
+            Filter = "json files (*.json)|*.json"
+        };
+        var dialogModel = _mapper.Map<DialogViewModel, DialogPersistanceModel>(PreDialog);
+        if (saveFileDialog.ShowDialog() == true)
+        {
+            var fileName = saveFileDialog.FileName;
+            var fileInfo = new FileInfo(fileName);
+            await using (var fileStream = fileInfo.OpenWrite())
+            {
+                await JsonSerializer.SerializeAsync(fileStream, dialogModel);
+            }
+        }
+    }));
+
+    public ICommand ExportCommand => new ActionCommand((async o =>
+    {
+        if (PreDialog == null)
+        {
+            return;
+        }
+
+        var saveFileDialog = new SaveFileDialog()
+        {
+            AddExtension = true,
+            DefaultExt = ".md", CheckPathExists = true,
+            Filter = "markdown files (*.md)|*.md"
+        };
+        if (saveFileDialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        var stringBuilder = new StringBuilder(8192);
+        stringBuilder.AppendLine($"# {PreDialog.Topic}");
+        if (PreDialog.Model != null)
+        {
+            stringBuilder.AppendLine($"### {PreDialog.Model.Name}");
+        }
+
+        foreach (var viewItem in PreDialog.DialogItems)
+        {
+            if (viewItem is ResponseViewItem responseViewItem && !responseViewItem.IsInterrupt)
+            {
+                stringBuilder.AppendLine("## **Assistant:**");
+                stringBuilder.Append(responseViewItem.Raw);
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine("***");
+                stringBuilder.AppendLine();
+            }
+            else if (viewItem is RequestViewItem reqViewItem && reqViewItem.IsEnable)
+            {
+                stringBuilder.AppendLine("## **User:**");
+                stringBuilder.Append(reqViewItem.MessageContent);
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine("***");
+                stringBuilder.AppendLine();
+            }
+        }
+
+        var fileName = saveFileDialog.FileName;
+        File.WriteAllText(fileName, stringBuilder.ToString());
+    }));
+
+    public ICommand ChangeModelCommand => new ActionCommand((async o =>
+    {
+        if (PreDialog == null)
+        {
+            return;
+        }
+
+        var selectionViewModel = new ModelSelectionViewModel()
+            { AvailableEndpoints = ConfigureViewModel.AvailableEndpoints };
+        if (await DialogHost.Show(selectionViewModel) is true)
+        {
+            if (selectionViewModel.SelectedModelName == null)
+            {
+                return;
+            }
+
+            if (selectionViewModel.SelectedEndpoint == null)
+            {
+                return;
+            }
+
+            var model = selectionViewModel.SelectedEndpoint.NewClient(selectionViewModel.SelectedModelName);
+            if (model == null)
+            {
+                MessageBox.Show("No model created!");
+                return;
+            }
+
+            PreDialog.Model = model;
+        }
+    }));
 
     public ICommand SelectModelCommand => new ActionCommand((async o =>
     {
@@ -194,9 +302,9 @@ public class MainViewModel : BaseViewModel
     {
     }
 
-    private const string DialogSaveFolder = "Dialogs";
+    public const string DialogSaveFolder = "Dialogs";
 
-    public async Task LoadFromLocal(string dirPath = DialogSaveFolder)
+    public async Task LoadDialogsFromLocal(string dirPath = DialogSaveFolder)
     {
         var path = Path.GetFullPath(dirPath);
         var directoryInfo = new DirectoryInfo(path);
@@ -306,7 +414,7 @@ public class MainViewModel : BaseViewModel
     public async void Initialize()
     {
         IsProcessing = true;
-        await LoadFromLocal(DialogSaveFolder);
+        await LoadDialogsFromLocal(DialogSaveFolder);
         if (DialogViewModels.Any())
         {
             this.PreDialog = DialogViewModels.First();

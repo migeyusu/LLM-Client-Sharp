@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:LLMClient.UI"
              xmlns:llmClient="clr-namespace:LLMClient"
              xmlns:grammars="clr-namespace:TextMateSharp.Grammars;assembly=TextMateSharp.Grammars"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance llmClient:GlobalConfig}"
              d:DesignHeight="300" d:DesignWidth="300">
@@ -29,5 +30,16 @@
                 Margin="0,16,0,0"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom" />
+        <StackPanel Grid.Row="0" Grid.Column="0"
+                    Orientation="Horizontal"
+                    Margin="10">
+            <Button VerticalAlignment="Center"
+                    Margin="20,0,0,0"
+                    Click="OpenDialogs_OnClick"
+                    WindowChrome.IsHitTestVisibleInChrome="True"
+                    Content="打开对话存储"
+                    Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}" />
+        </StackPanel>
     </Grid>
 </UserControl>

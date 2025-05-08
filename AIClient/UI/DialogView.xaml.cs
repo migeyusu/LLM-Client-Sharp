@@ -56,22 +56,12 @@ public partial class DialogView : UserControl
             PromptTextBox.InputBindings.Remove(findResource);
         }
     }
-
-    private void ScrollToNext_OnClick(object sender, RoutedEventArgs e)
-    {
-        DialogListBox.ScrollToNextPage();
-        /*var all = DialogListBox.GetVisibleItemsOptimized().ToArray();
-        var lastOrDefault = all.LastOrDefault();
-        if (lastOrDefault != null)
-        {
-            this.ViewModel.ScrollNext(lastOrDefault);
-        }*/
-    }
-
+    
     private void Redo_OnCanExecute(object sender, CanExecuteRoutedEventArgs e)
     {
         e.CanExecute = ViewModel.Model != null;
     }
+    
 }
 
 /*public class FlowDocumentScrollViewerEx : ContentControl

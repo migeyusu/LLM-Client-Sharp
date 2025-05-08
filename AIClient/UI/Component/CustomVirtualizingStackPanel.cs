@@ -14,7 +14,7 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
         base.OnCleanUpVirtualizedItem(e);
         if (e.Value is ResponseViewItem)
         {
-            var richTextBox = FindControlInContainer<FlowDocumentScrollViewer>(e.UIElement);
+            var richTextBox = e.UIElement.FindVisualChild<FlowDocumentScrollViewer>();
             if (richTextBox is { Document: not null })
             {
                 richTextBox.Document = new FlowDocument(); // 清除 FlowDocument 的引用
@@ -36,7 +36,7 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
 
             foreach (ListBoxItem item in value)
             {
-                var richTextBox = FindControlInContainer<FlowDocumentScrollViewer>(item);
+                var richTextBox = item.FindVisualChild<FlowDocumentScrollViewer>();
                 if (richTextBox is { Document: not null })
                 {
                     richTextBox.Document = new FlowDocument(); // 清除 FlowDocument 的引用
@@ -45,26 +45,5 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
         }
 
         base.OnClearChildren();
-    }
-
-    /// <summary>
-    /// 从 ListBoxItem 中查找 RichTextBox 控件
-    /// </summary>
-    private T? FindControlInContainer<T>(DependencyObject container) where T : DependencyObject
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(container); i++)
-        {
-            var child = VisualTreeHelper.GetChild(container, i);
-
-            if (child is T richTextBox)
-            {
-                return richTextBox;
-            }
-
-            var result = FindControlInContainer<T>(child);
-            if (result != null) return result;
-        }
-
-        return null; // 没有找到 RichTextBox
     }
 }

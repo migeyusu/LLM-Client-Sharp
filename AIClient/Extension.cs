@@ -173,43 +173,8 @@ public static class Extension
         }
     }
 
-    /// <summary>
-    /// 在虚拟化的ListBox中滚动到下一页项目
-    /// </summary>
-    public static void ScrollToNextPage(this ListBox listBox)
-    {
-        // 获取ListBox的ScrollViewer
-        ScrollViewer? scrollViewer = FindVisualChild<ScrollViewer>(listBox);
-        if (scrollViewer == null) return;
-
-        // 获取最后一个可见项的索引
-        VirtualizingStackPanel? panel = FindVisualChild<VirtualizingStackPanel>(listBox);
-        if (panel == null) return;
-
-        // 计算当前视口底部对应的项索引
-        int firstVisibleItemIndex = (int)panel.VerticalOffset;
-        double visibleItemsCount = panel.ViewportHeight;
-
-        // 估算最后一个可见项的索引（根据虚拟化面板的特性）
-        int lastVisibleItemIndex = firstVisibleItemIndex + (int)Math.Ceiling(visibleItemsCount) - 1;
-
-        // 确保索引不超出范围
-        lastVisibleItemIndex = Math.Min(lastVisibleItemIndex, listBox.Items.Count - 1);
-
-        // 滚动到下一项（即最后可见项的下一项）
-        int nextItemIndex = lastVisibleItemIndex + 1;
-        if (nextItemIndex < listBox.Items.Count)
-        {
-            var listBoxItem = listBox.Items[nextItemIndex];
-            if (listBoxItem != null)
-            {
-                listBox.ScrollIntoView(listBoxItem);
-            }
-        }
-    }
-
     // 递归查找子控件
-    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    public static T? FindVisualChild<T>(this DependencyObject parent) where T : DependencyObject
     {
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         {
@@ -225,7 +190,7 @@ public static class Extension
         return null;
     }
 
-    public static T? FindParent<T>(DependencyObject child) where T : DependencyObject
+    public static T? FindVisualParent<T>(this DependencyObject child) where T : DependencyObject
     {
         //get parent item
         DependencyObject? parentObject = VisualTreeHelper.GetParent(child);
@@ -238,6 +203,6 @@ public static class Extension
         if (parent != null)
             return parent;
         else
-            return FindParent<T>(parentObject);
+            return FindVisualParent<T>(parentObject);
     }
 }

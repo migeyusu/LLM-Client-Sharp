@@ -47,5 +47,4 @@ public partial class MainWindow : ExtendedWindow
     {
         await this.ShowDialog(_globalConfig);
     }
-    
 }
