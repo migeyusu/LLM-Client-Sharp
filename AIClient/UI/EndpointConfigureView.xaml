@@ -17,68 +17,80 @@
              x:Name="ControlRoot">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"
+                           MaxHeight="200" />
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <!--Style="{StaticResource MaterialDesignChoiceChipListBox}"-->
-        <ListBox Grid.Row="0"
-                 Margin="10"
-                 ItemsSource="{Binding Endpoints,Mode=OneWay}"
-                 SelectionMode="Single"
-                 Style="{StaticResource MaterialDesignChoiceChipPrimaryOutlineListBox}"
-                 SelectedItem="{Binding SelectedEndpoint,Mode=OneWayToSource}"
-                 MaxHeight="120"
-                 BorderBrush="DarkGray"
-                 BorderThickness="0,0,0,1">
-            <ListBox.ItemTemplate>
-                <DataTemplate DataType="{x:Type local:ILLMEndpoint}">
-                    <StackPanel Orientation="Horizontal">
-                        <Image Width="20"
-                               Height="20"
-                               Source="{Binding Icon,Mode=OneWay}" />
-                        <TextBlock Text="{Binding DisplayName,Mode=OneWay}"
-                                   Margin="6,0,0,0"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-            <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapPanel IsItemsHost="True" />
-                </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-        </ListBox>
-        <Button Grid.Row="0"
-                Style="{StaticResource CloseButtonStyle}"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                Margin="5" />
-        <materialDesign:PopupBox Grid.Row="2"
-                                 Margin="10"
-                                 PlacementMode="BottomAndAlignCentres"
-                                 HorizontalAlignment="Left"
-                                 VerticalAlignment="Bottom"
-                                 Width="40"
-                                 Height="40"
-                                 Style="{StaticResource MaterialDesignMultiFloatingActionPopupBox}">
-            <materialDesign:PopupBox.ToggleCheckedContent>
-                <materialDesign:PackIcon Width="24"
-                                         Height="24"
-                                         Kind="Pencil" />
-            </materialDesign:PopupBox.ToggleCheckedContent>
-            <StackPanel>
-                <Button ToolTip="OpenAI API兼容"
-                        Command="{Binding AddNewEndpointCommand}">
-                    <Button.Content>
-                        <materialDesign:PackIcon Kind="Api"
-                                                 Foreground="White"
-                                                 Width="26"
-                                                 Height="26" />
-                    </Button.Content>
-                </Button>
-            </StackPanel>
-        </materialDesign:PopupBox>
+        <Grid Margin="12,0,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <materialDesign:PopupBox Grid.Column="0"
+                                     Margin="5"
+                                     ToolTip="添加新的API"
+                                     ToolTipService.InitialShowDelay="0"
+                                     PlacementMode="BottomAndAlignCentres"
+                                     VerticalAlignment="Center"
+                                     materialDesign:ElevationAssist.Elevation="Dp4"
+                                     Width="30"
+                                     Height="30"
+                                     Style="{StaticResource MaterialDesignMultiFloatingActionSecondaryPopupBox}">
+                <materialDesign:PopupBox.ToggleCheckedContent>
+                    <materialDesign:PackIcon Width="24"
+                                             Height="24"
+                                             Kind="Pencil" />
+                </materialDesign:PopupBox.ToggleCheckedContent>
+                <StackPanel>
+                    <Button ToolTip="OpenAI API兼容"
+                            Margin="10"
+                            materialDesign:ElevationAssist.Elevation="Dp4"
+                            Command="{Binding AddNewEndpointCommand}">
+                        <Button.Content>
+                            <materialDesign:PackIcon Kind="Api"
+                                                     Foreground="White"
+                                                     Width="26"
+                                                     Height="26" />
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
+            </materialDesign:PopupBox>
+            <ListBox Grid.Column="1"
+                     Margin="10"
+                     ItemsSource="{Binding Endpoints,Mode=OneWay}"
+                     SelectionMode="Single"
+                     Style="{StaticResource MaterialDesignChoiceChipPrimaryOutlineListBox}"
+                     SelectedItem="{Binding SelectedEndpoint,Mode=OneWayToSource}"
+                     MaxHeight="120"
+                     BorderBrush="DarkGray"
+                     BorderThickness="0,0,0,1">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type local:ILLMEndpoint}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Width="20"
+                                   Height="20"
+                                   Source="{Binding Icon,Mode=OneWay}" />
+                            <TextBlock Text="{Binding DisplayName,Mode=OneWay}"
+                                       Margin="6,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel IsItemsHost="True" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
+            <Button Grid.Column="2"
+                    Style="{StaticResource CloseButtonStyle}"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="5" />
+        </Grid>
         <ContentControl Grid.Row="1"
                         Margin="10,5"
                         Content="{Binding SelectedEndpoint,Mode=OneWay}">

@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
 using AutoMapper;
@@ -8,6 +10,9 @@ using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using OpenAI;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using TextContent = Microsoft.Extensions.AI.TextContent;
 
@@ -17,9 +22,7 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
 {
     private static readonly Mapper Mapper = new Mapper((new MapperConfiguration((expression =>
     {
-        // expression.AddMaps(typeof(AzureModelBase).Assembly);
-        expression.CreateMap<AzureClientBase, DefaultModelParam>();
-        expression.CreateMap<DefaultModelParam, AzureClientBase>();
+        expression.CreateMap<AzureModelInfo, IModelParams>();
     }))));
 
     [JsonIgnore] public AzureModelInfo ModelInfo { get; }
@@ -50,6 +53,7 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
     {
         this.Endpoint = endPoint;
         ModelInfo = modelInfo;
+        Mapper.Map<AzureModelInfo, IModelParams>(modelInfo, this.Parameters);
         UITheme.ModeChanged += UIThemeOnModeChanged;
         Option = endPoint.Option;
     }
@@ -58,71 +62,29 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
     {
         UITheme.ModeChanged -= UIThemeOnModeChanged;
     }
+    
+    private readonly FieldInfo? _info = typeof(ChatCompletionsClient)
+        .GetField("_apiVersion", BindingFlags.Instance | BindingFlags.NonPublic);
 
-    public virtual IChatClient CreateClient(AzureOption endpoint)
+    protected override IChatClient CreateChatClient()
     {
-        var credential = new AzureKeyCredential(endpoint.APIToken);
+        var credential = new AzureKeyCredential(Option.APIToken);
         var chatCompletionsClient = new ChatCompletionsClient(new Uri(Option.URL), credential,
             new AzureAIInferenceClientOptions());
-        return new AzureAIInferenceChatClient(chatCompletionsClient);
+        _info?.SetValue(chatCompletionsClient, "2024-12-01-preview");
+        return chatCompletionsClient.AsIChatClient();
+        /*var build = Kernel.CreateBuilder()
+            .AddOpenAIChatCompletion(this.ModelInfo.Id, new Uri(Option.URL), this.Option.APIToken)
+            .Build();
+        var chatCompletionService = build.GetRequiredService<IChatCompletionService>();
+        return chatCompletionService.AsChatClient();*/
     }
 
     private void UIThemeOnModeChanged(bool obj)
     {
         this.OnPropertyChanged(nameof(Icon));
     }
-    
 
-    public override async Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
-        CancellationToken cancellationToken = default)
-    {
-        var cachedPreResponse = new StringBuilder();
-        try
-        {
-            PreResponse.Clear();
-            cachedPreResponse.Clear();
-            // PreResponse = "正在生成文档。。。。。";
-            IsResponding = true;
-            var messages = new List<ChatMessage>();
-            var requestOptions = this.CreateChatOptions(messages);
-            foreach (var dialogItem in dialogItems.Where((item => item.IsEnable)))
-            {
-                if (dialogItem.Message != null)
-                {
-                    messages.Add(dialogItem.Message);
-                }
-            }
-
-            UsageDetails? usageDetails = null;
-            await foreach (var update in CreateClient(Option)
-                               .GetStreamingResponseAsync(messages, requestOptions, cancellationToken))
-            {
-                var updateContents = update.Contents;
-                foreach (var content in updateContents)
-                {
-                    switch (content)
-                    {
-                        case UsageContent usageContent:
-                            usageDetails = usageContent.Details;;
-                            break;
-                        case TextContent textContent:
-                            PreResponse.Add(textContent.Text);
-                            cachedPreResponse.Append(textContent.Text);
-                            break;
-                        default:
-                            Trace.Write("unsupported content");
-                            break;
-                    }
-                }
-            }
-
-            return new CompletedResult(cachedPreResponse.ToString(), usageDetails ?? new UsageDetails());
-        }
-        finally
-        {
-            IsResponding = false;
-        }
-    }
 #pragma warning disable SKEXP0010
     public static void Test()
     {

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net.Http;
 using System.Windows;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure;
@@ -15,7 +16,6 @@ public class Program
     [STAThread]
     static void Main(string[] args)
     {
-        TestClass.Test();
         // 尝试获得互斥量的所有权
         if (!Debugger.IsAttached && !mutex.WaitOne(TimeSpan.Zero, true))
         {
@@ -47,6 +47,7 @@ public class Program
             serviceProvider = collection.BuildServiceProvider();
             App app = new App();
             app.InitializeComponent();
+            // app.Run(new TestWindow());
             serviceProvider.GetService<IEndpointService>()?.Initialize();
             app.Run(serviceProvider.GetService<MainWindow>());
         }

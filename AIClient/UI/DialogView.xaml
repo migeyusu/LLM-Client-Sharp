@@ -152,6 +152,8 @@
                                                 </component:FlowDocumentScrollViewerEx.ContextMenu>
                                             </component:FlowDocumentScrollViewerEx>
                                             <TextBlock Text="{Binding ErrorMessage,Mode=OneTime}"
+                                                       Foreground="Red"
+                                                       Padding="10"
                                                        Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                                         </Grid>
                                     </materialDesign:Card>

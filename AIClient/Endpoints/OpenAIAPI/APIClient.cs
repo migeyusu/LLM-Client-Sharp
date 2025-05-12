@@ -53,19 +53,15 @@ public class APIClient : LlmClientBase
 
     public override ILLMEndpoint Endpoint { get; }
 
-    private IChatClient _chatClient;
-
     private readonly DefaultOption _option;
 
 
     public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, DefaultOption option)
     {
         _option = option;
-        _option.PropertyChanged += OptionOnPropertyChanged;
         this.Endpoint = endPoint;
         ModelInfo = modelInfo;
         modelInfo.PropertyChanged += ModelInfoOnPropertyChanged;
-        _chatClient = CreateChatClient(modelInfo, option);
         Mapper.Map<APIModelInfo, IModelParams>(modelInfo, this.Parameters);
     }
 
@@ -81,167 +77,21 @@ public class APIClient : LlmClientBase
 
     ~APIClient()
     {
-        _option.PropertyChanged -= OptionOnPropertyChanged;
-        ModelInfo.PropertyChanged -= ModelInfoOnPropertyChanged;
     }
 
-    private IChatClient CreateChatClient(APIModelInfo modelInfo, DefaultOption option)
+    protected override IChatClient CreateChatClient()
     {
         /*var chatCompletionsClient = new ChatCompletionsClient(new Uri(option.URL),
             DelegatedTokenCredential.Create(((context, token) =>
                 new AccessToken(option.APIToken, DateTimeOffset.MaxValue))));
         return chatCompletionsClient.AsChatClient();*/
         var build = Kernel.CreateBuilder()
-            .AddOpenAIChatCompletion(modelInfo.Id, new Uri(option.URL), option.APIToken)
+            .AddOpenAIChatCompletion(this.ModelInfo.Id, new Uri(this._option.URL), _option.APIToken)
             .Build();
         var chatCompletionService = build.GetRequiredService<IChatCompletionService>();
         return chatCompletionService.AsChatClient();
     }
-
-    private void OptionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        _chatClient = CreateChatClient(ModelInfo, _option);
-        /*switch (e.PropertyName)
-        {
-            case nameof(DefaultOption.APIToken):
-                break;
-            case nameof(DefaultOption.URL):
-                break;
-        }*/
-    }
-
-    public override async Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
-        CancellationToken cancellationToken = default)
-    {
-        var cachedPreResponse = new StringBuilder();
-        try
-        {
-            PreResponse.Clear();
-            cachedPreResponse.Clear();
-            // PreResponse = "正在生成文档。。。。。";
-            IsResponding = true;
-            var messages = new List<ChatMessage>();
-            var requestOptions = this.CreateChatOptions(messages);
-            foreach (var dialogItem in dialogItems)
-            {
-                if (dialogItem.Message != null)
-                {
-                    messages.Add(dialogItem.Message);
-                }
-            }
-
-            if (this.Parameters.Streaming)
-            {
-                AdditionalPropertiesDictionary? dictionary = null;
-                UsageDetails? usageDetails = null;
-                await foreach (var update in _chatClient
-                                   .GetStreamingResponseAsync(messages, requestOptions, cancellationToken))
-                {
-                    if (update.AdditionalProperties != null)
-                    {
-                        dictionary = update.AdditionalProperties;
-                    }
-
-                    var updateContents = update.Contents;
-                    foreach (var content in updateContents)
-                    {
-                        switch (content)
-                        {
-                            case UsageContent usageContent:
-                                usageDetails = usageContent.Details;
-                                break;
-                            case TextContent textContent:
-                                PreResponse.Add(textContent.Text);
-                                cachedPreResponse.Append(textContent.Text);
-                                break;
-                            default:
-                                Trace.Write("unsupported content");
-                                break;
-                        }
-                    }
-                }
-
-                if (usageDetails == null && dictionary != null)
-                {
-                    // 方法1: 检查 Metadata 中的 Usage 信息
-                    if (dictionary.TryGetValue("Usage", out var usageObj))
-                    {
-                        if (usageObj is ChatTokenUsage chatTokenUsage)
-                        {
-                            usageDetails = new UsageDetails()
-                            {
-                                InputTokenCount = chatTokenUsage.InputTokenCount,
-                                OutputTokenCount = chatTokenUsage.OutputTokenCount,
-                                TotalTokenCount = chatTokenUsage.TotalTokenCount,
-                            };
-                        }
-
-                        /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
-                        {
-                            // tokenCount = Convert.ToInt32(totalTokensObj);
-                        }*/
-                    }
-
-                    // 方法2: 部分 AI 服务可能使用不同的元数据键
-                    /*if (usageDetails == null &&
-                        dictionary.TryGetValue("CompletionTokenCount", out var completionTokensObj))
-                    {
-                        // tokenCount = Convert.ToInt32(completionTokensObj);
-                    }
-
-                    // 方法3: 有些版本可能在 ModelResult 中提供 usage
-                    if (usageDetails == null &&
-                        dictionary.TryGetValue("ModelResults", out var modelResultsObj))
-                    {
-                        //do what?
-                    }*/
-                }
-
-                if (usageDetails == null)
-                {
-                    Trace.Write("usage details not provided");
-                }
-
-                return new CompletedResult(cachedPreResponse.ToString(), usageDetails ?? new UsageDetails());
-            }
-            else
-            {
-                UsageDetails? usageDetails = null;
-                var chatResponse = await _chatClient.GetResponseAsync(messages, requestOptions, cancellationToken);
-                if (chatResponse.Usage == null)
-                {
-                    if (chatResponse.AdditionalProperties?.TryGetValue("Usage", out var usageObj) == true)
-                    {
-                        if (usageObj is ChatTokenUsage chatTokenUsage)
-                        {
-                            usageDetails = new UsageDetails()
-                            {
-                                InputTokenCount = chatTokenUsage.InputTokenCount,
-                                OutputTokenCount = chatTokenUsage.OutputTokenCount,
-                                TotalTokenCount = chatTokenUsage.TotalTokenCount,
-                            };
-                        }
-
-                        /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
-                        {
-                            // tokenCount = Convert.ToInt32(totalTokensObj);
-                        }*/
-                    }
-                }
-                else
-                {
-                    usageDetails = chatResponse.Usage;
-                }
-
-                return new CompletedResult(chatResponse.Text, usageDetails ?? new UsageDetails());
-            }
-        }
-        finally
-        {
-            IsResponding = false;
-        }
-    }
-
+    
 
     /*private ChatCompletionsOptions ToAzureAIOptions(
       IEnumerable<ChatMessage> chatContents,

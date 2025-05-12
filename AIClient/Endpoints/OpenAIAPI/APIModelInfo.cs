@@ -117,11 +117,11 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     private float _presencePenalty;
     private long? _seed;
     private float _temperature = 1;
-    private int _maxTokens = 4096;
-    private int _maxTokenLimit = 65535;
+    private int _maxTokens = 4 * 1024;
+    private int _maxTokenLimit = 128 * 1024;
     private int _topKMax = 50;
     private string? _infoUrl;
-    private int _maxContextSize = 128000;
+    private int _maxContextSize = 200 * 1024;
     private bool _streaming = true;
 
     public int MaxContextSize

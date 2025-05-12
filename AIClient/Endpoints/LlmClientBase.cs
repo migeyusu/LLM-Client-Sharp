@@ -1,9 +1,13 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Windows.Media;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
+using OpenAI.Chat;
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Endpoints;
 
@@ -38,15 +42,13 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
         }
     }
 
-    [JsonIgnore]
-    public virtual ILLMModel Info
-    {
-        get { return null; }
-    }
+    [JsonIgnore] public abstract ILLMModel Info { get; }
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 
     [JsonIgnore] public virtual ObservableCollection<string> PreResponse { get; } = new ObservableCollection<string>();
+
+    protected abstract IChatClient CreateChatClient();
 
     protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
@@ -100,6 +102,136 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
         return chatOptions;
     }
 
-    public abstract Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
-        CancellationToken cancellationToken = default);
+    public virtual async Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
+        CancellationToken cancellationToken = default)
+    {
+        var cachedPreResponse = new StringBuilder();
+        try
+        {
+            PreResponse.Clear();
+            cachedPreResponse.Clear();
+            // PreResponse = "正在生成文档。。。。。";
+            IsResponding = true;
+            var messages = new List<ChatMessage>();
+            var requestOptions = this.CreateChatOptions(messages);
+            foreach (var dialogItem in dialogItems)
+            {
+                if (dialogItem.Message != null)
+                {
+                    messages.Add(dialogItem.Message);
+                }
+            }
+
+            if (this.Parameters.Streaming)
+            {
+                AdditionalPropertiesDictionary? dictionary = null;
+                UsageDetails? usageDetails = null;
+                await foreach (var update in CreateChatClient()
+                                   .GetStreamingResponseAsync(messages, requestOptions, cancellationToken))
+                {
+                    if (update.AdditionalProperties != null)
+                    {
+                        dictionary = update.AdditionalProperties;
+                    }
+
+                    var updateContents = update.Contents;
+                    foreach (var content in updateContents)
+                    {
+                        switch (content)
+                        {
+                            case UsageContent usageContent:
+                                usageDetails = usageContent.Details;
+                                break;
+                            case TextContent textContent:
+                                PreResponse.Add(textContent.Text);
+                                cachedPreResponse.Append(textContent.Text);
+                                break;
+                            default:
+                                Trace.Write("unsupported content");
+                                break;
+                        }
+                    }
+                }
+
+                if (usageDetails == null && dictionary != null)
+                {
+                    // 方法1: 检查 Metadata 中的 Usage 信息
+                    if (dictionary.TryGetValue("Usage", out var usageObj))
+                    {
+                        if (usageObj is ChatTokenUsage chatTokenUsage)
+                        {
+                            usageDetails = new UsageDetails()
+                            {
+                                InputTokenCount = chatTokenUsage.InputTokenCount,
+                                OutputTokenCount = chatTokenUsage.OutputTokenCount,
+                                TotalTokenCount = chatTokenUsage.TotalTokenCount,
+                            };
+                        }
+
+                        /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
+                        {
+                            // tokenCount = Convert.ToInt32(totalTokensObj);
+                        }*/
+                    }
+
+                    // 方法2: 部分 AI 服务可能使用不同的元数据键
+                    /*if (usageDetails == null &&
+                        dictionary.TryGetValue("CompletionTokenCount", out var completionTokensObj))
+                    {
+                        // tokenCount = Convert.ToInt32(completionTokensObj);
+                    }
+
+                    // 方法3: 有些版本可能在 ModelResult 中提供 usage
+                    if (usageDetails == null &&
+                        dictionary.TryGetValue("ModelResults", out var modelResultsObj))
+                    {
+                        //do what?
+                    }*/
+                }
+
+                if (usageDetails == null)
+                {
+                    Trace.Write("usage details not provided");
+                }
+
+                return new CompletedResult(cachedPreResponse.ToString(), usageDetails ?? new UsageDetails());
+            }
+            else
+            {
+                UsageDetails? usageDetails = null;
+                var chatResponse =
+                    await CreateChatClient().GetResponseAsync(messages, requestOptions, cancellationToken);
+                if (chatResponse.Usage == null)
+                {
+                    if (chatResponse.AdditionalProperties?.TryGetValue("Usage", out var usageObj) == true)
+                    {
+                        if (usageObj is ChatTokenUsage chatTokenUsage)
+                        {
+                            usageDetails = new UsageDetails()
+                            {
+                                InputTokenCount = chatTokenUsage.InputTokenCount,
+                                OutputTokenCount = chatTokenUsage.OutputTokenCount,
+                                TotalTokenCount = chatTokenUsage.TotalTokenCount,
+                            };
+                        }
+
+                        /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
+                        {
+                            // tokenCount = Convert.ToInt32(totalTokensObj);
+                        }*/
+                    }
+                }
+                else
+                {
+                    usageDetails = chatResponse.Usage;
+                }
+
+                return new CompletedResult(chatResponse.Text, usageDetails ?? new UsageDetails());
+            }
+        }
+        finally
+        {
+            IsResponding = false;
+        }
+    }
 }

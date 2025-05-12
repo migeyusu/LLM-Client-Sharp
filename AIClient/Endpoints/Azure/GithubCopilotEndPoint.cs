@@ -88,6 +88,19 @@ public class GithubCopilotEndPoint : AzureEndPointBase
 
     public GithubCopilotEndPoint()
     {
+        Action<AzureModelInfo> full = (info) =>
+        {
+            info.SystemPromptEnable = true;
+            info.TopPEnable = true;
+            info.TopP = 1;
+            info.TemperatureEnable = true;
+            info.Temperature = 1;
+            info.MaxTokens = 4096;
+            info.FrequencyPenaltyEnable = true;
+            info.FrequencyPenalty = 0;
+            info.PresencePenaltyEnable = true;
+            info.PresencePenalty = 0;
+        };
         Action<AzureModelInfo> mistral = (info) =>
         {
             info.SystemPromptEnable = true;
@@ -122,11 +135,36 @@ public class GithubCopilotEndPoint : AzureEndPointBase
             info.FrequencyPenalty = 0;
         };
         Action<AzureModelInfo> empty = (info) => { };
-        Action<AzureModelInfo> deepSeek = (info) => { info.MaxTokens = 2048; };
+        Action<AzureModelInfo> deepSeek_R1 = (info) => { info.MaxTokens = 2048; };
+        Action<AzureModelInfo> deepSeek_V3 = (info) =>
+        {
+            info.SystemPromptEnable = true;
+            info.TopPEnable = true;
+            info.TopP = 0.1f;
+            info.TemperatureEnable = true;
+            info.Temperature = 0.8f;
+            info.MaxTokens = 2048;
+            info.FrequencyPenaltyEnable = true;
+            info.FrequencyPenalty = 0;
+            info.PresencePenaltyEnable = true;
+            info.PresencePenalty = 0;
+        };
         _predefinedModels = new Dictionary<string, Action<AzureModelInfo>>()
         {
+            { "OpenAI GPT-4.1", full },
+            { "OpenAI GPT-4.1-mini", full },
+            { "OpenAI GPT-4.1-nano", full },
+
             { "OpenAI GPT-4o", baseModel },
             { "OpenAI GPT-4o mini", baseModel },
+
+            { "OpenAI o1", o1 },
+            { "OpenAI o1-mini", empty },
+            { "OpenAI o1-preview", empty },
+
+            { "OpenAI o3", o1 },
+            { "OpenAI o3-mini", o1 },
+            { "OpenAI o4-mini", o1 },
 
             { "Ministral 3B", mistral },
             { "Mistral Large 24.11", mistral },
@@ -143,12 +181,11 @@ public class GithubCopilotEndPoint : AzureEndPointBase
             { "Meta-Llama-3-8B-Instruct", llama3 },
             { "Meta-Llama-3-70B-Instruct", llama3 },
 
-            { "OpenAI o1", o1 },
-            { "OpenAI o1-mini", empty },
-            { "OpenAI o3-mini", o1 },
-            { "OpenAI o1-preview", empty },
-
-            { "DeepSeek-R1", deepSeek }
+            { "DeepSeek-R1", deepSeek_R1 },
+            { "MAI-DS-R1", deepSeek_R1 },
+            
+            {"DeepSeek-V3-0324",deepSeek_V3},
+            
         };
     }
 

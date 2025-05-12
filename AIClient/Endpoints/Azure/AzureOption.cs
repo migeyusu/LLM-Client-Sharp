@@ -6,6 +6,6 @@ public class AzureOption : DefaultOption
 {
     public AzureOption()
     {
-        this.URL = "https://models.inference.ai.azure.com";
+        this.URL = "https://models.github.ai/inference"; //"https://models.inference.ai.azure.com";
     }
 }

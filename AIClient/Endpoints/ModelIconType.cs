@@ -8,5 +8,19 @@ public enum ModelIconType : int
     Claude,
     Mistral,
     Deepseek,
-    Grok
+    Grok,
+    Qwen,
+    Microsoft,
+    Nvidia,
+    Meta,
+    CodeGeex,
+    Cohere,
+    Doubao,
+    Hunyuan,
+    Kimi,
+    Moonshot,
+    Qingyan,
+    Wenxin,
+    Yi,
+    Zhipu
 }

@@ -11,24 +11,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Anthropic.SDK" Version="5.0.0" />
         <PackageReference Include="AutoMapper" Version="13.0.1" />
         <PackageReference Include="Azure.AI.TextAnalytics" Version="5.3.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+        <PackageReference Include="Magick.NET-Q8-x64" Version="14.6.0" />
+        <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.6" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
         <PackageReference Include="MaterialDesignThemes" Version="5.1.1-ci859"/>
-        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.3.0-preview.1.25161.3" />
-        <PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" Version="9.3.0-preview.1.25161.3" />
-        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.3.0-preview.1.25161.3" />
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.1" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Amazon" Version="1.37.0-alpha" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.37.0" />
-        <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.42.0" />
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.4.3-preview.1.25230.7" />
+        <PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" Version="9.4.3-preview.1.25230.7" />
+        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.4.3-preview.1.25230.7" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0-preview.3.25171.5" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0-preview.3.25171.5" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.49.0" />
+        <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.49.0" />
         <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3124.44" />
         <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
         <PackageReference Include="SkiaSharp" Version="3.118.0-preview.2.3" />
-        <PackageReference Include="Svg.Skia" Version="2.0.0.4" />
         <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
         <PackageReference Include="System.Runtime.WindowsRuntime.UI.Xaml" Version="5.0.0-preview.5.20278.1" />
         <PackageReference Include="TextMateSharp" Version="1.0.65"/>
@@ -60,14 +59,17 @@
         <None Update="Azure\Models\models.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="Endpoints\Azure\Models\models_backup.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="Endpoints\Azure\Models\models.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Grammars\verilog\syntaxes\bsv.g4"/>
-        <Content Include="Grammars\vhdl\syntaxes\bsv.g4"/>
+        <Content Include="Grammars\verilog\syntaxes\bsv.g4" />
+        <Content Include="Grammars\vhdl\syntaxes\bsv.g4" />
     </ItemGroup>
 
     <ItemGroup>
@@ -121,21 +123,49 @@
       <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf" />
       <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
       <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
-      <Resource Include="Resources\Images\github-copilot-icon.png" />
-      <None Remove="Resources\Images\azure-icon.png" />
-      <Resource Include="Resources\Images\azure-icon.png" />
-      <None Remove="Resources\Images\llm\chatgpt-icon.png" />
-      <Resource Include="Resources\Images\llm\chatgpt.png" />
-      <None Remove="Resources\Images\llm\claude-ai-icon.png" />
-      <Resource Include="Resources\Images\llm\claude.png" />
-      <None Remove="Resources\Images\llm\deepseek-logo-icon.png" />
-      <Resource Include="Resources\Images\llm\deepseek.png" />
-      <None Remove="Resources\Images\llm\google-gemini-icon.png" />
-      <Resource Include="Resources\Images\llm\gemini.png" />
-      <None Remove="Resources\Images\llm\grok-logo-icon.png" />
-      <Resource Include="Resources\Images\llm\grok.png" />
-      <None Remove="Resources\Images\llm\mistral-ai-icon.png" />
-      <Resource Include="Resources\Images\llm\mistral.png" />
+      <None Remove="Resources\Images\llm\chatglm.svg" />
+      <Resource Include="Resources\Images\llm\chatglm.svg" />
+      <None Remove="Resources\Images\llm\codegeex.svg" />
+      <Resource Include="Resources\Images\llm\codegeex.svg" />
+      <None Remove="Resources\Images\llm\cohere.svg" />
+      <Resource Include="Resources\Images\llm\cohere.svg" />
+      <None Remove="Resources\Images\llm\doubao.svg" />
+      <Resource Include="Resources\Images\llm\doubao.svg" />
+      <None Remove="Resources\Images\llm\hunyuan.svg" />
+      <Resource Include="Resources\Images\llm\hunyuan.svg" />
+      <None Remove="Resources\Images\llm\kimi.svg" />
+      <Resource Include="Resources\Images\llm\kimi.svg" />
+      <None Remove="Resources\Images\llm\microsoft.svg" />
+      <Resource Include="Resources\Images\llm\microsoft.svg" />
+      <None Remove="Resources\Images\llm\midjourney.svg" />
+      <None Remove="Resources\Images\llm\nvidia.svg" />
+      <Resource Include="Resources\Images\llm\nvidia.svg" />
+      <None Remove="Resources\Images\llm\qingyan.svg" />
+      <Resource Include="Resources\Images\llm\qingyan.svg" />
+      <None Remove="Resources\Images\llm\yi.svg" />
+      <Resource Include="Resources\Images\llm\yi.svg" />
+      <None Remove="Resources\Images\llm\zhipu.svg" />
+      <Resource Include="Resources\Images\llm\zhipu.svg" />
+      <None Remove="Resources\Images\llm\meta.svg" />
+      <Resource Include="Resources\Images\llm\meta.svg" />
+      <None Remove="Resources\Images\llm\deepseek.svg" />
+      <Resource Include="Resources\Images\llm\deepseek.svg" />
+      <None Remove="Resources\Images\llm\gemini.svg" />
+      <Resource Include="Resources\Images\llm\gemini.svg" />
+      <None Remove="Resources\Images\llm\grok.svg" />
+      <Resource Include="Resources\Images\llm\grok.svg" />
+      <None Remove="Resources\Images\llm\claude.svg" />
+      <Resource Include="Resources\Images\llm\claude.svg" />
+      <None Remove="Resources\Images\llm\chatgpt.svg" />
+      <Resource Include="Resources\Images\llm\chatgpt.svg" />
+      <None Remove="Resources\Images\llm\mistral.svg" />
+      <Resource Include="Resources\Images\llm\mistral.svg" />
+      <None Remove="Resources\Images\llm\moonshot.svg" />
+      <Resource Include="Resources\Images\llm\moonshot.svg" />
+      <None Remove="Resources\Images\llm\qwen.svg" />
+      <Resource Include="Resources\Images\llm\qwen.svg" />
+      <None Remove="Resources\Images\llm\wenxin.svg" />
+      <Resource Include="Resources\Images\llm\wenxin.svg" />
     </ItemGroup>
 
     <ItemGroup>

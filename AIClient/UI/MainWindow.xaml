@@ -13,6 +13,7 @@
                           xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                           xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
                           xmlns:wpf="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+                          xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -133,7 +134,7 @@
                 <ui:EndpointConfigureView Width="800"
                                           Height="600" />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type openAiapi:APIClient}">
+            <DataTemplate DataType="{x:Type endpoints:LlmClientBase}">
                 <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"
                                         Width="600"
                                         Style="{StaticResource DialogContentControlStyle}">
@@ -514,6 +515,16 @@
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 DataContext="{Binding PreDialog,Mode=OneWay}">
+                        <StackPanel.Resources>
+                            <Style TargetType="{x:Type Button}"
+                                   BasedOn="{StaticResource MaterialDesignIconButton}">
+                                <Setter Property="ToolTipService.InitialShowDelay" Value="0" />
+                                <Setter Property="Width"
+                                        Value="36" />
+                                <Setter Property="Height"
+                                        Value="36" />
+                            </Style>
+                        </StackPanel.Resources>
                         <TextBlock MaxWidth="200"
                                    TextWrapping="Wrap"
                                    HorizontalAlignment="Right"
@@ -542,10 +553,7 @@
                                            Margin="10,0,0,0" />
                             </DockPanel>
                         </Button>
-                        <Button Style="{StaticResource MaterialDesignIconButton}"
-                                ToolTip="model信息"
-                                Width="36"
-                                Height="36"
+                        <Button ToolTip="model信息"
                                 Visibility="{Binding Model.Info,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                 Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                 CommandParameter="{Binding Model.Info,Mode=OneWay}">
@@ -553,20 +561,14 @@
                                                      Width="20"
                                                      Height="20" />
                         </Button>
-                        <Button Style="{StaticResource MaterialDesignIconButton}"
-                                Width="36"
-                                Height="36"
-                                ToolTip="清空对话"
+                        <Button ToolTip="清空对话"
                                 Command="{Binding ClearDialogCommand}">
                             <materialDesign:PackIcon
                                 Kind="Delete"
                                 Width="20"
                                 Height="20" />
                         </Button>
-                        <Button Style="{StaticResource MaterialDesignIconButton}"
-                                Width="36"
-                                Height="36"
-                                ToolTip="清空上下文"
+                        <Button ToolTip="清空上下文"
                                 Command="{Binding ClearContextCommand}">
                             <materialDesign:PackIcon
                                 Kind="Eraser"
@@ -605,29 +607,33 @@
                     </StackPanel>
                     <StackPanel Grid.Column="3"
                                 Orientation="Horizontal">
-                        <Button Style="{StaticResource MaterialDesignIconButton}" Width="36"
-                                Height="36"
-                                ToolTip="导出对话为Markdown"
+                        <StackPanel.Resources>
+                            <Style TargetType="{x:Type Button}"
+                                   BasedOn="{StaticResource MaterialDesignIconButton}">
+                                <Setter Property="ToolTipService.InitialShowDelay" Value="0" />
+                                <Setter Property="Width"
+                                        Value="36" />
+                                <Setter Property="Height"
+                                        Value="36" />
+                            </Style>
+                        </StackPanel.Resources>
+                        <Button ToolTip="导出对话为Markdown"
                                 Command="{Binding ExportCommand}">
                             <materialDesign:PackIcon
                                 Kind="FileExport"
                                 Width="20"
                                 Height="20" />
                         </Button>
-                        <Button Style="{StaticResource MaterialDesignIconButton}" Width="36"
-                                Height="36"
-                                ToolTip="备份"
+                        <Button ToolTip="备份"
                                 Command="{Binding BackupCommand}">
                             <materialDesign:PackIcon
-                                Kind="BackupRestore"
+                                Kind="ContentSave"
                                 Width="20"
                                 Height="20" />
                         </Button>
-                        <Button Style="{StaticResource MaterialDesignIconButton}" Width="36"
-                                Height="36"
-                                ToolTip="更改模型"
+                        <Button ToolTip="更改模型"
                                 Command="{Binding ChangeModelCommand}">
-                            <materialDesign:PackIcon Kind="RefreshCircle" />
+                            <materialDesign:PackIcon Kind="SwapHorizontalBold" />
                         </Button>
                     </StackPanel>
                 </Grid>

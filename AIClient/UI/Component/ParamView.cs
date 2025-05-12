@@ -20,6 +20,15 @@ public class ParamView : RangeBase
         set { SetValue(TickFrequencyProperty, value); }
     }
 
+    public static readonly DependencyProperty UnitProperty = DependencyProperty.Register(
+        nameof(Unit), typeof(string), typeof(ParamView), new PropertyMetadata(default(string)));
+
+    public string Unit
+    {
+        get { return (string)GetValue(UnitProperty); }
+        set { SetValue(UnitProperty, value); }
+    }
+    
     public static readonly DependencyProperty PropertyNameProperty = DependencyProperty.Register(
         nameof(PropertyName), typeof(string), typeof(ParamView), new PropertyMetadata(default(string)));
 

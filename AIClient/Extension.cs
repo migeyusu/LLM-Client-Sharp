@@ -1,23 +1,18 @@
 ﻿using System.Diagnostics;
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Azure.AI.Inference;
+using ImageMagick;
 using LLMClient.Render;
 using Markdig;
 using Markdig.Wpf;
-using SkiaSharp;
-using Svg.Skia;
-using Color = System.Windows.Media.Color;
 
 namespace LLMClient;
 
@@ -64,7 +59,7 @@ public static class Extension
                 {
                     if (extension == ".svg")
                     {
-                        return fileStream.SVGToImageSource();
+                        return fileStream.SVGStreamToImageSource();
                     }
 
                     return fileStream.ToImageSource();
@@ -83,7 +78,7 @@ public static class Extension
                         {
                             if (extension == ".svg")
                             {
-                                imageSource = stream.SVGToImageSource();
+                                imageSource = stream.SVGStreamToImageSource();
                             }
                             else
                             {
@@ -140,16 +135,19 @@ public static class Extension
         return image;
     }
 
-    private static ImageSource SVGToImageSource(this Stream stream)
+    public static ImageSource SVGStreamToImageSource(this Stream stream)
     {
-        var skBitmap = new SKBitmap();
+        var magickImage = new MagickImage(stream);
+        return magickImage.ToBitmapSource();
+        /*var skBitmap = new SKBitmap();
         var skCanvas = new SKCanvas(skBitmap);
         var skSvg = new SKSvg();
         skSvg.Load(stream);
+
         skCanvas.DrawPicture(skSvg.Picture);
         using (var asStream = new MemoryStream())
         {
-            skSvg.Save(asStream, SKColor.Empty);
+            skSvg.Save(asStream, SKColors.Empty);
             stream.Position = 0;
             var image = new BitmapImage();
             image.BeginInit();
@@ -160,7 +158,7 @@ public static class Extension
             image.EndInit();
             image.Freeze();
             return image;
-        }
+        }*/
     }
 
     public static ImageSource LoadSvgFromBase64(string src)
@@ -169,7 +167,7 @@ public static class Extension
         byte[] binaryData = Convert.FromBase64String(src);
         using (var mem = new MemoryStream(binaryData))
         {
-            return mem.SVGToImageSource();
+            return mem.SVGStreamToImageSource();
         }
     }
 
