@@ -3,6 +3,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
@@ -256,28 +257,32 @@ public class DialogViewModel : BaseViewModel
             var existTokens = list.Sum(item => item.Tokens);
             _requestTokenSource = new CancellationTokenSource();
             var response = await Model.SendRequest(list, _requestTokenSource.Token);
+            //如果响应出现错误，认为请求无效，不计入上下文
+            requestViewItem.IsAvailableInContext = !response.IsInterrupt;
             this.TokensConsumption += response.Usage.TotalTokenCount ?? 0;
             DialogItems.Add(new ResponseViewItem()
             {
-                Raw = response.Message,
-                Tokens = response.Usage.OutputTokenCount ?? 0
+                Raw = response.Response,
+                IsInterrupt = response.IsInterrupt,
+                Tokens = response.Usage.OutputTokenCount ?? 0,
+                ErrorMessage = response.ErrorMessage
             });
-            this.PromptString = string.Empty;
+            if (!response.IsInterrupt)
+            {
+                this.PromptString = string.Empty;
+            }
+
             var inputTokenCount = response.Usage.InputTokenCount;
             if (inputTokenCount != null)
             {
                 requestViewItem.Tokens = inputTokenCount.Value - existTokens;
             }
         }
-        catch (OperationCanceledException)
-        {
-            DialogItems.Remove(DialogItems.Last(item => item is RequestViewItem));
-        }
         catch (Exception exception)
         {
-            requestViewItem.IsEnable = false;
-            var errorMessage = exception.Message;
-            DialogItems.Add(new ResponseViewItem() { IsInterrupt = true, ErrorMessage = errorMessage });
+            //响应之外的错误，删除请求
+            DialogItems.Remove(DialogItems.Last(item => item is RequestViewItem));
+            MessageBox.Show(exception.Message, "请求失败", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -320,7 +325,7 @@ public class DialogViewModel : BaseViewModel
                 break;
             }
 
-            if (dialogViewItem is { IsEnable: true, Message: not null })
+            if (dialogViewItem is { IsAvailableInContext: true, Message: not null })
             {
                 dialogViewItems.Push(dialogViewItem);
             }

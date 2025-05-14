@@ -177,7 +177,7 @@ public class MainViewModel : BaseViewModel
                 stringBuilder.AppendLine("***");
                 stringBuilder.AppendLine();
             }
-            else if (viewItem is RequestViewItem reqViewItem && reqViewItem.IsEnable)
+            else if (viewItem is RequestViewItem reqViewItem && reqViewItem.IsAvailableInContext)
             {
                 stringBuilder.AppendLine("## **User:**");
                 stringBuilder.Append(reqViewItem.MessageContent);

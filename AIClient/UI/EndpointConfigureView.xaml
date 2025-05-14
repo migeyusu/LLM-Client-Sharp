@@ -40,8 +40,8 @@
                                      Height="30"
                                      Style="{StaticResource MaterialDesignMultiFloatingActionSecondaryPopupBox}">
                 <materialDesign:PopupBox.ToggleCheckedContent>
-                    <materialDesign:PackIcon Width="24"
-                                             Height="24"
+                    <materialDesign:PackIcon Width="20"
+                                             Height="20"
                                              Kind="Pencil" />
                 </materialDesign:PopupBox.ToggleCheckedContent>
                 <StackPanel>
@@ -52,8 +52,18 @@
                         <Button.Content>
                             <materialDesign:PackIcon Kind="Api"
                                                      Foreground="White"
-                                                     Width="26"
-                                                     Height="26" />
+                                                     Width="23"
+                                                     Height="23" />
+                        </Button.Content>
+                    </Button>
+                    <Button ToolTip="OpenAI API兼容模板"
+                            Margin="10"
+                            materialDesign:ElevationAssist.Elevation="Dp4"
+                            Command="{Binding AddNewTemplateCommand}">
+                        <Button.Content>
+                            <Image Source="../../Resources/Images/Document-New-32.png"
+                                   Width="18"
+                                   Height="18" />
                         </Button.Content>
                     </Button>
                 </StackPanel>
@@ -100,6 +110,9 @@
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type openAiapi:APIEndPoint}">
                     <openAiapi:APIEndPointView />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type endpoints:TemplateEndpoints}">
+                    <endpoints:TemplatesView />
                 </DataTemplate>
             </ContentControl.Resources>
         </ContentControl>

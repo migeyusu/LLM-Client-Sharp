@@ -25,15 +25,22 @@ public interface ILLMEndpoint
 
 public class CompletedResult
 {
-    public CompletedResult(string message, UsageDetails usage)
+    public CompletedResult(string? response, UsageDetails usage)
     {
-        Message = message;
+        Response = response;
         Usage = usage;
     }
 
-    public string Message { get; set; }
+    public string? Response { get; set; }
 
     public UsageDetails Usage { get; set; }
+
+    public string? ErrorMessage { get; set; }
+
+    public bool IsInterrupt
+    {
+        get { return ErrorMessage != null; }
+    }
 }
 
 public interface ILLMModelClient : IDialogViewItem

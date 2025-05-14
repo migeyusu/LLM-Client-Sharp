@@ -21,10 +21,8 @@ public class GithubCopilotEndPoint : AzureEndPointBase
 
     private static readonly Lazy<ImageSource> Source = new Lazy<ImageSource>((() =>
     {
-        var bitmapImage = new BitmapImage(new Uri(@"pack://application:,,,/"
-                                                  + Assembly.GetExecutingAssembly().GetName().Name
-                                                  + ";component/"
-                                                  + "Resources/Images/github-copilot-icon.png", UriKind.Absolute));
+        var bitmapImage = new BitmapImage(new Uri(@"pack://application:,,,/LLMClient;component/Resources/Images/github-copilot-icon.png",
+            UriKind.Absolute));
         bitmapImage.Freeze();
         return bitmapImage;
     }));

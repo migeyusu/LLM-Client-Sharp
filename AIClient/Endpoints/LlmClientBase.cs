@@ -15,7 +15,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
 {
     [JsonIgnore] public virtual ChatMessage? Message { get; } = null;
 
-    [JsonIgnore] public virtual bool IsEnable { get; } = false;
+    [JsonIgnore] public virtual bool IsAvailableInContext { get; } = false;
     [JsonIgnore] public long Tokens { get; } = 0;
 
     public abstract string Name { get; }
@@ -106,6 +106,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
         CancellationToken cancellationToken = default)
     {
         var cachedPreResponse = new StringBuilder();
+        UsageDetails? usageDetails = null;
         try
         {
             PreResponse.Clear();
@@ -124,109 +125,129 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
 
             if (this.Parameters.Streaming)
             {
-                AdditionalPropertiesDictionary? dictionary = null;
-                UsageDetails? usageDetails = null;
-                await foreach (var update in CreateChatClient()
-                                   .GetStreamingResponseAsync(messages, requestOptions, cancellationToken))
+                string? errorMessage = null;
+                try
                 {
-                    if (update.AdditionalProperties != null)
+                    AdditionalPropertiesDictionary? dictionary = null;
+                    await foreach (var update in CreateChatClient()
+                                       .GetStreamingResponseAsync(messages, requestOptions, cancellationToken))
                     {
-                        dictionary = update.AdditionalProperties;
-                    }
-
-                    var updateContents = update.Contents;
-                    foreach (var content in updateContents)
-                    {
-                        switch (content)
+                        if (update.AdditionalProperties != null)
                         {
-                            case UsageContent usageContent:
-                                usageDetails = usageContent.Details;
-                                break;
-                            case TextContent textContent:
-                                PreResponse.Add(textContent.Text);
-                                cachedPreResponse.Append(textContent.Text);
-                                break;
-                            default:
-                                Trace.Write("unsupported content");
-                                break;
+                            dictionary = update.AdditionalProperties;
                         }
-                    }
-                }
 
-                if (usageDetails == null && dictionary != null)
-                {
-                    // 方法1: 检查 Metadata 中的 Usage 信息
-                    if (dictionary.TryGetValue("Usage", out var usageObj))
-                    {
-                        if (usageObj is ChatTokenUsage chatTokenUsage)
+                        var updateContents = update.Contents;
+                        foreach (var content in updateContents)
                         {
-                            usageDetails = new UsageDetails()
+                            switch (content)
                             {
-                                InputTokenCount = chatTokenUsage.InputTokenCount,
-                                OutputTokenCount = chatTokenUsage.OutputTokenCount,
-                                TotalTokenCount = chatTokenUsage.TotalTokenCount,
-                            };
+                                case UsageContent usageContent:
+                                    usageDetails = usageContent.Details;
+                                    break;
+                                case TextContent textContent:
+                                    PreResponse.Add(textContent.Text);
+                                    cachedPreResponse.Append(textContent.Text);
+                                    break;
+                                default:
+                                    Trace.Write("unsupported content");
+                                    break;
+                            }
+                        }
+                    }
+
+                    if (usageDetails == null && dictionary != null)
+                    {
+                        // 方法1: 检查 Metadata 中的 Usage 信息
+                        if (dictionary.TryGetValue("Usage", out var usageObj))
+                        {
+                            if (usageObj is ChatTokenUsage chatTokenUsage)
+                            {
+                                usageDetails = new UsageDetails()
+                                {
+                                    InputTokenCount = chatTokenUsage.InputTokenCount,
+                                    OutputTokenCount = chatTokenUsage.OutputTokenCount,
+                                    TotalTokenCount = chatTokenUsage.TotalTokenCount,
+                                };
+                            }
+
+                            /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
+                            {
+                                // tokenCount = Convert.ToInt32(totalTokensObj);
+                            }*/
                         }
 
-                        /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
+                        // 方法2: 部分 AI 服务可能使用不同的元数据键
+                        /*if (usageDetails == null &&
+                            dictionary.TryGetValue("CompletionTokenCount", out var completionTokensObj))
                         {
-                            // tokenCount = Convert.ToInt32(totalTokensObj);
+                            // tokenCount = Convert.ToInt32(completionTokensObj);
+                        }
+
+                        // 方法3: 有些版本可能在 ModelResult 中提供 usage
+                        if (usageDetails == null &&
+                            dictionary.TryGetValue("ModelResults", out var modelResultsObj))
+                        {
+                            //do what?
                         }*/
                     }
 
-                    // 方法2: 部分 AI 服务可能使用不同的元数据键
-                    /*if (usageDetails == null &&
-                        dictionary.TryGetValue("CompletionTokenCount", out var completionTokensObj))
+                    if (usageDetails == null)
                     {
-                        // tokenCount = Convert.ToInt32(completionTokensObj);
+                        Trace.Write("usage details not provided");
                     }
-
-                    // 方法3: 有些版本可能在 ModelResult 中提供 usage
-                    if (usageDetails == null &&
-                        dictionary.TryGetValue("ModelResults", out var modelResultsObj))
-                    {
-                        //do what?
-                    }*/
                 }
-
-                if (usageDetails == null)
+                catch (OperationCanceledException)
                 {
-                    Trace.Write("usage details not provided");
+                    errorMessage = "Operation was canceled.";
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = ex.Message;
                 }
 
-                return new CompletedResult(cachedPreResponse.ToString(), usageDetails ?? new UsageDetails());
+                return new CompletedResult(cachedPreResponse.Length == 0 ? null : cachedPreResponse.ToString(),
+                        usageDetails ?? new UsageDetails())
+                    { ErrorMessage = errorMessage };
             }
             else
             {
-                UsageDetails? usageDetails = null;
-                var chatResponse =
-                    await CreateChatClient().GetResponseAsync(messages, requestOptions, cancellationToken);
-                if (chatResponse.Usage == null)
+                try
                 {
-                    if (chatResponse.AdditionalProperties?.TryGetValue("Usage", out var usageObj) == true)
+                    var chatResponse =
+                        await CreateChatClient().GetResponseAsync(messages, requestOptions, cancellationToken);
+                    if (chatResponse.Usage == null)
                     {
-                        if (usageObj is ChatTokenUsage chatTokenUsage)
+                        if (chatResponse.AdditionalProperties?.TryGetValue("Usage", out var usageObj) == true)
                         {
-                            usageDetails = new UsageDetails()
+                            if (usageObj is ChatTokenUsage chatTokenUsage)
                             {
-                                InputTokenCount = chatTokenUsage.InputTokenCount,
-                                OutputTokenCount = chatTokenUsage.OutputTokenCount,
-                                TotalTokenCount = chatTokenUsage.TotalTokenCount,
-                            };
+                                usageDetails = new UsageDetails()
+                                {
+                                    InputTokenCount = chatTokenUsage.InputTokenCount,
+                                    OutputTokenCount = chatTokenUsage.OutputTokenCount,
+                                    TotalTokenCount = chatTokenUsage.TotalTokenCount,
+                                };
+                            }
+
+                            /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
+                            {
+                                // tokenCount = Convert.ToInt32(totalTokensObj);
+                            }*/
                         }
-
-                        /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
-                        {
-                            // tokenCount = Convert.ToInt32(totalTokensObj);
-                        }*/
                     }
-                }
-                else
-                {
-                    usageDetails = chatResponse.Usage;
-                }
+                    else
+                    {
+                        usageDetails = chatResponse.Usage;
+                    }
 
-                return new CompletedResult(chatResponse.Text, usageDetails ?? new UsageDetails());
+                    return new CompletedResult(chatResponse.Text, usageDetails ?? new UsageDetails());
+                }
+                catch (Exception e)
+                {
+                    return new CompletedResult(null, new UsageDetails())
+                        { ErrorMessage = e.Message };
+                }
             }
         }
         finally

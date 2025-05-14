@@ -8,9 +8,27 @@ namespace LLMClient.Endpoints.OpenAIAPI;
 
 public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
 {
-    public string Id { get; set; } = string.Empty;
+    public string Id
+    {
+        get => _id;
+        set
+        {
+            if (value == _id) return;
+            _id = value;
+            OnPropertyChanged();
+        }
+    }
 
-    public string Name { get; set; } = string.Empty;
+    public string Name
+    {
+        get => _name;
+        set
+        {
+            if (value == _name) return;
+            _name = value;
+            OnPropertyChanged();
+        }
+    }
 
     public bool Streaming
     {
@@ -123,6 +141,8 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     private string? _infoUrl;
     private int _maxContextSize = 200 * 1024;
     private bool _streaming = true;
+    private string _id = string.Empty;
+    private string _name = string.Empty;
 
     public int MaxContextSize
     {

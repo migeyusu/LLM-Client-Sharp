@@ -38,6 +38,8 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public ICommand AddNewEndpointCommand => new ActionCommand((o => { Endpoints.Add(new APIEndPoint()); }));
 
+    public ICommand AddNewTemplateCommand => new ActionCommand((o => { }));
+
     public ICommand RemoveEndPointCommand => new RelayCommand<ILLMEndpoint?>((o =>
     {
         if (o is APIEndPoint endpoint)
@@ -104,7 +106,8 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         var endPointsNode = await EndPointsConfiguration.LoadEndpointsNode();
         _githubCopilotEndPoint.LoadConfig(endPointsNode);
         Endpoints.Add(_githubCopilotEndPoint);
-        if (endPointsNode.AsObject().TryGetPropertyValue(APIEndPoint.KeyName, out var apisNode))
+        var endPoints = endPointsNode.AsObject();
+        if (endPoints.TryGetPropertyValue(APIEndPoint.KeyName, out var apisNode))
         {
             var jsonArray = apisNode!.AsArray();
             foreach (var jsonNode in jsonArray)
@@ -120,6 +123,9 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             }
         }
 
+        var templateEndpoints = endPoints.GetOrCreate(TemplateEndpoints.KeyName);
+        var templates = templateEndpoints.Deserialize<TemplateEndpoints>() ?? new TemplateEndpoints();
+        Endpoints.Add(templates);
 
         foreach (var availableEndpoint in Endpoints)
         {
