@@ -17,7 +17,7 @@ namespace LLMClient.UI;
 [JsonDerivedType(typeof(ResponseViewItem), "response")]
 public interface IDialogViewItem
 {
-    [JsonIgnore] ChatMessage? Message { get; }
+    ChatMessage? Message { get; }
 
     bool IsAvailableInContext { get; }
 
@@ -63,8 +63,10 @@ public class RequestViewItem : BaseViewModel, IDialogViewItem
     }
 }
 
-public class ResponseViewItem : BaseViewModel, IDialogViewItem
+public class ResponseViewItem : IDialogViewItem
 {
+    public string Name { get; set; } = string.Empty;
+    
     /// <summary>
     /// 是否中断
     /// </summary>
@@ -73,12 +75,7 @@ public class ResponseViewItem : BaseViewModel, IDialogViewItem
     public long Tokens { get; set; }
 
     public string? ErrorMessage { get; set; }
-
-    /// <summary>
-    /// 是否为多回复
-    /// </summary>
-    public bool IsMultiResponse { get; set; }
-
+    
     private FlowDocument? _flowDocument = null;
 
     [JsonIgnore]
@@ -101,22 +98,6 @@ public class ResponseViewItem : BaseViewModel, IDialogViewItem
     }
 
     public string? Raw { get; set; }
-
-    public ObservableCollection<ResponseItem> ResponseItems { get; set; }
-
-    public ResponseItem CurrentItem { get; set; }
-
-    public ICommand SelectItemCommand =>
-        new ActionCommand((o =>
-        {
-            if (o is ResponseItem item)
-            {
-                Raw = item.Raw;
-                IsMultiResponse = false;
-                _flowDocument = null;
-                OnPropertyChanged(nameof(Document));
-            }
-        }));
 
     public ResponseViewItem()
     {
@@ -150,40 +131,4 @@ public class ResponseViewItem : BaseViewModel, IDialogViewItem
     {
         get { return !IsInterrupt; }
     }
-}
-
-public class ResponseItem
-{
-    //这里不绑定到APIClient，没有必要
-
-    public string Name { get; set; } = string.Empty;
-
-    public string? Raw { get; set; }
-
-    private FlowDocument? _flowDocument = null;
-
-    [JsonIgnore]
-    public FlowDocument? Document
-    {
-        get
-        {
-            if (Raw == null)
-            {
-                return null;
-            }
-
-            if (_flowDocument == null)
-            {
-                _flowDocument = this.Raw.ToFlowDocument();
-            }
-
-            return _flowDocument;
-        }
-    }
-
-    public string? ErrorMessage { get; set; }
-
-    public bool IsInterrupt { get; set; }
-
-    public long Tokens { get; set; }
 }
