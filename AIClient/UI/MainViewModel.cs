@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
+using LLMClient.Data;
 using LLMClient.Render;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
@@ -57,7 +58,7 @@ public class MainViewModel : BaseViewModel
         try
         {
             IsProcessing = true;
-            await SaveToLocal();
+            await SaveDialogsToLocal();
         }
         catch (Exception e)
         {
@@ -129,7 +130,7 @@ public class MainViewModel : BaseViewModel
             AddExtension = true, DefaultExt = ".json", CheckPathExists = true,
             Filter = "json files (*.json)|*.json"
         };
-        var dialogModel = _mapper.Map<DialogViewModel, DialogPersistanceModel>(PreDialog);
+        var dialogModel = _mapper.Map<DialogViewModel, DialogPersistModel>(PreDialog);
         if (saveFileDialog.ShowDialog() == true)
         {
             var fileName = saveFileDialog.FileName;
@@ -320,10 +321,10 @@ public class MainViewModel : BaseViewModel
             {
                 await using (var openRead = fileInfo.OpenRead())
                 {
-                    var dialogModel = await JsonSerializer.DeserializeAsync<DialogPersistanceModel>(openRead);
+                    var dialogModel = await JsonSerializer.DeserializeAsync<DialogPersistModel>(openRead);
                     if (dialogModel != null)
                     {
-                        var viewModel = _mapper.Map<DialogPersistanceModel, DialogViewModel>(dialogModel);
+                        var viewModel = _mapper.Map<DialogPersistModel, DialogViewModel>(dialogModel);
                         viewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
                         dialogViewModels.Add(viewModel);
                         viewModel.IsDataChanged = false;
@@ -369,7 +370,7 @@ public class MainViewModel : BaseViewModel
             .ToDictionary((f) => Path.GetFileNameWithoutExtension(f.Name), (f) => f);
     }
 
-    public async Task SaveToLocal(string folder = DialogSaveFolder)
+    public async Task SaveDialogsToLocal(string folder = DialogSaveFolder)
     {
         var dirPath = Path.GetFullPath(folder);
         var fileInfos = LocalDialogFiles();
@@ -380,7 +381,7 @@ public class MainViewModel : BaseViewModel
                 continue;
             }
 
-            var dialogModel = _mapper.Map<DialogViewModel, DialogPersistanceModel>(dialogViewModel);
+            var dialogModel = _mapper.Map<DialogViewModel, DialogPersistModel>(dialogViewModel);
             if (fileInfos.TryGetValue(dialogViewModel.FileName, out var fileInfo))
             {
                 fileInfo.Delete();

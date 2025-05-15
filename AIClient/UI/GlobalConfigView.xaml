@@ -7,8 +7,9 @@
              xmlns:llmClient="clr-namespace:LLMClient"
              xmlns:grammars="clr-namespace:TextMateSharp.Grammars;assembly=TextMateSharp.Grammars"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:data="clr-namespace:LLMClient.Data"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance llmClient:GlobalConfig}"
+             d:DataContext="{d:DesignInstance data:GlobalConfig}"
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
 

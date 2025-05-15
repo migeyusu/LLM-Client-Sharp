@@ -8,6 +8,7 @@
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+             xmlns:data="clr-namespace:LLMClient.Data"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="600"
              d:DataContext="{d:DesignInstance local:APIModelInfo}">
@@ -69,7 +70,7 @@
                                     <Image Width="20"
                                            Height="20">
                                         <Image.Source>
-                                            <Binding Converter="{x:Static component:EnumToIconConverter.Instance}" />
+                                            <Binding Converter="{x:Static data:EnumToIconConverter.Instance}" />
                                         </Image.Source>
                                     </Image>
                                     <TextBlock Text="{Binding}"

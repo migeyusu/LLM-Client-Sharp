@@ -1,13 +1,16 @@
-﻿namespace LLMClient.UI;
+﻿using LLMClient.Abstraction;
+using LLMClient.UI;
+
+namespace LLMClient.Data;
 
 /// <summary>
 /// 用于持久化
 /// </summary>
-public class DialogPersistanceModel
+public class DialogPersistModel
 {
     public DateTime EditTime { get; set; }
 
-    public IDialogViewItem[]? DialogItems { get; set; }
+    public IDialogItem[]? DialogItems { get; set; }
 
     public string Topic { get; set; } = string.Empty;
 

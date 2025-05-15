@@ -1,4 +1,4 @@
-﻿namespace LLMClient.UI;
+﻿namespace LLMClient.Data;
 
 public interface IPromptsResource
 {

@@ -1,6 +1,6 @@
 ﻿using System.Windows.Media;
 
-namespace LLMClient.Endpoints;
+namespace LLMClient.Abstraction;
 
 public interface ILLMModel : IModelParams
 {

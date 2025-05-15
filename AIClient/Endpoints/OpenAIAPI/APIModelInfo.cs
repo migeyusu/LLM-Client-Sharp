@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using System.Text.Json.Serialization;
 using System.Windows.Media;
+using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 
@@ -85,7 +87,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
             if (value == _iconUrl) return;
             ClearError();
             if ((!string.IsNullOrEmpty(value)) &&
-                !Extension.SupportedImageExtensions.Contains(Path.GetExtension(value)))
+                !Icons.SupportedImageExtensions.Contains(Path.GetExtension(value)))
             {
                 AddError("The image extension is not supported.");
                 return;
@@ -143,6 +145,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     private bool _streaming = true;
     private string _id = string.Empty;
     private string _name = string.Empty;
+    private Uri? _iconUrl1;
 
     public int MaxContextSize
     {
@@ -364,7 +367,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         {
             if (!string.IsNullOrEmpty(IconUrl))
             {
-                this.Icon = await this.IconUrl.LoadImageAsync();
+                this.Icon = await new Uri(this.IconUrl).GetIcon();
             }
         }
         else

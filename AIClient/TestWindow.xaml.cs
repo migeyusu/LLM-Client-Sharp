@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 

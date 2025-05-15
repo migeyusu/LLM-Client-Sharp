@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints.Azure.Models;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -21,7 +22,8 @@ public class GithubCopilotEndPoint : AzureEndPointBase
 
     private static readonly Lazy<ImageSource> Source = new Lazy<ImageSource>((() =>
     {
-        var bitmapImage = new BitmapImage(new Uri(@"pack://application:,,,/LLMClient;component/Resources/Images/github-copilot-icon.png",
+        var bitmapImage = new BitmapImage(new Uri(
+            @"pack://application:,,,/LLMClient;component/Resources/Images/github-copilot-icon.png",
             UriKind.Absolute));
         bitmapImage.Freeze();
         return bitmapImage;
@@ -59,6 +61,11 @@ public class GithubCopilotEndPoint : AzureEndPointBase
         }
 
         return null;
+    }
+
+    public override ILLMModel? GetModel(string modelName)
+    {
+        return _loadedModelInfos.GetValueOrDefault(modelName);
     }
 
     public void UpdateConfig(JsonNode document)
@@ -181,9 +188,8 @@ public class GithubCopilotEndPoint : AzureEndPointBase
 
             { "DeepSeek-R1", deepSeek_R1 },
             { "MAI-DS-R1", deepSeek_R1 },
-            
-            {"DeepSeek-V3-0324",deepSeek_V3},
-            
+
+            { "DeepSeek-V3-0324", deepSeek_V3 },
         };
     }
 

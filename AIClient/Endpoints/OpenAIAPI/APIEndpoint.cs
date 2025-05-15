@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
@@ -68,7 +70,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
             if (value == _iconUrl) return;
             ClearError();
             if ((!string.IsNullOrEmpty(value)) &&
-                !Extension.SupportedImageExtensions.Contains(Path.GetExtension(value)))
+                !Icons.SupportedImageExtensions.Contains(Path.GetExtension(value)))
             {
                 AddError("The image extension is not supported.");
                 return;
@@ -126,6 +128,11 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         return new APIClient(this, firstOrDefault, ConfigOption);
     }
 
+    public ILLMModel? GetModel(string modelName)
+    {
+        return Models.FirstOrDefault(x => x.Name == modelName);
+    }
+
     public Task InitializeAsync()
     {
         foreach (var model in _models)
@@ -140,11 +147,40 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         new FileInfo(path);*/
     }
 
+    /// <summary>
+    /// 验证
+    /// </summary>
+    public bool Validate(out string errorMessage)
+    {
+        if (string.IsNullOrEmpty(DisplayName))
+        {
+            errorMessage = "Display name cannot be empty.";
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(IconUrl))
+        {
+            errorMessage = "Icon URL cannot be empty.";
+            return false;
+        }
+
+        var distinctBy = _models.DistinctBy((info => info.Name));
+        var apiModelInfos = _models.Except(distinctBy);
+        if (apiModelInfos.Any())
+        {
+            errorMessage = "Model name must be unique.";
+            return false;
+        }
+
+        errorMessage = string.Empty;
+        return true;
+    }
+
     private async void UpdateIcon()
     {
         if (!string.IsNullOrEmpty(IconUrl))
         {
-            this.Icon = await this.IconUrl.LoadImageAsync();
+            this.Icon = await new Uri(this.IconUrl).GetIcon();
         }
     }
 }

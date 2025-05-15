@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Net.Http;
 using System.Windows;
+using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
@@ -35,15 +36,21 @@ public class Program
                 .AddTransient<GlobalConfig>()
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>();
-            collection.AddAutoMapper(((provider, expression) =>
+            collection.AddAutoMapper((provider, expression) =>
             {
-                expression.CreateMap<DialogPersistanceModel, DialogViewModel>().ConvertUsing<ModelTypeConverter>();
-                expression.CreateMap<DialogViewModel, DialogPersistanceModel>().ConvertUsing<ModelTypeConverter>();
+                expression.CreateMap<DialogPersistModel, DialogViewModel>().ConvertUsing<ModelTypeConverter>();
+                expression.CreateMap<DialogViewModel, DialogPersistModel>().ConvertUsing<ModelTypeConverter>();
                 expression.CreateMap<APIEndPoint, APIEndPoint>();
                 expression.CreateMap<DefaultOption, DefaultOption>();
+                expression.CreateMap<ResponseViewItem, ResponsePersistItem>();
+                expression.CreateMap<ResponsePersistItem, ResponseViewItem>().ConvertUsing<ModelTypeConverter>();
+                expression.CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
+                    .ConvertUsing<ModelTypeConverter>();
+                expression.CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
+                    .ConvertUsing<ModelTypeConverter>();
                 // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
                 expression.ConstructServicesUsing(provider.GetService);
-            }), AppDomain.CurrentDomain.GetAssemblies());
+            }, AppDomain.CurrentDomain.GetAssemblies());
             serviceProvider = collection.BuildServiceProvider();
             App app = new App();
             app.InitializeComponent();
@@ -61,7 +68,7 @@ public class Program
             var mainViewModel = serviceProvider?.GetService<MainViewModel>();
             if (mainViewModel is { IsInitialized: true })
             {
-                mainViewModel.SaveToLocal().Wait(TimeSpan.FromMinutes(1));
+                mainViewModel.SaveDialogsToLocal().Wait(TimeSpan.FromMinutes(1));
             }
         }
         catch (Exception e)

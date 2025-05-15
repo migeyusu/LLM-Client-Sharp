@@ -100,65 +100,83 @@
                     <component:DataTemplateTypePair>
                         <component:DataTemplateTypePair.Template>
                             <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
-                                <materialDesign:Card Padding="0"
-                                                     UniformCornerRadius="8"
-                                                     HorizontalAlignment="Stretch"
-                                                     BorderThickness="0"
-                                                     Style="{StaticResource MaterialDesignOutlinedCard}">
-                                    <StackPanel>
-                                        <component:FlowDocumentScrollViewerEx BorderThickness="0"
-                                                                              Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
-                                                                              Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
-                                                                              Document="{Binding Document,Mode=OneTime}">
-                                            <component:FlowDocumentScrollViewerEx.ContextMenu>
-                                                <ContextMenu>
-                                                    <MenuItem Command="Copy"
-                                                              Header="复制选定">
-                                                        <MenuItem.Icon>
-                                                            <materialDesign:PackIcon Kind="ContentCopy" />
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
-                                                    <MenuItem Command="SelectAll"
-                                                              Header="全选">
-                                                        <MenuItem.Icon>
-                                                            <materialDesign:PackIcon Kind="SelectAll" />
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
-                                                    <Separator />
-                                                    <MenuItem Header="复制全部"
-                                                              Command="{x:Static ui:CommonCommands.CopyCommand}"
-                                                              CommandParameter="{Binding Raw,Mode=OneTime}">
-                                                        <MenuItem.Icon>
-                                                            <materialDesign:PackIcon Kind="ContentCopy" />
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
-                                                    <MenuItem Header="删除"
-                                                              Command="Delete"
-                                                              CommandParameter="{Binding}">
-                                                        <MenuItem.Icon>
-                                                            <materialDesign:PackIcon Kind="DeleteOutline" />
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
-                                                    <MenuItem Header="导出"
-                                                              ToolTip="导出为Markdown"
-                                                              Command="{x:Static ui:CommonCommands.ExportCommand}"
-                                                              CommandParameter="{Binding Raw,Mode=OneTime}">
-                                                        <MenuItem.Icon>
-                                                            <materialDesign:PackIcon Kind="Export" />
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
-                                                </ContextMenu>
-                                            </component:FlowDocumentScrollViewerEx.ContextMenu>
-                                        </component:FlowDocumentScrollViewerEx>
-                                        <TextBlock Text="{Binding ErrorMessage,Mode=OneTime}"
-                                                   Foreground="Red"
-                                                   Padding="10"
-                                                   Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-                                        <TextBlock Text="{Binding Tokens,Mode=OneTime,StringFormat=Tokens:{0}}"
-                                                   HorizontalAlignment="Left"
-                                                   Margin="0,6,0,0" />
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal"
+                                                Margin="8,0,0,0">
+                                        <Image Source="{Binding  Icon,Mode=OneWay}"
+                                               Width="20"
+                                               Height="20" />
+                                        <TextBlock Text="{Binding ModelName,Mode=OneTime}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="10,0,0,0" />
+                                        <Menu>
+                                            <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert}"
+                                                      Width="20"
+                                                      Height="50"
+                                                      Padding="0">
+                                                <MenuItem Header="删除"
+                                                          Command="Delete"
+                                                          CommandParameter="{Binding}">
+                                                    <MenuItem.Icon>
+                                                        <materialDesign:PackIcon Kind="DeleteOutline" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </MenuItem>
+                                        </Menu>
                                     </StackPanel>
-                                </materialDesign:Card>
+                                    <materialDesign:Card Padding="0"
+                                                         UniformCornerRadius="8"
+                                                         HorizontalAlignment="Stretch"
+                                                         BorderThickness="0"
+                                                         Style="{StaticResource MaterialDesignOutlinedCard}">
+                                        <StackPanel>
+                                            <component:FlowDocumentScrollViewerEx BorderThickness="0"
+                                                Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
+                                                Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
+                                                Document="{Binding Document,Mode=OneTime}">
+                                                <component:FlowDocumentScrollViewerEx.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Command="Copy"
+                                                                  Header="复制选定">
+                                                            <MenuItem.Icon>
+                                                                <materialDesign:PackIcon Kind="ContentCopy" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Command="SelectAll"
+                                                                  Header="全选">
+                                                            <MenuItem.Icon>
+                                                                <materialDesign:PackIcon Kind="SelectAll" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <Separator />
+                                                        <MenuItem Header="复制全部"
+                                                                  Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                                                  CommandParameter="{Binding Raw,Mode=OneTime}">
+                                                            <MenuItem.Icon>
+                                                                <materialDesign:PackIcon Kind="ContentCopy" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <MenuItem Header="导出"
+                                                                  ToolTip="导出为Markdown"
+                                                                  Command="{x:Static ui:CommonCommands.ExportCommand}"
+                                                                  CommandParameter="{Binding Raw,Mode=OneTime}">
+                                                            <MenuItem.Icon>
+                                                                <materialDesign:PackIcon Kind="Export" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                    </ContextMenu>
+                                                </component:FlowDocumentScrollViewerEx.ContextMenu>
+                                            </component:FlowDocumentScrollViewerEx>
+                                            <TextBlock Text="{Binding ErrorMessage,Mode=OneTime}"
+                                                       Foreground="Red"
+                                                       Padding="10"
+                                                       Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                                        </StackPanel>
+                                    </materialDesign:Card>
+                                    <TextBlock Text="{Binding Tokens,Mode=OneTime,StringFormat=Tokens:{0}}"
+                                               HorizontalAlignment="Left"
+                                               Margin="0,6,0,0" />
+                                </StackPanel>
                             </DataTemplate>
                         </component:DataTemplateTypePair.Template>
                     </component:DataTemplateTypePair>

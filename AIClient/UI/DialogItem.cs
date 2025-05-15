@@ -1,20 +1,15 @@
-﻿using System.Collections.ObjectModel;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using System.Windows.Documents;
-using System.Windows.Input;
-using Azure.AI.Inference;
-using LLMClient.Render;
-using Markdig;
-using Markdig.Wpf;
+using System.Windows.Media;
+using LLMClient.Abstraction;
+using LLMClient.Data;
+using LLMClient.Endpoints;
+using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
-using Microsoft.Xaml.Behaviors.Core;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
 namespace LLMClient.UI;
 
-[JsonDerivedType(typeof(EraseViewItem), "erase")]
-[JsonDerivedType(typeof(RequestViewItem), "request")]
-[JsonDerivedType(typeof(ResponseViewItem), "response")]
 public interface IDialogViewItem
 {
     ChatMessage? Message { get; }
@@ -24,7 +19,7 @@ public interface IDialogViewItem
     long Tokens { get; }
 }
 
-public class EraseViewItem : IDialogViewItem
+public class EraseViewItem : IDialogViewItem, IDialogItem
 {
     [JsonIgnore] public ChatMessage? Message { get; } = null;
 
@@ -37,7 +32,7 @@ public class EraseViewItem : IDialogViewItem
     public long Tokens { get; } = 0;
 }
 
-public class RequestViewItem : BaseViewModel, IDialogViewItem
+public class RequestViewItem : BaseViewModel, IDialogViewItem, IDialogItem
 {
     private long _tokens;
 
@@ -63,22 +58,33 @@ public class RequestViewItem : BaseViewModel, IDialogViewItem
     }
 }
 
-public class ResponseViewItem : IDialogViewItem
+public class ResponseViewItem : BaseViewModel, IDialogViewItem
 {
-    public string Name { get; set; } = string.Empty;
-    
+    public ImageSource Icon
+    {
+        get { return Model?.Icon ?? APIClient.IconImageSource; }
+    }
+
+    public string EndPointName { get; }
+
+    public string ModelName
+    {
+        get { return Model?.Name ?? string.Empty; }
+    }
+
+    public ILLMModel? Model { get; }
+
     /// <summary>
     /// 是否中断
     /// </summary>
-    public bool IsInterrupt { get; set; }
+    public bool IsInterrupt { get; }
 
-    public long Tokens { get; set; }
+    public long Tokens { get; }
 
-    public string? ErrorMessage { get; set; }
-    
+    public string? ErrorMessage { get; }
+
     private FlowDocument? _flowDocument = null;
 
-    [JsonIgnore]
     public FlowDocument? Document
     {
         get
@@ -97,15 +103,32 @@ public class ResponseViewItem : IDialogViewItem
         }
     }
 
-    public string? Raw { get; set; }
+    public string? Raw { get; }
 
-    public ResponseViewItem()
+
+    public ResponseViewItem(ILLMModel? model, string? raw, long tokens, bool interrupt,
+        string? errorMessage, string endPointName)
     {
+        Model = model;
+        Raw = raw;
+        Tokens = tokens;
+        IsInterrupt = interrupt;
+        ErrorMessage = errorMessage;
+        EndPointName = endPointName;
+    }
+
+    public ResponseViewItem(ILLMModelClient client, CompletedResult result)
+    {
+        Model = client.Info;
+        EndPointName = client.Endpoint.Name;
+        Raw = result.Response;
+        Tokens = result.Usage.OutputTokenCount ?? 0;
+        IsInterrupt = result.IsInterrupt;
+        ErrorMessage = result.ErrorMessage;
     }
 
     private ChatMessage? _assistantMessage;
 
-    [JsonIgnore]
     public ChatMessage? AssistantMessage
     {
         get
@@ -124,9 +147,9 @@ public class ResponseViewItem : IDialogViewItem
         }
     }
 
-    [JsonIgnore] public ChatMessage? Message => AssistantMessage;
+    public ChatMessage? Message => AssistantMessage;
 
-    [JsonPropertyName("IsEnable")]
+
     public bool IsAvailableInContext
     {
         get { return !IsInterrupt; }

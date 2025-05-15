@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using AutoMapper;
 using Azure;
 using Azure.AI.Inference;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using LLMClient.UI.Component;

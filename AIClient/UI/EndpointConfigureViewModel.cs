@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
@@ -16,6 +17,11 @@ public interface IEndpointService
     IReadOnlyList<ILLMEndpoint> AvailableEndpoints { get; }
 
     Task Initialize();
+
+    ILLMEndpoint? GetEndpoint(string name)
+    {
+        return AvailableEndpoints.FirstOrDefault((endpoint) => endpoint.Name == name);
+    }
 }
 
 /// <summary>
@@ -56,17 +62,32 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public ICommand SaveAllCommand => new ActionCommand(async o =>
     {
+        var distinctEndpoints = Endpoints.DistinctBy((endpoint => endpoint.Name));
+        var difference = distinctEndpoints.Except(Endpoints).ToList();
+        if (difference.Count != 0)
+        {
+            difference.ForEach(endpoint => { MessageBox.Show("Endpoint name must be unique:" + endpoint.Name); });
+            return;
+        }
+
         var root = new JsonObject();
         var endPointsNode = root.GetOrCreate(EndPointsConfiguration.EndpointsNodeName);
         _githubCopilotEndPoint.UpdateConfig(endPointsNode);
         JsonArray jArray = new JsonArray();
         foreach (var apiEndPoint in Endpoints.Where((endpoint) => endpoint is APIEndPoint).Cast<APIEndPoint>())
         {
+            if (!apiEndPoint.Validate(out var message))
+            {
+                MessageBox.Show(message);
+                return;
+            }
+
             var serialize = JsonSerializer.SerializeToNode(apiEndPoint);
             jArray.Add(serialize);
         }
 
         endPointsNode[APIEndPoint.KeyName] = jArray;
+        //todo: 添加template 保存
         await EndPointsConfiguration.SaveDoc(root);
         /*var endPointsObject = new JsonObject();
         foreach (var endpoint in Endpoints)

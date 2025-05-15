@@ -1,6 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 using System.Windows.Documents;
 using System.Windows.Media;
+using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.Azure.Models;
@@ -185,8 +187,8 @@ public class AzureModelInfo : ILLMModel
         }
         else if (LogoUrl != null)
         {
-            var requestUri = $"https://github.com{LogoUrl}";
-            LightModeIcon = await requestUri.LoadImageAsync();
+            var requestUri = new Uri($"https://github.com{LogoUrl}");
+            LightModeIcon = await requestUri.GetIcon();
         }
     }
 

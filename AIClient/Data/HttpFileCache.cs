@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text.Json;
 
-namespace LLMClient;
+namespace LLMClient.Data;
 
 public class HttpFileCache
 {

@@ -14,6 +14,7 @@
                           xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
                           xmlns:wpf="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
                           xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+                          xmlns:data="clr-namespace:LLMClient.Data"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -148,7 +149,7 @@
                     <models:AzureModelInfoView Height="600" />
                 </HeaderedContentControl>
             </DataTemplate>
-            <DataTemplate DataType="{x:Type local:GlobalConfig}">
+            <DataTemplate DataType="{x:Type data:GlobalConfig}">
                 <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                         Header="软件配置">
                     <ui:GlobalConfigView />

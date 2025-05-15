@@ -1,10 +1,15 @@
 ﻿using System.Collections.ObjectModel;
 using AutoMapper;
+using LLMClient.Abstraction;
+using LLMClient.Data;
 
 namespace LLMClient.UI;
 
-public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistanceModel>,
-    ITypeConverter<DialogPersistanceModel, DialogViewModel>
+public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistModel>,
+    ITypeConverter<DialogPersistModel, DialogViewModel>,
+    ITypeConverter<MultiResponsePersistItem, MultiResponseViewItem>,
+    ITypeConverter<MultiResponseViewItem, MultiResponsePersistItem>,
+    ITypeConverter<ResponsePersistItem, ResponseViewItem>
 {
     private readonly IEndpointService _service;
 
@@ -13,13 +18,37 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersista
         this._service = service;
     }
 
-    public DialogPersistanceModel Convert(DialogViewModel source, DialogPersistanceModel destination,
+    public DialogPersistModel Convert(DialogViewModel source, DialogPersistModel destination,
         ResolutionContext context)
     {
-        return new DialogPersistanceModel()
+        var dialogItems = source.DialogItems.Select<IDialogViewItem, IDialogItem>((item =>
+        {
+            if (item is EraseViewItem eraseViewItem)
+            {
+                return eraseViewItem;
+            }
+            else if (item is RequestViewItem requestViewItem)
+            {
+                return requestViewItem;
+            }
+
+            if (item is ResponseViewItem responseViewItem)
+            {
+                return context.Mapper.Map<ResponseViewItem, ResponsePersistItem>(responseViewItem);
+            }
+
+            if (item is MultiResponseViewItem multiResponseViewItem)
+            {
+                return context.Mapper.Map<MultiResponseViewItem, MultiResponsePersistItem>(multiResponseViewItem);
+            }
+
+            throw new NotSupportedException();
+        })).ToArray();
+
+        return new DialogPersistModel()
         {
             EditTime = source.EditTime,
-            DialogItems = source.DialogItems.ToArray(),
+            DialogItems = dialogItems,
             Topic = source.Topic,
             EndPoint = source.Model?.Endpoint.Name,
             Model = source.Model?.Name,
@@ -29,16 +58,35 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersista
         };
     }
 
-    public DialogViewModel Convert(DialogPersistanceModel source, DialogViewModel destination,
+    public DialogViewModel Convert(DialogPersistModel source, DialogViewModel destination,
         ResolutionContext context)
     {
-        var sourceDialogItems = source.DialogItems;
-        if (sourceDialogItems != null)
+        var sourceDialogItems = source.DialogItems?.Select<IDialogItem, IDialogViewItem>((item =>
         {
-            sourceDialogItems = sourceDialogItems.Where(item => item is not ILLMModelClient).ToArray();
-        }
+            if (item is ResponsePersistItem responsePersistItem)
+            {
+                return context.Mapper.Map<ResponsePersistItem, ResponseViewItem>(responsePersistItem);
+            }
 
-        var llmEndpoint = _service.AvailableEndpoints.FirstOrDefault((endpoint => endpoint.Name == source.EndPoint));
+            if (item is MultiResponsePersistItem multiResponsePersistItem)
+            {
+                return context.Mapper.Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem);
+            }
+
+            if (item is RequestViewItem requestViewItem)
+            {
+                return requestViewItem;
+            }
+
+            if (item is EraseViewItem eraseViewItem)
+            {
+                return eraseViewItem;
+            }
+
+            throw new NotSupportedException();
+        })).ToArray();
+
+        var llmEndpoint = source.EndPoint == null ? null : _service.GetEndpoint(source.EndPoint);
         ILLMModelClient? llmModelClient = null;
         if (llmEndpoint != null)
         {
@@ -52,12 +100,43 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersista
                 }
             }
         }
-        
+
         return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
         {
             EditTime = source.EditTime,
             PromptString = source.PromptString,
             TokensConsumption = source.TokensConsumption,
+        };
+    }
+
+    public ResponseViewItem Convert(ResponsePersistItem source, ResponseViewItem destination,
+        ResolutionContext context)
+    {
+        var model = _service.GetEndpoint(source.EndPointName)?.GetModel(source.ModelName);
+        return new ResponseViewItem(model, source.Raw, source.Tokens, source.IsInterrupt, source.ErrorMessage,
+            source.EndPointName);
+    }
+
+    public MultiResponseViewItem Convert(MultiResponsePersistItem source, MultiResponseViewItem destination,
+        ResolutionContext context)
+    {
+        return new MultiResponseViewItem()
+        {
+            AcceptedIndex = source.AcceptedIndex,
+            Items = new ObservableCollection<ResponseViewItem>(source.ResponseItems.Select(x =>
+                new ResponseViewItem(_service.GetEndpoint(x.EndPointName)?.GetModel(x.ModelName), x.Raw, x.Tokens,
+                    x.IsInterrupt, x.ErrorMessage, x.EndPointName)))
+        };
+    }
+
+    public MultiResponsePersistItem Convert(MultiResponseViewItem source, MultiResponsePersistItem destination,
+        ResolutionContext context)
+    {
+        return new MultiResponsePersistItem()
+        {
+            AcceptedIndex = source.AcceptedIndex,
+            ResponseItems = source.Items.Select(x => context.Mapper.Map<ResponseViewItem, ResponsePersistItem>(x))
+                .ToArray()
         };
     }
 }

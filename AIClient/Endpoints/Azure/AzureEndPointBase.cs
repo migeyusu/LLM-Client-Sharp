@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using LLMClient.Abstraction;
 using LLMClient.UI;
 
 namespace LLMClient.Endpoints.Azure;
@@ -45,6 +46,7 @@ public abstract class AzureEndPointBase : BaseViewModel, ILLMEndpoint
     public abstract IList<string> AvailableModelNames { get; }
 
     public abstract ILLMModelClient? NewClient(string modelName);
+    public abstract ILLMModel? GetModel(string modelName);
 
     public abstract Task InitializeAsync();
 }

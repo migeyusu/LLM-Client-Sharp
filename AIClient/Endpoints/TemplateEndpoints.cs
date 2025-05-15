@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using Microsoft.Xaml.Behaviors.Core;
@@ -68,6 +69,11 @@ public class TemplateEndpoints : BaseViewModel, ILLMEndpoint
     public ILLMModelClient? NewClient(string modelName)
     {
         throw new NotSupportedException("Template endpoints does not support creating new clients.");
+    }
+
+    public ILLMModel? GetModel(string modelName)
+    {
+        throw new NotImplementedException();
     }
 
     public Task InitializeAsync()

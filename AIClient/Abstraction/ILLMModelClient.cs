@@ -1,47 +1,9 @@
 ﻿using System.Collections.ObjectModel;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Windows.Media;
 using LLMClient.Endpoints;
 using LLMClient.UI;
-using Microsoft.Extensions.AI;
 
-namespace LLMClient;
-
-public interface ILLMEndpoint
-{
-    string DisplayName { get; }
-
-    string Name { get; }
-
-    ImageSource? Icon { get; }
-
-    IList<string> AvailableModelNames { get; }
-
-    ILLMModelClient? NewClient(string modelName);
-
-    Task InitializeAsync();
-}
-
-public class CompletedResult
-{
-    public CompletedResult(string? response, UsageDetails usage)
-    {
-        Response = response;
-        Usage = usage;
-    }
-
-    public string? Response { get; set; }
-
-    public UsageDetails Usage { get; set; }
-
-    public string? ErrorMessage { get; set; }
-
-    public bool IsInterrupt
-    {
-        get { return ErrorMessage != null; }
-    }
-}
+namespace LLMClient.Abstraction;
 
 public interface ILLMModelClient : IDialogViewItem
 {

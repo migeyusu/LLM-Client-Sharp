@@ -6,7 +6,7 @@ using System.Windows.Input;
 using LLMClient.UI;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient;
+namespace LLMClient.Data;
 
 public class GlobalConfig : BaseViewModel
 {

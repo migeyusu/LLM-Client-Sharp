@@ -11,6 +11,7 @@
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
+             xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:EndpointConfigureViewModel}"
              d:DesignHeight="300" d:DesignWidth="300"
@@ -78,7 +79,7 @@
                      BorderBrush="DarkGray"
                      BorderThickness="0,0,0,1">
                 <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type local:ILLMEndpoint}">
+                    <DataTemplate DataType="{x:Type abstraction:ILLMEndpoint}">
                         <StackPanel Orientation="Horizontal">
                             <Image Width="20"
                                    Height="20"

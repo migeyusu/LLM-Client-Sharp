@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.Abstraction;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -239,6 +240,10 @@ public class DialogViewModel : BaseViewModel
     {
         var requestViewItem = new RequestViewItem() { MessageContent = prompt };
         DialogItems.Add(requestViewItem);
+        if (Model == null)
+        {
+            return;
+        }
 #if TESTMODE
         for (int i = 0; i < 1000; i++)
         {
@@ -260,13 +265,7 @@ public class DialogViewModel : BaseViewModel
             //如果响应出现错误，认为请求无效，不计入上下文
             requestViewItem.IsAvailableInContext = !response.IsInterrupt;
             this.TokensConsumption += response.Usage.TotalTokenCount ?? 0;
-            DialogItems.Add(new ResponseViewItem()
-            {
-                Raw = response.Response,
-                IsInterrupt = response.IsInterrupt,
-                Tokens = response.Usage.OutputTokenCount ?? 0,
-                ErrorMessage = response.ErrorMessage
-            });
+            DialogItems.Add(new ResponseViewItem(Model, response));
             if (!response.IsInterrupt)
             {
                 this.PromptString = string.Empty;

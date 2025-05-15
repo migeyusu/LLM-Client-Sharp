@@ -3,6 +3,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
+using LLMClient.Data;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using TextMateSharp.Grammars;

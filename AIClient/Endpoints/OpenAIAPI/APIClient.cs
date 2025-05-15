@@ -2,6 +2,7 @@
 using System.Text;
 using System.Windows.Media;
 using AutoMapper;
+using LLMClient.Abstraction;
 using LLMClient.UI;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
@@ -27,7 +28,7 @@ public class APIClient : LlmClientBase
 
     public static ImageSource IconImageSource => IconImageLazy.Value;
 
-    private static readonly Lazy<ImageSource> IconImageLazy = new Lazy<ImageSource>((() =>
+    private static readonly Lazy<ImageSource> IconImageLazy = new Lazy<ImageSource>(() =>
     {
         var packIcon = new PackIcon() { Kind = PackIconKind.Api };
         var packIconData = packIcon.Data;
@@ -36,7 +37,7 @@ public class APIClient : LlmClientBase
             new DrawingImage(new GeometryDrawing(Brushes.Black, new Pen(Brushes.White, 0), geometry));
         drawingImage.Freeze();
         return drawingImage;
-    }));
+    });
 
     public APIModelInfo ModelInfo { get; }
 

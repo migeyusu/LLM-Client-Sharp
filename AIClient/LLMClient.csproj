@@ -196,8 +196,4 @@
       <Resource Include="Resources\Images\Document-New-32.png" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Utility\" />
-    </ItemGroup>
-
 </Project>

@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Input;
+using LLMClient.Abstraction;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
 
