@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
-using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -30,11 +31,12 @@ public class TemplateEndpoints : BaseViewModel, ILLMEndpoint
             @"pack://application:,,,/LLMClient;component/Resources/Images/Document-New-32.png",
             UriKind.Absolute));
         bitmapImage.Freeze();
+        DebugEx.PrintThreadId();
         return bitmapImage;
     }));
 
     [JsonIgnore]
-    public ImageSource? Icon
+    public ImageSource Icon
     {
         get { return Source.Value; }
     }
@@ -65,7 +67,7 @@ public class TemplateEndpoints : BaseViewModel, ILLMEndpoint
         }));
 
     [JsonIgnore] public ICommand RemoveCommand => new ActionCommand((o => { TemplateModels.Remove((APIModelInfo)o); }));
-    
+
     public ILLMModelClient? NewClient(string modelName)
     {
         throw new NotSupportedException("Template endpoints does not support creating new clients.");
@@ -73,11 +75,25 @@ public class TemplateEndpoints : BaseViewModel, ILLMEndpoint
 
     public ILLMModel? GetModel(string modelName)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     public Task InitializeAsync()
     {
         return Task.CompletedTask;
+    }
+
+    public static TemplateEndpoints LoadOrCreate(JsonObject document)
+    {
+        if (document.TryGetPropertyValue(KeyName, out var jsonNode))
+        {
+            var endpoints = jsonNode.Deserialize<TemplateEndpoints>();
+            if (endpoints != null)
+            {
+                return endpoints;
+            }
+        }
+
+        return new TemplateEndpoints();
     }
 }

@@ -14,7 +14,7 @@ public partial class TestWindow : Window
 
     private void TestWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
-        Image.Source = Icons.GetIcon(ModelIconType.Deepseek);
+        
         
     }
 }

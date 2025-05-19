@@ -4,6 +4,8 @@ namespace LLMClient.Endpoints;
 
 public class CompletedResult
 {
+    public static CompletedResult Empty = new CompletedResult(null, new UsageDetails());
+
     public CompletedResult(string? response, UsageDetails usage)
     {
         Response = response;

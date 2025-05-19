@@ -263,7 +263,7 @@
                 </Setter>
             </Style>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="MarkdownResource.xaml" />
+                <ResourceDictionary Source="UI/MarkdownResource.xaml" />
                 <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Indigo" SecondaryColor="DeepOrange" />
                 <ResourceDictionary
                     Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesign2.defaults.xaml" />
@@ -271,6 +271,7 @@
                     Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.SplitButton.xaml" />
                 <ResourceDictionary
                     Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.popupbox.xaml" />
+                <ResourceDictionary Source="UI/DataTemplateDictionary.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

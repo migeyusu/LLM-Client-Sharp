@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.Data;
 
-public class MultiResponsePersistItem : IDialogItem
+public class MultiResponsePersistItem : IDialogPersistItem
 {
     public ResponsePersistItem[] ResponseItems { get; set; } = [];
 

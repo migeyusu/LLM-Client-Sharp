@@ -51,9 +51,9 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     public string Name { get; set; } = Guid.NewGuid().ToString();
 
     [JsonIgnore]
-    public ImageSource? Icon
+    public ImageSource Icon
     {
-        get { return _icon ?? APIClient.IconImageSource; }
+        get { return _icon ?? Icons.EndpointIcon; }
         private set
         {
             if (Equals(value, _icon)) return;
@@ -180,7 +180,8 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     {
         if (!string.IsNullOrEmpty(IconUrl))
         {
-            this.Icon = await new Uri(this.IconUrl).GetIcon();
+            this._icon = await new Uri(this.IconUrl).GetIcon();
+            OnPropertyChangedAsync(nameof(Icon));
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Net.Http;
 using System.Windows;
+using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure;
@@ -31,7 +32,6 @@ public class Program
             var serviceCollection = new ServiceCollection();
             var collection = serviceCollection.AddSingleton<MainViewModel>()
                 .AddSingleton<MainWindow>()
-                .AddSingleton<GithubCopilotEndPoint>()
                 .AddTransient<ModelTypeConverter>()
                 .AddTransient<GlobalConfig>()
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
@@ -54,13 +54,14 @@ public class Program
             serviceProvider = collection.BuildServiceProvider();
             App app = new App();
             app.InitializeComponent();
+            // SynchronizationHelper.Initialize();
             // app.Run(new TestWindow());
-            serviceProvider.GetService<IEndpointService>()?.Initialize();
+            // serviceProvider.GetService<IEndpointService>()?.Initialize();
             app.Run(serviceProvider.GetService<MainWindow>());
         }
         catch (Exception e)
         {
-            MessageBox.Show("An error occured: " + e.Message + "process will be terminated.");
+            MessageBox.Show("An error occured: " + e + "process will be terminated.");
         }
 
         try

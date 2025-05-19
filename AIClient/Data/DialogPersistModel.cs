@@ -8,9 +8,13 @@ namespace LLMClient.Data;
 /// </summary>
 public class DialogPersistModel
 {
+    public const int DialogPersistVersion = 2;
+
+    public int Version { get; set; }
+
     public DateTime EditTime { get; set; }
 
-    public IDialogItem[]? DialogItems { get; set; }
+    public IDialogPersistItem[]? DialogItems { get; set; }
 
     public string Topic { get; set; } = string.Empty;
 

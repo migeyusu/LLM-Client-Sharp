@@ -25,20 +25,7 @@ public class APIClient : LlmClientBase
     {
         expression.CreateMap<APIModelInfo, IModelParams>();
     }))));
-
-    public static ImageSource IconImageSource => IconImageLazy.Value;
-
-    private static readonly Lazy<ImageSource> IconImageLazy = new Lazy<ImageSource>(() =>
-    {
-        var packIcon = new PackIcon() { Kind = PackIconKind.Api };
-        var packIconData = packIcon.Data;
-        var geometry = Geometry.Parse(packIconData);
-        var drawingImage =
-            new DrawingImage(new GeometryDrawing(Brushes.Black, new Pen(Brushes.White, 0), geometry));
-        drawingImage.Freeze();
-        return drawingImage;
-    });
-
+    
     public APIModelInfo ModelInfo { get; }
 
     public override ILLMModel Info
@@ -62,20 +49,9 @@ public class APIClient : LlmClientBase
         _option = option;
         this.Endpoint = endPoint;
         ModelInfo = modelInfo;
-        modelInfo.PropertyChanged += ModelInfoOnPropertyChanged;
         Mapper.Map<APIModelInfo, IModelParams>(modelInfo, this.Parameters);
     }
-
-    private void ModelInfoOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        switch (e.PropertyName)
-        {
-            case nameof(ModelInfo.Icon):
-                this.OnPropertyChanged(nameof(Icon));
-                break;
-        }
-    }
-
+  
     ~APIClient()
     {
     }
@@ -90,6 +66,7 @@ public class APIClient : LlmClientBase
             .AddOpenAIChatCompletion(this.ModelInfo.Id, new Uri(this._option.URL), _option.APIToken)
             .Build();
         var chatCompletionService = build.GetRequiredService<IChatCompletionService>();
+      
         return chatCompletionService.AsChatClient();
     }
     

@@ -22,7 +22,6 @@ public static class UITheme
     }
 
     public static event Action<bool>? ModeChanged;
-
     
 
     private static void OnModeChanged(bool obj)

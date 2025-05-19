@@ -51,7 +51,7 @@
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="{x:Type local:APIModelInfo}">
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="{Binding Icon,Mode=OneWay}"
+                        <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
                                Width="25"
                                Height="25" />
                         <TextBlock Text="{Binding Name,Mode=OneWay}"

@@ -8,21 +8,20 @@ namespace LLMClient.UI;
 
 public class ModelSelectionViewModel : BaseViewModel
 {
-    private string? _selectedModelName;
-    private ILLMEndpoint? _selectedEndpoint;
-    private string _dialogName = "新建会话";
-
-    public IEnumerable<ILLMEndpoint>? AvailableEndpoints { get; set; }
-
-    public string DialogName
+    public IEnumerable<ILLMEndpoint> AvailableEndpoints
     {
-        get => _dialogName;
+        get => _availableEndpoints;
         set
         {
-            if (value == _dialogName) return;
-            _dialogName = value;
+            if (Equals(value, _availableEndpoints)) return;
+            _availableEndpoints = value;
             OnPropertyChanged();
         }
+    }
+
+    public ModelSelectionViewModel()
+    {
+        _availableEndpoints = Array.Empty<ILLMEndpoint>();
     }
 
     public string? SelectedModelName
@@ -33,7 +32,6 @@ public class ModelSelectionViewModel : BaseViewModel
             if (value == _selectedModelName) return;
             _selectedModelName = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(CreateModelCommand));
         }
     }
 
@@ -45,27 +43,28 @@ public class ModelSelectionViewModel : BaseViewModel
             if (Equals(value, _selectedEndpoint)) return;
             _selectedEndpoint = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(CreateModelCommand));
         }
     }
 
-    public ICommand CreateModelCommand => new ActionCommand((o =>
+
+    private string? _selectedModelName;
+
+    private ILLMEndpoint? _selectedEndpoint;
+    private IEnumerable<ILLMEndpoint> _availableEndpoints;
+
+    public ModelSelectionViewModel(IEnumerable<ILLMEndpoint> availableEndpoints)
     {
-        if (SelectedModelName == null || SelectedEndpoint == null)
+        _availableEndpoints = availableEndpoints;
+    }
+
+    public ILLMModelClient? GetClient()
+    {
+        if (this.SelectedModelName == null)
         {
-            MessageBox.Show("Please select model and endpoint");
-            return;
+            return null;
         }
 
-        var model = SelectedEndpoint.NewClient(SelectedModelName);
-        if (model == null)
-        {
-            MessageBox.Show("create model failed!");
-            return;
-        }
-
-
-        var frameworkElement = o as FrameworkElement;
-        DialogHost.CloseDialogCommand.Execute(true, frameworkElement);
-    }));
+        var model = this.SelectedEndpoint?.NewClient(this.SelectedModelName);
+        return model;
+    }
 }

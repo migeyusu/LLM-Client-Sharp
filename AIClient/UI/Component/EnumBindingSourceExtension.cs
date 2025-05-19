@@ -1,6 +1,6 @@
 ﻿using System.Windows.Markup;
 
-namespace LLMClient.UI;
+namespace LLMClient.UI.Component;
 
 public class EnumBindingSourceExtension : MarkupExtension
 {

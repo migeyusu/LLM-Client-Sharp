@@ -12,7 +12,7 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
     protected override void OnCleanUpVirtualizedItem(CleanUpVirtualizedItemEventArgs e)
     {
         base.OnCleanUpVirtualizedItem(e);
-        if (e.Value is ResponseViewItem)
+        if (e.Value is MultiResponseViewItem)
         {
             var richTextBox = e.UIElement.FindVisualChild<FlowDocumentScrollViewer>();
             if (richTextBox is { Document: not null })

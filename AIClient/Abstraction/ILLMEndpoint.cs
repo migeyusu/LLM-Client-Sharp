@@ -11,7 +11,7 @@ public interface ILLMEndpoint
     /// </summary>
     string Name { get; }
 
-    ImageSource? Icon { get; }
+    ImageSource Icon { get; }
 
     IList<string> AvailableModelNames { get; }
 

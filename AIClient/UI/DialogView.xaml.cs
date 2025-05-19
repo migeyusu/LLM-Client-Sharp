@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.UI;
 
@@ -56,12 +57,20 @@ public partial class DialogView : UserControl
             PromptTextBox.InputBindings.Remove(findResource);
         }
     }
-    
+
     private void Redo_OnCanExecute(object sender, CanExecuteRoutedEventArgs e)
     {
-        e.CanExecute = ViewModel.Model != null;
+        e.CanExecute = ViewModel.Client != null;
     }
-    
+
+    private void PopupBox_OnOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is PopupBox popupBox)
+        {
+            var responseViewItem = popupBox.DataContext as MultiResponseViewItem;
+            popupBox.PopupContent = new ResponseAddClientViewModel(responseViewItem!, this.ViewModel);
+        }
+    }
 }
 
 /*public class FlowDocumentScrollViewerEx : ContentControl

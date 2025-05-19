@@ -63,7 +63,7 @@
                     <ComboBox SelectedItem="{Binding IconType,Mode=TwoWay}"
                               Margin="10,0,0,0"
                               Width="90"
-                              ItemsSource="{Binding Source={ui:EnumBindingSource {x:Type endpoints:ModelIconType}}}">
+                              ItemsSource="{Binding Source={component:EnumBindingSource {x:Type endpoints:ModelIconType}}}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type endpoints:ModelIconType}">
                                 <DockPanel>

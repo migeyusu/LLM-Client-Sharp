@@ -5,7 +5,7 @@ using LLMClient.UI;
 
 namespace LLMClient.Abstraction;
 
-public interface ILLMModelClient : IDialogViewItem
+public interface ILLMModelClient
 {
     /// <summary>
     /// 唯一名称
@@ -13,12 +13,10 @@ public interface ILLMModelClient : IDialogViewItem
     string Name { get; }
 
     ILLMEndpoint Endpoint { get; }
-
-    ImageSource? Icon { get; }
-
-    bool IsResponding { get; }
-
+    
     ILLMModel Info { get; }
+    
+    bool IsResponding { get; set; }
 
     IModelParams Parameters { get; set; }
 

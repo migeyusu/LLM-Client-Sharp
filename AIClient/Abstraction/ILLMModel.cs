@@ -1,4 +1,5 @@
 ﻿using System.Windows.Media;
+using LLMClient.UI.Component;
 
 namespace LLMClient.Abstraction;
 
@@ -11,7 +12,7 @@ public interface ILLMModel : IModelParams
     /// </summary>
     string Name { get; }
 
-    ImageSource? Icon { get; }
+    ThemedIcon Icon { get; }
 
     int MaxContextSize { get; }
 

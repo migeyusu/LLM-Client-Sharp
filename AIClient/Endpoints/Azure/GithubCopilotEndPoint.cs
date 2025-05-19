@@ -3,22 +3,27 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.Azure.Models;
+using LLMClient.UI;
+using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.Azure;
 
 public class GithubCopilotEndPoint : AzureEndPointBase
 {
+    public const string GithubCopilotName = "Github Copilot";
+
     private readonly Dictionary<string, Action<AzureModelInfo>> _predefinedModels;
 
     private readonly Dictionary<string, AzureModelInfo> _loadedModelInfos = new Dictionary<string, AzureModelInfo>();
 
-    public override string Name { get; } = InternalEndpoints.GithubCopilotName;
+    public override string Name { get; } = GithubCopilotName;
 
     private static readonly Lazy<ImageSource> Source = new Lazy<ImageSource>((() =>
     {
@@ -26,10 +31,11 @@ public class GithubCopilotEndPoint : AzureEndPointBase
             @"pack://application:,,,/LLMClient;component/Resources/Images/github-copilot-icon.png",
             UriKind.Absolute));
         bitmapImage.Freeze();
+        DebugEx.PrintThreadId();
         return bitmapImage;
     }));
 
-    public override ImageSource? Icon
+    public override ImageSource Icon
     {
         get { return Source.Value; }
     }
@@ -43,13 +49,6 @@ public class GithubCopilotEndPoint : AzureEndPointBase
     {
         get { return _loadedModelInfos.Values; }
     }
-
-    public ICommand ReloadCommand => new ActionCommand((async o =>
-    {
-        var loadEndpointsNode = await EndPointsConfiguration.LoadEndpointsNode();
-        var selectedEndpoint = loadEndpointsNode.GetOrCreate(this.Name);
-        this.LoadConfig(selectedEndpoint);
-    }));
 
     public override ILLMModelClient? NewClient(string modelName)
     {
@@ -74,21 +73,19 @@ public class GithubCopilotEndPoint : AzureEndPointBase
         document[Name] = config;
     }
 
-    public void LoadConfig(JsonNode document)
+    public static GithubCopilotEndPoint LoadConfig(JsonObject document)
     {
-        var jsonNode = document[Name];
-        if (jsonNode == null)
+        var githubCopilotEndPoint = new GithubCopilotEndPoint();
+        if (document.TryGetPropertyValue(GithubCopilotName, out var jsonNode))
         {
-            return;
+            var azureOption = jsonNode?.Deserialize<AzureOption>();
+            if (azureOption != null)
+            {
+                githubCopilotEndPoint.Option = azureOption;
+            }
         }
 
-        var azureOption = jsonNode.Deserialize<AzureOption>();
-        if (azureOption == null)
-        {
-            return;
-        }
-
-        this.Option = azureOption;
+        return githubCopilotEndPoint;
     }
 
     public GithubCopilotEndPoint()
@@ -208,22 +205,26 @@ public class GithubCopilotEndPoint : AzureEndPointBase
             using (var fileStream = fileInfo.OpenRead())
             {
                 var modelsDocument = await JsonDocument.ParseAsync(fileStream);
-                foreach (var element in modelsDocument.RootElement.EnumerateArray())
+                await Application.Current.Dispatcher.InvokeAsync(async () =>
                 {
-                    var modelInfo = element.Deserialize<AzureModelInfo>();
-                    if (modelInfo == null)
+                    foreach (var element in modelsDocument.RootElement.EnumerateArray())
                     {
-                        continue;
+                        var modelInfo = element.Deserialize<AzureModelInfo>();
+                        if (modelInfo == null)
+                        {
+                            continue;
+                        }
+
+                        var modelInfoName = modelInfo.FriendlyName;
+                        if (_predefinedModels.ContainsKey(modelInfoName))
+                        {
+                            modelInfo.Endpoint = this;
+                            _loadedModelInfos.Add(modelInfoName, modelInfo);
+                        }
                     }
 
-                    var modelInfoName = modelInfo.FriendlyName;
-                    if (_predefinedModels.ContainsKey(modelInfoName))
-                    {
-                        await modelInfo.InitializeAsync();
-                        modelInfo.Endpoint = this;
-                        _loadedModelInfos.Add(modelInfoName, modelInfo);
-                    }
-                }
+                    
+                });
             }
         }
         catch (Exception e)

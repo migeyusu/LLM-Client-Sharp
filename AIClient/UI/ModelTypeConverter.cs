@@ -11,30 +11,26 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
     ITypeConverter<MultiResponseViewItem, MultiResponsePersistItem>,
     ITypeConverter<ResponsePersistItem, ResponseViewItem>
 {
-    private readonly IEndpointService _service;
+    private readonly IEndpointService _endpointService;
 
     public ModelTypeConverter(IEndpointService service)
     {
-        this._service = service;
+        this._endpointService = service;
     }
 
     public DialogPersistModel Convert(DialogViewModel source, DialogPersistModel destination,
         ResolutionContext context)
     {
-        var dialogItems = source.DialogItems.Select<IDialogViewItem, IDialogItem>((item =>
+        var dialogItems = source.DialogItems.Select<IDialogViewItem, IDialogPersistItem>((item =>
         {
             if (item is EraseViewItem eraseViewItem)
             {
                 return eraseViewItem;
             }
-            else if (item is RequestViewItem requestViewItem)
+
+            if (item is RequestViewItem requestViewItem)
             {
                 return requestViewItem;
-            }
-
-            if (item is ResponseViewItem responseViewItem)
-            {
-                return context.Mapper.Map<ResponseViewItem, ResponsePersistItem>(responseViewItem);
             }
 
             if (item is MultiResponseViewItem multiResponseViewItem)
@@ -50,10 +46,10 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
             EditTime = source.EditTime,
             DialogItems = dialogItems,
             Topic = source.Topic,
-            EndPoint = source.Model?.Endpoint.Name,
-            Model = source.Model?.Name,
+            EndPoint = source.Client?.Endpoint.Name,
+            Model = source.Client?.Name,
             PromptString = source.PromptString,
-            Params = source.Model?.Parameters,
+            Params = source.Client?.Parameters,
             TokensConsumption = source.TokensConsumption,
         };
     }
@@ -61,13 +57,8 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
     public DialogViewModel Convert(DialogPersistModel source, DialogViewModel destination,
         ResolutionContext context)
     {
-        var sourceDialogItems = source.DialogItems?.Select<IDialogItem, IDialogViewItem>((item =>
+        var sourceDialogItems = source.DialogItems?.Select<IDialogPersistItem, IDialogViewItem>((item =>
         {
-            if (item is ResponsePersistItem responsePersistItem)
-            {
-                return context.Mapper.Map<ResponsePersistItem, ResponseViewItem>(responsePersistItem);
-            }
-
             if (item is MultiResponsePersistItem multiResponsePersistItem)
             {
                 return context.Mapper.Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem);
@@ -86,7 +77,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
             throw new NotSupportedException();
         })).ToArray();
 
-        var llmEndpoint = source.EndPoint == null ? null : _service.GetEndpoint(source.EndPoint);
+        var llmEndpoint = source.EndPoint == null ? null : _endpointService.GetEndpoint(source.EndPoint);
         ILLMModelClient? llmModelClient = null;
         if (llmEndpoint != null)
         {
@@ -101,7 +92,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
             }
         }
 
-        return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
+        return new DialogViewModel(source.Topic, _endpointService, llmModelClient, sourceDialogItems)
         {
             EditTime = source.EditTime,
             PromptString = source.PromptString,
@@ -112,7 +103,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
     public ResponseViewItem Convert(ResponsePersistItem source, ResponseViewItem destination,
         ResolutionContext context)
     {
-        var model = _service.GetEndpoint(source.EndPointName)?.GetModel(source.ModelName);
+        var model = _endpointService.GetEndpoint(source.EndPointName)?.GetModel(source.ModelName);
         return new ResponseViewItem(model, source.Raw, source.Tokens, source.IsInterrupt, source.ErrorMessage,
             source.EndPointName);
     }
@@ -120,12 +111,11 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
     public MultiResponseViewItem Convert(MultiResponsePersistItem source, MultiResponseViewItem destination,
         ResolutionContext context)
     {
-        return new MultiResponseViewItem()
+        var items = source.ResponseItems.Select(x =>
+            context.Mapper.Map<ResponsePersistItem, ResponseViewItem>(x));
+        return new MultiResponseViewItem(items)
         {
             AcceptedIndex = source.AcceptedIndex,
-            Items = new ObservableCollection<ResponseViewItem>(source.ResponseItems.Select(x =>
-                new ResponseViewItem(_service.GetEndpoint(x.EndPointName)?.GetModel(x.ModelName), x.Raw, x.Tokens,
-                    x.IsInterrupt, x.ErrorMessage, x.EndPointName)))
         };
     }
 
@@ -135,7 +125,8 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
         return new MultiResponsePersistItem()
         {
             AcceptedIndex = source.AcceptedIndex,
-            ResponseItems = source.Items.Select(x => context.Mapper.Map<ResponseViewItem, ResponsePersistItem>(x))
+            ResponseItems = source.Items.Cast<ResponseViewItem>()
+                .Select(x => context.Mapper.Map<ResponseViewItem, ResponsePersistItem>(x))
                 .ToArray()
         };
     }

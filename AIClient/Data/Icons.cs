@@ -1,26 +1,84 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LLMClient.Endpoints;
+using LLMClient.UI.Component;
+using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Data;
 
 public static class Icons
 {
-    public static ImageSource? GetIcon(ModelIconType iconType)
+    public static ImageSource EndpointIcon => EndpointIconImageLazy.Value;
+
+    private static readonly Lazy<ImageSource> EndpointIconImageLazy = new Lazy<ImageSource>(() =>
+    {
+        return PackIconToIcon(PackIconKind.Web);
+    });
+
+    public static ThemedIcon APIIcon => APIIconImageLazy.Value;
+
+    private static readonly Lazy<ThemedIcon> APIIconImageLazy = new Lazy<ThemedIcon>(() =>
+    {
+        return new LocalThemedIcon(PackIconToIcon(PackIconKind.Api));
+    });
+
+    private static ImageSource PackIconToIcon(PackIconKind kind)
+    {
+        var packIcon = new PackIcon() { Kind = kind };
+        var packIconData = packIcon.Data;
+        var geometry = Geometry.Parse(packIconData);
+        var drawingImage =
+            new DrawingImage(new GeometryDrawing(Brushes.Black, new Pen(Brushes.White, 0), geometry));
+        drawingImage.Freeze();
+        return drawingImage;
+    }
+
+    public static ThemedIcon GetIcon(ModelIconType iconType)
     {
         if (iconType == ModelIconType.None)
-            return null;
-        var uri = new Uri(@"pack://application:,,,/LLMClient;component/Resources/Images/llm/"
-                          + iconType.ToString().ToLower() + ".png", UriKind.Absolute);
-        return GetIcon(uri).Result;
+            return Icons.APIIcon;
+        //获取icontype的Attribute
+        var darkModeAttribute =
+            typeof(ModelIconType).GetField(iconType.ToString())?.GetCustomAttribute<DarkModeAttribute>();
+        Uri lightUri;
+        Uri? darkUri = null;
+        if (darkModeAttribute != null)
+        {
+            darkUri = new Uri(
+                $"pack://application:,,,/LLMClient;component/Resources/Images/llm/{iconType.ToString().ToLower()}-dark.png",
+                UriKind.Absolute);
+            lightUri = new Uri(
+                $"pack://application:,,,/LLMClient;component/Resources/Images/llm/{iconType.ToString().ToLower()}-light.png",
+                UriKind.Absolute);
+        }
+        else
+        {
+            lightUri = new Uri(
+                $"pack://application:,,,/LLMClient;component/Resources/Images/llm/{iconType.ToString().ToLower()}.png"
+                , UriKind.Absolute);
+        }
+
+        return new AsyncThemedIcon(Task.Run((async () =>
+        {
+            var source = await GetIcon(lightUri);
+            return source ?? APIIcon.CurrentSource;
+        })), darkUri != null
+            ? Task.Run((async () =>
+            {
+                var source = await GetIcon(darkUri);
+                return source ?? APIIcon.CurrentSource;
+            }))
+            : null);
     }
 
     private static readonly Lazy<string[]> SupportedImageExtensionsLazy = new Lazy<string[]>(() =>
@@ -40,7 +98,7 @@ public static class Icons
         get => SupportedImageExtensionsLazy.Value;
     }
 
-    private static readonly Dictionary<Uri, ImageSource> IconCache = new Dictionary<Uri, ImageSource>();
+    private static readonly ConcurrentDictionary<Uri, ImageSource?> IconCache = new ConcurrentDictionary<Uri, ImageSource?>();
 
     public static async Task<ImageSource?> GetIcon(this Uri uri)
     {
@@ -68,7 +126,7 @@ public static class Icons
                 {
                     result = new BitmapImage(uri);
                     result.Freeze();
-                    IconCache.Add(uri, result);
+                    IconCache.TryAdd(uri, result);
                 }
             }
             else if (uriScheme == Uri.UriSchemeHttp || uriScheme == Uri.UriSchemeHttps)
@@ -162,7 +220,7 @@ public class EnumToIconConverter : IValueConverter
     {
         if (value is ModelIconType iconType)
         {
-            return Icons.GetIcon(iconType);
+            return Icons.GetIcon(iconType).CurrentSource;
         }
 
         return null;

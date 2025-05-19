@@ -55,13 +55,11 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
         this.Endpoint = endPoint;
         ModelInfo = modelInfo;
         Mapper.Map<AzureModelInfo, IModelParams>(modelInfo, this.Parameters);
-        UITheme.ModeChanged += UIThemeOnModeChanged;
         Option = endPoint.Option;
     }
 
     ~AzureClientBase()
     {
-        UITheme.ModeChanged -= UIThemeOnModeChanged;
     }
     
     private readonly FieldInfo? _info = typeof(ChatCompletionsClient)
@@ -80,11 +78,7 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
         var chatCompletionService = build.GetRequiredService<IChatCompletionService>();
         return chatCompletionService.AsChatClient();*/
     }
-
-    private void UIThemeOnModeChanged(bool obj)
-    {
-        this.OnPropertyChanged(nameof(Icon));
-    }
+    
 
 #pragma warning disable SKEXP0010
     public static void Test()

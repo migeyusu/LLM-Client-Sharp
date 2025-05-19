@@ -1,6 +1,4 @@
-﻿using LLMClient.UI;
-
-namespace LLMClient;
+﻿namespace LLMClient.UI;
 
 public class ProgressViewModel : BaseViewModel
 {

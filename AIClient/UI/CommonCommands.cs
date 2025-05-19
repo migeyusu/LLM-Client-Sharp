@@ -6,7 +6,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
 
-public class CommonCommands
+public static class CommonCommands
 {
     private static ICommand? _copyCommand;
 

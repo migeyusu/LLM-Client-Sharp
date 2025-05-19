@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
@@ -12,25 +13,11 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
 
-public interface IEndpointService
-{
-    IReadOnlyList<ILLMEndpoint> AvailableEndpoints { get; }
-
-    Task Initialize();
-
-    ILLMEndpoint? GetEndpoint(string name)
-    {
-        return AvailableEndpoints.FirstOrDefault((endpoint) => endpoint.Name == name);
-    }
-}
-
 /// <summary>
 /// 作为终结点的配置中心
 /// </summary>
 public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 {
-    private readonly GithubCopilotEndPoint _githubCopilotEndPoint;
-
     public ILLMEndpoint? SelectedEndpoint
     {
         get => _selectedEndpoint;
@@ -72,7 +59,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
         var root = new JsonObject();
         var endPointsNode = root.GetOrCreate(EndPointsConfiguration.EndpointsNodeName);
-        _githubCopilotEndPoint.UpdateConfig(endPointsNode);
+        _githubCopilotEndPoint?.UpdateConfig(endPointsNode);
         JsonArray jArray = new JsonArray();
         foreach (var apiEndPoint in Endpoints.Where((endpoint) => endpoint is APIEndPoint).Cast<APIEndPoint>())
         {
@@ -109,25 +96,27 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public IReadOnlyList<ILLMEndpoint> AvailableEndpoints
     {
-        get { return Endpoints.AsReadOnly(); }
+        get { return Endpoints.Where((endpoint => endpoint is not TemplateEndpoints)).ToArray().AsReadOnly(); }
     }
 
     private ILLMEndpoint? _selectedEndpoint;
 
-    private readonly IServiceProvider _serviceProvider;
-
-    public EndpointConfigureViewModel(GithubCopilotEndPoint githubOption, IServiceProvider serviceProvider)
+    public EndpointConfigureViewModel()
     {
-        _githubCopilotEndPoint = githubOption;
-        _serviceProvider = serviceProvider;
     }
+
+    private GithubCopilotEndPoint? _githubCopilotEndPoint;
+
+    private TemplateEndpoints? _templateEndpoints;
 
     public async Task Initialize()
     {
         var endPointsNode = await EndPointsConfiguration.LoadEndpointsNode();
-        _githubCopilotEndPoint.LoadConfig(endPointsNode);
-        Endpoints.Add(_githubCopilotEndPoint);
         var endPoints = endPointsNode.AsObject();
+        _templateEndpoints = TemplateEndpoints.LoadOrCreate(endPoints);
+        Endpoints.Add(_templateEndpoints);
+        _githubCopilotEndPoint = GithubCopilotEndPoint.LoadConfig(endPoints);
+        Endpoints.Add(_githubCopilotEndPoint);
         if (endPoints.TryGetPropertyValue(APIEndPoint.KeyName, out var apisNode))
         {
             var jsonArray = apisNode!.AsArray();
@@ -144,9 +133,6 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             }
         }
 
-        var templateEndpoints = endPoints.GetOrCreate(TemplateEndpoints.KeyName);
-        var templates = templateEndpoints.Deserialize<TemplateEndpoints>() ?? new TemplateEndpoints();
-        Endpoints.Add(templates);
 
         foreach (var availableEndpoint in Endpoints)
         {

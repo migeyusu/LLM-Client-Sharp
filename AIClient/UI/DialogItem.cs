@@ -4,7 +4,7 @@ using System.Windows.Media;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
@@ -15,11 +15,9 @@ public interface IDialogViewItem
     ChatMessage? Message { get; }
 
     bool IsAvailableInContext { get; }
-
-    long Tokens { get; }
 }
 
-public class EraseViewItem : IDialogViewItem, IDialogItem
+public class EraseViewItem : IDialogViewItem, IDialogPersistItem
 {
     [JsonIgnore] public ChatMessage? Message { get; } = null;
 
@@ -28,12 +26,15 @@ public class EraseViewItem : IDialogViewItem, IDialogItem
     /// </summary>
     [JsonPropertyName("IsEnable")]
     public bool IsAvailableInContext { get; } = false;
-
-    public long Tokens { get; } = 0;
 }
 
-public class RequestViewItem : BaseViewModel, IDialogViewItem, IDialogItem
+public class RequestViewItem : BaseViewModel, IDialogViewItem, IDialogPersistItem
 {
+    /// <summary>
+    /// 标记一次请求-响应过程，和响应对应
+    /// </summary>
+    public Guid InteractionId { get; set; }
+
     private long _tokens;
 
     public RequestViewItem() : base()
@@ -58,11 +59,11 @@ public class RequestViewItem : BaseViewModel, IDialogViewItem, IDialogItem
     }
 }
 
-public class ResponseViewItem : BaseViewModel, IDialogViewItem
+public class ResponseViewItem : BaseViewModel, IResponseViewItem
 {
-    public ImageSource Icon
+    public ThemedIcon Icon
     {
-        get { return Model?.Icon ?? APIClient.IconImageSource; }
+        get { return Model?.Icon ?? Icons.APIIcon; }
     }
 
     public string EndPointName { get; }
@@ -104,7 +105,6 @@ public class ResponseViewItem : BaseViewModel, IDialogViewItem
     }
 
     public string? Raw { get; }
-
 
     public ResponseViewItem(ILLMModel? model, string? raw, long tokens, bool interrupt,
         string? errorMessage, string endPointName)

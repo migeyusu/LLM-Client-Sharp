@@ -44,9 +44,9 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     }
 
     [JsonIgnore]
-    public ImageSource? Icon
+    public ThemedIcon Icon
     {
-        get { return _icon ?? APIClient.IconImageSource; }
+        get { return _icon ?? Icons.APIIcon; }
         private set
         {
             if (Equals(value, _icon)) return;
@@ -117,7 +117,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     }
 
     private string? _iconUrl;
-    private ImageSource? _icon = null;
+    private ThemedIcon? _icon = null;
     private bool _urlIconEnable = false;
     private ModelIconType _iconType = ModelIconType.None;
     private bool _systemPromptEnable;
@@ -361,13 +361,28 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         }
     }
 
-    private async void UpdateIcon()
+    public APIModelInfo()
+    {
+    }
+
+    ~APIModelInfo()
+    {
+    }
+
+
+    private void UpdateIcon()
     {
         if (UrlIconEnable)
         {
             if (!string.IsNullOrEmpty(IconUrl))
             {
-                this.Icon = await new Uri(this.IconUrl).GetIcon();
+                this.Icon = new AsyncThemedIcon(Task.Run((async () =>
+                {
+                    var imageSource = await new Uri(this.IconUrl).GetIcon();
+                    if (imageSource != null)
+                        return imageSource;
+                    return Icons.APIIcon.CurrentSource;
+                })), null);
             }
         }
         else

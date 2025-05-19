@@ -3,47 +3,37 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Windows.Media;
+using Azure;
+using Azure.AI.Inference;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
+using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
 namespace LLMClient.Endpoints;
 
 public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
 {
-    [JsonIgnore] public virtual ChatMessage? Message { get; } = null;
-
-    [JsonIgnore] public virtual bool IsAvailableInContext { get; } = false;
-    [JsonIgnore] public long Tokens { get; } = 0;
-
+    private bool _isResponding;
     public abstract string Name { get; }
 
     public abstract ILLMEndpoint Endpoint { get; }
+    
+    [JsonIgnore] public abstract ILLMModel Info { get; }
 
-    [JsonIgnore]
-    public virtual ImageSource? Icon
-    {
-        get { return this.Info.Icon; }
-    }
-
-    private bool _isResponding;
-
-    [JsonIgnore]
     public bool IsResponding
     {
         get => _isResponding;
-        protected set
+        set
         {
             if (value == _isResponding) return;
             _isResponding = value;
             OnPropertyChanged();
         }
     }
-
-    [JsonIgnore] public abstract ILLMModel Info { get; }
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 

@@ -2,7 +2,7 @@
 
 namespace LLMClient.Data;
 
-public class ResponsePersistItem: IDialogItem
+public class ResponsePersistItem
 {
     public string ModelName { get; set; } = string.Empty;
 

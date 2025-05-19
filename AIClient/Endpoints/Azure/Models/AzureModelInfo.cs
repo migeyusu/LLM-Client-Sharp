@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Diagnostics;
+using System.Text.Json.Serialization;
 using System.Windows.Documents;
 using System.Windows.Media;
 using LLMClient.Abstraction;
@@ -27,10 +28,26 @@ public class AzureModelInfo : ILLMModel
 
     [JsonIgnore] public bool Streaming { get; set; } = true;
 
+    ThemedIcon? _themedIcon;
+
     [JsonIgnore]
-    public ImageSource? Icon
+    public ThemedIcon Icon
     {
-        get { return UITheme.IsDarkMode ? this.DarkModeIcon : this.LightModeIcon; }
+        get
+        {
+            if (_themedIcon != null)
+            {
+                return _themedIcon;
+            }
+
+            if (LightModeIcon == null)
+            {
+                return Icons.APIIcon;
+            }
+
+            _themedIcon = new LocalThemedIcon(LightModeIcon, DarkModeIcon);
+            return _themedIcon;
+        }
     }
 
     [JsonIgnore] public int MaxContextSize { get; set; }
@@ -177,18 +194,24 @@ public class AzureModelInfo : ILLMModel
 
     [JsonPropertyName("light_mode_icon")] public string? LightModeIconString { get; set; }
 
-    [JsonIgnore] public ImageSource? LightModeIcon { get; set; }
+    private ImageSource? _lightModeIconBrush = null;
 
-    public async Task InitializeAsync()
+    [JsonIgnore]
+    public ImageSource? LightModeIcon
     {
-        if (!string.IsNullOrEmpty(LightModeIconString))
+        get
         {
-            LightModeIcon = Extension.LoadSvgFromBase64(LightModeIconString);
-        }
-        else if (LogoUrl != null)
-        {
-            var requestUri = new Uri($"https://github.com{LogoUrl}");
-            LightModeIcon = await requestUri.GetIcon();
+            if (!string.IsNullOrEmpty(LightModeIconString))
+            {
+                _lightModeIconBrush = Extension.LoadSvgFromBase64(LightModeIconString);
+            }
+            else if (LogoUrl != null)
+            {
+                var requestUri = new Uri($"https://github.com{LogoUrl}");
+                _lightModeIconBrush = requestUri.GetIcon().Result;
+            }
+
+            return _lightModeIconBrush;
         }
     }
 

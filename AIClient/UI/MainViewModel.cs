@@ -8,7 +8,9 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
+using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Endpoints;
 using LLMClient.Render;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
@@ -162,9 +164,9 @@ public class MainViewModel : BaseViewModel
 
         var stringBuilder = new StringBuilder(8192);
         stringBuilder.AppendLine($"# {PreDialog.Topic}");
-        if (PreDialog.Model != null)
+        if (PreDialog.Client != null)
         {
-            stringBuilder.AppendLine($"### {PreDialog.Model.Name}");
+            stringBuilder.AppendLine($"### {PreDialog.Client.Name}");
         }
 
         foreach (var viewItem in PreDialog.DialogItems)
@@ -200,48 +202,26 @@ public class MainViewModel : BaseViewModel
             return;
         }
 
-        var selectionViewModel = new ModelSelectionViewModel()
-            { AvailableEndpoints = ConfigureViewModel.AvailableEndpoints };
+        var selectionViewModel = new DialogCreationViewModel(ConfigureViewModel.AvailableEndpoints);
         if (await DialogHost.Show(selectionViewModel) is true)
         {
-            if (selectionViewModel.SelectedModelName == null)
-            {
-                return;
-            }
-
-            if (selectionViewModel.SelectedEndpoint == null)
-            {
-                return;
-            }
-
-            var model = selectionViewModel.SelectedEndpoint.NewClient(selectionViewModel.SelectedModelName);
+            var model = selectionViewModel.GetClient();
             if (model == null)
             {
                 MessageBox.Show("No model created!");
                 return;
             }
 
-            PreDialog.Model = model;
+            PreDialog.Client = model;
         }
     }));
 
     public ICommand SelectModelCommand => new ActionCommand((async o =>
     {
-        var selectionViewModel = new ModelSelectionViewModel()
-            { AvailableEndpoints = ConfigureViewModel.AvailableEndpoints };
+        var selectionViewModel = new DialogCreationViewModel(ConfigureViewModel.AvailableEndpoints);
         if (await DialogHost.Show(selectionViewModel) is true)
         {
-            if (selectionViewModel.SelectedModelName == null)
-            {
-                return;
-            }
-
-            if (selectionViewModel.SelectedEndpoint == null)
-            {
-                return;
-            }
-
-            var model = selectionViewModel.SelectedEndpoint.NewClient(selectionViewModel.SelectedModelName);
+            var model = selectionViewModel.GetClient();
             if (model == null)
             {
                 MessageBox.Show("No model created!");
@@ -249,7 +229,8 @@ public class MainViewModel : BaseViewModel
             }
 
             var dialogViewModel =
-                new DialogViewModel(selectionViewModel.DialogName, model) { IsDataChanged = true };
+                new DialogViewModel(selectionViewModel.DialogName, this.ConfigureViewModel, model)
+                    { IsDataChanged = true };
             dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
             PreDialog = dialogViewModel;
             this.DialogViewModels.Insert(0, dialogViewModel);
@@ -322,13 +303,22 @@ public class MainViewModel : BaseViewModel
                 await using (var openRead = fileInfo.OpenRead())
                 {
                     var dialogModel = await JsonSerializer.DeserializeAsync<DialogPersistModel>(openRead);
-                    if (dialogModel != null)
+                    if (dialogModel == null)
                     {
-                        var viewModel = _mapper.Map<DialogPersistModel, DialogViewModel>(dialogModel);
-                        viewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
-                        dialogViewModels.Add(viewModel);
-                        viewModel.IsDataChanged = false;
+                        Trace.WriteLine($"加载会话{fileInfo.FullName}失败：文件内容为空");
+                        continue;
                     }
+
+                    if (dialogModel.Version != DialogPersistModel.DialogPersistVersion)
+                    {
+                        Trace.WriteLine($"加载会话{fileInfo.FullName}失败：版本不匹配");
+                        continue;
+                    }
+
+                    var viewModel = _mapper.Map<DialogPersistModel, DialogViewModel>(dialogModel);
+                    viewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
+                    dialogViewModels.Add(viewModel);
+                    viewModel.IsDataChanged = false;
                 }
             }
             catch (Exception e)
@@ -382,6 +372,7 @@ public class MainViewModel : BaseViewModel
             }
 
             var dialogModel = _mapper.Map<DialogViewModel, DialogPersistModel>(dialogViewModel);
+            dialogModel.Version = DialogPersistModel.DialogPersistVersion;
             if (fileInfos.TryGetValue(dialogViewModel.FileName, out var fileInfo))
             {
                 fileInfo.Delete();
@@ -420,6 +411,7 @@ public class MainViewModel : BaseViewModel
     public async void Initialize()
     {
         IsProcessing = true;
+        await ConfigureViewModel.Initialize();
         await LoadDialogsFromLocal(DialogSaveFolder);
         if (DialogViewModels.Any())
         {

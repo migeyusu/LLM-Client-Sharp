@@ -127,8 +127,8 @@
                                x:Name="MainDialogHost"
                                DialogTheme="Inherit">
         <materialDesign:DialogHost.Resources>
-            <DataTemplate DataType="{x:Type ui:ModelSelectionViewModel}">
-                <ui:ModelSelectionView Width="900"
+            <DataTemplate DataType="{x:Type ui:DialogCreationViewModel}">
+                <ui:DialogCreationView Width="900"
                                        Height="600" />
             </DataTemplate>
             <DataTemplate DataType="{x:Type ui:EndpointConfigureViewModel}">
@@ -394,7 +394,7 @@
                                    Margin="10"
                                    RenderOptions.BitmapScalingMode="HighQuality"
                                    VerticalAlignment="Center"
-                                   Source="{Binding Model.Icon,Mode=OneWay}" />
+                                   Source="{Binding Client.Info.Icon.CurrentSource,Mode=OneWay}" />
                             <Grid Grid.Row="0" Grid.Column="1"
                                   VerticalAlignment="Top"
                                   HorizontalAlignment="Stretch">
@@ -403,7 +403,7 @@
                                     <ColumnDefinition Width="Auto"
                                                       MaxWidth="120" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding Model.Name}"
+                                <TextBlock Text="{Binding Client.Name}"
                                            Foreground="DimGray"
                                            TextWrapping="NoWrap"
                                            TextTrimming="CharacterEllipsis"
@@ -412,7 +412,7 @@
                                 <TextBlock Grid.Column="1"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Right"
-                                           Text="{Binding Model.Endpoint.DisplayName,Mode=OneTime}"
+                                           Text="{Binding Client.Endpoint.DisplayName,Mode=OneTime}"
                                            Margin="6,0,0,0" />
                             </Grid>
                             <TextBlock VerticalAlignment="Center"
@@ -476,7 +476,7 @@
                               materialDesign:TextFieldAssist.HasClearButton="True"
                               MaxDropDownHeight="400"
                               IsEditable="True"
-                              Text="{Binding  PreDialog.Model.Parameters.SystemPrompt,Mode=TwoWay}">
+                              Text="{Binding  PreDialog.Client.Parameters.SystemPrompt,Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type System:String}">
                                 <TextBlock TextWrapping="Wrap"
@@ -539,14 +539,14 @@
                             </TextBlock.Text>
                         </TextBlock>
                         <Button Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                CommandParameter="{Binding Model,Mode=OneWay}"
-                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                CommandParameter="{Binding Client,Mode=OneWay}"
+                                Style="{StaticResource MaterialDesignRaisedLightButton}"
                                 Margin="0,0,10,0"
                                 materialDesign:ButtonAssist.CornerRadius="15"
                                 Padding="10,5"
                                 ToolTip="配置模型">
-                            <DockPanel DataContext="{Binding Model,Mode=OneWay}">
-                                <Image Source="{Binding  Icon,Mode=OneWay}"
+                            <DockPanel DataContext="{Binding Client,Mode=OneWay}">
+                                <Image Source="{Binding  Info.Icon.CurrentSource,Mode=OneWay}"
                                        Width="20"
                                        Height="20" />
                                 <TextBlock Text="{Binding Name,Mode=OneTime}"
@@ -555,9 +555,9 @@
                             </DockPanel>
                         </Button>
                         <Button ToolTip="model信息"
-                                Visibility="{Binding Model.Info,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                Visibility="{Binding Client.Info,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                 Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                CommandParameter="{Binding Model.Info,Mode=OneWay}">
+                                CommandParameter="{Binding Client.Info,Mode=OneWay}">
                             <materialDesign:PackIcon Kind="InformationOutline"
                                                      Width="20"
                                                      Height="20" />

@@ -3,12 +3,12 @@
 public enum ModelIconType : int
 {
     None = 0,
-    ChatGpt,
+    [DarkMode] ChatGpt,
     Gemini,
     Claude,
     Mistral,
     Deepseek,
-    Grok,
+    [DarkMode] Grok,
     Qwen,
     Microsoft,
     Nvidia,
@@ -17,10 +17,14 @@ public enum ModelIconType : int
     Cohere,
     Doubao,
     Hunyuan,
-    Kimi,
-    Moonshot,
+    [DarkMode] Kimi,
+    [DarkMode] Moonshot,
     Qingyan,
     Wenxin,
-    Yi,
+    [DarkMode] Yi,
     Zhipu
+}
+
+public class DarkModeAttribute : Attribute
+{
 }
