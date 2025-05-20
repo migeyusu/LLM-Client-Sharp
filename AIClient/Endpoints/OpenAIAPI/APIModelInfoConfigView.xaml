@@ -35,7 +35,7 @@
                  materialDesign:HintAssist.Hint="最大上下文长度" />
         <TextBox Text="{Binding InfoUrl,Mode=TwoWay}"
                  Margin="0,0,0,10"
-                 materialDesign:HintAssist.Hint="模型介绍"
+                 materialDesign:HintAssist.Hint="模型信息URL"
                  Style="{StaticResource MaterialDesignFloatingHintTextBox}" />
         <CheckBox Content="Streaming"
                   IsChecked="{Binding Streaming,Mode=TwoWay}"

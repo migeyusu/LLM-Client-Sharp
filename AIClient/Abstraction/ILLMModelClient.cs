@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows.Media;
 using LLMClient.Endpoints;
 using LLMClient.UI;
@@ -13,14 +14,16 @@ public interface ILLMModelClient
     string Name { get; }
 
     ILLMEndpoint Endpoint { get; }
-    
+
     ILLMModel Info { get; }
-    
+
     bool IsResponding { get; set; }
 
     IModelParams Parameters { get; set; }
 
     ObservableCollection<string> PreResponse { get; }
+
+    Task AddFileToContext(FileInfo fileInfo);
 
     //为了尽可能抽象，要求单个方法就传递一次会话所需要的所有参数，防止文本生成、图像生成等任务类型的不相容
     Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,

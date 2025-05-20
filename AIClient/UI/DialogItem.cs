@@ -81,6 +81,9 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
     public bool IsInterrupt { get; }
 
     public long Tokens { get; }
+    public int Latency { get; }
+
+    public int Duration { get; }
 
     public string? ErrorMessage { get; }
 
@@ -106,25 +109,16 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
 
     public string? Raw { get; }
 
-    public ResponseViewItem(ILLMModel? model, string? raw, long tokens, bool interrupt,
-        string? errorMessage, string endPointName)
+    public ResponseViewItem(ILLMModel? model,IResponse response, string endPointName)
     {
+        Duration = response.Duration;
         Model = model;
-        Raw = raw;
-        Tokens = tokens;
-        IsInterrupt = interrupt;
-        ErrorMessage = errorMessage;
+        Raw = response.Raw;
+        Tokens = response.Tokens;
+        IsInterrupt = response.IsInterrupt;
+        ErrorMessage = response.ErrorMessage;
         EndPointName = endPointName;
-    }
-
-    public ResponseViewItem(ILLMModelClient client, CompletedResult result)
-    {
-        Model = client.Info;
-        EndPointName = client.Endpoint.Name;
-        Raw = result.Response;
-        Tokens = result.Usage.OutputTokenCount ?? 0;
-        IsInterrupt = result.IsInterrupt;
-        ErrorMessage = result.ErrorMessage;
+        Latency = response.Latency;
     }
 
     private ChatMessage? _assistantMessage;

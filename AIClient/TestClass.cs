@@ -5,13 +5,14 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.SemanticKernel;
 using SkiaSharp;
 
 namespace LLMClient;
 
 public class TestClass
 {
-    public static async void Test()
+    public static async void TestAzure()
     {
       
     }

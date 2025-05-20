@@ -1,5 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Windows.Media;
@@ -9,6 +11,9 @@ using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel.Plugins.Document;
+using Microsoft.SemanticKernel.Plugins.Document.FileSystem;
+using Microsoft.SemanticKernel.Plugins.Document.OpenXml;
 using OpenAI.Chat;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
@@ -21,7 +26,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
     public abstract string Name { get; }
 
     public abstract ILLMEndpoint Endpoint { get; }
-    
+
     [JsonIgnore] public abstract ILLMModel Info { get; }
 
     public bool IsResponding
@@ -93,6 +98,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
         return chatOptions;
     }
 
+    private readonly Stopwatch _stopwatch = new Stopwatch();
+
+    public abstract Task AddFileToContext(FileInfo fileInfo);
+    
     public virtual async Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default)
     {
@@ -114,15 +123,23 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                 }
             }
 
+            _stopwatch.Restart();
+            int duration = 0;
             if (this.Parameters.Streaming)
             {
                 string? errorMessage = null;
+                int? latency = null;
                 try
                 {
                     AdditionalPropertiesDictionary? dictionary = null;
                     await foreach (var update in CreateChatClient()
                                        .GetStreamingResponseAsync(messages, requestOptions, cancellationToken))
                     {
+                        if (!latency.HasValue)
+                        {
+                            latency = (int)_stopwatch.ElapsedMilliseconds;
+                        }
+
                         if (update.AdditionalProperties != null)
                         {
                             dictionary = update.AdditionalProperties;
@@ -147,6 +164,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                         }
                     }
 
+                    duration = (int)(_stopwatch.ElapsedMilliseconds / 1000);
                     if (usageDetails == null && dictionary != null)
                     {
                         // 方法1: 检查 Metadata 中的 Usage 信息
@@ -198,8 +216,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                 }
 
                 return new CompletedResult(cachedPreResponse.Length == 0 ? null : cachedPreResponse.ToString(),
-                        usageDetails ?? new UsageDetails())
-                    { ErrorMessage = errorMessage };
+                    usageDetails ?? new UsageDetails())
+                {
+                    ErrorMessage = errorMessage,
+                    Latency = latency ?? 0,
+                    Duration = duration
+                };
             }
             else
             {
@@ -207,6 +229,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                 {
                     var chatResponse =
                         await CreateChatClient().GetResponseAsync(messages, requestOptions, cancellationToken);
+                    duration = (int)(_stopwatch.ElapsedMilliseconds / 1000);
                     if (chatResponse.Usage == null)
                     {
                         if (chatResponse.AdditionalProperties?.TryGetValue("Usage", out var usageObj) == true)
@@ -226,18 +249,28 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                                 // tokenCount = Convert.ToInt32(totalTokensObj);
                             }*/
                         }
+                        else
+                        {
+                            Debugger.Break();
+                        }
                     }
                     else
                     {
                         usageDetails = chatResponse.Usage;
                     }
 
-                    return new CompletedResult(chatResponse.Text, usageDetails ?? new UsageDetails());
+                    return new CompletedResult(chatResponse.Text, usageDetails ?? new UsageDetails())
+                    {
+                        Duration = duration
+                    };
                 }
                 catch (Exception e)
                 {
                     return new CompletedResult(null, new UsageDetails())
-                        { ErrorMessage = e.Message };
+                    {
+                        ErrorMessage = e.Message,
+                        Duration = duration
+                    };
                 }
             }
         }

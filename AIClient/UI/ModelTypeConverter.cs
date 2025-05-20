@@ -104,8 +104,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
         ResolutionContext context)
     {
         var model = _endpointService.GetEndpoint(source.EndPointName)?.GetModel(source.ModelName);
-        return new ResponseViewItem(model, source.Raw, source.Tokens, source.IsInterrupt, source.ErrorMessage,
-            source.EndPointName);
+        return new ResponseViewItem(model, source, source.EndPointName);
     }
 
     public MultiResponseViewItem Convert(MultiResponsePersistItem source, MultiResponseViewItem destination,
@@ -116,6 +115,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
         return new MultiResponseViewItem(items)
         {
             AcceptedIndex = source.AcceptedIndex,
+            InteractionId = source.InteractionId,
         };
     }
 
@@ -127,7 +127,8 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
             AcceptedIndex = source.AcceptedIndex,
             ResponseItems = source.Items.Cast<ResponseViewItem>()
                 .Select(x => context.Mapper.Map<ResponseViewItem, ResponsePersistItem>(x))
-                .ToArray()
+                .ToArray(),
+            InteractionId = source.InteractionId,
         };
     }
 }

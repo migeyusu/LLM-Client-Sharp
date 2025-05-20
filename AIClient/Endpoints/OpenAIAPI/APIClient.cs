@@ -1,14 +1,28 @@
-﻿using System.ComponentModel;
+﻿using System.ClientModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Text;
 using System.Windows.Media;
 using AutoMapper;
+using Azure.AI.Inference;
 using LLMClient.Abstraction;
 using LLMClient.UI;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Azure;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Embeddings;
+using Microsoft.SemanticKernel.Memory;
+using Microsoft.SemanticKernel.Plugins.Document;
+using Microsoft.SemanticKernel.Plugins.Document.FileSystem;
+using Microsoft.SemanticKernel.Plugins.Document.OpenXml;
+using OpenAI;
 using OpenAI.Chat;
+using OpenAI.VectorStores;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
 using ImageSource = System.Windows.Media.ImageSource;
@@ -25,7 +39,7 @@ public class APIClient : LlmClientBase
     {
         expression.CreateMap<APIModelInfo, IModelParams>();
     }))));
-    
+
     public APIModelInfo ModelInfo { get; }
 
     public override ILLMModel Info
@@ -51,25 +65,99 @@ public class APIClient : LlmClientBase
         ModelInfo = modelInfo;
         Mapper.Map<APIModelInfo, IModelParams>(modelInfo, this.Parameters);
     }
-  
+
     ~APIClient()
     {
     }
 
+
+    [Experimental("SKEXP0050")]
+    public override async Task AddFileToContext(FileInfo fileInfo)
+    {
+        if (Kernel == null)
+        {
+            return;
+        }
+
+        DocumentPlugin documentPlugin = new(new WordDocumentConnector(), new LocalFileSystemConnector());
+        var doc = await documentPlugin.ReadTextAsync(fileInfo.FullName);
+        // 2. 简单按 500 tokens 左右切块（示例用行数）
+        var memory = Kernel.GetRequiredService<ISemanticTextMemory>();
+        var chunks = SplitByLength(doc, maxChars: 1500);
+
+        IEnumerable<string> SplitByLength(string text, int maxChars)
+        {
+            var span = text.AsMemory();
+            int offset = 0;
+            while (offset < span.Length)
+            {
+                int length = Math.Min(maxChars, span.Length - offset);
+                var chunk = span.Slice(offset, length).ToString();
+                offset += length;
+                yield return chunk;
+            }
+        }
+
+        Guid docId = Guid.NewGuid();
+        // 3. 存向量
+        int i = 0;
+        foreach (var chunk in chunks)
+        {
+            await memory.SaveInformationAsync(
+                collection: "docs", // 向量库里的“表”或“namespace”
+                text: chunk,
+                id: $"{docId}_{i++}", // 唯一键
+                description: $"doc:{docId}" // 可做元数据
+            );
+        }
+
+        // var embeddingGenerator = kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+        // var userQuestion = await embeddingGenerator.GenerateAsync("DDC的初始化有几个步骤？");
+        var searchResults = memory.SearchAsync(
+            collection: "docs",
+            query: "DDC的初始化有几个步骤？",
+            limit: 6, // 取前 6 段
+            minRelevanceScore: 0.7 // 可调
+        );
+        Debugger.Break();
+    }
+
+    Kernel? _kernel = null;
+
+    [Experimental("SKEXP0050")]
+    private Kernel Kernel
+    {
+        get
+        {
+            if (_kernel == null)
+            {
+                var endpoint = new Uri(this._option.URL);
+                var apiToken = _option.APIToken;
+                var kernelBuilder = Kernel.CreateBuilder();
+                kernelBuilder.Services.AddSingleton<IMemoryStore>(new VolatileMemoryStore())
+                    .AddSingleton<ISemanticTextMemory, SemanticTextMemory>();
+                _kernel = kernelBuilder.AddOpenAIChatCompletion(this.ModelInfo.Id, endpoint, apiToken)
+                    .AddOpenAITextEmbeddingGeneration("text-embedding-v3",
+                        new OpenAIClient(new ApiKeyCredential(apiToken),
+                            new OpenAIClientOptions() { Endpoint = endpoint }))
+                    .Build();
+            }
+
+            return _kernel;
+        }
+    }
+
+    [Experimental("SKEXP0050")]
     protected override IChatClient CreateChatClient()
     {
         /*var chatCompletionsClient = new ChatCompletionsClient(new Uri(option.URL),
-            DelegatedTokenCredential.Create(((context, token) =>
-                new AccessToken(option.APIToken, DateTimeOffset.MaxValue))));
-        return chatCompletionsClient.AsChatClient();*/
-        var build = Kernel.CreateBuilder()
-            .AddOpenAIChatCompletion(this.ModelInfo.Id, new Uri(this._option.URL), _option.APIToken)
-            .Build();
-        var chatCompletionService = build.GetRequiredService<IChatCompletionService>();
-      
+              DelegatedTokenCredential.Create(((context, token) =>
+                  new AccessToken(option.APIToken, DateTimeOffset.MaxValue))));
+          return chatCompletionsClient.AsChatClient();*/
+        var chatCompletionService = Kernel.GetRequiredService<IChatCompletionService>();
         return chatCompletionService.AsChatClient();
     }
-    
+
 
     /*private ChatCompletionsOptions ToAzureAIOptions(
       IEnumerable<ChatMessage> chatContents,

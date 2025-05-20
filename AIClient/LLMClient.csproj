@@ -23,7 +23,9 @@
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0-preview.3.25171.5"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0-preview.3.25171.5"/>
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.50.0"/>
-        <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.50.0"/>
+        <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.52.1" />
+        <PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.50.0-alpha" />
+        <PackageReference Include="Microsoft.SemanticKernel.Plugins.Memory" Version="1.52.1-alpha" />
         <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3124.44"/>
         <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135"/>
         <PackageReference Include="SkiaSharp" Version="3.118.0-preview.2.3"/>

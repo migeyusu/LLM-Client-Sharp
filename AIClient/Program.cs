@@ -56,7 +56,6 @@ public class Program
             app.InitializeComponent();
             // SynchronizationHelper.Initialize();
             // app.Run(new TestWindow());
-            // serviceProvider.GetService<IEndpointService>()?.Initialize();
             app.Run(serviceProvider.GetService<MainWindow>());
         }
         catch (Exception e)

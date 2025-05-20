@@ -11,7 +11,7 @@
              xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:DialogCreationViewModel}"
-             d:DesignHeight="300" d:DesignWidth="300">
+             d:DesignHeight="400" d:DesignWidth="600">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -90,6 +90,13 @@
                             <component:DataTemplateTypePair.Template>
                                 <DataTemplate DataType="{x:Type models:AzureModelInfo}">
                                     <models:AzureModelInfoView Margin="10" />
+                                </DataTemplate>
+                            </component:DataTemplateTypePair.Template>
+                        </component:DataTemplateTypePair>
+                        <component:DataTemplateTypePair>
+                            <component:DataTemplateTypePair.Template>
+                                <DataTemplate DataType="{x:Type openAiapi:APIModelInfo}">
+                                    <openAiapi:APIModelInfoView Uri="{Binding InfoUri,Mode=OneTime}" />
                                 </DataTemplate>
                             </component:DataTemplateTypePair.Template>
                         </component:DataTemplateTypePair>

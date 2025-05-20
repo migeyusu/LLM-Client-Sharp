@@ -1,18 +1,36 @@
 ﻿using System.Collections.ObjectModel;
-using System.Windows.Media;
 using LLMClient.Data;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.UI;
 
-public interface IResponseViewItem : IDialogViewItem
+public interface IResponse
+{
+    long Tokens { get; }
+
+    /// <summary>
+    /// The latency of the response in ms
+    /// </summary>
+    int Latency { get; }
+
+    /// <summary>
+    /// The duration of the response in s
+    /// </summary>
+    int Duration { get; }
+
+    string? Raw { get; }
+
+    bool IsInterrupt { get; }
+
+    string? ErrorMessage { get; }
+}
+
+public interface IResponseViewItem : IResponse, IDialogViewItem
 {
     ThemedIcon Icon { get; }
 
     string ModelName { get; }
-
-    long Tokens { get; }
 }
 
 public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
@@ -26,12 +44,37 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
 
     public bool IsAvailableInContext
     {
-        get { return AcceptedResponse?.IsAvailableInContext == true; }
+        get { return Items.Any(item => item.IsAvailableInContext); }
     }
 
     public long Tokens
     {
         get { return AcceptedResponse?.Tokens ?? 0; }
+    }
+
+    public int Latency
+    {
+        get { return AcceptedResponse?.Latency ?? 0; }
+    }
+
+    public int Duration
+    {
+        get { return AcceptedResponse?.Duration ?? 0; }
+    }
+
+    public string? Raw
+    {
+        get { return AcceptedResponse?.Raw; }
+    }
+
+    public bool IsInterrupt
+    {
+        get { return AcceptedResponse?.IsInterrupt ?? false; }
+    }
+
+    public string? ErrorMessage
+    {
+        get { return AcceptedResponse?.ErrorMessage; }
     }
 
     public ThemedIcon Icon
@@ -69,6 +112,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
             _acceptedIndex = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(AcceptedResponse));
+            OnPropertyChanged(nameof(IsAvailableInContext));
         }
     }
 

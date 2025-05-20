@@ -4,8 +4,10 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel.__Internals;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
@@ -134,7 +136,13 @@ public class DialogViewModel : BaseViewModel
 
     public string? Shortcut
     {
-        get { return DialogItems.FirstOrDefault(item => { return item is MultiResponseViewItem; })?.Message?.Text; }
+        get
+        {
+            return DialogItems.FirstOrDefault(item =>
+            {
+                return item is MultiResponseViewItem && item.IsAvailableInContext;
+            })?.Message?.Text;
+        }
     }
 
     public ICommand ClearContextCommand => new ActionCommand((o =>
@@ -154,6 +162,13 @@ public class DialogViewModel : BaseViewModel
 
     public ICommand TestCommand => new ActionCommand((async o =>
     {
+        if (this.Client == null)
+        {
+            return;
+        }
+
+        await this.Client.AddFileToContext(new FileInfo("E:\\PCCT原型机文档\\PCCT项目DAS与DPB接口定义_1_6.docx"));
+        
         var dialogViewItem = this.DialogItems.Last(item => item is MultiResponseViewItem && item.IsAvailableInContext);
         var multiResponseViewItem = dialogViewItem as MultiResponseViewItem;
         var endpoint = EndpointService.AvailableEndpoints[0];
@@ -230,7 +245,15 @@ public class DialogViewModel : BaseViewModel
         this._topic = topic;
         EndpointService = endpointService;
         this.Client = modelClient;
-        this.PropertyChanged += (_, __) => IsDataChanged = true;
+        this.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ScrollViewItem))
+            {
+                return;
+            }
+
+            IsDataChanged = true;
+        };
         DialogItems = items == null ? [] : new ObservableCollection<IDialogViewItem>(items);
         this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
     }
@@ -275,7 +298,7 @@ public class DialogViewModel : BaseViewModel
         {
             var list = GenerateHistory(dialog);
             completedResult = await client.SendRequest(list, tokenSource.Token);
-            multiResponseViewItem.Append(new ResponseViewItem(client, completedResult));
+            multiResponseViewItem.Append(new ResponseViewItem(client.Info, completedResult, client.Endpoint.Name));
         }
         catch (Exception exception)
         {
@@ -289,6 +312,7 @@ public class DialogViewModel : BaseViewModel
 
         IsProcessing = false;
         this.TokensConsumption += completedResult.Usage.TotalTokenCount ?? 0;
+        OnPropertyChangedAsync(nameof(Shortcut));
         return completedResult;
     }
 
@@ -299,12 +323,13 @@ public class DialogViewModel : BaseViewModel
             return;
         }
 
-        var requestViewItem = new RequestViewItem() { MessageContent = prompt };
+        var newGuid = Guid.NewGuid();
+        var requestViewItem = new RequestViewItem() { MessageContent = prompt, InteractionId = newGuid };
         DialogItems.Add(requestViewItem);
         var copy = DialogItems.ToArray();
         _requestTokenSource = new CancellationTokenSource();
         var respondingViewItem = new RespondingViewItem(this.Client);
-        var multiResponseViewItem = new MultiResponseViewItem([respondingViewItem]);
+        var multiResponseViewItem = new MultiResponseViewItem([respondingViewItem]) { InteractionId = newGuid };
         DialogItems.Add(multiResponseViewItem);
         ScrollViewItem = DialogItems.Last();
         var completedResult = await SendRequestCore(_requestTokenSource, this.Client, copy,
@@ -362,9 +387,12 @@ public class DialogViewModel : BaseViewModel
                 if (multiResponseViewItem.IsAvailableInContext)
                 {
                     interactionId = multiResponseViewItem.InteractionId;
+                    dialogViewItems.Push(multiResponseViewItem);
                 }
-
-                dialogViewItems.Push(multiResponseViewItem);
+                else
+                {
+                    interactionId = null;
+                }
             }
             else if (dialogViewItem is RequestViewItem requestViewItem)
             {

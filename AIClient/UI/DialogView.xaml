@@ -109,6 +109,7 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Orientation="Horizontal">
                                             <Image Source="{Binding  AcceptedResponse.Icon.CurrentSource,Mode=OneWay}"
+                                                   RenderOptions.BitmapScalingMode="HighQuality"
                                                    Width="26"
                                                    Height="26" />
                                             <TextBlock Text="{Binding AcceptedResponse.ModelName,Mode=OneWay}"
@@ -133,6 +134,7 @@
                                             <materialDesign:PopupBox Padding="2,0"
                                                                      Opened="PopupBox_OnOpened"
                                                                      StaysOpen="True"
+                                                                     ToolTip="添加新agent"
                                                                      Visibility="{Binding IsAvailableInContext,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                                                      Style="{StaticResource MaterialDesignToolPopupBox}"
                                                                      PopupContentTemplate="{StaticResource  ModelSelectionViewModelTemplate}">
@@ -143,11 +145,20 @@
                                             </materialDesign:PopupBox>
                                         </StackPanel>
                                         <ListBox Grid.Column="1"
+                                                 Height="60"
+                                                 Margin="16,0,0,0"
                                                  HorizontalAlignment="Right"
+                                                 VerticalAlignment="Center"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                                  SelectedIndex="{Binding AcceptedIndex,Mode=TwoWay}"
                                                  Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
                                                  Style="{StaticResource MaterialDesignChoiceChipPrimaryListBox}"
                                                  ItemsSource="{Binding Items,Mode=OneWay}">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
                                                     <StackPanel Orientation="Horizontal"
@@ -251,9 +262,18 @@
                                             </ContentControl.ContentTemplateSelector>
                                         </ContentControl>
                                     </materialDesign:Card>
-                                    <TextBlock Text="{Binding Tokens,Mode=OneWay,StringFormat=Tokens:{0}}"
-                                               HorizontalAlignment="Left"
-                                               Margin="0,6,0,0" />
+                                    <TextBlock
+                                        HorizontalAlignment="Left"
+                                        Margin="0,6,0,0">
+                                        <Run
+                                            Text="{Binding AcceptedResponse.Tokens,Mode=OneWay,StringFormat=Tokens: {0}}" />
+                                        <Run> </Run>
+                                        <Run
+                                            Text="{Binding  AcceptedResponse.Latency,Mode=OneWay,StringFormat=Latency: {0}ms}" />
+                                        <Run> </Run>
+                                        <Run
+                                            Text="{Binding AcceptedResponse.Duration,Mode=OneWay,StringFormat=Duration: {0}s}" />
+                                    </TextBlock>
                                 </StackPanel>
                             </DataTemplate>
                         </component:DataTemplateTypePair.Template>
@@ -372,8 +392,8 @@
                         Margin="16,0,0,0"
                         Style="{StaticResource MaterialDesignFlatLightButton}"
                         Content="发送" />
-                <!--<Button Command="{Binding TestCommand}"
-                        Content="测试"/>-->
+                <Button Command="{Binding TestCommand}"
+                        Content="测试"/>
             </StackPanel>
         </Grid>
         <Button Grid.Row="1"

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -78,7 +79,12 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
         var chatCompletionService = build.GetRequiredService<IChatCompletionService>();
         return chatCompletionService.AsChatClient();*/
     }
-    
+
+    public override Task AddFileToContext(FileInfo fileInfo)
+    {
+        throw new NotImplementedException();
+    }
+
 
 #pragma warning disable SKEXP0010
     public static void Test()

@@ -1,8 +1,9 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.UI;
 
 namespace LLMClient.Data;
 
-public class ResponsePersistItem
+public class ResponsePersistItem: IResponse
 {
     public string ModelName { get; set; } = string.Empty;
 
@@ -16,6 +17,9 @@ public class ResponsePersistItem
 
     public string? Raw { get; set; }
 
-    [JsonPropertyName("IsEnable")]
-    public bool IsAvailableInContext { get; set; }
+    public int Latency { get; set; }
+
+    public int Duration { get; set; }
+
+    [JsonPropertyName("IsEnable")] public bool IsAvailableInContext { get; set; }
 }

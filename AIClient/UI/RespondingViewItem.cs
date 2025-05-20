@@ -29,4 +29,12 @@ public class RespondingViewItem : BaseViewModel, IResponseViewItem
     }
 
     public long Tokens { get; } = 0;
+
+    public int Latency { get; set; } = 0;
+    public int Duration { get; } = 0;
+    public string? Raw { get; } = string.Empty;
+
+    public bool IsInterrupt { get; } = false;
+
+    public string? ErrorMessage { get; } = string.Empty;
 }
