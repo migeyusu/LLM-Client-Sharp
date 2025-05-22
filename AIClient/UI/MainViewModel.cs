@@ -142,6 +142,8 @@ public class MainViewModel : BaseViewModel
                 await JsonSerializer.SerializeAsync(fileStream, dialogModel);
             }
         }
+
+        MessageQueue.Enqueue("已备份");
     }));
 
     public ICommand ExportCommand => new ActionCommand((async o =>
@@ -192,7 +194,8 @@ public class MainViewModel : BaseViewModel
         }
 
         var fileName = saveFileDialog.FileName;
-        File.WriteAllText(fileName, stringBuilder.ToString());
+        await File.WriteAllTextAsync(fileName, stringBuilder.ToString());
+        MessageEventBus.Publish("已导出");
     }));
 
     public ICommand ChangeModelCommand => new ActionCommand((async o =>

@@ -1,7 +1,9 @@
 ﻿using System.Collections.ObjectModel;
+using System.Windows.Input;
 using LLMClient.Data;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
+using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
 
@@ -31,6 +33,8 @@ public interface IResponseViewItem : IResponse, IDialogViewItem
     ThemedIcon Icon { get; }
 
     string ModelName { get; }
+
+    string EndPointName { get; }
 }
 
 public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
@@ -87,6 +91,11 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         get { return AcceptedResponse?.ModelName ?? String.Empty; }
     }
 
+    public string EndPointName
+    {
+        get { return AcceptedResponse?.EndPointName ?? String.Empty; }
+    }
+
     public bool IsMultiResponse
     {
         get => _isMultiResponse;
@@ -100,7 +109,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
 
     public ObservableCollection<IResponseViewItem> Items { get; }
 
-    private int _acceptedIndex = 0;
+    private int _acceptedIndex = -1;
     private bool _isMultiResponse = false;
 
     public int AcceptedIndex
@@ -141,6 +150,19 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         }
     }
 
+    public ICommand RemoveCurrent => new ActionCommand((o =>
+    {
+        if (Items.Count == 1)
+        {
+            return;
+        }
+
+        if (o is ResponseViewItem response)
+        {
+            this.Remove(response);
+        }
+    }));
+
     public MultiResponseViewItem(IEnumerable<IResponseViewItem> items)
     {
         Items = new ObservableCollection<IResponseViewItem>(items);
@@ -166,9 +188,34 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         IsMultiResponse = Items.Count > 1;
     }
 
+    public void Insert(IResponseViewItem viewItem, int index)
+    {
+        this.Items.Insert(index, viewItem);
+        this.AcceptedIndex = index;
+        IsMultiResponse = Items.Count > 1;
+    }
+
     public void Remove(IResponseViewItem viewItem)
     {
-        this.Items.Remove(viewItem);
+        var indexOf = this.Items.IndexOf(viewItem);
+        if (indexOf < 0)
+        {
+            return;
+        }
+
+        var acceptedIndex = AcceptedIndex;
+        this.Items.RemoveAt(indexOf);
+        if (acceptedIndex >= indexOf)
+        {
+            this.AcceptedIndex = acceptedIndex - 1;
+        }
+
+        IsMultiResponse = Items.Count > 1;
+    }
+
+    public void RemoveAt(int index)
+    {
+        this.Items.RemoveAt(index);
         this.AcceptedIndex = AcceptedIndex - 1;
         IsMultiResponse = Items.Count > 1;
     }

@@ -120,7 +120,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     private ThemedIcon? _icon = null;
     private bool _urlIconEnable = false;
     private ModelIconType _iconType = ModelIconType.None;
-    private bool _systemPromptEnable;
+    private bool _systemPromptEnable = true;
     private bool _topPEnable;
     private bool _topKEnable;
     private bool _temperatureEnable;
@@ -181,8 +181,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
             OnPropertyChanged();
         }
     }
-
-
+    
     public bool TopKEnable
     {
         get => _topKEnable;

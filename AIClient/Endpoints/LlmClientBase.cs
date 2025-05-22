@@ -99,8 +99,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
     }
 
     private readonly Stopwatch _stopwatch = new Stopwatch();
-
-    public abstract Task AddFileToContext(FileInfo fileInfo);
     
     public virtual async Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default)

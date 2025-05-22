@@ -28,9 +28,14 @@ public class ResponseAddClientViewModel : ModelSelectionViewModel
         {
             PopupBox.ClosePopupCommand.Execute(this, frameworkElement);
         }
-        
-        
-        await DialogViewModel.AppendResponseOn(Response, this);
+
+        var llmModelClient = this.GetClient();
+        if (llmModelClient == null)
+        {
+            return;
+        }
+
+        await DialogViewModel.AppendResponseOn(Response, llmModelClient);
     }));
 
     public ResponseAddClientViewModel(MultiResponseViewItem view,

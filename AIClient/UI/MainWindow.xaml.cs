@@ -27,7 +27,7 @@ public partial class MainWindow : ExtendedWindow
         InitializeComponent();
     }
 
-    private async void CommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    private async void Delete_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is DialogViewModel dialogViewModel)
         {
@@ -37,11 +37,10 @@ public partial class MainWindow : ExtendedWindow
             }
         }
     }
-    
+
 
     private void MainWindow_OnClosing(object? sender, CancelEventArgs e)
     {
-        
     }
 
     private async void OpenConfig_OnClick(object sender, RoutedEventArgs e)

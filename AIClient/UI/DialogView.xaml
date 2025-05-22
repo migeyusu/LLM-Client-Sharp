@@ -17,7 +17,7 @@
     <UserControl.Resources>
         <KeyBinding x:Key="PromptKeyBinding"
                     Key="Enter"
-                    Command="{Binding SendRequestCommand}" />
+                    Command="{Binding NewResponseCommand}" />
     </UserControl.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -68,7 +68,7 @@
                                             </MenuItem>
                                             <MenuItem Header="排除之前上下文"
                                                       ToolTip="将之前的对话清出上下文"
-                                                      Command="Refresh"
+                                                      Command="{x:Static ui:CommonCommands.Exclude}"
                                                       CommandParameter="{Binding}">
                                                 <MenuItem.Icon>
                                                     <materialDesign:PackIcon Kind="FormatAlignTop" />
@@ -107,9 +107,11 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition />
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel Orientation="Horizontal">
+                                        <StackPanel Orientation="Horizontal"
+                                                    VerticalAlignment="Bottom">
                                             <Image Source="{Binding  AcceptedResponse.Icon.CurrentSource,Mode=OneWay}"
                                                    RenderOptions.BitmapScalingMode="HighQuality"
+                                                   VerticalAlignment="Center"
                                                    Width="26"
                                                    Height="26" />
                                             <TextBlock Text="{Binding AcceptedResponse.ModelName,Mode=OneWay}"
@@ -117,7 +119,7 @@
                                                        Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
                                                        VerticalAlignment="Center"
                                                        Margin="10,0" />
-                                            <Menu>
+                                            <Menu VerticalAlignment="Center">
                                                 <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert}"
                                                           Width="20"
                                                           Height="50"
@@ -129,26 +131,44 @@
                                                             <materialDesign:PackIcon Kind="DeleteOutline" />
                                                         </MenuItem.Icon>
                                                     </MenuItem>
+                                                    <MenuItem Header="删除当前"
+                                                              Command="{Binding RemoveCurrent}"
+                                                              CommandParameter="{Binding  AcceptedResponse}">
+                                                        <MenuItem.Icon>
+                                                            <materialDesign:PackIcon Kind="InvoiceTextRemove" />
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
                                                 </MenuItem>
                                             </Menu>
                                             <materialDesign:PopupBox Padding="2,0"
                                                                      Opened="PopupBox_OnOpened"
                                                                      StaysOpen="True"
+                                                                     VerticalAlignment="Center"
                                                                      ToolTip="添加新agent"
                                                                      Visibility="{Binding IsAvailableInContext,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                                                      Style="{StaticResource MaterialDesignToolPopupBox}"
                                                                      PopupContentTemplate="{StaticResource  ModelSelectionViewModelTemplate}">
                                                 <materialDesign:PopupBox.ToggleContent>
                                                     <materialDesign:PackIcon Kind="Add" />
-                                                    <!--BorderThickness="1" BorderBrush="{DynamicResource MaterialDesignTextFieldBoxBackground}" -->
                                                 </materialDesign:PopupBox.ToggleContent>
                                             </materialDesign:PopupBox>
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                    Command="Refresh"
+                                                    Width="28"
+                                                    Height="28"
+                                                    VerticalAlignment="Center"
+                                                    Margin="6,0,0,0"
+                                                    CommandParameter="{Binding}">
+                                                <materialDesign:PackIcon Kind="Refresh"
+                                                                         Width="20"
+                                                                         Height="20" />
+                                            </Button>
                                         </StackPanel>
                                         <ListBox Grid.Column="1"
                                                  Height="60"
                                                  Margin="16,0,0,0"
                                                  HorizontalAlignment="Right"
-                                                 VerticalAlignment="Center"
+                                                 VerticalAlignment="Bottom"
                                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                                  SelectedIndex="{Binding AcceptedIndex,Mode=TwoWay}"
                                                  Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
@@ -340,8 +360,10 @@
                 <CommandBinding Command="Redo"
                                 Executed="OnRedoExecuted"
                                 CanExecute="Redo_OnCanExecute" />
+                <CommandBinding Command="{x:Static ui:CommonCommands.Exclude}"
+                                Executed="OnExcludeExecuted" />
                 <CommandBinding Command="Refresh"
-                                Executed="OnRefreshExecuted" />
+                                Executed="Refresh_OnExecuted" />
             </ListBox.CommandBindings>
         </component:ListBoxEx>
         <StackPanel Grid.Row="0"
@@ -386,14 +408,14 @@
                           Checked="EnterKeyInputBinding_OnChecked"
                           Unchecked="EnterKeyInputBinding_OnUnchecked"
                           materialDesign:CheckBoxAssist.CheckBoxSize="30" />
-                <Button Command="{Binding SendRequestCommand}"
+                <Button Command="{Binding NewResponseCommand}"
                         Width="80"
                         Height="30"
                         Margin="16,0,0,0"
                         Style="{StaticResource MaterialDesignFlatLightButton}"
                         Content="发送" />
-                <Button Command="{Binding TestCommand}"
-                        Content="测试"/>
+                <!--<Button Command="{Binding TestCommand}"
+                        Content="测试" />-->
             </StackPanel>
         </Grid>
         <Button Grid.Row="1"

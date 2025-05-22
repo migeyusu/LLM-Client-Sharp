@@ -15,7 +15,7 @@ public class KUnitConverter : IValueConverter
 
         if (Int32.TryParse(s, out int d))
         {
-            return d / 1024;
+            return d / 1000;
         }
 
         return 0;
@@ -31,7 +31,7 @@ public class KUnitConverter : IValueConverter
 
         if (Int32.TryParse(s, out int d))
         {
-            return d * 1024;
+            return d * 1000;
         }
 
         return 0;

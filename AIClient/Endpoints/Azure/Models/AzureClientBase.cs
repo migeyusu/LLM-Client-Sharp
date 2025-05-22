@@ -80,11 +80,6 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
         return chatCompletionService.AsChatClient();*/
     }
 
-    public override Task AddFileToContext(FileInfo fileInfo)
-    {
-        throw new NotImplementedException();
-    }
-
 
 #pragma warning disable SKEXP0010
     public static void Test()

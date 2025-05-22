@@ -30,15 +30,23 @@ public partial class DialogView : UserControl
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
-            ViewModel.ReSend(requestViewItem);
+            ViewModel.ReBase(requestViewItem);
         }
     }
 
-    private void OnRefreshExecuted(object sender, ExecutedRoutedEventArgs e)
+    private void OnExcludeExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
             ViewModel.InsertClearContextItem(requestViewItem);
+        }
+    }
+    
+    private void Refresh_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is MultiResponseViewItem multiResponseViewItem)
+        {
+            ViewModel.RetryCurrent(multiResponseViewItem);
         }
     }
 
@@ -71,6 +79,7 @@ public partial class DialogView : UserControl
             popupBox.PopupContent = new ResponseAddClientViewModel(responseViewItem!, this.ViewModel);
         }
     }
+
 }
 
 /*public class FlowDocumentScrollViewerEx : ContentControl

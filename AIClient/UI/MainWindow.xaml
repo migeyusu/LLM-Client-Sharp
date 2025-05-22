@@ -240,7 +240,7 @@
                      BorderThickness="0"
                      ItemsSource="{Binding DialogViewModels,Mode=OneWay}">
                 <ListBox.CommandBindings>
-                    <CommandBinding Command="Delete" Executed="CommandBinding_OnExecuted" />
+                    <CommandBinding Command="Delete" Executed="Delete_OnExecuted" />
                 </ListBox.CommandBindings>
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="{x:Type ListBoxItem}"

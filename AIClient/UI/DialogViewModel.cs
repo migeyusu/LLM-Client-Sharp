@@ -11,8 +11,14 @@ using CommunityToolkit.Mvvm.ComponentModel.__Internals;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
+using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Memory;
+using Microsoft.SemanticKernel.Plugins.Document;
+using Microsoft.SemanticKernel.Plugins.Document.FileSystem;
+using Microsoft.SemanticKernel.Plugins.Document.OpenXml;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
@@ -121,7 +127,7 @@ public class DialogViewModel : BaseViewModel
 
             _client = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(SendRequestCommand));
+            OnPropertyChanged(nameof(NewResponseCommand));
             if (value is INotifyPropertyChanged newValue)
             {
                 newValue.PropertyChanged += NotifyPropertyChangedOnPropertyChanged;
@@ -159,6 +165,52 @@ public class DialogViewModel : BaseViewModel
             DialogItems.Clear();
         }
     });
+    
+    /*public async Task AddFileToContext(FileInfo fileInfo)
+    {
+        var build = Kernel.CreateBuilder().Build();
+        DocumentPlugin documentPlugin = new(new WordDocumentConnector(), new LocalFileSystemConnector());
+        var doc = await documentPlugin.ReadTextAsync(fileInfo.FullName);
+        // 2. 简单按 500 tokens 左右切块（示例用行数）
+        var memory = build.GetRequiredService<ISemanticTextMemory>();
+        var chunks = SplitByLength(doc, maxChars: 1500);
+
+        IEnumerable<string> SplitByLength(string text, int maxChars)
+        {
+            var span = text.AsMemory();
+            int offset = 0;
+            while (offset < span.Length)
+            {
+                int length = Math.Min(maxChars, span.Length - offset);
+                var chunk = span.Slice(offset, length).ToString();
+                offset += length;
+                yield return chunk;
+            }
+        }
+
+        Guid docId = Guid.NewGuid();
+        // 3. 存向量
+        int i = 0;
+        foreach (var chunk in chunks)
+        {
+            await memory.SaveInformationAsync(
+                collection: "docs", // 向量库里的“表”或“namespace”
+                text: chunk,
+                id: $"{docId}_{i++}", // 唯一键
+                description: $"doc:{docId}" // 可做元数据
+            );
+        }
+
+        // var embeddingGenerator = kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+        // var userQuestion = await embeddingGenerator.GenerateAsync("DDC的初始化有几个步骤？");
+        var searchResults = memory.SearchAsync(
+            collection: "docs",
+            query: "DDC的初始化有几个步骤？",
+            limit: 6, // 取前 6 段
+            minRelevanceScore: 0.7 // 可调
+        );
+        Debugger.Break();
+    }*/
 
     public ICommand TestCommand => new ActionCommand((async o =>
     {
@@ -167,30 +219,34 @@ public class DialogViewModel : BaseViewModel
             return;
         }
 
-        await this.Client.AddFileToContext(new FileInfo("E:\\PCCT原型机文档\\PCCT项目DAS与DPB接口定义_1_6.docx"));
-        
         var dialogViewItem = this.DialogItems.Last(item => item is MultiResponseViewItem && item.IsAvailableInContext);
         var multiResponseViewItem = dialogViewItem as MultiResponseViewItem;
         var endpoint = EndpointService.AvailableEndpoints[0];
         var first = endpoint.AvailableModelNames.First();
+        var llmModelClient = new ModelSelectionViewModel()
+        {
+            SelectedModelName = first,
+            SelectedEndpoint = endpoint
+        }.GetClient();
+        if (llmModelClient == null)
+        {
+            return;
+        }
+
         if (multiResponseViewItem != null)
         {
-            await AppendResponseOn(multiResponseViewItem, new ModelSelectionViewModel()
-            {
-                SelectedModelName = first,
-                SelectedEndpoint = endpoint
-            });
+            await AppendResponseOn(multiResponseViewItem, llmModelClient);
         }
     }));
 
-    public ICommand SendRequestCommand => new RelayCommand((() =>
+    public ICommand NewResponseCommand => new RelayCommand((() =>
     {
         if (string.IsNullOrEmpty(PromptString?.Trim()))
         {
             return;
         }
 
-        SendRequest(PromptString);
+        NewResponse(PromptString);
     }), () => { return Client != null; });
 
     public ICommand CancelCommand => new ActionCommand((o => { _requestTokenSource?.Cancel(); }));
@@ -259,11 +315,8 @@ public class DialogViewModel : BaseViewModel
     }
 
     public async Task AppendResponseOn(MultiResponseViewItem responseViewItem,
-        ModelSelectionViewModel modelSelectionViewModel)
+        ILLMModelClient llmModelClient)
     {
-        var llmModelClient = modelSelectionViewModel.GetClient();
-        if (llmModelClient == null)
-            return;
         //获得之前的所有请求
         var indexOf = DialogItems.IndexOf(responseViewItem);
         if (indexOf < 1)
@@ -271,12 +324,8 @@ public class DialogViewModel : BaseViewModel
             return;
         }
 
-        _requestTokenSource = new CancellationTokenSource();
         var dialogViewItems = DialogItems.Take(indexOf).ToArray();
-        var respondingViewItem = new RespondingViewItem(llmModelClient);
-        responseViewItem.Append(respondingViewItem);
-        await SendRequestCore(_requestTokenSource, llmModelClient, dialogViewItems, responseViewItem);
-        responseViewItem.Remove(respondingViewItem);
+        await SendRequestCore(llmModelClient, dialogViewItems, responseViewItem);
     }
 
     public void DeleteItem(IDialogViewItem item)
@@ -288,16 +337,19 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public async Task<CompletedResult> SendRequestCore(CancellationTokenSource tokenSource,
+    public async Task<CompletedResult> SendRequestCore(
         ILLMModelClient client, IList<IDialogViewItem> dialog,
         MultiResponseViewItem multiResponseViewItem)
     {
+        _requestTokenSource = new CancellationTokenSource();
         var completedResult = CompletedResult.Empty;
         IsProcessing = true;
+        var respondingViewItem = new RespondingViewItem(client);
         try
         {
+            multiResponseViewItem.Append(respondingViewItem);
             var list = GenerateHistory(dialog);
-            completedResult = await client.SendRequest(list, tokenSource.Token);
+            completedResult = await client.SendRequest(list, _requestTokenSource.Token);
             multiResponseViewItem.Append(new ResponseViewItem(client.Info, completedResult, client.Endpoint.Name));
         }
         catch (Exception exception)
@@ -307,7 +359,8 @@ public class DialogViewModel : BaseViewModel
         }
         finally
         {
-            tokenSource.Dispose();
+            _requestTokenSource.Dispose();
+            multiResponseViewItem.Remove(respondingViewItem);
         }
 
         IsProcessing = false;
@@ -316,7 +369,7 @@ public class DialogViewModel : BaseViewModel
         return completedResult;
     }
 
-    public async void SendRequest(string prompt)
+    public async void NewResponse(string prompt)
     {
         if (Client == null)
         {
@@ -327,23 +380,19 @@ public class DialogViewModel : BaseViewModel
         var requestViewItem = new RequestViewItem() { MessageContent = prompt, InteractionId = newGuid };
         DialogItems.Add(requestViewItem);
         var copy = DialogItems.ToArray();
-        _requestTokenSource = new CancellationTokenSource();
-        var respondingViewItem = new RespondingViewItem(this.Client);
-        var multiResponseViewItem = new MultiResponseViewItem([respondingViewItem]) { InteractionId = newGuid };
+        var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
         DialogItems.Add(multiResponseViewItem);
         ScrollViewItem = DialogItems.Last();
-        var completedResult = await SendRequestCore(_requestTokenSource, this.Client, copy,
+        var completedResult = await SendRequestCore(this.Client, copy,
             multiResponseViewItem);
         if (!completedResult.IsInterrupt)
         {
             this.PromptString = string.Empty;
         }
-
-        multiResponseViewItem.Remove(respondingViewItem);
     }
 
 
-    public void ReSend(RequestViewItem redoItem)
+    public void ReBase(RequestViewItem redoItem)
     {
         if (Client == null)
         {
@@ -360,7 +409,29 @@ public class DialogViewModel : BaseViewModel
 
         var message = redoItem.MessageContent;
         PromptString = message;
-        SendRequest(message);
+        NewResponse(message);
+    }
+
+    public async void RetryCurrent(MultiResponseViewItem multiResponseViewItem)
+    {
+        // var index = multiResponseViewItem.AcceptedIndex;
+        var responseViewItem = multiResponseViewItem.AcceptedResponse;
+        if (responseViewItem == null)
+        {
+            MessageEventBus.Publish("响应为空！");
+            return;
+        }
+
+        var llmModel = EndpointService.GetEndpoint(responseViewItem.EndPointName)?
+            .NewClient(responseViewItem.ModelName);
+        if (llmModel == null)
+        {
+            MessageEventBus.Publish("已无法找到模型！");
+            return;
+        }
+
+        multiResponseViewItem.Remove(responseViewItem);
+        await AppendResponseOn(multiResponseViewItem, llmModel);
     }
 
     private static IList<IDialogViewItem> GenerateHistory(IList<IDialogViewItem> source)

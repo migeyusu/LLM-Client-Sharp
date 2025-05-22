@@ -22,10 +22,7 @@ public interface ILLMModelClient
     IModelParams Parameters { get; set; }
 
     ObservableCollection<string> PreResponse { get; }
-
-    Task AddFileToContext(FileInfo fileInfo);
-
-    //为了尽可能抽象，要求单个方法就传递一次会话所需要的所有参数，防止文本生成、图像生成等任务类型的不相容
+    
     Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default);
 }

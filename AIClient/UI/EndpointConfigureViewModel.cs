@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Reflection.Emit;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
@@ -9,6 +10,7 @@ using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
@@ -76,6 +78,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         endPointsNode[APIEndPoint.KeyName] = jArray;
         //todo: 添加template 保存
         await EndPointsConfiguration.SaveDoc(root);
+        MessageEventBus.Publish("已保存！");
         /*var endPointsObject = new JsonObject();
         foreach (var endpoint in Endpoints)
         {

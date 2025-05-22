@@ -1,6 +1,4 @@
-﻿using System.Windows.Media;
-using LLMClient.Abstraction;
-using LLMClient.Data;
+﻿using LLMClient.Abstraction;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 
@@ -26,6 +24,11 @@ public class RespondingViewItem : BaseViewModel, IResponseViewItem
     public string ModelName
     {
         get { return Client.Info.Name; }
+    }
+
+    public string EndPointName
+    {
+        get { return Client.Endpoint.Name; }
     }
 
     public long Tokens { get; } = 0;
