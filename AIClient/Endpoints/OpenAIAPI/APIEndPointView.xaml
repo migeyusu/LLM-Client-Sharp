@@ -18,35 +18,53 @@
         </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="180" />
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
-        <TextBlock Text="Display Name：" />
-        <TextBox Grid.Row="0" Grid.Column="1"
-                 Text="{Binding DisplayName,Mode=TwoWay}" />
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="API Token：" />
-        <TextBox Grid.Row="1" Grid.Column="1"
-                 Text="{Binding ConfigOption.APIToken,Mode=TwoWay}"
-                 Height="30"
-                 Margin="5,10" />
-        <TextBlock Grid.Row="2" Grid.Column="0" Text="URL：" />
-        <TextBox Grid.Row="2" Grid.Column="1"
-                 Height="30"
-                 Text="{Binding ConfigOption.URL,Mode=TwoWay}" />
-        <TextBlock Grid.Row="3" Grid.Column="0"
-                   Text="Icon Url:" />
-        <TextBox Grid.Row="3" Grid.Column="1"
-                 Height="30"
-                 Text="{Binding IconUrl,Mode=TwoWay}" />
-        <ListBox Grid.Row="4" Grid.Column="0"
+        <Grid Grid.ColumnSpan="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="120" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="80" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Display Name：" />
+            <TextBox Grid.Row="0" Grid.Column="1"
+                     Margin="5,10"
+                     Text="{Binding DisplayName,Mode=TwoWay}" />
+            <TextBlock Grid.Row="1" Grid.Column="2"
+                       Text="API Token：" />
+            <TextBox Grid.Row="1" Grid.Column="3"
+                     Text="{Binding ConfigOption.APIToken,Mode=TwoWay}"
+                     Height="30"
+                     Margin="5,10" />
+            <TextBlock Grid.Row="1" Grid.Column="0"
+                       Text="API URL：" />
+            <TextBox Grid.Row="1" Grid.Column="1"
+                     Height="30"
+                     Text="{Binding ConfigOption.URL,Mode=TwoWay}" />
+            <TextBlock Grid.Row="0" Grid.Column="2"
+                       Text="Icon Url:" />
+            <TextBox Grid.Row="0" Grid.Column="3"
+                     Height="30"
+                     Text="{Binding IconUrl,Mode=TwoWay}" />
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="API Usage Url：" />
+            <TextBox Grid.Row="2" Grid.Column="1"
+                     Text="{Binding ApiLogUrl,Mode=TwoWay}" />
+        </Grid>
+        <ListBox Grid.Row="1" Grid.Column="0"
                  Margin="0,16,0,0"
                  x:Name="ModelsListBox"
+                 IsSynchronizedWithCurrentItem="True"
+                 SelectedIndex="{Binding SelectedModelIndex,Mode=TwoWay}"
                  ItemsSource="{Binding Models,Mode=OneWay}">
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="{x:Type local:APIModelInfo}">
@@ -63,11 +81,11 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-        <Separator Grid.Row="4" Grid.Column="0"
+        <Separator Grid.Row="1" Grid.Column="0"
                    Grid.ColumnSpan="2"
                    VerticalAlignment="Top"
                    Margin="0,6" />
-        <ContentControl Grid.Row="4" Grid.Column="1"
+        <ContentControl Grid.Row="1" Grid.Column="1"
                         Margin="10,16,0,0"
                         Visibility="{Binding ElementName=ModelsListBox,Path=SelectedItem,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                         Content="{Binding ElementName=ModelsListBox,Path=SelectedItem,Mode=OneWay}">
@@ -79,11 +97,12 @@
                 </DataTemplate>
             </ContentControl.ContentTemplate>
         </ContentControl>
-        <Button Grid.Row="4" Grid.Column="0"
+        <Button Grid.Row="1" Grid.Column="0"
                 VerticalAlignment="Bottom"
                 HorizontalAlignment="Right"
                 Width="30"
                 Height="30"
+                Margin="0,0,6,0"
                 Command="{Binding AddNewCommand}"
                 Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
                 ToolTip="添加">
@@ -91,11 +110,12 @@
                                      Width="20"
                                      Height="20" />
         </Button>
-        <Button Grid.Row="4" Grid.Column="0"
+        <Button Grid.Row="1" Grid.Column="0"
                 VerticalAlignment="Bottom"
                 HorizontalAlignment="Left"
                 Width="30"
                 Height="30"
+                Margin="6,0,0,0"
                 Command="{Binding RemoveCommand}"
                 Visibility="{Binding ElementName=ModelsListBox,Path=SelectedItem,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                 CommandParameter="{Binding ElementName=ModelsListBox,Path=SelectedItem}"

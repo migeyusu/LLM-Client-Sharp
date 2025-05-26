@@ -15,13 +15,11 @@ namespace LLMClient;
 
 public class TestClass
 {
-    public static async void TestDocumentLoad()
+    public static void TestDocumentLoad()
     {
         using (WordprocessingDocument wordprocessingDocument =
                WordprocessingDocument.Open("E:\\PCCT原型机文档\\PCCT项目DAS与DPB接口定义_1_6.docx", false))
         {
-            
         }
     }
-    
 }

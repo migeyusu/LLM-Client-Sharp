@@ -10,7 +10,7 @@ public class DialogPersistModel
 {
     public const int DialogPersistVersion = 2;
 
-    public int Version { get; set; }
+    public int Version { get; set; } = DialogPersistVersion;
 
     public DateTime EditTime { get; set; }
 

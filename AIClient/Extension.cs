@@ -36,12 +36,12 @@ public static class Extension
         propertyInfo?.SetValue(client, apiVersion);
     }
 
+
     public static FlowDocument ToFlowDocument(this string Raw)
     {
         return Markdig.Wpf.Markdown.ToFlowDocument(Raw, DefaultPipeline, Renderer);
     }
-
-
+    
     public static ImageSource SVGStreamToImageSource(this Stream stream)
     {
         var magickImage = new MagickImage(stream);

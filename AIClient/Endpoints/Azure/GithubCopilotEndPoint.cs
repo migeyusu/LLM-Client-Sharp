@@ -15,7 +15,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.Azure;
 
-public class GithubCopilotEndPoint : AzureEndPointBase
+public sealed class GithubCopilotEndPoint : AzureEndPointBase
 {
     public const string GithubCopilotName = "Github Copilot";
 
@@ -205,7 +205,7 @@ public class GithubCopilotEndPoint : AzureEndPointBase
             using (var fileStream = fileInfo.OpenRead())
             {
                 var modelsDocument = await JsonDocument.ParseAsync(fileStream);
-                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     foreach (var element in modelsDocument.RootElement.EnumerateArray())
                     {

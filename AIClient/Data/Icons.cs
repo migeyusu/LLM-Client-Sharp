@@ -68,17 +68,8 @@ public static class Icons
                 , UriKind.Absolute);
         }
 
-        return new AsyncThemedIcon(Task.Run((async () =>
-        {
-            var source = await GetIcon(lightUri);
-            return source ?? APIIcon.CurrentSource;
-        })), darkUri != null
-            ? Task.Run((async () =>
-            {
-                var source = await GetIcon(darkUri);
-                return source ?? APIIcon.CurrentSource;
-            }))
-            : null);
+        return new LocalThemedIcon(GetIcon(lightUri).Result ?? APIIcon.CurrentSource,
+            darkUri != null ? GetIcon(darkUri).Result : null);
     }
 
     private static readonly Lazy<string[]> SupportedImageExtensionsLazy = new Lazy<string[]>(() =>
@@ -98,7 +89,8 @@ public static class Icons
         get => SupportedImageExtensionsLazy.Value;
     }
 
-    private static readonly ConcurrentDictionary<Uri, ImageSource?> IconCache = new ConcurrentDictionary<Uri, ImageSource?>();
+    private static readonly ConcurrentDictionary<Uri, ImageSource?> IconCache =
+        new ConcurrentDictionary<Uri, ImageSource?>();
 
     public static async Task<ImageSource?> GetIcon(this Uri uri)
     {

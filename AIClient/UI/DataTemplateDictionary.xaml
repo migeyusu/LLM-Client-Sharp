@@ -3,8 +3,10 @@
                     x:Class="LLMClient.UI.DataTemplateDictionary"
                     x:ClassModifier="public"
                     xmlns:ui="clr-namespace:LLMClient.UI"
-                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
-    <DataTemplate x:Key="ModelSelectionViewModelTemplate" DataType="{x:Type ui:ResponseAddClientViewModel}">
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:component="clr-namespace:LLMClient.UI.Component"
+                    xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI">
+    <DataTemplate x:Key="ModelSelectionViewModelTemplate" DataType="{x:Type ui:ResponseAppendClientViewModel}">
         <StackPanel Margin="10"
                     Width="350">
             <DockPanel Height="200">
@@ -47,5 +49,23 @@
                 </StackPanel>
             </Grid>
         </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="APIModelInfoDataTemplate"
+                  DataType="{x:Type openAiapi:APIModelInfo}">
+        <Grid Margin="10,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Visibility="{Binding InfoUrl,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
+                <Hyperlink NavigateUri="{Binding InfoUrl,Mode=OneWay}"
+                           RequestNavigate="Hyperlink_OnRequestNavigate">
+                    <Run Text="{Binding InfoUrl,Mode=OneWay}" />
+                </Hyperlink>
+            </TextBlock>
+            <component:FlowDocumentScrollViewerEx Grid.Row="1"
+                                                  Document="{Binding Description,Mode=OneWay, Converter={x:Static component:MarkdownToDocumentConverter.Instance}}" />
+        </Grid>
     </DataTemplate>
 </ResourceDictionary>

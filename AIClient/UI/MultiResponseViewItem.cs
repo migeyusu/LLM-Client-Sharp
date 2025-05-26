@@ -7,10 +7,8 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
 
-public interface IResponse
+public interface IResponse : ITokenizable
 {
-    long Tokens { get; }
-
     /// <summary>
     /// The latency of the response in ms
     /// </summary>
@@ -150,7 +148,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         }
     }
 
-    public ICommand RemoveCurrent => new ActionCommand((o =>
+    public ICommand RemoveCurrent => new ActionCommand(o =>
     {
         if (Items.Count == 1)
         {
@@ -161,7 +159,8 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         {
             this.Remove(response);
         }
-    }));
+    });
+
 
     public MultiResponseViewItem(IEnumerable<IResponseViewItem> items)
     {

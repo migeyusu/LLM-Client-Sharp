@@ -15,6 +15,9 @@ public static class CommonCommands
     public static RoutedUICommand DeleteCurrent =
         new RoutedUICommand("DeleteCurrent", "DeleteCurrent", typeof(CommonCommands));
 
+    public static RoutedUICommand Conclusion =
+        new RoutedUICommand("Conclusion", "Conclusion", typeof(CommonCommands));
+
     private static ICommand? _copyCommand;
 
     public static ICommand CopyCommand

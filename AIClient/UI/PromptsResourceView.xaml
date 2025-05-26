@@ -16,11 +16,14 @@
         </Grid.RowDefinitions>
         <ListBox x:Name="ListBox"
                  Margin="10"
+                 SelectionMode="Single"
+                 SelectedIndex="{Binding SelectedIndex,Mode=TwoWay}"
+                 SelectedItem="{Binding SelectedPrompt,Mode=TwoWay}"
                  VirtualizingPanel.IsVirtualizing="False"
                  ScrollViewer.CanContentScroll="False"
                  HorizontalAlignment="Stretch"
                  HorizontalContentAlignment="Left"
-                 ItemsSource="{Binding PromptsSystem,Mode=OneWay}"
+                 ItemsSource="{Binding Prompts,Mode=OneWay}"
                  MouseDoubleClick="ListBox_OnMouseDoubleClick">
             <ListBox.CommandBindings>
                 <CommandBinding Command="Copy"
@@ -42,6 +45,8 @@
                  Margin="10"
                  AcceptsReturn="True"
                  AcceptsTab="True"
+                 TextWrapping="Wrap"
+                 Text="{Binding  SelectedPrompt,Mode=OneWay}"
                  materialDesign:HintAssist.Hint="请输入Prompt"
                  Style="{StaticResource MaterialDesignFilledTextBox}" />
         <StackPanel Grid.Row="2"
@@ -49,13 +54,16 @@
                     HorizontalAlignment="Right"
                     Margin="10">
             <Button Content="移除"
-                    Command="{Binding RemoveCommand}"
-                    CommandParameter="{Binding ElementName=ListBox,Path=SelectedIndex,Mode=OneWay}" />
+                    Command="{Binding RemoveCommand}" />
             <Button Content="新增"
-                    Margin="10,0"
-                    Command="{Binding AddCommand}"
+                    Margin="10,0,0,0"
+                    Command="{Binding AddCommand}" />
+            <Button Content="更新"
+                    Margin="10,0,0,0"
+                    Command="{Binding UpdateCommand}"
                     CommandParameter="{Binding ElementName=PromptsTextBox,Mode=OneTime}" />
             <Button Content="保存"
+                    Margin="10,0,0,0"
                     Command="{Binding SaveCommand}" />
         </StackPanel>
     </Grid>

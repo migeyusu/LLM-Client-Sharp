@@ -3,11 +3,9 @@ using System.IO;
 using System.Text.Json.Serialization;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI;
-using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
@@ -51,7 +49,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     public string Name { get; set; } = Guid.NewGuid().ToString();
 
     [JsonIgnore]
-    public ImageSource Icon
+    public virtual ImageSource Icon
     {
         get { return _icon ?? Icons.EndpointIcon; }
         private set
@@ -82,6 +80,17 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         }
     }
 
+    public string? ApiLogUrl
+    {
+        get => _apiLogUrl;
+        set
+        {
+            if (value == _apiLogUrl) return;
+            _apiLogUrl = value;
+            OnPropertyChanged();
+        }
+    }
+
     public DefaultOption ConfigOption
     {
         get => _configOption;
@@ -98,34 +107,58 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     private ObservableCollection<APIModelInfo> _models = new ObservableCollection<APIModelInfo>();
     private string? _iconUrl;
     private ImageSource? _icon = null;
+    private int _selectedModelIndex = -1;
+    private string? _apiLogUrl;
+
+    [JsonIgnore]
+    public int SelectedModelIndex
+    {
+        get => _selectedModelIndex;
+        set
+        {
+            if (value == _selectedModelIndex) return;
+            _selectedModelIndex = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(AddNewCommand));
+        }
+    }
 
     [JsonIgnore] public IList<string> AvailableModelNames => Models.Select(x => x.Name).ToList();
 
     private const string NewModelName = "测试名称";
 
     [JsonIgnore]
-    public ICommand AddNewCommand =>
-        new ActionCommand((o =>
+    public ICommand AddNewCommand => new ActionCommand((o =>
+    {
+        int v = 0;
+        var newModelName = NewModelName + v;
+        while (_models.Any((info => info.Name == newModelName)))
         {
-            int v = 0;
-            var newModelName = NewModelName + v;
-            while (_models.Any((info => info.Name == newModelName)))
-            {
-                v++;
-                newModelName = NewModelName + v;
-            }
+            v++;
+            newModelName = NewModelName + v;
+        }
 
-            Models.Add(new APIModelInfo() { Name = newModelName, Endpoint = this });
-        }));
+        var apiModelInfo = new APIModelInfo() { Name = newModelName, Endpoint = this };
+        if (SelectedModelIndex > -1)
+        {
+            Models.Insert(SelectedModelIndex + 1, apiModelInfo);
+        }
+        else
+        {
+            Models.Add(apiModelInfo);
+        }
+
+        SelectedModelIndex = Models.IndexOf(apiModelInfo);
+    }));
 
     [JsonIgnore] public ICommand RemoveCommand => new ActionCommand((o => { Models.Remove((APIModelInfo)o); }));
 
     public ILLMModelClient? NewClient(string modelName)
     {
-        var firstOrDefault = Models.FirstOrDefault(x => x.Name == modelName);
-        if (firstOrDefault == null)
+        var apiModelInfo = Models.FirstOrDefault(x => x.Name == modelName);
+        if (apiModelInfo == null)
             return null;
-        return new APIClient(this, firstOrDefault, ConfigOption);
+        return new APIClient(this, apiModelInfo, ConfigOption);
     }
 
     public ILLMModel? GetModel(string modelName)

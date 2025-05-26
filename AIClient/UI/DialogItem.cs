@@ -1,16 +1,22 @@
 ﻿using System.Text.Json.Serialization;
 using System.Windows.Documents;
-using System.Windows.Media;
 using LLMClient.Abstraction;
 using LLMClient.Data;
-using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
 namespace LLMClient.UI;
 
-public interface IDialogViewItem
+public interface ITokenizable
+{
+    /// <summary>
+    /// （估计的）tokens数量
+    /// </summary>
+    long Tokens { get; }
+}
+
+public interface IDialogViewItem : ITokenizable
 {
     ChatMessage? Message { get; }
 
@@ -26,6 +32,8 @@ public class EraseViewItem : IDialogViewItem, IDialogPersistItem
     /// </summary>
     [JsonPropertyName("IsEnable")]
     public bool IsAvailableInContext { get; } = false;
+
+    public long Tokens { get; } = 0;
 }
 
 public class RequestViewItem : BaseViewModel, IDialogViewItem, IDialogPersistItem
@@ -34,8 +42,6 @@ public class RequestViewItem : BaseViewModel, IDialogViewItem, IDialogPersistIte
     /// 标记一次请求-响应过程，和响应对应
     /// </summary>
     public Guid InteractionId { get; set; }
-
-    private long _tokens;
 
     public RequestViewItem() : base()
     {
@@ -49,13 +55,8 @@ public class RequestViewItem : BaseViewModel, IDialogViewItem, IDialogPersistIte
 
     public long Tokens
     {
-        get => _tokens;
-        set
-        {
-            if (value == _tokens) return;
-            _tokens = value;
-            OnPropertyChanged();
-        }
+        //估计tokens
+        get => (long)(MessageContent.Length / 1.5);
     }
 }
 
@@ -109,7 +110,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
 
     public string? Raw { get; }
 
-    public ResponseViewItem(ILLMModel? model,IResponse response, string endPointName)
+    public ResponseViewItem(ILLMModel? model, IResponse response, string endPointName)
     {
         Duration = response.Duration;
         Model = model;

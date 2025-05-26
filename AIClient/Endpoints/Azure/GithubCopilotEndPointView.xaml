@@ -5,32 +5,69 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:azure="clr-namespace:LLMClient.Endpoints.Azure"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+             xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance azure:GithubCopilotEndPoint}"
-             d:DesignHeight="300" d:DesignWidth="300">
+             d:DesignHeight="300" d:DesignWidth="600">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition />
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition />
-        </Grid.ColumnDefinitions>
-        <TextBlock Text="API Token："
-                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                   VerticalAlignment="Center" />
-        <TextBox Grid.Row="0" Grid.Column="1"
-                 Text="{Binding Option.APIToken,Mode=TwoWay}"
-                 Height="30"
-                 Margin="5,10" />
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="URL："
-                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                   VerticalAlignment="Center" />
-        <TextBox Grid.Row="1" Grid.Column="1"
-                 Height="30"
-                 Text="{Binding Option.URL,Mode=TwoWay}" />
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="90" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="90" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="API Token："
+                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                       VerticalAlignment="Center" />
+            <TextBox Grid.Row="0" Grid.Column="1"
+                     Text="{Binding Option.APIToken,Mode=TwoWay}"
+                     Margin="15,0" />
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="API URL："
+                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                       VerticalAlignment="Center" />
+            <TextBox Grid.Row="0" Grid.Column="3"
+                     Text="{Binding Option.URL,Mode=TwoWay}" />
+        </Grid>
+        <ScrollViewer Grid.Row="1"
+                      Margin="0,10">
+            <ItemsControl Grid.Row="1"
+                          ItemsSource="{Binding AvailableModelsInfos,Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:AzureModelInfo}">
+                        <StackPanel Orientation="Horizontal"
+                                    Height="40">
+                            <Image Width="32"
+                                   Height="32"
+                                   VerticalAlignment="Center"
+                                   Source="{Binding Icon.CurrentSource,Mode=OneTime}" />
+                            <TextBlock Margin="10,0"
+                                       VerticalAlignment="Center"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}">
+                                <TextBlock.Text>
+                                    <MultiBinding
+                                        StringFormat="{}{0}, Publisher: {1}, Max Context Size: {2}, Max Input Tokens: {3}, Max Output Tokens: {4}">
+                                        <Binding Path="FriendlyName" />
+                                        <Binding Path="Publisher" />
+                                        <Binding Path="MaxContextSize" />
+                                        <Binding Path="MaxInputTokens" />
+                                        <Binding Path="MaxOutputTokens" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
     </Grid>
 </UserControl>

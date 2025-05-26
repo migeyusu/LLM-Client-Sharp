@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Net.Http;
 using System.Windows;
+using System.Windows.Controls;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
@@ -52,6 +53,7 @@ public class Program
                 expression.ConstructServicesUsing(provider.GetService);
             }, AppDomain.CurrentDomain.GetAssemblies());
             serviceProvider = collection.BuildServiceProvider();
+            BaseViewModel.ServiceProvider = serviceProvider;
             App app = new App();
             app.InitializeComponent();
             // SynchronizationHelper.Initialize();

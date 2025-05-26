@@ -5,20 +5,26 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
+using AutoMapper;
 using CommunityToolkit.Mvvm.ComponentModel.__Internals;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.Plugins.Document;
 using Microsoft.SemanticKernel.Plugins.Document.FileSystem;
 using Microsoft.SemanticKernel.Plugins.Document.OpenXml;
+using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
@@ -107,6 +113,21 @@ public class DialogViewModel : BaseViewModel
 
     public ObservableCollection<IDialogViewItem> DialogItems { get; }
 
+    public long CurrentContextTokens
+    {
+        get
+        {
+            if (!DialogItems.Any())
+            {
+                return 0;
+            }
+
+            var dialogViewItems = new Stack<IDialogViewItem>();
+            FilterHistory(DialogItems.ToArray(), dialogViewItems);
+            return dialogViewItems.Sum(item => item.Tokens);
+        }
+    }
+
     private ILLMModelClient? _client;
 
     public ILLMModelClient? Client
@@ -165,7 +186,79 @@ public class DialogViewModel : BaseViewModel
             DialogItems.Clear();
         }
     });
-    
+
+    private IMapper Mapper => ServiceProvider.GetService<IMapper>()!;
+
+    public ICommand BackupCommand => new ActionCommand((async o =>
+    {
+        var saveFileDialog = new SaveFileDialog()
+        {
+            AddExtension = true, DefaultExt = ".json", CheckPathExists = true,
+            Filter = "json files (*.json)|*.json"
+        };
+        var dialogModel = Mapper.Map<DialogViewModel, DialogPersistModel>(this);
+        if (saveFileDialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        var fileName = saveFileDialog.FileName;
+        var fileInfo = new FileInfo(fileName);
+        await using (var fileStream = fileInfo.OpenWrite())
+        {
+            await JsonSerializer.SerializeAsync(fileStream, dialogModel);
+        }
+
+        MessageEventBus.Publish("已备份");
+    }));
+
+    public ICommand ExportCommand => new ActionCommand((async o =>
+    {
+        var saveFileDialog = new SaveFileDialog()
+        {
+            AddExtension = true,
+            DefaultExt = ".md", CheckPathExists = true,
+            Filter = "markdown files (*.md)|*.md"
+        };
+        if (saveFileDialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        var stringBuilder = new StringBuilder(8192);
+        stringBuilder.AppendLine($"# {this.Topic}");
+        if (this.Client != null)
+        {
+            stringBuilder.AppendLine($"### {this.Client.Name}");
+        }
+
+        foreach (var viewItem in this.DialogItems.Where((item => item.IsAvailableInContext)))
+        {
+            if (viewItem is IResponseViewItem responseViewItem)
+            {
+                stringBuilder.AppendLine("## **Assistant:**");
+                stringBuilder.Append(responseViewItem.Raw);
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine("***");
+                stringBuilder.AppendLine();
+            }
+            else if (viewItem is RequestViewItem reqViewItem)
+            {
+                stringBuilder.AppendLine("## **User:**");
+                stringBuilder.Append(reqViewItem.MessageContent);
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine("***");
+                stringBuilder.AppendLine();
+            }
+        }
+
+        var fileName = saveFileDialog.FileName;
+        await File.WriteAllTextAsync(fileName, stringBuilder.ToString());
+        MessageEventBus.Publish("已导出");
+    }));
+
     /*public async Task AddFileToContext(FileInfo fileInfo)
     {
         var build = Kernel.CreateBuilder().Build();
@@ -251,7 +344,27 @@ public class DialogViewModel : BaseViewModel
 
     public ICommand CancelCommand => new ActionCommand((o => { _requestTokenSource?.Cancel(); }));
 
-    // public ICommand DeleteCommand => new ActionCommand((o => { this.DeleteItem((o as ResponseViewItem)!); }));
+    public ICommand ScrollToPreviousCommand => new ActionCommand(o =>
+    {
+        if (DialogItems.Count == 0)
+        {
+            return;
+        }
+
+        var scrollViewItem = this.ScrollViewItem;
+        if (scrollViewItem != null)
+        {
+            var indexOf = this.DialogItems.IndexOf(scrollViewItem);
+            if (indexOf > 0)
+            {
+                this.ScrollViewItem = this.DialogItems[indexOf - 1];
+            }
+        }
+        else
+        {
+            this.ScrollViewItem = this.DialogItems.FirstOrDefault();
+        }
+    });
 
     public ICommand ScrollToNextCommand => new ActionCommand(o =>
     {
@@ -271,7 +384,7 @@ public class DialogViewModel : BaseViewModel
         }
         else
         {
-            this.ScrollViewItem = this.DialogItems.FirstOrDefault();
+            this.ScrollViewItem = this.DialogItems.LastOrDefault();
         }
     });
 
@@ -285,7 +398,37 @@ public class DialogViewModel : BaseViewModel
         this.ScrollViewItem = DialogItems.Last();
     }));
 
-    public IEndpointService EndpointService { get; }
+    public ICommand ScrollToBeginCommand => new ActionCommand((o =>
+    {
+        if (!DialogItems.Any())
+        {
+            return;
+        }
+
+        this.ScrollViewItem = DialogItems.First();
+    }));
+
+    public ICommand ChangeModelCommand => new ActionCommand((async o =>
+    {
+        var selectionViewModel = new DialogCreationViewModel(EndpointService.AvailableEndpoints);
+        if (await DialogHost.Show(selectionViewModel) is true)
+        {
+            var model = selectionViewModel.GetClient();
+            if (model == null)
+            {
+                MessageBox.Show("No model created!");
+                return;
+            }
+
+            this.Client = model;
+        }
+    }));
+
+
+    private IEndpointService EndpointService
+    {
+        get { return ServiceProvider.GetService<IEndpointService>()!; }
+    }
 
     private string? _promptString;
     private string _topic;
@@ -295,11 +438,10 @@ public class DialogViewModel : BaseViewModel
     private long _tokensConsumption;
     private bool _isProcessing;
 
-    public DialogViewModel(string topic, IEndpointService endpointService, ILLMModelClient? modelClient = null,
+    public DialogViewModel(string topic, ILLMModelClient? modelClient = null,
         IList<IDialogViewItem>? items = null)
     {
         this._topic = topic;
-        EndpointService = endpointService;
         this.Client = modelClient;
         this.PropertyChanged += (_, e) =>
         {
@@ -312,6 +454,31 @@ public class DialogViewModel : BaseViewModel
         };
         DialogItems = items == null ? [] : new ObservableCollection<IDialogViewItem>(items);
         this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
+    }
+
+    public async void Conclusion(MultiResponseViewItem item)
+    {
+        if (this.Client == null)
+        {
+            return;
+        }
+
+        var newGuid = Guid.NewGuid();
+        var requestViewItem = new RequestViewItem()
+        {
+            MessageContent = "请基于以上对话内容进行简短且细致地总结，不要遗漏关键细节，总结大小控制在100字以内。",
+            InteractionId = newGuid
+        };
+        DialogItems.Add(requestViewItem);
+        var copy = DialogItems.ToArray();
+        var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
+        DialogItems.Add(multiResponseViewItem);
+        ScrollViewItem = DialogItems.Last();
+        await SendRequestCore(this.Client, copy,
+            multiResponseViewItem);
+        var indexOf = DialogItems.IndexOf(requestViewItem);
+        DialogItems.Insert(indexOf, new EraseViewItem());
+        ScrollViewItem = DialogItems.Last();
     }
 
     public async Task AppendResponseOn(MultiResponseViewItem responseViewItem,
@@ -338,7 +505,7 @@ public class DialogViewModel : BaseViewModel
     }
 
     public async Task<CompletedResult> SendRequestCore(
-        ILLMModelClient client, IList<IDialogViewItem> dialog,
+        ILLMModelClient client, Memory<IDialogViewItem> dialog,
         MultiResponseViewItem multiResponseViewItem)
     {
         _requestTokenSource = new CancellationTokenSource();
@@ -434,18 +601,10 @@ public class DialogViewModel : BaseViewModel
         await AppendResponseOn(multiResponseViewItem, llmModel);
     }
 
-    private static IList<IDialogViewItem> GenerateHistory(IList<IDialogViewItem> source)
+    private static void FilterHistory(Span<IDialogViewItem> source, Stack<IDialogViewItem> dialogViewItems)
     {
-        var dialogViewItems = new Stack<IDialogViewItem>();
-        var lastRequest = source[^1];
-        if (lastRequest is not RequestViewItem)
-        {
-            throw new InvalidOperationException("最后一条记录不是请求");
-        }
-
-        dialogViewItems.Push(lastRequest);
         Guid? interactionId = null;
-        for (int i = source.Count - 2; i >= 0; i--)
+        for (int i = source.Length - 1; i >= 0; i--)
         {
             var dialogViewItem = source[i];
             if (dialogViewItem is EraseViewItem)
@@ -473,7 +632,21 @@ public class DialogViewModel : BaseViewModel
                 }
             }
         }
+    }
 
+
+    private static IList<IDialogViewItem> GenerateHistory(Memory<IDialogViewItem> memory)
+    {
+        var dialogViewItems = new Stack<IDialogViewItem>();
+        var source = memory.Span;
+        var lastRequest = source[^1];
+        if (lastRequest is not RequestViewItem)
+        {
+            throw new InvalidOperationException("最后一条记录不是请求");
+        }
+
+        dialogViewItems.Push(lastRequest);
+        FilterHistory(source.Slice(0, source.Length - 1), dialogViewItems);
         var list = new List<IDialogViewItem>();
         while (dialogViewItems.TryPop(out var dialogViewItem))
         {
@@ -494,6 +667,7 @@ public class DialogViewModel : BaseViewModel
         IsDataChanged = true;
         this.EditTime = DateTime.Now;
         OnPropertyChangedAsync(nameof(Shortcut));
+        OnPropertyChanged(nameof(CurrentContextTokens));
     }
 
     private void NotifyPropertyChangedOnPropertyChanged(object? sender, PropertyChangedEventArgs e)

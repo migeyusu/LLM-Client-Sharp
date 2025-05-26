@@ -1,15 +1,10 @@
-﻿using System.Collections;
-using System.Reflection;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Media;
+﻿using System.Windows.Controls;
 
 namespace LLMClient.UI.Component;
 
 public class CustomVirtualizingStackPanel : VirtualizingStackPanel
 {
-    protected override void OnCleanUpVirtualizedItem(CleanUpVirtualizedItemEventArgs e)
+    /*protected override void OnCleanUpVirtualizedItem(CleanUpVirtualizedItemEventArgs e)
     {
         base.OnCleanUpVirtualizedItem(e);
         if (e.Value is MultiResponseViewItem)
@@ -20,9 +15,9 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
                 richTextBox.Document = new FlowDocument(); // 清除 FlowDocument 的引用
             }
         }
-    }
+    }*/
 
-    protected override void OnClearChildren()
+    /*protected override void OnClearChildren()
     {
         if (this.IsItemsHost)
         {
@@ -45,5 +40,5 @@ public class CustomVirtualizingStackPanel : VirtualizingStackPanel
         }
 
         base.OnClearChildren();
-    }
+    }*/
 }

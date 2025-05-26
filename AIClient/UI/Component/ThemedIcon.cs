@@ -73,24 +73,23 @@ public class LocalThemedIcon : ThemedIcon
 
 public class AsyncThemedIcon : ThemedIcon
 {
-    public AsyncThemedIcon(Task<ImageSource> lightModeSourceTask, Task<ImageSource>? darkModeSourceTask)
-        : base(lightModeSourceTask.IsCompleted ? lightModeSourceTask.Result : EmptyIcon,
-            darkModeSourceTask != null,
-            darkModeSourceTask?.IsCompleted == true ? darkModeSourceTask.Result : EmptyIcon)
+    public AsyncThemedIcon(Func<Task<ImageSource>> lightModeSourceTask, Func<Task<ImageSource>>? darkModeSourceTask)
+        : base(EmptyIcon, darkModeSourceTask != null, EmptyIcon)
     {
         UpdateSource(lightModeSourceTask, darkModeSourceTask);
     }
 
-    private async void UpdateSource(Task<ImageSource> lightModeSourceTask, Task<ImageSource>? darkModeSourceTask)
+    private async void UpdateSource(Func<Task<ImageSource>> lightModeSourceTask,
+        Func<Task<ImageSource>>? darkModeSourceTask)
     {
         if (LightModeSource.Equals(EmptyIcon.CurrentSource))
         {
-            this.LightModeSource = await lightModeSourceTask;
+            this.LightModeSource = await lightModeSourceTask();
         }
 
         if (darkModeSourceTask != null)
         {
-            this.DarkModeSource = await darkModeSourceTask;
+            this.DarkModeSource = await darkModeSourceTask();
         }
 
         OnPropertyChangedAsync(nameof(CurrentSource));

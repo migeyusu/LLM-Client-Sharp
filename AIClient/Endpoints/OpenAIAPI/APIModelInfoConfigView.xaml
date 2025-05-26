@@ -20,23 +20,38 @@
                         Value="Center" />
             </Style>
         </StackPanel.Resources>
-        <TextBox Text="{Binding Name,Mode=TwoWay}"
-                 materialDesign:HintAssist.Hint="模型名称"
-                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                 Margin="0,0,0,10" />
-        <TextBox Text="{Binding Id,Mode=TwoWay}"
-                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                 Margin="0,0,0,10"
-                 materialDesign:HintAssist.Hint="模型ID" />
-        <TextBox Text="{Binding MaxContextSize,Mode=TwoWay,Converter={StaticResource KUnitConverter}}"
-                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                 Margin="0,0,0,10"
-                 materialDesign:TextFieldAssist.SuffixText="K"
-                 materialDesign:HintAssist.Hint="最大上下文长度" />
+        <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Text="{Binding Name,Mode=TwoWay}"
+                     materialDesign:HintAssist.Hint="模型名称"
+                     MinWidth="120"
+                     MaxWidth="200"
+                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                     Margin="0,0,10,0" />
+            <TextBox Grid.Column="1" Text="{Binding Id,Mode=TwoWay}"
+                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                     Margin="0,0,10,0"
+                     materialDesign:HintAssist.Hint="模型ID" />
+            <TextBox Grid.Column="2"
+                     MinWidth="50"
+                     MaxWidth="100"
+                     Text="{Binding MaxContextSize,Mode=TwoWay,Converter={StaticResource KUnitConverter}}"
+                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                     Margin="0,0,0,0"
+                     materialDesign:TextFieldAssist.SuffixText="K"
+                     materialDesign:HintAssist.Hint="最大上下文长度" />
+        </Grid>
         <TextBox Text="{Binding InfoUrl,Mode=TwoWay}"
                  Margin="0,0,0,10"
                  materialDesign:HintAssist.Hint="模型信息URL"
                  Style="{StaticResource MaterialDesignFloatingHintTextBox}" />
+        <TextBox Text="{Binding Description,Mode=TwoWay}"
+                 materialDesign:HintAssist.Hint="模型描述（markdown）"
+                 Margin="0,0,0,10" />
         <CheckBox Content="Streaming"
                   IsChecked="{Binding Streaming,Mode=TwoWay}"
                   Margin="0,0,0,10" />
@@ -47,7 +62,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock Text="Icon：" />
-            <RadioButton Grid.Column="1" IsChecked="{Binding UrlIconEnable,Mode=TwoWay}">
+            <RadioButton Grid.Column="1" IsChecked="{Binding UrlIconEnable,Mode=TwoWay, UpdateSourceTrigger=LostFocus}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Url Icon:" />
                     <TextBox Text="{Binding IconUrl,Mode=TwoWay}"
@@ -57,14 +72,14 @@
                 </StackPanel>
             </RadioButton>
             <RadioButton Grid.Column="2" Margin="10,0,0,0"
-                         IsChecked="{Binding UrlIconEnable,Mode=TwoWay,Converter={StaticResource InvertBooleanConverter}}">
+                         IsChecked="{Binding UrlIconEnable,Mode=TwoWay,Converter={StaticResource InvertBooleanConverter}, UpdateSourceTrigger=LostFocus}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Icon Type:" />
                     <ComboBox SelectedItem="{Binding IconType,Mode=TwoWay}"
                               Margin="10,0,0,0"
                               Width="90"
                               ItemsSource="{Binding Source={component:EnumBindingSource {x:Type endpoints:ModelIconType}}}">
-                        <ComboBox.ItemTemplate>
+                        <!--<ComboBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type endpoints:ModelIconType}">
                                 <DockPanel>
                                     <Image Width="20"
@@ -77,7 +92,7 @@
                                                Margin="6,0,0,0" />
                                 </DockPanel>
                             </DataTemplate>
-                        </ComboBox.ItemTemplate>
+                        </ComboBox.ItemTemplate>-->
                     </ComboBox>
                 </StackPanel>
             </RadioButton>

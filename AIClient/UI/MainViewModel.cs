@@ -119,107 +119,24 @@ public class MainViewModel : BaseViewModel
         var sourceDictionary = application.Resources;
         sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
     }
-
-    public ICommand BackupCommand => new ActionCommand((async o =>
+    
+    public ICommand ImportDialogCommand => new ActionCommand((async o =>
     {
-        if (PreDialog == null)
-        {
-            return;
-        }
-
-        var saveFileDialog = new SaveFileDialog()
-        {
-            AddExtension = true, DefaultExt = ".json", CheckPathExists = true,
-            Filter = "json files (*.json)|*.json"
-        };
-        var dialogModel = _mapper.Map<DialogViewModel, DialogPersistModel>(PreDialog);
-        if (saveFileDialog.ShowDialog() == true)
-        {
-            var fileName = saveFileDialog.FileName;
-            var fileInfo = new FileInfo(fileName);
-            await using (var fileStream = fileInfo.OpenWrite())
-            {
-                await JsonSerializer.SerializeAsync(fileStream, dialogModel);
-            }
-        }
-
-        MessageQueue.Enqueue("已备份");
-    }));
-
-    public ICommand ExportCommand => new ActionCommand((async o =>
-    {
-        if (PreDialog == null)
-        {
-            return;
-        }
-
-        var saveFileDialog = new SaveFileDialog()
+        var openFileDialog = new OpenFileDialog()
         {
             AddExtension = true,
-            DefaultExt = ".md", CheckPathExists = true,
-            Filter = "markdown files (*.md)|*.md"
+            Filter = "json files (*.json)|*.json",
+            CheckFileExists = true,
+            Multiselect = true
         };
-        if (saveFileDialog.ShowDialog() != true)
+        if (openFileDialog.ShowDialog() == true)
         {
-            return;
-        }
-
-        var stringBuilder = new StringBuilder(8192);
-        stringBuilder.AppendLine($"# {PreDialog.Topic}");
-        if (PreDialog.Client != null)
-        {
-            stringBuilder.AppendLine($"### {PreDialog.Client.Name}");
-        }
-
-        foreach (var viewItem in PreDialog.DialogItems)
-        {
-            if (viewItem is ResponseViewItem responseViewItem && !responseViewItem.IsInterrupt)
-            {
-                stringBuilder.AppendLine("## **Assistant:**");
-                stringBuilder.Append(responseViewItem.Raw);
-                stringBuilder.AppendLine();
-                stringBuilder.AppendLine();
-                stringBuilder.AppendLine("***");
-                stringBuilder.AppendLine();
-            }
-            else if (viewItem is RequestViewItem reqViewItem && reqViewItem.IsAvailableInContext)
-            {
-                stringBuilder.AppendLine("## **User:**");
-                stringBuilder.Append(reqViewItem.MessageContent);
-                stringBuilder.AppendLine();
-                stringBuilder.AppendLine();
-                stringBuilder.AppendLine("***");
-                stringBuilder.AppendLine();
-            }
-        }
-
-        var fileName = saveFileDialog.FileName;
-        await File.WriteAllTextAsync(fileName, stringBuilder.ToString());
-        MessageEventBus.Publish("已导出");
-    }));
-
-    public ICommand ChangeModelCommand => new ActionCommand((async o =>
-    {
-        if (PreDialog == null)
-        {
-            return;
-        }
-
-        var selectionViewModel = new DialogCreationViewModel(ConfigureViewModel.AvailableEndpoints);
-        if (await DialogHost.Show(selectionViewModel) is true)
-        {
-            var model = selectionViewModel.GetClient();
-            if (model == null)
-            {
-                MessageBox.Show("No model created!");
-                return;
-            }
-
-            PreDialog.Client = model;
+            var fileInfos = openFileDialog.FileNames.Select((s => new FileInfo(s)));
+            await LoadDialogs(fileInfos);
         }
     }));
 
-    public ICommand SelectModelCommand => new ActionCommand((async o =>
+    public ICommand NewDialogCommand => new ActionCommand((async o =>
     {
         var selectionViewModel = new DialogCreationViewModel(ConfigureViewModel.AvailableEndpoints);
         if (await DialogHost.Show(selectionViewModel) is true)
@@ -232,7 +149,7 @@ public class MainViewModel : BaseViewModel
             }
 
             var dialogViewModel =
-                new DialogViewModel(selectionViewModel.DialogName, this.ConfigureViewModel, model)
+                new DialogViewModel(selectionViewModel.DialogName, model)
                     { IsDataChanged = true };
             dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
             PreDialog = dialogViewModel;
@@ -289,17 +206,10 @@ public class MainViewModel : BaseViewModel
 
     public const string DialogSaveFolder = "Dialogs";
 
-    public async Task LoadDialogsFromLocal(string dirPath = DialogSaveFolder)
+    public async Task LoadDialogs(IEnumerable<FileInfo> fileInfos)
     {
-        var path = Path.GetFullPath(dirPath);
-        var directoryInfo = new DirectoryInfo(path);
-        if (!directoryInfo.Exists)
-        {
-            return;
-        }
-
         var dialogViewModels = new List<DialogViewModel>();
-        foreach (var fileInfo in directoryInfo.GetFiles())
+        foreach (var fileInfo in fileInfos)
         {
             try
             {
@@ -337,9 +247,21 @@ public class MainViewModel : BaseViewModel
         }
     }
 
+    public async Task InitialDialogsFromLocal(string dirPath = DialogSaveFolder)
+    {
+        var path = Path.GetFullPath(dirPath);
+        var directoryInfo = new DirectoryInfo(path);
+        if (!directoryInfo.Exists)
+        {
+            return;
+        }
+
+        await LoadDialogs(directoryInfo.GetFiles());
+    }
+
     private void DialogOnEditTimeChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var dialogViewModel = ((DialogViewModel)sender)!;
+        var dialogViewModel = ((DialogViewModel?)sender)!;
         switch (e.PropertyName)
         {
             case nameof(DialogViewModel.EditTime):
@@ -375,7 +297,6 @@ public class MainViewModel : BaseViewModel
             }
 
             var dialogModel = _mapper.Map<DialogViewModel, DialogPersistModel>(dialogViewModel);
-            dialogModel.Version = DialogPersistModel.DialogPersistVersion;
             if (fileInfos.TryGetValue(dialogViewModel.FileName, out var fileInfo))
             {
                 fileInfo.Delete();
@@ -415,7 +336,7 @@ public class MainViewModel : BaseViewModel
     {
         IsProcessing = true;
         await ConfigureViewModel.Initialize();
-        await LoadDialogsFromLocal(DialogSaveFolder);
+        await InitialDialogsFromLocal(DialogSaveFolder);
         if (DialogViewModels.Any())
         {
             this.PreDialog = DialogViewModels.First();

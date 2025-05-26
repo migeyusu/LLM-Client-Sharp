@@ -37,7 +37,7 @@
                              VirtualizingPanel.IsVirtualizing="True"
                              VirtualizingPanel.VirtualizationMode="Recycling"
                              VirtualizingPanel.CacheLengthUnit="Item"
-                             VirtualizingPanel.CacheLength="10"
+                             VirtualizingPanel.CacheLength="15,15"
                              VirtualizingPanel.ScrollUnit="Pixel"
                              VirtualizingPanel.IsContainerVirtualizable="True"
                              materialDesign:ListBoxItemAssist.ShowSelection="False"
@@ -138,6 +138,14 @@
                                                             <materialDesign:PackIcon Kind="InvoiceTextRemove" />
                                                         </MenuItem.Icon>
                                                     </MenuItem>
+                                                    <MenuItem Header="总结当前上下文"
+                                                              ToolTip="用于Tokens缩减"
+                                                              Command="{x:Static ui:CommonCommands.Conclusion}"
+                                                              CommandParameter="{Binding  }">
+                                                        <MenuItem.Icon>
+                                                            <materialDesign:PackIcon Kind="NotebookCheckOutline" />
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
                                                 </MenuItem>
                                             </Menu>
                                             <materialDesign:PopupBox Padding="2,0"
@@ -229,9 +237,9 @@
                                                                 <StackPanel>
                                                                     <component:FlowDocumentScrollViewerEx
                                                                         BorderThickness="0"
+                                                                        CleanDocument="{Binding Document,Mode=OneTime}"
                                                                         Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
-                                                                        Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}"
-                                                                        Document="{Binding Document,Mode=OneTime}">
+                                                                        Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}">
                                                                         <component:FlowDocumentScrollViewerEx.ContextMenu>
                                                                             <ContextMenu>
                                                                                 <MenuItem Command="Copy"
@@ -364,6 +372,8 @@
                                 Executed="OnExcludeExecuted" />
                 <CommandBinding Command="Refresh"
                                 Executed="Refresh_OnExecuted" />
+                <CommandBinding Command="{x:Static  ui:CommonCommands.Conclusion}"
+                                Executed="Conclusion_OnExecuted" />
             </ListBox.CommandBindings>
         </component:ListBoxEx>
         <StackPanel Grid.Row="0"
@@ -381,6 +391,12 @@
                             Value="26" />
                 </Style>
             </StackPanel.Resources>
+            <Button Command="{Binding ScrollToBeginCommand}">
+                <materialDesign:PackIcon Kind="FormatVerticalAlignTop" />
+            </Button>
+            <Button Command="{Binding ScrollToPreviousCommand}">
+                <materialDesign:PackIcon Kind="ArrowUpBold" />
+            </Button>
             <Button Command="{Binding ScrollToNextCommand}">
                 <materialDesign:PackIcon Kind="ArrowDownBold" />
             </Button>
@@ -404,7 +420,10 @@
                         Margin="0,0,16,8"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom">
+                <TextBlock Text="{Binding CurrentContextTokens,StringFormat=当前上下文预估：{0}}"
+                           VerticalAlignment="Center" />
                 <CheckBox Content="回车发送"
+                          Margin="16,0,0,0"
                           Checked="EnterKeyInputBinding_OnChecked"
                           Unchecked="EnterKeyInputBinding_OnUnchecked"
                           materialDesign:CheckBoxAssist.CheckBoxSize="30" />

@@ -102,7 +102,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     [JsonIgnore]
     public Uri InfoUri
     {
-        get { return _infoUrl == null ? new Uri("about:blank") : new Uri(_infoUrl); }
+        get { return _description == null ? new Uri("about:blank") : new Uri(_description); }
     }
 
     public string? InfoUrl
@@ -112,6 +112,17 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         {
             if (value == _infoUrl) return;
             _infoUrl = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? Description
+    {
+        get => _description;
+        set
+        {
+            if (value == _description) return;
+            _description = value;
             OnPropertyChanged();
         }
     }
@@ -137,15 +148,15 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     private float _presencePenalty;
     private long? _seed;
     private float _temperature = 1;
-    private int _maxTokens = 4 * 1024;
-    private int _maxTokenLimit = 128 * 1024;
+    private int _maxTokens = 4 * 1000;
+    private int _maxTokenLimit = 128 * 1000;
     private int _topKMax = 50;
-    private string? _infoUrl;
-    private int _maxContextSize = 200 * 1024;
+    private string? _description;
+    private int _maxContextSize = 200 * 1000;
     private bool _streaming = true;
     private string _id = string.Empty;
     private string _name = string.Empty;
-    private Uri? _iconUrl1;
+    private string? _infoUrl;
 
     public int MaxContextSize
     {
@@ -181,7 +192,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
             OnPropertyChanged();
         }
     }
-    
+
     public bool TopKEnable
     {
         get => _topKEnable;
@@ -375,7 +386,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         {
             if (!string.IsNullOrEmpty(IconUrl))
             {
-                this.Icon = new AsyncThemedIcon(Task.Run((async () =>
+                this.Icon = new AsyncThemedIcon(((async () =>
                 {
                     var imageSource = await new Uri(this.IconUrl).GetIcon();
                     if (imageSource != null)

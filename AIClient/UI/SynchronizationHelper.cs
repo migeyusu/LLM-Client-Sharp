@@ -29,7 +29,7 @@ public static class SynchronizationHelper
         _uiContext = SynchronizationContext.Current;
     }
 
-    public static void Inovke(Action<object> action, object state)
+    public static void Inovke(Action<object?> action, object state)
     {
         if (_uiContext == null)
         {
@@ -39,7 +39,7 @@ public static class SynchronizationHelper
         _uiContext.Send(o => action(o), state);
     }
 
-    public static void InvokeAsync(Action<object> action, object state)
+    public static void InvokeAsync(Action<object?> action, object state)
     {
         if (_uiContext == null)
         {

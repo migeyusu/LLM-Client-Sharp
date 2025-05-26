@@ -92,7 +92,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
             }
         }
 
-        return new DialogViewModel(source.Topic, _endpointService, llmModelClient, sourceDialogItems)
+        return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
         {
             EditTime = source.EditTime,
             PromptString = source.PromptString,
