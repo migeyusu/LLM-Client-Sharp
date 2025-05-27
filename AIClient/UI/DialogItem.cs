@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using LLMClient.Abstraction;
 using LLMClient.Data;
@@ -103,7 +104,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
             {
                 _flowDocument = this.Raw.ToFlowDocument();
             }
-
+            
             return _flowDocument;
         }
     }

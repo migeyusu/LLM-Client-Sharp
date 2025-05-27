@@ -217,4 +217,14 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
             OnPropertyChangedAsync(nameof(Icon));
         }
     }
+
+    public void MoveUp(APIModelInfo modelInfo)  
+    {
+        int index = Models.IndexOf(modelInfo);
+        if (index > 0)
+        {
+            Models.Move(index, index - 1);
+            SelectedModelIndex = index - 1;
+        }
+    }
 }

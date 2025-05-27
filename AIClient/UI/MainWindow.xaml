@@ -437,17 +437,17 @@
                 <Button Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
                         ToolTip="新建对话"
                         Command="{Binding NewDialogCommand}">
-                    <materialDesign:PackIcon Width="14"
-                                             Height="14"
+                    <materialDesign:PackIcon Width="18"
+                                             Height="18"
                                              Kind="Plus" />
                 </Button>
                 <Button Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
+                        Margin="10,0,0,0" 
                         ToolTip="导入对话"
                         Command="{Binding ImportDialogCommand}">
                     <materialDesign:PackIcon Kind="Import"
-                                             Width="14"
-                                             Height="14"
-                                             Margin="10,0,0,0" />
+                                             Width="18"
+                                             Height="18"/>
                 </Button>
             </StackPanel>
 

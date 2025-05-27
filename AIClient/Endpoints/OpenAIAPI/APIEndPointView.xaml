@@ -66,20 +66,63 @@
                  IsSynchronizedWithCurrentItem="True"
                  SelectedIndex="{Binding SelectedModelIndex,Mode=TwoWay}"
                  ItemsSource="{Binding Models,Mode=OneWay}">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="{x:Type ListBoxItem}"
+                       BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                    <Setter Property="HorizontalContentAlignment"
+                            Value="Stretch" />
+                    <Setter Property="VerticalContentAlignment"
+                            Value="Stretch" />
+                </Style>
+            </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="{x:Type local:APIModelInfo}">
-                    <StackPanel Orientation="Horizontal">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
                         <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
                                Width="25"
                                Height="25" />
-                        <TextBlock Text="{Binding Name,Mode=OneWay}"
+                        <TextBlock Grid.Column="1" Text="{Binding Name,Mode=OneWay}"
                                    Margin="6,0,0,0"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap"
                                    VerticalAlignment="Center" />
-                    </StackPanel>
+                        <Button Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Width="22"
+                                Height="22"
+                                Background="White"
+                                Command="MoveUp"
+                                CommandParameter="{Binding}"
+                                x:Name="MoveUpButton">
+                            <materialDesign:PackIcon Kind="ArrowUpBold"
+                                                     Width="17"
+                                                     Height="17" />
+                            <Button.Style>
+                                <Style TargetType="Button"
+                                       BasedOn="{StaticResource MaterialDesignIconButton}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger
+                                            Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                                            Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
+            <ListBox.CommandBindings>
+                <CommandBinding Command="MoveUp"
+                                Executed="MoveUp_OnExecuted" />
+            </ListBox.CommandBindings>
         </ListBox>
         <Separator Grid.Row="1" Grid.Column="0"
                    Grid.ColumnSpan="2"

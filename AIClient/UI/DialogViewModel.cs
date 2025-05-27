@@ -55,14 +55,31 @@ public class DialogViewModel : BaseViewModel
     /// <summary>
     /// 正在处理
     /// </summary>
-    public bool IsProcessing
+    public bool IsResponding
     {
-        get => _isProcessing;
+        get => RespondingCount > 0;
+    }
+
+    public bool IsNewResponding
+    {
+        get => _isNewResponding;
         set
         {
-            if (value == _isProcessing) return;
-            _isProcessing = value;
+            if (value == _isNewResponding) return;
+            _isNewResponding = value;
             OnPropertyChanged();
+        }
+    }
+
+    public int RespondingCount
+    {
+        get => _respondingCount;
+        set
+        {
+            if (value == _respondingCount) return;
+            _respondingCount = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsResponding));
         }
     }
 
@@ -342,7 +359,14 @@ public class DialogViewModel : BaseViewModel
         NewResponse(PromptString);
     }), () => { return Client != null; });
 
-    public ICommand CancelCommand => new ActionCommand((o => { _requestTokenSource?.Cancel(); }));
+    public ICommand CancelCommand => new ActionCommand((o =>
+    {
+        var multiResponseViewItem = DialogItems.LastOrDefault() as MultiResponseViewItem;
+        if (multiResponseViewItem?.AcceptedResponse is RespondingViewItem respondingViewItem)
+        {
+            respondingViewItem.CancelCommand.Execute(null);
+        }
+    }));
 
     public ICommand ScrollToPreviousCommand => new ActionCommand(o =>
     {
@@ -433,10 +457,11 @@ public class DialogViewModel : BaseViewModel
     private string? _promptString;
     private string _topic;
     private IDialogViewItem? _scrollViewItem;
-    private CancellationTokenSource? _requestTokenSource;
+
     private DateTime _editTime = DateTime.Now;
     private long _tokensConsumption;
-    private bool _isProcessing;
+    private bool _isNewResponding;
+    private int _respondingCount;
 
     public DialogViewModel(string topic, ILLMModelClient? modelClient = null,
         IList<IDialogViewItem>? items = null)
@@ -508,15 +533,14 @@ public class DialogViewModel : BaseViewModel
         ILLMModelClient client, Memory<IDialogViewItem> dialog,
         MultiResponseViewItem multiResponseViewItem)
     {
-        _requestTokenSource = new CancellationTokenSource();
         var completedResult = CompletedResult.Empty;
-        IsProcessing = true;
+        RespondingCount++;
         var respondingViewItem = new RespondingViewItem(client);
         try
         {
             multiResponseViewItem.Append(respondingViewItem);
             var list = GenerateHistory(dialog);
-            completedResult = await client.SendRequest(list, _requestTokenSource.Token);
+            completedResult = await client.SendRequest(list, respondingViewItem.RequestTokenSource.Token);
             multiResponseViewItem.Append(new ResponseViewItem(client.Info, completedResult, client.Endpoint.Name));
         }
         catch (Exception exception)
@@ -526,11 +550,11 @@ public class DialogViewModel : BaseViewModel
         }
         finally
         {
-            _requestTokenSource.Dispose();
+            respondingViewItem.RequestTokenSource.Dispose();
             multiResponseViewItem.Remove(respondingViewItem);
+            RespondingCount--;
         }
 
-        IsProcessing = false;
         this.TokensConsumption += completedResult.Usage.TotalTokenCount ?? 0;
         OnPropertyChangedAsync(nameof(Shortcut));
         return completedResult;
@@ -550,8 +574,10 @@ public class DialogViewModel : BaseViewModel
         var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
         DialogItems.Add(multiResponseViewItem);
         ScrollViewItem = DialogItems.Last();
+        IsNewResponding = true;
         var completedResult = await SendRequestCore(this.Client, copy,
             multiResponseViewItem);
+        IsNewResponding = false;
         if (!completedResult.IsInterrupt)
         {
             this.PromptString = string.Empty;

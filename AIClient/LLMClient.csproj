@@ -8,31 +8,36 @@
         <StartupObject>LLMClient.Program</StartupObject>
         <UseWPF>true</UseWPF>
         <ApplicationIcon>smart_toy.ico</ApplicationIcon>
+        <Platforms>AnyCPU;x64</Platforms>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <PlatformTarget>x64</PlatformTarget>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="13.0.1"/>
-        <PackageReference Include="Azure.AI.TextAnalytics" Version="5.3.0"/>
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0"/>
-        <PackageReference Include="Magick.NET-Q8-x64" Version="14.6.0"/>
-        <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.6"/>
-        <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
-        <PackageReference Include="MaterialDesignThemes" Version="5.2.2-ci991"/>
-        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.5.0"/>
-        <PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" Version="9.5.0-preview.1.25265.7"/>
-        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.5.0-preview.1.25265.7"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0-preview.3.25171.5"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0-preview.3.25171.5"/>
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.50.0"/>
+        <PackageReference Include="AutoMapper" Version="13.0.1" />
+        <PackageReference Include="Azure.AI.TextAnalytics" Version="5.3.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+        <PackageReference Include="Magick.NET-Q8-x64" Version="14.6.0" />
+        <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.6" />
+        <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
+        <PackageReference Include="MaterialDesignThemes" Version="5.2.2-ci991" />
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.5.0" />
+        <PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" Version="9.5.0-preview.1.25265.7" />
+        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.5.0-preview.1.25265.7" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0-preview.3.25171.5" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0-preview.3.25171.5" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.50.0" />
         <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.52.1" />
         <PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.50.0-alpha" />
         <PackageReference Include="Microsoft.SemanticKernel.Plugins.Memory" Version="1.52.1-alpha" />
-        <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3124.44"/>
-        <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135"/>
-        <PackageReference Include="SkiaSharp" Version="3.118.0-preview.2.3"/>
-        <PackageReference Include="System.Drawing.Common" Version="9.0.1"/>
-        <PackageReference Include="System.Runtime.WindowsRuntime.UI.Xaml" Version="5.0.0-preview.5.20278.1"/>
-        <PackageReference Include="TextMateSharp" Version="1.0.65"/>
-        <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.0"/>
+        <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3124.44" />
+        <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
+        <PackageReference Include="SkiaSharp" Version="3.118.0-preview.2.3" />
+        <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
+        <PackageReference Include="System.Runtime.WindowsRuntime.UI.Xaml" Version="5.0.0-preview.5.20278.1" />
+        <PackageReference Include="TextMateSharp" Version="1.0.65" />
+        <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -69,8 +74,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Grammars\verilog\syntaxes\bsv.g4"/>
-        <Content Include="Grammars\vhdl\syntaxes\bsv.g4"/>
+        <Content Include="Grammars\verilog\syntaxes\bsv.g4" />
+        <Content Include="Grammars\vhdl\syntaxes\bsv.g4" />
     </ItemGroup>
 
     <ItemGroup>
@@ -120,85 +125,85 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Bold.otf"/>
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Bold.otf"/>
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-ExtraLight.otf"/>
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-ExtraLight.otf"/>
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Heavy.otf"/>
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Heavy.otf"/>
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Light.otf"/>
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Light.otf"/>
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Medium.otf"/>
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Medium.otf"/>
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf"/>
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf"/>
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf"/>
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf"/>
-        <None Remove="Resources\Images\llm\chatglm.svg"/>
-        <None Remove="Resources\Images\llm\codegeex.svg"/>
-        <None Remove="Resources\Images\llm\cohere.svg"/>
-        <None Remove="Resources\Images\llm\doubao.svg"/>
-        <None Remove="Resources\Images\llm\hunyuan.svg"/>
-        <None Remove="Resources\Images\llm\kimi.svg"/>
-        <None Remove="Resources\Images\llm\microsoft.svg"/>
-        <None Remove="Resources\Images\llm\midjourney.svg"/>
-        <None Remove="Resources\Images\llm\nvidia.svg"/>
-        <None Remove="Resources\Images\llm\qingyan.svg"/>
-        <None Remove="Resources\Images\llm\yi.svg"/>
-        <None Remove="Resources\Images\llm\zhipu.svg"/>
-        <None Remove="Resources\Images\llm\meta.svg"/>
-        <None Remove="Resources\Images\llm\deepseek.svg"/>
-        <None Remove="Resources\Images\llm\gemini.svg"/>
-        <None Remove="Resources\Images\llm\grok.svg"/>
-        <None Remove="Resources\Images\llm\claude.svg"/>
-        <None Remove="Resources\Images\llm\chatgpt.svg"/>
-        <None Remove="Resources\Images\llm\mistral.svg"/>
-        <None Remove="Resources\Images\llm\moonshot.svg"/>
-        <None Remove="Resources\Images\llm\qwen.svg"/>
-        <None Remove="Resources\Images\llm\wenxin.svg"/>
-        <None Remove="Resources\Images\llm\chatglm.png"/>
-        <Resource Include="Resources\Images\llm\chatglm.png"/>
-        <None Remove="Resources\Images\llm\chatgpt.png"/>
-        <None Remove="Resources\Images\llm\claude.png"/>
-        <Resource Include="Resources\Images\llm\claude.png"/>
-        <None Remove="Resources\Images\llm\codegeex.png"/>
-        <Resource Include="Resources\Images\llm\codegeex.png"/>
-        <None Remove="Resources\Images\llm\cohere.png"/>
-        <Resource Include="Resources\Images\llm\cohere.png"/>
-        <None Remove="Resources\Images\llm\deepseek.png"/>
-        <Resource Include="Resources\Images\llm\deepseek.png"/>
-        <None Remove="Resources\Images\llm\doubao.png"/>
-        <Resource Include="Resources\Images\llm\doubao.png"/>
-        <None Remove="Resources\Images\llm\gemini.png"/>
-        <Resource Include="Resources\Images\llm\gemini.png"/>
-        <None Remove="Resources\Images\llm\grok.png"/>
-        <None Remove="Resources\Images\llm\hunyuan.png"/>
-        <Resource Include="Resources\Images\llm\hunyuan.png"/>
-        <None Remove="Resources\Images\llm\kimi.png"/>
-        <None Remove="Resources\Images\llm\meta.png"/>
-        <Resource Include="Resources\Images\llm\meta.png"/>
-        <None Remove="Resources\Images\llm\microsoft.png"/>
-        <Resource Include="Resources\Images\llm\microsoft.png"/>
-        <None Remove="Resources\Images\llm\mistral.png"/>
-        <Resource Include="Resources\Images\llm\mistral.png"/>
-        <None Remove="Resources\Images\llm\moonshot.png"/>
-        <None Remove="Resources\Images\llm\nvidia.png"/>
-        <Resource Include="Resources\Images\llm\nvidia.png"/>
-        <None Remove="Resources\Images\llm\qingyan.png"/>
-        <Resource Include="Resources\Images\llm\qingyan.png"/>
-        <None Remove="Resources\Images\llm\qwen.png"/>
-        <Resource Include="Resources\Images\llm\qwen.png"/>
-        <None Remove="Resources\Images\llm\wenxin.png"/>
-        <Resource Include="Resources\Images\llm\wenxin.png"/>
-        <None Remove="Resources\Images\llm\yi.png"/>
-        <None Remove="Resources\Images\llm\zhipu.png"/>
-        <Resource Include="Resources\Images\llm\zhipu.png"/>
-        <None Remove="Resources\Images\github-copilot-icon.png"/>
-        <Resource Include="Resources\Images\github-copilot-icon.png"/>
-        <None Remove="Resources\Images\azure-icon.png"/>
-        <Resource Include="Resources\Images\azure-icon.png"/>
-        <None Remove="Resources\Images\Document-New-32.png"/>
-        <Resource Include="Resources\Images\Document-New-32.png"/>
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Bold.otf" />
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Bold.otf" />
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-ExtraLight.otf" />
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-ExtraLight.otf" />
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Heavy.otf" />
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Heavy.otf" />
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Light.otf" />
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Light.otf" />
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Medium.otf" />
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Medium.otf" />
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf" />
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf" />
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
+        <None Remove="Resources\Images\llm\chatglm.svg" />
+        <None Remove="Resources\Images\llm\codegeex.svg" />
+        <None Remove="Resources\Images\llm\cohere.svg" />
+        <None Remove="Resources\Images\llm\doubao.svg" />
+        <None Remove="Resources\Images\llm\hunyuan.svg" />
+        <None Remove="Resources\Images\llm\kimi.svg" />
+        <None Remove="Resources\Images\llm\microsoft.svg" />
+        <None Remove="Resources\Images\llm\midjourney.svg" />
+        <None Remove="Resources\Images\llm\nvidia.svg" />
+        <None Remove="Resources\Images\llm\qingyan.svg" />
+        <None Remove="Resources\Images\llm\yi.svg" />
+        <None Remove="Resources\Images\llm\zhipu.svg" />
+        <None Remove="Resources\Images\llm\meta.svg" />
+        <None Remove="Resources\Images\llm\deepseek.svg" />
+        <None Remove="Resources\Images\llm\gemini.svg" />
+        <None Remove="Resources\Images\llm\grok.svg" />
+        <None Remove="Resources\Images\llm\claude.svg" />
+        <None Remove="Resources\Images\llm\chatgpt.svg" />
+        <None Remove="Resources\Images\llm\mistral.svg" />
+        <None Remove="Resources\Images\llm\moonshot.svg" />
+        <None Remove="Resources\Images\llm\qwen.svg" />
+        <None Remove="Resources\Images\llm\wenxin.svg" />
+        <None Remove="Resources\Images\llm\chatglm.png" />
+        <Resource Include="Resources\Images\llm\chatglm.png" />
+        <None Remove="Resources\Images\llm\chatgpt.png" />
+        <None Remove="Resources\Images\llm\claude.png" />
+        <Resource Include="Resources\Images\llm\claude.png" />
+        <None Remove="Resources\Images\llm\codegeex.png" />
+        <Resource Include="Resources\Images\llm\codegeex.png" />
+        <None Remove="Resources\Images\llm\cohere.png" />
+        <Resource Include="Resources\Images\llm\cohere.png" />
+        <None Remove="Resources\Images\llm\deepseek.png" />
+        <Resource Include="Resources\Images\llm\deepseek.png" />
+        <None Remove="Resources\Images\llm\doubao.png" />
+        <Resource Include="Resources\Images\llm\doubao.png" />
+        <None Remove="Resources\Images\llm\gemini.png" />
+        <Resource Include="Resources\Images\llm\gemini.png" />
+        <None Remove="Resources\Images\llm\grok.png" />
+        <None Remove="Resources\Images\llm\hunyuan.png" />
+        <Resource Include="Resources\Images\llm\hunyuan.png" />
+        <None Remove="Resources\Images\llm\kimi.png" />
+        <None Remove="Resources\Images\llm\meta.png" />
+        <Resource Include="Resources\Images\llm\meta.png" />
+        <None Remove="Resources\Images\llm\microsoft.png" />
+        <Resource Include="Resources\Images\llm\microsoft.png" />
+        <None Remove="Resources\Images\llm\mistral.png" />
+        <Resource Include="Resources\Images\llm\mistral.png" />
+        <None Remove="Resources\Images\llm\moonshot.png" />
+        <None Remove="Resources\Images\llm\nvidia.png" />
+        <Resource Include="Resources\Images\llm\nvidia.png" />
+        <None Remove="Resources\Images\llm\qingyan.png" />
+        <Resource Include="Resources\Images\llm\qingyan.png" />
+        <None Remove="Resources\Images\llm\qwen.png" />
+        <Resource Include="Resources\Images\llm\qwen.png" />
+        <None Remove="Resources\Images\llm\wenxin.png" />
+        <Resource Include="Resources\Images\llm\wenxin.png" />
+        <None Remove="Resources\Images\llm\yi.png" />
+        <None Remove="Resources\Images\llm\zhipu.png" />
+        <Resource Include="Resources\Images\llm\zhipu.png" />
+        <None Remove="Resources\Images\github-copilot-icon.png" />
+        <Resource Include="Resources\Images\github-copilot-icon.png" />
+        <None Remove="Resources\Images\azure-icon.png" />
+        <Resource Include="Resources\Images\azure-icon.png" />
+        <None Remove="Resources\Images\Document-New-32.png" />
+        <Resource Include="Resources\Images\Document-New-32.png" />
         <None Remove="Resources\Images\llm\chatgpt-dark.png" />
         <Resource Include="Resources\Images\llm\chatgpt-dark.png" />
         <None Remove="Resources\Images\llm\chatgpt-light.png" />

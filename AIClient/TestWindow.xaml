@@ -8,8 +8,15 @@
         Title="TestWindow" Height="450" Width="800"
         Loaded="TestWindow_OnLoaded">
     <Grid>
-        <Image Width="120"
-               Height="120"
-               x:Name="Image"/>
+        <FlowDocumentScrollViewer></FlowDocumentScrollViewer>
+        <FlowDocumentPageViewer>
+            <FlowDocumentPageViewer.Document>
+                <FlowDocument>
+                    <Paragraph>
+                        <Run>text</Run>
+                    </Paragraph>
+                </FlowDocument>
+            </FlowDocumentPageViewer.Document>
+        </FlowDocumentPageViewer>
     </Grid>
 </Window>

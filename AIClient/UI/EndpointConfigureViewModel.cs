@@ -33,8 +33,6 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public ICommand AddNewEndpointCommand => new ActionCommand((o => { Endpoints.Add(new APIEndPoint()); }));
 
-    public ICommand AddNewTemplateCommand => new ActionCommand((o => { }));
-
     public ICommand RemoveEndPointCommand => new RelayCommand<ILLMEndpoint?>((o =>
     {
         if (o is APIEndPoint endpoint)

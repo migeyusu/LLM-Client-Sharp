@@ -119,7 +119,7 @@ public class MainViewModel : BaseViewModel
         var sourceDictionary = application.Resources;
         sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
     }
-    
+
     public ICommand ImportDialogCommand => new ActionCommand((async o =>
     {
         var openFileDialog = new OpenFileDialog()
@@ -129,10 +129,44 @@ public class MainViewModel : BaseViewModel
             CheckFileExists = true,
             Multiselect = true
         };
-        if (openFileDialog.ShowDialog() == true)
+        if (openFileDialog.ShowDialog() != true)
         {
-            var fileInfos = openFileDialog.FileNames.Select((s => new FileInfo(s)));
-            await LoadDialogs(fileInfos);
+            return;
+        }
+
+        var fileInfos = openFileDialog.FileNames.Select((s => new FileInfo(s)));
+        var path = Path.GetFullPath(DialogSaveFolder);
+        var directoryInfo = new DirectoryInfo(path);
+        if (!directoryInfo.Exists)
+        {
+            directoryInfo.Create();
+        }
+
+        try
+        {
+            var list = new List<FileInfo>();
+            foreach (var fileInfo in fileInfos)
+            {
+                if (fileInfo.DirectoryName?.Equals(directoryInfo.FullName, StringComparison.OrdinalIgnoreCase) == false)
+                {
+                    var newFilePath = Path.Combine(directoryInfo.FullName, fileInfo.Name);
+                    if (File.Exists(newFilePath))
+                    {
+                        MessageQueue.Enqueue($"会话文件 {fileInfo.Name} 已存在，未进行复制。");
+                    }
+                    else
+                    {
+                        File.Copy(fileInfo.FullName, newFilePath, true);
+                        list.Add(new FileInfo(newFilePath));
+                    }
+                }
+            }
+
+            await LoadDialogs(list);
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show("导入出现问题" + e.Message);
         }
     }));
 
@@ -218,13 +252,13 @@ public class MainViewModel : BaseViewModel
                     var dialogModel = await JsonSerializer.DeserializeAsync<DialogPersistModel>(openRead);
                     if (dialogModel == null)
                     {
-                        Trace.WriteLine($"加载会话{fileInfo.FullName}失败：文件内容为空");
+                        MessageQueue.Enqueue($"加载会话{fileInfo.FullName}失败：文件内容为空");
                         continue;
                     }
 
                     if (dialogModel.Version != DialogPersistModel.DialogPersistVersion)
                     {
-                        Trace.WriteLine($"加载会话{fileInfo.FullName}失败：版本不匹配");
+                        MessageQueue.Enqueue($"加载会话{fileInfo.FullName}失败：版本不匹配");
                         continue;
                     }
 
@@ -236,7 +270,7 @@ public class MainViewModel : BaseViewModel
             }
             catch (Exception e)
             {
-                Trace.WriteLine($"加载会话{fileInfo.FullName}失败：{e.Message}");
+                MessageQueue.Enqueue($"加载会话{fileInfo.FullName}失败：{e.Message}");
             }
         }
 

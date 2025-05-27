@@ -148,7 +148,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         }
     }
 
-    public ICommand RemoveCurrent => new ActionCommand(o =>
+    public ICommand RemoveCommand => new ActionCommand(o =>
     {
         if (Items.Count == 1)
         {

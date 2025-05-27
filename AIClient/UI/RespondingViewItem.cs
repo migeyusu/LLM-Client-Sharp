@@ -1,6 +1,8 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Windows.Input;
+using LLMClient.Abstraction;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
+using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
 
@@ -10,6 +12,13 @@ public class RespondingViewItem : BaseViewModel, IResponseViewItem
     public bool IsAvailableInContext { get; } = false;
 
     public ILLMModelClient Client { get; }
+    
+    public ICommand CancelCommand => new ActionCommand(async o =>
+    {
+        RequestTokenSource.Cancel();
+    });
+
+    public CancellationTokenSource RequestTokenSource { get; } = new CancellationTokenSource();
 
     public RespondingViewItem(ILLMModelClient client)
     {

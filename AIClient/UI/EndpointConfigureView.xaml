@@ -14,7 +14,7 @@
              xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:EndpointConfigureViewModel}"
-             d:DesignHeight="300" d:DesignWidth="300"
+             d:DesignHeight="500" d:DesignWidth="600"
              x:Name="ControlRoot">
     <Grid>
         <Grid.RowDefinitions>
@@ -55,16 +55,6 @@
                                                      Foreground="White"
                                                      Width="23"
                                                      Height="23" />
-                        </Button.Content>
-                    </Button>
-                    <Button ToolTip="OpenAI API兼容模板"
-                            Margin="10"
-                            materialDesign:ElevationAssist.Elevation="Dp4"
-                            Command="{Binding AddNewTemplateCommand}">
-                        <Button.Content>
-                            <Image Source="../../Resources/Images/Document-New-32.png"
-                                   Width="18"
-                                   Height="18" />
                         </Button.Content>
                     </Button>
                 </StackPanel>

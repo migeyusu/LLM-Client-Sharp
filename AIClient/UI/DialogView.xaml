@@ -131,13 +131,6 @@
                                                             <materialDesign:PackIcon Kind="DeleteOutline" />
                                                         </MenuItem.Icon>
                                                     </MenuItem>
-                                                    <MenuItem Header="删除当前"
-                                                              Command="{Binding RemoveCurrent}"
-                                                              CommandParameter="{Binding  AcceptedResponse}">
-                                                        <MenuItem.Icon>
-                                                            <materialDesign:PackIcon Kind="InvoiceTextRemove" />
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
                                                     <MenuItem Header="总结当前上下文"
                                                               ToolTip="用于Tokens缩减"
                                                               Command="{x:Static ui:CommonCommands.Conclusion}"
@@ -187,22 +180,93 @@
                                                     <StackPanel Orientation="Horizontal" />
                                                 </ItemsPanelTemplate>
                                             </ListBox.ItemsPanel>
-                                            <ListBox.ItemTemplate>
-                                                <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
-                                                    <StackPanel Orientation="Horizontal"
-                                                                Margin="3">
-                                                        <Image Source="{Binding Model.Icon.CurrentSource,Mode=OneWay}"
-                                                               Width="23"
-                                                               Height="23" />
-                                                        <TextBlock Text="{Binding ModelName,Mode=OneTime}"
-                                                                   VerticalAlignment="Center"
-                                                                   Margin="6,0,0,0"
-                                                                   MaxWidth="200"
-                                                                   TextTrimming="CharacterEllipsis"
-                                                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </ListBox.ItemTemplate>
+                                            <ListBox.ItemTemplateSelector>
+                                                <component:TypeBasedDataTemplateSelector>
+                                                    <component:DataTemplateTypePair>
+                                                        <component:DataTemplateTypePair.Template>
+                                                            <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
+                                                                <StackPanel Orientation="Horizontal"
+                                                                            Margin="3">
+                                                                    <Image
+                                                                        Source="{Binding Model.Icon.CurrentSource,Mode=OneWay}"
+                                                                        Width="23"
+                                                                        Height="23" />
+                                                                    <TextBlock Text="{Binding ModelName,Mode=OneTime}"
+                                                                               VerticalAlignment="Center"
+                                                                               Margin="6,0,0,0"
+                                                                               MaxWidth="200"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                                                    <Button Width="16"
+                                                                            Height="16"
+                                                                            Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveCommand}"
+                                                                            CommandParameter="{Binding  }"
+                                                                            Margin="6,0,-6,0"
+                                                                            VerticalAlignment="Center"
+                                                                            ToolTip="删除当前">
+                                                                        <Button.Template>
+                                                                            <ControlTemplate>
+                                                                                <Grid>
+                                                                                    <Ellipse x:Name="Bg"
+                                                                                        Fill="#FFA6A6A6"
+                                                                                        Stroke="#FF009587"
+                                                                                        StrokeThickness="0" />
+                                                                                    <materialDesign:PackIcon Width="12"
+                                                                                        Height="12"
+                                                                                        HorizontalAlignment="Center"
+                                                                                        VerticalAlignment="Center"
+                                                                                        Kind="Close" />
+                                                                                </Grid>
+                                                                                <ControlTemplate.Triggers>
+                                                                                    <Trigger Property="IsMouseOver"
+                                                                                        Value="True">
+                                                                                        <Setter TargetName="Bg"
+                                                                                            Property="StrokeThickness"
+                                                                                            Value="1" />
+                                                                                    </Trigger>
+                                                                                </ControlTemplate.Triggers>
+                                                                            </ControlTemplate>
+                                                                        </Button.Template>
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </component:DataTemplateTypePair.Template>
+                                                    </component:DataTemplateTypePair>
+                                                    <component:DataTemplateTypePair>
+                                                        <component:DataTemplateTypePair.Template>
+                                                            <DataTemplate DataType="{x:Type ui:RespondingViewItem}">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Button Width="32"
+                                                                            Height="32"
+                                                                            Padding="0"
+                                                                            Command="{Binding CancelCommand}"
+                                                                            Style="{StaticResource MaterialDesignIconButton}">
+                                                                        <Grid>
+                                                                            <ProgressBar IsIndeterminate="True"
+                                                                                Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light.Foreground}"
+                                                                                Width="28"
+                                                                                Height="28"
+                                                                                Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                                                                Value="0" />
+                                                                            <materialDesign:PackIcon Width="17"
+                                                                                Height="17"
+                                                                                Kind="Stop"
+                                                                                VerticalAlignment="Center"
+                                                                                HorizontalAlignment="Center" />
+                                                                        </Grid>
+                                                                    </Button>
+                                                                    <TextBlock Text="{Binding ModelName,Mode=OneTime}"
+                                                                               VerticalAlignment="Center"
+                                                                               Margin="6,0,0,0"
+                                                                               MaxWidth="200"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </component:DataTemplateTypePair.Template>
+                                                    </component:DataTemplateTypePair>
+                                                </component:TypeBasedDataTemplateSelector>
+                                            </ListBox.ItemTemplateSelector>
                                         </ListBox>
                                     </Grid>
                                     <materialDesign:Card Padding="0"
@@ -217,10 +281,8 @@
                                                         <component:DataTemplateTypePair.Template>
                                                             <DataTemplate DataType="{x:Type ui:RespondingViewItem}">
                                                                 <GroupBox materialDesign:ColorZoneAssist.Mode="Dark"
-                                                                          Style="{StaticResource MaterialDesignCardGroupBox}">
-                                                                    <GroupBox.Header>
-                                                                        正在生成文档。。。。。。。。
-                                                                    </GroupBox.Header>
+                                                                          Style="{StaticResource MaterialDesignCardGroupBox}"
+                                                                          Header="正在生成文档。。。。。。。。">
                                                                     <Grid>
                                                                         <ScrollViewer>
                                                                             <component:MarkdownTextBlock
@@ -405,7 +467,7 @@
             </Button>
         </StackPanel>
         <Grid Grid.Row="1"
-              IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+              IsEnabled="{Binding IsResponding,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
             <TextBox x:Name="PromptTextBox"
                      materialDesign:HintAssist.Hint="输入Prompt"
                      AcceptsReturn="True"
@@ -445,7 +507,7 @@
                 VerticalAlignment="Bottom"
                 Margin="0,0,200,0"
                 Command="{Binding CancelCommand}"
-                Visibility="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                 Style="{StaticResource MaterialDesignRaisedDarkButton}">
             <StackPanel Orientation="Horizontal">
                 <ProgressBar IsIndeterminate="True"
