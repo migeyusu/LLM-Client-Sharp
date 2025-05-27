@@ -13,6 +13,17 @@ public enum ModelSource
 
 public abstract class ModelMapping
 {
+    public static ModelMapping? Create(ModelSource source)
+    {
+        return source switch
+        {
+            ModelSource.OpenRouter => new OpenRouterModelMapping(),
+            ModelSource.O3Fan => new O3FanModelMapping(),
+            ModelSource.GeekAI => new GeekAIModelMapping(),
+            _ => null
+        };
+    }
+
     protected ModelMapping(string name)
     {
         Name = name;
@@ -24,5 +35,5 @@ public abstract class ModelMapping
 
     public abstract Task<bool> Refresh();
 
-    public abstract APIModelInfo? TryGet(string modelName);
+    public abstract APIModelInfo? TryGet(string modelId);
 }

@@ -6,9 +6,9 @@ using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.Converters;
 
-public class OpenRouterMapping : ModelMapping
+public class OpenRouterModelMapping : ModelMapping
 {
-    public OpenRouterMapping() : base("OpenRouter")
+    public OpenRouterModelMapping() : base("OpenRouter")
     {
     }
 
@@ -50,9 +50,9 @@ public class OpenRouterMapping : ModelMapping
         return false;
     }
 
-    public override APIModelInfo? TryGet(string modelName)
+    public override APIModelInfo? TryGet(string modelId)
     {
-        var openRouterModel = _modelInfos.FirstOrDefault((model => model.ShortName == modelName));
+        var openRouterModel = _modelInfos.FirstOrDefault((model => model.Slug == modelId));
         if (openRouterModel == null)
         {
             return null;

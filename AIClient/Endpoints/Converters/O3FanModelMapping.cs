@@ -6,9 +6,9 @@ using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.Converters;
 
-public class O3ModelMapping : ModelMapping
+public class O3FanModelMapping : ModelMapping
 {
-    public O3ModelMapping() : base("O3.Fan")
+    public O3FanModelMapping() : base("O3.Fan")
     {
     }
 
@@ -48,10 +48,10 @@ public class O3ModelMapping : ModelMapping
         return false;
     }
 
-    public override APIModelInfo? TryGet(string displayName)
+    public override APIModelInfo? TryGet(string modelId)
     {
         var modelInfo =
-            _modelInfos.FirstOrDefault(info => info.Id.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+            _modelInfos.FirstOrDefault(info => info.Id.Equals(modelId, StringComparison.OrdinalIgnoreCase));
         if (modelInfo != null)
         {
             ModelIconType iconType = ModelIconType.None;

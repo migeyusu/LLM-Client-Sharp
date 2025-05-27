@@ -6,9 +6,9 @@ using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.Converters;
 
-public class GeekAIMapping : ModelMapping
+public class GeekAIModelMapping : ModelMapping
 {
-    public GeekAIMapping() : base("GeekAI")
+    public GeekAIModelMapping() : base("GeekAI")
     {
     }
 
@@ -49,10 +49,10 @@ public class GeekAIMapping : ModelMapping
         return false;
     }
 
-    public override APIModelInfo? TryGet(string displayName)
+    public override APIModelInfo? TryGet(string modelId)
     {
         var modelInfo =
-            _modelInfos.FirstOrDefault(info => info.Alias.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+            _modelInfos.FirstOrDefault(info => info.Name.Equals(modelId, StringComparison.OrdinalIgnoreCase));
         if (modelInfo != null)
         {
             return new APIModelInfo()
