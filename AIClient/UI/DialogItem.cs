@@ -57,7 +57,7 @@ public class RequestViewItem : BaseViewModel, IDialogViewItem, IDialogPersistIte
     public long Tokens
     {
         //估计tokens
-        get => (long)(MessageContent.Length / 1.5);
+        get => (long)(MessageContent.Length / 2.5);
     }
 }
 
@@ -89,9 +89,20 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
 
     public string? ErrorMessage { get; }
 
-    private FlowDocument? _flowDocument = null;
+    public Run? FocusRun
+    {
+        get => _focusRun;
+        set
+        {
+            if (Equals(value, _focusRun)) return;
+            _focusRun = value;
+            OnPropertyChanged();
+        }
+    }
 
-    public FlowDocument? Document
+    private SearchableFlowDocument? _flowDocument = null;
+
+    public SearchableFlowDocument? Document
     {
         get
         {
@@ -102,9 +113,9 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
 
             if (_flowDocument == null)
             {
-                _flowDocument = this.Raw.ToFlowDocument();
+                _flowDocument = new SearchableFlowDocument(this.Raw.ToFlowDocument());
             }
-            
+
             return _flowDocument;
         }
     }
@@ -124,6 +135,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
     }
 
     private ChatMessage? _assistantMessage;
+    private Run? _focusRun;
 
     public ChatMessage? AssistantMessage
     {

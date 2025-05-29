@@ -189,6 +189,38 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
+    public string? SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (value == _searchText) return;
+            _searchText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ICommand SearchCommand => new ActionCommand((o =>
+    {
+        var s = o as string;
+        this.SearchText = s;
+    }));
+
+    public ICommand GoToCommand => new ActionCommand((o =>
+    {
+        if (o is MultiResponseViewItem multiResponseViewItem)
+        {
+            if (multiResponseViewItem.AcceptedResponse is ResponseViewItem responseViewItem)
+            {
+                var searchableFlowDocument = responseViewItem.Document;
+                if (searchableFlowDocument != null)
+                {
+                    responseViewItem.FocusRun = searchableFlowDocument.MoveToNextHighlight();
+                }
+            }
+        }
+    }));
+
     public ICommand ClearContextCommand => new ActionCommand((o =>
     {
         var item = new EraseViewItem();
@@ -462,6 +494,7 @@ public class DialogViewModel : BaseViewModel
     private long _tokensConsumption;
     private bool _isNewResponding;
     private int _respondingCount;
+    private string? _searchText;
 
     public DialogViewModel(string topic, ILLMModelClient? modelClient = null,
         IList<IDialogViewItem>? items = null)

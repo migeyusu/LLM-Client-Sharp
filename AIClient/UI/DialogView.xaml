@@ -41,6 +41,7 @@
                              VirtualizingPanel.ScrollUnit="Pixel"
                              VirtualizingPanel.IsContainerVirtualizable="True"
                              materialDesign:ListBoxItemAssist.ShowSelection="False"
+                             SelectionMode="Single"
                              Style="{StaticResource {x:Type ListBox}}"
                              CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"
                              ItemsSource="{Binding DialogItems,Mode=OneWay}">
@@ -298,7 +299,9 @@
                                                             <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
                                                                 <StackPanel>
                                                                     <component:FlowDocumentScrollViewerEx
+                                                                        SearchText="{Binding RelativeSource={RelativeSource AncestorType=component:ListBoxEx},Path=DataContext.SearchText,Mode=OneWay}"
                                                                         BorderThickness="0"
+                                                                        BringToRun="{Binding FocusRun,Mode=OneWay}"
                                                                         CleanDocument="{Binding Document,Mode=OneTime}"
                                                                         Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
                                                                         Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}">
