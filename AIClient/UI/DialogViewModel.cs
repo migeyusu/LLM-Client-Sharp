@@ -189,6 +189,8 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
+    private string? _searchText;
+
     public string? SearchText
     {
         get => _searchText;
@@ -202,21 +204,143 @@ public class DialogViewModel : BaseViewModel
 
     public ICommand SearchCommand => new ActionCommand((o =>
     {
-        var s = o as string;
-        this.SearchText = s;
+        foreach (var dialogViewItem in this.DialogItems)
+        {
+            if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
+            {
+                foreach (var responseViewItem in multiResponseViewItem.Items.OfType<ResponseViewItem>())
+                {
+                    responseViewItem.Document?.ApplySearch(_searchText);
+                }
+            }
+        }
+
+        this.FocusedResponse = null;
     }));
 
-    public ICommand GoToCommand => new ActionCommand((o =>
+    private int _currentHighlightIndex = 0;
+
+    private MultiResponseViewItem? FocusedResponse { get; set; }
+
+    SearchableFlowDocument? FocusedDocument
     {
-        if (o is MultiResponseViewItem multiResponseViewItem)
+        get { return FocusedResponse?.CurrentResponse?.Document; }
+    }
+
+    private void CheckOrNextHighlightedResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
+    {
+        var count = responseViewItems.Count;
+        while (FocusedDocument?.HasMatched != true && responseIndex < count - 1)
         {
-            if (multiResponseViewItem.AcceptedResponse is ResponseViewItem responseViewItem)
+            responseIndex++;
+            FocusedResponse = responseViewItems[responseIndex];
+            _currentHighlightIndex = -1; //重置高亮索引
+        }
+    }
+
+    private void CheckOrPreHighlightedResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
+    {
+        while (FocusedDocument?.HasMatched != true && responseIndex > 0)
+        {
+            responseIndex--;
+            FocusedResponse = responseViewItems[responseIndex];
+            _currentHighlightIndex = FocusedDocument?.FoundTextRanges.Count ?? 0; //重置高亮索引
+        }
+    }
+
+    private void CheckResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
+    {
+        if (FocusedResponse != null)
+        {
+            responseIndex = responseViewItems.IndexOf(FocusedResponse);
+            if (responseIndex == -1)
             {
-                var searchableFlowDocument = responseViewItem.Document;
-                if (searchableFlowDocument != null)
-                {
-                    responseViewItem.FocusRun = searchableFlowDocument.MoveToNextHighlight();
-                }
+                FocusedResponse = null;
+                responseIndex = 0;
+            }
+        }
+    }
+
+    public ICommand GoToNextHighlightCommand => new ActionCommand((o =>
+    {
+        if (string.IsNullOrEmpty(SearchText))
+        {
+            return;
+        }
+
+        var responseViewItems = DialogItems.OfType<MultiResponseViewItem>().ToList();
+        if (responseViewItems.Count == 0)
+        {
+            MessageEventBus.Publish("没有找到对话记录！");
+            return;
+        }
+
+        var responseIndex = 0;
+        CheckResponse(responseViewItems, ref responseIndex);
+        CheckOrNextHighlightedResponse(responseViewItems, ref responseIndex);
+        if (FocusedDocument?.HasMatched != true)
+        {
+            MessageEventBus.Publish("没有找到匹配的内容！");
+            return;
+        }
+
+        _currentHighlightIndex++;
+        if (_currentHighlightIndex >= FocusedDocument?.FoundTextRanges.Count)
+        {
+            //跳转到下一个FlowDocument
+            FocusedResponse = null;
+            GoToNextHighlightCommand.Execute(null);
+        }
+        else
+        {
+            var foundTextRange = FocusedDocument?.FoundTextRanges[_currentHighlightIndex];
+            if (foundTextRange == null)
+                return;
+            if (FocusedDocument?.Document.Parent is FlowDocumentScrollViewerEx ex)
+            {
+                ex.ScrollToRange(foundTextRange);
+            }
+        }
+    }));
+
+    public ICommand GoToPreviousHighlightCommand => new ActionCommand((o =>
+    {
+        if (string.IsNullOrEmpty(SearchText))
+        {
+            return;
+        }
+
+        var responseViewItems = DialogItems.OfType<MultiResponseViewItem>().ToList();
+        if (responseViewItems.Count == 0)
+        {
+            MessageEventBus.Publish("没有找到对话记录！");
+            return;
+        }
+
+        var responseIndex = responseViewItems.Count - 1;
+        CheckResponse(responseViewItems, ref responseIndex);
+        CheckOrPreHighlightedResponse(responseViewItems, ref responseIndex);
+        if (FocusedDocument?.HasMatched != true)
+        {
+            MessageEventBus.Publish("没有找到匹配的内容！");
+            return;
+        }
+
+        _currentHighlightIndex--;
+        if (_currentHighlightIndex < 0)
+        {
+            //跳转到上一个FlowDocument
+            FocusedResponse = null;
+            GoToPreviousHighlightCommand.Execute(null);
+        }
+        else
+        {
+            var foundTextRange = FocusedDocument?.FoundTextRanges[_currentHighlightIndex];
+            if (foundTextRange == null)
+                return;
+            if (FocusedDocument?.Document.Parent is FlowDocumentScrollViewerEx ex)
+            {
+                ex.ScrollToRange(foundTextRange);
             }
         }
     }));
@@ -236,7 +360,7 @@ public class DialogViewModel : BaseViewModel
         }
     });
 
-    private IMapper Mapper => ServiceProvider.GetService<IMapper>()!;
+    private IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
 
     public ICommand BackupCommand => new ActionCommand((async o =>
     {
@@ -483,7 +607,7 @@ public class DialogViewModel : BaseViewModel
 
     private IEndpointService EndpointService
     {
-        get { return ServiceProvider.GetService<IEndpointService>()!; }
+        get { return ServiceLocator.GetService<IEndpointService>()!; }
     }
 
     private string? _promptString;
@@ -494,7 +618,7 @@ public class DialogViewModel : BaseViewModel
     private long _tokensConsumption;
     private bool _isNewResponding;
     private int _respondingCount;
-    private string? _searchText;
+
 
     public DialogViewModel(string topic, ILLMModelClient? modelClient = null,
         IList<IDialogViewItem>? items = null)
@@ -503,7 +627,8 @@ public class DialogViewModel : BaseViewModel
         this.Client = modelClient;
         this.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(ScrollViewItem))
+            var propertyName = e.PropertyName;
+            if (propertyName == nameof(ScrollViewItem))
             {
                 return;
             }

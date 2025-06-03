@@ -53,7 +53,7 @@ public class Program
                 expression.ConstructServicesUsing(provider.GetService);
             }, AppDomain.CurrentDomain.GetAssemblies());
             serviceProvider = collection.BuildServiceProvider();
-            BaseViewModel.ServiceProvider = serviceProvider;
+            BaseViewModel.ServiceLocator = serviceProvider;
             App app = new App();
             app.InitializeComponent();
             // SynchronizationHelper.Initialize();

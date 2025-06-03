@@ -125,7 +125,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
         return new MultiResponsePersistItem()
         {
             AcceptedIndex = source.AcceptedIndex,
-            ResponseItems = source.Items.Cast<ResponseViewItem>()
+            ResponseItems = source.Items.OfType<ResponseViewItem>()
                 .Select(x => context.Mapper.Map<ResponseViewItem, ResponsePersistItem>(x))
                 .ToArray(),
             InteractionId = source.InteractionId,

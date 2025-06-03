@@ -89,17 +89,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
 
     public string? ErrorMessage { get; }
 
-    public Run? FocusRun
-    {
-        get => _focusRun;
-        set
-        {
-            if (Equals(value, _focusRun)) return;
-            _focusRun = value;
-            OnPropertyChanged();
-        }
-    }
-
     private SearchableFlowDocument? _flowDocument = null;
 
     public SearchableFlowDocument? Document
@@ -135,7 +124,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
     }
 
     private ChatMessage? _assistantMessage;
-    private Run? _focusRun;
 
     public ChatMessage? AssistantMessage
     {

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Net.Http;
 using System.Text;
 using System.Windows.Media;
 using AutoMapper;
@@ -95,6 +96,8 @@ public class APIClient : LlmClientBase
         }
     }*/
 
+    HttpClient httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
+
     [Experimental("SKEXP0050")]
     protected override IChatClient CreateChatClient()
     {
@@ -104,8 +107,9 @@ public class APIClient : LlmClientBase
           return chatCompletionsClient.AsChatClient();*/
         var endpoint = new Uri(this._option.URL);
         var apiToken = _option.APIToken;
-        var kernel = Kernel.CreateBuilder()
-            .AddOpenAIChatCompletion(this.ModelInfo.Id, endpoint, apiToken)
+        var builder = Kernel.CreateBuilder();
+        var kernel = builder
+            .AddOpenAIChatCompletion(this.ModelInfo.Id, endpoint, apiToken, "LLMClient", "1.0.0", httpClient)
             .Build();
         var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
         return chatCompletionService.AsChatClient();

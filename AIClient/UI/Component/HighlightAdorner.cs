@@ -32,9 +32,10 @@ public class HighlightAdorner : Adorner
         IsHitTestVisible = false; // Adorner should not interfere with mouse events on underlying content
     }
 
-    public void SetHighlights(IEnumerable<TextRange> rangesToHighlight)
+    public void SetHighlights(IEnumerable<TextRange>? rangesToHighlight)
     {
         _highlightInfos.Clear();
+        _currentHighlightRange = null;
         if (rangesToHighlight == null)
         {
             InvalidateVisual();
@@ -58,78 +59,78 @@ public class HighlightAdorner : Adorner
         _currentHighlightRange = currentRange;
         InvalidateVisual();
     }
+    
+private List<Rect> CalculateRectsForRange(TextRange range)
+{
+    var rects = new List<Rect>();
+    if (range.IsEmpty) return rects;
 
-    public void ClearHighlights()
+    TextPointer navigator = range.Start;
+    TextPointer endPointer = range.End;
+
+    while (navigator != null && navigator.CompareTo(endPointer) < 0)
     {
-        _highlightInfos.Clear();
-        _currentHighlightRange = null;
-        InvalidateVisual();
-    }
-
-    // This is the most complex part: calculating bounding rectangles for a TextRange
-    // A TextRange can span multiple lines, so it might need multiple Rects.
-    private List<Rect> CalculateRectsForRange(TextRange range)
-    {
-        var rects = new List<Rect>();
-        if (range.IsEmpty) return rects;
-
-        TextPointer navigator = range.Start;
-        while (navigator.CompareTo(range.End) < 0)
+        // 获取当前字符的开始位置矩形
+        Rect startRect = navigator.GetCharacterRect(LogicalDirection.Forward);
+        
+        // 获取下一个字符位置
+        TextPointer nextCharPointer = navigator.GetPositionAtOffset(1, LogicalDirection.Forward);
+        
+        // 如果到达了范围末尾，使用endPointer
+        if (nextCharPointer == null || nextCharPointer.CompareTo(endPointer) > 0)
         {
-            // Get the rectangle for the character at the current navigator position
-            Rect charRect = navigator.GetCharacterRect(LogicalDirection.Forward);
-
-            // Skip empty rectangles (e.g., for line breaks or non-visible characters)
-            if (charRect == Rect.Empty)
-            {
-                TextPointer nextContextPosition = navigator.GetNextContextPosition(LogicalDirection.Forward);
-                if (nextContextPosition == null || nextContextPosition.CompareTo(range.End) >= 0) break;
-                navigator = nextContextPosition;
-                continue;
-            }
-
-            // Try to merge with the last rect if on the same visual line
+            nextCharPointer = endPointer;
+        }
+        
+        // 获取字符结束位置的矩形
+        Rect endRect = nextCharPointer.GetCharacterRect(LogicalDirection.Backward);
+        
+        // 计算完整的字符矩形
+        if (!startRect.IsEmpty && !endRect.IsEmpty)
+        {
+            Rect charRect = new Rect(
+                startRect.Left,
+                Math.Min(startRect.Top, endRect.Top),
+                Math.Max(endRect.Right - startRect.Left, 0),
+                Math.Max(startRect.Height, endRect.Height)
+            );
+            
+            // 合并相邻矩形的逻辑保持不变
             if (rects.Count > 0)
             {
                 Rect lastRect = rects[rects.Count - 1];
-                // Heuristic for "same line": similar Y coordinates and charRect is to the right
-                // Tolerance for Y comparison can be useful due to subpixel rendering
                 const double yTolerance = 2.0;
-                if (Math.Abs(lastRect.Top - charRect.Top) < yTolerance &&
-                    Math.Abs(lastRect.Bottom - charRect.Bottom) < yTolerance &&
-                    charRect.Left >= lastRect.Left - yTolerance) // Allow slight overlap or adjacency
+
+                bool onSameLine = Math.Abs(lastRect.Top - charRect.Top) < yTolerance &&
+                                  Math.Abs(lastRect.Bottom - charRect.Bottom) < yTolerance &&
+                                  charRect.Left >= lastRect.Left - yTolerance;
+
+                if (onSameLine)
                 {
                     rects[rects.Count - 1] = Rect.Union(lastRect, charRect);
                 }
                 else
                 {
-                    // If charRect is completely to the left of lastRect and on a new line (higher Top),
-                    // it indicates a new line. Also, if Top is significantly different.
-                    if (charRect.Top > lastRect.Bottom - yTolerance || charRect.Right < lastRect.Left)
-                    {
-                        rects.Add(charRect);
-                    }
-                    else // Should be part of the current line logic, but as a fallback
-                    {
-                        rects.Add(charRect);
-                    }
+                    rects.Add(charRect);
                 }
             }
             else
             {
                 rects.Add(charRect);
             }
-
-            // Move to the next character position within the range
-            TextPointer nextCharPointer = navigator.GetPositionAtOffset(1, LogicalDirection.Forward);
-            // Ensure we don't go past the end of the range or document
-            if (nextCharPointer == null || nextCharPointer.CompareTo(range.End) > 0)
-                break;
-            navigator = nextCharPointer;
         }
-
-        return rects;
+        
+        // 移动到下一个字符
+        if (nextCharPointer.CompareTo(endPointer) >= 0)
+        {
+            break;
+        }
+        
+        navigator = nextCharPointer;
     }
+
+    return rects;
+}
 
 
     protected override void OnRender(DrawingContext drawingContext)

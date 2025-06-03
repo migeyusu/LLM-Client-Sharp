@@ -84,7 +84,7 @@ public partial class DialogView : UserControl
                 return;
             }
 
-            var endpointService = BaseViewModel.ServiceProvider.GetService<IEndpointService>()!;
+            var endpointService = BaseViewModel.ServiceLocator.GetService<IEndpointService>()!;
             popupBox.PopupContent = new ResponseAppendClientViewModel(responseViewItem, this.ViewModel, endpointService,
                 async (client) => { await this.ViewModel.AppendResponseOn(responseViewItem, client); });
         }

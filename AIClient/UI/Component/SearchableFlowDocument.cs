@@ -441,7 +441,7 @@ public class SearchableFlowDocument : BaseViewModel
         Document = document ?? throw new ArgumentNullException(nameof(document));
     }
 
-    public void ApplySearch(string searchText)
+    /*public void ApplySearch(string? searchText)
     {
         _foundTextRanges.Clear();
         if (string.IsNullOrEmpty(searchText))
@@ -493,5 +493,65 @@ public class SearchableFlowDocument : BaseViewModel
         }
 
         OnPropertyChanged(nameof(FoundTextRanges));
+    }*/
+    
+    public void ApplySearch(string? searchText)
+{
+    _foundTextRanges.Clear();
+    if (string.IsNullOrEmpty(searchText))
+    {
+        OnPropertyChanged(nameof(FoundTextRanges));
+        return;
     }
+
+    // 使用TextPointer遍历整个文档
+    FindTextInDocument(Document, searchText);
+    OnPropertyChanged(nameof(FoundTextRanges));
+}
+
+private void FindTextInDocument(FlowDocument document, string searchText)
+{
+    TextPointer position = document.ContentStart;
+    
+    while (position != null && position.CompareTo(document.ContentEnd) < 0)
+    {
+        // 查找下一个文本运行
+        if (position.GetPointerContext(LogicalDirection.Forward) == TextPointerContext.Text)
+        {
+            string textRun = position.GetTextInRun(LogicalDirection.Forward);
+            
+            // 在当前文本运行中查找所有匹配
+            int indexInRun = 0;
+            while (indexInRun < textRun.Length)
+            {
+                int index = textRun.IndexOf(searchText, indexInRun, StringComparison.OrdinalIgnoreCase);
+                if (index != -1)
+                {
+                    // 创建精确的TextPointer
+                    TextPointer start = position.GetPositionAtOffset(index, LogicalDirection.Forward);
+                    TextPointer end = start?.GetPositionAtOffset(searchText.Length, LogicalDirection.Forward);
+                    
+                    if (start != null && end != null)
+                    {
+                        // 验证找到的文本是否真的匹配
+                        var foundRange = new TextRange(start, end);
+                        if (string.Equals(foundRange.Text, searchText, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _foundTextRanges.Add(foundRange);
+                        }
+                    }
+                    
+                    indexInRun = index + searchText.Length;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+        
+        // 移动到下一个位置
+        position = position.GetNextContextPosition(LogicalDirection.Forward);
+    }
+}
 }

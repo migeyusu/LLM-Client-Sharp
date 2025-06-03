@@ -61,7 +61,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         var endPointsNode = root.GetOrCreate(EndPointsConfiguration.EndpointsNodeName);
         _githubCopilotEndPoint?.UpdateConfig(endPointsNode);
         JsonArray jArray = new JsonArray();
-        foreach (var apiEndPoint in Endpoints.Where((endpoint) => endpoint is APIEndPoint).Cast<APIEndPoint>())
+        foreach (var apiEndPoint in Endpoints.OfType<APIEndPoint>())
         {
             if (!apiEndPoint.Validate(out var message))
             {

@@ -17,6 +17,8 @@ public class ListBoxEx : ListBox
     {
         this.Loaded += OnLoaded;
     }
+    
+    
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {

@@ -123,6 +123,18 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         }
     }
 
+    public ResponseViewItem? CurrentResponse
+    {
+        get
+        {
+            if (AcceptedResponse is ResponseViewItem response)
+            {
+                return response;
+            }
+            return null;
+        }
+    }
+
     public IResponseViewItem? AcceptedResponse
     {
         get

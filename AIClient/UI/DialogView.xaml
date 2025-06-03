@@ -299,10 +299,9 @@
                                                             <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
                                                                 <StackPanel>
                                                                     <component:FlowDocumentScrollViewerEx
-                                                                        SearchText="{Binding RelativeSource={RelativeSource AncestorType=component:ListBoxEx},Path=DataContext.SearchText,Mode=OneWay}"
                                                                         BorderThickness="0"
-                                                                        BringToRun="{Binding FocusRun,Mode=OneWay}"
-                                                                        CleanDocument="{Binding Document,Mode=OneTime}"
+                                                                        HighlightableRanges="{Binding Document.FoundTextRanges,Mode=OneWay}"
+                                                                        CleanDocument="{Binding Document.Document,Mode=OneTime}"
                                                                         Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
                                                                         Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}">
                                                                         <component:FlowDocumentScrollViewerEx.ContextMenu>

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Threading;
@@ -14,16 +15,15 @@ public class BaseViewModel : INotifyPropertyChanged
 
     private static IServiceProvider? _serviceProvider;
 
-    public static IServiceProvider ServiceProvider
+    /// <summary>
+    /// anti-pattern: Service Locator, but useful for this scenario
+    /// </summary>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static IServiceProvider ServiceLocator
     {
         get
         {
-            if (_serviceProvider == null)
-            {
-                // 这里可以抛出异常或者返回一个默认的服务提供者
-                throw new InvalidOperationException("ServiceProvider is not initialized.");
-            }
-
+            Debug.Assert(_serviceProvider != null, nameof(_serviceProvider) + " != null");
             return _serviceProvider;
         }
         set => _serviceProvider = value;

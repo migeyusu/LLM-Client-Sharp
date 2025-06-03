@@ -123,6 +123,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
 
             _stopwatch.Restart();
             int duration = 0;
+            var chatClient = CreateChatClient();
             if (this.Parameters.Streaming)
             {
                 string? errorMessage = null;
@@ -130,7 +131,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                 try
                 {
                     AdditionalPropertiesDictionary? dictionary = null;
-                    await foreach (var update in CreateChatClient()
+                    await foreach (var update in chatClient
                                        .GetStreamingResponseAsync(messages, requestOptions, cancellationToken))
                     {
                         if (!latency.HasValue)
@@ -226,7 +227,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                 try
                 {
                     var chatResponse =
-                        await CreateChatClient().GetResponseAsync(messages, requestOptions, cancellationToken);
+                        await chatClient.GetResponseAsync(messages, requestOptions, cancellationToken);
                     duration = (int)(_stopwatch.ElapsedMilliseconds / 1000);
                     if (chatResponse.Usage == null)
                     {
