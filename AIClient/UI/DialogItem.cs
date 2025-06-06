@@ -89,9 +89,9 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
 
     public string? ErrorMessage { get; }
 
-    private SearchableFlowDocument? _flowDocument = null;
+    private SearchableDocument? _flowDocument = null;
 
-    public SearchableFlowDocument? Document
+    public SearchableDocument? Document
     {
         get
         {
@@ -102,7 +102,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
 
             if (_flowDocument == null)
             {
-                _flowDocument = new SearchableFlowDocument(this.Raw.ToFlowDocument());
+                _flowDocument = new SearchableDocument(this.Raw);
             }
 
             return _flowDocument;

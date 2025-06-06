@@ -46,7 +46,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
 
     public bool IsAvailableInContext
     {
-        get { return Items.Any(item => item.IsAvailableInContext); }
+        get { return AcceptedResponse?.IsAvailableInContext == true; }
     }
 
     public long Tokens
@@ -131,6 +131,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
             {
                 return response;
             }
+
             return null;
         }
     }

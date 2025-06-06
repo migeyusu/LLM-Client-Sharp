@@ -11,7 +11,7 @@ public class DialogCreationViewModel : ModelSelectionViewModel
 {
     private string _dialogName = "新建会话";
 
-    public DialogCreationViewModel(IEnumerable<ILLMEndpoint> availableEndpoints) : base(availableEndpoints)
+    public DialogCreationViewModel(IEndpointService service) : base(service)
     {
         
     }

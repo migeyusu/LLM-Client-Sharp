@@ -35,7 +35,7 @@
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Width="300"
-                      ItemsSource="{Binding  AvailableEndpoints,Mode=OneTime}">
+                      ItemsSource="{Binding  EndpointService.AvailableEndpoints,Mode=OneWay}">
                 <TreeView.Resources>
                     <HierarchicalDataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}"
                                               ItemsSource="{Binding AvailableModelsInfos, Mode=OneTime}">

@@ -13,6 +13,7 @@
                           xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
                           xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
                           xmlns:data="clr-namespace:LLMClient.Data"
+                          xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -190,7 +191,7 @@
                 <Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
                         Padding="8,2"
                         Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                        CommandParameter="{Binding ConfigureViewModel,Mode=OneTime}">
+                        CommandParameter="{Binding EndpointsViewModel,Mode=OneTime}">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Connection" />
                         <TextBlock Text="配置服务"
@@ -449,6 +450,52 @@
                                              Width="18"
                                              Height="18" />
                 </Button>
+                <materialDesign:PopupBox PlacementMode="TopAndAlignLeftEdges"
+                                         Style="{StaticResource MaterialDesignMultiFloatingActionSecondaryPopupBox}"
+                                         ToolTip="Snap create dialog"
+                                         Margin="10,0,0,0"
+                                         Width="40"
+                                         Height="40">
+                    <materialDesign:PopupBox.CommandBindings>
+                        <CommandBinding Command="Select"
+                                        Executed="SnapCommandBinding_OnExecuted"/>
+                    </materialDesign:PopupBox.CommandBindings>
+                    <materialDesign:PopupBox.ToggleContent>
+                        <materialDesign:PackIcon Width="20"
+                                                 Height="20"
+                                                 Kind="Thunder" />
+                    </materialDesign:PopupBox.ToggleContent>
+                    <materialDesign:PopupBox.ToggleCheckedContent>
+                        <materialDesign:PackIcon Width="20"
+                                                 Height="20"
+                                                 Kind="Pencil" />
+                    </materialDesign:PopupBox.ToggleCheckedContent>
+                    <ItemsControl ItemsSource="{Binding  EndpointsViewModel.SuggestedModels,Mode=OneWay}"
+                                  Margin="10">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type abstraction:SuggestedModel}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Command="Select"
+                                            CommandParameter="{Binding}"
+                                            Background="{DynamicResource MaterialDesign.Brush.Primary.Dark}">
+                                        <Button.Content>
+                                            <Image Source="{Binding LlmModel.Icon.CurrentSource,Mode=OneWay}" />
+                                        </Button.Content>
+                                    </Button>
+                                    <Border VerticalAlignment="Center"
+                                            Margin="10,0,0,0"
+                                            Background="{DynamicResource MaterialDesign.Brush.ToolTip.Background}"
+                                            CornerRadius="2">
+                                        <TextBlock Text="{Binding LlmModel.Name}"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource MaterialDesign.Brush.Background}"
+                                                   Margin="8" />
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </materialDesign:PopupBox>
             </StackPanel>
 
 
@@ -480,7 +527,7 @@
                                                 PopupElevation="Dp6"
                                                 PopupUniformCornerRadius="6"
                                                 Style="{StaticResource MaterialDesignFlatSplitButton}"
-                                                Margin="10,0">
+                                                Margin="0,0,10,0">
                         <materialDesign:SplitButton.Content>
                             <TextBox materialDesign:TextFieldAssist.HasClearButton="True"
                                      TextWrapping="Wrap"
@@ -503,26 +550,6 @@
                             </ListBox>
                         </materialDesign:SplitButton.PopupContent>
                     </materialDesign:SplitButton>
-                    <!--<Grid Grid.Column="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock TextWrapping="Wrap"
-                                   VerticalAlignment="Center"
-                                   Padding="16,0"
-                                   MaxHeight="{Binding RelativeSource={RelativeSource Self},Path=LineHeight,Mode=OneTime}"
-                                   TextTrimming="WordEllipsis"
-                                   Text="{Binding SystemPrompt,Mode=OneWay,StringFormat=System Prompt：{0},TargetNullValue={}}"
-                                   Style="{StaticResource MaterialDesignBody2TextBlock}" />
-                    </Grid>-->
-                    <!--<Button Grid.Column="1"
-                        HorizontalAlignment="Stretch"
-                        Style="{StaticResource MaterialDesignFlatButton}"
-                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
-                    <Button.CommandParameter>
-                    </Button.CommandParameter>
-                </Button>-->
                     <StackPanel Grid.Column="2"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Right"
@@ -537,14 +564,14 @@
                                         Value="36" />
                             </Style>
                         </StackPanel.Resources>
-                        <TextBlock MaxWidth="200"
-                                   TextWrapping="Wrap"
+                        <TextBlock MaxWidth="120"
+                                   TextWrapping="Wrap"  
                                    HorizontalAlignment="Right"
-                                   Margin="16,0"
+                                   Margin="0,0,10,0"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource MaterialDesignOverlineTextBlock}">
                             <TextBlock.Text>
-                                <MultiBinding StringFormat="TokensConsumption:{0}">
+                                <MultiBinding StringFormat="Tokens Consumption:{0}">
                                     <Binding Path="TokensConsumption" />
                                 </MultiBinding>
                             </TextBlock.Text>
@@ -560,7 +587,7 @@
                                 <Image Source="{Binding  Client.Info.Icon.CurrentSource,Mode=OneWay}"
                                        Width="20"
                                        Height="20" />
-                                <TextBlock Text="{Binding Client.Name,Mode=OneTime}"
+                                <TextBlock Text="{Binding Client.Name,Mode=OneWay}"
                                            VerticalAlignment="Center"
                                            TextTrimming="CharacterEllipsis"
                                            MaxWidth="120"
@@ -586,7 +613,7 @@
                                                      Width="20"
                                                      Height="20" />
                         </Button>
-                        <materialDesign:ColorZone Margin="16,0,0,0"
+                        <materialDesign:ColorZone Margin="10,0"
                                                   Padding="8,4,8,4"
                                                   Panel.ZIndex="1"
                                                   VerticalAlignment="Center"
@@ -670,14 +697,27 @@
                     </StackPanel>
                 </Grid>
             </materialDesign:Card>
-            <ContentControl Grid.Row="1" Grid.Column="1"
+            <ui:DialogView Grid.Row="1"
+                           Grid.Column="1"
+                           DataContext="{Binding  PreDialog,Mode=OneWay }">
+                <ui:DialogView.CommandBindings>
+                    <CommandBinding Command="{x:Static ui:CommonCommands.Branch}"
+                                    Executed="Branch_OnExecuted" />
+                </ui:DialogView.CommandBindings>
+            </ui:DialogView>
+            <!--<ContentControl Grid.Row="1" Grid.Column="1"
                             Content="{Binding PreDialog,Mode=OneWay}">
                 <ContentControl.Resources>
                     <DataTemplate DataType="{x:Type ui:DialogViewModel}">
-                        <ui:DialogView HorizontalAlignment="Stretch" />
+                        <ui:DialogView HorizontalAlignment="Stretch">
+                            <ui:DialogView.CommandBindings>
+                                <CommandBinding Command="{x:Static ui:CommonCommands.Branch}"
+                                                Executed="Branch_OnExecuted"/>
+                            </ui:DialogView.CommandBindings>
+                        </ui:DialogView>
                     </DataTemplate>
                 </ContentControl.Resources>
-            </ContentControl>
+            </ContentControl>-->
             <materialDesign:Card Grid.Row="0" Grid.Column="0"
                                  Grid.RowSpan="2"
                                  Grid.ColumnSpan="2"

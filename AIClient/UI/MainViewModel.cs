@@ -26,7 +26,7 @@ public class MainViewModel : BaseViewModel
 
     public SnackbarMessageQueue MessageQueue { get; set; } = new SnackbarMessageQueue();
 
-    public IEndpointService ConfigureViewModel { get; }
+    public IEndpointService EndpointsViewModel { get; }
 
     public IPromptsResource PromptsResource { get; }
 
@@ -172,7 +172,7 @@ public class MainViewModel : BaseViewModel
 
     public ICommand NewDialogCommand => new ActionCommand((async o =>
     {
-        var selectionViewModel = new DialogCreationViewModel(ConfigureViewModel.AvailableEndpoints);
+        var selectionViewModel = new DialogCreationViewModel(EndpointsViewModel);
         if (await DialogHost.Show(selectionViewModel) is true)
         {
             var model = selectionViewModel.GetClient();
@@ -182,14 +182,45 @@ public class MainViewModel : BaseViewModel
                 return;
             }
 
-            var dialogViewModel =
-                new DialogViewModel(selectionViewModel.DialogName, model)
-                    { IsDataChanged = true };
-            dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
-            PreDialog = dialogViewModel;
-            this.DialogViewModels.Insert(0, dialogViewModel);
+            AddNewDialog(model, selectionViewModel.DialogName);
         }
     }));
+
+    public void AddNewDialog(ILLMModelClient client, string dialogName = "新建会话")
+    {
+        var dialogViewModel = new DialogViewModel(dialogName, client)
+            { IsDataChanged = true };
+        dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
+        PreDialog = dialogViewModel;
+        this.DialogViewModels.Insert(0, dialogViewModel);
+    }
+
+    public async void ForkPreDialog(IDialogViewItem viewModel)
+    {
+        var preDialog = PreDialog;
+        if (preDialog == null)
+        {
+            return;
+        }
+
+        var of = preDialog.DialogItems.IndexOf(viewModel);
+        var dialogModelClone = _mapper.Map<DialogViewModel, DialogPersistModel>(preDialog);
+        dialogModelClone.DialogItems = dialogModelClone.DialogItems?.Take(of + 1).ToArray();
+        var dirPath = Path.GetFullPath(DialogSaveFolder);
+        var fileInfo = new FileInfo(Path.Combine(dirPath, $"{Guid.NewGuid()}.json"));
+        await using (var fileStream = fileInfo.OpenWrite())
+        {
+            await JsonSerializer.SerializeAsync(fileStream, dialogModelClone);
+        }
+
+        var dialogViewModel = _mapper.Map<DialogPersistModel, DialogViewModel>(dialogModelClone);
+        dialogViewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
+        dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
+        dialogViewModel.IsDataChanged = false;
+        var indexOf = this.DialogViewModels.IndexOf(preDialog);
+        this.DialogViewModels.Insert(indexOf, dialogViewModel);
+        PreDialog = dialogViewModel;
+    }
 
     public ObservableCollection<DialogViewModel> DialogViewModels { get; set; } =
         new ObservableCollection<DialogViewModel>();
@@ -214,7 +245,7 @@ public class MainViewModel : BaseViewModel
         MessageEventBus.MessageReceived += s => this.MessageQueue.Enqueue(s);
         _mapper = mapper;
         PromptsResource = promptsResource;
-        ConfigureViewModel = configureViewModel;
+        EndpointsViewModel = configureViewModel;
         var paletteHelper = new PaletteHelper();
         Theme theme = paletteHelper.GetTheme();
         IsDarkTheme = theme.GetBaseTheme() == BaseTheme.Dark;
@@ -369,13 +400,13 @@ public class MainViewModel : BaseViewModel
     public async void Initialize()
     {
         IsProcessing = true;
-        await ConfigureViewModel.Initialize();
+        await EndpointsViewModel.Initialize();
         await InitialDialogsFromLocal(DialogSaveFolder);
         if (DialogViewModels.Any())
         {
             this.PreDialog = DialogViewModels.First();
         }
-
+        
         UpdateResource(_themeName);
         await this.PromptsResource.Initialize();
         IsProcessing = false;

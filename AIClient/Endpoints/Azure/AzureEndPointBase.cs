@@ -27,6 +27,8 @@ public abstract class AzureEndPointBase : BaseViewModel, ILLMEndpoint
         get { return Name; }
     }
 
+    public abstract bool IsDefault { get; }
+
     public abstract string Name { get; }
 
     private static readonly Lazy<ImageSource> Source = new Lazy<ImageSource>((() =>

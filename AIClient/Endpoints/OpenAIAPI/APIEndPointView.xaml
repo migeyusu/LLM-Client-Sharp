@@ -162,7 +162,7 @@
                 Command="{Binding RemoveCommand}"
                 Visibility="{Binding ElementName=ModelsListBox,Path=SelectedItem,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                 CommandParameter="{Binding ElementName=ModelsListBox,Path=SelectedItem}"
-                Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
+                Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
                 ToolTip="移除">
             <materialDesign:PackIcon Kind="Minus"
                                      Width="20"

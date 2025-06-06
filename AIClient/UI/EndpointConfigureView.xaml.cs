@@ -8,4 +8,5 @@ public partial class EndpointConfigureView : UserControl
     {
         InitializeComponent();
     }
+    
 }

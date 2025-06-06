@@ -5,6 +5,8 @@ namespace LLMClient.Abstraction;
 public interface ILLMEndpoint
 {
     string DisplayName { get; }
+    
+    bool IsDefault { get; }
 
     /// <summary>
     /// 名称，必须唯一

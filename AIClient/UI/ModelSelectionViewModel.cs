@@ -1,28 +1,10 @@
-﻿using System.Windows;
-using System.Windows.Input;
-using LLMClient.Abstraction;
-using MaterialDesignThemes.Wpf;
-using Microsoft.Xaml.Behaviors.Core;
+﻿using LLMClient.Abstraction;
 
 namespace LLMClient.UI;
 
 public class ModelSelectionViewModel : BaseViewModel
 {
-    public IEnumerable<ILLMEndpoint> AvailableEndpoints
-    {
-        get => _availableEndpoints;
-        set
-        {
-            if (Equals(value, _availableEndpoints)) return;
-            _availableEndpoints = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public ModelSelectionViewModel()
-    {
-        _availableEndpoints = Array.Empty<ILLMEndpoint>();
-    }
+    public IEndpointService EndpointService { get; set; }
 
     public string? SelectedModelName
     {
@@ -50,11 +32,10 @@ public class ModelSelectionViewModel : BaseViewModel
     private string? _selectedModelName;
 
     private ILLMEndpoint? _selectedEndpoint;
-    private IEnumerable<ILLMEndpoint> _availableEndpoints;
 
-    public ModelSelectionViewModel(IEnumerable<ILLMEndpoint> availableEndpoints)
+    public ModelSelectionViewModel(IEndpointService endpointService)
     {
-        _availableEndpoints = availableEndpoints;
+        EndpointService = endpointService;
     }
 
     public ILLMModelClient? GetClient()

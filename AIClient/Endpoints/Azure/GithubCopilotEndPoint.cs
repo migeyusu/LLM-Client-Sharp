@@ -1,17 +1,12 @@
 ﻿using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.Azure.Models;
-using LLMClient.UI;
-using LLMClient.UI.Component;
-using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.Azure;
 
@@ -23,6 +18,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
 
     private readonly Dictionary<string, AzureModelInfo> _loadedModelInfos = new Dictionary<string, AzureModelInfo>();
 
+    public override bool IsDefault { get; } = true;
     public override string Name { get; } = GithubCopilotName;
 
     private static readonly Lazy<ImageSource> Source = new Lazy<ImageSource>((() =>
@@ -73,7 +69,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         document[Name] = config;
     }
 
-    public static GithubCopilotEndPoint LoadConfig(JsonObject document)
+    public static GithubCopilotEndPoint TryLoad(JsonObject document)
     {
         var githubCopilotEndPoint = new GithubCopilotEndPoint();
         if (document.TryGetPropertyValue(GithubCopilotName, out var jsonNode))
@@ -92,65 +88,51 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
     {
         Action<AzureModelInfo> full = (info) =>
         {
-            info.SystemPromptEnable = true;
-            info.TopPEnable = true;
             info.TopP = 1;
-            info.TemperatureEnable = true;
             info.Temperature = 1;
-            info.MaxTokens = 4096;
-            info.FrequencyPenaltyEnable = true;
             info.FrequencyPenalty = 0;
-            info.PresencePenaltyEnable = true;
             info.PresencePenalty = 0;
         };
         Action<AzureModelInfo> mistral = (info) =>
         {
-            info.SystemPromptEnable = true;
-            info.TopPEnable = true;
-            info.TemperatureEnable = true;
             info.MaxTokens = 2048;
             info.Temperature = 0.8f;
             info.TopP = 0.1f;
         };
         Action<AzureModelInfo> baseModel = (info) =>
         {
-            info.SystemPromptEnable = true;
-            info.TopPEnable = true;
             info.TopP = 1;
-            info.TemperatureEnable = true;
             info.Temperature = 1;
-            info.MaxTokens = 4096;
         };
 
-        Action<AzureModelInfo> o1 = (info) => { info.SystemPromptEnable = true; };
         Action<AzureModelInfo> llama3 = (info) =>
         {
-            info.SystemPromptEnable = true;
-            info.TopPEnable = true;
             info.TopP = 0.1f;
-            info.TemperatureEnable = true;
             info.Temperature = 0.8f;
             info.MaxTokens = 2048;
-            info.PresencePenaltyEnable = true;
             info.PresencePenalty = 0;
-            info.FrequencyPenaltyEnable = true;
             info.FrequencyPenalty = 0;
         };
         Action<AzureModelInfo> empty = (info) => { };
+        Action<AzureModelInfo> noPrompt = (info) => info.SystemPromptEnable = false;
         Action<AzureModelInfo> deepSeek_R1 = (info) => { info.MaxTokens = 2048; };
         Action<AzureModelInfo> deepSeek_V3 = (info) =>
         {
-            info.SystemPromptEnable = true;
-            info.TopPEnable = true;
             info.TopP = 0.1f;
-            info.TemperatureEnable = true;
             info.Temperature = 0.8f;
             info.MaxTokens = 2048;
-            info.FrequencyPenaltyEnable = true;
             info.FrequencyPenalty = 0;
-            info.PresencePenaltyEnable = true;
             info.PresencePenalty = 0;
         };
+        Action<AzureModelInfo> phi4 = (info) =>
+        {
+            info.MaxTokens = 2048;
+            info.Temperature = 0.8f;
+            info.TopP = 0.1f;
+            info.PresencePenalty = 0;
+            info.PresencePenalty = 0;
+        };
+
         _predefinedModels = new Dictionary<string, Action<AzureModelInfo>>()
         {
             { "OpenAI GPT-4.1", full },
@@ -160,13 +142,13 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             { "OpenAI GPT-4o", baseModel },
             { "OpenAI GPT-4o mini", baseModel },
 
-            { "OpenAI o1", o1 },
-            { "OpenAI o1-mini", empty },
-            { "OpenAI o1-preview", empty },
+            { "OpenAI o1", empty },
+            { "OpenAI o1-mini", noPrompt },
+            { "OpenAI o1-preview", noPrompt },
 
-            { "OpenAI o3", o1 },
-            { "OpenAI o3-mini", o1 },
-            { "OpenAI o4-mini", o1 },
+            { "OpenAI o3", empty },
+            { "OpenAI o3-mini", empty },
+            { "OpenAI o4-mini", empty },
 
             { "Ministral 3B", mistral },
             { "Mistral Large 24.11", mistral },
@@ -183,10 +165,20 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             { "Meta-Llama-3-8B-Instruct", llama3 },
             { "Meta-Llama-3-70B-Instruct", llama3 },
 
+            { "Llama 4 Maverick 17B 128E Instruct FP8", llama3 },
+            { "Llama 4 Scout 17B 16E Instruct", llama3 },
+
             { "DeepSeek-R1", deepSeek_R1 },
             { "MAI-DS-R1", deepSeek_R1 },
+            { "DeepSeek-R1-0528", deepSeek_R1 },
 
             { "DeepSeek-V3-0324", deepSeek_V3 },
+
+            { "Phi-4", phi4 },
+            { "Phi-4-mini-instruct", phi4 },
+            { "Phi-4-mini-reasoning", phi4 },
+            { "Phi-4-multimodal-instruct", phi4 },
+            { "Phi-4-reasoning", phi4 }
         };
     }
 
@@ -204,27 +196,24 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         {
             using (var fileStream = fileInfo.OpenRead())
             {
-                var modelsDocument = await JsonDocument.ParseAsync(fileStream);
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                var azureModelInfos = await JsonSerializer.DeserializeAsync<AzureModelInfo[]>(fileStream);
+                if (azureModelInfos == null)
                 {
-                    foreach (var element in modelsDocument.RootElement.EnumerateArray())
+                    return;
+                }
+
+                foreach (var modelInfo in
+                         azureModelInfos.Where((info => info.Task == AzureModelInfo.FilteredTask
+                                                        && info.SupportedInputModalities?.Contains(AzureModelInfo
+                                                            .FilteredInputText) == true)))
+                {
+                    var modelInfoName = modelInfo.FriendlyName;
+                    if (_predefinedModels.ContainsKey(modelInfoName))
                     {
-                        var modelInfo = element.Deserialize<AzureModelInfo>();
-                        if (modelInfo == null)
-                        {
-                            continue;
-                        }
-
-                        var modelInfoName = modelInfo.FriendlyName;
-                        if (_predefinedModels.ContainsKey(modelInfoName))
-                        {
-                            modelInfo.Endpoint = this;
-                            _loadedModelInfos.Add(modelInfoName, modelInfo);
-                        }
+                        modelInfo.Endpoint = this;
+                        _loadedModelInfos.Add(modelInfoName, modelInfo);
                     }
-
-                    
-                });
+                }
             }
         }
         catch (Exception e)

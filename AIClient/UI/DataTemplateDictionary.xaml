@@ -6,14 +6,14 @@
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
                     xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI">
-    <DataTemplate x:Key="ModelSelectionViewModelTemplate" DataType="{x:Type ui:ResponseAppendClientViewModel}">
+    <DataTemplate x:Key="PopupSelectViewModelTemplate" DataType="{x:Type ui:PopupSelectViewModel}">
         <StackPanel Margin="10"
                     Width="350">
             <DockPanel Height="200">
                 <ListBox DisplayMemberPath="DisplayName"
                          Width="150"
                          SelectedItem="{Binding SelectedEndpoint,Mode=TwoWay}"
-                         ItemsSource="{Binding  AvailableEndpoints,Mode=OneWay}" />
+                         ItemsSource="{Binding    EndpointService.AvailableEndpoints,Mode=OneWay}" />
                 <ListBox DockPanel.Dock="Right"
                          HorizontalAlignment="Stretch"
                          SelectedItem="{Binding SelectedModelName,Mode=TwoWay}"

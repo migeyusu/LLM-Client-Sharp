@@ -8,9 +8,32 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Data;
 
-public class GlobalConfig : BaseViewModel
+public class GlobalConfig : NotifyDataErrorInfoViewModelBase
 {
+    private int _summarizeWordsCount = 1000;
     private const string DEFAULT_GLOBAL_CONFIG_FILE = "globalconfig.json";
+
+    private const string DefaultSummarizePrompt =
+        "Provide a concise and complete summarization of the entire dialog that does not exceed {0} words. \n\nThis summary must always:\n- Consider both user and assistant interactions\n- Maintain continuity for the purpose of further dialog\n- Include details from any existing summary\n- Focus on the most significant aspects of the dialog\n\nThis summary must never:\n- Critique, correct, interpret, presume, or assume\n- Identify faults, mistakes, misunderstanding, or correctness\n- Analyze what has not occurred\n- Exclude details from any existing summary";
+
+    public string TokenSummarizePrompt { get; set; } = DefaultSummarizePrompt;
+
+    public int SummarizeWordsCount
+    {
+        get => _summarizeWordsCount;
+        set
+        {
+            this.ClearError();
+            if (value == _summarizeWordsCount) return;
+            if (value < 100)
+            {
+                this.AddError("Summarize words count must be greater than 100.");
+                return;
+            }
+            _summarizeWordsCount = value;
+            OnPropertyChanged();
+        }
+    }
 
     [JsonIgnore]
     public ICommand SaveCommand => new ActionCommand(async (param) =>

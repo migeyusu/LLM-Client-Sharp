@@ -85,8 +85,16 @@ public partial class DialogView : UserControl
             }
 
             var endpointService = BaseViewModel.ServiceLocator.GetService<IEndpointService>()!;
-            popupBox.PopupContent = new ResponseAppendClientViewModel(responseViewItem, this.ViewModel, endpointService,
-                async (client) => { await this.ViewModel.AppendResponseOn(responseViewItem, client); });
+            popupBox.PopupContent = new PopupSelectViewModel(endpointService,
+                async (selector) =>
+                {
+                    var llmModelClient = selector.GetClient();
+                    if (llmModelClient == null)
+                    {
+                        return;
+                    }
+                    await this.ViewModel.AppendResponseOn(responseViewItem, llmModelClient);
+                });
         }
     }
 
@@ -97,4 +105,5 @@ public partial class DialogView : UserControl
             ViewModel.Conclusion(item);
         }
     }
+    
 }

@@ -6,6 +6,25 @@ using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.Converters;
 
+public class XiaoaiAIModelMapping : ModelMapping
+{
+    public XiaoaiAIModelMapping() : base("XiaoaiAI")
+    {
+    }
+
+    public override IList<string> AvailableModels { get; } = [];
+
+    public override Task<bool> Refresh()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override APIModelInfo? TryGet(string modelId)
+    {
+        throw new NotImplementedException();
+    }
+}
+
 public class GeekAIModelMapping : ModelMapping
 {
     public GeekAIModelMapping() : base("GeekAI")
@@ -70,8 +89,8 @@ public class GeekAIModelMapping : ModelMapping
 
         return null;
     }
-    
-    
+
+
     public class ModelInfo
     {
         [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;

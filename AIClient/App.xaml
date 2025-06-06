@@ -9,6 +9,28 @@
              ShutdownMode="OnLastWindowClose">
     <Application.Resources>
         <ResourceDictionary>
+            <ControlTemplate x:Key="ItemDeleteButtonTemplate"
+                             TargetType="{x:Type Button}">
+                <Grid>
+                    <Ellipse x:Name="Bg"
+                             Fill="#FFA6A6A6"
+                             Stroke="#FF009587"
+                             StrokeThickness="0" />
+                    <materialDesign:PackIcon Width="12"
+                                             Height="12"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center"
+                                             Kind="Close" />
+                </Grid>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver"
+                             Value="True">
+                        <Setter TargetName="Bg"
+                                Property="StrokeThickness"
+                                Value="1" />
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
             <Style TargetType="{x:Type FlowDocumentScrollViewer}"
                    x:Key="ExFlowDocumentScrollViewerStyle">
                 <Setter Property="FocusVisualStyle" Value="{x:Null}" />

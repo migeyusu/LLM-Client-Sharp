@@ -20,6 +20,7 @@ using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.Plugins.Document;
 using Microsoft.SemanticKernel.Plugins.Document.FileSystem;
@@ -114,6 +115,10 @@ public class DialogViewModel : BaseViewModel
             if (Equals(value, _scrollViewItem)) return;
             _scrollViewItem = value;
             OnPropertyChanged();
+            if (value is MultiResponseViewItem viewItem)
+            {
+                viewItem.CurrentResponse?.Document?.EnsureSearch();
+            }
         }
     }
 
@@ -216,36 +221,31 @@ public class DialogViewModel : BaseViewModel
         }
 
         this.FocusedResponse = null;
+        if (this.ScrollViewItem is MultiResponseViewItem viewItem)
+        {
+            viewItem.CurrentResponse?.Document?.EnsureSearch();
+        }
     }));
 
     private int _currentHighlightIndex = 0;
 
-    private MultiResponseViewItem? FocusedResponse { get; set; }
+    private MultiResponseViewItem? FocusedResponse
+    {
+        get => _focusedResponse;
+        set
+        {
+            _focusedResponse = value;
+            var document = value?.CurrentResponse?.Document;
+            if (document is { HasMatched: true })
+            {
+                document.EnsureSearch();
+            }
+        }
+    }
 
-    SearchableFlowDocument? FocusedDocument
+    SearchableDocument? FocusedDocument
     {
         get { return FocusedResponse?.CurrentResponse?.Document; }
-    }
-
-    private void CheckOrNextHighlightedResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
-    {
-        var count = responseViewItems.Count;
-        while (FocusedDocument?.HasMatched != true && responseIndex < count - 1)
-        {
-            responseIndex++;
-            FocusedResponse = responseViewItems[responseIndex];
-            _currentHighlightIndex = -1; //重置高亮索引
-        }
-    }
-
-    private void CheckOrPreHighlightedResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
-    {
-        while (FocusedDocument?.HasMatched != true && responseIndex > 0)
-        {
-            responseIndex--;
-            FocusedResponse = responseViewItems[responseIndex];
-            _currentHighlightIndex = FocusedDocument?.FoundTextRanges.Count ?? 0; //重置高亮索引
-        }
     }
 
     private void CheckResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
@@ -259,6 +259,24 @@ public class DialogViewModel : BaseViewModel
                 responseIndex = 0;
             }
         }
+
+        if (FocusedResponse == null)
+        {
+            this.FocusedResponse = responseViewItems.First();
+        }
+    }
+
+    private void GoToHighlight()
+    {
+        ScrollViewItem = this.FocusedResponse;
+        var foundTextRange = FocusedDocument?.FoundTextRanges[_currentHighlightIndex];
+        if (foundTextRange == null)
+            return;
+        var parent = FocusedDocument?.Document.Parent;
+        if (parent is FlowDocumentScrollViewerEx ex)
+        {
+            ex.ScrollToRange(foundTextRange);
+        }
     }
 
     public ICommand GoToNextHighlightCommand => new ActionCommand((o =>
@@ -268,39 +286,28 @@ public class DialogViewModel : BaseViewModel
             return;
         }
 
-        var responseViewItems = DialogItems.OfType<MultiResponseViewItem>().ToList();
-        if (responseViewItems.Count == 0)
+        var responseViewItems = DialogItems.OfType<MultiResponseViewItem>()
+            .Where(item => item.AcceptedResponse is ResponseViewItem { Document.HasMatched: true }).ToArray();
+        if (responseViewItems.Length == 0)
         {
-            MessageEventBus.Publish("没有找到对话记录！");
+            MessageEventBus.Publish("没有找到匹配的结果！");
             return;
         }
 
         var responseIndex = 0;
         CheckResponse(responseViewItems, ref responseIndex);
-        CheckOrNextHighlightedResponse(responseViewItems, ref responseIndex);
-        if (FocusedDocument?.HasMatched != true)
-        {
-            MessageEventBus.Publish("没有找到匹配的内容！");
-            return;
-        }
-
         _currentHighlightIndex++;
         if (_currentHighlightIndex >= FocusedDocument?.FoundTextRanges.Count)
         {
             //跳转到下一个FlowDocument
-            FocusedResponse = null;
-            GoToNextHighlightCommand.Execute(null);
+            responseIndex++;
+            FocusedResponse = responseIndex < responseViewItems.Length
+                ? responseViewItems[responseIndex]
+                : responseViewItems[0];
+            _currentHighlightIndex = 0;
         }
-        else
-        {
-            var foundTextRange = FocusedDocument?.FoundTextRanges[_currentHighlightIndex];
-            if (foundTextRange == null)
-                return;
-            if (FocusedDocument?.Document.Parent is FlowDocumentScrollViewerEx ex)
-            {
-                ex.ScrollToRange(foundTextRange);
-            }
-        }
+
+        GoToHighlight();
     }));
 
     public ICommand GoToPreviousHighlightCommand => new ActionCommand((o =>
@@ -310,39 +317,27 @@ public class DialogViewModel : BaseViewModel
             return;
         }
 
-        var responseViewItems = DialogItems.OfType<MultiResponseViewItem>().ToList();
-        if (responseViewItems.Count == 0)
+        var responseViewItems = DialogItems.OfType<MultiResponseViewItem>()
+            .Where(item => item.AcceptedResponse is ResponseViewItem { Document.HasMatched: true }).ToArray();
+        if (responseViewItems.Length == 0)
         {
-            MessageEventBus.Publish("没有找到对话记录！");
+            MessageEventBus.Publish("没有找到匹配的结果！");
             return;
         }
 
-        var responseIndex = responseViewItems.Count - 1;
+        var responseIndex = responseViewItems.Length - 1;
         CheckResponse(responseViewItems, ref responseIndex);
-        CheckOrPreHighlightedResponse(responseViewItems, ref responseIndex);
-        if (FocusedDocument?.HasMatched != true)
-        {
-            MessageEventBus.Publish("没有找到匹配的内容！");
-            return;
-        }
-
         _currentHighlightIndex--;
         if (_currentHighlightIndex < 0)
         {
             //跳转到上一个FlowDocument
-            FocusedResponse = null;
-            GoToPreviousHighlightCommand.Execute(null);
+            FocusedResponse = responseIndex > 0
+                ? responseViewItems[--responseIndex]
+                : responseViewItems.Last();
+            _currentHighlightIndex = FocusedDocument?.FoundTextRanges.Count - 1 ?? 0;
         }
-        else
-        {
-            var foundTextRange = FocusedDocument?.FoundTextRanges[_currentHighlightIndex];
-            if (foundTextRange == null)
-                return;
-            if (FocusedDocument?.Document.Parent is FlowDocumentScrollViewerEx ex)
-            {
-                ex.ScrollToRange(foundTextRange);
-            }
-        }
+
+        GoToHighlight();
     }));
 
     public ICommand ClearContextCommand => new ActionCommand((o =>
@@ -489,7 +484,7 @@ public class DialogViewModel : BaseViewModel
         var multiResponseViewItem = dialogViewItem as MultiResponseViewItem;
         var endpoint = EndpointService.AvailableEndpoints[0];
         var first = endpoint.AvailableModelNames.First();
-        var llmModelClient = new ModelSelectionViewModel()
+        var llmModelClient = new ModelSelectionViewModel(this.EndpointService)
         {
             SelectedModelName = first,
             SelectedEndpoint = endpoint
@@ -590,7 +585,7 @@ public class DialogViewModel : BaseViewModel
 
     public ICommand ChangeModelCommand => new ActionCommand((async o =>
     {
-        var selectionViewModel = new DialogCreationViewModel(EndpointService.AvailableEndpoints);
+        var selectionViewModel = new DialogCreationViewModel(EndpointService);
         if (await DialogHost.Show(selectionViewModel) is true)
         {
             var model = selectionViewModel.GetClient();
@@ -618,6 +613,7 @@ public class DialogViewModel : BaseViewModel
     private long _tokensConsumption;
     private bool _isNewResponding;
     private int _respondingCount;
+    private MultiResponseViewItem? _focusedResponse;
 
 
     public DialogViewModel(string topic, ILLMModelClient? modelClient = null,
@@ -646,22 +642,29 @@ public class DialogViewModel : BaseViewModel
             return;
         }
 
+        var dialogViewItems = this.DialogItems;
         var newGuid = Guid.NewGuid();
+        var config = GlobalConfig.LoadOrCreate();
         var requestViewItem = new RequestViewItem()
         {
-            MessageContent = "请基于以上对话内容进行简短且细致地总结，不要遗漏关键细节，总结大小控制在100字以内。",
+            MessageContent = string.Format(config.TokenSummarizePrompt, config.SummarizeWordsCount),
             InteractionId = newGuid
         };
-        DialogItems.Add(requestViewItem);
-        var copy = DialogItems.ToArray();
+        dialogViewItems.Add(requestViewItem);
+        var copy = dialogViewItems.ToArray();
         var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
-        DialogItems.Add(multiResponseViewItem);
-        ScrollViewItem = DialogItems.Last();
-        await SendRequestCore(this.Client, copy,
-            multiResponseViewItem);
-        var indexOf = DialogItems.IndexOf(requestViewItem);
-        DialogItems.Insert(indexOf, new EraseViewItem());
-        ScrollViewItem = DialogItems.Last();
+        dialogViewItems.Add(multiResponseViewItem);
+        ScrollViewItem = dialogViewItems.LastOrDefault();
+        var completedResult = await SendRequestCore(this.Client, copy, multiResponseViewItem);
+        if (completedResult.IsInterrupt)
+        {
+            dialogViewItems.Remove(multiResponseViewItem);
+            dialogViewItems.Remove(requestViewItem);
+            return;
+        }
+        var indexOf = dialogViewItems.IndexOf(requestViewItem);
+        dialogViewItems.Insert(indexOf, new EraseViewItem());
+        ScrollViewItem = dialogViewItems.LastOrDefault();
     }
 
     public async Task AppendResponseOn(MultiResponseViewItem responseViewItem,
@@ -680,7 +683,24 @@ public class DialogViewModel : BaseViewModel
 
     public void DeleteItem(IDialogViewItem item)
     {
-        this.DialogItems.Remove(item);
+        var indexOf = this.DialogItems.IndexOf(item);
+        if (item is RequestViewItem requestViewItem)
+        {
+            var interactionId = requestViewItem.InteractionId;
+            // 删除所有与该请求相关的响应
+            if (indexOf < this.DialogItems.Count - 1)
+            {
+                var index = indexOf + 1;
+                var dialogViewItem = this.DialogItems[index];
+                if (dialogViewItem is MultiResponseViewItem multiResponseViewItem &&
+                    multiResponseViewItem.InteractionId == interactionId)
+                {
+                    this.DialogItems.RemoveAt(index);
+                }
+            }
+        }
+
+        this.DialogItems.RemoveAt(indexOf);
         if (ScrollViewItem == item)
         {
             ScrollViewItem = this.DialogItems.LastOrDefault();

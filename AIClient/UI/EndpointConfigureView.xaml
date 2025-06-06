@@ -3,14 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:LLMClient"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:system="clr-namespace:System;assembly=System.Runtime"
              xmlns:azure="clr-namespace:LLMClient.Endpoints.Azure"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
-             xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:EndpointConfigureViewModel}"
@@ -75,8 +72,18 @@
                                    Height="20"
                                    Source="{Binding Icon,Mode=OneWay}" />
                             <TextBlock Text="{Binding DisplayName,Mode=OneWay}"
+                                       MaxWidth="120"
                                        Margin="6,0,0,0"
                                        VerticalAlignment="Center" />
+                            <Button Width="18"
+                                    Height="18"
+                                    Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveEndPointCommand}"
+                                    CommandParameter="{Binding  }"
+                                    Margin="6,0,0,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip="删除当前"
+                                    Visibility="{Binding  IsDefault,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
+                                    Template="{StaticResource ItemDeleteButtonTemplate}" />
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -102,33 +109,102 @@
                 <DataTemplate DataType="{x:Type openAiapi:APIEndPoint}">
                     <openAiapi:APIEndPointView />
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type endpoints:TemplateEndpoints}">
-                    <endpoints:TemplatesView />
-                </DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
         <Separator Grid.Row="2"
                    Background="Black"
                    VerticalAlignment="Top"
                    Margin="10,0" />
-        <StackPanel Grid.Row="2"
-                    Margin="10"
-                    HorizontalAlignment="Right"
-                    Orientation="Horizontal">
-            <StackPanel Orientation="Horizontal"
-                        Visibility="{Binding SelectedEndpoint,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ListBox Grid.Column="1"
+                     VerticalAlignment="Center"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     Style="{StaticResource MaterialDesignChoiceChipPrimaryOutlineListBox}"
+                     ItemsSource="{Binding SuggestedModels,Mode=OneWay}"
+                     Margin="6,0">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel IsItemsHost="True"
+                                    CanHorizontallyScroll="True"
+                                    CanVerticallyScroll="False"
+                                    Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type abstraction:SuggestedModel}">
+                        <StackPanel Height="30"
+                                    ToolTipService.InitialShowDelay="0"
+                                    Orientation="Horizontal">
+                            <StackPanel.ToolTip>
+                                <TextBlock
+                                    Text="{Binding  Endpoint.DisplayName, Mode=OneWay}"
+                                    MaxWidth="300"
+                                    TextWrapping="Wrap" />
+                            </StackPanel.ToolTip>
+                            <Image Width="26"
+                                   Height="26"
+                                   Source="{Binding LlmModel.Icon.CurrentSource,Mode=OneWay}" />
+                            <TextBlock Text="{Binding LlmModel.Name}"
+                                       VerticalAlignment="Center"
+                                       MaxWidth="120"
+                                       Margin="10,0,0,0" />
+                            <Button Width="18"
+                                    Height="18"
+                                    Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveSuggestedModelCommand}"
+                                    CommandParameter="{Binding  }"
+                                    Margin="6,0,0,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip="删除当前"
+                                    Template="{StaticResource ItemDeleteButtonTemplate}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal"
+                        Margin="10,0,0,0">
+                <TextBlock Text="Suggestion:"
+                           VerticalAlignment="Center"
+                           Margin="10,0,0,0" />
+                <materialDesign:PopupBox Padding="2,0"
+                                         StaysOpen="True"
+                                         Margin="10,0,0,0"
+                                         VerticalAlignment="Center"
+                                         ToolTip="添加suggestion"
+                                         Style="{StaticResource MaterialDesignToolPopupBox}"
+                                         PopupContentTemplate="{StaticResource  PopupSelectViewModelTemplate}"
+                                         PopupContent="{Binding   PopupSelectViewModel,Mode=OneTime}">
+                    <materialDesign:PopupBox.ToggleContent>
+                        <Border Width="23"
+                                Height="23"
+                                Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                                CornerRadius="11">
+                            <materialDesign:PackIcon Kind="Add"
+                                                     VerticalAlignment="Center"
+                                                     HorizontalAlignment="Center"
+                                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}" />
+                        </Border>
+                    </materialDesign:PopupBox.ToggleContent>
+                </materialDesign:PopupBox>
+            </StackPanel>
+            <StackPanel Grid.Column="2"
+                        Margin="10"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal">
                 <Button Content="重置"
                         Margin="10,0,0,0"
                         Command="{Binding ReloadCommand}" />
-                <Button Content="移除"
+                <Button Content="保存全部"
                         Margin="10,0,0,0"
-                        CommandParameter="{Binding SelectedEndpoint,Mode=OneWay}"
-                        Command="{Binding RemoveEndPointCommand}" />
+                        Command="{Binding SaveAllCommand}"
+                        CommandParameter="{Binding ElementName=ControlRoot}" />
             </StackPanel>
-            <Button Content="保存全部"
-                    Margin="10,0,0,0"
-                    Command="{Binding SaveAllCommand}"
-                    CommandParameter="{Binding ElementName=ControlRoot}" />
-        </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

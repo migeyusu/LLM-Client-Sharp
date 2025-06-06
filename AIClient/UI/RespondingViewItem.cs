@@ -12,11 +12,8 @@ public class RespondingViewItem : BaseViewModel, IResponseViewItem
     public bool IsAvailableInContext { get; } = false;
 
     public ILLMModelClient Client { get; }
-    
-    public ICommand CancelCommand => new ActionCommand(async o =>
-    {
-        RequestTokenSource.Cancel();
-    });
+
+    public ICommand CancelCommand => new ActionCommand(o => { RequestTokenSource.Cancel(); });
 
     public CancellationTokenSource RequestTokenSource { get; } = new CancellationTokenSource();
 

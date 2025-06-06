@@ -1,6 +1,5 @@
 ﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Reflection.Emit;
+using System.Collections.Specialized;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
@@ -37,7 +36,8 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
     {
         if (o is APIEndPoint endpoint)
         {
-            if (MessageBox.Show("Sure to remove the endpoint?" + endpoint.Name, "warning", MessageBoxButton.YesNo)
+            if (MessageBox.Show($"Sure to remove the endpoint {endpoint.DisplayName} ?", "warning",
+                    MessageBoxButton.YesNo)
                 != MessageBoxResult.Yes)
             {
                 return;
@@ -45,38 +45,49 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
             Endpoints.Remove(endpoint);
         }
-    }), (endpoint => { return endpoint is not GithubCopilotEndPoint; }));
+    }));
 
     public ICommand SaveAllCommand => new ActionCommand(async o =>
     {
-        var distinctEndpoints = Endpoints.DistinctBy((endpoint => endpoint.Name));
-        var difference = distinctEndpoints.Except(Endpoints).ToList();
-        if (difference.Count != 0)
+        try
         {
-            difference.ForEach(endpoint => { MessageBox.Show("Endpoint name must be unique:" + endpoint.Name); });
-            return;
-        }
-
-        var root = new JsonObject();
-        var endPointsNode = root.GetOrCreate(EndPointsConfiguration.EndpointsNodeName);
-        _githubCopilotEndPoint?.UpdateConfig(endPointsNode);
-        JsonArray jArray = new JsonArray();
-        foreach (var apiEndPoint in Endpoints.OfType<APIEndPoint>())
-        {
-            if (!apiEndPoint.Validate(out var message))
+            var distinctEndpoints = Endpoints.DistinctBy((endpoint => endpoint.Name));
+            var difference = distinctEndpoints.Except(Endpoints).ToList();
+            if (difference.Count != 0)
             {
-                MessageBox.Show(message);
+                difference.ForEach(endpoint => { MessageBox.Show("Endpoint name must be unique:" + endpoint.Name); });
                 return;
             }
 
-            var serialize = JsonSerializer.SerializeToNode(apiEndPoint);
-            jArray.Add(serialize);
-        }
+            var root = new JsonObject();
+            var endPointsNode = root.GetOrCreate(EndPointsConfiguration.EndpointsNodeName);
+            _githubCopilotEndPoint?.UpdateConfig(endPointsNode);
+            // 1. 拿到所有的 APIEndPoint
+            var apiEndpoints = Endpoints
+                .OfType<APIEndPoint>()
+                .ToList();
+            foreach (var ep in apiEndpoints)
+            {
+                if (!ep.Validate(out var msg))
+                {
+                    MessageBox.Show(msg);
+                    return;
+                }
+            }
 
-        endPointsNode[APIEndPoint.KeyName] = jArray;
-        //todo: 添加template 保存
-        await EndPointsConfiguration.SaveDoc(root);
-        MessageEventBus.Publish("已保存！");
+            endPointsNode[APIEndPoint.KeyName] = JsonSerializer.SerializeToNode(apiEndpoints);
+            var keyValuePairs = this.SuggestedModels
+                .Select(model => new KeyValuePair<string, string>(model.Endpoint.Name, model.LlmModel.Name))
+                .ToArray();
+            endPointsNode[SuggestedModelKey] = JsonSerializer.SerializeToNode(keyValuePairs);
+            //todo: 添加template 保存
+            await EndPointsConfiguration.SaveDoc(root);
+            MessageEventBus.Publish("已保存！");
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show("保存失败: " + e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
         /*var endPointsObject = new JsonObject();
         foreach (var endpoint in Endpoints)
         {
@@ -97,26 +108,62 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public IReadOnlyList<ILLMEndpoint> AvailableEndpoints
     {
-        get { return Endpoints.Where((endpoint => endpoint is not TemplateEndpoints)).ToArray().AsReadOnly(); }
+        get { return Endpoints.ToArray().AsReadOnly(); }
     }
+
+    public ObservableCollection<SuggestedModel> SuggestedModels { get; } =
+        new ObservableCollection<SuggestedModel>();
+    public PopupSelectViewModel PopupSelectViewModel { get; }
+
+    public ICommand RemoveSuggestedModelCommand => new ActionCommand((o =>
+    {
+        if (o is SuggestedModel suggestedModel)
+        {
+            this.SuggestedModels.Remove(suggestedModel);
+        }
+    }));
 
     private ILLMEndpoint? _selectedEndpoint;
 
     public EndpointConfigureViewModel()
     {
+        PopupSelectViewModel = new PopupSelectViewModel(this, OnModelSelected);
+        Endpoints.CollectionChanged += EndpointsOnCollectionChanged;
+    }
+
+    private void EndpointsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        this.OnPropertyChanged(nameof(AvailableEndpoints));
+    }
+
+    private void OnModelSelected(ModelSelectionViewModel obj)
+    {
+        if (SuggestedModels.Count > 6)
+        {
+            MessageEventBus.Publish("最多只能添加6个推荐模型");
+            return;
+        }
+
+        var selectedEndpoint = obj.SelectedEndpoint;
+        if (selectedEndpoint is null)
+            return;
+        var selectedModelName = obj.SelectedModelName;
+        if (selectedModelName is null)
+            return;
+        var llmModel = selectedEndpoint.GetModel(selectedModelName);
+        if (llmModel is null)
+            return;
+        this.SuggestedModels.Add(new SuggestedModel(selectedEndpoint, llmModel));
     }
 
     private GithubCopilotEndPoint? _githubCopilotEndPoint;
 
-    private TemplateEndpoints? _templateEndpoints;
+    private const string SuggestedModelKey = "SuggestedModels";
 
     public async Task Initialize()
     {
-        var endPointsNode = await EndPointsConfiguration.LoadEndpointsNode();
-        var endPoints = endPointsNode.AsObject();
-        _templateEndpoints = TemplateEndpoints.LoadOrCreate(endPoints);
-        Endpoints.Add(_templateEndpoints);
-        _githubCopilotEndPoint = GithubCopilotEndPoint.LoadConfig(endPoints);
+        var endPoints = (await EndPointsConfiguration.LoadEndpointsNode()).AsObject();
+        _githubCopilotEndPoint = GithubCopilotEndPoint.TryLoad(endPoints);
         Endpoints.Add(_githubCopilotEndPoint);
         if (endPoints.TryGetPropertyValue(APIEndPoint.KeyName, out var apisNode))
         {
@@ -134,10 +181,30 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             }
         }
 
-
         foreach (var availableEndpoint in Endpoints)
         {
             await availableEndpoint.InitializeAsync();
+        }
+
+        if (endPoints.TryGetPropertyValue(SuggestedModelKey, out var suggestedModelsNode))
+        {
+            var keyValuePair = suggestedModelsNode.Deserialize<KeyValuePair<string, String>[]>();
+            if (keyValuePair != null)
+            {
+                foreach (var valuePair in keyValuePair)
+                {
+                    var valuePairKey = valuePair.Key;
+                    var llmEndpoint = ((IEndpointService)this).GetEndpoint(valuePairKey);
+                    if (llmEndpoint != null)
+                    {
+                        var llmModel = llmEndpoint.GetModel(valuePair.Value);
+                        if (llmModel != null)
+                        {
+                            SuggestedModels.Add(new SuggestedModel(llmEndpoint, llmModel));
+                        }
+                    }
+                }
+            }
         }
     }
 }

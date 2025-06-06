@@ -66,18 +66,19 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
     private readonly FieldInfo? _info = typeof(ChatCompletionsClient)
         .GetField("_apiVersion", BindingFlags.Instance | BindingFlags.NonPublic);
 
+    [Experimental("SKEXP0001")]
     protected override IChatClient CreateChatClient()
     {
-        var credential = new AzureKeyCredential(Option.APIToken);
+        /*var credential = new AzureKeyCredential(Option.APIToken);
         var chatCompletionsClient = new ChatCompletionsClient(new Uri(Option.URL), credential,
             new AzureAIInferenceClientOptions());
         _info?.SetValue(chatCompletionsClient, "2024-12-01-preview");
-        return chatCompletionsClient.AsIChatClient();
-        /*var build = Kernel.CreateBuilder()
+        return chatCompletionsClient.AsIChatClient();*/
+        var build = Kernel.CreateBuilder()
             .AddOpenAIChatCompletion(this.ModelInfo.Id, new Uri(Option.URL), this.Option.APIToken)
             .Build();
         var chatCompletionService = build.GetRequiredService<IChatCompletionService>();
-        return chatCompletionService.AsChatClient();*/
+        return chatCompletionService.AsChatClient();
     }
 
 

@@ -3,6 +3,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
+using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
@@ -46,5 +47,29 @@ public partial class MainWindow : ExtendedWindow
     private async void OpenConfig_OnClick(object sender, RoutedEventArgs e)
     {
         await this.ShowDialog(_globalConfig);
+    }
+
+    private void SnapCommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is SuggestedModel suggested)
+        {
+            var llmModelClient = suggested.Endpoint.NewClient(suggested.LlmModel.Name);
+            if (llmModelClient != null)
+            {
+                _mainViewModel.AddNewDialog(llmModelClient);
+            }
+            else
+            {
+                _mainViewModel.MessageQueue.Enqueue("创建模型失败，请检查配置");
+            }
+        }
+    }
+
+    private void Branch_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is IDialogViewItem dialogViewItem)
+        {
+            _mainViewModel.ForkPreDialog(dialogViewItem);
+        }
     }
 }

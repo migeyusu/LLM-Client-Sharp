@@ -46,6 +46,8 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         }
     }
 
+    public virtual bool IsDefault { get; } = false;
+
     public string Name { get; set; } = Guid.NewGuid().ToString();
 
     [JsonIgnore]
@@ -149,9 +151,15 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         }
 
         SelectedModelIndex = Models.IndexOf(apiModelInfo);
+        OnPropertyChanged(nameof(AvailableModelNames));
     }));
 
-    [JsonIgnore] public ICommand RemoveCommand => new ActionCommand((o => { Models.Remove((APIModelInfo)o); }));
+    [JsonIgnore]
+    public ICommand RemoveCommand => new ActionCommand((o =>
+    {
+        Models.Remove((APIModelInfo)o);
+        OnPropertyChanged(nameof(AvailableModelNames));
+    }));
 
     public ILLMModelClient? NewClient(string modelName)
     {
@@ -218,7 +226,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         }
     }
 
-    public void MoveUp(APIModelInfo modelInfo)  
+    public void MoveUp(APIModelInfo modelInfo)
     {
         int index = Models.IndexOf(modelInfo);
         if (index > 0)

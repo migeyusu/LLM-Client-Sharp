@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -65,7 +66,7 @@ public class AzureModelInfo : ILLMModel
 
     [JsonIgnore] public ILLMEndpoint? Endpoint { get; set; }
 
-    [JsonIgnore] public bool SystemPromptEnable { get; set; }
+    [JsonIgnore] public bool SystemPromptEnable { get; set; } = true;
 
     [JsonIgnore] public bool TopPEnable { get; set; }
 
@@ -73,7 +74,7 @@ public class AzureModelInfo : ILLMModel
 
     [JsonIgnore] public bool TemperatureEnable { get; set; }
 
-    [JsonIgnore] public bool MaxTokensEnable { get; set; }
+    [JsonIgnore] public bool MaxTokensEnable { get; set; } = true;
 
     [JsonIgnore] public bool FrequencyPenaltyEnable { get; set; }
 
@@ -83,21 +84,71 @@ public class AzureModelInfo : ILLMModel
 
     [JsonIgnore] public string? SystemPrompt { get; set; }
 
-    [JsonIgnore] public float TopP { get; set; }
+    [JsonIgnore]
+    public float TopP
+    {
+        get => _topP;
+        set
+        {
+            _topP = value;
+            this.TopPEnable = true;
+        }
+    }
 
     [JsonIgnore] public int TopKMax { get; set; }
 
-    [JsonIgnore] public int TopK { get; set; }
+    [JsonIgnore]
+    public int TopK
+    {
+        get => _topK;
+        set
+        {
+            _topK = value;
+            TopKEnable = true;
+        }
+    }
 
-    [JsonIgnore] public float Temperature { get; set; }
+    [JsonIgnore]
+    public float Temperature
+    {
+        get => _temperature;
+        set
+        {
+            _temperature = value;
+            TemperatureEnable = true;
+        }
+    }
 
-    [JsonIgnore] public int MaxTokens { get; set; }
+    [JsonIgnore] public int MaxTokens { get; set; } = 4096;
 
-    [JsonIgnore] public int MaxTokenLimit { get; set; }
+    [JsonIgnore]
+    public int MaxTokenLimit
+    {
+        get => MaxOutputTokens.HasValue ? (int)MaxOutputTokens.Value : 4096;
+        set => throw new NotImplementedException();
+    }
 
-    [JsonIgnore] public float FrequencyPenalty { get; set; }
+    [JsonIgnore]
+    public float FrequencyPenalty
+    {
+        get => _frequencyPenalty;
+        set
+        {
+            _frequencyPenalty = value;
+            FrequencyPenaltyEnable = true;
+        }
+    }
 
-    [JsonIgnore] public float PresencePenalty { get; set; }
+    [JsonIgnore]
+    public float PresencePenalty
+    {
+        get => _presencePenalty;
+        set
+        {
+            _presencePenalty = value;
+            PresencePenaltyEnable = true;
+        }
+    }
 
     [JsonIgnore] public long? Seed { get; set; }
 
@@ -195,6 +246,11 @@ public class AzureModelInfo : ILLMModel
     [JsonPropertyName("light_mode_icon")] public string? LightModeIconString { get; set; }
 
     private ImageSource? _lightModeIconBrush = null;
+    private float _topP;
+    private float _frequencyPenalty = 0;
+    private float _presencePenalty = 0;
+    private float _temperature = 1f;
+    private int _topK;
 
     [JsonIgnore]
     public ImageSource? LightModeIcon
@@ -221,4 +277,24 @@ public class AzureModelInfo : ILLMModel
     [JsonPropertyName("summary")] public string? Summary { get; set; }
 
     [JsonPropertyName("model_version")] public string? ModelVersion { get; set; }
+
+    public const string FilteredTask = "chat-completion";
+    [JsonPropertyName("task")] public string? Task { get; set; }
+
+    /// <summary>
+    /// "multimodal","reasoning","conversation", "multipurpose","multilingual","coding","rag",
+    /// "agents","understanding","low latency","large context", "vision","audio","summarization"
+    /// </summary>
+    [JsonPropertyName("tags")]
+    public string[]? Tags { get; set; }
+
+    public const string FilteredInputText = "text";
+
+    [JsonPropertyName("supported_input_modalities")]
+    public string[]? SupportedInputModalities { get; set; }
+
+    [JsonPropertyName("supported_output_modalities")]
+    public string[]? SupportedOutputModalities { get; set; }
+
+    [JsonPropertyName("capabilities")] public JsonObject? Capabilities { get; set; }
 }

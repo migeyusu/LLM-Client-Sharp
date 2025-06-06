@@ -51,10 +51,9 @@
                  Style="{StaticResource MaterialDesignFloatingHintTextBox}" />
         <TextBox Text="{Binding Description,Mode=TwoWay}"
                  materialDesign:HintAssist.Hint="模型描述（markdown）"
+                 Style="{StaticResource MaterialDesignFilledTextBox}"
+                 MaxHeight="300"
                  Margin="0,0,0,10" />
-        <CheckBox Content="Streaming"
-                  IsChecked="{Binding Streaming,Mode=TwoWay}"
-                  Margin="0,0,0,10" />
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -97,9 +96,6 @@
                 </StackPanel>
             </RadioButton>
         </Grid>
-
-        <TextBlock Text="预设值:"
-                   Margin="0,10,0,0" />
         <CheckBox IsChecked="{Binding SystemPromptEnable,Mode=TwoWay}"
                   Content="System Prompt:"
                   materialDesign:CheckBoxAssist.CheckBoxSize="30"
