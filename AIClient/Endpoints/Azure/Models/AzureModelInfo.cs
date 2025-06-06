@@ -29,7 +29,7 @@ public class AzureModelInfo : ILLMModel
 
     [JsonIgnore] public bool Streaming { get; set; } = true;
 
-    ThemedIcon? _themedIcon;
+    private ThemedIcon? _themedIcon;
 
     [JsonIgnore]
     public ThemedIcon Icon
@@ -41,12 +41,27 @@ public class AzureModelInfo : ILLMModel
                 return _themedIcon;
             }
 
-            if (LightModeIcon == null)
-            {
-                return Icons.APIIcon;
-            }
+            _themedIcon = new AsyncThemedIcon((() =>
+                {
+                    return Task.Run((() =>
+                    {
+                        ImageSource? lightModeIconBrush = null;
+                        if (!string.IsNullOrEmpty(LightModeIconString))
+                        {
+                            lightModeIconBrush = Extension.LoadSvgFromBase64(LightModeIconString);
+                        }
+                        else if (LogoUrl != null)
+                        {
+                            var requestUri = new Uri($"https://github.com{LogoUrl}");
+                            lightModeIconBrush = requestUri.GetIcon().Result;
+                        }
 
-            _themedIcon = new LocalThemedIcon(LightModeIcon, DarkModeIcon);
+                        return lightModeIconBrush ?? Icons.APIIcon.CurrentSource;
+                    }));
+                }),
+                string.IsNullOrEmpty(DarkModeIconString)
+                    ? null
+                    : (() => { return Task.Run((() => Extension.LoadSvgFromBase64(DarkModeIconString))); }));
             return _themedIcon;
         }
     }
@@ -225,51 +240,13 @@ public class AzureModelInfo : ILLMModel
 
     [JsonPropertyName("dark_mode_icon")] public string? DarkModeIconString { get; set; }
 
-    private ImageSource? _darkModeIconBrush = null;
-
-    [JsonIgnore]
-    public ImageSource? DarkModeIcon
-    {
-        get
-        {
-            if (string.IsNullOrEmpty(DarkModeIconString))
-                return null;
-            if (_darkModeIconBrush == null)
-            {
-                _darkModeIconBrush = Extension.LoadSvgFromBase64(DarkModeIconString);
-            }
-
-            return _darkModeIconBrush;
-        }
-    }
-
     [JsonPropertyName("light_mode_icon")] public string? LightModeIconString { get; set; }
-
-    private ImageSource? _lightModeIconBrush = null;
+    
     private float _topP;
     private float _frequencyPenalty = 0;
     private float _presencePenalty = 0;
     private float _temperature = 1f;
     private int _topK;
-
-    [JsonIgnore]
-    public ImageSource? LightModeIcon
-    {
-        get
-        {
-            if (!string.IsNullOrEmpty(LightModeIconString))
-            {
-                _lightModeIconBrush = Extension.LoadSvgFromBase64(LightModeIconString);
-            }
-            else if (LogoUrl != null)
-            {
-                var requestUri = new Uri($"https://github.com{LogoUrl}");
-                _lightModeIconBrush = requestUri.GetIcon().Result;
-            }
-
-            return _lightModeIconBrush;
-        }
-    }
 
     [JsonPropertyName("training_data_date")]
     public string? TrainingDataDate { get; set; }
@@ -279,7 +256,7 @@ public class AzureModelInfo : ILLMModel
     [JsonPropertyName("model_version")] public string? ModelVersion { get; set; }
 
     public const string FilteredTask = "chat-completion";
-    [JsonPropertyName("task")] public string? Task { get; set; }
+    [JsonPropertyName("task")] public string? ModelTask { get; set; }
 
     /// <summary>
     /// "multimodal","reasoning","conversation", "multipurpose","multilingual","coding","rag",

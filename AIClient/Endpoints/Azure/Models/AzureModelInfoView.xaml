@@ -17,7 +17,7 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <StackPanel Orientation="Horizontal">
-            <Image Source="{Binding  LightModeIcon,Mode=OneWay}"
+            <Image Source="{Binding  Icon.CurrentSource,Mode=OneWay}"
                    Width="40"
                    Height="40" />
             <TextBlock Text="{Binding  FriendlyName,Mode=OneTime}"

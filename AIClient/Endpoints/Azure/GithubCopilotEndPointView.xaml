@@ -35,7 +35,9 @@
         </Grid>
         <ScrollViewer Grid.Row="1"
                       Margin="0,10">
-            <ItemsControl ItemsSource="{Binding AvailableModelsInfos,Mode=OneWay}">
+            <ItemsControl ItemsSource="{Binding AvailableModelsInfos,Mode=OneWay}"
+                          VirtualizingStackPanel.IsVirtualizing="True"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type models:AzureModelInfo}">
                         <StackPanel Orientation="Horizontal"
@@ -43,7 +45,7 @@
                             <Image Width="32"
                                    Height="32"
                                    VerticalAlignment="Center"
-                                   Source="{Binding Icon.CurrentSource,Mode=OneTime}" />
+                                   Source="{Binding Icon.CurrentSource,Mode=OneWay}" />
                             <TextBlock Margin="10,0"
                                        VerticalAlignment="Center"
                                        TextWrapping="NoWrap"
@@ -51,7 +53,7 @@
                                        Style="{StaticResource MaterialDesignSubtitle2TextBlock}">
                                 <TextBlock.Text>
                                     <MultiBinding Mode="OneTime"
-                                        StringFormat="{}{0}, Max Input Tokens: {1}, Max Output Tokens: {2}">
+                                                  StringFormat="{}{0}, Max Input Tokens: {1}, Max Output Tokens: {2}">
                                         <Binding Path="FriendlyName" />
                                         <Binding Path="MaxInputTokens" />
                                         <Binding Path="MaxOutputTokens" />

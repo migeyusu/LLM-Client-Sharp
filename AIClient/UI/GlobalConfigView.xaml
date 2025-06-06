@@ -43,9 +43,15 @@
                     HorizontalAlignment="Right"
                     Orientation="Horizontal"
                     Margin="10">
+            <Button Click="ImportEndpoints_OnClick"
+                    Content="导入Endpoints文件" 
+                    Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="20,0,0,0"/>
             <Button Click="OpenDialogs_OnClick"
                     WindowChrome.IsHitTestVisibleInChrome="True"
                     Content="打开对话存储"
+                    Margin="20,0,0,0"
                     Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
                     Style="{StaticResource MaterialDesignOutlinedButton}" />
             <Button Command="{Binding SaveCommand}"

@@ -41,31 +41,13 @@ public static class Extension
     {
         return Markdig.Wpf.Markdown.ToFlowDocument(Raw, DefaultPipeline, Renderer);
     }
-    
+
     public static ImageSource SVGStreamToImageSource(this Stream stream)
     {
         var magickImage = new MagickImage(stream);
-        return magickImage.ToBitmapSource();
-        /*var skBitmap = new SKBitmap();
-        var skCanvas = new SKCanvas(skBitmap);
-        var skSvg = new SKSvg();
-        skSvg.Load(stream);
-
-        skCanvas.DrawPicture(skSvg.Picture);
-        using (var asStream = new MemoryStream())
-        {
-            skSvg.Save(asStream, SKColors.Empty);
-            stream.Position = 0;
-            var image = new BitmapImage();
-            image.BeginInit();
-            image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.UriSource = null;
-            image.StreamSource = asStream;
-            image.EndInit();
-            image.Freeze();
-            return image;
-        }*/
+        var bitmapSource = magickImage.ToBitmapSource();
+        bitmapSource.Freeze();
+        return bitmapSource;
     }
 
     public static ImageSource LoadSvgFromBase64(string src)

@@ -143,7 +143,6 @@
                                                                      StaysOpen="True"
                                                                      VerticalAlignment="Center"
                                                                      ToolTip="添加新agent"
-                                                                     Visibility="{Binding IsAvailableInContext,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                                                      Style="{StaticResource MaterialDesignToolPopupBox}"
                                                                      PopupContentTemplate="{StaticResource  PopupSelectViewModelTemplate}">
                                                 <materialDesign:PopupBox.ToggleContent>
@@ -183,7 +182,9 @@
                                                         <component:DataTemplateTypePair.Template>
                                                             <DataTemplate DataType="{x:Type ui:ResponseViewItem}">
                                                                 <StackPanel Orientation="Horizontal"
-                                                                            Margin="3">
+                                                                            Margin="3"
+                                                                            ToolTipService.InitialShowDelay="0"
+                                                                            ToolTip="{Binding Model.Endpoint.DisplayName,Mode=OneTime}">
                                                                     <Image
                                                                         Source="{Binding Model.Icon.CurrentSource,Mode=OneWay}"
                                                                         Width="23"
@@ -201,7 +202,7 @@
                                                                             Margin="6,0,-6,0"
                                                                             VerticalAlignment="Center"
                                                                             ToolTip="删除当前"
-                                                                            Template="{StaticResource ItemDeleteButtonTemplate}"/>
+                                                                            Template="{StaticResource ItemDeleteButtonTemplate}" />
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </component:DataTemplateTypePair.Template>
@@ -480,7 +481,7 @@
                         Margin="0,0,16,8"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom">
-                <TextBlock Text="{Binding CurrentContextTokens,StringFormat=当前上下文预估：{0}}"
+                <TextBlock Text="{Binding CurrentContextTokens,StringFormat=当前上下文预估：{0},Mode=OneWay}"
                            VerticalAlignment="Center" />
                 <CheckBox Content="回车发送"
                           Margin="16,0,0,0"

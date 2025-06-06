@@ -15,7 +15,7 @@ public static class EndPointsConfiguration
      * }
      */
 
-    private const string EndPointsJsonFileName = "EndPoints.json";
+    public const string EndPointsJsonFileName = "EndPoints.json";
 
     /// <summary>
     /// 保存自定义终结点
@@ -34,6 +34,12 @@ public static class EndPointsConfiguration
     public static async Task<JsonNode> LoadDoc()
     {
         var fullPath = Path.GetFullPath(EndPointsJsonFileName);
+        var node = await TryLoadDoc(fullPath);
+        return node ?? JsonNode.Parse("""{}""")!;
+    }
+
+    public static async Task<JsonNode?> TryLoadDoc(string fullPath)
+    {
         var fileInfo = new FileInfo(fullPath);
         if (fileInfo.Exists)
         {
@@ -54,7 +60,7 @@ public static class EndPointsConfiguration
             }
         }
 
-        return JsonNode.Parse("""{}""")!;
+        return null;
     }
 
     public static JsonNode GetOrCreate(this JsonNode jsonNode, string key)

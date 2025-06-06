@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System.Collections.Specialized;
+using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;

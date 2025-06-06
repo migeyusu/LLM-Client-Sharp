@@ -203,7 +203,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
                 }
 
                 foreach (var modelInfo in
-                         azureModelInfos.Where((info => info.Task == AzureModelInfo.FilteredTask
+                         azureModelInfos.Where((info => info.ModelTask == AzureModelInfo.FilteredTask
                                                         && info.SupportedInputModalities?.Contains(AzureModelInfo
                                                             .FilteredInputText) == true)))
                 {

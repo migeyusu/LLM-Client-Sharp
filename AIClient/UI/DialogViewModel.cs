@@ -473,7 +473,7 @@ public class DialogViewModel : BaseViewModel
         Debugger.Break();
     }*/
 
-    public ICommand TestCommand => new ActionCommand((async o =>
+    /*public ICommand TestCommand => new ActionCommand((async o =>
     {
         if (this.Client == null)
         {
@@ -498,7 +498,7 @@ public class DialogViewModel : BaseViewModel
         {
             await AppendResponseOn(multiResponseViewItem, llmModelClient);
         }
-    }));
+    }));*/
 
     public ICommand NewResponseCommand => new RelayCommand((() =>
     {
@@ -735,6 +735,7 @@ public class DialogViewModel : BaseViewModel
 
         this.TokensConsumption += completedResult.Usage.TotalTokenCount ?? 0;
         OnPropertyChangedAsync(nameof(Shortcut));
+        OnPropertyChangedAsync(nameof(CurrentContextTokens));
         return completedResult;
     }
 

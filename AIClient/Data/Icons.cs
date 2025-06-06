@@ -129,16 +129,7 @@ public static class Icons
                 {
                     await using (var fileStream = fileInfo.OpenRead())
                     {
-                        if (extension == ".svg")
-                        {
-                            result = fileStream.SVGStreamToImageSource();
-                            result.Freeze();
-                        }
-                        else
-                        {
-                            result = fileStream.ToImageSource();
-                        }
-
+                        result = extension == ".svg" ? fileStream.SVGStreamToImageSource() : fileStream.ToImageSource();
                         IconCache.TryAdd(uri, result);
                         return result;
                     }
@@ -153,15 +144,7 @@ public static class Icons
                         {
                             using (var stream = await message.Content.ReadAsStreamAsync(CancellationToken.None))
                             {
-                                if (extension == ".svg")
-                                {
-                                    result = stream.SVGStreamToImageSource();
-                                    result.Freeze();
-                                }
-                                else
-                                {
-                                    result = stream.ToImageSource();
-                                }
+                                result = extension == ".svg" ? stream.SVGStreamToImageSource() : stream.ToImageSource();
 
                                 IconCache.TryAdd(uri, result);
                                 stream.Seek(0, SeekOrigin.Begin);

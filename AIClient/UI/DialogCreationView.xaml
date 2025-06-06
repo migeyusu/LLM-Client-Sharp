@@ -53,7 +53,7 @@
                             <Image DockPanel.Dock="Left"
                                    Width="30"
                                    Height="30"
-                                   Source="{Binding  LightModeIcon,Mode=OneTime}" />
+                                   Source="{Binding  Icon.CurrentSource,Mode=OneWay}" />
                             <TextBlock Margin="10,2"
                                        VerticalAlignment="Center"
                                        Text="{Binding FriendlyName,Mode=OneTime }" />

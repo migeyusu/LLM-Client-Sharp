@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Xunit.Abstractions;
 
 namespace LLMClient.Test;
-
+//dotnet publish .\LLMClient.csproj -p:PublishProfile=FolderProfile
 public class UnitTest1
 {
     private ITestOutputHelper output;
