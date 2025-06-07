@@ -38,12 +38,12 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         get { return Source.Value; }
     }
 
-    public override IList<string> AvailableModelNames
+    public override IReadOnlyCollection<string> AvailableModelNames
     {
-        get { return _loadedModelInfos.Values.Select((info => info.FriendlyName)).ToArray(); }
+        get { return _loadedModelInfos.Keys; }
     }
 
-    public ICollection<AzureModelInfo> AvailableModelsInfos
+    public IReadOnlyCollection<AzureModelInfo> AvailableModelsInfos
     {
         get { return _loadedModelInfos.Values; }
     }
@@ -213,7 +213,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
                     if (_predefinedModels.ContainsKey(modelInfoName))
                     {
                         modelInfo.Endpoint = this;
-                        _loadedModelInfos.Add(modelInfo.Id, modelInfo);
+                        _loadedModelInfos.Add(modelInfoName, modelInfo);
                     }
                 }
             }

@@ -45,7 +45,7 @@ public abstract class AzureEndPointBase : BaseViewModel, ILLMEndpoint
         get { return Source.Value; }
     }
 
-    public abstract IList<string> AvailableModelNames { get; }
+    public abstract IReadOnlyCollection<string> AvailableModelNames { get; }
 
     public abstract ILLMModelClient? NewClient(string modelName);
     public abstract ILLMModel? GetModel(string modelName);

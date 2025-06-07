@@ -15,11 +15,11 @@ public interface ILLMEndpoint
 
     ImageSource Icon { get; }
 
-    IList<string> AvailableModelNames { get; }
+    IReadOnlyCollection<string> AvailableModelNames { get; }
 
-    ILLMModelClient? NewClient(string modelId);
+    ILLMModelClient? NewClient(string modelName);
 
-    ILLMModel? GetModel(string modelId);
+    ILLMModel? GetModel(string modelName);
 
     Task InitializeAsync();
 }

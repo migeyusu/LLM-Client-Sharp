@@ -125,7 +125,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         }
     }
 
-    [JsonIgnore] public IList<string> AvailableModelNames => Models.Select(x => x.Name).ToList();
+    [JsonIgnore] public IReadOnlyCollection<string> AvailableModelNames => Models.Select(x => x.Name).ToArray();
 
     private const string NewModelName = "测试名称";
 
