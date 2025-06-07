@@ -339,17 +339,19 @@
                                             </ContentControl.ContentTemplateSelector>
                                         </ContentControl>
                                     </materialDesign:Card>
-                                    <TextBlock
-                                        HorizontalAlignment="Left"
-                                        Margin="0,6,0,0">
-                                        <Run
-                                            Text="{Binding AcceptedResponse.Tokens,Mode=OneWay,StringFormat=Tokens: {0}}" />
-                                        <Run> </Run>
-                                        <Run
-                                            Text="{Binding  AcceptedResponse.Latency,Mode=OneWay,StringFormat=Latency: {0}ms}" />
-                                        <Run> </Run>
-                                        <Run
-                                            Text="{Binding AcceptedResponse.Duration,Mode=OneWay,StringFormat=Duration: {0}s}" />
+                                    <TextBlock DataContext="{Binding AcceptedResponse,Mode=OneWay}"
+                                               HorizontalAlignment="Left"
+                                               Margin="0,6,0,0">
+                                        <TextBlock.Text>
+                                            <MultiBinding
+                                                StringFormat="Tokens: {0}, Latency: {1}ms, Duration:{2}s, Speed:{3:F1}tps">
+                                                <Binding Path="Tokens" Mode="OneTime" />
+                                                <Binding Path="Latency" Mode="OneTime" />
+                                                <Binding Path="Duration" Mode="OneTime" />
+                                                <Binding Path="." Mode="OneTime"
+                                                         Converter="{x:Static component:TpsConverter.Instance}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
                                     </TextBlock>
                                 </StackPanel>
                             </DataTemplate>

@@ -16,6 +16,9 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
 
     private readonly Dictionary<string, Action<AzureModelInfo>> _predefinedModels;
 
+    /// <summary>
+    /// key: model-id
+    /// </summary>
     private readonly Dictionary<string, AzureModelInfo> _loadedModelInfos = new Dictionary<string, AzureModelInfo>();
 
     public override bool IsDefault { get; } = true;
@@ -27,7 +30,6 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             @"pack://application:,,,/LLMClient;component/Resources/Images/github-copilot-icon.png",
             UriKind.Absolute));
         bitmapImage.Freeze();
-        DebugEx.PrintThreadId();
         return bitmapImage;
     }));
 
@@ -38,7 +40,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
 
     public override IList<string> AvailableModelNames
     {
-        get { return _loadedModelInfos.Keys.ToArray(); }
+        get { return _loadedModelInfos.Values.Select((info => info.FriendlyName)).ToArray(); }
     }
 
     public ICollection<AzureModelInfo> AvailableModelsInfos
@@ -211,7 +213,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
                     if (_predefinedModels.ContainsKey(modelInfoName))
                     {
                         modelInfo.Endpoint = this;
-                        _loadedModelInfos.Add(modelInfoName, modelInfo);
+                        _loadedModelInfos.Add(modelInfo.Id, modelInfo);
                     }
                 }
             }

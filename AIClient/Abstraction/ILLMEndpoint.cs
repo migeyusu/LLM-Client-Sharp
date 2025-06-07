@@ -5,7 +5,7 @@ namespace LLMClient.Abstraction;
 public interface ILLMEndpoint
 {
     string DisplayName { get; }
-    
+
     bool IsDefault { get; }
 
     /// <summary>
@@ -17,9 +17,9 @@ public interface ILLMEndpoint
 
     IList<string> AvailableModelNames { get; }
 
-    ILLMModelClient? NewClient(string modelName);
+    ILLMModelClient? NewClient(string modelId);
 
-    ILLMModel? GetModel(string modelName);
+    ILLMModel? GetModel(string modelId);
 
     Task InitializeAsync();
 }

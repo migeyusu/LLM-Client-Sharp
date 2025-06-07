@@ -16,7 +16,7 @@ public class AzureModelInfo : ILLMModel
     [JsonIgnore]
     public string Id
     {
-        get { return this.Publisher?.ToLower() + "/" + this.OriginalName; }
+        get { return this.Publisher?.ToLower() + "-" + this.OriginalName; }
     }
 
     [JsonPropertyName("name")] public string ModelName { get; set; } = string.Empty;

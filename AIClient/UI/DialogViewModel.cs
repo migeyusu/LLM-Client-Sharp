@@ -103,7 +103,6 @@ public class DialogViewModel : BaseViewModel
             if (value == _promptString) return;
             _promptString = value;
             OnPropertyChanged();
-            // PromptTokensCount = value?.Length ?? 0;
         }
     }
 

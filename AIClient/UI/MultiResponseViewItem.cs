@@ -43,7 +43,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
     {
         get { return AcceptedResponse?.Message; }
     }
-    
+
     public bool IsAvailableInContext
     {
         get { return AcceptedResponse?.IsAvailableInContext == true; }
