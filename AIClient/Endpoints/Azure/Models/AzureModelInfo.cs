@@ -1,10 +1,10 @@
-﻿using System.Diagnostics;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Windows.Documents;
 using System.Windows.Media;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Render;
 using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.Azure.Models;
@@ -16,7 +16,7 @@ public class AzureModelInfo : ILLMModel
     [JsonIgnore]
     public string Id
     {
-        get { return this.Publisher?.ToLower() + "-" + this.OriginalName; }
+        get { return this.Publisher?.ToLower() + "/" + this.OriginalName; }
     }
 
     [JsonPropertyName("name")] public string ModelName { get; set; } = string.Empty;
@@ -143,6 +143,8 @@ public class AzureModelInfo : ILLMModel
         set => throw new NotImplementedException();
     }
 
+    public bool ReasoningEnable { get; } = false;
+
     [JsonIgnore]
     public float FrequencyPenalty
     {
@@ -241,7 +243,7 @@ public class AzureModelInfo : ILLMModel
     [JsonPropertyName("dark_mode_icon")] public string? DarkModeIconString { get; set; }
 
     [JsonPropertyName("light_mode_icon")] public string? LightModeIconString { get; set; }
-    
+
     private float _topP;
     private float _frequencyPenalty = 0;
     private float _presencePenalty = 0;

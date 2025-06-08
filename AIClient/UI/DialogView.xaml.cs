@@ -102,7 +102,7 @@ public partial class DialogView : UserControl
     {
         if (e.Parameter is MultiResponseViewItem item)
         {
-            ViewModel.Conclusion(item);
+            ViewModel.ConclusionTillEnd();
         }
     }
     

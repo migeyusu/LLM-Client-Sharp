@@ -18,29 +18,12 @@ namespace LLMClient;
 
 public static class Extension
 {
-    private static readonly CustomRenderer Renderer;
-
-    private static readonly MarkdownPipeline DefaultPipeline =
-        new MarkdownPipelineBuilder().UseSupportedExtensions().Build();
-
-    static Extension()
-    {
-        Renderer = new CustomRenderer();
-        Renderer.Initialize();
-        DefaultPipeline.Setup(Renderer);
-    }
-
     public static void UpgradeAPIVersion(this ChatCompletionsClient client, string apiVersion = "2024-12-01-preview")
     {
         var propertyInfo = client.GetType().GetField("_apiVersion", BindingFlags.Instance | BindingFlags.NonPublic);
         propertyInfo?.SetValue(client, apiVersion);
     }
 
-
-    public static FlowDocument ToFlowDocument(this string Raw)
-    {
-        return Markdig.Wpf.Markdown.ToFlowDocument(Raw, DefaultPipeline, Renderer);
-    }
 
     public static ImageSource SVGStreamToImageSource(this Stream stream)
     {

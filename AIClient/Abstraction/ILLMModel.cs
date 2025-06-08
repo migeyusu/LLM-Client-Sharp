@@ -30,6 +30,7 @@ public interface ILLMModel : IModelParams
     bool SeedEnable { get; }
     int TopKMax { get; }
     int MaxTokenLimit { get; }
+    bool ReasoningEnable { get; }
 
     #endregion
 }

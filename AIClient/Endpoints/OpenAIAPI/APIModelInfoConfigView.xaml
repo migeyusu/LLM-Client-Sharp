@@ -96,6 +96,12 @@
                 </StackPanel>
             </RadioButton>
         </Grid>
+        <!--<CheckBox IsChecked="{Binding ReasoningEnable,Mode=TwoWay}"
+                  Content="Reasoning (if supported and need manually enabled)"
+                  materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Center"
+                  Margin="0,10,0,0" />-->
         <CheckBox IsChecked="{Binding SystemPromptEnable,Mode=TwoWay}"
                   Content="System Prompt:"
                   materialDesign:CheckBoxAssist.CheckBoxSize="30"

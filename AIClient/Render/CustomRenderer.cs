@@ -1,6 +1,4 @@
 ﻿using Markdig.Renderers;
-using TextMateSharp.Grammars;
-using Block = Markdig.Syntax.Block;
 
 namespace LLMClient.Render;
 
@@ -14,7 +12,9 @@ public class CustomRenderer : WpfRenderer
         {
             return;
         }
+
         ObjectRenderers.Add(new TextMateCodeRenderer());
+        ObjectRenderers.Add(new ThinkBlockRenderer());
         base.LoadRenderers();
         _isRendererLoaded = true;
     }

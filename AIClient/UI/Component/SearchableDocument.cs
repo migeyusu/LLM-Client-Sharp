@@ -1,5 +1,5 @@
 ﻿using System.Windows.Documents;
-using LLMClient;
+using LLMClient.Render;
 using LLMClient.UI;
 
 public class SearchableDocument : BaseViewModel

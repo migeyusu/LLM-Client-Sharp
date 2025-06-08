@@ -598,7 +598,8 @@ public class DialogViewModel : BaseViewModel
         }
     }));
 
-
+    public ICommand ConclusionCommand => new ActionCommand((o => { ConclusionTillEnd(); }));
+    
     private IEndpointService EndpointService
     {
         get { return ServiceLocator.GetService<IEndpointService>()!; }
@@ -634,7 +635,7 @@ public class DialogViewModel : BaseViewModel
         this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
     }
 
-    public async void Conclusion(MultiResponseViewItem item)
+    public async void ConclusionTillEnd()
     {
         if (this.Client == null)
         {
@@ -661,6 +662,7 @@ public class DialogViewModel : BaseViewModel
             dialogViewItems.Remove(requestViewItem);
             return;
         }
+
         var indexOf = dialogViewItems.IndexOf(requestViewItem);
         dialogViewItems.Insert(indexOf, new EraseViewItem());
         ScrollViewItem = dialogViewItems.LastOrDefault();

@@ -9,6 +9,7 @@ using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace LLMClient;
 
@@ -36,7 +37,8 @@ public class Program
                 .AddTransient<ModelTypeConverter>()
                 .AddTransient<GlobalConfig>()
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
-                .AddSingleton<IEndpointService, EndpointConfigureViewModel>();
+                .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
+                .AddLogging((builder => builder.AddDebug()));
             collection.AddAutoMapper((provider, expression) =>
             {
                 expression.CreateMap<DialogPersistModel, DialogViewModel>().ConvertUsing<ModelTypeConverter>();

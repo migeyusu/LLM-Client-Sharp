@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows.Data;
+using LLMClient.Render;
 
 namespace LLMClient.UI.Component;
 

@@ -338,6 +338,8 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         }
     }
 
+    public bool ReasoningEnable { get; set; } = false;
+
     public float FrequencyPenalty
     {
         get => _frequencyPenalty;

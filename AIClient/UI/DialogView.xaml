@@ -464,6 +464,7 @@
                      HorizontalAlignment="Stretch"
                      MinHeight="80"
                      Margin="0,10,0,0"
+                     Padding="10,10,10,40"
                      Text="{Binding  PromptString,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto">
@@ -485,6 +486,13 @@
                         VerticalAlignment="Bottom">
                 <TextBlock Text="{Binding CurrentContextTokens,StringFormat=当前上下文预估：{0},Mode=OneWay}"
                            VerticalAlignment="Center" />
+                <!--<TextBlock Text="推理："
+                           VerticalAlignment="Center" />-->
+                <!--<ToggleButton ToolTip="开启/关闭推理"
+                              Margin="16,0,0,0"
+                              VerticalAlignment="Center"
+                              Visibility="{Binding Client.Info.ReasoningEnable,Mode=TwoWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                              Style="{StaticResource MaterialDesignSwitchToggleButton}" />-->
                 <CheckBox Content="回车发送"
                           Margin="16,0,0,0"
                           Checked="EnterKeyInputBinding_OnChecked"
@@ -494,8 +502,12 @@
                         Width="80"
                         Height="30"
                         Margin="16,0,0,0"
-                        Style="{StaticResource MaterialDesignFlatLightButton}"
+                        Style="{StaticResource MaterialDesignRaisedLightButton}"
                         Content="发送" />
+                <Button Command="{Binding ConclusionCommand}"
+                        Margin="16,0,0,0"
+                        Content="总结"
+                        Style="{StaticResource MaterialDesignOutlinedDarkButton}" />
                 <!--<Button Command="{Binding TestCommand}"
                         Content="测试" />-->
             </StackPanel>

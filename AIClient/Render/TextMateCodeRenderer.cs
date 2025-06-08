@@ -3,14 +3,16 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
 using Markdig.Renderers;
-using Markdig.Renderers.Wpf;
+using Markdig.Renderers.Html;
 using Markdig.Syntax;
 using Markdig.Wpf;
 using TextMateSharp.Grammars;
 using TextMateSharp.Registry;
 using TextMateSharp.Themes;
+using CodeBlockRenderer = Markdig.Renderers.Wpf.CodeBlockRenderer;
 
 namespace LLMClient.Render;
+
 
 public class TextMateCodeRenderer : CodeBlockRenderer
 {
@@ -52,12 +54,17 @@ public class TextMateCodeRenderer : CodeBlockRenderer
 
     protected override void Write(WpfRenderer renderer, CodeBlock obj)
     {
+        #region header
+
         var blockUiContainer = new BlockUIContainer();
         var contentControl = new ContentControl();
         contentControl.SetResourceReference(FrameworkElement.StyleProperty, CodeBlockHeaderStyleKey);
         ((IAddChild)blockUiContainer).AddChild(contentControl);
         renderer.Push(blockUiContainer);
         renderer.Pop();
+
+        #endregion
+        
         var paragraph = new Paragraph();
         paragraph.BeginInit();
         paragraph.SetResourceReference(FrameworkContentElement.StyleProperty, Styles.CodeBlockStyleKey);

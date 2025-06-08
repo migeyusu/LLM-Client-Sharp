@@ -705,19 +705,7 @@
                                     Executed="Branch_OnExecuted" />
                 </ui:DialogView.CommandBindings>
             </ui:DialogView>
-            <!--<ContentControl Grid.Row="1" Grid.Column="1"
-                            Content="{Binding PreDialog,Mode=OneWay}">
-                <ContentControl.Resources>
-                    <DataTemplate DataType="{x:Type ui:DialogViewModel}">
-                        <ui:DialogView HorizontalAlignment="Stretch">
-                            <ui:DialogView.CommandBindings>
-                                <CommandBinding Command="{x:Static ui:CommonCommands.Branch}"
-                                                Executed="Branch_OnExecuted"/>
-                            </ui:DialogView.CommandBindings>
-                        </ui:DialogView>
-                    </DataTemplate>
-                </ContentControl.Resources>
-            </ContentControl>-->
+
             <materialDesign:Card Grid.Row="0" Grid.Column="0"
                                  Grid.RowSpan="2"
                                  Grid.ColumnSpan="2"

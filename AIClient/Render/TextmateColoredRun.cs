@@ -4,6 +4,8 @@ using TextMateSharp.Grammars;
 
 namespace LLMClient.Render;
 
+
+
 public class TextmateColoredRun : Run
 {
     public IToken Token { get; }
@@ -32,8 +34,7 @@ public class TextmateColoredRun : Run
     {
         Token = token;
     }
-
-
+    
     protected override void OnInitialized(EventArgs e)
     {
         base.OnInitialized(e);

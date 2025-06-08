@@ -1,34 +1,10 @@
-﻿using System.ClientModel;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Net.Http;
-using System.Text;
-using System.Windows.Media;
+﻿using System.Net.Http;
 using AutoMapper;
-using Azure.AI.Inference;
 using LLMClient.Abstraction;
-using LLMClient.UI;
-using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Azure;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Embeddings;
-using Microsoft.SemanticKernel.Memory;
-using Microsoft.SemanticKernel.Plugins.Document;
-using Microsoft.SemanticKernel.Plugins.Document.FileSystem;
-using Microsoft.SemanticKernel.Plugins.Document.OpenXml;
-using OpenAI;
-using OpenAI.Chat;
-using OpenAI.VectorStores;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
-using ChatRole = Microsoft.Extensions.AI.ChatRole;
-using ImageSource = System.Windows.Media.ImageSource;
-using TextContent = Microsoft.Extensions.AI.TextContent;
-using Trace = System.Diagnostics.Trace;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
@@ -65,6 +41,7 @@ public class APIClient : LlmClientBase
         this.Endpoint = endPoint;
         ModelInfo = modelInfo;
         Mapper.Map<APIModelInfo, IModelParams>(modelInfo, this.Parameters);
+        _httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
     }
 
     ~APIClient()
@@ -96,113 +73,38 @@ public class APIClient : LlmClientBase
         }
     }*/
 
-    HttpClient httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
+    private readonly HttpClient _httpClient;
 
-    [Experimental("SKEXP0050")]
-    protected override IChatClient CreateChatClient()
+    private Kernel? _kernel;
+
+    protected override IChatCompletionService CreateChatCompletionService()
     {
-        /*var chatCompletionsClient = new ChatCompletionsClient(new Uri(option.URL),
-              DelegatedTokenCredential.Create(((context, token) =>
-                  new AccessToken(option.APIToken, DateTimeOffset.MaxValue))));
-          return chatCompletionsClient.AsChatClient();*/
         var endpoint = new Uri(this._option.URL);
         var apiToken = _option.APIToken;
         var builder = Kernel.CreateBuilder();
-        var kernel = builder
-            .AddOpenAIChatCompletion(this.ModelInfo.Id, endpoint, apiToken, "LLMClient", "1.0.0", httpClient)
+        _kernel = builder
+            .AddOpenAIChatCompletion(this.ModelInfo.Id, endpoint, apiToken, "LLMClient", "1.0.0", _httpClient)
             .Build();
-        var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
-        return chatCompletionService.AsChatClient();
+        return _kernel.GetRequiredService<IChatCompletionService>();
     }
 
-
-    /*private ChatCompletionsOptions ToAzureAIOptions(
-      IEnumerable<ChatMessage> chatContents,
-      ChatOptions? options)
+    protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
-      ChatCompletionsOptions completionsOptions = new ChatCompletionsOptions(this.ToAzureAIInferenceChatMessages(chatContents));
-      string str1 = options?.ModelId;
-      if (str1 == null)
-        str1 = this._metadata.ModelId ?? throw new InvalidOperationException("No model id was provided when either constructing the client or in the chat options.");
-      completionsOptions.Model = str1;
-      ChatCompletionsOptions azureAiOptions = completionsOptions;
-      if (options != null)
-      {
-        azureAiOptions.FrequencyPenalty = options.FrequencyPenalty;
-        azureAiOptions.MaxTokens = options.MaxOutputTokens;
-        azureAiOptions.NucleusSamplingFactor = options.TopP;
-        azureAiOptions.PresencePenalty = options.PresencePenalty;
-        azureAiOptions.Temperature = options.Temperature;
-        azureAiOptions.Seed = options.Seed;
-        IList<string> stopSequences = options.StopSequences;
-        if (stopSequences != null && stopSequences.Count > 0)
+        var chatOptions = base.CreateChatOptions(messages);
+        /*if (this.ModelInfo.ReasoningEnable)
         {
-          foreach (string str2 in (IEnumerable<string>) stopSequences)
-            azureAiOptions.StopSequences.Add(str2);
-        }
-        int? topK = options.TopK;
-        if (topK.HasValue)
-        {
-          int valueOrDefault = topK.GetValueOrDefault();
-          azureAiOptions.AdditionalProperties["top_k"] = new BinaryData(JsonSerializer.SerializeToUtf8Bytes((object) valueOrDefault, AIJsonUtilities.DefaultOptions.GetTypeInfo(typeof (int))));
-        }
-        AdditionalPropertiesDictionary additionalProperties = options.AdditionalProperties;
-        if (additionalProperties != null)
-        {
-          foreach (KeyValuePair<string, object> keyValuePair in (AdditionalPropertiesDictionary<object>) additionalProperties)
-          {
-            string key = keyValuePair.Key;
-            if (keyValuePair.Value != null)
+            chatOptions.AdditionalProperties = new AdditionalPropertiesDictionary(new Dictionary<string, object?>()
             {
-              byte[] utf8Bytes = JsonSerializer.SerializeToUtf8Bytes(keyValuePair.Value, this.ToolCallJsonSerializerOptions.GetTypeInfo(typeof (object)));
-              azureAiOptions.AdditionalProperties[keyValuePair.Key] = new BinaryData(utf8Bytes);
-            }
-          }
-        }
-        IList<AITool> tools = options.Tools;
-        if (tools != null && tools.Count > 0)
-        {
-          foreach (AITool aiTool in (IEnumerable<AITool>) tools)
-          {
-            if (aiTool is AIFunction aiFunction)
-              azureAiOptions.Tools.Add(AzureAIInferenceChatClient.ToAzureAIChatTool(aiFunction));
-          }
-          switch (options.ToolMode)
-          {
-            case NoneChatToolMode _:
-              azureAiOptions.ToolChoice = ChatCompletionsToolChoice.None;
-              break;
-            case AutoChatToolMode _:
-            case null:
-              azureAiOptions.ToolChoice = ChatCompletionsToolChoice.Auto;
-              break;
-            case RequiredChatToolMode requiredChatToolMode:
-              azureAiOptions.ToolChoice = requiredChatToolMode.RequiredFunctionName == null ? ChatCompletionsToolChoice.Required : new ChatCompletionsToolChoice(new FunctionDefinition(requiredChatToolMode.RequiredFunctionName));
-              break;
-          }
-        }
-        if (options.ResponseFormat is ChatResponseFormatText)
-          azureAiOptions.ResponseFormat = ChatCompletionsResponseFormat.CreateTextFormat();
-        else if (options.ResponseFormat is ChatResponseFormatJson responseFormat)
-        {
-          JsonElement? schema = responseFormat.Schema;
-          if (schema.HasValue)
-          {
-            AzureAIChatToolJson azureAiChatToolJson = schema.GetValueOrDefault().Deserialize<AzureAIChatToolJson>(JsonContext.Default.AzureAIChatToolJson);
-            azureAiOptions.ResponseFormat = ChatCompletionsResponseFormat.CreateJsonFormat(responseFormat.SchemaName ?? "json_schema", (IDictionary<string, BinaryData>) new Dictionary<string, BinaryData>()
-            {
-              ["type"] = AzureAIInferenceChatClient._objectString,
-              ["properties"] = BinaryData.FromBytes(JsonSerializer.SerializeToUtf8Bytes<Dictionary<string, JsonElement>>(azureAiChatToolJson.Properties, JsonContext.Default.DictionaryStringJsonElement)),
-              ["required"] = BinaryData.FromBytes(JsonSerializer.SerializeToUtf8Bytes<List<string>>(azureAiChatToolJson.Required, JsonContext.Default.ListString)),
-              ["additionalProperties"] = AzureAIInferenceChatClient._falseString
-            }, responseFormat.SchemaDescription, new bool?());
-          }
-          else
-            azureAiOptions.ResponseFormat = ChatCompletionsResponseFormat.CreateJsonFormat();
-        }
-      }
-      return azureAiOptions;
-    }*/
+                // { "reasoning_effort", ChatReasoningEffortLevel.Medium },
+                {
+                    "reasoning_effort", "medium"
+                }
+            });
+        }*/
+
+        return chatOptions;
+    }
 }
+
 #pragma warning restore SKEXP0010
 #pragma warning restore SKEXP0001

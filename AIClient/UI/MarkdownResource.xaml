@@ -3,7 +3,8 @@
                     xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
                     xmlns:llmClient="clr-namespace:LLMClient"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-                    xmlns:render="clr-namespace:LLMClient.Render">
+                    xmlns:render="clr-namespace:LLMClient.Render"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
     <!-- Document styles -->
     <Style TargetType="{x:Type FlowDocument}" x:Key="{x:Static markdig:Styles.DocumentStyleKey}">
         <Setter Property="FontFamily" Value="Calibri" />
@@ -37,10 +38,43 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <Style TargetType="{x:Type render:TextmateColoredRun}" 
+    <Style TargetType="{x:Type render:TextmateColoredRun}"
            x:Key="{x:Static render:TextMateCodeRenderer.TokenStyleKey}">
         <Setter Property="ThemeColors"
                 Value="{DynamicResource CodeBlock.TextMateSharp.Theme}" />
+    </Style>
+
+    <Style TargetType="{x:Type Expander}"
+           x:Key="{x:Static render:ThinkBlockRenderer.ThinkBlockExpanderStyleKey}">
+        <Setter Property="Padding"
+                Value="16" />
+        <Setter Property="HeaderTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"
+                                                 Margin="6,0,0,0"/>
+                        <TextBlock Text="已完成思考"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                    </StackPanel>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock Foreground="DarkGray"
+                               FontStyle="Italic"
+                               TextWrapping="Wrap"
+                               Text="{Binding}" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+
     </Style>
     <Style TargetType="{x:Type List}">
         <Setter Property="Margin" Value="40,0,0,0" />

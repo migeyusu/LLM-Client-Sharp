@@ -1,11 +1,13 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel.ChatCompletion;
 using OpenAI.Chat;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
@@ -36,7 +38,13 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
 
     [JsonIgnore] public virtual ObservableCollection<string> PreResponse { get; } = new ObservableCollection<string>();
 
-    protected abstract IChatClient CreateChatClient();
+    [Experimental("SKEXP0001")]
+    protected virtual IChatClient CreateChatClient()
+    {
+        return CreateChatCompletionService().AsChatClient();
+    }
+
+    protected abstract IChatCompletionService CreateChatCompletionService();
 
     protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
@@ -92,6 +100,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
 
     private readonly Stopwatch _stopwatch = new Stopwatch();
     
+    [Experimental("SKEXP0001")]
     public virtual async Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default)
     {
