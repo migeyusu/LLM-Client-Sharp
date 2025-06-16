@@ -46,11 +46,12 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
             EditTime = source.EditTime,
             DialogItems = dialogItems,
             Topic = source.Topic,
-            EndPoint = source.Client?.Endpoint.Name,
-            Model = source.Client?.Name,
+            EndPoint = source.Client.Endpoint.Name,
+            Model = source.Client.Name,
             PromptString = source.PromptString,
-            Params = source.Client?.Parameters,
+            Params = source.Client.Parameters,
             TokensConsumption = source.TokensConsumption,
+            TotalPrice = source.TotalPrice,
         };
     }
 
@@ -78,18 +79,11 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
         })).ToArray();
 
         var llmEndpoint = source.EndPoint == null ? null : _endpointService.GetEndpoint(source.EndPoint);
-        ILLMModelClient? llmModelClient = null;
-        if (llmEndpoint != null)
+        var llmModelClient = llmEndpoint?.NewClient(source.Model ?? string.Empty) ?? new NullLlmModelClient();
+        var sourceJsonModel = source.Params;
+        if (sourceJsonModel != null)
         {
-            llmModelClient = llmEndpoint.NewClient(source.Model ?? string.Empty);
-            if (llmModelClient != null)
-            {
-                var sourceJsonModel = source.Params;
-                if (sourceJsonModel != null)
-                {
-                    llmModelClient.Parameters = sourceJsonModel;
-                }
-            }
+            llmModelClient.Parameters = sourceJsonModel;
         }
 
         return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
@@ -97,6 +91,7 @@ public class ModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistM
             EditTime = source.EditTime,
             PromptString = source.PromptString,
             TokensConsumption = source.TokensConsumption,
+            TotalPrice = source.TotalPrice,
         };
     }
 

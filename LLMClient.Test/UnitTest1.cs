@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.Net;
 using Xunit.Abstractions;
 
 namespace LLMClient.Test;
+
 //dotnet publish .\LLMClient.csproj -p:PublishProfile=FolderProfile
 public class UnitTest1
 {
@@ -23,15 +25,17 @@ public class UnitTest1
     [Fact]
     public async void GetGithubModels()
     {
-        var httpClient = new HttpClient();
-        using (var message = await httpClient.GetAsync("https://xiaoai.plus/api/user/models"))
+        HttpClientHandler handler = new HttpClientHandler()
+            { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
+        using (var httpClient = new HttpClient(handler))
         {
-            message.EnsureSuccessStatusCode();
-            await using (var stream = await message.Content.ReadAsStreamAsync())
+            using (var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://xiaoai.plus/api/pricing"))
             {
-                using (var reader = new StreamReader(stream))
+                httpRequestMessage.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
+                using (var message = await httpClient.SendAsync(httpRequestMessage))
                 {
-                    var content = await reader.ReadToEndAsync();
+                    message.EnsureSuccessStatusCode();
+                    var content = await message.Content.ReadAsStringAsync();
                     output.WriteLine(content);
                 }
             }

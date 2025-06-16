@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -24,6 +25,17 @@ public static class Extension
         propertyInfo?.SetValue(client, apiVersion);
     }
 
+    public static JsonNode GetOrCreate(this JsonNode jsonNode, string key)
+    {
+        if (jsonNode.AsObject().TryGetPropertyValue(key, out var listNode))
+        {
+            return listNode!;
+        }
+
+        var jsonObject = new JsonObject();
+        jsonNode[key] = jsonObject;
+        return jsonObject;
+    }
 
     public static ImageSource SVGStreamToImageSource(this Stream stream)
     {

@@ -74,7 +74,6 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
-
     </Style>
     <Style TargetType="{x:Type List}">
         <Setter Property="Margin" Value="40,0,0,0" />

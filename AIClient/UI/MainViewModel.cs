@@ -186,13 +186,14 @@ public class MainViewModel : BaseViewModel
         }
     }));
 
-    public void AddNewDialog(ILLMModelClient client, string dialogName = "新建会话")
+    public DialogViewModel AddNewDialog(ILLMModelClient client, string dialogName = "新建会话")
     {
         var dialogViewModel = new DialogViewModel(dialogName, client)
             { IsDataChanged = true };
         dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
-        PreDialog = dialogViewModel;
         this.DialogViewModels.Insert(0, dialogViewModel);
+        PreDialog = dialogViewModel;
+        return dialogViewModel;
     }
 
     public async void ForkPreDialog(IDialogViewItem viewModel)

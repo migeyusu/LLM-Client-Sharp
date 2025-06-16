@@ -33,6 +33,8 @@
             </ControlTemplate>
             <Style TargetType="{x:Type FlowDocumentScrollViewer}"
                    x:Key="ExFlowDocumentScrollViewerStyle">
+                <Setter Property="FontFamily"
+                        Value="Microsoft YaHei"/>
                 <Setter Property="FocusVisualStyle" Value="{x:Null}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
                 <Setter Property="BorderThickness" Value="1" />

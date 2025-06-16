@@ -99,17 +99,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
     }
 
     private readonly Stopwatch _stopwatch = new Stopwatch();
-    
+
     [Experimental("SKEXP0001")]
     public virtual async Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
         CancellationToken cancellationToken = default)
     {
-        var cachedPreResponse = new StringBuilder();
         UsageDetails? usageDetails = null;
         try
         {
             PreResponse.Clear();
-            cachedPreResponse.Clear();
             // PreResponse = "正在生成文档。。。。。";
             IsResponding = true;
             var messages = new List<ChatMessage>();
@@ -122,13 +120,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                 }
             }
 
+            string? errorMessage = null;
+            string? responseText = null;
             _stopwatch.Restart();
             int duration = 0;
+            int? latency = null;
             var chatClient = CreateChatClient();
             if (this.Parameters.Streaming)
             {
-                string? errorMessage = null;
-                int? latency = null;
+                var cachedPreResponse = new StringBuilder();
                 try
                 {
                     AdditionalPropertiesDictionary? dictionary = null;
@@ -215,13 +215,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                     errorMessage = ex.Message;
                 }
 
-                return new CompletedResult(cachedPreResponse.Length == 0 ? null : cachedPreResponse.ToString(),
-                    usageDetails ?? new UsageDetails())
-                {
-                    ErrorMessage = errorMessage,
-                    Latency = latency ?? 0,
-                    Duration = duration
-                };
+                responseText = cachedPreResponse.Length == 0 ? null : cachedPreResponse.ToString();
             }
             else
             {
@@ -259,20 +253,27 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                         usageDetails = chatResponse.Usage;
                     }
 
-                    return new CompletedResult(chatResponse.Text, usageDetails ?? new UsageDetails())
-                    {
-                        Duration = duration
-                    };
+                    responseText = chatResponse.Text;
                 }
                 catch (Exception e)
                 {
-                    return new CompletedResult(null, new UsageDetails())
-                    {
-                        ErrorMessage = e.Message,
-                        Duration = duration
-                    };
+                    errorMessage = e.Message;
                 }
             }
+
+            usageDetails ??= new UsageDetails
+            {
+                InputTokenCount = 0,
+                OutputTokenCount = 0,
+                TotalTokenCount = 0,
+            };
+            var price = this.Info.PriceCalculator?.Calculate(usageDetails);
+            return new CompletedResult(responseText, usageDetails, price)
+            {
+                ErrorMessage = errorMessage,
+                Latency = latency ?? 0,
+                Duration = duration
+            };
         }
         finally
         {

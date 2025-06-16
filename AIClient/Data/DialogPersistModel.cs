@@ -27,4 +27,6 @@ public class DialogPersistModel
     public IModelParams? Params { get; set; }
 
     public long TokensConsumption { get; set; }
+
+    public double TotalPrice { get; set; }
 }

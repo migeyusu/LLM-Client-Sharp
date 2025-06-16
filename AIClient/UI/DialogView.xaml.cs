@@ -33,7 +33,7 @@ public partial class DialogView : UserControl
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
-            ViewModel.ReBase(requestViewItem);
+            ViewModel.ReBaseOn(requestViewItem);
         }
     }
 
@@ -69,11 +69,6 @@ public partial class DialogView : UserControl
         }
     }
 
-    private void Redo_OnCanExecute(object sender, CanExecuteRoutedEventArgs e)
-    {
-        e.CanExecute = ViewModel.Client != null;
-    }
-
     private void PopupBox_OnOpened(object sender, RoutedEventArgs e)
     {
         if (sender is PopupBox popupBox)
@@ -102,8 +97,15 @@ public partial class DialogView : UserControl
     {
         if (e.Parameter is MultiResponseViewItem item)
         {
-            ViewModel.ConclusionTillEnd();
+            ViewModel.ConclusionCurrent();
         }
     }
-    
+
+    private void ClearBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is RequestViewItem requestViewItem)
+        {
+            ViewModel.ClearBefore(requestViewItem);
+        }
+    }
 }

@@ -24,12 +24,12 @@
             <RowDefinition MinHeight="60" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <GridSplitter Grid.Row="0"
-                      VerticalAlignment="Bottom"
-                      HorizontalAlignment="Stretch"
-                      Background="DarkGray"
-                      Margin="20,0"
-                      Height="3" />
+        <Separator Grid.Row="0"
+                   VerticalAlignment="Bottom"
+                   HorizontalAlignment="Stretch"
+                   Background="DarkGray"
+                   Margin="20,0"
+                   Height="3" />
         <component:ListBoxEx Grid.Row="0"
                              x:Name="DialogListBox"
                              Margin="0,0,5,5"
@@ -66,12 +66,20 @@
                                                     <materialDesign:PackIcon Kind="ContentCopy" />
                                                 </MenuItem.Icon>
                                             </MenuItem>
-                                            <MenuItem Header="排除之前上下文"
+                                            <MenuItem Header="排除之前对话"
                                                       ToolTip="将之前的对话清出上下文"
                                                       Command="{x:Static ui:CommonCommands.Exclude}"
                                                       CommandParameter="{Binding}">
                                                 <MenuItem.Icon>
                                                     <materialDesign:PackIcon Kind="FormatAlignTop" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="清空之前对话"
+                                                      ToolTip="删除之前的对话内容"
+                                                      Command="{x:Static ui:CommonCommands.Clear}"
+                                                      CommandParameter="{Binding}">
+                                                <MenuItem.Icon>
+                                                    <materialDesign:PackIcon Kind="DeleteSweepOutline" />
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="重发"
@@ -344,8 +352,9 @@
                                                Margin="0,6,0,0">
                                         <TextBlock.Text>
                                             <MultiBinding
-                                                StringFormat="Tokens: {0}, Latency: {1}ms, Duration:{2}s, Speed:{3:F1}tps">
+                                                StringFormat="Tokens: {0}, Price：{1:F4}$，Latency: {2}ms, Duration:{3}s, Speed:{4:F1}tps">
                                                 <Binding Path="Tokens" Mode="OneTime" />
+                                                <Binding Path="Price" Mode="OneTime" TargetNullValue="None" />
                                                 <Binding Path="Latency" Mode="OneTime" />
                                                 <Binding Path="Duration" Mode="OneTime" />
                                                 <Binding Path="." Mode="OneTime"
@@ -417,14 +426,15 @@
                 <CommandBinding Command="Delete"
                                 Executed="OnDeleteExecuted" />
                 <CommandBinding Command="Redo"
-                                Executed="OnRedoExecuted"
-                                CanExecute="Redo_OnCanExecute" />
+                                Executed="OnRedoExecuted"/>
                 <CommandBinding Command="{x:Static ui:CommonCommands.Exclude}"
                                 Executed="OnExcludeExecuted" />
                 <CommandBinding Command="Refresh"
                                 Executed="Refresh_OnExecuted" />
                 <CommandBinding Command="{x:Static  ui:CommonCommands.Conclusion}"
                                 Executed="Conclusion_OnExecuted" />
+                <CommandBinding Command="{x:Static ui:CommonCommands.Clear}"
+                                Executed="ClearBefore_OnExecuted" />
             </ListBox.CommandBindings>
         </component:ListBoxEx>
         <StackPanel Grid.Row="0"

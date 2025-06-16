@@ -1,5 +1,7 @@
-﻿using System.Net.Http;
+﻿using System.IO;
+using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI.Component;
@@ -29,14 +31,25 @@ public class OpenRouterModelMapping : ModelMapping
                 await httpClient.GetAsync(new Uri("https://openrouter.ai/api/frontend/models"));
             await using (var stream = await responseMessage.Content.ReadAsStreamAsync())
             {
-                var modelInfo = await JsonSerializer.DeserializeAsync<OpenRouterModel[]>(stream);
-                if (modelInfo != null)
+                var node = await JsonNode.ParseAsync(stream);
+                if (node?.AsObject().TryGetPropertyValue("data", out var listNode) != true)
                 {
-                    _modelInfos = modelInfo
-                        .Where((info =>
-                            !string.IsNullOrEmpty(info.Slug) && !string.IsNullOrEmpty(info.ShortName) &&
-                            info.InputModalities?.Contains(inputModalities) == true &&
-                            info.OutputModalities?.Contains(outputModalities) == true))
+                    return false;
+                }
+
+                if (listNode == null)
+                {
+                    return false;
+                }
+                
+                var openRouterModels = listNode.Deserialize<OpenRouterModel[]>();
+                if (openRouterModels != null)
+                {
+                    _modelInfos = openRouterModels
+                        .Where((info => info.Endpoint is { IsHidden: false } &&
+                                        !string.IsNullOrEmpty(info.Slug) && !string.IsNullOrEmpty(info.ShortName) &&
+                                        info.InputModalities?.Contains(inputModalities) == true &&
+                                        info.OutputModalities?.Contains(outputModalities) == true))
                         .ToArray();
                     return true;
                 }
@@ -45,6 +58,10 @@ public class OpenRouterModelMapping : ModelMapping
         catch (Exception e)
         {
             MessageEventBus.Publish($"Error fetching models from OpenRouter: {e.Message}");
+        }
+        finally
+        {
+            httpClient.Dispose();
         }
 
         return false;
@@ -58,13 +75,60 @@ public class OpenRouterModelMapping : ModelMapping
             return null;
         }
 
-        return new APIModelInfo
+        var apiModelInfo = new APIModelInfo
         {
             Id = openRouterModel.Slug,
             Name = openRouterModel.ShortName,
-            Description = openRouterModel.Description,
-            MaxContextSize = openRouterModel.ContextLength ?? 0,
         };
+        this.MapInfo(apiModelInfo);
+        return apiModelInfo;
+    }
+
+    public override void MapInfo(APIModelInfo apiModelInfo)
+    {
+        var openRouterModel = _modelInfos.FirstOrDefault((model =>
+        {
+            var id = apiModelInfo.Id;
+            return model.Slug == id
+                   || model.Endpoint?.ModelVariantSlug == id;
+        }));
+        if (openRouterModel != null)
+        {
+            apiModelInfo.Description = openRouterModel.Description;
+            apiModelInfo.MaxContextSize = openRouterModel.ContextLength ?? 1000000;
+            if (apiModelInfo.PriceCalculator is TokenBasedPriceCalculator tokenBasedPriceCalculator)
+            {
+                var endpoint = openRouterModel.Endpoint;
+                if (endpoint != null)
+                {
+                    if (endpoint.IsFree == true)
+                    {
+                        tokenBasedPriceCalculator.DiscountFactor = 0;
+                    }
+                    else
+                    {
+                        var pricing = endpoint.Pricing;
+                        if (pricing != null)
+                        {
+                            tokenBasedPriceCalculator.DiscountFactor = 1;
+                            if (double.TryParse(pricing.Prompt, out var input))
+                            {
+                                tokenBasedPriceCalculator.InputPrice = input * 1000000;
+                            }
+
+                            if (double.TryParse(pricing.Completion, out var output))
+                            {
+                                tokenBasedPriceCalculator.OutputPrice = output * 1000000;
+                            }
+                        }
+                        else
+                        {
+                            tokenBasedPriceCalculator.Enable = false;
+                        }
+                    }
+                }
+            }
+        }
     }
 
 
@@ -116,7 +180,7 @@ public class OpenRouterModelMapping : ModelMapping
 
         [JsonPropertyName("permaslug")] public string? Permaslug { get; set; }
 
-        [JsonPropertyName("reasoning_config")] public string? ReasoningConfig { get; set; }
+        [JsonPropertyName("reasoning_config")] public object? ReasoningConfig { get; set; }
 
         /// <summary>
         /// reasoning config，暂时不需要
@@ -131,7 +195,7 @@ public class OpenRouterModelMapping : ModelMapping
     {
         [JsonPropertyName("type")] public string? Type { get; set; }
 
-        [JsonPropertyName("threshold")] public int? Threshold { get; set; }
+        [JsonPropertyName("threshold")] public object? Threshold { get; set; }
 
         [JsonPropertyName("prompt")] public string? Prompt { get; set; }
 
@@ -204,7 +268,7 @@ public class OpenRouterModelMapping : ModelMapping
         [JsonPropertyName("pricing")] public Pricing? Pricing { get; set; }
 
         [JsonPropertyName("variable_pricings")]
-        public List<VariablePricing>? VariablePricings { get; set; }
+        public VariablePricing[]? VariablePricings { get; set; }
 
         [JsonPropertyName("is_hidden")] public bool? IsHidden { get; set; }
 
@@ -285,7 +349,7 @@ public class OpenRouterModelMapping : ModelMapping
 
         [JsonPropertyName("permaslug")] public string? Permaslug { get; set; }
 
-        [JsonPropertyName("reasoning_config")] public string? ReasoningConfig { get; set; }
+        [JsonPropertyName("reasoning_config")] public object? ReasoningConfig { get; set; }
 
         [JsonPropertyName("features")] public ModelFeatures? Features { get; set; }
     }

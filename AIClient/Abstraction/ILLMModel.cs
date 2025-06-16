@@ -33,4 +33,6 @@ public interface ILLMModel : IModelParams
     bool ReasoningEnable { get; }
 
     #endregion
+
+    IPriceCalculator? PriceCalculator { get; }
 }

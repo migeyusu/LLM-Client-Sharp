@@ -8,17 +8,16 @@ namespace LLMClient.UI;
 
 public static class CommonCommands
 {
-    public static RoutedUICommand Rebase = new RoutedUICommand("Rebase", "Rebase", typeof(CommonCommands));
-
     public static RoutedUICommand Exclude = new RoutedUICommand("Exclude", "Exclude", typeof(CommonCommands));
 
-    public static RoutedUICommand DeleteCurrent =
-        new RoutedUICommand("DeleteCurrent", "DeleteCurrent", typeof(CommonCommands));
-
+    public static RoutedCommand Clear = new RoutedUICommand("Clear", "Clear", typeof(CommonCommands));
+    
     public static RoutedUICommand Conclusion =
         new RoutedUICommand("Conclusion", "Conclusion", typeof(CommonCommands));
 
     public static RoutedUICommand Branch = new RoutedUICommand("Branch", "Branch", typeof(CommonCommands));
+
+    public static RoutedUICommand ReProcess = new RoutedUICommand("ReProcess", "ReProcess", typeof(CommonCommands));
 
     private static ICommand? _copyCommand;
 

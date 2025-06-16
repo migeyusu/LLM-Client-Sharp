@@ -14,6 +14,8 @@ public class ResponsePersistItem: IResponse
     public long Tokens { get; set; }
 
     public string? ErrorMessage { get; set; }
+    
+    public double? Price { get; set; }
 
     public string? Raw { get; set; }
 

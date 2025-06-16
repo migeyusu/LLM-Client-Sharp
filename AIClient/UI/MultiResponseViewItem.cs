@@ -24,6 +24,8 @@ public interface IResponse : ITokenizable
     bool IsInterrupt { get; }
 
     string? ErrorMessage { get; }
+
+    double? Price { get; }
 }
 
 public interface IResponseViewItem : IResponse, IDialogViewItem
@@ -47,6 +49,11 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
     public bool IsAvailableInContext
     {
         get { return AcceptedResponse?.IsAvailableInContext == true; }
+    }
+    
+    public bool HasAvailableMessage
+    {
+        get { return Items.Any((item => item.IsAvailableInContext)); }
     }
 
     public long Tokens
@@ -77,6 +84,11 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
     public string? ErrorMessage
     {
         get { return AcceptedResponse?.ErrorMessage; }
+    }
+
+    public double? Price
+    {
+        get { return Items.Sum((item => item.Price ?? 0)); }
     }
 
     public ThemedIcon Icon
@@ -198,6 +210,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         this.Items.Add(viewItem);
         this.AcceptedIndex = this.Items.Count - 1;
         IsMultiResponse = Items.Count > 1;
+        OnPropertyChanged(nameof(Price));
     }
 
     public void Insert(IResponseViewItem viewItem, int index)
@@ -205,6 +218,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         this.Items.Insert(index, viewItem);
         this.AcceptedIndex = index;
         IsMultiResponse = Items.Count > 1;
+        OnPropertyChanged(nameof(Price));
     }
 
     public void Remove(IResponseViewItem viewItem)
@@ -223,6 +237,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         }
 
         IsMultiResponse = Items.Count > 1;
+        OnPropertyChanged(nameof(Price));
     }
 
     public void RemoveAt(int index)
@@ -230,5 +245,6 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         this.Items.RemoveAt(index);
         this.AcceptedIndex = AcceptedIndex - 1;
         IsMultiResponse = Items.Count > 1;
+        OnPropertyChanged(nameof(Price));
     }
 }

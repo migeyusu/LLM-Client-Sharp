@@ -5,7 +5,8 @@
                     xmlns:ui="clr-namespace:LLMClient.UI"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
-                    xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI">
+                    xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
+                    xmlns:global="clr-namespace:">
     <DataTemplate x:Key="PopupSelectViewModelTemplate" DataType="{x:Type ui:PopupSelectViewModel}">
         <StackPanel Margin="10"
                     Width="350">
@@ -67,5 +68,28 @@
             <component:FlowDocumentScrollViewerEx Grid.Row="1"
                                                   Document="{Binding Description,Mode=OneWay, Converter={x:Static component:MarkdownToDocumentConverter.Instance}}" />
         </Grid>
+    </DataTemplate>
+    <DataTemplate x:Key="PriceCalculatorDataTemplate" DataType="{x:Type global:TokenBasedPriceCalculator}">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="Input Price:"
+                       VerticalAlignment="Center" />
+            <TextBox materialDesign:TextFieldAssist.SuffixText="/M tokens"
+                     Margin="6,0,0,0"
+                     Width="90"
+                     Text="{Binding InputPrice,Mode=TwoWay}" />
+            <TextBlock Text="Output Price:"
+                       VerticalAlignment="Center"
+                       Margin="16,0,0,0" />
+            <TextBox materialDesign:TextFieldAssist.SuffixText="/M tokens"
+                     Margin="6,0,0,0"
+                     Width="90"
+                     Text="{Binding OutputPrice,Mode=TwoWay}" />
+            <TextBlock Text="Ratio:"
+                       VerticalAlignment="Center"
+                       Margin="16,0,0,0" />
+            <TextBox Text="{Binding DiscountFactor,Mode=TwoWay}"
+                     Margin="6,0,0,0"
+                     Width="50" />
+        </StackPanel>
     </DataTemplate>
 </ResourceDictionary>

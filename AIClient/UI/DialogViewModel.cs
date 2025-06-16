@@ -64,7 +64,7 @@ public class DialogViewModel : BaseViewModel
     public bool IsNewResponding
     {
         get => _isNewResponding;
-        set
+        private set
         {
             if (value == _isNewResponding) return;
             _isNewResponding = value;
@@ -75,7 +75,7 @@ public class DialogViewModel : BaseViewModel
     public int RespondingCount
     {
         get => _respondingCount;
-        set
+        private set
         {
             if (value == _respondingCount) return;
             _respondingCount = value;
@@ -132,6 +132,17 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
+    public double TotalPrice
+    {
+        get => _totalPrice;
+        set
+        {
+            if (value.Equals(_totalPrice)) return;
+            _totalPrice = value;
+            OnPropertyChanged();
+        }
+    }
+
     public ObservableCollection<IDialogViewItem> DialogItems { get; }
 
     public long CurrentContextTokens
@@ -149,9 +160,9 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    private ILLMModelClient? _client;
+    private ILLMModelClient _client;
 
-    public ILLMModelClient? Client
+    public ILLMModelClient Client
     {
         get => _client;
         set
@@ -192,6 +203,110 @@ public class DialogViewModel : BaseViewModel
             })?.Message?.Text;
         }
     }
+
+    #region request chain
+
+    public bool IsChaining
+    {
+        get => _isChaining;
+        set
+        {
+            if (value == _isChaining) return;
+            _isChaining = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int ChainStepCount
+    {
+        get => _chainStepCount;
+        set
+        {
+            if (value == _chainStepCount) return;
+            _chainStepCount = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int ChainingStep
+    {
+        get => _chainingStep;
+        set
+        {
+            if (value == _chainingStep) return;
+            _chainingStep = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public async void SequentialChain(IEnumerable<IDialogViewItem> dialogItems)
+    {
+        var client = this.Client;
+        this.RespondingCount++;
+        this.IsChaining = true;
+        this.ChainingStep = 0;
+        var pendingItems = dialogItems
+            .Where(item => item is RequestViewItem || item is EraseViewItem)
+            .ToArray();
+        this.ChainStepCount = pendingItems.Length;
+        try
+        {
+            foreach (var oldDialogDialogItem in pendingItems)
+            {
+                if (oldDialogDialogItem is RequestViewItem requestViewItem)
+                {
+                    var newGuid = Guid.NewGuid();
+                    var newItem = new RequestViewItem()
+                        { MessageContent = requestViewItem.MessageContent, InteractionId = newGuid };
+                    DialogItems.Add(newItem);
+                    var copy = DialogItems.ToArray();
+                    int retryCount = 3;
+                    while (retryCount > 0)
+                    {
+                        var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
+                        DialogItems.Add(multiResponseViewItem);
+                        var completedResult = await SendRequestCore(client, copy,
+                            multiResponseViewItem);
+                        if (!completedResult.IsInterrupt)
+                        {
+                            break;
+                        }
+
+                        DialogItems.Remove(multiResponseViewItem);
+                        retryCount--;
+                    }
+
+                    if (retryCount == 0)
+                    {
+                        MessageBox.Show("请求失败，重试次数已用完！", "错误", MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                }
+                else if (oldDialogDialogItem is EraseViewItem)
+                {
+                    this.DialogItems.Add(new EraseViewItem());
+                }
+
+                ChainingStep++;
+            }
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show("重试处理对话失败: " + exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            this.RespondingCount--;
+            this.IsChaining = false;
+            /*this.ChainStepCount = 0;
+            this.ChainingStep = 0;*/
+            ScrollViewItem = DialogItems.Last();
+        }
+    }
+
+    #endregion
+
+    #region search
 
     private string? _searchText;
 
@@ -247,7 +362,7 @@ public class DialogViewModel : BaseViewModel
         get { return FocusedResponse?.CurrentResponse?.Document; }
     }
 
-    private void CheckResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
+    private void CheckFocusResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
     {
         if (FocusedResponse != null)
         {
@@ -294,7 +409,7 @@ public class DialogViewModel : BaseViewModel
         }
 
         var responseIndex = 0;
-        CheckResponse(responseViewItems, ref responseIndex);
+        CheckFocusResponse(responseViewItems, ref responseIndex);
         _currentHighlightIndex++;
         if (_currentHighlightIndex >= FocusedDocument?.FoundTextRanges.Count)
         {
@@ -325,7 +440,7 @@ public class DialogViewModel : BaseViewModel
         }
 
         var responseIndex = responseViewItems.Length - 1;
-        CheckResponse(responseViewItems, ref responseIndex);
+        CheckFocusResponse(responseViewItems, ref responseIndex);
         _currentHighlightIndex--;
         if (_currentHighlightIndex < 0)
         {
@@ -338,6 +453,8 @@ public class DialogViewModel : BaseViewModel
 
         GoToHighlight();
     }));
+
+    #endregion
 
     public ICommand ClearContextCommand => new ActionCommand((o =>
     {
@@ -353,6 +470,28 @@ public class DialogViewModel : BaseViewModel
             DialogItems.Clear();
         }
     });
+
+    public ICommand ClearUnavailableCommand => new ActionCommand((o =>
+    {
+        var deleteItems = new List<IDialogViewItem>();
+        Guid unusedInteractionId = Guid.Empty;
+        for (var index = DialogItems.Count - 1; index >= 0; index--)
+        {
+            var dialogViewItem = DialogItems[index];
+            if (dialogViewItem is MultiResponseViewItem item && !item.HasAvailableMessage)
+            {
+                deleteItems.Add(dialogViewItem);
+                unusedInteractionId = item.InteractionId;
+            }
+            else if (dialogViewItem is RequestViewItem requestViewItem &&
+                     requestViewItem.InteractionId == unusedInteractionId)
+            {
+                deleteItems.Add(requestViewItem);
+            }
+        }
+
+        deleteItems.ForEach(item => DialogItems.Remove(item));
+    }));
 
     private IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
 
@@ -394,11 +533,7 @@ public class DialogViewModel : BaseViewModel
 
         var stringBuilder = new StringBuilder(8192);
         stringBuilder.AppendLine($"# {this.Topic}");
-        if (this.Client != null)
-        {
-            stringBuilder.AppendLine($"### {this.Client.Name}");
-        }
-
+        stringBuilder.AppendLine($"### {this.Client.Name}");
         foreach (var viewItem in this.DialogItems.Where((item => item.IsAvailableInContext)))
         {
             if (viewItem is IResponseViewItem responseViewItem)
@@ -499,15 +634,16 @@ public class DialogViewModel : BaseViewModel
         }
     }));*/
 
-    public ICommand NewResponseCommand => new RelayCommand((() =>
+    public ICommand NewResponseCommand => new RelayCommand((async () =>
     {
         if (string.IsNullOrEmpty(PromptString?.Trim()))
         {
             return;
         }
 
-        NewResponse(PromptString);
-    }), () => { return Client != null; });
+
+        await NewResponse(PromptString);
+    }));
 
     public ICommand CancelCommand => new ActionCommand((o =>
     {
@@ -598,8 +734,8 @@ public class DialogViewModel : BaseViewModel
         }
     }));
 
-    public ICommand ConclusionCommand => new ActionCommand((o => { ConclusionTillEnd(); }));
-    
+    public ICommand ConclusionCommand => new ActionCommand((o => { ConclusionCurrent(); }));
+
     private IEndpointService EndpointService
     {
         get { return ServiceLocator.GetService<IEndpointService>()!; }
@@ -614,13 +750,17 @@ public class DialogViewModel : BaseViewModel
     private bool _isNewResponding;
     private int _respondingCount;
     private MultiResponseViewItem? _focusedResponse;
+    private double _totalPrice;
+    private bool _isChaining;
+    private int _chainStepCount;
+    private int _chainingStep;
 
 
-    public DialogViewModel(string topic, ILLMModelClient? modelClient = null,
+    public DialogViewModel(string topic, ILLMModelClient modelClient,
         IList<IDialogViewItem>? items = null)
     {
         this._topic = topic;
-        this.Client = modelClient;
+        this._client = modelClient;
         this.PropertyChanged += (_, e) =>
         {
             var propertyName = e.PropertyName;
@@ -635,13 +775,8 @@ public class DialogViewModel : BaseViewModel
         this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
     }
 
-    public async void ConclusionTillEnd()
+    public async void ConclusionCurrent()
     {
-        if (this.Client == null)
-        {
-            return;
-        }
-
         var dialogViewItems = this.DialogItems;
         var newGuid = Guid.NewGuid();
         var config = GlobalConfig.LoadOrCreate();
@@ -669,7 +804,7 @@ public class DialogViewModel : BaseViewModel
     }
 
     public async Task AppendResponseOn(MultiResponseViewItem responseViewItem,
-        ILLMModelClient llmModelClient)
+        ILLMModelClient? llmModelClient)
     {
         //获得之前的所有请求
         var indexOf = DialogItems.IndexOf(responseViewItem);
@@ -709,7 +844,7 @@ public class DialogViewModel : BaseViewModel
     }
 
     public async Task<CompletedResult> SendRequestCore(
-        ILLMModelClient client, Memory<IDialogViewItem> dialog,
+        ILLMModelClient? client, Memory<IDialogViewItem> dialog,
         MultiResponseViewItem multiResponseViewItem)
     {
         var completedResult = CompletedResult.Empty;
@@ -735,18 +870,14 @@ public class DialogViewModel : BaseViewModel
         }
 
         this.TokensConsumption += completedResult.Usage.TotalTokenCount ?? 0;
+        this.TotalPrice += completedResult.Price ?? 0;
         OnPropertyChangedAsync(nameof(Shortcut));
         OnPropertyChangedAsync(nameof(CurrentContextTokens));
         return completedResult;
     }
 
-    public async void NewResponse(string prompt)
+    public async Task NewResponse(string prompt)
     {
-        if (Client == null)
-        {
-            return;
-        }
-
         var newGuid = Guid.NewGuid();
         var requestViewItem = new RequestViewItem() { MessageContent = prompt, InteractionId = newGuid };
         DialogItems.Add(requestViewItem);
@@ -765,13 +896,8 @@ public class DialogViewModel : BaseViewModel
     }
 
 
-    public void ReBase(RequestViewItem redoItem)
+    public async void ReBaseOn(RequestViewItem redoItem)
     {
-        if (Client == null)
-        {
-            return;
-        }
-
         //删除本请求及之后的所有记录
         var indexOf = DialogItems.IndexOf(redoItem);
         var dialogCount = DialogItems.Count;
@@ -782,7 +908,21 @@ public class DialogViewModel : BaseViewModel
 
         var message = redoItem.MessageContent;
         PromptString = message;
-        NewResponse(message);
+        await NewResponse(message);
+    }
+
+    public async void ClearBefore(RequestViewItem requestViewItem)
+    {
+        if ((await DialogHost.Show(new ConfirmView() { Header = "清空会话？" })) is true)
+        {
+            var indexOf = DialogItems.IndexOf(requestViewItem);
+            for (int i = 0; i < indexOf; i++)
+            {
+                DialogItems.RemoveAt(0);
+            }
+
+            this.ScrollViewItem = requestViewItem;
+        }
     }
 
     public async void RetryCurrent(MultiResponseViewItem multiResponseViewItem)

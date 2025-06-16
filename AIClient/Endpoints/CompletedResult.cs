@@ -5,12 +5,13 @@ namespace LLMClient.Endpoints;
 
 public class CompletedResult : IResponse
 {
-    public static CompletedResult Empty = new CompletedResult(null, new UsageDetails());
+    public static readonly CompletedResult Empty = new CompletedResult(null, new UsageDetails(), null);
 
-    public CompletedResult(string? response, UsageDetails usage)
+    public CompletedResult(string? response, UsageDetails usage, double? price)
     {
         Raw = response;
         Usage = usage;
+        Price = price;
     }
 
     public string? Raw { get; set; }
@@ -27,6 +28,8 @@ public class CompletedResult : IResponse
     public int Duration { get; set; }
 
     public string? ErrorMessage { get; set; }
+
+    public double? Price { get; }
 
     public bool IsInterrupt
     {

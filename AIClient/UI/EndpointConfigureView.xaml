@@ -100,7 +100,8 @@
                     Margin="5" />
         </Grid>
         <ContentControl Grid.Row="1"
-                        Margin="10,5"
+                        Margin="16,0,16,5"
+                        Padding="0"
                         Content="{Binding SelectedEndpoint,Mode=OneWay}">
             <ContentControl.Resources>
                 <DataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}">
@@ -167,8 +168,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
             <StackPanel Grid.Column="0"
-                        Orientation="Horizontal"
-                        Margin="10,0,0,0">
+                        Orientation="Horizontal">
                 <TextBlock Text="Suggestion:"
                            VerticalAlignment="Center"
                            Margin="10,0,0,0" />
@@ -197,6 +197,11 @@
                         Margin="10"
                         HorizontalAlignment="Right"
                         Orientation="Horizontal">
+                <Separator VerticalAlignment="Stretch"
+                           Width="2"
+                           Background="Gray"
+                           Margin="0"
+                           Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
                 <Button Content="重置"
                         Margin="10,0,0,0"
                         Command="{Binding ReloadCommand}" />

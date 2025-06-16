@@ -88,6 +88,8 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
     public int Duration { get; }
 
     public string? ErrorMessage { get; }
+    
+    public double? Price { get; set; }
 
     private SearchableDocument? _flowDocument = null;
 
@@ -121,6 +123,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
         ErrorMessage = response.ErrorMessage;
         EndPointName = endPointName;
         Latency = response.Latency;
+        Price = response.Price;
     }
 
     private ChatMessage? _assistantMessage;

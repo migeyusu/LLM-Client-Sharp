@@ -32,6 +32,12 @@ public partial class MainWindow : ExtendedWindow
     {
         if (e.Parameter is DialogViewModel dialogViewModel)
         {
+            if (dialogViewModel.IsResponding)
+            {
+                _mainViewModel.MessageQueue.Enqueue("请等待当前响应完成后再删除会话");
+                return;
+            }
+
             if ((await DialogHost.Show(new ConfirmView() { Header = "删除该会话吗？" })) is true)
             {
                 _mainViewModel.DeleteDialog(dialogViewModel);
@@ -49,7 +55,7 @@ public partial class MainWindow : ExtendedWindow
         await this.ShowDialog(_globalConfig);
     }
 
-    private void SnapCommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    private void SnapNewDialog_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is SuggestedModel suggested)
         {
@@ -70,6 +76,27 @@ public partial class MainWindow : ExtendedWindow
         if (e.Parameter is IDialogViewItem dialogViewItem)
         {
             _mainViewModel.ForkPreDialog(dialogViewItem);
+        }
+    }
+
+    private async void Reprocess_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is DialogViewModel oldDialog)
+        {
+            var selectionViewModel = new DialogCreationViewModel(_mainViewModel.EndpointsViewModel);
+            if (await DialogHost.Show(selectionViewModel) is true)
+            {
+                var model = selectionViewModel.GetClient();
+                if (model == null)
+                {
+                    MessageBox.Show("No model created!");
+                    return;
+                }
+
+                var newDialog = _mainViewModel.AddNewDialog(model, oldDialog.Topic);
+                newDialog.Client.Parameters.SystemPrompt = oldDialog.Client.Parameters.SystemPrompt;
+                newDialog.SequentialChain(oldDialog.DialogItems);
+            }
         }
     }
 }

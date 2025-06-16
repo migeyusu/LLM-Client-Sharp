@@ -144,6 +144,8 @@ public class AzureModelInfo : ILLMModel
     }
 
     public bool ReasoningEnable { get; } = false;
+    
+    public IPriceCalculator? PriceCalculator { get; } = null;
 
     [JsonIgnore]
     public float FrequencyPenalty

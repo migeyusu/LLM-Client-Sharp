@@ -12,13 +12,13 @@ public class RespondingViewItem : BaseViewModel, IResponseViewItem
     public ChatMessage? Message { get; } = null;
     public bool IsAvailableInContext { get; } = false;
 
-    public ILLMModelClient Client { get; }
+    public ILLMModelClient? Client { get; }
 
     public ICommand CancelCommand => new ActionCommand(o => { RequestTokenSource.Cancel(); });
 
     public CancellationTokenSource RequestTokenSource { get; } = new CancellationTokenSource();
 
-    public RespondingViewItem(ILLMModelClient client)
+    public RespondingViewItem(ILLMModelClient? client)
     {
         this.Client = client;
     }
@@ -47,4 +47,6 @@ public class RespondingViewItem : BaseViewModel, IResponseViewItem
     public bool IsInterrupt { get; } = false;
 
     public string? ErrorMessage { get; } = string.Empty;
+
+    public double? Price { get; } = 0;
 }

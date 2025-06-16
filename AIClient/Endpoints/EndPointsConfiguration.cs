@@ -63,18 +63,6 @@ public static class EndPointsConfiguration
         return null;
     }
 
-    public static JsonNode GetOrCreate(this JsonNode jsonNode, string key)
-    {
-        if (jsonNode.AsObject().TryGetPropertyValue(key, out var listNode))
-        {
-            return listNode!;
-        }
-
-        var jsonObject = new JsonObject();
-        jsonNode[key] = jsonObject;
-        return jsonObject;
-    }
-
     public static async Task<JsonNode> LoadOptionNode()
     {
         var loadEndpointsDoc = await LoadDoc();
@@ -103,9 +91,10 @@ public static class EndPointsConfiguration
 
         await using (var fileStream = fileInfo.OpenWrite())
         {
-            await using (var utf8JsonWriter = new Utf8JsonWriter(fileStream))
+            await using (var utf8JsonWriter = new Utf8JsonWriter(fileStream, new JsonWriterOptions()))
             {
                 node.WriteTo(utf8JsonWriter);
+                await utf8JsonWriter.FlushAsync();
             }
         }
     }

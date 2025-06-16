@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Endpoints.Converters;
 using LLMClient.UI;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -82,6 +83,36 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         }
     }
 
+    public ModelSource ModelsSource
+    {
+        get => _modelsSource;
+        set
+        {
+            if (value == _modelsSource) return;
+            _modelsSource = value;
+            OnPropertyChanged();
+            ModelMapping = ModelMapping.Create(value);
+        }
+    }
+
+    [JsonIgnore] public ModelMapping? ModelMapping { get; set; }
+
+    public ICommand RefreshModelSource => new ActionCommand((async o =>
+    {
+        if (ModelMapping == null)
+        {
+            return;
+        }
+
+        if (await ModelMapping.Refresh())
+        {
+            foreach (var apiModelInfo in this.Models)
+            {
+                ModelMapping.MapInfo(apiModelInfo);
+            }
+        }
+    }));
+
     public string? ApiLogUrl
     {
         get => _apiLogUrl;
@@ -111,6 +142,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     private ImageSource? _icon = null;
     private int _selectedModelIndex = -1;
     private string? _apiLogUrl;
+    private ModelSource _modelsSource = ModelSource.None;
 
     [JsonIgnore]
     public int SelectedModelIndex

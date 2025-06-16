@@ -23,6 +23,11 @@ public class XiaoaiAIModelMapping : ModelMapping
     {
         throw new NotImplementedException();
     }
+
+    public override void MapInfo(APIModelInfo modelInfo)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 public class GeekAIModelMapping : ModelMapping
@@ -74,20 +79,36 @@ public class GeekAIModelMapping : ModelMapping
             _modelInfos.FirstOrDefault(info => info.Name.Equals(modelId, StringComparison.OrdinalIgnoreCase));
         if (modelInfo != null)
         {
-            return new APIModelInfo()
+            var info = new APIModelInfo()
             {
                 Name = modelInfo.Alias,
                 Id = modelInfo.Name,
-                Description = modelInfo.Desc,
-                UrlIconEnable = !string.IsNullOrEmpty(modelInfo.Icon),
-                IconUrl = modelInfo.Icon,
-                MaxContextSize = modelInfo.ContextLen,
-                MaxTokenLimit = modelInfo.OutputLen,
-                SystemPromptEnable = modelInfo.Systemable,
             };
+            this.MapInfo(info);
+            return info;
         }
 
         return null;
+    }
+
+    public override void MapInfo(APIModelInfo modelInfo)
+    {
+        var info = _modelInfos.FirstOrDefault(x => x.Name.Equals(modelInfo.Id, StringComparison.OrdinalIgnoreCase));
+        if (info != null)
+        {
+            modelInfo.Description = info.Desc;
+            modelInfo.UrlIconEnable = !string.IsNullOrEmpty(info.Icon);
+            modelInfo.IconUrl = info.Icon;
+            modelInfo.MaxContextSize = info.ContextLen;
+            modelInfo.MaxTokenLimit = info.OutputLen;
+            modelInfo.SystemPromptEnable = info.Systemable;
+            if (modelInfo.PriceCalculator is TokenBasedPriceCalculator calculator)
+            {
+                calculator.DiscountFactor = 1;
+                calculator.InputPrice = info.InputPrice * 1000 / 7; // Convert to per million tokens
+                calculator.OutputPrice = info.OutputPrice * 1000 / 7; // Convert to per million tokens
+            }
+        }
     }
 
 

@@ -63,8 +63,8 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
     {
     }
 
-    private readonly FieldInfo? _info = typeof(ChatCompletionsClient)
-        .GetField("_apiVersion", BindingFlags.Instance | BindingFlags.NonPublic);
+    // private readonly FieldInfo? _info = typeof(ChatCompletionsClient)
+    //     .GetField("_apiVersion", BindingFlags.Instance | BindingFlags.NonPublic);
     
     protected override IChatCompletionService CreateChatCompletionService()
     {
@@ -74,14 +74,14 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
         return build.GetRequiredService<IChatCompletionService>();
     }
 
-    protected override IChatClient CreateChatClient()
+    /*protected override IChatClient CreateChatClient()
     {
         var credential = new AzureKeyCredential(Option.APIToken);
         var chatCompletionsClient = new ChatCompletionsClient(new Uri(Option.URL), credential,
             new AzureAIInferenceClientOptions());
         _info?.SetValue(chatCompletionsClient, "2024-12-01-preview");
         return chatCompletionsClient.AsIChatClient();
-    }
+    }*/
 
 #pragma warning disable SKEXP0010
     public static void Test()

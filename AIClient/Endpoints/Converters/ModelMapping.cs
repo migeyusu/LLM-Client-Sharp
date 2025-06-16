@@ -1,14 +1,16 @@
-﻿using System.IO;
+﻿using System.ComponentModel;
+using System.IO;
 using LLMClient.Endpoints.OpenAIAPI;
 
 namespace LLMClient.Endpoints.Converters;
 
 public enum ModelSource
 {
-    Custom,
+    None,
     OpenRouter,
     O3Fan,
     GeekAI,
+    XiaoAI
 }
 
 public abstract class ModelMapping
@@ -20,6 +22,7 @@ public abstract class ModelMapping
             ModelSource.OpenRouter => new OpenRouterModelMapping(),
             ModelSource.O3Fan => new O3FanModelMapping(),
             ModelSource.GeekAI => new GeekAIModelMapping(),
+            ModelSource.XiaoAI => new XiaoAIModelMapping(),
             _ => null
         };
     }
@@ -36,4 +39,6 @@ public abstract class ModelMapping
     public abstract Task<bool> Refresh();
 
     public abstract APIModelInfo? TryGet(string modelId);
+
+    public abstract void MapInfo(APIModelInfo modelInfo);
 }

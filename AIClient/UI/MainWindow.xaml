@@ -151,7 +151,8 @@
             <DataTemplate DataType="{x:Type data:GlobalConfig}">
                 <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                         Header="软件配置">
-                    <ui:GlobalConfigView />
+                    <ui:GlobalConfigView Width="800"
+                                         Height="500" />
                 </HeaderedContentControl>
             </DataTemplate>
             <DataTemplate DataType="{x:Type ui:PromptsResourceViewModel}">
@@ -255,123 +256,6 @@
                                 Value="Stretch" />
                         <Setter Property="HorizontalContentAlignment"
                                 Value="Stretch" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                    <Border Margin="{TemplateBinding Margin}"
-                                            Background="{TemplateBinding Background}"
-                                            BorderBrush="{TemplateBinding BorderBrush}"
-                                            BorderThickness="{TemplateBinding BorderThickness}"
-                                            ClipToBounds="{TemplateBinding ClipToBounds}">
-                                        <VisualStateManager.VisualStateGroups>
-                                            <VisualStateGroup Name="CommonStates">
-                                                <VisualStateGroup.Transitions>
-                                                    <VisualTransition GeneratedDuration="0:0:0.3" To="Normal">
-                                                        <VisualTransition.GeneratedEasingFunction>
-                                                            <CircleEase EasingMode="EaseOut" />
-                                                        </VisualTransition.GeneratedEasingFunction>
-                                                    </VisualTransition>
-                                                </VisualStateGroup.Transitions>
-                                                <VisualState Name="Normal" />
-                                                <VisualState Name="MouseOver">
-                                                    <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetName="MouseOverBorder"
-                                                                         Storyboard.TargetProperty="Opacity"
-                                                                         To="1"
-                                                                         Duration="0" />
-                                                    </Storyboard>
-                                                </VisualState>
-                                                <VisualState Name="Disabled" />
-                                            </VisualStateGroup>
-                                            <VisualStateGroup Name="SelectionStates">
-                                                <VisualStateGroup.Transitions>
-                                                    <VisualTransition GeneratedDuration="0:0:0.6" />
-                                                </VisualStateGroup.Transitions>
-                                                <VisualState Name="Selected">
-                                                    <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetName="SelectedBorder"
-                                                                         Storyboard.TargetProperty="Opacity"
-                                                                         To="1"
-                                                                         Duration="0" />
-                                                    </Storyboard>
-                                                </VisualState>
-                                                <VisualState Name="Unselected" />
-                                                <VisualState Name="SelectedUnfocused">
-                                                    <Storyboard>
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetName="SelectedUnfocusedBorder"
-                                                            Storyboard.TargetProperty="Opacity"
-                                                            To="1"
-                                                            Duration="0" />
-                                                    </Storyboard>
-                                                </VisualState>
-                                            </VisualStateGroup>
-                                        </VisualStateManager.VisualStateGroups>
-                                        <Grid>
-                                            <Border x:Name="MouseOverBorder"
-                                                    Background="{Binding Path=(materialDesign:ListBoxItemAssist.HoverBackground), RelativeSource={RelativeSource TemplatedParent}}"
-                                                    Opacity="0" />
-                                            <Border x:Name="SelectedBorder"
-                                                    Background="{Binding Path=(materialDesign:ListBoxItemAssist.SelectedFocusedBackground), RelativeSource={RelativeSource TemplatedParent}}"
-                                                    Opacity="0" />
-                                            <Border x:Name="SelectedUnfocusedBorder"
-                                                    Background="{Binding Path=(materialDesign:ListBoxItemAssist.SelectedUnfocusedBackground), RelativeSource={RelativeSource TemplatedParent}}"
-                                                    Opacity="0" />
-                                            <materialDesign:Ripple x:Name="Ripple"
-                                                                   Padding="{TemplateBinding Padding}"
-                                                                   HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                                   Content="{TemplateBinding Content}"
-                                                                   ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                                   ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                                                                   Feedback="{TemplateBinding Foreground, Converter={x:Static materialDesign:BrushRoundConverter.Instance}}"
-                                                                   Focusable="False"
-                                                                   RecognizesAccessKey="False"
-                                                                   SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                            <Button CommandParameter="{Binding}"
-                                                    Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
-                                                    x:Name="DeleteButton"
-                                                    Command="Delete"
-                                                    Height="30"
-                                                    Width="30"
-                                                    Margin="10,0"
-                                                    Visibility="Collapsed"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Center"
-                                                    Style="{StaticResource MaterialDesignIconButton}">
-                                                <materialDesign:PackIcon Kind="DeleteOutline"
-                                                                         Width="18"
-                                                                         Height="18" />
-                                            </Button>
-                                        </Grid>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsEnabled" Value="False">
-                                            <Setter Property="Opacity" Value=".56" />
-                                        </Trigger>
-                                        <DataTrigger
-                                            Binding="{Binding RelativeSource={RelativeSource Self}, Path=(materialDesign:ListBoxItemAssist.ShowSelection)}"
-                                            Value="False">
-                                            <Setter TargetName="MouseOverBorder" Property="Visibility"
-                                                    Value="Collapsed" />
-                                            <Setter TargetName="Ripple" Property="Feedback" Value="Transparent" />
-                                            <Setter TargetName="SelectedBorder" Property="Visibility"
-                                                    Value="Collapsed" />
-                                            <Setter TargetName="SelectedUnfocusedBorder" Property="Visibility"
-                                                    Value="Collapsed" />
-                                        </DataTrigger>
-                                        <Trigger Property="IsMouseOver"
-                                                 Value="True">
-                                            <Trigger.Setters>
-                                                <Setter TargetName="DeleteButton"
-                                                        Property="Visibility"
-                                                        Value="Visible" />
-                                            </Trigger.Setters>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
                     </Style>
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
@@ -426,6 +310,46 @@
                                        TextWrapping="NoWrap"
                                        TextTrimming="CharacterEllipsis"
                                        Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                            <Button Grid.Row="0"
+                                    Grid.Column="1"
+                                    Grid.RowSpan="3"
+                                    CommandParameter="{Binding}"
+                                    Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                                    x:Name="DeleteButton"
+                                    Command="Delete"
+                                    Height="30"
+                                    Width="30"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Margin="10,0">
+                                <materialDesign:PackIcon Kind="DeleteOutline"
+                                                         Width="18"
+                                                         Height="18" />
+                                <Button.Style>
+                                    <Style TargetType="{x:Type Button}"
+                                           BasedOn="{StaticResource MaterialDesignIconButton}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger
+                                                Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                                                Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <ProgressBar Grid.Row="2"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         VerticalAlignment="Bottom"
+                                         HorizontalAlignment="Stretch"
+                                         Margin="-4,0,-4,-4"
+                                         Minimum="0"
+                                         Maximum="{Binding ChainStepCount,Mode=OneWay}"
+                                         Value="{Binding ChainingStep,Mode=OneWay}"
+                                         IsIndeterminate="{Binding IsChaining,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}"
+                                         Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -458,7 +382,7 @@
                                          Height="40">
                     <materialDesign:PopupBox.CommandBindings>
                         <CommandBinding Command="Select"
-                                        Executed="SnapCommandBinding_OnExecuted"/>
+                                        Executed="SnapNewDialog_OnExecuted" />
                     </materialDesign:PopupBox.CommandBindings>
                     <materialDesign:PopupBox.ToggleContent>
                         <materialDesign:PackIcon Width="20"
@@ -553,6 +477,7 @@
                     <StackPanel Grid.Column="2"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Right"
+                                IsEnabled="{Binding IsResponding,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}"
                                 DataContext="{Binding PreDialog,Mode=OneWay}">
                         <StackPanel.Resources>
                             <Style TargetType="{x:Type Button}"
@@ -564,17 +489,15 @@
                                         Value="36" />
                             </Style>
                         </StackPanel.Resources>
-                        <TextBlock MaxWidth="120"
-                                   TextWrapping="Wrap"  
+                        <TextBlock MaxWidth="140"
+                                   TextWrapping="Wrap"
                                    HorizontalAlignment="Right"
                                    Margin="0,0,10,0"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource MaterialDesignOverlineTextBlock}">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="Tokens Consumption:{0}">
-                                    <Binding Path="TokensConsumption" />
-                                </MultiBinding>
-                            </TextBlock.Text>
+                            <Run Text="{Binding TokensConsumption, Mode=OneWay,StringFormat=Total Tokens:{0}}" />
+                            <LineBreak />
+                            <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                         </TextBlock>
                         <Button Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                 CommandParameter="{Binding Client,Mode=OneWay}"
@@ -690,10 +613,18 @@
                         <materialDesign:PopupBox StaysOpen="True">
                             <WrapPanel MaxWidth="200"
                                        MaxHeight="200">
-                                <Button Content="删除所有上下文分割" />
-                                <Button Content="清空无效对话" />
+                                <Button Content="对话重执行"
+                                        ToolTip="基于现有对话，使用新模型重新执行"
+                                        CommandParameter="{Binding}"
+                                        Command="{x:Static ui:CommonCommands.ReProcess}" />
+                                <Button Content="清空无效对话"
+                                        Command="{Binding ClearUnavailableCommand}" />
                             </WrapPanel>
                         </materialDesign:PopupBox>
+                        <StackPanel.CommandBindings>
+                            <CommandBinding Command="{x:Static ui:CommonCommands.ReProcess}"
+                                            Executed="Reprocess_OnExecuted" />
+                        </StackPanel.CommandBindings>
                     </StackPanel>
                 </Grid>
             </materialDesign:Card>

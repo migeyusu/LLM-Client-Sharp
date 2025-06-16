@@ -83,6 +83,11 @@ public class O3FanModelMapping : ModelMapping
         return null;
     }
 
+    public override void MapInfo(APIModelInfo modelInfo)
+    {
+        
+    }
+
     const string statusAvailable = "published";
 
     const string modelAblityChat = "对话";
