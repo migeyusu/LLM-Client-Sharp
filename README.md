@@ -2,7 +2,7 @@
 
 # LLM Client for WPF
 
-一个基于 `.NET` 和 `WPF` 技术实现的开源大语言模型 (LLM) 客户端项目，旨在提供一种轻量级、直观且功能丰富的交互工具，用于使用多种支持的 LLM 服务。本项目默认支持 GitHub Copilot 服务下提供的一些模型（如 `GPT-4o`、`O1` 和 `DeepSeek`），并可通过扩展支持其他服务终结点。
+一个基于 `.NET` 和 `WPF` 技术实现的大语言模型 (LLM) 客户端项目，旨在提供一种轻量级、直观且功能丰富的交互工具，用于使用多种支持的 LLM 服务。本项目默认支持 GitHub Copilot 服务下提供的一些模型（如 `GPT-4o`、`O1` 和 `DeepSeek`），并可通过扩展支持其他服务终结点。
 
 ![项目截图](images/model_selection.png)
 
