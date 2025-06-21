@@ -9,28 +9,32 @@ namespace LLMClient.UI;
 
 public class RespondingViewItem : BaseViewModel, IResponseViewItem
 {
-    public ChatMessage? Message { get; } = null;
+    public Task<ChatMessage?> GetMessage()
+    {
+        throw new NotSupportedException();
+    }
+
     public bool IsAvailableInContext { get; } = false;
 
-    public ILLMModelClient? Client { get; }
+    public ILLMModelClient Client { get; }
 
     public ICommand CancelCommand => new ActionCommand(o => { RequestTokenSource.Cancel(); });
 
     public CancellationTokenSource RequestTokenSource { get; } = new CancellationTokenSource();
 
-    public RespondingViewItem(ILLMModelClient? client)
+    public RespondingViewItem(ILLMModelClient client)
     {
         this.Client = client;
     }
 
     public ThemedIcon Icon
     {
-        get { return Client.Info.Icon; }
+        get { return Client.Model.Icon; }
     }
 
     public string ModelName
     {
-        get { return Client.Info.Name; }
+        get { return Client.Model.Name; }
     }
 
     public string EndPointName

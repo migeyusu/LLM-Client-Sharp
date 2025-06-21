@@ -19,7 +19,7 @@ public class APIClient : LlmClientBase
 
     public APIModelInfo ModelInfo { get; }
 
-    public override ILLMModel Info
+    public override ILLMModel Model
     {
         get { return ModelInfo; }
     }

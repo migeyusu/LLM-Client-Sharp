@@ -21,7 +21,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
 
     public abstract ILLMEndpoint Endpoint { get; }
 
-    [JsonIgnore] public abstract ILLMModel Info { get; }
+    [JsonIgnore] public abstract ILLMModel Model { get; }
 
     public bool IsResponding
     {
@@ -48,7 +48,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
 
     protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
-        var modelInfo = this.Info;
+        var modelInfo = this.Model;
         var modelParams = this.Parameters;
         if (modelInfo.SystemPromptEnable && !string.IsNullOrWhiteSpace(modelParams.SystemPrompt))
         {
@@ -114,9 +114,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
             var requestOptions = this.CreateChatOptions(messages);
             foreach (var dialogItem in dialogItems)
             {
-                if (dialogItem.Message != null)
+                var chatMessage = await dialogItem.GetMessage();
+                if (chatMessage != null)
                 {
-                    messages.Add(dialogItem.Message);
+                    messages.Add(chatMessage);
                 }
             }
 
@@ -267,7 +268,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                 OutputTokenCount = 0,
                 TotalTokenCount = 0,
             };
-            var price = this.Info.PriceCalculator?.Calculate(usageDetails);
+            var price = this.Model.PriceCalculator?.Calculate(usageDetails);
             return new CompletedResult(responseText, usageDetails, price)
             {
                 ErrorMessage = errorMessage,

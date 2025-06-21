@@ -41,16 +41,21 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
 {
     public Guid InteractionId { get; set; }
 
-    public ChatMessage? Message
+    public Task<ChatMessage?> GetMessage()
     {
-        get { return AcceptedResponse?.Message; }
+        if (AcceptedResponse == null)
+        {
+            return Task.FromResult<ChatMessage?>(null);
+        }
+
+        return AcceptedResponse.GetMessage();
     }
 
     public bool IsAvailableInContext
     {
         get { return AcceptedResponse?.IsAvailableInContext == true; }
     }
-    
+
     public bool HasAvailableMessage
     {
         get { return Items.Any((item => item.IsAvailableInContext)); }
@@ -93,7 +98,7 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
 
     public ThemedIcon Icon
     {
-        get { return AcceptedResponse?.Icon ?? Icons.APIIcon; }
+        get { return AcceptedResponse?.Icon ?? ImageExtensions.APIIcon; }
     }
 
     public string ModelName

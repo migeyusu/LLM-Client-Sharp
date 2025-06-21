@@ -7,6 +7,7 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints.Converters;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
@@ -54,7 +55,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     [JsonIgnore]
     public virtual ImageSource Icon
     {
-        get { return _icon ?? Icons.EndpointIcon; }
+        get { return _icon ?? ImageExtensions.EndpointIcon; }
         private set
         {
             if (Equals(value, _icon)) return;
@@ -71,7 +72,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
             if (value == _iconUrl) return;
             ClearError();
             if ((!string.IsNullOrEmpty(value)) &&
-                !Icons.SupportedImageExtensions.Contains(Path.GetExtension(value)))
+                !ImageExtensions.SupportedImageExtensions.Contains(Path.GetExtension(value)))
             {
                 AddError("The image extension is not supported.");
                 return;
@@ -108,9 +109,14 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         {
             foreach (var apiModelInfo in this.Models)
             {
-                ModelMapping.MapInfo(apiModelInfo);
+                if (!ModelMapping.MapInfo(apiModelInfo))
+                {
+                    apiModelInfo.IsNotAvailable = true;
+                }
             }
         }
+
+        MessageEventBus.Publish("已刷新模型列表");
     }));
 
     public string? ApiLogUrl

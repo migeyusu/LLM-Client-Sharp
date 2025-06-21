@@ -80,7 +80,7 @@ public class XiaoAIModelMapping : ModelMapping
         return apiModelInfo;
     }
 
-    public override void MapInfo(APIModelInfo modelInfo)
+    public override bool MapInfo(APIModelInfo modelInfo)
     {
         var modelInfoId = modelInfo.Id;
         if (priceInfos.TryGetValue(modelInfoId, out var modelDetails))
@@ -92,8 +92,10 @@ public class XiaoAIModelMapping : ModelMapping
                 calculator.OutputPrice = modelDetails.ModelRatio * 2 * modelDetails.CompletionRatio;
             }
 
-            return;
+            return true;
         }
+
+        return false;
     }
 
     public class ModelDetails

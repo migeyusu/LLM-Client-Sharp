@@ -55,13 +55,13 @@
                                                      Margin="50,0,0,0"
                                                      UniformCornerRadius="8"
                                                      BorderThickness="0"
-                                                     Background="{DynamicResource MaterialDesign.Brush.Primary}"
-                                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}">
+                                                     Background="{DynamicResource MaterialDesign.Brush.Primary.Light}"
+                                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light.Foreground}">
                                     <materialDesign:Card.ContextMenu>
                                         <ContextMenu Padding="0">
                                             <MenuItem Header="复制"
                                                       Command="{x:Static ui:CommonCommands.CopyCommand}"
-                                                      CommandParameter="{Binding MessageContent,Mode=OneTime}">
+                                                      CommandParameter="{Binding TextMessage,Mode=OneTime}">
                                                 <MenuItem.Icon>
                                                     <materialDesign:PackIcon Kind="ContentCopy" />
                                                 </MenuItem.Icon>
@@ -99,9 +99,35 @@
                                             </MenuItem>
                                         </ContextMenu>
                                     </materialDesign:Card.ContextMenu>
-                                    <TextBlock TextWrapping="Wrap">
-                                        <Run Text="{Binding MessageContent,Mode=OneTime}" />
-                                    </TextBlock>
+                                    <StackPanel>
+                                        <TextBlock TextWrapping="Wrap"
+                                                   Text="{Binding TextMessage,Mode=OneTime}" />
+                                        <ItemsControl ItemsSource="{Binding Attachments,Mode=OneTime}"
+                                                      Margin="0,8,0,0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type ui:Attachment}">
+                                                    <materialDesign:Chip IsDeletable="False"
+                                                                         MaxWidth="140"
+                                                                         Margin="0"
+                                                                         ToolTipService.InitialShowDelay="0"
+                                                                         ToolTip="{Binding OriUri,Mode=OneTime}"
+                                                                         Command="{Binding OpenFileCommand}"
+                                                                         Content="{Binding Name,Mode=OneTime}">
+                                                        <materialDesign:Chip.Icon>
+                                                            <materialDesign:PackIcon
+                                                                Kind="{Binding Type,Mode=OneWay,Converter={x:Static component:AttachmentTypeConverter.Instance}}" />
+                                                        </materialDesign:Chip.Icon>
+                                                    </materialDesign:Chip>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel IsItemsHost="True" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
+                                    </StackPanel>
+
                                 </materialDesign:Card>
                             </DataTemplate>
                         </component:DataTemplateTypePair.Template>
@@ -426,7 +452,7 @@
                 <CommandBinding Command="Delete"
                                 Executed="OnDeleteExecuted" />
                 <CommandBinding Command="Redo"
-                                Executed="OnRedoExecuted"/>
+                                Executed="OnRedoExecuted" />
                 <CommandBinding Command="{x:Static ui:CommonCommands.Exclude}"
                                 Executed="OnExcludeExecuted" />
                 <CommandBinding Command="Refresh"
@@ -465,71 +491,132 @@
                 <materialDesign:PackIcon Kind="FormatVerticalAlignBottom" />
             </Button>
         </StackPanel>
-        <Grid Grid.Row="1"
-              IsEnabled="{Binding IsResponding,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
-            <TextBox x:Name="PromptTextBox"
-                     materialDesign:HintAssist.Hint="输入Prompt"
-                     AcceptsReturn="True"
-                     VerticalAlignment="Stretch"
-                     HorizontalAlignment="Stretch"
-                     MinHeight="80"
-                     Margin="0,10,0,0"
-                     Padding="10,10,10,40"
-                     Text="{Binding  PromptString,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
-                     TextWrapping="Wrap"
-                     VerticalScrollBarVisibility="Auto">
-                <TextBox.Style>
-                    <Style TargetType="TextBox"
-                           BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
-                        <Setter Property="MaxHeight" Value="80" />
-                        <Style.Triggers>
-                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter Property="MaxHeight" Value="500" />
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBox.Style>
-            </TextBox>
-            <StackPanel Orientation="Horizontal"
-                        Margin="0,0,16,8"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Bottom">
-                <TextBlock Text="{Binding CurrentContextTokens,StringFormat=当前上下文预估：{0},Mode=OneWay}"
-                           VerticalAlignment="Center" />
-                <!--<TextBlock Text="推理："
-                           VerticalAlignment="Center" />-->
-                <!--<ToggleButton ToolTip="开启/关闭推理"
+        <Border Grid.Row="1"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="8"
+                Margin="0,10,0,0"
+                BorderBrush="{DynamicResource MaterialDesign.Brush.TextBox.Border}"
+                IsEnabled="{Binding IsResponding,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+            <StackPanel Orientation="Vertical">
+                <TextBox x:Name="PromptTextBox"
+                         materialDesign:HintAssist.Hint="输入Prompt"
+                         materialDesign:HintAssist.HintHorizontalAlignment="Left"
+                         AcceptsReturn="True"
+                         VerticalAlignment="Stretch"
+                         HorizontalAlignment="Stretch"
+                         MinHeight="40"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Text="{Binding  PromptString,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox"
+                               BasedOn="{StaticResource MaterialDesignTextBoxBase}">
+                            <Setter Property="materialDesign:TextFieldAssist.DecorationVisibility"
+                                    Value="Collapsed" />
+                            <Setter Property="MaxHeight" Value="40" />
+                            <Style.Triggers>
+                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                    <Setter Property="MaxHeight" Value="500" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+                <Grid Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                            Command="{Binding AddImageCommand}"
+                            Height="32"
+                            Width="32"
+                            VerticalAlignment="Bottom"
+                            Visibility="{Binding Client.Model.SupportImageInput,Mode=OneWay}">
+                        <materialDesign:PackIcon Kind="FileImagePlusOutline"
+                                                 Width="15"
+                                                 Height="15" />
+                    </Button>
+                    <ScrollViewer Grid.Column="1"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  Margin="6,0">
+                        <ItemsControl Padding="0"
+                                      ItemsSource="{Binding Attachments,Mode=OneWay}"
+                                      VerticalAlignment="Bottom">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"
+                                                IsItemsHost="True" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type ui:Attachment}">
+                                    <materialDesign:Chip IsDeletable="True"
+                                                         MaxWidth="140"
+                                                         Margin="0"
+                                                         IconBackground="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                         IconForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
+                                                         ToolTipService.InitialShowDelay="0"
+                                                         ToolTip="{Binding OriUri,Mode=OneTime}"
+                                                         Command="{Binding OpenFileCommand}"
+                                                         CommandParameter="{Binding}"
+                                                         Content="{Binding Name,Mode=OneTime}"
+                                                         DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"
+                                                         DeleteCommandParameter="{Binding  }">
+                                        <materialDesign:Chip.Icon>
+                                            <materialDesign:PackIcon
+                                                Kind="{Binding Type,Mode=OneWay,Converter={x:Static component:AttachmentTypeConverter.Instance}}" />
+                                        </materialDesign:Chip.Icon>
+                                    </materialDesign:Chip>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                Margin="0,4,0,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom">
+                        <TextBlock Text="{Binding CurrentContextTokens,StringFormat=当前上下文预估：{0},Mode=OneWay}"
+                                   VerticalAlignment="Center" />
+                        <!--<ToggleButton ToolTip="推理"
                               Margin="16,0,0,0"
                               VerticalAlignment="Center"
                               Visibility="{Binding Client.Info.ReasoningEnable,Mode=TwoWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                               Style="{StaticResource MaterialDesignSwitchToggleButton}" />-->
-                <CheckBox Content="回车发送"
-                          Margin="16,0,0,0"
-                          Checked="EnterKeyInputBinding_OnChecked"
-                          Unchecked="EnterKeyInputBinding_OnUnchecked"
-                          materialDesign:CheckBoxAssist.CheckBoxSize="30" />
-                <Button Command="{Binding NewResponseCommand}"
-                        Width="80"
-                        Height="30"
-                        Margin="16,0,0,0"
-                        Style="{StaticResource MaterialDesignRaisedLightButton}"
-                        Content="发送" />
-                <Button Command="{Binding ConclusionCommand}"
-                        Margin="16,0,0,0"
-                        Content="总结"
-                        Style="{StaticResource MaterialDesignOutlinedDarkButton}" />
-                <!--<Button Command="{Binding TestCommand}"
+                        <CheckBox Content="回车发送"
+                                  Margin="16,0,0,0"
+                                  Checked="EnterKeyInputBinding_OnChecked"
+                                  Unchecked="EnterKeyInputBinding_OnUnchecked"
+                                  materialDesign:CheckBoxAssist.CheckBoxSize="30" />
+                        <Button Command="{Binding NewResponseCommand}"
+                                Width="80"
+                                Height="30"
+                                Margin="16,0,0,0"
+                                Style="{StaticResource MaterialDesignRaisedDarkButton}"
+                                Content="发送" />
+                        <Button Command="{Binding ConclusionCommand}"
+                                Margin="16,0,0,0"
+                                Content="总结"
+                                Style="{StaticResource MaterialDesignPaperLightButton}" />
+                        <!--<Button Command="{Binding TestCommand}"
                         Content="测试" />-->
+                    </StackPanel>
+                </Grid>
             </StackPanel>
-        </Grid>
+        </Border>
         <Button Grid.Row="1"
                 materialDesign:ButtonAssist.CornerRadius="18"
                 Height="36"
                 materialDesign:ElevationAssist.Elevation="Dp16"
                 HorizontalAlignment="Center"
-                VerticalAlignment="Bottom"
-                Margin="0,0,200,0"
-                Command="{Binding CancelCommand}"
+                VerticalAlignment="Center"
+                Command="{Binding CancelLastCommand}"
                 Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                 Style="{StaticResource MaterialDesignRaisedDarkButton}">
             <StackPanel Orientation="Horizontal">

@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-using System.IO;
-using LLMClient.Endpoints.OpenAIAPI;
+﻿using LLMClient.Endpoints.OpenAIAPI;
 
 namespace LLMClient.Endpoints.Converters;
 
@@ -40,5 +38,5 @@ public abstract class ModelMapping
 
     public abstract APIModelInfo? TryGet(string modelId);
 
-    public abstract void MapInfo(APIModelInfo modelInfo);
+    public abstract bool MapInfo(APIModelInfo modelInfo);
 }

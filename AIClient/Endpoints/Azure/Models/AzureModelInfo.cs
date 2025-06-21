@@ -56,7 +56,7 @@ public class AzureModelInfo : ILLMModel
                             lightModeIconBrush = requestUri.GetIcon().Result;
                         }
 
-                        return lightModeIconBrush ?? Icons.APIIcon.CurrentSource;
+                        return lightModeIconBrush ?? ImageExtensions.APIIcon.CurrentSource;
                     }));
                 }),
                 string.IsNullOrEmpty(DarkModeIconString)
@@ -143,8 +143,25 @@ public class AzureModelInfo : ILLMModel
         set => throw new NotImplementedException();
     }
 
-    public bool ReasoningEnable { get; } = false;
+    public bool Reasonable { get; } = false;
+
+    public bool SupportImageGeneration { get; } = false;
     
+    public bool SupportAudioGeneration { get; } = false;
+
+    public bool SupportVideoGeneration { get; } = false;
+
+    public bool SupportSearch { get; } = false;
+
+    public bool SupportFunctionCall { get; } = false;
+
+    public bool SupportAudioInput { get; } = false;
+
+    public bool SupportVideoInput { get; } = false;
+
+    public bool SupportTextGeneration { get; } = true;
+    public bool SupportImageInput { get; } = false;
+
     public IPriceCalculator? PriceCalculator { get; } = null;
 
     [JsonIgnore]

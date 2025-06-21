@@ -2,6 +2,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 using Microsoft.Win32;
@@ -48,5 +49,11 @@ public partial class GlobalConfigView : UserControl
             File.Copy(fileName, fullPath, true);
             MessageEventBus.Publish("导入成功，已覆盖当前配置。请重启应用程序以使更改生效。");
         }
+    }
+
+    private void ClearHttpCache_OnClick(object sender, RoutedEventArgs e)
+    {
+        HttpContentCache.Instance.Clear();
+        MessageEventBus.Publish("已清空");
     }
 }

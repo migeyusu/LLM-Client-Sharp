@@ -81,6 +81,7 @@
                         <converters:ModelSource>OpenRouter</converters:ModelSource>
                         <converters:ModelSource>GeekAI</converters:ModelSource>
                         <converters:ModelSource>XiaoAI</converters:ModelSource>
+                        <converters:ModelSource>O3Fan</converters:ModelSource>
                     </ComboBox.Items>
                 </ComboBox>
                 <Button Style="{StaticResource MaterialDesignIconForegroundButton}"
@@ -118,6 +119,14 @@
                         <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
                                Width="25"
                                Height="25" />
+                        <materialDesign:PackIcon Grid.Column="0"
+                                                 Width="15"
+                                                 Height="15"
+                                                 Foreground="Red"
+                                                 Visibility="{Binding IsNotAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 VerticalAlignment="Bottom"
+                                                 HorizontalAlignment="Right"
+                                                 Kind="AlertCircleOutline" />
                         <TextBlock Grid.Column="1" Text="{Binding Name,Mode=OneWay}"
                                    Margin="6,0,0,0"
                                    TextTrimming="CharacterEllipsis"

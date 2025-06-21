@@ -32,6 +32,18 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         }
     }
 
+    [JsonIgnore]
+    public bool IsNotAvailable
+    {
+        get => _isNotAvailable;
+        set
+        {
+            if (value == _isNotAvailable) return;
+            _isNotAvailable = value;
+            OnPropertyChanged();
+        }
+    }
+
     public bool Streaming
     {
         get => _streaming;
@@ -46,7 +58,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     [JsonIgnore]
     public ThemedIcon Icon
     {
-        get { return _icon ?? Icons.APIIcon; }
+        get { return _icon ?? ImageExtensions.APIIcon; }
         private set
         {
             if (Equals(value, _icon)) return;
@@ -85,14 +97,6 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         set
         {
             if (value == _iconUrl) return;
-            ClearError();
-            if ((!string.IsNullOrEmpty(value)) &&
-                !Icons.SupportedImageExtensions.Contains(Path.GetExtension(value)))
-            {
-                AddError("The image extension is not supported.");
-                return;
-            }
-
             _iconUrl = value;
             OnPropertyChanged();
             UpdateIcon();
@@ -157,6 +161,17 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     private string _id = string.Empty;
     private string _name = string.Empty;
     private string? _infoUrl;
+    private bool _isNotAvailable;
+    private bool _supportTextGeneration;
+    private bool _supportVideoInput;
+    private bool _supportAudioInput;
+    private bool _supportFunctionCall;
+    private bool _supportSearch;
+    private bool _supportImageOutput;
+    private bool _reasonable = false;
+    private bool _supportImageInput;
+    private bool _supoortVideoGeneration;
+    private bool _supportAudioGeneration;
 
     public int MaxContextSize
     {
@@ -338,7 +353,115 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         }
     }
 
-    public bool ReasoningEnable { get; set; } = false;
+    public bool Reasonable
+    {
+        get => _reasonable;
+        set
+        {
+            if (value == _reasonable) return;
+            _reasonable = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool SupportImageGeneration
+    {
+        get => _supportImageOutput;
+        set
+        {
+            if (value == _supportImageOutput) return;
+            _supportImageOutput = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool SupportAudioGeneration
+    {
+        get => _supportAudioGeneration;
+        set
+        {
+            if (value == _supportAudioGeneration) return;
+            _supportAudioGeneration = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool SupportVideoGeneration
+    {
+        get => _supoortVideoGeneration;
+        set
+        {
+            if (value == _supoortVideoGeneration) return;
+            _supoortVideoGeneration = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool SupportSearch
+    {
+        get => _supportSearch;
+        set
+        {
+            if (value == _supportSearch) return;
+            _supportSearch = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool SupportFunctionCall
+    {
+        get => _supportFunctionCall;
+        set
+        {
+            if (value == _supportFunctionCall) return;
+            _supportFunctionCall = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool SupportAudioInput
+    {
+        get => _supportAudioInput;
+        set
+        {
+            if (value == _supportAudioInput) return;
+            _supportAudioInput = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool SupportVideoInput
+    {
+        get => _supportVideoInput;
+        set
+        {
+            if (value == _supportVideoInput) return;
+            _supportVideoInput = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool SupportTextGeneration
+    {
+        get => _supportTextGeneration;
+        set
+        {
+            if (value == _supportTextGeneration) return;
+            _supportTextGeneration = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool SupportImageInput
+    {
+        get => _supportImageInput;
+        set
+        {
+            if (value == _supportImageInput) return;
+            _supportImageInput = value;
+            OnPropertyChanged();
+        }
+    }
 
     public IPriceCalculator? PriceCalculator { get; set; } = new TokenBasedPriceCalculator();
 
@@ -375,15 +498,6 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         }
     }
 
-    public APIModelInfo()
-    {
-    }
-
-    ~APIModelInfo()
-    {
-    }
-
-
     private void UpdateIcon()
     {
         if (UrlIconEnable)
@@ -395,13 +509,13 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
                     var imageSource = await new Uri(this.IconUrl).GetIcon();
                     if (imageSource != null)
                         return imageSource;
-                    return Icons.APIIcon.CurrentSource;
+                    return ImageExtensions.APIIcon.CurrentSource;
                 })), null);
             }
         }
         else
         {
-            this.Icon = Icons.GetIcon(this.IconType);
+            this.Icon = ImageExtensions.GetIcon(this.IconType);
         }
     }
 }

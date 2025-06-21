@@ -276,7 +276,7 @@
                                    Margin="10"
                                    RenderOptions.BitmapScalingMode="HighQuality"
                                    VerticalAlignment="Center"
-                                   Source="{Binding Client.Info.Icon.CurrentSource,Mode=OneWay}" />
+                                   Source="{Binding Client.Model.Icon.CurrentSource,Mode=OneWay}" />
                             <Grid Grid.Row="0" Grid.Column="1"
                                   VerticalAlignment="Top"
                                   HorizontalAlignment="Stretch">
@@ -507,7 +507,7 @@
                                 Padding="10,5"
                                 ToolTip="配置模型">
                             <StackPanel Orientation="Horizontal">
-                                <Image Source="{Binding  Client.Info.Icon.CurrentSource,Mode=OneWay}"
+                                <Image Source="{Binding  Client.Model.Icon.CurrentSource,Mode=OneWay}"
                                        Width="20"
                                        Height="20" />
                                 <TextBlock Text="{Binding Client.Name,Mode=OneWay}"
@@ -529,9 +529,9 @@
                             </StackPanel>
                         </Button>
                         <Button ToolTip="model信息"
-                                Visibility="{Binding Client.Info,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                Visibility="{Binding Client.Model,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                 Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                CommandParameter="{Binding Client.Info,Mode=OneWay}">
+                                CommandParameter="{Binding Client.Model,Mode=OneWay}">
                             <materialDesign:PackIcon Kind="InformationOutline"
                                                      Width="20"
                                                      Height="20" />

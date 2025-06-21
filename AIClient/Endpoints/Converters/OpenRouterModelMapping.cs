@@ -1,8 +1,10 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using LLMClient.Data;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI.Component;
 
@@ -18,9 +20,9 @@ public class OpenRouterModelMapping : ModelMapping
 
     private OpenRouterModel[] _modelInfos = [];
 
-    const string inputModalities = "text";
+    /*const string inputModalities = "text";
 
-    const string outputModalities = "text";
+    const string outputModalities = "text";*/
 
     public override async Task<bool> Refresh()
     {
@@ -41,15 +43,13 @@ public class OpenRouterModelMapping : ModelMapping
                 {
                     return false;
                 }
-                
+
                 var openRouterModels = listNode.Deserialize<OpenRouterModel[]>();
                 if (openRouterModels != null)
                 {
                     _modelInfos = openRouterModels
                         .Where((info => info.Endpoint is { IsHidden: false } &&
-                                        !string.IsNullOrEmpty(info.Slug) && !string.IsNullOrEmpty(info.ShortName) &&
-                                        info.InputModalities?.Contains(inputModalities) == true &&
-                                        info.OutputModalities?.Contains(outputModalities) == true))
+                                        !string.IsNullOrEmpty(info.Slug) && !string.IsNullOrEmpty(info.ShortName)))
                         .ToArray();
                     return true;
                 }
@@ -84,51 +84,106 @@ public class OpenRouterModelMapping : ModelMapping
         return apiModelInfo;
     }
 
-    public override void MapInfo(APIModelInfo apiModelInfo)
+    private const string BaseUrl = "https://openrouter.ai";
+
+    public override bool MapInfo(APIModelInfo modelInfo)
     {
         var openRouterModel = _modelInfos.FirstOrDefault((model =>
         {
-            var id = apiModelInfo.Id;
+            var id = modelInfo.Id;
             return model.Slug == id
                    || model.Endpoint?.ModelVariantSlug == id;
         }));
-        if (openRouterModel != null)
+        if (openRouterModel == null)
         {
-            apiModelInfo.Description = openRouterModel.Description;
-            apiModelInfo.MaxContextSize = openRouterModel.ContextLength ?? 1000000;
-            if (apiModelInfo.PriceCalculator is TokenBasedPriceCalculator tokenBasedPriceCalculator)
-            {
-                var endpoint = openRouterModel.Endpoint;
-                if (endpoint != null)
-                {
-                    if (endpoint.IsFree == true)
-                    {
-                        tokenBasedPriceCalculator.DiscountFactor = 0;
-                    }
-                    else
-                    {
-                        var pricing = endpoint.Pricing;
-                        if (pricing != null)
-                        {
-                            tokenBasedPriceCalculator.DiscountFactor = 1;
-                            if (double.TryParse(pricing.Prompt, out var input))
-                            {
-                                tokenBasedPriceCalculator.InputPrice = input * 1000000;
-                            }
+            return false;
+        }
 
-                            if (double.TryParse(pricing.Completion, out var output))
-                            {
-                                tokenBasedPriceCalculator.OutputPrice = output * 1000000;
-                            }
-                        }
-                        else
-                        {
-                            tokenBasedPriceCalculator.Enable = false;
-                        }
+        var endpoint = openRouterModel.Endpoint;
+        Trace.Assert(endpoint != null, "Endpoint should not be null");
+        modelInfo.Description = openRouterModel.Description;
+        modelInfo.MaxContextSize = openRouterModel.ContextLength ?? 1000000;
+        var maxTokenLimit = endpoint.MaxCompletionTokens;
+        if (maxTokenLimit != null)
+        {
+            modelInfo.MaxTokensEnable = true;
+            modelInfo.MaxTokenLimit = maxTokenLimit.Value;
+        }
+
+        var iconUrl = endpoint.ProviderInfo?.Icon?.Url;
+        if (!string.IsNullOrEmpty(iconUrl))
+        {
+            if (Uri.TryCreate(iconUrl, UriKind.RelativeOrAbsolute, out var uri))
+            {
+                modelInfo.UrlIconEnable = true;
+                modelInfo.IconUrl = uri.IsAbsoluteUri ? iconUrl : BaseUrl + iconUrl;
+            }
+        }
+
+        modelInfo.Streaming = endpoint.CanAbort == true;
+        modelInfo.Reasonable = endpoint.SupportsReasoning == true;
+        modelInfo.SupportFunctionCall = endpoint.SupportsToolParameters == true;
+        var list = endpoint.SupportedParameters;
+        if (list != null)
+        {
+            modelInfo.TemperatureEnable = list.Contains("temperature");
+            modelInfo.TopPEnable = list.Contains("top_p");
+            modelInfo.TopKEnable = list.Contains("top_k");
+            modelInfo.FrequencyPenaltyEnable = list.Contains("frequency_penalty");
+            modelInfo.PresencePenaltyEnable = list.Contains("presence_penalty");
+            modelInfo.SeedEnable = list.Contains("seed");
+            if (endpoint.MaxCompletionTokens == null)
+            {
+                modelInfo.MaxTokensEnable = list.Contains("max_tokens");
+            }
+
+            modelInfo.SupportSearch = list.Contains("web_search_options");
+        }
+
+        var inputModalities = openRouterModel.InputModalities;
+        if (inputModalities != null)
+        {
+            modelInfo.SupportImageInput = inputModalities.Contains("image");
+            modelInfo.SupportVideoInput = inputModalities.Contains("video");
+        }
+
+        var outputModalities = openRouterModel.OutputModalities;
+        if (outputModalities != null)
+        {
+            modelInfo.SupportTextGeneration = outputModalities.Contains("text");
+            modelInfo.SupportImageGeneration = outputModalities.Contains("image");
+        }
+        
+        if (modelInfo.PriceCalculator is TokenBasedPriceCalculator tokenBasedPriceCalculator)
+        {
+            if (endpoint.IsFree == true)
+            {
+                tokenBasedPriceCalculator.DiscountFactor = 0;
+            }
+            else
+            {
+                var pricing = endpoint.Pricing;
+                if (pricing != null)
+                {
+                    tokenBasedPriceCalculator.DiscountFactor = 1;
+                    if (double.TryParse(pricing.Prompt, out var input))
+                    {
+                        tokenBasedPriceCalculator.InputPrice = input * 1000000;
                     }
+
+                    if (double.TryParse(pricing.Completion, out var output))
+                    {
+                        tokenBasedPriceCalculator.OutputPrice = output * 1000000;
+                    }
+                }
+                else
+                {
+                    tokenBasedPriceCalculator.Enable = false;
                 }
             }
         }
+
+        return true;
     }
 
 

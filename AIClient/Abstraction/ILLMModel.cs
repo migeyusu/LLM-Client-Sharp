@@ -30,7 +30,26 @@ public interface ILLMModel : IModelParams
     bool SeedEnable { get; }
     int TopKMax { get; }
     int MaxTokenLimit { get; }
-    bool ReasoningEnable { get; }
+    bool Reasonable { get; }
+    
+    
+    bool SupportAudioInput { get; }
+    
+    bool SupportVideoInput { get; }
+    
+    bool SupportImageInput { get; }
+    
+    bool SupportTextGeneration { get; }
+    
+    bool SupportImageGeneration { get; }
+    
+    bool SupportAudioGeneration { get; }
+    
+    bool SupportVideoGeneration { get; }
+    
+    bool SupportSearch { get; }
+    
+    bool SupportFunctionCall { get; }
 
     #endregion
 

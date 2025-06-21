@@ -9,6 +9,7 @@
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              xmlns:data="clr-namespace:LLMClient.Data"
+             xmlns:wpf="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="600"
              d:DataContext="{d:DesignInstance local:APIModelInfo}">
@@ -98,12 +99,39 @@
                 </StackPanel>
             </RadioButton>
         </Grid>
-        <!--<CheckBox IsChecked="{Binding ReasoningEnable,Mode=TwoWay}"
-                  Content="Reasoning (if supported and need manually enabled)"
-                  materialDesign:CheckBoxAssist.CheckBoxSize="30"
-                  HorizontalAlignment="Left"
-                  VerticalAlignment="Center"
-                  Margin="0,10,0,0" />-->
+        <WrapPanel Margin="0,10,0,0"
+                   Orientation="Horizontal">
+            <WrapPanel.Resources>
+                <Style TargetType="{x:Type CheckBox}"
+                       BasedOn="{StaticResource {x:Type CheckBox}}">
+                    <Setter Property="Margin"
+                            Value="0,0,10,0" />
+                    <Setter Property="materialDesign:CheckBoxAssist.CheckBoxSize"
+                            Value="30" />
+                </Style>
+            </WrapPanel.Resources>
+            <CheckBox IsChecked="{Binding Reasonable,Mode=TwoWay}"
+                      Content="Support Reasoning"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center" />
+            <CheckBox IsChecked="{Binding Streaming,Mode=TwoWay}"
+                      Content="Support Streaming" />
+            <CheckBox IsChecked="{Binding SupportImageInput,Mode=TwoWay}"
+                      Content="Support Image Input" />
+            <CheckBox IsChecked="{Binding  SupportAudioInput,Mode=TwoWay}"
+                      Content="Support Audio Input" />
+            <CheckBox IsChecked="{Binding  SupportVideoInput,Mode=TwoWay}"
+                      Content="Support Video Input" />
+            <CheckBox IsChecked="{Binding SupportTextGeneration,Mode=TwoWay}"
+                      Content="Support Text Generation" />
+            <CheckBox IsChecked="{Binding SupportImageGeneration,Mode=TwoWay}"
+                      Content="Support Image Output" />
+            <CheckBox IsChecked="{Binding SupportSearch,Mode=TwoWay}"
+                      Content="Support Search" />
+            <CheckBox IsChecked="{Binding SupportFunctionCall,Mode=TwoWay}"
+                      Content="Support Function Call" />
+
+        </WrapPanel>
         <CheckBox IsChecked="{Binding SystemPromptEnable,Mode=TwoWay}"
                   Content="System Prompt:"
                   materialDesign:CheckBoxAssist.CheckBoxSize="30"

@@ -1,6 +1,14 @@
 ﻿using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 
+public class ImagePriceCalculator : IPriceCalculator
+{
+    public double Calculate(UsageDetails usage)
+    {
+        return Double.NaN;
+    }
+}
+
 public class TokenBasedPriceCalculator : IPriceCalculator
 {
     /// <summary>

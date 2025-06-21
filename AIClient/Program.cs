@@ -74,6 +74,8 @@ public class Program
             {
                 mainViewModel.SaveDialogsToLocal().Wait(TimeSpan.FromMinutes(1));
             }
+
+            HttpContentCache.Instance.PersistIndexAsync().Wait(TimeSpan.FromSeconds(5));
         }
         catch (Exception e)
         {

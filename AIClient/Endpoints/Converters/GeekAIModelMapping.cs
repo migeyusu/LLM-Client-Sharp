@@ -6,30 +6,6 @@ using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.Converters;
 
-public class XiaoaiAIModelMapping : ModelMapping
-{
-    public XiaoaiAIModelMapping() : base("XiaoaiAI")
-    {
-    }
-
-    public override IList<string> AvailableModels { get; } = [];
-
-    public override Task<bool> Refresh()
-    {
-        throw new NotImplementedException();
-    }
-
-    public override APIModelInfo? TryGet(string modelId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void MapInfo(APIModelInfo modelInfo)
-    {
-        throw new NotImplementedException();
-    }
-}
-
 public class GeekAIModelMapping : ModelMapping
 {
     public GeekAIModelMapping() : base("GeekAI")
@@ -41,7 +17,7 @@ public class GeekAIModelMapping : ModelMapping
         get { return _modelInfos.Select((info => info.Alias)).ToArray(); }
     }
 
-    private string[] modelType = { "chat", "search" };
+    // private string[] modelType = { "chat", "search" };
 
     private ModelInfo[] _modelInfos = [];
 
@@ -57,9 +33,8 @@ public class GeekAIModelMapping : ModelMapping
                 if (modelInfo != null)
                 {
                     _modelInfos = modelInfo
-                        .Where((info =>
-                            !string.IsNullOrEmpty(info.Name) && !string.IsNullOrEmpty(info.Alias) &&
-                            modelType.Contains(info.Type)))
+                        .Where(info => !string.IsNullOrEmpty(info.Name)
+                                       && !string.IsNullOrEmpty(info.Alias))
                         .ToArray();
                     return true;
                 }
@@ -91,24 +66,41 @@ public class GeekAIModelMapping : ModelMapping
         return null;
     }
 
-    public override void MapInfo(APIModelInfo modelInfo)
+    public override bool MapInfo(APIModelInfo modelInfo)
     {
         var info = _modelInfos.FirstOrDefault(x => x.Name.Equals(modelInfo.Id, StringComparison.OrdinalIgnoreCase));
-        if (info != null)
+        if (info == null)
         {
-            modelInfo.Description = info.Desc;
-            modelInfo.UrlIconEnable = !string.IsNullOrEmpty(info.Icon);
-            modelInfo.IconUrl = info.Icon;
-            modelInfo.MaxContextSize = info.ContextLen;
-            modelInfo.MaxTokenLimit = info.OutputLen;
-            modelInfo.SystemPromptEnable = info.Systemable;
-            if (modelInfo.PriceCalculator is TokenBasedPriceCalculator calculator)
-            {
-                calculator.DiscountFactor = 1;
-                calculator.InputPrice = info.InputPrice * 1000 / 7; // Convert to per million tokens
-                calculator.OutputPrice = info.OutputPrice * 1000 / 7; // Convert to per million tokens
-            }
+            return false;
         }
+
+        modelInfo.Description = info.Desc;
+        modelInfo.UrlIconEnable = !string.IsNullOrEmpty(info.Icon);
+        modelInfo.IconUrl = info.Icon;
+        modelInfo.Streaming = info.Streamable;
+        modelInfo.Reasonable = info.Reasonable;
+        modelInfo.TemperatureEnable = Math.Abs(info.Temperature - 1f) <= float.Epsilon;
+        modelInfo.Temperature = (float)info.Temperature;
+        modelInfo.MaxContextSize = info.ContextLen;
+        modelInfo.MaxTokenLimit = info.OutputLen;
+        modelInfo.SupportFunctionCall = info.Functionable;
+        modelInfo.SupportImageInput = info.Visible;
+        modelInfo.SupportVideoInput = info.Features?.Contains("视频理解") == true;
+        modelInfo.SupportAudioInput = info.Audioable;
+        modelInfo.SupportSearch = info.Searchable;
+        modelInfo.SupportImageGeneration = info.Type == "image";
+        modelInfo.SupportVideoGeneration = info.Type == "video";
+        modelInfo.SupportAudioGeneration = info.Type == "audio";
+        modelInfo.SupportTextGeneration = info.Type == "chat";
+        modelInfo.SystemPromptEnable = info.Systemable;
+        if (modelInfo.PriceCalculator is TokenBasedPriceCalculator calculator)
+        {
+            calculator.DiscountFactor = 1;
+            calculator.InputPrice = info.InputPrice * 1000 / 7; // Convert to per million tokens
+            calculator.OutputPrice = info.OutputPrice * 1000 / 7; // Convert to per million tokens
+        }
+
+        return true;
     }
 
 

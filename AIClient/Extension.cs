@@ -25,6 +25,29 @@ public static class Extension
         propertyInfo?.SetValue(client, apiVersion);
     }
 
+    /// <summary>
+    /// cache local file to specific folder.
+    /// </summary>
+    public static string CacheLocalFile(string filePath, string cacheFolder)
+    {
+        var fileInfo = new FileInfo(filePath);
+        if (!fileInfo.Exists)
+        {
+            throw new FileNotFoundException("The specified file does not exist.", filePath);
+        }
+
+        var extension = Path.GetExtension(filePath);
+        //确保目录存在
+        Directory.CreateDirectory(cacheFolder);
+        var newFileName = Guid.NewGuid() + extension;
+        var targetPath = Path.GetFullPath(newFileName, cacheFolder);
+        fileInfo.CopyTo(targetPath);
+        return targetPath;
+    }
+
+
+    #region json
+
     public static JsonNode GetOrCreate(this JsonNode jsonNode, string key)
     {
         if (jsonNode.AsObject().TryGetPropertyValue(key, out var listNode))
@@ -36,6 +59,9 @@ public static class Extension
         jsonNode[key] = jsonObject;
         return jsonObject;
     }
+
+    #endregion
+
 
     public static ImageSource SVGStreamToImageSource(this Stream stream)
     {

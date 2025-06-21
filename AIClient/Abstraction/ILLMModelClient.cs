@@ -16,7 +16,7 @@ public interface ILLMModelClient
 
     ILLMEndpoint Endpoint { get; }
 
-    ILLMModel Info { get; }
+    ILLMModel Model { get; }
 
     bool IsResponding { get; set; }
 
@@ -37,7 +37,7 @@ public class NullLlmModelClient : ILLMModelClient
         get { return new APIEndPoint(); }
     }
 
-    public ILLMModel Info
+    public ILLMModel Model
     {
         get { return new APIModelInfo(); }
     }

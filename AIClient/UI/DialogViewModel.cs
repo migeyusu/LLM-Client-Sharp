@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
@@ -197,10 +198,9 @@ public class DialogViewModel : BaseViewModel
     {
         get
         {
-            return DialogItems.FirstOrDefault(item =>
-            {
-                return item is MultiResponseViewItem && item.IsAvailableInContext;
-            })?.Message?.Text;
+            return DialogItems.OfType<MultiResponseViewItem>()
+                .FirstOrDefault(item => { return item.IsAvailableInContext; })
+                ?.CurrentResponse?.ResponseWithoutThinking;
         }
     }
 
@@ -257,7 +257,7 @@ public class DialogViewModel : BaseViewModel
                 {
                     var newGuid = Guid.NewGuid();
                     var newItem = new RequestViewItem()
-                        { MessageContent = requestViewItem.MessageContent, InteractionId = newGuid };
+                        { TextMessage = requestViewItem.TextMessage, InteractionId = newGuid };
                     DialogItems.Add(newItem);
                     var copy = DialogItems.ToArray();
                     int retryCount = 3;
@@ -548,7 +548,7 @@ public class DialogViewModel : BaseViewModel
             else if (viewItem is RequestViewItem reqViewItem)
             {
                 stringBuilder.AppendLine("## **User:**");
-                stringBuilder.Append(reqViewItem.MessageContent);
+                stringBuilder.Append(reqViewItem.TextMessage);
                 stringBuilder.AppendLine();
                 stringBuilder.AppendLine();
                 stringBuilder.AppendLine("***");
@@ -641,11 +641,16 @@ public class DialogViewModel : BaseViewModel
             return;
         }
 
-
-        await NewResponse(PromptString);
+        var requestViewItem = new RequestViewItem()
+        {
+            InteractionId = Guid.NewGuid(),
+            TextMessage = PromptString.Trim(),
+            Attachments = Attachments.ToList(),
+        };
+        await NewResponse(requestViewItem);
     }));
 
-    public ICommand CancelCommand => new ActionCommand((o =>
+    public ICommand CancelLastCommand => new ActionCommand((o =>
     {
         var multiResponseViewItem = DialogItems.LastOrDefault() as MultiResponseViewItem;
         if (multiResponseViewItem?.AcceptedResponse is RespondingViewItem respondingViewItem)
@@ -653,6 +658,8 @@ public class DialogViewModel : BaseViewModel
             respondingViewItem.CancelCommand.Execute(null);
         }
     }));
+
+    #region scroll
 
     public ICommand ScrollToPreviousCommand => new ActionCommand(o =>
     {
@@ -718,6 +725,8 @@ public class DialogViewModel : BaseViewModel
         this.ScrollViewItem = DialogItems.First();
     }));
 
+    #endregion
+
     public ICommand ChangeModelCommand => new ActionCommand((async o =>
     {
         var selectionViewModel = new DialogCreationViewModel(EndpointService);
@@ -741,10 +750,47 @@ public class DialogViewModel : BaseViewModel
         get { return ServiceLocator.GetService<IEndpointService>()!; }
     }
 
+    #region attachment
+
+    public ObservableCollection<Attachment> Attachments { get; set; } =
+        new ObservableCollection<Attachment>();
+
+    public ICommand AddImageCommand => new ActionCommand(o =>
+    {
+        var openFileDialog = new OpenFileDialog()
+        {
+            Filter = "Image files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg",
+            Multiselect = true
+        };
+        if (openFileDialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        foreach (var fileName in openFileDialog.FileNames)
+        {
+            this.Attachments.Add(new Attachment()
+            {
+                Type = AttachmentType.Image,
+                OriUri = new Uri(fileName)
+            });
+        }
+    });
+
+    public ICommand RemoveAttachmentCommand => new ActionCommand(o =>
+    {
+        if (o is Attachment attachment)
+        {
+            this.Attachments.Remove(attachment);
+        }
+    });
+
+    #endregion
+
+
     private string? _promptString;
     private string _topic;
     private IDialogViewItem? _scrollViewItem;
-
     private DateTime _editTime = DateTime.Now;
     private long _tokensConsumption;
     private bool _isNewResponding;
@@ -754,7 +800,6 @@ public class DialogViewModel : BaseViewModel
     private bool _isChaining;
     private int _chainStepCount;
     private int _chainingStep;
-
 
     public DialogViewModel(string topic, ILLMModelClient modelClient,
         IList<IDialogViewItem>? items = null)
@@ -782,7 +827,7 @@ public class DialogViewModel : BaseViewModel
         var config = GlobalConfig.LoadOrCreate();
         var requestViewItem = new RequestViewItem()
         {
-            MessageContent = string.Format(config.TokenSummarizePrompt, config.SummarizeWordsCount),
+            TextMessage = string.Format(config.TokenSummarizePrompt, config.SummarizeWordsCount),
             InteractionId = newGuid
         };
         dialogViewItems.Add(requestViewItem);
@@ -804,7 +849,7 @@ public class DialogViewModel : BaseViewModel
     }
 
     public async Task AppendResponseOn(MultiResponseViewItem responseViewItem,
-        ILLMModelClient? llmModelClient)
+        ILLMModelClient llmModelClient)
     {
         //获得之前的所有请求
         var indexOf = DialogItems.IndexOf(responseViewItem);
@@ -844,7 +889,7 @@ public class DialogViewModel : BaseViewModel
     }
 
     public async Task<CompletedResult> SendRequestCore(
-        ILLMModelClient? client, Memory<IDialogViewItem> dialog,
+        ILLMModelClient client, Memory<IDialogViewItem> dialog,
         MultiResponseViewItem multiResponseViewItem)
     {
         var completedResult = CompletedResult.Empty;
@@ -855,7 +900,7 @@ public class DialogViewModel : BaseViewModel
             multiResponseViewItem.Append(respondingViewItem);
             var list = GenerateHistory(dialog);
             completedResult = await client.SendRequest(list, respondingViewItem.RequestTokenSource.Token);
-            multiResponseViewItem.Append(new ResponseViewItem(client.Info, completedResult, client.Endpoint.Name));
+            multiResponseViewItem.Append(new ResponseViewItem(client.Model, completedResult, client.Endpoint.Name));
         }
         catch (Exception exception)
         {
@@ -876,13 +921,11 @@ public class DialogViewModel : BaseViewModel
         return completedResult;
     }
 
-    public async Task NewResponse(string prompt)
+    public async Task NewResponse(RequestViewItem requestViewItem)
     {
-        var newGuid = Guid.NewGuid();
-        var requestViewItem = new RequestViewItem() { MessageContent = prompt, InteractionId = newGuid };
         DialogItems.Add(requestViewItem);
         var copy = DialogItems.ToArray();
-        var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
+        var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = requestViewItem.InteractionId };
         DialogItems.Add(multiResponseViewItem);
         ScrollViewItem = DialogItems.Last();
         IsNewResponding = true;
@@ -892,13 +935,13 @@ public class DialogViewModel : BaseViewModel
         if (!completedResult.IsInterrupt)
         {
             this.PromptString = string.Empty;
+            this.Attachments.Clear();
         }
     }
 
-
     public async void ReBaseOn(RequestViewItem redoItem)
     {
-        //删除本请求及之后的所有记录
+        //删除之后的所有记录
         var indexOf = DialogItems.IndexOf(redoItem);
         var dialogCount = DialogItems.Count;
         for (int i = 0; i < dialogCount - indexOf; i++)
@@ -906,9 +949,7 @@ public class DialogViewModel : BaseViewModel
             DialogItems.RemoveAt(indexOf);
         }
 
-        var message = redoItem.MessageContent;
-        PromptString = message;
-        await NewResponse(message);
+        await NewResponse(redoItem);
     }
 
     public async void ClearBefore(RequestViewItem requestViewItem)
@@ -1020,4 +1061,129 @@ public class DialogViewModel : BaseViewModel
     {
         IsDataChanged = true;
     }
+}
+
+public class Attachment
+{
+    public Uri? OriUri { get; set; }
+
+    [JsonIgnore]
+    public string Name
+    {
+        get
+        {
+            if (OriUri?.IsFile == true)
+            {
+                return Path.GetFileName(OriUri.LocalPath);
+            }
+
+            return OriUri?.ToString() ?? string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// 缓存的文件名
+    /// </summary>
+    public string? CachedFileName { get; set; }
+
+    [JsonIgnore]
+    public string CachedFilePath
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(CachedFileName))
+            {
+                return string.Empty;
+            }
+
+            return Path.GetFullPath(CachedFileName, ImageAttachmentCacheFolder);
+        }
+    }
+
+    public AttachmentType Type { get; set; }
+
+    [JsonIgnore]
+    public string ImageAttachmentCacheFolder
+    {
+        get { return Path.GetFullPath(Path.Combine("Attachment", "Images")); }
+    }
+
+    public ICommand OpenFileCommand => new ActionCommand(o =>
+    {
+        if (Type == AttachmentType.Image)
+        {
+            string? filePath = null;
+            var cachedFilePath = CachedFilePath;
+            if (!string.IsNullOrEmpty(cachedFilePath) &&
+                File.Exists(cachedFilePath))
+            {
+                filePath = cachedFilePath;
+            }
+            else
+            {
+                if (OriUri?.IsFile == true)
+                {
+                    var fileName = Path.GetFullPath(OriUri.LocalPath);
+                    if (File.Exists(fileName))
+                    {
+                        filePath = fileName;
+                    }
+                }
+            }
+
+            if (filePath == null)
+            {
+                MessageEventBus.Publish("文件不存在！");
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
+        }
+    });
+
+    public bool EnsureCache()
+    {
+        try
+        {
+            if (OriUri == null)
+            {
+                throw new NullReferenceException("OriUri不能为空!");
+            }
+
+            switch (Type)
+            {
+                case AttachmentType.Image:
+                    if (string.IsNullOrEmpty(CachedFileName) ||
+                        !File.Exists(Path.GetFullPath(CachedFileName, ImageAttachmentCacheFolder)))
+                    {
+                        if (!OriUri.IsFile)
+                        {
+                            throw new NotSupportedException("图片附件必须是本地文件!");
+                        }
+
+                        this.CachedFileName =
+                            Extension.CacheLocalFile(this.OriUri.LocalPath, ImageAttachmentCacheFolder);
+                    }
+
+                    break;
+                default:
+                    throw new NotSupportedException("不支持的附件类型: " + Type);
+            }
+        }
+        catch (Exception e)
+        {
+            Trace.TraceError($"[Attachment] Error ensuring cache for {OriUri}: {e.Message}");
+            return false;
+        }
+
+        return true;
+    }
+}
+
+public enum AttachmentType
+{
+    Image,
+    File,
+    Audio,
+    Video
 }
