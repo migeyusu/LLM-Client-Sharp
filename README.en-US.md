@@ -1,4 +1,4 @@
-[English](README.md) | [简体中文](README.zh-CN.md)
+[English](README.en-US.md) | [简体中文](README.md)
 
 # LLM Client for WPF
 
