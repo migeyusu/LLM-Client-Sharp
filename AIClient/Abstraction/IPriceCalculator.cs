@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;

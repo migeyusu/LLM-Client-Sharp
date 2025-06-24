@@ -19,12 +19,4 @@ public partial class PromptsResourceView : UserControl
             MessageEventBus.Publish("已复制");
         }
     }
-
-    private void CommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.OriginalSource is ListBoxItem listBoxItem)
-        {
-            CommonCommands.CopyCommand.Execute(listBoxItem.Content);
-        }
-    }
 }

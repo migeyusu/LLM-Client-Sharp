@@ -1,6 +1,8 @@
 ﻿using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 
+namespace LLMClient.Endpoints;
+
 public class ImagePriceCalculator : IPriceCalculator
 {
     public double Calculate(UsageDetails usage)

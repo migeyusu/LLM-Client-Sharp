@@ -25,7 +25,7 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
             if (Equals(value, _prompts)) return;
             _prompts = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(AddCommand));
+            OnPropertyChanged(nameof(NewPromptCommand));
             OnPropertyChanged(nameof(RemoveCommand));
             OnPropertyChanged(nameof(SaveCommand));
             OnPropertyChanged(nameof(SystemPrompts));
@@ -53,26 +53,37 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
             _selectedIndex = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(UpdateCommand));
+            SelectedPrompt = value >= 0 && value < Prompts.Count
+                ? Prompts[value]
+                : string.Empty;
         }
     }
 
     public ICommand UpdateCommand => new ActionCommand((o =>
     {
-        if (SelectedIndex < 0)
+        var selectedIndex = SelectedIndex;
+        if (selectedIndex < 0)
         {
             return;
         }
 
-        if (o is TextBox textBox)
-        {
-            Prompts[SelectedIndex] = textBox.Text;
-        }
+        Prompts[selectedIndex] = SelectedPrompt ?? string.Empty;
+        SelectedIndex = selectedIndex;
     }));
 
-    public ICommand AddCommand => new ActionCommand((o =>
+    public ICommand NewPromptCommand => new ActionCommand((o =>
     {
         Prompts.Add("您是一个AI助手，帮助用户解决问题。");
         SelectedIndex = Prompts.Count - 1;
+    }));
+
+    public ICommand AddToCommand => new ActionCommand((o =>
+    {
+        if (!string.IsNullOrEmpty(SelectedPrompt))
+        {
+            Prompts.Add(SelectedPrompt);
+            SelectedIndex = Prompts.Count - 1;
+        }
     }));
 
     public ICommand RemoveCommand => new ActionCommand((o =>

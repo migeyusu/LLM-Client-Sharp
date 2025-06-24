@@ -45,9 +45,9 @@ public class DialogViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// 用于跟踪对话对象
+    /// 用于跟踪对话对象，新实例自动创建
     /// </summary>
-    public string FileName { get; set; } = String.Empty;
+    public string FileName { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>
     /// indicate whether data is changed after loading.
@@ -849,8 +849,13 @@ public class DialogViewModel : BaseViewModel
     }
 
     public async Task AppendResponseOn(MultiResponseViewItem responseViewItem,
-        ILLMModelClient llmModelClient)
+        ILLMModelClient client)
     {
+        if (client.Model.SystemPromptEnable)
+        {
+            client.Parameters.SystemPrompt = this.Client.Parameters.SystemPrompt;
+        }
+
         //获得之前的所有请求
         var indexOf = DialogItems.IndexOf(responseViewItem);
         if (indexOf < 1)
@@ -859,7 +864,7 @@ public class DialogViewModel : BaseViewModel
         }
 
         var dialogViewItems = DialogItems.Take(indexOf).ToArray();
-        await SendRequestCore(llmModelClient, dialogViewItems, responseViewItem);
+        await SendRequestCore(client, dialogViewItems, responseViewItem);
     }
 
     public void DeleteItem(IDialogViewItem item)
@@ -969,23 +974,22 @@ public class DialogViewModel : BaseViewModel
     public async void RetryCurrent(MultiResponseViewItem multiResponseViewItem)
     {
         // var index = multiResponseViewItem.AcceptedIndex;
-        var responseViewItem = multiResponseViewItem.AcceptedResponse;
-        if (responseViewItem == null)
+        if (multiResponseViewItem.AcceptedResponse is not ResponseViewItem responseViewItem)
         {
             MessageEventBus.Publish("响应为空！");
             return;
         }
 
-        var llmModel = EndpointService.GetEndpoint(responseViewItem.EndPointName)?
+        var client = EndpointService.GetEndpoint(responseViewItem.EndPointName)?
             .NewClient(responseViewItem.ModelName);
-        if (llmModel == null)
+        if (client == null)
         {
             MessageEventBus.Publish("已无法找到模型！");
             return;
         }
 
         multiResponseViewItem.Remove(responseViewItem);
-        await AppendResponseOn(multiResponseViewItem, llmModel);
+        await AppendResponseOn(multiResponseViewItem, client);
     }
 
     private static void FilterHistory(Span<IDialogViewItem> source, Stack<IDialogViewItem> dialogViewItems)
@@ -1041,6 +1045,38 @@ public class DialogViewModel : BaseViewModel
         }
 
         return list;
+    }
+
+    public FileInfo GetAssossiateFile(string folderPath)
+    {
+        var fileName = Path.GetFullPath(this.FileName + ".json", folderPath);
+        return new FileInfo(fileName);
+    }
+
+    public async Task SaveToLocal(string folderPath)
+    {
+        if (this.IsDataChanged == false)
+        {
+            return;
+        }
+
+        var dialogModel = Mapper.Map<DialogViewModel, DialogPersistModel>(this);
+        var fileInfo = this.GetAssossiateFile(folderPath);
+        if (fileInfo.Exists)
+        {
+            fileInfo.Delete();
+        }
+        else
+        {
+            fileInfo = new FileInfo(Path.Combine(folderPath, $"{Guid.NewGuid()}.json"));
+        }
+
+        await using (var fileStream = fileInfo.OpenWrite())
+        {
+            await JsonSerializer.SerializeAsync(fileStream, dialogModel);
+        }
+
+        this.IsDataChanged = false;
     }
 
     public void InsertClearContextItem(IDialogViewItem item)

@@ -143,24 +143,37 @@ public class AzureModelInfo : ILLMModel
         set => throw new NotImplementedException();
     }
 
-    public bool Reasonable { get; } = false;
+    public bool Reasonable
+    {
+        get { return Tags?.Contains("reasoning") == true; }
+    }
 
-    public bool SupportImageGeneration { get; } = false;
-    
+    public bool SupportTextGeneration
+    {
+        get { return SupportedOutputModalities?.Contains("text") == true; }
+    }
+
+    public bool SupportImageGeneration => false;
+
     public bool SupportAudioGeneration { get; } = false;
 
     public bool SupportVideoGeneration { get; } = false;
 
     public bool SupportSearch { get; } = false;
 
-    public bool SupportFunctionCall { get; } = false;
+    public bool SupportFunctionCall
+    {
+        get { return Tags?.Contains("agents") == true; }
+    }
 
     public bool SupportAudioInput { get; } = false;
 
     public bool SupportVideoInput { get; } = false;
 
-    public bool SupportTextGeneration { get; } = true;
-    public bool SupportImageInput { get; } = false;
+    public bool SupportImageInput
+    {
+        get { return SupportedInputModalities?.Contains("image") == true; }
+    }
 
     public IPriceCalculator? PriceCalculator { get; } = null;
 

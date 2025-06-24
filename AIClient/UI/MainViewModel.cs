@@ -13,6 +13,7 @@ using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Render;
 using LLMClient.UI.Component;
+using LLMClient.UI.MCP;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
@@ -29,6 +30,8 @@ public class MainViewModel : BaseViewModel
     public IEndpointService EndpointsViewModel { get; }
 
     public IPromptsResource PromptsResource { get; }
+
+    public McpServiceCollection McpServiceCollection { get; set; } = new McpServiceCollection();
 
     public bool IsInitialized { get; private set; }
 
@@ -341,60 +344,25 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-    private IDictionary<string, FileInfo> LocalDialogFiles(string folder = DialogSaveFolder)
-    {
-        var dirPath = Path.GetFullPath(folder);
-        var directoryInfo = new DirectoryInfo(dirPath);
-        if (!directoryInfo.Exists)
-            directoryInfo.Create();
-        return directoryInfo.GetFiles()
-            .ToDictionary((f) => Path.GetFileNameWithoutExtension(f.Name), (f) => f);
-    }
-
     public async Task SaveDialogsToLocal(string folder = DialogSaveFolder)
     {
         var dirPath = Path.GetFullPath(folder);
-        var fileInfos = LocalDialogFiles();
         foreach (var dialogViewModel in DialogViewModels)
         {
-            if (dialogViewModel.IsDataChanged == false)
-            {
-                continue;
-            }
-
-            var dialogModel = _mapper.Map<DialogViewModel, DialogPersistModel>(dialogViewModel);
-            if (fileInfos.TryGetValue(dialogViewModel.FileName, out var fileInfo))
-            {
-                fileInfo.Delete();
-            }
-            else
-            {
-                fileInfo = new FileInfo(Path.Combine(dirPath, $"{Guid.NewGuid()}.json"));
-            }
-
-            await using (var fileStream = fileInfo.OpenWrite())
-            {
-                await JsonSerializer.SerializeAsync(fileStream, dialogModel);
-            }
-
-            dialogViewModel.IsDataChanged = false;
+            await dialogViewModel.SaveToLocal(dirPath);
         }
     }
 
-    public void DeleteDialog(DialogViewModel dialogViewModel)
+    public void DeleteDialog(DialogViewModel dialogViewModel, string folderPath = DialogSaveFolder)
     {
         dialogViewModel.PropertyChanged -= DialogOnEditTimeChanged;
         this.DialogViewModels.Remove(dialogViewModel);
         this.PreDialog = this.DialogViewModels.FirstOrDefault();
-        var fileInfos = LocalDialogFiles();
-        if (string.IsNullOrEmpty(dialogViewModel.FileName))
+        var dirPath = Path.GetFullPath(folderPath);
+        var assossiateFile = dialogViewModel.GetAssossiateFile(dirPath);
+        if (assossiateFile.Exists)
         {
-            return;
-        }
-
-        if (fileInfos.TryGetValue(dialogViewModel.FileName, out var fileInfo))
-        {
-            fileInfo.Delete();
+            assossiateFile.Delete();
         }
     }
 
@@ -407,9 +375,11 @@ public class MainViewModel : BaseViewModel
         {
             this.PreDialog = DialogViewModels.First();
         }
-        
+
         UpdateResource(_themeName);
         await this.PromptsResource.Initialize();
+        await this.McpServiceCollection.LoadAsync();
+        await McpServiceCollection.InitializeAsync();
         IsProcessing = false;
         IsInitialized = true;
     }

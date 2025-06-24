@@ -1,0 +1,62 @@
+﻿<Window x:Class="LLMClient.UI.Log.LoggerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:log="clr-namespace:LLMClient.UI.Log"
+        xmlns:diagnostics="clr-namespace:System.Diagnostics;assembly=System.Diagnostics.TraceSource"
+        mc:Ignorable="d"
+        Title="Log" Height="450" Width="800"
+        d:DataContext="{d:DesignInstance log:LoggerWindow}">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ScrollViewer Margin="0,0,0,10"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding LogItems}"
+                          FontFamily="Consolas"
+                          HorizontalContentAlignment="Stretch">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type log:LogItem}">
+                        <TextBlock Text="{Binding }"
+                                   TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="{x:Type TextBlock}"
+                                       BasedOn="{StaticResource MaterialDesignBody2TextBlock}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding  Type,Mode=OneTime}">
+                                            <DataTrigger.Value>
+                                                <diagnostics:TraceEventType>
+                                                    Warning
+                                                </diagnostics:TraceEventType>
+                                            </DataTrigger.Value>
+                                            <Setter Property="Foreground"
+                                                    Value="IndianRed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding  Type,Mode=OneTime}">
+                                            <DataTrigger.Value>
+                                                <diagnostics:TraceEventType>
+                                                    Critical
+                                                </diagnostics:TraceEventType>
+                                            </DataTrigger.Value>
+                                            <Setter Property="Foreground"
+                                                    Value="Red" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+        <StackPanel Grid.Row="1" Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Click="Clear_OnClick"
+                    Content="清空所有" />
+        </StackPanel>
+    </Grid>
+</Window>

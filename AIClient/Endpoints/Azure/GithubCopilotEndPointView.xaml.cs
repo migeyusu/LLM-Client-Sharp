@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace LLMClient.Endpoints;
+namespace LLMClient.Endpoints.Azure;
 
 public partial class GithubCopilotEndPointView : UserControl
 {

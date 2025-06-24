@@ -1,8 +1,9 @@
 ﻿using System.Globalization;
 using System.Windows.Data;
+using LLMClient.Data;
 using LLMClient.Endpoints;
 
-namespace LLMClient.Data;
+namespace LLMClient.UI.Component;
 
 public class EnumToIconConverter : IValueConverter
 {

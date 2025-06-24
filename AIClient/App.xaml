@@ -9,6 +9,123 @@
              ShutdownMode="OnLastWindowClose">
     <Application.Resources>
         <ResourceDictionary>
+            <Style x:Key="ArrowButtonStyle" TargetType="RepeatButton">
+                <Setter Property="Width" Value="30" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="2" />
+                <Setter Property="HorizontalContentAlignment"
+                        Value="Stretch" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RepeatButton">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="HorizontalArrowScrollViewer"
+                   TargetType="{x:Type ScrollViewer}">
+                <Style.Resources>
+                    <Style x:Key="MinimalHorizontalScrollBar" TargetType="{x:Type ScrollBar}">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ScrollBar}">
+                                    <!-- Track是滚动条的轨道，是必须的部分 -->
+                                    <Track x:Name="PART_Track"
+                                           IsDirectionReversed="False"
+                                           Focusable="False">
+                                        <Track.Thumb>
+                                            <!-- Thumb就是滚动条上可以拖动的滑块 -->
+                                            <Thumb Focusable="False">
+                                                <Thumb.Template>
+                                                    <ControlTemplate TargetType="{x:Type Thumb}">
+                                                        <!-- 用一个圆角的Border来充当滑块视觉效果 -->
+                                                        <Border CornerRadius="2"
+                                                                Background="{TemplateBinding Foreground}"
+                                                                Opacity="0.7" />
+                                                    </ControlTemplate>
+                                                </Thumb.Template>
+                                            </Thumb>
+                                        </Track.Thumb>
+                                    </Track>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Style.Resources>
+                <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+                <Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                            <Grid Background="{TemplateBinding Background}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <RepeatButton x:Name="PART_LeftButton"
+                                              Style="{StaticResource ArrowButtonStyle}"
+                                              Command="ScrollBar.PageLeftCommand"
+                                              CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}">
+                                    <materialDesign:PackIcon Kind="MenuLeft"
+                                                             Width="30"
+                                                             Height="30"
+                                                             Foreground="{TemplateBinding Foreground}" />
+                                    <RepeatButton.Visibility>
+                                        <MultiBinding
+                                            Converter="{x:Static component:ScrollEndVisibilityConverter.LeftEnd}">
+                                            <Binding RelativeSource="{RelativeSource TemplatedParent}"
+                                                     Path="HorizontalOffset" />
+                                            <Binding RelativeSource="{RelativeSource TemplatedParent}"
+                                                     Path="ScrollableWidth" />
+                                        </MultiBinding>
+                                    </RepeatButton.Visibility>
+                                </RepeatButton>
+                                <Grid Grid.Column="1">
+                                    <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                                            Margin="{TemplateBinding Padding}"
+                                                            CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                            Content="{TemplateBinding Content}"
+                                                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                            ContentStringFormat="{TemplateBinding ContentStringFormat}" />
+                                </Grid>
+                                <RepeatButton x:Name="PART_RightButton"
+                                              Grid.Column="2"
+                                              Style="{StaticResource ArrowButtonStyle}"
+                                              Command="ScrollBar.PageRightCommand"
+                                              CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}">
+                                    <materialDesign:PackIcon Kind="MenuRight"
+                                                             Width="30"
+                                                             Height="30"
+                                                             Foreground="{TemplateBinding Foreground}" />
+                                    <RepeatButton.Visibility>
+                                        <MultiBinding
+                                            Converter="{x:Static component:ScrollEndVisibilityConverter.RightEnd}">
+                                            <Binding RelativeSource="{RelativeSource TemplatedParent}"
+                                                     Path="HorizontalOffset" />
+                                            <Binding RelativeSource="{RelativeSource TemplatedParent}"
+                                                     Path="ScrollableWidth" />
+                                        </MultiBinding>
+                                    </RepeatButton.Visibility>
+                                </RepeatButton>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="ScrollableWidth" Value="0">
+                                    <Setter TargetName="PART_LeftButton" Property="Visibility" Value="Collapsed" />
+                                    <Setter TargetName="PART_RightButton" Property="Visibility" Value="Collapsed" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
             <ControlTemplate x:Key="ItemDeleteButtonTemplate"
                              TargetType="{x:Type Button}">
                 <Grid>
@@ -34,7 +151,7 @@
             <Style TargetType="{x:Type FlowDocumentScrollViewer}"
                    x:Key="ExFlowDocumentScrollViewerStyle">
                 <Setter Property="FontFamily"
-                        Value="Microsoft YaHei"/>
+                        Value="Microsoft YaHei" />
                 <Setter Property="FocusVisualStyle" Value="{x:Null}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
                 <Setter Property="BorderThickness" Value="1" />

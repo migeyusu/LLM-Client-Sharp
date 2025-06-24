@@ -3,10 +3,9 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Input;
-using LLMClient.UI;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.Data;
+namespace LLMClient.UI;
 
 public class GlobalConfig : NotifyDataErrorInfoViewModelBase
 {

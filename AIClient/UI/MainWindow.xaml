@@ -7,13 +7,14 @@
                           xmlns:ui="clr-namespace:LLMClient.UI"
                           xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
                           xmlns:component="clr-namespace:LLMClient.UI.Component"
-                          xmlns:System="clr-namespace:System;assembly=System.Runtime"
+                          xmlns:system="clr-namespace:System;assembly=System.Runtime"
                           xmlns:grammars="clr-namespace:TextMateSharp.Grammars;assembly=TextMateSharp.Grammars"
                           xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                           xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
                           xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
                           xmlns:data="clr-namespace:LLMClient.Data"
                           xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
+                          xmlns:mcp="clr-namespace:LLMClient.UI.MCP"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -84,7 +85,7 @@
                     IsEnabled="{Binding ElementName=MainDialogHost, Path=IsOpen,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
             <StackPanel.Resources>
                 <ObjectDataProvider x:Key="DataFromEnum" MethodName="GetValues"
-                                    ObjectType="{x:Type System:Enum}">
+                                    ObjectType="{x:Type system:Enum}">
                     <ObjectDataProvider.MethodParameters>
                         <x:Type TypeName="grammars:ThemeName" />
                     </ObjectDataProvider.MethodParameters>
@@ -100,6 +101,20 @@
                     Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
                     Style="{StaticResource MaterialDesignIconButton}">
                 <materialDesign:PackIcon Kind="CogOutline"
+                                         Width="20"
+                                         Height="20"
+                                         RenderOptions.BitmapScalingMode="HighQuality" />
+            </Button>
+            <Button VerticalAlignment="Center"
+                    Width="32"
+                    Height="32"
+                    Margin="16,0,0,0"
+                    ToolTip="打开日志"
+                    Click="OpenLogger_OnClick"
+                    WindowChrome.IsHitTestVisibleInChrome="True"
+                    Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                    Style="{StaticResource MaterialDesignIconButton}">
+                <materialDesign:PackIcon Kind="MathLog"
                                          Width="20"
                                          Height="20"
                                          RenderOptions.BitmapScalingMode="HighQuality" />
@@ -148,7 +163,7 @@
                     <models:AzureModelInfoView Height="600" />
                 </HeaderedContentControl>
             </DataTemplate>
-            <DataTemplate DataType="{x:Type data:GlobalConfig}">
+            <DataTemplate DataType="{x:Type ui:GlobalConfig}">
                 <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                         Header="软件配置">
                     <ui:GlobalConfigView Width="800"
@@ -168,6 +183,13 @@
                                         Content="{Binding}"
                                         ContentTemplate="{StaticResource APIModelInfoDataTemplate}" />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type mcp:McpServiceCollection}">
+                <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                        Header="MCP Server">
+                    <mcp:MCPServiceCollectionView Width="800"
+                                                  Height="600" />
+                </HeaderedContentControl>
+            </DataTemplate>
         </materialDesign:DialogHost.Resources>
         <Grid Margin="10"
               IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
@@ -181,36 +203,49 @@
                                   MinWidth="230" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal">
-                <StackPanel.Resources>
-                    <Style TargetType="{x:Type Button}"
-                           BasedOn="{StaticResource MaterialDesignOutlinedLightButton}">
-                        <Setter Property="Padding"
-                                Value="8,2" />
-                    </Style>
-                </StackPanel.Resources>
-                <Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
-                        Padding="8,2"
-                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                        CommandParameter="{Binding EndpointsViewModel,Mode=OneTime}">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Connection" />
-                        <TextBlock Text="配置服务"
-                                   Margin="5,0,0,0"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <Button Margin="10,0,0,0"
-                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                        CommandParameter="{Binding PromptsResource,Mode=OneTime}">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="CodeString" />
-                        <TextBlock Text="预设Prompts"
-                                   Margin="5,0,0,0"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <!--<Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
+            <ScrollViewer Style="{StaticResource HorizontalArrowScrollViewer}">
+                <StackPanel Orientation="Horizontal">
+                    <StackPanel.Resources>
+                        <Style TargetType="{x:Type Button}"
+                               BasedOn="{StaticResource MaterialDesignOutlinedLightButton}">
+                            <Setter Property="Padding"
+                                    Value="8,2" />
+                        </Style>
+                    </StackPanel.Resources>
+                    <Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
+                            Padding="8,2"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding EndpointsViewModel,Mode=OneTime}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Connection" />
+                            <TextBlock Text="配置服务"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Margin="10,0,0,0"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding PromptsResource,Mode=OneTime}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CodeString" />
+                            <TextBlock Text="预设Prompts"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Margin="10,0,0,0"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding McpServiceCollection,Mode=OneTime}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ServerNetwork" />
+                            <TextBlock Text="配置MCP"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <!--<Button Content="测试"
+                            Click="ButtonBase_OnClick"/>-->
+                    <!--<Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
                         Padding="8,2"
                         Margin="10,0,0,0"
                         Command="{Binding SaveCommand}">
@@ -232,7 +267,8 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>-->
-            </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
             <ListBox Grid.Row="1" Grid.Column="0"
                      SelectedItem="{Binding PreDialog,Mode=TwoWay}"
                      Margin="0,0,6,0"
@@ -345,6 +381,9 @@
                                          VerticalAlignment="Bottom"
                                          HorizontalAlignment="Stretch"
                                          Margin="-4,0,-4,-4"
+                                         Background="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                         BorderBrush="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                         Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Dark}"
                                          Minimum="0"
                                          Maximum="{Binding ChainStepCount,Mode=OneWay}"
                                          Value="{Binding ChainingStep,Mode=OneWay}"
@@ -465,7 +504,7 @@
                                      SelectedItem="{Binding  PreDialog.Client.Parameters.SystemPrompt,Mode=TwoWay}"
                                      ItemsSource="{Binding PromptsResource.SystemPrompts,Mode=OneWay}">
                                 <ListBox.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type System:String}">
+                                    <DataTemplate DataType="{x:Type system:String}">
                                         <TextBlock TextWrapping="Wrap"
                                                    TextTrimming="WordEllipsis"
                                                    Text="{Binding}" />

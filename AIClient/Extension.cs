@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Documents;
@@ -58,6 +59,28 @@ public static class Extension
         var jsonObject = new JsonObject();
         jsonNode[key] = jsonObject;
         return jsonObject;
+    }
+
+    /// <summary>
+    /// 如果根节点是对象，返回第一个属性的名称；  
+    /// 否则抛出异常（数组、空对象、纯值都会被判定为非法）。
+    /// </summary>
+    public static string GetRootPropertyName(string json)
+    {
+        using JsonDocument doc = JsonDocument.Parse(json);
+        JsonElement root = doc.RootElement;
+
+        // 1. 必须是对象
+        if (root.ValueKind != JsonValueKind.Object)
+            throw new InvalidOperationException("根节点不是对象，可能是数组或纯值。");
+
+        // 2. 必须至少有一个属性
+        foreach (JsonProperty prop in root.EnumerateObject())
+        {
+            return prop.Name; // 取到第一个属性名就结束
+        }
+
+        throw new InvalidOperationException("根对象为空（没有任何属性）。");
     }
 
     #endregion

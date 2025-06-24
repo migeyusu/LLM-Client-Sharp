@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Xunit.Abstractions;
 
 namespace LLMClient.Test;
@@ -17,10 +19,11 @@ public class UnitTest1
     [Fact]
     public async void Test1()
     {
-        var task = Task.Run((async () => await Task.Delay(1)));
-        await Task.Delay(10);
-        output.WriteLine($"{task.IsCompleted}");
+        var s = "{\n \"code-analysis\": {\n      \"command\": \"uv\",\n      \"args\": [\n        \"--directory\",\n        \"/PATH/TO/YOUR/REPO\",\n        \"run\",\n        \"code_analysis.py\"\n      ]\n    } \n}";
+     
     }
+    
+
 
     [Fact]
     public async void GetGithubModels()

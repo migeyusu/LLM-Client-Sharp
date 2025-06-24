@@ -103,7 +103,15 @@
                                         <TextBlock TextWrapping="Wrap"
                                                    Text="{Binding TextMessage,Mode=OneTime}" />
                                         <ItemsControl ItemsSource="{Binding Attachments,Mode=OneTime}"
-                                                      Margin="0,8,0,0">
+                                                      Margin="0,8,0,0"
+                                                      Visibility="Collapsed">
+                                            <b:Interaction.Triggers>
+                                                <b:DataTrigger Binding="{Binding Attachments.Count}"
+                                                               Value="0">
+                                                    <b:ChangePropertyAction PropertyName="Visibility"
+                                                                            Value="Visible" />
+                                                </b:DataTrigger>
+                                            </b:Interaction.Triggers>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate DataType="{x:Type ui:Attachment}">
                                                     <materialDesign:Chip IsDeletable="False"
@@ -536,7 +544,7 @@
                             Height="32"
                             Width="32"
                             VerticalAlignment="Bottom"
-                            Visibility="{Binding Client.Model.SupportImageInput,Mode=OneWay}">
+                            Visibility="{Binding Client.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
                         <materialDesign:PackIcon Kind="FileImagePlusOutline"
                                                  Width="15"
                                                  Height="15" />

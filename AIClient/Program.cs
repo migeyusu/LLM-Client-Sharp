@@ -8,6 +8,7 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
+using LLMClient.UI.MCP;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -59,7 +60,7 @@ public class Program
             App app = new App();
             app.InitializeComponent();
             // SynchronizationHelper.Initialize();
-            // app.Run(new TestWindow());
+            // app.Run(new JsonPreviewWindow());
             app.Run(serviceProvider.GetService<MainWindow>());
         }
         catch (Exception e)

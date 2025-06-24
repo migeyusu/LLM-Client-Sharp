@@ -17,36 +17,20 @@
         <ListBox x:Name="ListBox"
                  Margin="10"
                  SelectionMode="Single"
-                 SelectedIndex="{Binding SelectedIndex,Mode=TwoWay}"
-                 SelectedItem="{Binding SelectedPrompt,Mode=TwoWay}"
                  VirtualizingPanel.IsVirtualizing="False"
                  ScrollViewer.CanContentScroll="False"
                  HorizontalAlignment="Stretch"
                  HorizontalContentAlignment="Left"
+                 SelectedIndex="{Binding SelectedIndex,Mode=TwoWay}"
                  ItemsSource="{Binding Prompts,Mode=OneWay}"
-                 MouseDoubleClick="ListBox_OnMouseDoubleClick">
-            <ListBox.CommandBindings>
-                <CommandBinding Command="Copy"
-                                Executed="CommandBinding_OnExecuted" />
-            </ListBox.CommandBindings>
-            <ListBox.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Command="Copy">
-                        <MenuItem.Icon>
-                            <materialDesign:PackIcon Kind="ContentCopy" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                </ContextMenu>
-            </ListBox.ContextMenu>
-        </ListBox>
-        <TextBox x:Name="PromptsTextBox"
-                 Grid.Row="1"
+                 MouseDoubleClick="ListBox_OnMouseDoubleClick" />
+        <TextBox Grid.Row="1"
                  Height="150"
                  Margin="10"
                  AcceptsReturn="True"
                  AcceptsTab="True"
                  TextWrapping="Wrap"
-                 Text="{Binding  SelectedPrompt,Mode=OneWay}"
+                 Text="{Binding  SelectedPrompt,Mode=TwoWay}"
                  materialDesign:HintAssist.Hint="请输入Prompt"
                  Style="{StaticResource MaterialDesignFilledTextBox}" />
         <StackPanel Grid.Row="2"
@@ -54,14 +38,16 @@
                     HorizontalAlignment="Right"
                     Margin="10">
             <Button Content="移除"
-                    Command="{Binding RemoveCommand}" />
-            <Button Content="新增"
+                    Command="{Binding RemoveCommand}"/>
+            <Button Content="新建"
                     Margin="10,0,0,0"
-                    Command="{Binding AddCommand}" />
+                    Command="{Binding NewPromptCommand}" />
+            <Button Content="添加到列表"
+                    Margin="10,0,0,0"
+                    Command="{Binding AddToCommand}" />
             <Button Content="更新"
                     Margin="10,0,0,0"
-                    Command="{Binding UpdateCommand}"
-                    CommandParameter="{Binding ElementName=PromptsTextBox,Mode=OneTime}" />
+                    Command="{Binding UpdateCommand}" />
             <Button Content="保存"
                     Margin="10,0,0,0"
                     Command="{Binding SaveCommand}" />

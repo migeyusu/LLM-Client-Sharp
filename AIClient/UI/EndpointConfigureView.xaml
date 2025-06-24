@@ -105,7 +105,7 @@
                         Content="{Binding SelectedEndpoint,Mode=OneWay}">
             <ContentControl.Resources>
                 <DataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}">
-                    <endpoints:GithubCopilotEndPointView />
+                    <azure:GithubCopilotEndPointView />
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type openAiapi:APIEndPoint}">
                     <openAiapi:APIEndPointView />

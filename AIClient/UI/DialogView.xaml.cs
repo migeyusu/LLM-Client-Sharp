@@ -83,12 +83,13 @@ public partial class DialogView : UserControl
             popupBox.PopupContent = new PopupSelectViewModel(endpointService,
                 async (selector) =>
                 {
-                    var llmModelClient = selector.GetClient();
-                    if (llmModelClient == null)
+                    var client = selector.GetClient();
+                    if (client == null)
                     {
                         return;
                     }
-                    await this.ViewModel.AppendResponseOn(responseViewItem, llmModelClient);
+                    
+                    await this.ViewModel.AppendResponseOn(responseViewItem, client);
                 });
         }
     }

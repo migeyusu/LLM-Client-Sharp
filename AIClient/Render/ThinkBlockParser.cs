@@ -1,7 +1,7 @@
-﻿
-using LLMClient.Render;
-using Markdig.Parsers;
+﻿using Markdig.Parsers;
 using Markdig.Syntax;
+
+namespace LLMClient.Render;
 
 public class ThinkBlockParser : BlockParser
 {

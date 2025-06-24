@@ -6,6 +6,8 @@ using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI.Component;
+using LLMClient.UI.Log;
+using LLMClient.UI.MCP;
 using MaterialDesignThemes.Wpf;
 using TextMateSharp.Grammars;
 
@@ -98,5 +100,20 @@ public partial class MainWindow : ExtendedWindow
                 newDialog.SequentialChain(oldDialog.DialogItems);
             }
         }
+    }
+
+
+    private readonly LoggerWindow _logWindow = new LoggerWindow();
+
+    private void OpenLogger_OnClick(object sender, RoutedEventArgs e)
+    {
+        _logWindow.Show();
+        _logWindow.Activate();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        this._logWindow.Shutdown();
+        base.OnClosed(e);
     }
 }

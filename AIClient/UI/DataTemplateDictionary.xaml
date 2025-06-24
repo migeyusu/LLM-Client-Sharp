@@ -6,7 +6,8 @@
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
                     xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
-                    xmlns:global="clr-namespace:">
+                    xmlns:global="clr-namespace:"
+                    xmlns:endpoints="clr-namespace:LLMClient.Endpoints">
     <DataTemplate x:Key="PopupSelectViewModelTemplate" DataType="{x:Type ui:PopupSelectViewModel}">
         <StackPanel Margin="10"
                     Width="350">
@@ -69,7 +70,7 @@
                                                   Document="{Binding Description,Mode=OneWay, Converter={x:Static component:MarkdownToDocumentConverter.Instance}}" />
         </Grid>
     </DataTemplate>
-    <DataTemplate x:Key="PriceCalculatorDataTemplate" DataType="{x:Type global:TokenBasedPriceCalculator}">
+    <DataTemplate x:Key="PriceCalculatorDataTemplate" DataType="{x:Type endpoints:TokenBasedPriceCalculator}">
         <StackPanel Orientation="Horizontal">
             <TextBlock Text="Input Price:"
                        VerticalAlignment="Center" />

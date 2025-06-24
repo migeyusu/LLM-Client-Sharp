@@ -24,7 +24,6 @@ public class APIClient : LlmClientBase
         get { return ModelInfo; }
     }
 
-
     public override string Name
     {
         get { return ModelInfo.Name; }
