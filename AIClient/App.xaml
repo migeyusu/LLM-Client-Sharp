@@ -6,6 +6,8 @@
              xmlns:system="clr-namespace:System;assembly=System.Runtime"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
+             xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+             xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              ShutdownMode="OnLastWindowClose">
     <Application.Resources>
         <ResourceDictionary>
@@ -80,7 +82,7 @@
                                                              Foreground="{TemplateBinding Foreground}" />
                                     <RepeatButton.Visibility>
                                         <MultiBinding
-                                            Converter="{x:Static component:ScrollEndVisibilityConverter.LeftEnd}">
+                                            Converter="{x:Static converters:ScrollEndVisibilityConverter.LeftEnd}">
                                             <Binding RelativeSource="{RelativeSource TemplatedParent}"
                                                      Path="HorizontalOffset" />
                                             <Binding RelativeSource="{RelativeSource TemplatedParent}"
@@ -107,7 +109,7 @@
                                                              Foreground="{TemplateBinding Foreground}" />
                                     <RepeatButton.Visibility>
                                         <MultiBinding
-                                            Converter="{x:Static component:ScrollEndVisibilityConverter.RightEnd}">
+                                            Converter="{x:Static converters:ScrollEndVisibilityConverter.RightEnd}">
                                             <Binding RelativeSource="{RelativeSource TemplatedParent}"
                                                      Path="HorizontalOffset" />
                                             <Binding RelativeSource="{RelativeSource TemplatedParent}"
@@ -175,13 +177,13 @@
                 </Setter>
             </Style>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-            <component:KUnitConverter x:Key="KUnitConverter" />
+            <converters:KUnitConverter x:Key="KUnitConverter" />
             <materialDesign:InvertBooleanConverter x:Key="InvertBooleanConverter" />
             <component:SiYuanFont x:Key="DefaultFontFamily" />
-            <Style TargetType="{x:Type component:ParamView}">
+            <Style TargetType="{x:Type endpoints:ParamView}">
                 <Setter Property="Template">
                     <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type component:ParamView}">
+                        <ControlTemplate TargetType="{x:Type endpoints:ParamView}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -229,10 +231,10 @@
                 <Setter Property="Margin"
                         Value="0,10,0,0" />
             </Style>
-            <Style TargetType="{x:Type component:ParamConfigView}">
+            <Style TargetType="{x:Type endpoints:ParamConfigView}">
                 <Setter Property="Template">
                     <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type component:ParamConfigView}">
+                        <ControlTemplate TargetType="{x:Type endpoints:ParamConfigView}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />

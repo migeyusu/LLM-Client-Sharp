@@ -8,6 +8,7 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
+using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -33,25 +34,26 @@ public class Program
         try
         {
             var serviceCollection = new ServiceCollection();
-            var collection = serviceCollection.AddSingleton<MainViewModel>()
+            var collection = serviceCollection.AddSingleton<MainWindowViewModel>()
                 .AddSingleton<MainWindow>()
-                .AddTransient<ModelTypeConverter>()
+                .AddTransient<AutoMapModelTypeConverter>()
                 .AddTransient<GlobalConfig>()
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
-                .AddLogging((builder => builder.AddDebug()));
+                .AddLogging((builder => builder.AddDebug()))
+                .AddSingleton<IMcpServiceCollection, McpServiceCollection>();
             collection.AddAutoMapper((provider, expression) =>
             {
-                expression.CreateMap<DialogPersistModel, DialogViewModel>().ConvertUsing<ModelTypeConverter>();
-                expression.CreateMap<DialogViewModel, DialogPersistModel>().ConvertUsing<ModelTypeConverter>();
+                expression.CreateMap<DialogPersistModel, DialogViewModel>().ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<DialogViewModel, DialogPersistModel>().ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<APIEndPoint, APIEndPoint>();
-                expression.CreateMap<DefaultOption, DefaultOption>();
+                expression.CreateMap<APIDefaultOption, APIDefaultOption>();
                 expression.CreateMap<ResponseViewItem, ResponsePersistItem>();
-                expression.CreateMap<ResponsePersistItem, ResponseViewItem>().ConvertUsing<ModelTypeConverter>();
+                expression.CreateMap<ResponsePersistItem, ResponseViewItem>().ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
-                    .ConvertUsing<ModelTypeConverter>();
+                    .ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
-                    .ConvertUsing<ModelTypeConverter>();
+                    .ConvertUsing<AutoMapModelTypeConverter>();
                 // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
                 expression.ConstructServicesUsing(provider.GetService);
             }, AppDomain.CurrentDomain.GetAssemblies());
@@ -70,7 +72,7 @@ public class Program
 
         try
         {
-            var mainViewModel = serviceProvider?.GetService<MainViewModel>();
+            var mainViewModel = serviceProvider?.GetService<MainWindowViewModel>();
             if (mainViewModel is { IsInitialized: true })
             {
                 mainViewModel.SaveDialogsToLocal().Wait(TimeSpan.FromMinutes(1));

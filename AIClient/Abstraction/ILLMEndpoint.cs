@@ -17,7 +17,7 @@ public interface ILLMEndpoint
 
     IReadOnlyCollection<string> AvailableModelNames { get; }
 
-    ILLMModelClient? NewClient(string modelName);
+    ILLMClient? NewClient(string modelName);
 
     ILLMModel? GetModel(string modelName);
 

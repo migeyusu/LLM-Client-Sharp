@@ -18,7 +18,7 @@ public partial class GlobalConfigView : UserControl
 
     private void OpenDialogs_OnClick(object sender, RoutedEventArgs e)
     {
-        var path = Path.GetFullPath(MainViewModel.DialogSaveFolder);
+        var path = Path.GetFullPath(MainWindowViewModel.DialogSaveFolder);
         var directoryInfo = new DirectoryInfo(path);
         if (!directoryInfo.Exists)
         {

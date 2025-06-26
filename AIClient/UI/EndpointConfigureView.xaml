@@ -138,7 +138,7 @@
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type abstraction:SuggestedModel}">
+                    <DataTemplate DataType="{x:Type ui:SuggestedModel}">
                         <StackPanel Height="30"
                                     ToolTipService.InitialShowDelay="0"
                                     Orientation="Horizontal">

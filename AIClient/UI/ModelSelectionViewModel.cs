@@ -38,7 +38,7 @@ public class ModelSelectionViewModel : BaseViewModel
         EndpointService = endpointService;
     }
 
-    public ILLMModelClient? GetClient()
+    public ILLMClient? GetClient()
     {
         if (this.SelectedModelName == null)
         {

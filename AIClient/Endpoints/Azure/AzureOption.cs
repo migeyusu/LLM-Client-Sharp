@@ -2,7 +2,7 @@
 
 namespace LLMClient.Endpoints.Azure;
 
-public class AzureOption : DefaultOption
+public class AzureOption : APIDefaultOption
 {
     public AzureOption()
     {

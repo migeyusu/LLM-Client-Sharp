@@ -6,15 +6,22 @@ using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
+using LLMClient.UI.Dialog;
 using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using OpenAI.Chat;
+using OpenAI.Images;
+using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
+using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
+using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
+using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Endpoints;
 
-public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
+public abstract class LlmClientBase : BaseViewModel, ILLMClient
 {
     private bool _isResponding;
     public abstract string Name { get; }
@@ -36,7 +43,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 
-    [JsonIgnore] public virtual ObservableCollection<string> PreResponse { get; } = new ObservableCollection<string>();
+    [JsonIgnore]
+    public virtual ObservableCollection<string> RespondingText { get; } = new ObservableCollection<string>();
 
     [Experimental("SKEXP0001")]
     protected virtual IChatClient CreateChatClient()
@@ -101,110 +109,214 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
     private readonly Stopwatch _stopwatch = new Stopwatch();
 
     [Experimental("SKEXP0001")]
-    public virtual async Task<CompletedResult> SendRequest(IEnumerable<IDialogViewItem> dialogItems,
-        CancellationToken cancellationToken = default)
+    public virtual async Task<CompletedResult> SendRequest(IEnumerable<IDialogItem> dialogItems,
+        IList<IAIFunctionGroup>? functionGroups = null, CancellationToken cancellationToken = default)
     {
-        UsageDetails? usageDetails = null;
         try
         {
-            PreResponse.Clear();
+            RespondingText.Clear();
             // PreResponse = "正在生成文档。。。。。";
             IsResponding = true;
-            var messages = new List<ChatMessage>();
-            var requestOptions = this.CreateChatOptions(messages);
+            var chatHistory = new List<ChatMessage>();
+            // Dictionary<string, AIFunction>? functionsDict = null;
+            var kernelPluginCollection = new KernelPluginCollection();
+            var requestOptions = this.CreateChatOptions(chatHistory);
+
+            if (functionGroups != null)
+            {
+                foreach (var functionGroup in functionGroups)
+                {
+                    var availableTools = functionGroup.AvailableTools;
+                    if (availableTools == null || availableTools.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    kernelPluginCollection.AddFromFunctions(functionGroup.Name,
+                        availableTools.Select((function => function.AsKernelFunction())));
+                }
+
+                var aiTools = kernelPluginCollection.SelectMany((plugin => plugin)).ToArray<AITool>();
+                requestOptions.Tools = aiTools;
+                // functionsDict = aiTools .ToDictionary(f => f.Name, f => f);
+            }
+
             foreach (var dialogItem in dialogItems)
             {
                 var chatMessage = await dialogItem.GetMessage();
                 if (chatMessage != null)
                 {
-                    messages.Add(chatMessage);
+                    chatHistory.Add(chatMessage);
                 }
             }
 
             string? errorMessage = null;
-            string? responseText = null;
-            _stopwatch.Restart();
-            int duration = 0;
             int? latency = null;
             var chatClient = CreateChatClient();
-            if (this.Parameters.Streaming)
+            _stopwatch.Restart();
+            var responseMessages = new List<ChatMessage>();
+            var functionCallContents = new List<FunctionCallContent>();
+            var preUpdates = new List<ChatResponseUpdate>();
+            var response = new StringBuilder();
+            var totalUsageDetails = new UsageDetails
             {
-                var cachedPreResponse = new StringBuilder();
+                InputTokenCount = 0,
+                OutputTokenCount = 0,
+                TotalTokenCount = 0,
+            };
+            ChatFinishReason? finishReason = null;
+            while (errorMessage == null)
+            {
+                functionCallContents.Clear();
+                preUpdates.Clear();
                 try
                 {
-                    AdditionalPropertiesDictionary? dictionary = null;
-                    await foreach (var update in chatClient
-                                       .GetStreamingResponseAsync(messages, requestOptions, cancellationToken))
+                    UsageDetails? loopUsageDetails = null;
+                    if (this.Parameters.Streaming)
                     {
-                        if (!latency.HasValue)
+                        await foreach (var update in chatClient
+                                           .GetStreamingResponseAsync(chatHistory, requestOptions, cancellationToken))
                         {
-                            latency = (int)_stopwatch.ElapsedMilliseconds;
+                            latency ??= (int)_stopwatch.ElapsedMilliseconds;
+                            preUpdates.Add(update);
+                            RespondingText.Add(update.Text);
+                            var message = new ChatMessage(update.Role ?? ChatRole.Assistant, update.Contents)
+                            {
+                                AdditionalProperties = update.AdditionalProperties,
+                                AuthorName = update.AuthorName,
+                                RawRepresentation = update.RawRepresentation,
+                                MessageId = update.MessageId,
+                            };
+                            responseMessages.Add(message);
+                            chatHistory.Add(message);
+                        }
+                    }
+                    else
+                    {
+                        var chatResponse =
+                            await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
+                        var details = chatResponse.Usage;
+                        if (loopUsageDetails == null)
+                        {
+                            loopUsageDetails = details;
+                        }
+                        else if (details != null)
+                        {
+                            loopUsageDetails.Add(details);
                         }
 
-                        if (update.AdditionalProperties != null)
-                        {
-                            dictionary = update.AdditionalProperties;
-                        }
+                        var chatMessages = chatResponse.Messages;
+                        chatHistory.AddRange(chatMessages);
+                        responseMessages.AddRange(chatMessages);
+                        preUpdates.AddRange(chatResponse.ToChatResponseUpdates());
+                        RespondingText.Add(chatResponse.Text);
+                    }
 
-                        var updateContents = update.Contents;
-                        foreach (var content in updateContents)
+                    finishReason = null;
+                    foreach (var update in preUpdates)
+                    {
+                        finishReason ??= update.FinishReason;
+                        foreach (var content in update.Contents)
                         {
                             switch (content)
                             {
                                 case UsageContent usageContent:
-                                    usageDetails = usageContent.Details;
+                                    var usage = usageContent.Details;
+                                    if (loopUsageDetails == null)
+                                    {
+                                        loopUsageDetails = usage;
+                                    }
+                                    else
+                                    {
+                                        loopUsageDetails.Add(usage);
+                                    }
+
                                     break;
                                 case TextContent textContent:
-                                    PreResponse.Add(textContent.Text);
-                                    cachedPreResponse.Append(textContent.Text);
+                                    response.Append(textContent.Text);
+                                    break;
+                                case FunctionCallContent functionCallContent:
+                                    functionCallContents.Add(functionCallContent);
+                                    response.AppendLine("Function call: ");
+                                    var value = functionCallContent.GetDebuggerString();
+                                    response.AppendLine(value);
+                                    RespondingText.Add("Function call: " + value);
                                     break;
                                 default:
-                                    Trace.Write("unsupported content");
+                                    Trace.TraceWarning("unsupported content: " + content.GetType().Name);
+                                    RespondingText.Add(
+                                        $"Unsupported content type: {content.GetType().Name}");
+                                    RespondingText.Add(content.RawRepresentation?.ToString() ?? string.Empty);
                                     break;
                             }
                         }
                     }
 
-                    duration = (int)(_stopwatch.ElapsedMilliseconds / 1000);
-                    if (usageDetails == null && dictionary != null)
+                    loopUsageDetails ??= GetUsageDetailsFromAdditional(preUpdates);
+                    if (loopUsageDetails != null)
                     {
-                        // 方法1: 检查 Metadata 中的 Usage 信息
-                        if (dictionary.TryGetValue("Usage", out var usageObj))
-                        {
-                            if (usageObj is ChatTokenUsage chatTokenUsage)
-                            {
-                                usageDetails = new UsageDetails()
-                                {
-                                    InputTokenCount = chatTokenUsage.InputTokenCount,
-                                    OutputTokenCount = chatTokenUsage.OutputTokenCount,
-                                    TotalTokenCount = chatTokenUsage.TotalTokenCount,
-                                };
-                            }
-
-                            /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
-                            {
-                                // tokenCount = Convert.ToInt32(totalTokensObj);
-                            }*/
-                        }
-
-                        // 方法2: 部分 AI 服务可能使用不同的元数据键
-                        /*if (usageDetails == null &&
-                            dictionary.TryGetValue("CompletionTokenCount", out var completionTokensObj))
-                        {
-                            // tokenCount = Convert.ToInt32(completionTokensObj);
-                        }
-
-                        // 方法3: 有些版本可能在 ModelResult 中提供 usage
-                        if (usageDetails == null &&
-                            dictionary.TryGetValue("ModelResults", out var modelResultsObj))
-                        {
-                            //do what?
-                        }*/
+                        totalUsageDetails.Add(loopUsageDetails);
                     }
 
-                    if (usageDetails == null)
+                    if (finishReason != null)
                     {
-                        Trace.Write("usage details not provided");
+                        if (finishReason == ChatFinishReason.ToolCalls)
+                        {
+                            RespondingText.Add("Function call finished, need run function calls...");
+                        }
+                        else if (finishReason == ChatFinishReason.Stop)
+                        {
+                            RespondingText.Add("Response completed without function calls.");
+                            break;
+                        }
+                        else if (finishReason == ChatFinishReason.Length)
+                        {
+                            RespondingText.Add("Exceeded maximum response length.");
+                        }
+                        else
+                        {
+                            RespondingText.Add($"Unexpected finish reason: {finishReason}");
+                        }
+                    }
+
+                    if (functionCallContents.Count == 0)
+                    {
+                        RespondingText.Add("No function calls were requested, response completed.");
+                        break;
+                    }
+
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        errorMessage = "Operation was canceled.";
+                        break;
+                    }
+
+                    if (functionsDict == null || functionsDict.Count == 0)
+                    {
+                        errorMessage =
+                            $"No functions available to call. But {functionCallContents.Count} function calls were requested.";
+                        break;
+                    }
+
+                    RespondingText.Add("Processing function calls...");
+                    var chatMessage = new ChatMessage()
+                    {
+                        Role = ChatRole.Tool,
+                    };
+                    chatHistory.Add(chatMessage);
+                    foreach (var functionCallContent in functionCallContents)
+                    {
+                        if (!functionsDict.TryGetValue(functionCallContent.Name, out var aiFunction))
+                        {
+                            errorMessage =
+                                $"Function '{functionCallContent.Name}' not found, call failed. Procedure interrupted.";
+                            break;
+                        }
+
+                        var invokeResult = await aiFunction.InvokeAsync(
+                            new AIFunctionArguments(functionCallContent.Arguments),
+                            cancellationToken);
+                        chatMessage.Contents.Add(new FunctionResultContent(functionCallContent.CallId, invokeResult));
                     }
                 }
                 catch (OperationCanceledException)
@@ -214,71 +326,84 @@ public abstract class LlmClientBase : BaseViewModel, ILLMModelClient
                 catch (Exception ex)
                 {
                     errorMessage = ex.Message;
-                }
-
-                responseText = cachedPreResponse.Length == 0 ? null : cachedPreResponse.ToString();
-            }
-            else
-            {
-                try
-                {
-                    var chatResponse =
-                        await chatClient.GetResponseAsync(messages, requestOptions, cancellationToken);
-                    duration = (int)(_stopwatch.ElapsedMilliseconds / 1000);
-                    if (chatResponse.Usage == null)
-                    {
-                        if (chatResponse.AdditionalProperties?.TryGetValue("Usage", out var usageObj) == true)
-                        {
-                            if (usageObj is ChatTokenUsage chatTokenUsage)
-                            {
-                                usageDetails = new UsageDetails()
-                                {
-                                    InputTokenCount = chatTokenUsage.InputTokenCount,
-                                    OutputTokenCount = chatTokenUsage.OutputTokenCount,
-                                    TotalTokenCount = chatTokenUsage.TotalTokenCount,
-                                };
-                            }
-
-                            /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
-                            {
-                                // tokenCount = Convert.ToInt32(totalTokensObj);
-                            }*/
-                        }
-                        else
-                        {
-                            Debugger.Break();
-                        }
-                    }
-                    else
-                    {
-                        usageDetails = chatResponse.Usage;
-                    }
-
-                    responseText = chatResponse.Text;
-                }
-                catch (Exception e)
-                {
-                    errorMessage = e.Message;
+                    Trace.TraceError($"Error during response: {ex}");
                 }
             }
 
-            usageDetails ??= new UsageDetails
+            var duration = (int)(_stopwatch.ElapsedMilliseconds / 1000);
+            var price = this.Model.PriceCalculator?.Calculate(totalUsageDetails);
+            var log = RespondingText.Aggregate((string.Empty), (current, text) => current + text);
+            return new CompletedResult(response.ToString(), totalUsageDetails, price)
             {
-                InputTokenCount = 0,
-                OutputTokenCount = 0,
-                TotalTokenCount = 0,
-            };
-            var price = this.Model.PriceCalculator?.Calculate(usageDetails);
-            return new CompletedResult(responseText, usageDetails, price)
-            {
+                ResponseLog = log,
                 ErrorMessage = errorMessage,
                 Latency = latency ?? 0,
-                Duration = duration
+                Duration = duration,
+                FinishReason = finishReason,
+                ChatMessages = responseMessages,
             };
         }
         finally
         {
             IsResponding = false;
         }
+    }
+
+    private UsageDetails? GetUsageDetailsFromAdditional(List<ChatResponseUpdate> updates)
+    {
+        UsageDetails? usageDetails = null;
+        foreach (var update in updates)
+        {
+            var additionalProperties = update.AdditionalProperties;
+            if (additionalProperties != null)
+            {
+                // 方法1: 检查 Metadata 中的 Usage 信息
+                if (additionalProperties.TryGetValue("Usage", out var usageObj))
+                {
+                    if (usageObj is ChatTokenUsage chatTokenUsage)
+                    {
+                        var details = new UsageDetails()
+                        {
+                            InputTokenCount = chatTokenUsage.InputTokenCount,
+                            OutputTokenCount = chatTokenUsage.OutputTokenCount,
+                            TotalTokenCount = chatTokenUsage.TotalTokenCount,
+                        };
+                        if (usageDetails == null)
+                        {
+                            usageDetails = details;
+                        }
+                        else
+                        {
+                            usageDetails.Add(details);
+                        }
+                    }
+
+                    /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
+                    {
+                        // tokenCount = Convert.ToInt32(totalTokensObj);
+                    }*/
+                }
+                else
+                {
+                    Debugger.Break();
+                }
+                // 方法2: 部分 AI 服务可能使用不同的元数据键
+                /*if (usageDetails == null &&
+                    dictionary.TryGetValue("CompletionTokenCount", out var completionTokensObj))
+                {
+                    // tokenCount = Convert.ToInt32(completionTokensObj);
+                }
+
+                // 方法3: 有些版本可能在 ModelResult 中提供 usage
+                if (usageDetails == null &&
+                    dictionary.TryGetValue("ModelResults", out var modelResultsObj))
+                {
+                    //do what?
+                }*/
+            }
+        }
+
+
+        return usageDetails;
     }
 }

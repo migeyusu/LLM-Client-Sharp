@@ -113,7 +113,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public ObservableCollection<SuggestedModel> SuggestedModels { get; } =
         new ObservableCollection<SuggestedModel>();
-    public PopupSelectViewModel PopupSelectViewModel { get; }
+    public PopupModelSelectionViewModel PopupSelectViewModel { get; }
 
     public ICommand RemoveSuggestedModelCommand => new ActionCommand((o =>
     {
@@ -127,7 +127,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public EndpointConfigureViewModel()
     {
-        PopupSelectViewModel = new PopupSelectViewModel(this, OnModelSelected);
+        PopupSelectViewModel = new PopupModelSelectionViewModel(this, OnModelSelected);
         Endpoints.CollectionChanged += EndpointsOnCollectionChanged;
     }
 

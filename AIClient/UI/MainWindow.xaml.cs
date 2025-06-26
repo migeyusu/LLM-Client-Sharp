@@ -6,6 +6,7 @@ using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI.Component;
+using LLMClient.UI.Dialog;
 using LLMClient.UI.Log;
 using LLMClient.UI.MCP;
 using MaterialDesignThemes.Wpf;
@@ -18,15 +19,15 @@ namespace LLMClient.UI;
 /// </summary>
 public partial class MainWindow : ExtendedWindow
 {
-    MainViewModel _mainViewModel;
+    private readonly MainWindowViewModel _mainWindowViewModel;
 
-    GlobalConfig _globalConfig;
+    private readonly GlobalConfig _globalConfig;
 
-    public MainWindow(MainViewModel mainViewModel, GlobalConfig globalConfig)
+    public MainWindow(MainWindowViewModel mainWindowViewModel, GlobalConfig globalConfig)
     {
-        this._mainViewModel = mainViewModel;
+        this._mainWindowViewModel = mainWindowViewModel;
         this._globalConfig = globalConfig;
-        this.DataContext = mainViewModel;
+        this.DataContext = mainWindowViewModel;
         InitializeComponent();
     }
 
@@ -36,13 +37,13 @@ public partial class MainWindow : ExtendedWindow
         {
             if (dialogViewModel.IsResponding)
             {
-                _mainViewModel.MessageQueue.Enqueue("请等待当前响应完成后再删除会话");
+                _mainWindowViewModel.MessageQueue.Enqueue("请等待当前响应完成后再删除会话");
                 return;
             }
 
             if ((await DialogHost.Show(new ConfirmView() { Header = "删除该会话吗？" })) is true)
             {
-                _mainViewModel.DeleteDialog(dialogViewModel);
+                _mainWindowViewModel.DeleteDialog(dialogViewModel);
             }
         }
     }
@@ -64,20 +65,20 @@ public partial class MainWindow : ExtendedWindow
             var llmModelClient = suggested.Endpoint.NewClient(suggested.LlmModel.Name);
             if (llmModelClient != null)
             {
-                _mainViewModel.AddNewDialog(llmModelClient);
+                _mainWindowViewModel.AddNewDialog(llmModelClient);
             }
             else
             {
-                _mainViewModel.MessageQueue.Enqueue("创建模型失败，请检查配置");
+                _mainWindowViewModel.MessageQueue.Enqueue("创建模型失败，请检查配置");
             }
         }
     }
 
     private void Branch_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is IDialogViewItem dialogViewItem)
+        if (e.Parameter is IDialogItem dialogViewItem)
         {
-            _mainViewModel.ForkPreDialog(dialogViewItem);
+            _mainWindowViewModel.ForkPreDialog(dialogViewItem);
         }
     }
 
@@ -85,7 +86,7 @@ public partial class MainWindow : ExtendedWindow
     {
         if (e.Parameter is DialogViewModel oldDialog)
         {
-            var selectionViewModel = new DialogCreationViewModel(_mainViewModel.EndpointsViewModel);
+            var selectionViewModel = new DialogCreationViewModel(_mainWindowViewModel.EndpointsViewModel);
             if (await DialogHost.Show(selectionViewModel) is true)
             {
                 var model = selectionViewModel.GetClient();
@@ -95,7 +96,7 @@ public partial class MainWindow : ExtendedWindow
                     return;
                 }
 
-                var newDialog = _mainViewModel.AddNewDialog(model, oldDialog.Topic);
+                var newDialog = _mainWindowViewModel.AddNewDialog(model, oldDialog.Topic);
                 newDialog.Client.Parameters.SystemPrompt = oldDialog.Client.Parameters.SystemPrompt;
                 newDialog.SequentialChain(oldDialog.DialogItems);
             }

@@ -130,7 +130,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         }
     }
 
-    public DefaultOption ConfigOption
+    public APIDefaultOption ConfigOption
     {
         get => _configOption;
         set
@@ -142,7 +142,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     }
 
     private string _displayName = string.Empty;
-    private DefaultOption _configOption = new DefaultOption();
+    private APIDefaultOption _configOption = new APIDefaultOption();
     private ObservableCollection<APIModelInfo> _models = new ObservableCollection<APIModelInfo>();
     private string? _iconUrl;
     private ImageSource? _icon = null;
@@ -199,7 +199,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         OnPropertyChanged(nameof(AvailableModelNames));
     }));
 
-    public ILLMModelClient? NewClient(string modelName)
+    public ILLMClient? NewClient(string modelName)
     {
         var apiModelInfo = Models.FirstOrDefault(x => x.Name == modelName);
         if (apiModelInfo == null)

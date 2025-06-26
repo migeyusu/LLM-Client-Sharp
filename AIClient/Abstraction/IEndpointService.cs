@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.UI;
 
 namespace LLMClient.Abstraction;
 
@@ -15,17 +16,4 @@ public interface IEndpointService
     {
         return AvailableEndpoints.FirstOrDefault((endpoint) => endpoint.Name == name);
     }
-}
-
-public class SuggestedModel
-{
-    public SuggestedModel(ILLMEndpoint endpoint, ILLMModel llmModel)
-    {
-        Endpoint = endpoint;
-        LlmModel = llmModel;
-    }
-
-    public ILLMEndpoint Endpoint { get; set; }
-
-    public ILLMModel LlmModel { get; set; }
 }

@@ -20,7 +20,7 @@ using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Endpoints.Azure.Models;
 
-public class AzureClientBase : LlmClientBase, ILLMModelClient
+public class AzureClientBase : LlmClientBase, ILLMClient
 {
     private static readonly Mapper Mapper = new Mapper((new MapperConfiguration((expression =>
     {
@@ -57,10 +57,6 @@ public class AzureClientBase : LlmClientBase, ILLMModelClient
         ModelInfo = modelInfo;
         Mapper.Map<AzureModelInfo, IModelParams>(modelInfo, this.Parameters);
         Option = endPoint.Option;
-    }
-
-    ~AzureClientBase()
-    {
     }
 
     // private readonly FieldInfo? _info = typeof(ChatCompletionsClient)

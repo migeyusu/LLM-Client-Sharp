@@ -1,6 +1,7 @@
 ﻿using System.Net.Http;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.UI.Dialog;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -31,10 +32,10 @@ public class APIClient : LlmClientBase
 
     public override ILLMEndpoint Endpoint { get; }
 
-    private readonly DefaultOption _option;
+    private readonly APIDefaultOption _option;
 
 
-    public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, DefaultOption option)
+    public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option)
     {
         _option = option;
         this.Endpoint = endPoint;
@@ -75,7 +76,7 @@ public class APIClient : LlmClientBase
     private readonly HttpClient _httpClient;
 
     private Kernel? _kernel;
-
+    
     protected override IChatCompletionService CreateChatCompletionService()
     {
         var endpoint = new Uri(this._option.URL);
@@ -103,6 +104,7 @@ public class APIClient : LlmClientBase
 
         return chatOptions;
     }
+    
 }
 
 #pragma warning restore SKEXP0010

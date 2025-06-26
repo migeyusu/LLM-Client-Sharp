@@ -47,7 +47,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         get { return _loadedModelInfos.Values; }
     }
 
-    public override ILLMModelClient? NewClient(string modelName)
+    public override ILLMClient? NewClient(string modelName)
     {
         if (_predefinedModels.TryGetValue(modelName, out var action) &&
             _loadedModelInfos.TryGetValue(modelName, out var availableModelInfo))

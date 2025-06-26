@@ -8,9 +8,11 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
+             xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
-             d:DataContext="{d:DesignInstance mcp:McpServiceCollection}">
+             d:DataContext="{d:DesignInstance mcp:McpServiceCollection}"
+             Loaded="MCPServiceCollectionView_OnLoaded">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200" />
@@ -90,7 +92,7 @@
                       Height="200">
             <ContentControl Content="{Binding ElementName=ModelsListBox,Path=SelectedItem,Mode=OneWay}">
                 <ContentControl.Resources>
-                    <component:ListToStringConverter x:Key="StringToListConverter" />
+                    <converters:ListToStringConverter x:Key="StringToListConverter" />
                     <DataTemplate DataType="{x:Type mcp:StdIOServerItem}">
                         <Grid>
                             <Grid.Resources>
@@ -211,25 +213,28 @@
             </ContentControl>
         </ScrollViewer>
         <ScrollViewer Grid.Row="1" Grid.Column="1">
-            <ItemsControl ItemsSource="{Binding SelectedServerItem.Tools,Mode=TwoWay}">
+            <ItemsControl ItemsSource="{Binding SelectedServerItem.AvailableTools,Mode=TwoWay}"
+                          Margin="10,10,10,0">
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="{x:Type ai:AITool}">
+                    <DataTemplate DataType="{x:Type ai:AIFunction}">
                         <StackPanel>
                             <TextBlock Text="{Binding Name,Mode=OneTime}"
-                                       Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
+                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
                             <TextBlock Text="{Binding Description,Mode=OneWay}"
                                        TextWrapping="Wrap"
                                        Margin="0,5,0,0"
-                                       Style="{StaticResource MaterialDesignBody2TextBlock}" />
+                                       Style="{StaticResource MaterialDesignCaptionTextBlock}" />
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
         <TextBlock Grid.Row="1" Grid.Column="1"
-                   Visibility="{Binding SelectedServerItem.IsToolAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                   Visibility="{Binding SelectedServerItem.IsToolAvailable,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
                    Style="{StaticResource MaterialDesignHeadline5TextBlock}"
-                   Text="未获取到工具" />
+                   Margin="16,16,0,0"
+                   Text="未获取到工具"
+                   Foreground="Red" />
         <Separator Grid.Row="0" Grid.Column="1"
                    VerticalAlignment="Bottom"
                    HorizontalAlignment="Stretch"

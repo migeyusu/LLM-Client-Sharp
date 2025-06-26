@@ -15,6 +15,7 @@ using ImageMagick;
 using LLMClient.Render;
 using Markdig;
 using Markdig.Wpf;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient;
 
@@ -46,7 +47,17 @@ public static class Extension
         return targetPath;
     }
 
-
+    public static string GetDebuggerString(this FunctionCallContent functionCallContent)
+    {
+        string str = "FunctionCall = ";
+        var callId = functionCallContent.CallId;
+        if (!string.IsNullOrEmpty(callId))
+            str = $"{str}{callId}, ";
+        return str + (functionCallContent.Arguments != null
+            ? $"{functionCallContent.Name}({string.Join(", ", (IEnumerable<KeyValuePair<string, object>>)functionCallContent.Arguments)})"
+            : functionCallContent.Name + "()");
+    }
+    
     #region json
 
     public static JsonNode GetOrCreate(this JsonNode jsonNode, string key)

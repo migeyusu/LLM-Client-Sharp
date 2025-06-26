@@ -8,7 +8,7 @@
                     xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
                     xmlns:global="clr-namespace:"
                     xmlns:endpoints="clr-namespace:LLMClient.Endpoints">
-    <DataTemplate x:Key="PopupSelectViewModelTemplate" DataType="{x:Type ui:PopupSelectViewModel}">
+    <DataTemplate x:Key="PopupSelectViewModelTemplate" DataType="{x:Type ui:PopupModelSelectionViewModel}">
         <StackPanel Margin="10"
                     Width="350">
             <DockPanel Height="200">

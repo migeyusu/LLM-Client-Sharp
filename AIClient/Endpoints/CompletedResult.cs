@@ -1,4 +1,6 @@
-﻿using LLMClient.UI;
+﻿using DocumentFormat.OpenXml.Office2013.Excel;
+using LLMClient.UI;
+using LLMClient.UI.Dialog;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Endpoints;
@@ -13,6 +15,8 @@ public class CompletedResult : IResponse
         Usage = usage;
         Price = price;
     }
+
+    public string ResponseLog { get; set; }
 
     public string? Raw { get; set; }
 
@@ -35,4 +39,8 @@ public class CompletedResult : IResponse
     {
         get { return ErrorMessage != null; }
     }
+
+    public ChatFinishReason? FinishReason { get; set; }
+
+    public IList<ChatMessage> ChatMessages { get; set; }
 }
