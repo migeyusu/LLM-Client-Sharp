@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
+using System.Windows;
 using System.Windows.Data;
 using LambdaConverters;
 
@@ -23,5 +24,12 @@ internal static class SnapConverters
                 default:
                     return Brushes.Transparent;
             }
+        });
+
+    public static readonly IValueConverter ThicknessToDoubleConverter =
+        ValueConverter.Create<Thickness, double>(e =>
+        {
+            // 只取左边的值
+            return e.Value.Left;
         });
 }
