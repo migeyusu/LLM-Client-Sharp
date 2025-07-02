@@ -101,4 +101,19 @@ public partial class DialogView : UserControl
             ViewModel.ClearBefore(requestViewItem);
         }
     }
+
+    private async void McpPopupBox_OnOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is PopupBox popupBox)
+        {
+            if (popupBox.PopupContent is IMcpServiceCollection popupBoxPopupContent)
+            {
+                if (!popupBoxPopupContent.IsInitialized)
+                {
+                    await popupBoxPopupContent.LoadAsync();
+                    await popupBoxPopupContent.RefreshToolsAsync();
+                }
+            }
+        }
+    }
 }

@@ -17,7 +17,7 @@ public partial class LoggerWindow : Window
         InitializeComponent();
         // 把自定义监听器挂到 Trace
         Trace.Listeners.Add(
-            new ObservableCollectionTraceListener(LogItems, Application.Current.Dispatcher));
+            new ObservableCollectionTraceListener(LogItems));
         Trace.AutoFlush = true; // 写完立即刷新，避免丢日志
     }
 

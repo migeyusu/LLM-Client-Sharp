@@ -16,6 +16,5 @@ public class ThinkBlockExtension : IMarkdownExtension
         {
             renderer.ObjectRenderers.Insert(0, new ThinkBlockRenderer());
         }
-        
     }
 }

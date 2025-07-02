@@ -5,7 +5,7 @@ namespace LLMClient.UI.Component;
 
 public class SearchableDocument : BaseViewModel
 {
-    private readonly string _rawText;
+    public string RawText { get; }
 
     private readonly List<TextRange> _foundTextRanges = new List<TextRange>();
 
@@ -26,7 +26,7 @@ public class SearchableDocument : BaseViewModel
             throw new ArgumentException("Raw text cannot be null or empty.", nameof(rawText));
         }
 
-        _rawText = rawText;
+        RawText = rawText;
         Document = rawText.ToFlowDocument();
     }
 
@@ -38,7 +38,7 @@ public class SearchableDocument : BaseViewModel
     {
         _cachedSearchText = searchText;
         HasMatched = !string.IsNullOrEmpty(searchText) &&
-                     _rawText.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0;
+                     RawText.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0;
         _isSearchApplied = !HasMatched;
         if (_foundTextRanges.Count > 0)
         {

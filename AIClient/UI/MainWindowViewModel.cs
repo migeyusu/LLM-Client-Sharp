@@ -1,16 +1,13 @@
 ﻿using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
-using LLMClient.Endpoints;
 using LLMClient.Render;
 using LLMClient.UI.Component;
 using LLMClient.UI.Dialog;
@@ -31,8 +28,6 @@ public class MainWindowViewModel : BaseViewModel
     public IEndpointService EndpointsViewModel { get; }
 
     public IPromptsResource PromptsResource { get; }
-
-    public IMcpServiceCollection McpServiceCollection { get; } 
 
     public bool IsInitialized { get; private set; }
 
@@ -123,6 +118,10 @@ public class MainWindowViewModel : BaseViewModel
         var sourceDictionary = application.Resources;
         sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
     }
+
+    public McpServiceCollection McpServiceCollection { get; } = new McpServiceCollection();
+
+    #region dialog
 
     public ICommand ImportDialogCommand => new ActionCommand((async o =>
     {
@@ -243,14 +242,15 @@ public class MainWindowViewModel : BaseViewModel
 
     private DialogViewModel? _preDialog;
 
+    #endregion
+
     private bool _isProcessing;
 
-    public MainWindowViewModel(IEndpointService configureViewModel, IMapper mapper, IPromptsResource promptsResource, IMcpServiceCollection mcpServiceCollection)
+    public MainWindowViewModel(IEndpointService configureViewModel, IMapper mapper, IPromptsResource promptsResource)
     {
         MessageEventBus.MessageReceived += s => this.MessageQueue.Enqueue(s);
         _mapper = mapper;
         PromptsResource = promptsResource;
-        McpServiceCollection = mcpServiceCollection;
         EndpointsViewModel = configureViewModel;
         var paletteHelper = new PaletteHelper();
         Theme theme = paletteHelper.GetTheme();
@@ -278,38 +278,20 @@ public class MainWindowViewModel : BaseViewModel
         var dialogViewModels = new List<DialogViewModel>();
         foreach (var fileInfo in fileInfos)
         {
-            try
+            var dialogViewModel = await DialogViewModel.LoadFromFile(fileInfo);
+            if (dialogViewModel != null)
             {
-                await using (var openRead = fileInfo.OpenRead())
-                {
-                    var dialogModel = await JsonSerializer.DeserializeAsync<DialogPersistModel>(openRead);
-                    if (dialogModel == null)
-                    {
-                        MessageQueue.Enqueue($"加载会话{fileInfo.FullName}失败：文件内容为空");
-                        continue;
-                    }
-
-                    if (dialogModel.Version != DialogPersistModel.DialogPersistVersion)
-                    {
-                        MessageQueue.Enqueue($"加载会话{fileInfo.FullName}失败：版本不匹配");
-                        continue;
-                    }
-
-                    var viewModel = _mapper.Map<DialogPersistModel, DialogViewModel>(dialogModel);
-                    viewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
-                    dialogViewModels.Add(viewModel);
-                    viewModel.IsDataChanged = false;
-                }
+                dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
+                dialogViewModels.Add(dialogViewModel);
             }
-            catch (Exception e)
+            else
             {
-                MessageQueue.Enqueue($"加载会话{fileInfo.FullName}失败：{e.Message}");
+                MessageQueue.Enqueue($"加载会话{fileInfo.FullName}失败：文件内容为空或格式不正确");
             }
         }
 
         foreach (var dialogViewModel in dialogViewModels.OrderByDescending(model => model.EditTime))
         {
-            dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
             this.DialogViewModels.Add(dialogViewModel);
         }
     }
@@ -357,7 +339,7 @@ public class MainWindowViewModel : BaseViewModel
         this.DialogViewModels.Remove(dialogViewModel);
         this.PreDialog = this.DialogViewModels.FirstOrDefault();
         var dirPath = Path.GetFullPath(folderPath);
-        var assossiateFile = dialogViewModel.GetAssossiateFile(dirPath);
+        var assossiateFile = dialogViewModel.GetAssociateFile(dirPath);
         if (assossiateFile.Exists)
         {
             assossiateFile.Delete();
@@ -376,7 +358,6 @@ public class MainWindowViewModel : BaseViewModel
 
         UpdateResource(_themeName);
         await this.PromptsResource.Initialize();
-        await this.McpServiceCollection.LoadAsync();
         IsProcessing = false;
         IsInitialized = true;
     }

@@ -1,7 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using LLMClient.Endpoints;
 using LLMClient.UI.Dialog;
-using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;
 
@@ -22,6 +21,6 @@ public interface ILLMClient
 
     ObservableCollection<string> RespondingText { get; }
 
-    Task<CompletedResult> SendRequest(IEnumerable<IDialogItem> dialogItems, IList<IAIFunctionGroup>? functionGroups = null,
+    Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems, 
         CancellationToken cancellationToken = default);
 }

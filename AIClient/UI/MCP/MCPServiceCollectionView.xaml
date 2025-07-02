@@ -9,10 +9,10 @@
              xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+             Loaded="MCPServiceCollectionView_OnLoaded"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
-             d:DataContext="{d:DesignInstance mcp:McpServiceCollection}"
-             Loaded="MCPServiceCollectionView_OnLoaded">
+             d:DataContext="{d:DesignInstance mcp:McpServiceCollection}">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200" />
@@ -233,7 +233,7 @@
                    Visibility="{Binding SelectedServerItem.IsToolAvailable,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
                    Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                    Margin="16,16,0,0"
-                   Text="未获取到工具"
+                   Text="{Binding SelectedServerItem.ErrorMessage,Mode=OneWay,StringFormat=未获取到工具：{0}}"
                    Foreground="Red" />
         <Separator Grid.Row="0" Grid.Column="1"
                    VerticalAlignment="Bottom"

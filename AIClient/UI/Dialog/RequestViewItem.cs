@@ -1,6 +1,9 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using LLMClient.Abstraction;
 using LLMClient.Data;
 using Microsoft.Extensions.AI;
 using MimeTypes;
@@ -16,9 +19,11 @@ public class RequestViewItem : BaseViewModel, IDialogItem, IDialogPersistItem
 
     [JsonPropertyName("MessageContent")] public string TextMessage { get; set; } = string.Empty;
 
+    public IList<IAIFunctionGroup>? FunctionGroups { get; set; }
+
     private ChatMessage? _message = null;
 
-    public async Task<ChatMessage?> GetMessage()
+    public async IAsyncEnumerable<ChatMessage> GetMessages([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (_message == null)
         {
@@ -44,14 +49,14 @@ public class RequestViewItem : BaseViewModel, IDialogItem, IDialogPersistItem
                             continue;
                         }
 
-                        var bytesAsync = await File.ReadAllBytesAsync(path);
+                        var bytesAsync = await File.ReadAllBytesAsync(path, cancellationToken);
                         _message.Contents.Add(new DataContent(bytesAsync.AsMemory(), mimeType));
                     }
                 }
             }
         }
 
-        return _message;
+        yield return _message;
     }
 
     [JsonPropertyName("IsEnable")] public bool IsAvailableInContext { get; set; } = true;
@@ -67,5 +72,14 @@ public class RequestViewItem : BaseViewModel, IDialogItem, IDialogPersistItem
 
     public RequestViewItem() : base()
     {
+    }
+
+    private static JsonSerializerOptions _options = new JsonSerializerOptions()
+        { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
+
+    public RequestViewItem Clone()
+    {
+        var serialize = JsonSerializer.Serialize(this);
+        return JsonSerializer.Deserialize<RequestViewItem>(serialize, _options)!;
     }
 }

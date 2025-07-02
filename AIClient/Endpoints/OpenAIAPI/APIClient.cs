@@ -34,7 +34,6 @@ public class APIClient : LlmClientBase
 
     private readonly APIDefaultOption _option;
 
-
     public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option)
     {
         _option = option;
@@ -42,10 +41,6 @@ public class APIClient : LlmClientBase
         ModelInfo = modelInfo;
         Mapper.Map<APIModelInfo, IModelParams>(modelInfo, this.Parameters);
         _httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
-    }
-
-    ~APIClient()
-    {
     }
 
     /*Kernel? _kernel = null;

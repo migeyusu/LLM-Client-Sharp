@@ -130,7 +130,6 @@
                       Content="Support Search" />
             <CheckBox IsChecked="{Binding SupportFunctionCall,Mode=TwoWay}"
                       Content="Support Function Call" />
-
         </WrapPanel>
         <CheckBox IsChecked="{Binding SystemPromptEnable,Mode=TwoWay}"
                   Content="System Prompt:"

@@ -8,7 +8,7 @@ namespace LLMClient.Data;
 /// </summary>
 public class DialogPersistModel
 {
-    public const int DialogPersistVersion = 2;
+    public const int DialogPersistVersion = 3;
 
     public int Version { get; set; } = DialogPersistVersion;
 

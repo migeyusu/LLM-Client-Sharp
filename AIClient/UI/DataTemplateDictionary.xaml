@@ -52,24 +52,6 @@
             </Grid>
         </StackPanel>
     </DataTemplate>
-    <DataTemplate x:Key="APIModelInfoDataTemplate"
-                  DataType="{x:Type openAiapi:APIModelInfo}">
-        <Grid Margin="10,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            <TextBlock
-                Visibility="{Binding InfoUrl,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
-                <Hyperlink NavigateUri="{Binding InfoUrl,Mode=OneWay}"
-                           RequestNavigate="Hyperlink_OnRequestNavigate">
-                    <Run Text="{Binding InfoUrl,Mode=OneWay}" />
-                </Hyperlink>
-            </TextBlock>
-            <component:FlowDocumentScrollViewerEx Grid.Row="1"
-                                                  Document="{Binding Description,Mode=OneWay, Converter={x:Static component:MarkdownToDocumentConverter.Instance}}" />
-        </Grid>
-    </DataTemplate>
     <DataTemplate x:Key="PriceCalculatorDataTemplate" DataType="{x:Type endpoints:TokenBasedPriceCalculator}">
         <StackPanel Orientation="Horizontal">
             <TextBlock Text="Input Price:"
@@ -92,5 +74,93 @@
                      Margin="6,0,0,0"
                      Width="50" />
         </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="ApiModelInfoDataTemplate"
+                  DataType="{x:Type openAiapi:APIModelInfo}">
+        <Grid Margin="10,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <StackPanel>
+                <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                           TextWrapping="Wrap">
+                    <Run Text="{Binding Name,Mode=OneWay}"
+                         FontSize="18"
+                         FontWeight="Bold" />
+                    <Run> </Run>
+                    <Run Text="{Binding Id,Mode=OneWay}"
+                         FontSize="12" />
+                    <LineBreak />
+                    <Run Text="{Binding MaxContextSize,Mode=OneWay,StringFormat=Max Context Size:{0}}"
+                         FontSize="12" />
+                </TextBlock>
+                <ContentControl Content="{Binding PriceCalculator,Mode=OneWay}"
+                                IsEnabled="False"
+                                Margin="0,10,0,0"
+                                ContentTemplate="{StaticResource PriceCalculatorDataTemplate}" />
+                <TextBlock Margin="0,10,0,0"
+                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           Visibility="{Binding InfoUrl,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
+                    <Hyperlink NavigateUri="{Binding InfoUrl,Mode=OneWay}"
+                               TextDecorations="Underline"
+                               RequestNavigate="Hyperlink_OnRequestNavigate">
+                        <Hyperlink.Style>
+                            <Style TargetType="{x:Type Hyperlink}"
+                                   BasedOn="{StaticResource {x:Type Hyperlink}}">
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver"
+                                             Value="True">
+                                        <Setter Property="Foreground"
+                                                Value="DodgerBlue" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Hyperlink.Style>
+                        <Run Text="{Binding InfoUrl,Mode=OneWay}" />
+                    </Hyperlink>
+                </TextBlock>
+                <WrapPanel Margin="0,10"
+                           Orientation="Horizontal">
+                    <WrapPanel.Resources>
+                        <Style TargetType="{x:Type CheckBox}"
+                               BasedOn="{StaticResource {x:Type CheckBox}}">
+                            <Setter Property="Margin"
+                                    Value="0,0,10,0" />
+                            <Setter Property="materialDesign:CheckBoxAssist.CheckBoxSize"
+                                    Value="30" />
+                            <Setter Property="IsEnabled"
+                                    Value="False" />
+                        </Style>
+                    </WrapPanel.Resources>
+                    <CheckBox IsChecked="{Binding Reasonable,Mode=OneWay}"
+                              Content="Support Reasoning"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center" />
+                    <CheckBox IsChecked="{Binding Streaming,Mode=OneWay}"
+                              Content="Support Streaming" />
+                    <CheckBox IsChecked="{Binding SupportImageInput,Mode=OneWay}"
+                              Content="Support Image Input" />
+                    <CheckBox IsChecked="{Binding  SupportAudioInput,Mode=OneWay}"
+                              Content="Support Audio Input" />
+                    <CheckBox IsChecked="{Binding  SupportVideoInput,Mode=OneWay}"
+                              Content="Support Video Input" />
+                    <CheckBox IsChecked="{Binding SupportTextGeneration,Mode=OneWay}"
+                              Content="Support Text Generation" />
+                    <CheckBox IsChecked="{Binding SupportImageGeneration,Mode=OneWay}"
+                              Content="Support Image Output" />
+                    <CheckBox IsChecked="{Binding SupportSearch,Mode=OneWay}"
+                              Content="Support Search" />
+                    <CheckBox IsChecked="{Binding SupportFunctionCall,Mode=OneWay}"
+                              Content="Support Function Call" />
+                </WrapPanel>
+            </StackPanel>
+            <FlowDocumentScrollViewer Grid.Row="1"
+                                      Document="{Binding Description,Mode=OneWay, Converter={x:Static component:MarkdownToDocumentConverter.Instance}}" />
+        </Grid>
     </DataTemplate>
 </ResourceDictionary>

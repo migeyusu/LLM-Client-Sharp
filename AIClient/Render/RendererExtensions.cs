@@ -11,6 +11,8 @@ internal static class RendererExtensions
         new MarkdownPipelineBuilder()
             .UseAdvancedExtensions()
             .UseThinkBlock()
+            .UseFunctionCallBlock()
+            .UseFunctionResultBlock()
             .UseGenericAttributes()
             .Build();
 
@@ -26,16 +28,29 @@ internal static class RendererExtensions
         return Markdig.Wpf.Markdown.ToFlowDocument(raw, DefaultPipeline, Renderer);
     }
 
+    internal static string SubstringAtIndexes(this string str, int startIndex, int endIndex)
+    {
+        return str.Substring(startIndex, endIndex - startIndex);
+    }
 
     public static MarkdownPipelineBuilder UseThinkBlock(
         this MarkdownPipelineBuilder pipeline)
     {
-        pipeline.Extensions.ReplaceOrAdd<ThinkBlockExtension>((IMarkdownExtension)new ThinkBlockExtension());
+        pipeline.Extensions.ReplaceOrAdd<ThinkBlockExtension>(new ThinkBlockExtension());
         return pipeline;
     }
 
-    internal static string SubstringAtIndexes(this string str, int startIndex, int endIndex)
+    public static MarkdownPipelineBuilder UseFunctionCallBlock(
+        this MarkdownPipelineBuilder pipeline)
     {
-        return str.Substring(startIndex, endIndex - startIndex);
+        pipeline.Extensions.ReplaceOrAdd<FunctionCallBlockExtension>(new FunctionCallBlockExtension());
+        return pipeline;
+    }
+
+    public static MarkdownPipelineBuilder UseFunctionResultBlock(
+        this MarkdownPipelineBuilder pipeline)
+    {
+        pipeline.Extensions.ReplaceOrAdd<FunctionResultBlockExtension>(new FunctionResultBlockExtension());
+        return pipeline;
     }
 }

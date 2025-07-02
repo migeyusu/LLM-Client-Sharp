@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -57,7 +58,17 @@ public static class Extension
             ? $"{functionCallContent.Name}({string.Join(", ", (IEnumerable<KeyValuePair<string, object>>)functionCallContent.Arguments)})"
             : functionCallContent.Name + "()");
     }
-    
+
+    public static string GetDebuggerString(this FunctionResultContent resultContent)
+    {
+        var str = $"FunctionResult = {resultContent.CallId}, ";
+        var exception = resultContent.Exception;
+        return str + (exception != null
+            ? $"{exception.GetType().Name}(\"{exception.Message}\")"
+            : (resultContent.Result?.ToString() ?? "(null)") ?? "");
+    }
+
+
     #region json
 
     public static JsonNode GetOrCreate(this JsonNode jsonNode, string key)
@@ -94,8 +105,69 @@ public static class Extension
         throw new InvalidOperationException("根对象为空（没有任何属性）。");
     }
 
+    public static string? FormatJson(string? json)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(json))
+            {
+                return null;
+            }
+
+            using JsonDocument doc = JsonDocument.Parse(json);
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+            return JsonSerializer.Serialize(doc, options);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    //json schema create code
+    /* JsonSerializerOptions options = new()
+        {
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+            Converters = { new JsonStringEnumConverter() },
+        };
+        options.MakeReadOnly();
+        AIJsonSchemaCreateOptions s_jsonSchemaCreateOptions = new()
+        {
+            TransformOptions = new()
+            {
+                DisallowAdditionalProperties = true,
+                RequireAllProperties = true,
+                MoveDefaultKeywordToDescription = true,
+            }
+        };
+        var jsonElement = AIJsonUtilities.CreateJsonSchema(typeof(SseServerItem), "test description",
+            serializerOptions: options, inferenceOptions: s_jsonSchemaCreateOptions);
+        var rawText = jsonElement.GetRawText();*/
+
     #endregion
 
+    public static void AddLine(this IList<string> list, string? msg = null)
+    {
+        if (!string.IsNullOrEmpty(msg))
+        {
+            list.Add(msg);
+        }
+
+        list.Add(Environment.NewLine);
+    }
+
+    public static void NewLine(this IList<string> list, string? msg = null)
+    {
+        list.Add(Environment.NewLine);
+        if (!string.IsNullOrEmpty(msg))
+        {
+            list.Add(msg);
+        }
+    }
 
     public static ImageSource SVGStreamToImageSource(this Stream stream)
     {

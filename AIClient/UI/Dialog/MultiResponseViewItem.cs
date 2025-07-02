@@ -1,54 +1,26 @@
 ﻿using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using LLMClient.Data;
-using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.Dialog;
 
-public interface IResponse : ITokenizable
-{
-    /// <summary>
-    /// The latency of the response in ms
-    /// </summary>
-    int Latency { get; }
-
-    /// <summary>
-    /// The duration of the response in s
-    /// </summary>
-    int Duration { get; }
-
-    string? Raw { get; }
-
-    bool IsInterrupt { get; }
-
-    string? ErrorMessage { get; }
-
-    double? Price { get; }
-}
-
-public interface IResponseViewItem : IResponse, IDialogItem
-{
-    ThemedIcon Icon { get; }
-
-    string ModelName { get; }
-
-    string EndPointName { get; }
-}
-
-public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
+public class MultiResponseViewItem : BaseViewModel, IDialogItem
 {
     public Guid InteractionId { get; set; }
 
-    public Task<ChatMessage?> GetMessage()
+    public async IAsyncEnumerable<ChatMessage> GetMessages([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (AcceptedResponse == null)
         {
-            return Task.FromResult<ChatMessage?>(null);
+            yield break;
         }
 
-        return AcceptedResponse.GetMessage();
+        await foreach (var chatMessage in AcceptedResponse.GetMessages(cancellationToken))
+        {
+            yield return chatMessage;
+        }
     }
 
     public bool IsAvailableInContext
@@ -64,51 +36,6 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
     public long Tokens
     {
         get { return AcceptedResponse?.Tokens ?? 0; }
-    }
-
-    public int Latency
-    {
-        get { return AcceptedResponse?.Latency ?? 0; }
-    }
-
-    public int Duration
-    {
-        get { return AcceptedResponse?.Duration ?? 0; }
-    }
-
-    public string? Raw
-    {
-        get { return AcceptedResponse?.Raw; }
-    }
-
-    public bool IsInterrupt
-    {
-        get { return AcceptedResponse?.IsInterrupt ?? false; }
-    }
-
-    public string? ErrorMessage
-    {
-        get { return AcceptedResponse?.ErrorMessage; }
-    }
-
-    public double? Price
-    {
-        get { return Items.Sum((item => item.Price ?? 0)); }
-    }
-
-    public ThemedIcon Icon
-    {
-        get { return AcceptedResponse?.Icon ?? ImageExtensions.APIIcon; }
-    }
-
-    public string ModelName
-    {
-        get { return AcceptedResponse?.ModelName ?? String.Empty; }
-    }
-
-    public string EndPointName
-    {
-        get { return AcceptedResponse?.EndPointName ?? String.Empty; }
     }
 
     public bool IsMultiResponse
@@ -157,8 +84,6 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
     {
         get
         {
-            /*if (SelectedIndex >= Items.Count||SelectedIndex == 0)
-                throw new IndexOutOfRangeException();*/
             if (Items.Count == 0)
             {
                 return null;
@@ -190,23 +115,14 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
             this.Remove(response);
         }
     });
-
-
+    
     public MultiResponseViewItem(IEnumerable<IResponseViewItem> items)
     {
         Items = new ObservableCollection<IResponseViewItem>(items);
-        /*((INotifyPropertyChanged)Items).PropertyChanged += (sender, args) =>
-        {
-            if (args.PropertyName == nameof(Items.Count))
-            {
-                IsMultiResponse = Items.Count > 1;
-            }
-        };
-        IsMultiResponse = Items.Count > 1;*/
         IsMultiResponse = Items.Count > 1;
     }
 
-    public MultiResponseViewItem() : this(Enumerable.Empty<IResponseViewItem>())
+    public MultiResponseViewItem() : this([])
     {
     }
 
@@ -215,7 +131,6 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         this.Items.Add(viewItem);
         this.AcceptedIndex = this.Items.Count - 1;
         IsMultiResponse = Items.Count > 1;
-        OnPropertyChanged(nameof(Price));
     }
 
     public void Insert(IResponseViewItem viewItem, int index)
@@ -223,7 +138,6 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         this.Items.Insert(index, viewItem);
         this.AcceptedIndex = index;
         IsMultiResponse = Items.Count > 1;
-        OnPropertyChanged(nameof(Price));
     }
 
     public void Remove(IResponseViewItem viewItem)
@@ -242,7 +156,6 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         }
 
         IsMultiResponse = Items.Count > 1;
-        OnPropertyChanged(nameof(Price));
     }
 
     public void RemoveAt(int index)
@@ -250,6 +163,5 @@ public class MultiResponseViewItem : BaseViewModel, IResponseViewItem
         this.Items.RemoveAt(index);
         this.AcceptedIndex = AcceptedIndex - 1;
         IsMultiResponse = Items.Count > 1;
-        OnPropertyChanged(nameof(Price));
     }
 }

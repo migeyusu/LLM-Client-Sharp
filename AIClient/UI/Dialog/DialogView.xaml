@@ -304,6 +304,7 @@
                                                                     <Grid>
                                                                         <ScrollViewer>
                                                                             <component:MarkdownTextBlock
+                                                                                TextWrapping="Wrap"
                                                                                 CollectionText="{Binding  Client.RespondingText,Mode=OneWay}" />
                                                                         </ScrollViewer>
                                                                     </Grid>
@@ -338,9 +339,25 @@
                                                                                     </MenuItem.Icon>
                                                                                 </MenuItem>
                                                                                 <Separator />
-                                                                                <MenuItem Header="复制全部"
+                                                                                <MenuItem Header="复制文本"
                                                                                     Command="{x:Static ui:CommonCommands.CopyCommand}"
-                                                                                    CommandParameter="{Binding Raw,Mode=OneTime}">
+                                                                                    CommandParameter="{Binding TextContent,Mode=OneTime}">
+                                                                                    <MenuItem.Icon>
+                                                                                        <materialDesign:PackIcon
+                                                                                            Kind="ContentCopy" />
+                                                                                    </MenuItem.Icon>
+                                                                                </MenuItem>
+                                                                                <MenuItem Header="复制文本（排除Think）"
+                                                                                    Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                                                                    CommandParameter="{Binding TextWithoutThinking,Mode=OneTime}">
+                                                                                    <MenuItem.Icon>
+                                                                                        <materialDesign:PackIcon
+                                                                                            Kind="ContentCopy" />
+                                                                                    </MenuItem.Icon>
+                                                                                </MenuItem>
+                                                                                <MenuItem Header="复制所有"
+                                                                                    Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                                                                    CommandParameter="{Binding Document.RawText,Mode=OneTime}">
                                                                                     <MenuItem.Icon>
                                                                                         <materialDesign:PackIcon
                                                                                             Kind="ContentCopy" />
@@ -349,7 +366,7 @@
                                                                                 <MenuItem Header="导出"
                                                                                     ToolTip="导出为Markdown"
                                                                                     Command="{x:Static ui:CommonCommands.ExportCommand}"
-                                                                                    CommandParameter="{Binding Raw,Mode=OneTime}">
+                                                                                    CommandParameter="{Binding TextContent,Mode=OneTime}">
                                                                                     <MenuItem.Icon>
                                                                                         <materialDesign:PackIcon
                                                                                             Kind="Export" />
@@ -542,12 +559,13 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal">
                         <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                                  IsChecked="{Binding EnableMCP,Mode=TwoWay}"
+                                  IsChecked="{Binding MCPEnabled,Mode=TwoWay}"
                                   Visibility="{Binding Client.Model.SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="MCP Tools" />
                                 <materialDesign:PopupBox Margin="6,0"
                                                          StaysOpen="True"
+                                                         Opened="McpPopupBox_OnOpened"
                                                          ToggleContent="{materialDesign:PackIcon Kind=Tools,Size=16}"
                                                          VerticalAlignment="Center"
                                                          ToolTip="对比其他模型"
@@ -561,15 +579,27 @@
                                                     <TreeView.Resources>
                                                         <HierarchicalDataTemplate DataType="{x:Type mcp:McpServerItem}"
                                                             ItemsSource="{Binding AvailableTools,Mode=OneWay}">
-                                                            <CheckBox Content="{Binding Name}"
-                                                                      IsEnabled="{Binding IsToolAvailable,Mode=OneWay}"
-                                                                      IsChecked="{Binding IsEnabled,Mode=TwoWay}" />
+                                                            <CheckBox IsEnabled="{Binding IsToolAvailable,Mode=OneWay}"
+                                                                      IsChecked="{Binding IsEnabled,Mode=TwoWay}">
+                                                                <TextBlock TextWrapping="NoWrap"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           MaxHeight="20"
+                                                                           MaxWidth="400">
+                                                                    <Run Text="{Binding Name,Mode=OneTime}" />
+                                                                    <Run> </Run>
+                                                                    <Run Text="{Binding ErrorMessage,Mode=OneWay}"
+                                                                         Foreground="Red" />
+                                                                </TextBlock>
+                                                            </CheckBox>
                                                         </HierarchicalDataTemplate>
-                                                        <DataTemplate DataType="{x:Type ai:AITool}">
+                                                        <DataTemplate DataType="{x:Type ai:AIFunction}">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <TextBlock Text="{Binding Name,Mode=OneTime}"
                                                                            Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
                                                                 <TextBlock Text="{Binding Description,Mode=OneWay}"
+                                                                           MaxHeight="20"
+                                                                           MaxWidth="300"
+                                                                           TextTrimming="CharacterEllipsis"
                                                                            TextWrapping="Wrap"
                                                                            Margin="5,0,0,0"
                                                                            VerticalAlignment="Center"
@@ -579,9 +609,10 @@
                                                         </DataTemplate>
                                                     </TreeView.Resources>
                                                 </TreeView>
-                                                <Button Command="{Binding  RefreshCommand}"
+                                                <Button Command="{Binding  ReloadCommand}"
                                                         HorizontalAlignment="Right"
                                                         VerticalAlignment="Bottom"
+                                                        ToolTip="重载MCP服务"
                                                         Margin="0,0,10,10"
                                                         Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
                                                         Content="{materialDesign:PackIcon Refresh}" />

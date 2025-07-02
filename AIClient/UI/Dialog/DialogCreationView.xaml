@@ -93,7 +93,7 @@
                                 </DataTemplate>
                             </component:DataTemplateTypePair.Template>
                         </component:DataTemplateTypePair>
-                        <component:DataTemplateTypePair Template="{StaticResource APIModelInfoDataTemplate}">
+                        <component:DataTemplateTypePair Template="{StaticResource ApiModelInfoDataTemplate}">
                         </component:DataTemplateTypePair>
                     </component:TypeBasedDataTemplateSelector>
                 </ContentControl.ContentTemplateSelector>

@@ -25,8 +25,8 @@ public class NullLlmModelClient : ILLMClient
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
     public ObservableCollection<string> RespondingText { get; } = new ObservableCollection<string>();
 
-    public Task<CompletedResult> SendRequest(IEnumerable<IDialogItem> dialogItems,
-        IList<IAIFunctionGroup>? functions = null, CancellationToken cancellationToken = bad)
+    public Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems,
+        CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("This client does not support sending requests.");
     }

@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
@@ -55,17 +54,6 @@ public class DialogViewModel : BaseViewModel
         get => RespondingCount > 0;
     }
 
-    public bool IsNewResponding
-    {
-        get => _isNewResponding;
-        private set
-        {
-            if (value == _isNewResponding) return;
-            _isNewResponding = value;
-            OnPropertyChanged();
-        }
-    }
-
     public int RespondingCount
     {
         get => _respondingCount;
@@ -89,31 +77,6 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public string? PromptString
-    {
-        get => _promptString;
-        set
-        {
-            if (value == _promptString) return;
-            _promptString = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public IDialogItem? ScrollViewItem
-    {
-        get => _scrollViewItem;
-        set
-        {
-            if (Equals(value, _scrollViewItem)) return;
-            _scrollViewItem = value;
-            OnPropertyChanged();
-            if (value is MultiResponseViewItem viewItem)
-            {
-                viewItem.CurrentResponse?.Document?.EnsureSearch();
-            }
-        }
-    }
 
     public long TokensConsumption
     {
@@ -138,21 +101,6 @@ public class DialogViewModel : BaseViewModel
     }
 
     public ObservableCollection<IDialogItem> DialogItems { get; }
-
-    public long CurrentContextTokens
-    {
-        get
-        {
-            if (!DialogItems.Any())
-            {
-                return 0;
-            }
-
-            var dialogViewItems = new Stack<IDialogItem>();
-            FilterHistory(DialogItems.ToArray(), dialogViewItems);
-            return dialogViewItems.Sum(item => item.Tokens);
-        }
-    }
 
     private ILLMClient _client;
 
@@ -193,7 +141,7 @@ public class DialogViewModel : BaseViewModel
         {
             return DialogItems.OfType<MultiResponseViewItem>()
                 .FirstOrDefault(item => { return item.IsAvailableInContext; })
-                ?.CurrentResponse?.ResponseWithoutThinking;
+                ?.CurrentResponse?.TextWithoutThinking;
         }
     }
 
@@ -249,8 +197,7 @@ public class DialogViewModel : BaseViewModel
                 if (oldDialogDialogItem is RequestViewItem requestViewItem)
                 {
                     var newGuid = Guid.NewGuid();
-                    var newItem = new RequestViewItem()
-                        { TextMessage = requestViewItem.TextMessage, InteractionId = newGuid };
+                    var newItem = requestViewItem.Clone();
                     DialogItems.Add(newItem);
                     var copy = DialogItems.ToArray();
                     int retryCount = 3;
@@ -451,7 +398,16 @@ public class DialogViewModel : BaseViewModel
 
     #region function call
 
-    public bool EnableMCP { get; set; }
+    public bool MCPEnabled
+    {
+        get => _mcpEnabled;
+        set
+        {
+            if (value == _mcpEnabled) return;
+            _mcpEnabled = value;
+            OnPropertyChanged();
+        }
+    }
 
     public IMcpServiceCollection McpServiceCollection
     {
@@ -459,6 +415,8 @@ public class DialogViewModel : BaseViewModel
     }
 
     #endregion
+
+    #region toolbar
 
     public ICommand ClearContextCommand => new ActionCommand((o =>
     {
@@ -497,7 +455,21 @@ public class DialogViewModel : BaseViewModel
         deleteItems.ForEach(item => DialogItems.Remove(item));
     }));
 
-    private IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
+    public ICommand ChangeModelCommand => new ActionCommand((async o =>
+    {
+        var selectionViewModel = new DialogCreationViewModel(EndpointService);
+        if (await DialogHost.Show(selectionViewModel) is true)
+        {
+            var model = selectionViewModel.GetClient();
+            if (model == null)
+            {
+                MessageBox.Show("No model created!");
+                return;
+            }
+
+            this.Client = model;
+        }
+    }));
 
     public ICommand BackupCommand => new ActionCommand((async o =>
     {
@@ -540,10 +512,12 @@ public class DialogViewModel : BaseViewModel
         stringBuilder.AppendLine($"### {this.Client.Name}");
         foreach (var viewItem in this.DialogItems.Where((item => item.IsAvailableInContext)))
         {
-            if (viewItem is IResponseViewItem responseViewItem)
+            if (viewItem is MultiResponseViewItem multiResponseView &&
+                multiResponseView.AcceptedResponse is ResponseViewItem responseViewItem)
             {
+                var textContent = responseViewItem.TextContent;
                 stringBuilder.AppendLine("## **Assistant:**");
-                stringBuilder.Append(responseViewItem.Raw);
+                stringBuilder.Append(textContent ?? string.Empty);
                 stringBuilder.AppendLine();
                 stringBuilder.AppendLine();
                 stringBuilder.AppendLine("***");
@@ -564,6 +538,8 @@ public class DialogViewModel : BaseViewModel
         await File.WriteAllTextAsync(fileName, stringBuilder.ToString());
         MessageEventBus.Publish("已导出");
     }));
+
+    #endregion
 
     /*public async Task AddFileToContext(FileInfo fileInfo)
     {
@@ -638,19 +614,54 @@ public class DialogViewModel : BaseViewModel
         }
     }));*/
 
+    #region input box
+
+    public bool IsNewResponding
+    {
+        get => _isNewResponding;
+        private set
+        {
+            if (value == _isNewResponding) return;
+            _isNewResponding = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public long CurrentContextTokens
+    {
+        get
+        {
+            if (!DialogItems.Any())
+            {
+                return 0;
+            }
+
+            var dialogViewItems = new Stack<IDialogItem>();
+            FilterHistory(DialogItems.ToArray(), dialogViewItems);
+            return dialogViewItems.Sum(item => item.Tokens);
+        }
+    }
+
+    public string? PromptString
+    {
+        get => _promptString;
+        set
+        {
+            if (value == _promptString) return;
+            _promptString = value;
+            OnPropertyChanged();
+        }
+    }
+
     public ICommand NewResponseCommand => new RelayCommand((async () =>
     {
-        if (string.IsNullOrEmpty(PromptString?.Trim()))
+        var prompt = PromptString?.Trim();
+        if (string.IsNullOrEmpty(prompt))
         {
             return;
         }
 
-        var requestViewItem = new RequestViewItem()
-        {
-            InteractionId = Guid.NewGuid(),
-            TextMessage = PromptString.Trim(),
-            Attachments = Attachments.ToList(),
-        };
+        var requestViewItem = NewRequest(prompt);
         await NewResponse(requestViewItem);
     }));
 
@@ -663,7 +674,26 @@ public class DialogViewModel : BaseViewModel
         }
     }));
 
+    public ICommand ConclusionCommand => new ActionCommand((o => { ConclusionCurrent(); }));
+
+    #endregion
+
     #region scroll
+
+    public IDialogItem? ScrollViewItem
+    {
+        get => _scrollViewItem;
+        set
+        {
+            if (Equals(value, _scrollViewItem)) return;
+            _scrollViewItem = value;
+            OnPropertyChanged();
+            if (value is MultiResponseViewItem viewItem)
+            {
+                viewItem.CurrentResponse?.Document?.EnsureSearch();
+            }
+        }
+    }
 
     public ICommand ScrollToPreviousCommand => new ActionCommand(o =>
     {
@@ -731,29 +761,6 @@ public class DialogViewModel : BaseViewModel
 
     #endregion
 
-    public ICommand ChangeModelCommand => new ActionCommand((async o =>
-    {
-        var selectionViewModel = new DialogCreationViewModel(EndpointService);
-        if (await DialogHost.Show(selectionViewModel) is true)
-        {
-            var model = selectionViewModel.GetClient();
-            if (model == null)
-            {
-                MessageBox.Show("No model created!");
-                return;
-            }
-
-            this.Client = model;
-        }
-    }));
-
-    public ICommand ConclusionCommand => new ActionCommand((o => { ConclusionCurrent(); }));
-
-    private IEndpointService EndpointService
-    {
-        get { return ServiceLocator.GetService<IEndpointService>()!; }
-    }
-
     #region attachment
 
     public ObservableCollection<Attachment> Attachments { get; set; } =
@@ -791,6 +798,9 @@ public class DialogViewModel : BaseViewModel
 
     #endregion
 
+    private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
+
+    private IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
 
     private string? _promptString;
     private string _topic;
@@ -804,6 +814,13 @@ public class DialogViewModel : BaseViewModel
     private bool _isChaining;
     private int _chainStepCount;
     private int _chainingStep;
+    private bool _mcpEnabled;
+
+    private string[] _notTrackingProperties = new[]
+    {
+        nameof(ScrollViewItem),
+        nameof(SearchText)
+    };
 
     public DialogViewModel(string topic, ILLMClient modelClient,
         IList<IDialogItem>? items = null)
@@ -813,7 +830,7 @@ public class DialogViewModel : BaseViewModel
         this.PropertyChanged += (_, e) =>
         {
             var propertyName = e.PropertyName;
-            if (propertyName == nameof(ScrollViewItem))
+            if (_notTrackingProperties.Contains(propertyName))
             {
                 return;
             }
@@ -834,6 +851,7 @@ public class DialogViewModel : BaseViewModel
             TextMessage = string.Format(config.TokenSummarizePrompt, config.SummarizeWordsCount),
             InteractionId = newGuid
         };
+
         dialogViewItems.Add(requestViewItem);
         var copy = dialogViewItems.ToArray();
         var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
@@ -897,24 +915,40 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public async Task<CompletedResult> SendRequestCore(
-        ILLMClient client, Memory<IDialogItem> dialog,
-        MultiResponseViewItem multiResponseViewItem)
+    private RequestViewItem NewRequest(string promptString)
+    {
+        IList<IAIFunctionGroup>? tools = null;
+        if (this.Client.Model.SupportFunctionCall && this.MCPEnabled)
+        {
+            tools = McpServiceCollection.Where(group => group is { IsEnabled: true, IsToolAvailable: true }).ToArray();
+        }
+
+        return new RequestViewItem()
+        {
+            InteractionId = Guid.NewGuid(),
+            TextMessage = promptString.Trim(),
+            Attachments = Attachments.ToList(),
+            FunctionGroups = tools,
+        };
+    }
+
+    public async Task<CompletedResult> SendRequestCore(ILLMClient client,
+        Memory<IDialogItem> dialog, MultiResponseViewItem multiResponseViewItem)
     {
         var completedResult = CompletedResult.Empty;
+        if (client.IsResponding)
+        {
+            MessageEventBus.Publish("模型正在响应中，请稍后再试。");
+            return completedResult;
+        }
+
         RespondingCount++;
         var respondingViewItem = new RespondingViewItem(client);
         try
         {
             multiResponseViewItem.Append(respondingViewItem);
             var list = GenerateHistory(dialog);
-            IList<AITool>? tools = null;
-            if (this.Client.Model.SupportFunctionCall && this.EnableMCP)
-            {
-                tools = McpServiceCollection.AvailableTools.ToArray();
-            }
-
-            completedResult = await client.SendRequest(list, tools, respondingViewItem.RequestTokenSource.Token);
+            completedResult = await client.SendRequest(list, respondingViewItem.RequestTokenSource.Token);
             multiResponseViewItem.Append(new ResponseViewItem(client.Model, completedResult, client.Endpoint.Name));
         }
         catch (Exception exception)
@@ -944,8 +978,7 @@ public class DialogViewModel : BaseViewModel
         DialogItems.Add(multiResponseViewItem);
         ScrollViewItem = DialogItems.Last();
         IsNewResponding = true;
-        var completedResult = await SendRequestCore(this.Client, copy,
-            multiResponseViewItem);
+        var completedResult = await SendRequestCore(this.Client, copy, multiResponseViewItem);
         IsNewResponding = false;
         if (!completedResult.IsInterrupt)
         {
@@ -1057,10 +1090,48 @@ public class DialogViewModel : BaseViewModel
         return list;
     }
 
-    public FileInfo GetAssossiateFile(string folderPath)
+    public FileInfo GetAssociateFile(string folderPath)
     {
         var fileName = Path.GetFullPath(this.FileName + ".json", folderPath);
         return new FileInfo(fileName);
+    }
+
+    public static async Task<DialogViewModel?> LoadFromFile(FileInfo fileInfo,
+        int version = DialogPersistModel.DialogPersistVersion)
+    {
+        if (!fileInfo.Exists)
+        {
+            return null;
+        }
+
+        try
+        {
+            await using (var fileStream = fileInfo.OpenRead())
+            {
+                var dialogModel = await JsonSerializer.DeserializeAsync<DialogPersistModel>(fileStream);
+                if (dialogModel == null)
+                {
+                    Trace.TraceError($"加载会话{fileInfo.FullName}失败：文件内容为空");
+                    return null;
+                }
+
+                if (dialogModel.Version != version)
+                {
+                    Trace.TraceError($"加载会话{fileInfo.FullName}失败：版本不匹配");
+                    return null;
+                }
+
+                var viewModel = Mapper.Map<DialogPersistModel, DialogViewModel>(dialogModel);
+                viewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
+                viewModel.IsDataChanged = false;
+                return viewModel;
+            }
+        }
+        catch (Exception e)
+        {
+            Trace.TraceError(e.ToString());
+            return null;
+        }
     }
 
     public async Task SaveToLocal(string folderPath)
@@ -1071,7 +1142,7 @@ public class DialogViewModel : BaseViewModel
         }
 
         var dialogModel = Mapper.Map<DialogViewModel, DialogPersistModel>(this);
-        var fileInfo = this.GetAssossiateFile(folderPath);
+        var fileInfo = this.GetAssociateFile(folderPath);
         if (fileInfo.Exists)
         {
             fileInfo.Delete();
@@ -1107,129 +1178,4 @@ public class DialogViewModel : BaseViewModel
     {
         IsDataChanged = true;
     }
-}
-
-public class Attachment
-{
-    public Uri? OriUri { get; set; }
-
-    [JsonIgnore]
-    public string Name
-    {
-        get
-        {
-            if (OriUri?.IsFile == true)
-            {
-                return Path.GetFileName(OriUri.LocalPath);
-            }
-
-            return OriUri?.ToString() ?? string.Empty;
-        }
-    }
-
-    /// <summary>
-    /// 缓存的文件名
-    /// </summary>
-    public string? CachedFileName { get; set; }
-
-    [JsonIgnore]
-    public string CachedFilePath
-    {
-        get
-        {
-            if (string.IsNullOrEmpty(CachedFileName))
-            {
-                return string.Empty;
-            }
-
-            return Path.GetFullPath(CachedFileName, ImageAttachmentCacheFolder);
-        }
-    }
-
-    public AttachmentType Type { get; set; }
-
-    [JsonIgnore]
-    public string ImageAttachmentCacheFolder
-    {
-        get { return Path.GetFullPath(Path.Combine("Attachment", "Images")); }
-    }
-
-    public ICommand OpenFileCommand => new ActionCommand(o =>
-    {
-        if (Type == AttachmentType.Image)
-        {
-            string? filePath = null;
-            var cachedFilePath = CachedFilePath;
-            if (!string.IsNullOrEmpty(cachedFilePath) &&
-                File.Exists(cachedFilePath))
-            {
-                filePath = cachedFilePath;
-            }
-            else
-            {
-                if (OriUri?.IsFile == true)
-                {
-                    var fileName = Path.GetFullPath(OriUri.LocalPath);
-                    if (File.Exists(fileName))
-                    {
-                        filePath = fileName;
-                    }
-                }
-            }
-
-            if (filePath == null)
-            {
-                MessageEventBus.Publish("文件不存在！");
-                return;
-            }
-
-            Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
-        }
-    });
-
-    public bool EnsureCache()
-    {
-        try
-        {
-            if (OriUri == null)
-            {
-                throw new NullReferenceException("OriUri不能为空!");
-            }
-
-            switch (Type)
-            {
-                case AttachmentType.Image:
-                    if (string.IsNullOrEmpty(CachedFileName) ||
-                        !File.Exists(Path.GetFullPath(CachedFileName, ImageAttachmentCacheFolder)))
-                    {
-                        if (!OriUri.IsFile)
-                        {
-                            throw new NotSupportedException("图片附件必须是本地文件!");
-                        }
-
-                        this.CachedFileName =
-                            Extension.CacheLocalFile(this.OriUri.LocalPath, ImageAttachmentCacheFolder);
-                    }
-
-                    break;
-                default:
-                    throw new NotSupportedException("不支持的附件类型: " + Type);
-            }
-        }
-        catch (Exception e)
-        {
-            Trace.TraceError($"[Attachment] Error ensuring cache for {OriUri}: {e.Message}");
-            return false;
-        }
-
-        return true;
-    }
-}
-
-public enum AttachmentType
-{
-    Image,
-    File,
-    Audio,
-    Video
 }

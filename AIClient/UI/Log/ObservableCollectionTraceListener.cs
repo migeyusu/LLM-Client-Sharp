@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Windows;
 using System.Windows.Threading;
 
 namespace LLMClient.UI.Log;
@@ -12,11 +13,13 @@ public sealed class ObservableCollectionTraceListener : TraceListener
     private readonly ObservableCollection<LogItem> _target;
     private readonly Dispatcher _dispatcher;
 
+    public TraceEventType EventType { get; set; } = TraceEventType.Warning;
+
     public ObservableCollectionTraceListener(ObservableCollection<LogItem> target,
         Dispatcher? uiDispatcher = null)
     {
         _target = target;
-        _dispatcher = uiDispatcher ?? Dispatcher.CurrentDispatcher;
+        _dispatcher = uiDispatcher ?? Application.Current.Dispatcher;
     }
 
     public override void Write(string? message) => Append(new LogItem()
@@ -29,6 +32,8 @@ public sealed class ObservableCollectionTraceListener : TraceListener
     public override void TraceEvent(TraceEventCache? eventCache, string source,
         TraceEventType eventType, int id, string? message)
     {
+        if (eventType > EventType)
+            return;
         Append(new LogItem()
         {
             Message = message,

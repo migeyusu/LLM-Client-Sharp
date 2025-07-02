@@ -7,18 +7,14 @@ namespace LLMClient.Endpoints;
 
 public class CompletedResult : IResponse
 {
-    public static readonly CompletedResult Empty = new CompletedResult(null, new UsageDetails(), null);
+    public static readonly CompletedResult Empty =
+        new CompletedResult(new UsageDetails());
 
-    public CompletedResult(string? response, UsageDetails usage, double? price)
+    public CompletedResult(UsageDetails usage, IList<ChatMessage>? chatMessages = null)
     {
-        Raw = response;
         Usage = usage;
-        Price = price;
+        ResponseMessages = chatMessages;
     }
-
-    public string ResponseLog { get; set; }
-
-    public string? Raw { get; set; }
 
     public UsageDetails Usage { get; set; }
 
@@ -33,7 +29,7 @@ public class CompletedResult : IResponse
 
     public string? ErrorMessage { get; set; }
 
-    public double? Price { get; }
+    public double? Price { get; set; }
 
     public bool IsInterrupt
     {
@@ -42,5 +38,5 @@ public class CompletedResult : IResponse
 
     public ChatFinishReason? FinishReason { get; set; }
 
-    public IList<ChatMessage> ChatMessages { get; set; }
+    public IList<ChatMessage>? ResponseMessages { get; }
 }

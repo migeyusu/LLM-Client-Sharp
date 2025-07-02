@@ -183,7 +183,9 @@
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="Model Description"
                                             Content="{Binding}"
-                                            ContentTemplate="{StaticResource APIModelInfoDataTemplate}" />
+                                            Width="800"
+                                            Height="600"
+                                            ContentTemplate="{StaticResource ApiModelInfoDataTemplate}" />
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type mcp:McpServiceCollection}">
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
@@ -567,7 +569,7 @@
                                     </Button>
                                 </StackPanel>
                             </Button>
-                            <Button ToolTip="model信息"
+                            <Button ToolTip="model info"
                                     Visibility="{Binding Client.Model,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                     Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                     CommandParameter="{Binding Client.Model,Mode=OneWay}">

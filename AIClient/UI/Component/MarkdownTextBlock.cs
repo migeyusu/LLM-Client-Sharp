@@ -59,7 +59,7 @@ public class MarkdownTextBlock : TextBlock
                 {
                     foreach (var se in enumerable)
                     {
-                        inlineCollection.Add(FromMarkdown(se)); 
+                        inlineCollection.Add(FromMarkdown(se));
                     }
                 }
 
@@ -88,8 +88,13 @@ public class MarkdownTextBlock : TextBlock
 
     private bool isCodeBlock = false;
 
-    private Run FromMarkdown(string raw)
+    private Inline FromMarkdown(string raw)
     {
+        if (raw == Environment.NewLine)
+        {
+            return new LineBreak();
+        }
+
         switch (raw)
         {
             case "**":
@@ -107,7 +112,7 @@ public class MarkdownTextBlock : TextBlock
         }
 
         var run = new Run(raw);
-        
+
         if (isBold)
         {
             run.FontWeight = FontWeights.Bold;

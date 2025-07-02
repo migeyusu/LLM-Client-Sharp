@@ -16,6 +16,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
 
     private bool _isEnabled = true;
 
+    [JsonIgnore]
     public bool IsEnabled
     {
         get => _isEnabled;
@@ -23,6 +24,18 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         {
             if (value == _isEnabled) return;
             _isEnabled = value;
+            OnPropertyChanged();
+        }
+    }
+
+    [JsonIgnore]
+    public string? ErrorMessage
+    {
+        get => _errorMessage;
+        set
+        {
+            if (value == _errorMessage) return;
+            _errorMessage = value;
             OnPropertyChanged();
         }
     }
@@ -46,6 +59,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
     }
 
     private IList<AIFunction>? _availableTools;
+    private string? _errorMessage;
 
     [JsonIgnore]
     public IList<AIFunction>? AvailableTools
@@ -66,29 +80,39 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         get => _availableTools?.Count > 0;
     }
 
-    public ICommand RefreshCommand => new RelayCommand(async () =>
-    {
-        try
-        {
-            var supportedOps = await this.ListSupportedOps();
-            this.AvailableTools = supportedOps.ToArray();
-        }
-        catch (Exception ex)
-        {
-            MessageEventBus.Publish($"Error refreshing tools: {ex.Message}");
-        }
-    });
+    public ICommand RefreshCommand => new RelayCommand(async () => { await RefreshOps(); });
 
     /// <summary>
     /// 列举支持的操作
     /// </summary>
     /// <returns></returns>
-    public async Task<IEnumerable<AIFunction>> ListSupportedOps()
+    public async Task RefreshOps()
+    {
+        try
+        {
+            ErrorMessage = null;
+            this.AvailableTools = await SearchToolsAsync();
+        }
+        catch (Exception e)
+        {
+            var exception = e;
+            while (exception.InnerException != null)
+            {
+                exception = exception.InnerException;
+            }
+
+            ErrorMessage = exception.Message;
+            MessageEventBus.Publish($"Error refreshing tools: {e.Message}");
+        }
+    }
+
+    public async Task<IList<AIFunction>> SearchToolsAsync(CancellationToken cancellationToken = default)
     {
         var transport = this.Create();
-        var client = await McpClientFactory.CreateAsync(transport);
-        return (await client.ListToolsAsync());
+        var client = await McpClientFactory.CreateAsync(transport, cancellationToken: cancellationToken);
+        return (await client.ListToolsAsync(cancellationToken: cancellationToken)).ToArray<AIFunction>();
     }
+
 
     public abstract IClientTransport Create();
 

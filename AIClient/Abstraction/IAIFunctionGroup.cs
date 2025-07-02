@@ -1,10 +1,14 @@
-﻿using Microsoft.Extensions.AI;
+﻿using System.Text.Json.Serialization;
+using LLMClient.UI.MCP;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;
 
 /// <summary>
 /// 一组函数的接口定义
 /// </summary>
+[JsonDerivedType(typeof(StdIOServerItem), "stdio")]
+[JsonDerivedType(typeof(SseServerItem), "sse")]
 public interface IAIFunctionGroup
 {
     /// <summary>
@@ -18,4 +22,6 @@ public interface IAIFunctionGroup
     bool IsToolAvailable { get; }
 
     bool IsEnabled { get; }
+
+    Task<IList<AIFunction>> SearchToolsAsync(CancellationToken cancellationToken = default);
 }

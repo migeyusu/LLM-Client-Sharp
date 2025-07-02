@@ -6,12 +6,12 @@ using Markdig.Renderers.Wpf;
 
 namespace LLMClient.Render;
 
-public class ThinkBlockRenderer : WpfObjectRenderer<ThinkBlock>
+public class FunctionCallBlockRenderer : WpfObjectRenderer<FunctionCallBlock>
 {
-    public static ComponentResourceKey ThinkBlockExpanderStyleKey { get; } =
-        new(typeof(ThinkBlockRenderer), (object)nameof(ThinkBlockExpanderStyleKey));
+    public static ComponentResourceKey FunctionCallBlockExpanderStyleKey { get; } =
+        new(typeof(FunctionCallBlockRenderer), nameof(FunctionCallBlockExpanderStyleKey));
 
-    protected override void Write(WpfRenderer renderer, ThinkBlock obj)
+    protected override void Write(WpfRenderer renderer, FunctionCallBlock obj)
     {
         var blockUiContainer = new BlockUIContainer();
         renderer.Push(blockUiContainer);
@@ -20,7 +20,7 @@ public class ThinkBlockRenderer : WpfObjectRenderer<ThinkBlock>
             IsExpanded = false,
             Margin = new Thickness(0, 5, 0, 5),
         };
-        expander.SetResourceReference(FrameworkElement.StyleProperty, ThinkBlockExpanderStyleKey);
+        expander.SetResourceReference(FrameworkElement.StyleProperty, FunctionCallBlockExpanderStyleKey);
         renderer.Push(expander);
         expander.Content = obj.Lines.ToString();
         renderer.Pop();

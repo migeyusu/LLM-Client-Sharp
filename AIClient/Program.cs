@@ -1,12 +1,12 @@
-﻿using System.Diagnostics;
-using System.Net.Http;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.Obsolete;
 using LLMClient.UI;
 using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
@@ -61,8 +61,12 @@ public class Program
             BaseViewModel.ServiceLocator = serviceProvider;
             App app = new App();
             app.InitializeComponent();
-            // SynchronizationHelper.Initialize();
-            // app.Run(new JsonPreviewWindow());
+            /*var version3Converter = new Version3Converter(serviceProvider);
+            version3Converter
+                .ConvertToVersion3(
+                    "D:\\Dev\\LLM-Client-Sharp\\AIClient\\bin\\Release\\net8.0-windows\\publish\\win-x64\\Dialogs")
+                .Wait();
+            return;*/
             app.Run(serviceProvider.GetService<MainWindow>());
         }
         catch (Exception e)
