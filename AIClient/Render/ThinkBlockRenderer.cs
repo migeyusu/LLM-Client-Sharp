@@ -18,11 +18,10 @@ public class ThinkBlockRenderer : WpfObjectRenderer<ThinkBlock>
         var expander = new Expander()
         {
             IsExpanded = false,
-            Margin = new Thickness(0, 5, 0, 5),
         };
         expander.SetResourceReference(FrameworkElement.StyleProperty, ThinkBlockExpanderStyleKey);
         renderer.Push(expander);
-        expander.Content = obj.Lines.ToString();
+        expander.Content = obj.Lines.ToString().Trim();
         renderer.Pop();
         renderer.Pop();
     }

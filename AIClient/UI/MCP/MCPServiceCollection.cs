@@ -15,13 +15,17 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.MCP;
 
-public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
+/// <summary>
+/// 经过慎重考虑，设置为单例，因为mcp服务可能由客户端命令启动，重复启动会清空实例的上下文状态
+/// </summary>
+public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IAsyncDisposable
 {
     public const string FileName = "mcp_servers.json";
 
     private McpServerItem? _selectedServerItem;
     private ObservableCollection<McpServerItem> _items = new ObservableCollection<McpServerItem>();
     private bool _isInitialized;
+    private bool _isLoaded;
 
     public ObservableCollection<McpServerItem> Items
     {
@@ -31,42 +35,27 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
             if (Equals(value, _items)) return;
             _items = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(AvailableTools));
             OnPropertyChanged(nameof(ImportFromJsonCommand));
             OnPropertyChanged(nameof(AddNewCommand));
             OnPropertyChanged(nameof(SaveCommand));
         }
     }
 
-    public IEnumerable<AITool> AvailableTools
+    public bool IsLoaded
     {
-        get
+        get => _isLoaded;
+        set
         {
-            foreach (var item in Items)
-            {
-                if (item.IsToolAvailable && item.IsEnabled)
-                {
-                    var functions = item.AvailableTools;
-                    if (functions == null)
-                    {
-                        continue;
-                    }
-
-                    foreach (var itemTool in functions)
-                    {
-                        yield return itemTool;
-                    }
-                }
-            }
-
-            yield break;
+            if (value == _isLoaded) return;
+            _isLoaded = value;
+            OnPropertyChanged();
         }
     }
 
     public bool IsInitialized
     {
         get => _isInitialized;
-        set
+        private set
         {
             if (value == _isInitialized) return;
             _isInitialized = value;
@@ -74,65 +63,73 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
         }
     }
 
-    public ICommand ImportFromJsonCommand => new RelayCommand(() =>
+    public ICommand ImportFromJsonCommand => new RelayCommand(async () =>
     {
-        //只适配claude/jetbrains的mcp.json
-        var jsonPreviewWindow = new JsonEditorWindow()
+        var jsonContent =
+            "{\n \"code-analysis\": {\n      \"command\": \"uv\",\n      \"args\": [\n        \"--directory\",\n        \"/PATH/TO/YOUR/REPO\",\n        \"run\",\n        \"code_analysis.py\"\n      ]\n    } \n}";
+        while (true)
         {
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            JsonContent =
-                "{\n \"code-analysis\": {\n      \"command\": \"uv\",\n      \"args\": [\n        \"--directory\",\n        \"/PATH/TO/YOUR/REPO\",\n        \"run\",\n        \"code_analysis.py\"\n      ]\n    } \n}"
-        };
-        if (jsonPreviewWindow.ShowDialog() == true)
-        {
+            //只适配claude/jetbrains的mcp.json
+            var jsonPreviewWindow = new JsonEditorWindow()
+            {
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                JsonContent = jsonContent,
+            };
+            if (jsonPreviewWindow.ShowDialog() != true) return;
             try
             {
-                var json = jsonPreviewWindow.JsonContent;
-                var jsonDocument = JsonNode.Parse(json);
-                if (jsonDocument == null)
+                jsonContent = jsonPreviewWindow.JsonContent;
+                var jsonDocument = JsonNode.Parse(jsonContent);
+                if (jsonDocument != null)
                 {
-                    MessageEventBus.Publish("Invalid JSON format!");
-                    return;
-                }
-
-                var name = Extension.GetRootPropertyName(json);
-                McpServerItem item;
-                var server = JsonNode.Parse(json)?[name]?.AsObject();
-                if (server == null)
-                {
-                    MessageEventBus.Publish("Invalid MCP server format!");
-                    return;
-                }
-
-                if (server.ContainsKey("command"))
-                {
-                    item = new StdIOServerItem()
+                    var name = Extension.GetRootPropertyName(jsonContent);
+                    McpServerItem item;
+                    var server = JsonNode.Parse(jsonContent)?[name]?.AsObject();
+                    if (server != null)
                     {
-                        Command = server["command"]?.ToString(),
-                        Argument = server["args"]?.AsArray()?.Select(a =>
+                        if (server.ContainsKey("command"))
                         {
-                            if (a != null) return a.ToString();
-                            return string.Empty;
-                        }).Where(s => !string.IsNullOrEmpty(s.Trim())).ToList(),
-                    };
-                }
-                else if (server.ContainsKey("url"))
-                {
-                    item = new SseServerItem()
+                            item = new StdIOServerItem()
+                            {
+                                Command = server["command"]?.ToString(),
+                                Argument = server["args"]?.AsArray()?.Select(a =>
+                                {
+                                    if (a != null) return a.ToString();
+                                    return string.Empty;
+                                }).Where(s => !string.IsNullOrEmpty(s.Trim())).ToList(),
+                            };
+                        }
+                        else if (server.ContainsKey("url"))
+                        {
+                            item = new SseServerItem()
+                            {
+                                Url = server["url"]?.ToString(),
+                            };
+                        }
+                        else
+                        {
+                            MessageEventBus.Publish("Unsupported MCP server format!");
+                            continue;
+                        }
+
+                        item.Name = name;
+                        Items.Add(item);
+                        SelectedServerItem = item;
+                        if (await item.ListToolsAsync())
+                        {
+                            MessageEventBus.Publish($"已导入MCP服务器: {item.Name},工具数量: {item.AvailableTools?.Count ?? 0}");
+                            return;
+                        }
+                    }
+                    else
                     {
-                        Url = server["url"]?.ToString(),
-                    };
+                        MessageEventBus.Publish("Invalid MCP server format!");
+                    }
                 }
                 else
                 {
-                    MessageEventBus.Publish("Unsupported MCP server format!");
-                    return;
+                    MessageEventBus.Publish("Invalid JSON format!");
                 }
-
-                item.Name = name;
-                Items.Add(item);
-                SelectedServerItem = item;
-                item.RefreshCommand.Execute(null);
             }
             catch (Exception ex)
             {
@@ -183,15 +180,9 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
             }
         }
 
-        if (Items.DistinctBy((item => item.Name)).Count() != Items.Count)
+        if (Items.DistinctBy(item => item.Name).Count() != Items.Count)
         {
             MessageEventBus.Publish("服务名称不能重复，请检查！");
-            return;
-        }
-
-        if (Items.Any((item => !item.IsToolAvailable)))
-        {
-            MessageEventBus.Publish("有服务无法连接，请检查！");
             return;
         }
 
@@ -209,7 +200,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
     {
         try
         {
-            await RefreshToolsAsync();
+            await InitializeToolsAsync();
             MessageEventBus.Publish("已刷新MCP服务器工具列表");
         }
         catch (Exception e)
@@ -222,10 +213,9 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
     {
         try
         {
-            await LoadAsync();
-            MessageEventBus.Publish("已重新加载MCP服务器配置");
-            await RefreshToolsAsync();
-            MessageEventBus.Publish("已刷新MCP服务器工具列表");
+            this.IsLoaded = false;
+            this.IsInitialized = false;
+            await this.EnsureAsync();
         }
         catch (Exception e)
         {
@@ -233,8 +223,14 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
         }
     });
 
+
     public async Task LoadAsync()
     {
+        if (IsLoaded)
+        {
+            return;
+        }
+
         var fileInfo = new FileInfo(Path.GetFullPath(FileName));
         if (!fileInfo.Exists)
         {
@@ -243,6 +239,11 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
 
         try
         {
+            foreach (var mcpServerItem in Items)
+            {
+                await mcpServerItem.DisposeAsync();
+            }
+
             await using (var fileStream = fileInfo.OpenRead())
             {
                 var deserialize = JsonSerializer.Deserialize<IList<McpServerItem>>(fileStream);
@@ -252,7 +253,8 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
                 }
             }
 
-            this.IsInitialized = true;
+            this.IsLoaded = true;
+            MessageEventBus.Publish("已加载MCP服务器配置");
         }
         catch (Exception e)
         {
@@ -260,25 +262,43 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
         }
     }
 
-    public async Task RefreshToolsAsync()
+    public async Task EnsureAsync()
     {
+        if (!this.IsLoaded)
+        {
+            await this.LoadAsync();
+        }
+
+        if (!this.IsInitialized)
+        {
+            await this.InitializeToolsAsync();
+        }
+    }
+
+    public async Task InitializeToolsAsync()
+    {
+        if (this.IsInitialized)
+        {
+            return;
+        }
+
         foreach (var mcpServerItem in this.Items)
         {
             try
             {
-                if (mcpServerItem.Validate())
-                {
-                    await mcpServerItem.RefreshOps();
-                }
+                await mcpServerItem.ListToolsAsync();
             }
             catch (Exception e)
             {
                 Trace.TraceWarning($"mcp service {mcpServerItem.Name} get tools failed: {e.Message}");
             }
         }
+
+        this.IsInitialized = true;
+        MessageEventBus.Publish("已刷新MCP服务器工具列表");
     }
 
-    public void DeleteServerItem(McpServerItem? item)
+    public async void DeleteServerItem(McpServerItem? item)
     {
         if (item == null) return;
         Items.Remove(item);
@@ -286,6 +306,8 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
         {
             SelectedServerItem = null;
         }
+
+        await item.DisposeAsync();
     }
 
     public IEnumerator<IAIFunctionGroup> GetEnumerator()
@@ -296,5 +318,13 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var item in _items)
+        {
+            await item.DisposeAsync();
+        }
     }
 }

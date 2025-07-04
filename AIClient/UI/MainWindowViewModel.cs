@@ -119,7 +119,7 @@ public class MainWindowViewModel : BaseViewModel
         sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
     }
 
-    public McpServiceCollection McpServiceCollection { get; } = new McpServiceCollection();
+    public IMcpServiceCollection McpServiceCollection { get; }
 
     #region dialog
 
@@ -246,11 +246,13 @@ public class MainWindowViewModel : BaseViewModel
 
     private bool _isProcessing;
 
-    public MainWindowViewModel(IEndpointService configureViewModel, IMapper mapper, IPromptsResource promptsResource)
+    public MainWindowViewModel(IEndpointService configureViewModel, IMapper mapper, IPromptsResource promptsResource,
+        IMcpServiceCollection mcpServiceCollection)
     {
         MessageEventBus.MessageReceived += s => this.MessageQueue.Enqueue(s);
         _mapper = mapper;
         PromptsResource = promptsResource;
+        McpServiceCollection = mcpServiceCollection;
         EndpointsViewModel = configureViewModel;
         var paletteHelper = new PaletteHelper();
         Theme theme = paletteHelper.GetTheme();

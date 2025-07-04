@@ -33,7 +33,7 @@ public class SseServerItem : McpServerItem
         }
     }
 
-    public override IClientTransport Create()
+    protected override IClientTransport GetTransport()
     {
         if (string.IsNullOrEmpty(this.Url))
         {

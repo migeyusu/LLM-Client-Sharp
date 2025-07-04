@@ -1,20 +1,25 @@
-﻿using System.Windows;
+﻿using System.IO;
+using System.Windows;
 using System.Windows.Input;
+using LLMClient.UI.Component;
 using Markdig.Helpers;
+using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Render;
 
 public class CodeContext
 {
-    public CodeContext(string? extension, StringLineGroup code)
+    public CodeContext(string? name, StringLineGroup code)
     {
-        Extension = extension;
+        Name = name;
         CodeGroup = code;
     }
 
-    public string? Extension { get; set; }
+    public string? Name { get; set; }
     public StringLineGroup CodeGroup { get; set; }
+
+    public string? Extension { get; set; }
 
     public ICommand CopyCommand => new ActionCommand(o =>
     {
@@ -28,6 +33,40 @@ public class CodeContext
             catch (Exception e)
             {
                 MessageBox.Show(e.Message);
+            }
+        }
+    });
+
+    public ICommand SaveCommand => new ActionCommand(o =>
+    {
+        var s = CodeGroup.ToString();
+        if (!string.IsNullOrEmpty(s))
+        {
+            try
+            {
+                var saveFileDialog = new SaveFileDialog();
+                if (!string.IsNullOrEmpty(Extension))
+                {
+                    var defaultExt = Extension.TrimStart('.');
+                    saveFileDialog.Filter = $"Code files (*.{defaultExt})|*.{defaultExt}|All files (*.*)|*.*";
+                    saveFileDialog.DefaultExt = defaultExt;
+                }
+                else
+                {
+                    saveFileDialog.Filter = "Code files (*.*)|*.*";
+                    saveFileDialog.DefaultExt = "txt";
+                }
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    var fileName = saveFileDialog.FileName;
+                    File.WriteAllText(fileName, s);
+                    MessageEventBus.Publish($"Code saved to {fileName}");
+                }
+            }
+            catch (Exception e)
+            {
+                MessageEventBus.Publish(e.Message);
             }
         }
     });

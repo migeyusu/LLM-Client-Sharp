@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using LLMClient.UI.MCP.Servers;
 using Xunit.Abstractions;
 
 namespace LLMClient.Test;
@@ -19,8 +20,9 @@ public class UnitTest1
     [Fact]
     public async void Test1()
     {
-        var s = "{\n \"code-analysis\": {\n      \"command\": \"uv\",\n      \"args\": [\n        \"--directory\",\n        \"/PATH/TO/YOUR/REPO\",\n        \"run\",\n        \"code_analysis.py\"\n      ]\n    } \n}";
-     
+        var fileSystemPlugin = new FileSystemPlugin(new []{"D:\\Dev\\LLM-Client-Sharp\\AIClient\\bin\\Release\\net8.0-windows\\publish\\win-x64\\Dialogs"});
+        var listAllowedDirectories = fileSystemPlugin.ListAllowedDirectories();
+        output.WriteLine($"Listing allowed directories:{listAllowedDirectories}");
     }
     
 

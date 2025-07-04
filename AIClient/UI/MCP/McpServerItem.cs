@@ -10,7 +10,7 @@ namespace LLMClient.UI.MCP;
 
 [JsonDerivedType(typeof(StdIOServerItem), "stdio")]
 [JsonDerivedType(typeof(SseServerItem), "sse")]
-public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunctionGroup
+public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunctionGroup, IAsyncDisposable
 {
     [JsonIgnore] public abstract string Type { get; }
 
@@ -80,18 +80,33 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         get => _availableTools?.Count > 0;
     }
 
-    public ICommand RefreshCommand => new RelayCommand(async () => { await RefreshOps(); });
+    public ICommand RefreshToolsCommand => new RelayCommand(async () => { await ListToolsAsync(); });
+
+    public ICommand ResetToolsCommand => new RelayCommand(async () => { await ResetToolsAsync(); });
 
     /// <summary>
     /// 列举支持的操作
     /// </summary>
     /// <returns></returns>
-    public async Task RefreshOps()
+    public async Task<bool> ListToolsAsync(CancellationToken cancellationToken = default)
     {
+        if (!Validate())
+        {
+            return false;
+        }
+
         try
         {
             ErrorMessage = null;
-            this.AvailableTools = await SearchToolsAsync();
+            if (_client == null)
+            {
+                var transport = this.GetTransport();
+                _client = await McpClientFactory.CreateAsync(transport, cancellationToken: cancellationToken);
+            }
+
+            this.AvailableTools =
+                (await _client.ListToolsAsync(cancellationToken: cancellationToken)).ToArray<AIFunction>();
+            return true;
         }
         catch (Exception e)
         {
@@ -103,18 +118,44 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
 
             ErrorMessage = exception.Message;
             MessageEventBus.Publish($"Error refreshing tools: {e.Message}");
+            return false;
         }
     }
 
-    public async Task<IList<AIFunction>> SearchToolsAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// 重置工具列表
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    public async Task ResetToolsAsync(CancellationToken cancellationToken = default)
     {
-        var transport = this.Create();
-        var client = await McpClientFactory.CreateAsync(transport, cancellationToken: cancellationToken);
-        return (await client.ListToolsAsync(cancellationToken: cancellationToken)).ToArray<AIFunction>();
+        AvailableTools = null;
+        if (_client != null)
+        {
+            await _client.DisposeAsync();
+            _client = null;
+        }
+
+        await ListToolsAsync(cancellationToken);
     }
 
+    private IMcpClient? _client;
 
-    public abstract IClientTransport Create();
+    public async Task<IList<AIFunction>> GetToolsAsync(CancellationToken cancellationToken = default)
+    {
+        if (AvailableTools == null)
+        {
+            await ListToolsAsync(cancellationToken);
+        }
+
+        return AvailableTools ?? new List<AIFunction>();
+    }
+
+    protected abstract IClientTransport GetTransport();
 
     public abstract bool Validate();
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_client != null) await _client.DisposeAsync();
+    }
 }

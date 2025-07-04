@@ -6,18 +6,13 @@
                     xmlns:render="clr-namespace:LLMClient.Render"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary
+            Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.button.xaml" />
+    </ResourceDictionary.MergedDictionaries>
     <SolidColorBrush x:Key="Expander.Static.Circle.Stroke" Color="#FF333333" />
-    <SolidColorBrush x:Key="Expander.Static.Circle.Fill" Color="#FFFFFFFF" />
-    <SolidColorBrush x:Key="Expander.Static.Arrow.Stroke" Color="#FF333333" />
     <SolidColorBrush x:Key="Expander.MouseOver.Circle.Stroke" Color="#FF5593FF" />
-    <SolidColorBrush x:Key="Expander.MouseOver.Circle.Fill" Color="#FFF3F9FF" />
-    <SolidColorBrush x:Key="Expander.MouseOver.Arrow.Stroke" Color="#FF000000" />
     <SolidColorBrush x:Key="Expander.Pressed.Circle.Stroke" Color="#FF3C77DD" />
-    <SolidColorBrush x:Key="Expander.Pressed.Circle.Fill" Color="#FFD9ECFF" />
-    <SolidColorBrush x:Key="Expander.Pressed.Arrow.Stroke" Color="#FF000000" />
-    <SolidColorBrush x:Key="Expander.Disabled.Circle.Stroke" Color="#FFBCBCBC" />
-    <SolidColorBrush x:Key="Expander.Disabled.Circle.Fill" Color="#FFE6E6E6" />
-    <SolidColorBrush x:Key="Expander.Disabled.Arrow.Stroke" Color="#FF707070" />
     <Style x:Key="ExpanderHeaderFocusVisual">
         <Setter Property="Control.Template">
             <Setter.Value>
@@ -37,49 +32,37 @@
                     <Border Padding="{TemplateBinding Padding}">
                         <Grid Background="Transparent" SnapsToDevicePixels="False">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="19" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Ellipse x:Name="circle" Fill="{StaticResource Expander.Static.Circle.Fill}"
-                                     HorizontalAlignment="Center" Height="19"
-                                     Stroke="{StaticResource Expander.Static.Circle.Stroke}" VerticalAlignment="Center"
-                                     Width="19" />
-                            <Path x:Name="arrow" Data="M 1,1.5 L 4.5,5 L 8,1.5" HorizontalAlignment="Center"
-                                  Stroke="{StaticResource Expander.Static.Arrow.Stroke}" SnapsToDevicePixels="false"
-                                  StrokeThickness="2" VerticalAlignment="Center" />
-                            <ContentPresenter Grid.Column="1" HorizontalAlignment="Left" Margin="4,0,0,0"
+                            <ContentPresenter Grid.Column="0" HorizontalAlignment="Left" Margin="4,0,0,0"
                                               RecognizesAccessKey="True" SnapsToDevicePixels="True"
                                               VerticalAlignment="Center" />
+                            <materialDesign:PackIcon Grid.Column="1"
+                                                     Width="20"
+                                                     Height="20"
+                                                     VerticalAlignment="Center"
+                                                     Margin="6,0"
+                                                     Kind="ChevronDown"
+                                                     x:Name="Icon" />
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsChecked" Value="true">
-                            <Setter Property="Data" TargetName="arrow" Value="M 1,4.5  L 4.5,1  L 8,4.5" />
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Kind" TargetName="Icon"
+                                    Value="ChevronUp" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="true">
-                            <Setter Property="Stroke" TargetName="circle"
+                            <Setter Property="Foreground" TargetName="Icon"
                                     Value="{StaticResource Expander.MouseOver.Circle.Stroke}" />
-                            <Setter Property="Fill" TargetName="circle"
-                                    Value="{StaticResource Expander.MouseOver.Circle.Fill}" />
-                            <Setter Property="Stroke" TargetName="arrow"
-                                    Value="{StaticResource Expander.MouseOver.Arrow.Stroke}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="true">
-                            <Setter Property="Stroke" TargetName="circle"
+                            <Setter Property="Foreground" TargetName="Icon"
                                     Value="{StaticResource Expander.Pressed.Circle.Stroke}" />
-                            <Setter Property="StrokeThickness" TargetName="circle" Value="1.5" />
-                            <Setter Property="Fill" TargetName="circle"
-                                    Value="{StaticResource Expander.Pressed.Circle.Fill}" />
-                            <Setter Property="Stroke" TargetName="arrow"
-                                    Value="{StaticResource Expander.Pressed.Arrow.Stroke}" />
                         </Trigger>
-                        <Trigger Property="IsEnabled" Value="false">
-                            <Setter Property="Stroke" TargetName="circle"
-                                    Value="{StaticResource Expander.Disabled.Circle.Stroke}" />
-                            <Setter Property="Fill" TargetName="circle"
-                                    Value="{StaticResource Expander.Disabled.Circle.Fill}" />
-                            <Setter Property="Stroke" TargetName="arrow"
-                                    Value="{StaticResource Expander.Disabled.Arrow.Stroke}" />
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" TargetName="Icon"
+                                    Value="{DynamicResource MaterialDesign.Brush.CheckBox.Disabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -147,6 +130,83 @@
         <Setter Property="FontFamily" Value="Calibri" />
         <Setter Property="TextAlignment" Value="Left" />
     </Style>
+    <Style x:Key="CopyCommandStyle" TargetType="{x:Type Button}"
+           BasedOn="{StaticResource MaterialDesignFlatLightButton}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="4"
+                            Padding="{TemplateBinding Padding}">
+                        <Grid>
+                            <!-- 默认状态：复制图标 + "Copy" -->
+                            <StackPanel x:Name="CopyContent" Orientation="Horizontal" Visibility="Visible">
+                                <materialDesign:PackIcon Kind="ContentCopy"
+                                                         Width="20"
+                                                         Height="20"
+                                                         VerticalAlignment="Center" />
+                                <TextBlock Text="Copy" VerticalAlignment="Center"
+                                           Margin="6,0,0,0" />
+                            </StackPanel>
+                            <!-- 点击后状态：打钩图标 + "Copied" -->
+                            <StackPanel x:Name="CopiedContent" Orientation="Horizontal"
+                                        Visibility="Collapsed">
+                                <materialDesign:PackIcon Kind="CheckBold"
+                                                         Width="20"
+                                                         Height="20"
+                                                         VerticalAlignment="Center"
+                                                         Foreground="White" />
+                                <TextBlock Text="Copied" FontWeight="Bold"
+                                           VerticalAlignment="Center"
+                                           Foreground="White"
+                                           Margin="6,0,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <EventTrigger RoutedEvent="Button.Click">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="CopiedContent"
+                                                                   Storyboard.TargetProperty="Visibility">
+                                        <DiscreteObjectKeyFrame KeyTime="00:00:00"
+                                                                Value="{x:Static Visibility.Visible}" />
+                                        <DiscreteObjectKeyFrame KeyTime="00:00:02"
+                                                                Value="{x:Static Visibility.Collapsed}" />
+                                    </ObjectAnimationUsingKeyFrames>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="CopyContent"
+                                                                   Storyboard.TargetProperty="Visibility">
+                                        <DiscreteObjectKeyFrame KeyTime="00:00:00"
+                                                                Value="{x:Static Visibility.Collapsed}" />
+                                        <DiscreteObjectKeyFrame KeyTime="00:00:02"
+                                                                Value="{x:Static Visibility.Visible}" />
+                                    </ObjectAnimationUsingKeyFrames>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background">
+                                        <DiscreteObjectKeyFrame KeyTime="00:00:00">
+                                            <DiscreteObjectKeyFrame.Value>
+                                                <SolidColorBrush>Green</SolidColorBrush>
+                                            </DiscreteObjectKeyFrame.Value>
+                                        </DiscreteObjectKeyFrame>
+                                    </ObjectAnimationUsingKeyFrames>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background">
+                                        <DiscreteObjectKeyFrame KeyTime="00:00:02">
+                                            <DiscreteObjectKeyFrame.Value>
+                                                <SolidColorBrush>Transparent</SolidColorBrush>
+                                            </DiscreteObjectKeyFrame.Value>
+                                        </DiscreteObjectKeyFrame>
+                                    </ObjectAnimationUsingKeyFrames>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Foreground"
+                Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+    </Style>
     <Style TargetType="{x:Type ContentControl}" x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockHeaderStyleKey}">
         <Setter Property="Height"
                 Value="40" />
@@ -164,12 +224,26 @@
                                    Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
                                    HorizontalAlignment="Left"
                                    VerticalAlignment="Center" />
-                        <Button HorizontalAlignment="Right"
-                                Style="{DynamicResource MaterialDesignFlatLightButton}"
-                                Command="{Binding CopyCommand}"
-                                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
-                            <materialDesign:PackIcon Kind="ContentCopy" />
-                        </Button>
+                        <StackPanel HorizontalAlignment="Right"
+                                    Orientation="Horizontal">
+                            <Button Style="{StaticResource MaterialDesignFlatLightButton}"
+                                    Command="{Binding SaveCommand}"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ContentSave"
+                                                                 Width="20"
+                                                                 Height="20" />
+                                        <TextBlock Text="Save"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0,0,0" />
+                                    </StackPanel>
+                                </Button.Content>
+                            </Button>
+                            <Button Style="{DynamicResource CopyCommandStyle}"
+                                    Margin="10,0,0,0"
+                                    Command="{Binding CopyCommand}" />
+                        </StackPanel>
                     </Grid>
                 </DataTemplate>
             </Setter.Value>
@@ -191,8 +265,7 @@
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"
-                                                 Margin="6,0,0,0" />
+                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"/>
                         <TextBlock Text="已完成思考"
                                    VerticalAlignment="Center"
                                    Margin="6,0,0,0"
@@ -226,8 +299,7 @@
                                 VerticalAlignment="Center">
                         <materialDesign:PackIcon Kind="Function"
                                                  Width="20"
-                                                 Height="20"
-                                                 Margin="6,0,0,0" />
+                                                 Height="20"/>
                         <TextBlock Text="函数调用"
                                    VerticalAlignment="Center"
                                    Margin="6,0,0,0"
@@ -260,7 +332,8 @@
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center">
                         <materialDesign:PackIcon Kind="CallReceived"
-                                                 Margin="6,0,0,0" />
+                                                 Width="20"
+                                                 Height="20"/>
                         <TextBlock Text="函数调用结果"
                                    VerticalAlignment="Center"
                                    Margin="6,0,0,0"

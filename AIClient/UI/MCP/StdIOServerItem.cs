@@ -117,7 +117,7 @@ public class StdIOServerItem : McpServerItem
         }
     });
 
-    public override IClientTransport Create()
+    protected override IClientTransport GetTransport()
     {
         if (string.IsNullOrEmpty(Command))
         {

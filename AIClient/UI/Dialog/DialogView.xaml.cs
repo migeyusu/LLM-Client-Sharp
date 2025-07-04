@@ -106,13 +106,9 @@ public partial class DialogView : UserControl
     {
         if (sender is PopupBox popupBox)
         {
-            if (popupBox.PopupContent is IMcpServiceCollection popupBoxPopupContent)
+            if (popupBox.PopupContent is IMcpServiceCollection mcpServiceCollection)
             {
-                if (!popupBoxPopupContent.IsInitialized)
-                {
-                    await popupBoxPopupContent.LoadAsync();
-                    await popupBoxPopupContent.RefreshToolsAsync();
-                }
+                await mcpServiceCollection.EnsureAsync();
             }
         }
     }

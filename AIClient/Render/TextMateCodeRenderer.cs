@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
+using System.Windows.Shapes;
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
@@ -10,9 +11,9 @@ using TextMateSharp.Grammars;
 using TextMateSharp.Registry;
 using TextMateSharp.Themes;
 using CodeBlockRenderer = Markdig.Renderers.Wpf.CodeBlockRenderer;
+using Path = System.IO.Path;
 
 namespace LLMClient.Render;
-
 
 public class TextMateCodeRenderer : CodeBlockRenderer
 {
@@ -64,7 +65,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
         renderer.Pop();
 
         #endregion
-        
+
         var paragraph = new Paragraph();
         paragraph.BeginInit();
         paragraph.SetResourceReference(FrameworkContentElement.StyleProperty, Styles.CodeBlockStyleKey);
@@ -72,14 +73,20 @@ public class TextMateCodeRenderer : CodeBlockRenderer
         var written = false;
         if (obj is FencedCodeBlock fencedCodeBlock)
         {
-            var extension = fencedCodeBlock.Info;
-            contentControl.Content = new CodeContext(extension, fencedCodeBlock.Lines);
-            if (extension != null)
+            var name = fencedCodeBlock.Info;
+            var codeContext = new CodeContext(name, fencedCodeBlock.Lines);
+            contentControl.Content = codeContext;
+            if (name != null)
             {
-                var scope = Options.GetScopeByLanguageId(extension);
+                var scope = Options.GetScopeByLanguageId(name);
                 if (scope == null)
                 {
-                    scope = Options.GetScopeByExtension("." + extension);
+                    scope = Options.GetScopeByExtension("." + name);
+                }
+
+                if (!string.IsNullOrEmpty(scope))
+                {
+                    codeContext.Extension = Path.GetExtension(scope);
                 }
 
                 var grammar = _registry.LoadGrammar(scope);

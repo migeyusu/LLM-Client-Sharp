@@ -133,7 +133,7 @@
                                     Value="0,0,10,0" />
                             <Setter Property="materialDesign:CheckBoxAssist.CheckBoxSize"
                                     Value="30" />
-                            <Setter Property="IsEnabled"
+                            <Setter Property="IsHitTestVisible"
                                     Value="False" />
                         </Style>
                     </WrapPanel.Resources>

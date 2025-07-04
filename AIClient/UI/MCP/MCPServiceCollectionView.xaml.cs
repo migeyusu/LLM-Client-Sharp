@@ -18,7 +18,7 @@ public partial class MCPServiceCollectionView : UserControl
         var mcpServiceCollection = this.McpServiceCollection;
         mcpServiceCollection?.DeleteServerItem(e.Parameter as McpServerItem);
     }
-    
+
     private async void MCPServiceCollectionView_OnLoaded(object sender, RoutedEventArgs e)
     {
         // 第一次临时实例化时 IsVisible == false，或者 PresentationSource == null
@@ -27,11 +27,7 @@ public partial class MCPServiceCollectionView : UserControl
         var mcpServiceCollection = this.McpServiceCollection;
         if (mcpServiceCollection != null)
         {
-            if (!mcpServiceCollection.IsInitialized)
-            {
-                await mcpServiceCollection.LoadAsync();
-                await mcpServiceCollection.RefreshToolsAsync();
-            }
+            await mcpServiceCollection.EnsureAsync();
         }
     }
 }

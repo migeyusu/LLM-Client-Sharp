@@ -12,6 +12,11 @@ using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 namespace LLMClient;
 
@@ -57,6 +62,40 @@ public class Program
                 // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
                 expression.ConstructServicesUsing(provider.GetService);
             }, AppDomain.CurrentDomain.GetAssemblies());
+            
+            //debug mode
+#if DEBUG
+            var resourceBuilder = ResourceBuilder
+                .CreateDefault()
+                .AddService("TelemetryConsoleQuickstart");
+// Enable model diagnostics with sensitive data.
+            AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
+
+            using var traceProvider = Sdk.CreateTracerProviderBuilder()
+                .SetResourceBuilder(resourceBuilder)
+                .AddSource("Microsoft.SemanticKernel*")
+                .AddConsoleExporter()
+                .Build();
+
+            using var meterProvider = Sdk.CreateMeterProviderBuilder()
+                .SetResourceBuilder(resourceBuilder)
+                .AddMeter("Microsoft.SemanticKernel*")
+                .AddConsoleExporter()
+                .Build();
+            collection.AddLogging(builder =>
+            {
+                // Add OpenTelemetry as a logging provider
+                builder.AddOpenTelemetry(options =>
+                {
+                    options.SetResourceBuilder(resourceBuilder);
+                    options.AddConsoleExporter();
+                    // Format log messages. This is default to false.
+                    options.IncludeFormattedMessage = true;
+                    options.IncludeScopes = true;
+                });
+                builder.SetMinimumLevel(LogLevel.Information);
+            });
+#endif
             serviceProvider = collection.BuildServiceProvider();
             BaseViewModel.ServiceLocator = serviceProvider;
             App app = new App();

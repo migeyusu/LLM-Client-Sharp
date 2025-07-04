@@ -11,17 +11,14 @@ namespace LLMClient.Abstraction;
 [JsonDerivedType(typeof(SseServerItem), "sse")]
 public interface IAIFunctionGroup
 {
-    /// <summary>
-    /// 获取可用的函数列表
-    /// </summary>
-    /// <returns></returns>
-    IList<AIFunction>? AvailableTools { get; }
-
     string Name { get; }
-
-    bool IsToolAvailable { get; }
 
     bool IsEnabled { get; }
 
-    Task<IList<AIFunction>> SearchToolsAsync(CancellationToken cancellationToken = default);
+    /// <summary>
+    /// 获取工具列表
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<IList<AIFunction>> GetToolsAsync(CancellationToken cancellationToken = default);
 }

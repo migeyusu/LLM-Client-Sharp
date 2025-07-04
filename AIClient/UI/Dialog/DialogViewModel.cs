@@ -728,10 +728,18 @@ public class DialogViewModel : BaseViewModel
         if (scrollViewItem != null)
         {
             var indexOf = this.DialogItems.IndexOf(scrollViewItem);
-            if (indexOf != -1 && indexOf < this.DialogItems.Count - 1)
+            if (indexOf == -1)
             {
-                this.ScrollViewItem = this.DialogItems[indexOf + 1];
+                return;
             }
+
+            if (indexOf == this.DialogItems.Count - 1)
+            {
+                MessageEventBus.Publish("已经是最后一条了！");
+                return;
+            }
+
+            this.ScrollViewItem = this.DialogItems[indexOf + 1];
         }
         else
         {
@@ -746,7 +754,14 @@ public class DialogViewModel : BaseViewModel
             return;
         }
 
-        this.ScrollViewItem = DialogItems.Last();
+        var scrollViewItem = DialogItems.Last();
+        if (scrollViewItem == this.ScrollViewItem)
+        {
+            MessageEventBus.Publish("已经是最后一条了！");
+            return;
+        }
+
+        this.ScrollViewItem = scrollViewItem;
     }));
 
     public ICommand ScrollToBeginCommand => new ActionCommand((o =>
@@ -920,7 +935,7 @@ public class DialogViewModel : BaseViewModel
         IList<IAIFunctionGroup>? tools = null;
         if (this.Client.Model.SupportFunctionCall && this.MCPEnabled)
         {
-            tools = McpServiceCollection.Where(group => group is { IsEnabled: true, IsToolAvailable: true }).ToArray();
+            tools = McpServiceCollection.Where(group => group is { IsEnabled: true }).ToArray();
         }
 
         return new RequestViewItem()

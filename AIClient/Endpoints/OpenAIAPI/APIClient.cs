@@ -1,8 +1,11 @@
-﻿using System.Net.Http;
+﻿using System.ComponentModel;
+using System.Diagnostics;
+using System.Net.Http;
 using AutoMapper;
 using LLMClient.Abstraction;
-using LLMClient.UI.Dialog;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -37,10 +40,22 @@ public class APIClient : LlmClientBase
     public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option)
     {
         _option = option;
+        option.PropertyChanged += OptionOnPropertyChanged;
         this.Endpoint = endPoint;
         ModelInfo = modelInfo;
         Mapper.Map<APIModelInfo, IModelParams>(modelInfo, this.Parameters);
-        _httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
+        EnsureKernel();
+    }
+
+    ~APIClient()
+    {
+        _option.PropertyChanged -= OptionOnPropertyChanged;
+        _chatClient?.Dispose();
+    }
+
+    private void OptionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        EnsureKernel();
     }
 
     /*Kernel? _kernel = null;
@@ -68,24 +83,42 @@ public class APIClient : LlmClientBase
         }
     }*/
 
-    private readonly HttpClient _httpClient;
-
     private Kernel? _kernel;
-    
-    protected override IChatCompletionService CreateChatCompletionService()
+
+    private IChatClient? _chatClient;
+
+    private void EnsureKernel()
     {
-        var endpoint = new Uri(this._option.URL);
-        var apiToken = _option.APIToken;
+        var httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
         var builder = Kernel.CreateBuilder();
+#if DEBUG
+        var loggerFactory = ServiceLocator.GetService<ILoggerFactory>() ?? throw new ArgumentNullException("ServiceLocator.GetService<ILoggerFactory>()");
+        builder.Services.AddSingleton(loggerFactory);
+#endif
         _kernel = builder
-            .AddOpenAIChatCompletion(this.ModelInfo.Id, endpoint, apiToken, "LLMClient", "1.0.0", _httpClient)
+            .AddOpenAIChatCompletion(this.ModelInfo.Id, new Uri(_option.URL), _option.APIToken, "LLMClient", "1.0.0",
+                httpClient)
             .Build();
-        return _kernel.GetRequiredService<IChatCompletionService>();
+        if (_chatClient != null)
+        {
+            _chatClient.Dispose();
+        }
+
+        _chatClient = _kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
+    }
+
+    protected override IChatClient GetChatClient()
+    {
+        return _chatClient!;
     }
 
     protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
         var chatOptions = base.CreateChatOptions(messages);
+        /*chatOptions.AdditionalProperties = new AdditionalPropertiesDictionary(new Dictionary<string, object?>()
+        {
+            { "max_completion_tokens", this.ModelInfo.MaxTokens },
+        });*/
         /*if (this.ModelInfo.ReasoningEnable)
         {
             chatOptions.AdditionalProperties = new AdditionalPropertiesDictionary(new Dictionary<string, object?>()
@@ -96,10 +129,22 @@ public class APIClient : LlmClientBase
                 }
             });
         }*/
-
         return chatOptions;
     }
-    
+}
+
+public class SendMessageLogger : DelegatingHandler
+{
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var requestContent = request.Content;
+        if (requestContent != null)
+        {
+            var stringAsync = await requestContent.ReadAsStringAsync(cancellationToken);
+            Debug.WriteLine(stringAsync);
+        }
+        return await base.SendAsync(request, cancellationToken);
+    }
 }
 
 #pragma warning restore SKEXP0010

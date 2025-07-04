@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
@@ -20,6 +21,7 @@ using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Endpoints.Azure.Models;
 
+#pragma warning disable SKEXP0001
 public class AzureClientBase : LlmClientBase, ILLMClient
 {
     private static readonly Mapper Mapper = new Mapper((new MapperConfiguration((expression =>
@@ -57,17 +59,40 @@ public class AzureClientBase : LlmClientBase, ILLMClient
         ModelInfo = modelInfo;
         Mapper.Map<AzureModelInfo, IModelParams>(modelInfo, this.Parameters);
         Option = endPoint.Option;
+        endPoint.PropertyChanged += EndPointOnPropertyChanged;
+        _chatClient = CreateChatClient();
+    }
+
+    ~AzureClientBase()
+    {
+        ((AzureEndPointBase)this.Endpoint).PropertyChanged -= EndPointOnPropertyChanged;
+    }
+
+    private void EndPointOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        _chatClient.Dispose();
+        _chatClient = CreateChatClient();
     }
 
     // private readonly FieldInfo? _info = typeof(ChatCompletionsClient)
     //     .GetField("_apiVersion", BindingFlags.Instance | BindingFlags.NonPublic);
-    
-    protected override IChatCompletionService CreateChatCompletionService()
+
+    private Kernel? _kernel;
+
+    [Experimental("SKEXP0001")]
+    private IChatClient CreateChatClient()
     {
-        var build = Kernel.CreateBuilder()
+        _kernel = Kernel.CreateBuilder()
             .AddOpenAIChatCompletion(this.ModelInfo.Id, new Uri(Option.URL), this.Option.APIToken)
             .Build();
-        return build.GetRequiredService<IChatCompletionService>();
+        return _kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
+    }
+
+    private IChatClient _chatClient;
+
+    protected override IChatClient GetChatClient()
+    {
+        return _chatClient;
     }
 
     /*protected override IChatClient CreateChatClient()
@@ -108,4 +133,5 @@ public class AzureClientBase : LlmClientBase, ILLMClient
         }*/
     }
 #pragma warning restore SKEXP0010
+#pragma warning restore SKEXP0001
 }

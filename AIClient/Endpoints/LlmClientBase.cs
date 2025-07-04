@@ -46,14 +46,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
 
     [JsonIgnore]
     public virtual ObservableCollection<string> RespondingText { get; } = new ObservableCollection<string>();
-
-    [Experimental("SKEXP0001")]
-    protected virtual IChatClient CreateChatClient()
-    {
-        return CreateChatCompletionService().AsChatClient();
-    }
-
-    protected abstract IChatCompletionService CreateChatCompletionService();
+    
+    protected abstract IChatClient GetChatClient();
 
     protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages)
     {
@@ -129,7 +123,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
             {
                 foreach (var functionGroup in requestViewItem.FunctionGroups)
                 {
-                    var availableTools = await functionGroup.SearchToolsAsync(cancellationToken);
+                    var availableTools = await functionGroup.GetToolsAsync(cancellationToken);
                     if (availableTools.Count == 0)
                     {
                         continue;
@@ -138,7 +132,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                     kernelPluginCollection.AddFromFunctions(functionGroup.Name,
                         availableTools.Select((function => function.AsKernelFunction())));
                 }
-
+                
                 var aiTools = kernelPluginCollection.SelectMany((plugin => plugin)).ToArray<AITool>();
                 if (aiTools.Length > 0)
                 {
@@ -165,7 +159,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
 
             string? errorMessage = null;
             int? latency = null;
-            var chatClient = CreateChatClient();
+            var chatClient = GetChatClient();
             _stopwatch.Restart();
             var responseMessages = new List<ChatMessage>();
             var functionCallContents = new List<FunctionCallContent>();

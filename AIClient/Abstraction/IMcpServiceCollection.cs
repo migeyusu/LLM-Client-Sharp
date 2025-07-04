@@ -4,10 +4,13 @@ namespace LLMClient.Abstraction;
 
 public interface IMcpServiceCollection : IEnumerable<IAIFunctionGroup>
 {
-    IEnumerable<AITool> AvailableTools { get; }
-
     bool IsInitialized { get; }
 
-    Task RefreshToolsAsync();
+    bool IsLoaded { get; }
+
+    Task InitializeToolsAsync();
+
     Task LoadAsync();
+
+    Task EnsureAsync();
 }
