@@ -26,6 +26,7 @@ public class NullLlmModelClient : ILLMClient
     public ObservableCollection<string> RespondingText { get; } = new ObservableCollection<string>();
 
     public Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems,
+        string? systemPrompt = null,
         CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("This client does not support sending requests.");

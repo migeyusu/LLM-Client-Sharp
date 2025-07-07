@@ -7,8 +7,8 @@ using LLMClient.UI.Dialog;
 
 namespace LLMClient.UI;
 
-public class AutoMapModelTypeConverter : ITypeConverter<DialogViewModel, DialogPersistModel>,
-    ITypeConverter<DialogPersistModel, DialogViewModel>,
+public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSessionPersistModel>,
+    ITypeConverter<DialogSessionPersistModel, DialogSession>,
     ITypeConverter<MultiResponsePersistItem, MultiResponseViewItem>,
     ITypeConverter<MultiResponseViewItem, MultiResponsePersistItem>,
     ITypeConverter<ResponsePersistItem, ResponseViewItem>
@@ -20,9 +20,10 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogViewModel, DialogP
         this._endpointService = service;
     }
 
-    public DialogPersistModel Convert(DialogViewModel source, DialogPersistModel destination,
+    public DialogSessionPersistModel Convert(DialogSession from, DialogSessionPersistModel destination,
         ResolutionContext context)
     {
+        var source = from.Dialog;
         var dialogItems = source.DialogItems.Select<IDialogItem, IDialogPersistItem>((item =>
         {
             if (item is EraseViewItem eraseViewItem)
@@ -43,9 +44,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogViewModel, DialogP
             throw new NotSupportedException();
         })).ToArray();
 
-        return new DialogPersistModel()
+        return new DialogSessionPersistModel()
         {
-            EditTime = source.EditTime,
+            EditTime = from.EditTime,
             DialogItems = dialogItems,
             Topic = source.Topic,
             EndPoint = source.DefaultClient.Endpoint.Name,
@@ -57,7 +58,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogViewModel, DialogP
         };
     }
 
-    public DialogViewModel Convert(DialogPersistModel source, DialogViewModel destination,
+    public DialogSession Convert(DialogSessionPersistModel source, DialogSession destination,
         ResolutionContext context)
     {
         var sourceDialogItems = source.DialogItems?.Select<IDialogPersistItem, IDialogItem>((item =>
@@ -88,13 +89,13 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogViewModel, DialogP
             llmModelClient.Parameters = sourceJsonModel;
         }
 
-        return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
+        var dialogViewModel = new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
         {
-            EditTime = source.EditTime,
             PromptString = source.PromptString,
             TokensConsumption = source.TokensConsumption,
             TotalPrice = source.TotalPrice,
         };
+        return new DialogSession(dialogViewModel) { EditTime = source.EditTime };
     }
 
     public ResponseViewItem Convert(ResponsePersistItem source, ResponseViewItem destination,

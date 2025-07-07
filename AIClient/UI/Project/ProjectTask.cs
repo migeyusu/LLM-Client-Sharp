@@ -27,6 +27,7 @@ public class ProjectTask : NotifyDataErrorInfoViewModelBase
 {
     private string? _name;
     private string? _taskPrompt; //"请描述任务的内容和目标。";
+    private string? _summary;
 
     public ProjectTask()
     {
@@ -90,7 +91,16 @@ public class ProjectTask : NotifyDataErrorInfoViewModelBase
     /// <summary>
     /// summary of the task, used to summarize the task for the user.
     /// </summary>
-    public string Summary { get; set; }
+    public string? Summary
+    {
+        get => _summary;
+        set
+        {
+            if (value == _summary) return;
+            _summary = value;
+            OnPropertyChanged();
+        }
+    }
 
     public ProjectTaskType Type { get; set; }
 
@@ -103,8 +113,6 @@ public class ProjectTask : NotifyDataErrorInfoViewModelBase
         new ObservableCollection<IAIFunctionGroup>();
 
     public ObservableCollection<IDialogItem> Dialog { get; set; } = new ObservableCollection<IDialogItem>();
-    
-    
 }
 
 public enum ProjectTaskStatus

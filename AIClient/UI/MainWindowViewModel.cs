@@ -17,6 +17,7 @@ using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 using TextMateSharp.Grammars;
+using DialogSession = LLMClient.UI.Dialog.DialogSession;
 
 namespace LLMClient.UI;
 
@@ -124,7 +125,7 @@ public class MainWindowViewModel : BaseViewModel
 
     #region dialog
 
-    public ICommand ImportCommand => new ActionCommand((async o =>
+    public ICommand ImportCommand => new ActionCommand((o =>
     {
         var type = o.ToString();
         var openFileDialog = new OpenFileDialog()
@@ -142,7 +143,7 @@ public class MainWindowViewModel : BaseViewModel
         var fileInfos = openFileDialog.FileNames.Select((s => new FileInfo(s)));
         IEnumerable<ILLMSession> sessions = type switch
         {
-            "dialog" => DialogViewModel.ImportFiles(fileInfos).ToBlockingEnumerable(),
+            "dialog" => DialogSession.ImportFiles(fileInfos).ToBlockingEnumerable(),
             "project" => ProjectViewModel.ImportFiles(fileInfos).ToBlockingEnumerable(),
             _ => throw new ArgumentOutOfRangeException()
         };
@@ -166,24 +167,22 @@ public class MainWindowViewModel : BaseViewModel
         }
     }));
 
-    public DialogViewModel AddNewDialog(ILLMClient client, string dialogName = "新建会话")
+    public DialogSession AddNewDialog(ILLMClient client, string dialogName = "新建会话")
     {
-        var dialogViewModel = new DialogViewModel(dialogName, client)
-            { IsDataChanged = true };
-        dialogViewModel.PropertyChanged += SessionOnEditTimeChanged;
-        this.SessionViewModels.Insert(0, dialogViewModel);
-        PreSession = dialogViewModel;
-        return dialogViewModel;
+        var dialogSession = new DialogSession(dialogName, client) { IsDataChanged = true };
+        dialogSession.PropertyChanged += SessionOnEditTimeChanged;
+        this.SessionViewModels.Insert(0, dialogSession);
+        PreSession = dialogSession;
+        return dialogSession;
     }
 
-    public async void ForkPreDialog(IDialogItem viewModel)
+    public async void ForkPreDialog(IDialogItem item)
     {
         var preSession = PreSession;
-        if (preSession is not DialogViewModel preDialog)
+        if (preSession is not DialogSession preDialog)
         {
             return;
         }
-
 
         var indexOf = this.SessionViewModels.IndexOf(preDialog);
         if (indexOf < 0)
@@ -191,22 +190,10 @@ public class MainWindowViewModel : BaseViewModel
             return;
         }
 
-        var of = preDialog.DialogItems.IndexOf(viewModel);
-        var dialogModelClone = _mapper.Map<DialogViewModel, DialogPersistModel>(preDialog);
-        dialogModelClone.DialogItems = dialogModelClone.DialogItems?.Take(of + 1).ToArray();
-        var dirPath = Path.GetFullPath(DialogViewModel.SaveFolder);
-        var fileInfo = new FileInfo(Path.Combine(dirPath, $"{Guid.NewGuid()}.json"));
-        await using (var fileStream = fileInfo.OpenWrite())
-        {
-            await JsonSerializer.SerializeAsync(fileStream, dialogModelClone);
-        }
-
-        var dialogViewModel = _mapper.Map<DialogPersistModel, DialogViewModel>(dialogModelClone);
-        dialogViewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
-        dialogViewModel.PropertyChanged += SessionOnEditTimeChanged;
-        dialogViewModel.IsDataChanged = false;
-        this.SessionViewModels.Insert(indexOf, dialogViewModel);
-        PreSession = dialogViewModel;
+        var dialogSession = await preDialog.Fork(item);
+        dialogSession.PropertyChanged += SessionOnEditTimeChanged;
+        this.SessionViewModels.Insert(indexOf, dialogSession);
+        PreSession = dialogSession;
     }
 
     public ObservableCollection<ILLMSession> SessionViewModels { get; set; } =
@@ -260,7 +247,7 @@ public class MainWindowViewModel : BaseViewModel
     public async Task InitialSessionsFromLocal()
     {
         var sessions = new List<ILLMSession>();
-        await foreach (var llmSession in DialogViewModel.LoadFromLocal())
+        await foreach (var llmSession in DialogSession.LoadFromLocal())
         {
             sessions.Add(llmSession);
         }
@@ -314,7 +301,7 @@ public class MainWindowViewModel : BaseViewModel
         var projectDirPath = Path.GetFullPath(ProjectViewModel.SaveDir);
         foreach (var sessionViewModel in SessionViewModels)
         {
-            if (sessionViewModel is DialogViewModel dialogViewModel)
+            if (sessionViewModel is DialogSession dialogViewModel)
             {
                 await dialogViewModel.SaveToLocal();
             }

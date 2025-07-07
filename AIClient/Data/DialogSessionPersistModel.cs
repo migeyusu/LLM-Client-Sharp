@@ -6,7 +6,7 @@ namespace LLMClient.Data;
 /// <summary>
 /// 用于持久化
 /// </summary>
-public class DialogPersistModel
+public class DialogSessionPersistModel
 {
     public const int DialogPersistVersion = 3;
 

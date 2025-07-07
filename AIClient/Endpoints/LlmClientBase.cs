@@ -46,16 +46,16 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
 
     [JsonIgnore]
     public virtual ObservableCollection<string> RespondingText { get; } = new ObservableCollection<string>();
-    
+
     protected abstract IChatClient GetChatClient();
 
-    protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages)
+    protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages, string? systemPrompt = null)
     {
         var modelInfo = this.Model;
         var modelParams = this.Parameters;
-        if (modelInfo.SystemPromptEnable && !string.IsNullOrWhiteSpace(modelParams.SystemPrompt))
+        if (modelInfo.SystemPromptEnable && !string.IsNullOrWhiteSpace(systemPrompt))
         {
-            messages.Add(new ChatMessage(ChatRole.System, modelParams.SystemPrompt));
+            messages.Add(new ChatMessage(ChatRole.System, systemPrompt));
         }
 
         var chatOptions = new ChatOptions()
@@ -105,6 +105,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
 
     [Experimental("SKEXP0001")]
     public virtual async Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems,
+        string? systemPrompt = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -113,7 +114,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
             IsResponding = true;
             var chatHistory = new List<ChatMessage>();
             var kernelPluginCollection = new KernelPluginCollection();
-            var requestOptions = this.CreateChatOptions(chatHistory);
+            var requestOptions = this.CreateChatOptions(chatHistory, systemPrompt);
             if (dialogItems.LastOrDefault() is not RequestViewItem requestViewItem)
             {
                 throw new NotSupportedException("RequestViewItem is required in dialog items.");
@@ -132,7 +133,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                     kernelPluginCollection.AddFromFunctions(functionGroup.Name,
                         availableTools.Select((function => function.AsKernelFunction())));
                 }
-                
+
                 var aiTools = kernelPluginCollection.SelectMany((plugin => plugin)).ToArray<AITool>();
                 if (aiTools.Length > 0)
                 {

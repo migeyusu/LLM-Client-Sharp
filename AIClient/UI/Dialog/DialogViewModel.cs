@@ -3,19 +3,15 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
-using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
-using LLMClient.UI.MCP.Servers;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
@@ -23,25 +19,20 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.Dialog;
 
-public class DialogViewModel : FileBasedSessionBase
+public class DialogViewModel : BaseViewModel
 {
     /// <summary>
     /// 正在处理
     /// </summary>
-    public override bool IsBusy
+    public bool IsBusy
     {
         get => RespondingCount > 0;
     }
-
-    private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveFolder)));
-
-    protected override string SaveFolderPath => SaveFolderPathLazy.Value;
-
-    protected override async Task SaveToStream(Stream stream)
-    {
-        var dialogModel = Mapper.Map<DialogViewModel, DialogPersistModel>(this);
-        await JsonSerializer.SerializeAsync(stream, dialogModel);
-    }
+    
+    /// <summary>
+    /// indicate whether data is changed after loading.
+    /// </summary>
+    public bool IsDataChanged { get; set; } = false;
 
     public int RespondingCount
     {
@@ -66,8 +57,48 @@ public class DialogViewModel : FileBasedSessionBase
         }
     }
 
+
+    private long _tokensConsumption;
+
+    public long TokensConsumption
+    {
+        get => _tokensConsumption;
+        set
+        {
+            if (value == _tokensConsumption) return;
+            _tokensConsumption = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private double _totalPrice;
+
+    public double TotalPrice
+    {
+        get => _totalPrice;
+        set
+        {
+            if (value.Equals(_totalPrice)) return;
+            _totalPrice = value;
+            OnPropertyChanged();
+        }
+    }
+
     public ObservableCollection<IDialogItem> DialogItems { get; }
 
+    /// <summary>
+    /// dialog level prompt
+    /// </summary>
+    public string? DialogPrompt
+    {
+        get => _dialogPrompt;
+        set
+        {
+            if (value == _dialogPrompt) return;
+            _dialogPrompt = value;
+            OnPropertyChanged();
+        }
+    }
 
     public string? Shortcut
     {
@@ -139,8 +170,8 @@ public class DialogViewModel : FileBasedSessionBase
                     {
                         var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
                         DialogItems.Add(multiResponseViewItem);
-                        var completedResult = await SendRequestCore(client, copy,
-                            multiResponseViewItem);
+                        var completedResult =
+                            await SendRequestCore(client, copy, multiResponseViewItem, this.DialogPrompt);
                         if (!completedResult.IsInterrupt)
                         {
                             break;
@@ -403,29 +434,6 @@ public class DialogViewModel : FileBasedSessionBase
 
             this.DefaultClient = model;
         }
-    }));
-
-    public ICommand BackupCommand => new ActionCommand((async o =>
-    {
-        var saveFileDialog = new SaveFileDialog()
-        {
-            AddExtension = true, DefaultExt = ".json", CheckPathExists = true,
-            Filter = "json files (*.json)|*.json"
-        };
-        var dialogModel = Mapper.Map<DialogViewModel, DialogPersistModel>(this);
-        if (saveFileDialog.ShowDialog() != true)
-        {
-            return;
-        }
-
-        var fileName = saveFileDialog.FileName;
-        var fileInfo = new FileInfo(fileName);
-        await using (var fileStream = fileInfo.OpenWrite())
-        {
-            await JsonSerializer.SerializeAsync(fileStream, dialogModel);
-        }
-
-        MessageEventBus.Publish("已备份");
     }));
 
     public ICommand ExportCommand => new ActionCommand((async o =>
@@ -747,13 +755,35 @@ public class DialogViewModel : FileBasedSessionBase
 
     #endregion
 
-    private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
-
     private IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
 
     public IPromptsResource PromptsResource
     {
         get { return ServiceLocator.GetService<IPromptsResource>()!; }
+    }
+
+    private ILLMClient _defaultClient;
+
+    public ILLMClient DefaultClient
+    {
+        get => _defaultClient;
+        set
+        {
+            if (Equals(value, _defaultClient)) return;
+            if (_defaultClient is INotifyPropertyChanged oldValue)
+            {
+                oldValue.PropertyChanged -= TagDataChangedOnPropertyChanged;
+            }
+
+            if (_defaultClient.Parameters is INotifyPropertyChanged oldParameters)
+            {
+                oldParameters.PropertyChanged -= TagDataChangedOnPropertyChanged;
+            }
+
+            _defaultClient = value;
+            OnPropertyChanged();
+            TrackClientChanged(value);
+        }
     }
 
     private string? _promptString;
@@ -766,27 +796,14 @@ public class DialogViewModel : FileBasedSessionBase
     private int _chainStepCount;
     private int _chainingStep;
     private bool _mcpEnabled;
-
-    private readonly string[] _notTrackingProperties =
-    [
-        nameof(ScrollViewItem),
-        nameof(SearchText)
-    ];
+    private string? _dialogPrompt;
 
     public DialogViewModel(string topic, ILLMClient modelClient,
-        IList<IDialogItem>? items = null) : base(modelClient)
+        IList<IDialogItem>? items = null)
     {
         this._topic = topic;
-        this.PropertyChanged += (_, e) =>
-        {
-            var propertyName = e.PropertyName;
-            if (_notTrackingProperties.Contains(propertyName))
-            {
-                return;
-            }
-
-            IsDataChanged = true;
-        };
+        _defaultClient = modelClient;
+        TrackClientChanged(modelClient);
         DialogItems = items == null ? [] : new ObservableCollection<IDialogItem>(items);
         this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
     }
@@ -807,7 +824,7 @@ public class DialogViewModel : FileBasedSessionBase
         var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
         dialogViewItems.Add(multiResponseViewItem);
         ScrollViewItem = dialogViewItems.LastOrDefault();
-        var completedResult = await SendRequestCore(this.DefaultClient, copy, multiResponseViewItem);
+        var completedResult = await SendRequestCore(this.DefaultClient, copy, multiResponseViewItem, this.DialogPrompt);
         if (completedResult.IsInterrupt)
         {
             dialogViewItems.Remove(multiResponseViewItem);
@@ -823,11 +840,6 @@ public class DialogViewModel : FileBasedSessionBase
     public async Task AppendResponseOn(MultiResponseViewItem responseViewItem,
         ILLMClient client)
     {
-        if (client.Model.SystemPromptEnable)
-        {
-            client.Parameters.SystemPrompt = this.DefaultClient.Parameters.SystemPrompt;
-        }
-
         //获得之前的所有请求
         var indexOf = DialogItems.IndexOf(responseViewItem);
         if (indexOf < 1)
@@ -836,7 +848,7 @@ public class DialogViewModel : FileBasedSessionBase
         }
 
         var dialogViewItems = DialogItems.Take(indexOf).ToArray();
-        await SendRequestCore(client, dialogViewItems, responseViewItem);
+        await SendRequestCore(client, dialogViewItems, responseViewItem, this.DialogPrompt);
     }
 
     public void DeleteItem(IDialogItem item)
@@ -883,7 +895,7 @@ public class DialogViewModel : FileBasedSessionBase
     }
 
     public async Task<CompletedResult> SendRequestCore(ILLMClient client,
-        Memory<IDialogItem> dialog, MultiResponseViewItem multiResponseViewItem)
+        Memory<IDialogItem> dialog, MultiResponseViewItem multiResponseViewItem, string? systemPrompt = null)
     {
         var completedResult = CompletedResult.Empty;
         if (client.IsResponding)
@@ -898,7 +910,8 @@ public class DialogViewModel : FileBasedSessionBase
         {
             multiResponseViewItem.Append(respondingViewItem);
             var list = GenerateHistory(dialog);
-            completedResult = await client.SendRequest(list, respondingViewItem.RequestTokenSource.Token);
+            completedResult = await client.SendRequest(list,
+                cancellationToken: respondingViewItem.RequestTokenSource.Token, systemPrompt: systemPrompt);
             multiResponseViewItem.Append(new ResponseViewItem(client.Model, completedResult, client.Endpoint.Name));
         }
         catch (Exception exception)
@@ -928,7 +941,7 @@ public class DialogViewModel : FileBasedSessionBase
         DialogItems.Add(multiResponseViewItem);
         ScrollViewItem = DialogItems.Last();
         IsNewResponding = true;
-        var completedResult = await SendRequestCore(this.DefaultClient, copy, multiResponseViewItem);
+        var completedResult = await SendRequestCore(this.DefaultClient, copy, multiResponseViewItem, this.DialogPrompt);
         IsNewResponding = false;
         if (!completedResult.IsInterrupt)
         {
@@ -985,7 +998,7 @@ public class DialogViewModel : FileBasedSessionBase
         await AppendResponseOn(multiResponseViewItem, client);
     }
 
-    private static void FilterHistory(Span<IDialogItem> source, Stack<IDialogItem> dialogViewItems)
+    protected static void FilterHistory(Span<IDialogItem> source, Stack<IDialogItem> dialogViewItems)
     {
         Guid? interactionId = null;
         for (int i = source.Length - 1; i >= 0; i--)
@@ -1018,7 +1031,7 @@ public class DialogViewModel : FileBasedSessionBase
         }
     }
 
-    private static IList<IDialogItem> GenerateHistory(Memory<IDialogItem> memory)
+    protected static IList<IDialogItem> GenerateHistory(Memory<IDialogItem> memory)
     {
         var dialogViewItems = new Stack<IDialogItem>();
         var source = memory.Span;
@@ -1039,105 +1052,21 @@ public class DialogViewModel : FileBasedSessionBase
         return list;
     }
 
-    public static async Task<DialogViewModel?> LoadFromFile(FileInfo fileInfo,
-        int version = DialogPersistModel.DialogPersistVersion)
+    private void TagDataChangedOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (!fileInfo.Exists)
-        {
-            return null;
-        }
-
-        try
-        {
-            await using (var fileStream = fileInfo.OpenRead())
-            {
-                var dialogModel = await JsonSerializer.DeserializeAsync<DialogPersistModel>(fileStream);
-                if (dialogModel == null)
-                {
-                    Trace.TraceError($"加载会话{fileInfo.FullName}失败：文件内容为空");
-                    return null;
-                }
-
-                if (dialogModel.Version != version)
-                {
-                    Trace.TraceError($"加载会话{fileInfo.FullName}失败：版本不匹配");
-                    return null;
-                }
-
-                var viewModel = Mapper.Map<DialogPersistModel, DialogViewModel>(dialogModel);
-                viewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
-                viewModel.IsDataChanged = false;
-                return viewModel;
-            }
-        }
-        catch (Exception e)
-        {
-            Trace.TraceError(e.ToString());
-            return null;
-        }
+        IsDataChanged = true;
     }
 
-    public const string SaveFolder = "Dialogs";
-
-    public static async IAsyncEnumerable<DialogViewModel> LoadFromLocal()
+    private void TrackClientChanged(ILLMClient client)
     {
-        string fullPath = SaveFolderPathLazy.Value;
-        var directoryInfo = new DirectoryInfo(fullPath);
-        if (!directoryInfo.Exists)
+        if (client is INotifyPropertyChanged newValue)
         {
-            directoryInfo.Create();
+            newValue.PropertyChanged += TagDataChangedOnPropertyChanged;
         }
 
-        foreach (var fileInfo in directoryInfo.GetFiles())
+        if (_defaultClient.Parameters is INotifyPropertyChanged newParameters)
         {
-            var dialogViewModel = await LoadFromFile(fileInfo);
-            if (dialogViewModel == null)
-            {
-                continue;
-            }
-
-            yield return dialogViewModel;
-        }
-    }
-
-    public static async IAsyncEnumerable<DialogViewModel> ImportFiles(IEnumerable<FileInfo> fileInfos)
-    {
-        var targetFolderPath = SaveFolderPathLazy.Value;
-        var targetDirectoryInfo = new DirectoryInfo(targetFolderPath);
-        if (!targetDirectoryInfo.Exists)
-        {
-            targetDirectoryInfo.Create();
-        }
-
-        foreach (var fileInfo in fileInfos)
-        {
-            if (fileInfo.DirectoryName?.Equals(targetDirectoryInfo.FullName, StringComparison.OrdinalIgnoreCase) ==
-                false)
-            {
-                DialogViewModel? dialogViewModel = null;
-                try
-                {
-                    var newFilePath = Path.Combine(targetDirectoryInfo.FullName, fileInfo.Name);
-                    if (File.Exists(newFilePath))
-                    {
-                        MessageEventBus.Publish($"会话文件 {fileInfo.Name} 已存在，未进行复制。");
-                    }
-                    else
-                    {
-                        File.Copy(fileInfo.FullName, newFilePath, true);
-                        var info = new FileInfo(newFilePath);
-                        dialogViewModel = await LoadFromFile(info);
-                    }
-                }
-                catch (Exception e)
-                {
-                    MessageEventBus.Publish("导入出现问题" + e.Message);
-                    continue;
-                }
-
-                if (dialogViewModel == null) continue;
-                yield return dialogViewModel;
-            }
+            newParameters.PropertyChanged += TagDataChangedOnPropertyChanged;
         }
     }
 
@@ -1149,8 +1078,6 @@ public class DialogViewModel : FileBasedSessionBase
 
     private void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        IsDataChanged = true;
-        this.EditTime = DateTime.Now;
         OnPropertyChangedAsync(nameof(Shortcut));
         OnPropertyChanged(nameof(CurrentContextTokens));
     }

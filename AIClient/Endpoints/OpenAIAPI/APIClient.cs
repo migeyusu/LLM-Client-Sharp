@@ -92,7 +92,8 @@ public class APIClient : LlmClientBase
         var httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
         var builder = Kernel.CreateBuilder();
 #if DEBUG
-        var loggerFactory = ServiceLocator.GetService<ILoggerFactory>() ?? throw new ArgumentNullException("ServiceLocator.GetService<ILoggerFactory>()");
+        var loggerFactory = ServiceLocator.GetService<ILoggerFactory>() ??
+                            throw new ArgumentNullException("ServiceLocator.GetService<ILoggerFactory>()");
         builder.Services.AddSingleton(loggerFactory);
 #endif
         _kernel = builder
@@ -108,9 +109,9 @@ public class APIClient : LlmClientBase
         return _chatClient!;
     }
 
-    protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages)
+    protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages, string? systemPrompt = null)
     {
-        var chatOptions = base.CreateChatOptions(messages);
+        var chatOptions = base.CreateChatOptions(messages, systemPrompt);
         /*chatOptions.AdditionalProperties = new AdditionalPropertiesDictionary(new Dictionary<string, object?>()
         {
             { "max_completion_tokens", this.ModelInfo.MaxTokens },
@@ -131,7 +132,8 @@ public class APIClient : LlmClientBase
 
 public class SendMessageLogger : DelegatingHandler
 {
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
         var requestContent = request.Content;
         if (requestContent != null)
@@ -139,6 +141,7 @@ public class SendMessageLogger : DelegatingHandler
             var stringAsync = await requestContent.ReadAsStringAsync(cancellationToken);
             Debug.WriteLine(stringAsync);
         }
+
         return await base.SendAsync(request, cancellationToken);
     }
 }

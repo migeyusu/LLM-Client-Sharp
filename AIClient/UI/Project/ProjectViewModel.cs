@@ -15,12 +15,13 @@ public class ProjectViewModel : FileBasedSessionBase
 {
     public const string SaveDir = "Projects";
 
-    public ProjectViewModel(ILLMClient defaultClient) : base(defaultClient)
+    public ProjectViewModel(ILLMClient defaultClient) : base()
     {
     }
 
     private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
 
+    public override bool IsDataChanged { get; set; }
     public override bool IsBusy { get; } = false;
 
     #region file

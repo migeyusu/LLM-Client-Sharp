@@ -21,6 +21,6 @@ public interface ILLMClient
 
     ObservableCollection<string> RespondingText { get; }
 
-    Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems, 
+    Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems, string? systemPrompt = null,
         CancellationToken cancellationToken = default);
 }

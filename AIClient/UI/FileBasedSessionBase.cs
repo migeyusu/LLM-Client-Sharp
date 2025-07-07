@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.IO;
+﻿using System.IO;
 using LLMClient.Abstraction;
 
 namespace LLMClient.UI;
@@ -27,81 +26,14 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     /// <summary>
     /// indicate whether data is changed after loading.
     /// </summary>
-    public bool IsDataChanged { get; set; } = false;
+    public abstract bool IsDataChanged { get; set; }
 
-    private long _tokensConsumption;
+    public abstract bool IsBusy { get; }
 
-    public long TokensConsumption
+    protected FileBasedSessionBase()
     {
-        get => _tokensConsumption;
-        set
-        {
-            if (value == _tokensConsumption) return;
-            _tokensConsumption = value;
-            OnPropertyChanged();
-        }
     }
 
-    private double _totalPrice;
-
-    public double TotalPrice
-    {
-        get => _totalPrice;
-        set
-        {
-            if (value.Equals(_totalPrice)) return;
-            _totalPrice = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public virtual bool IsBusy
-    {
-        get { return this._defaultClient.IsResponding; }
-    }
-
-    private ILLMClient _defaultClient;
-
-    public ILLMClient DefaultClient
-    {
-        get => _defaultClient;
-        set
-        {
-            if (Equals(value, _defaultClient)) return;
-            if (_defaultClient is INotifyPropertyChanged oldValue)
-            {
-                oldValue.PropertyChanged -= TagDataChangedOnPropertyChanged;
-            }
-
-            if (_defaultClient.Parameters is INotifyPropertyChanged oldParameters)
-            {
-                oldParameters.PropertyChanged -= TagDataChangedOnPropertyChanged;
-            }
-
-            _defaultClient = value;
-            OnPropertyChanged();
-            TrackClientChanged(value);
-        }
-    }
-
-    protected FileBasedSessionBase(ILLMClient defaultClient)
-    {
-        _defaultClient = defaultClient;
-        TrackClientChanged(defaultClient);
-    }
-
-    private void TrackClientChanged(ILLMClient client)
-    {
-        if (client is INotifyPropertyChanged newValue)
-        {
-            newValue.PropertyChanged += TagDataChangedOnPropertyChanged;
-        }
-
-        if (_defaultClient.Parameters is INotifyPropertyChanged newParameters)
-        {
-            newParameters.PropertyChanged += TagDataChangedOnPropertyChanged;
-        }
-    }
 
     public void Delete()
     {
@@ -116,7 +48,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
 
     protected FileInfo GetAssociateFile()
     {
-        var fullPath = Path.GetFullPath(SaveFolderPath);
+        var fullPath = this.SaveFolderPath;
         var fileName = Path.GetFullPath(this.FileName + ".json", fullPath);
         return new FileInfo(fileName);
     }
@@ -142,10 +74,5 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
         }
 
         this.IsDataChanged = false;
-    }
-
-    private void TagDataChangedOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        IsDataChanged = true;
     }
 }

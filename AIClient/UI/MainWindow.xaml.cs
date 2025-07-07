@@ -101,8 +101,7 @@ public partial class MainWindow : ExtendedWindow
                 }
 
                 var newDialog = _mainWindowViewModel.AddNewDialog(model, oldDialog.Topic);
-                newDialog.DefaultClient.Parameters.SystemPrompt = oldDialog.DefaultClient.Parameters.SystemPrompt;
-                newDialog.SequentialChain(oldDialog.DialogItems);
+                newDialog.Dialog.SequentialChain(oldDialog.DialogItems);
             }
         }
     }
