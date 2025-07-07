@@ -33,9 +33,9 @@ public partial class MainWindow : ExtendedWindow
 
     private async void Delete_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is DialogViewModel dialogViewModel)
+        if (e.Parameter is ILLMSession session)
         {
-            if (dialogViewModel.IsResponding)
+            if (session.IsBusy)
             {
                 _mainWindowViewModel.MessageQueue.Enqueue("请等待当前响应完成后再删除会话");
                 return;
@@ -43,14 +43,18 @@ public partial class MainWindow : ExtendedWindow
 
             if ((await DialogHost.Show(new ConfirmView() { Header = "删除该会话吗？" })) is true)
             {
-                _mainWindowViewModel.DeleteDialog(dialogViewModel);
+                _mainWindowViewModel.DeleteSession(session);
             }
         }
     }
 
-
     private void MainWindow_OnClosing(object? sender, CancelEventArgs e)
     {
+        if (this._mainWindowViewModel.SessionViewModels.Any((session => session.IsBusy)))
+        {
+            e.Cancel = true;
+            _mainWindowViewModel.MessageQueue.Enqueue("请等待当前响应完成后再关闭窗口");
+        }
     }
 
     private async void OpenConfig_OnClick(object sender, RoutedEventArgs e)
@@ -97,7 +101,7 @@ public partial class MainWindow : ExtendedWindow
                 }
 
                 var newDialog = _mainWindowViewModel.AddNewDialog(model, oldDialog.Topic);
-                newDialog.Client.Parameters.SystemPrompt = oldDialog.Client.Parameters.SystemPrompt;
+                newDialog.DefaultClient.Parameters.SystemPrompt = oldDialog.DefaultClient.Parameters.SystemPrompt;
                 newDialog.SequentialChain(oldDialog.DialogItems);
             }
         }

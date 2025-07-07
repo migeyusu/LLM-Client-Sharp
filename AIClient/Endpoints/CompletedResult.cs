@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Office2013.Excel;
+using LLMClient.Abstraction;
 using LLMClient.UI;
 using LLMClient.UI.Dialog;
 using Microsoft.Extensions.AI;

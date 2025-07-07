@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.AI;
+﻿using LLMClient.Abstraction;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.UI.Dialog;
 

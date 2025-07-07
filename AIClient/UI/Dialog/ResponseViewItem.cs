@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Render;
@@ -190,7 +189,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
 
     private const string ThinkingEndTag = "</think>";
 
-
     public ResponseViewItem(ILLMModel? model, IResponse response, string endPointName)
     {
         Duration = response.Duration;
@@ -215,7 +213,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
             }
         }
     }
-
 
     public bool IsAvailableInContext
     {

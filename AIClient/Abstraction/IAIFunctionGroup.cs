@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.UI.MCP;
+using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;
@@ -9,7 +10,9 @@ namespace LLMClient.Abstraction;
 /// </summary>
 [JsonDerivedType(typeof(StdIOServerItem), "stdio")]
 [JsonDerivedType(typeof(SseServerItem), "sse")]
-public interface IAIFunctionGroup
+[JsonDerivedType(typeof(FileSystemPlugin), "filesystemplugin")]
+[JsonDerivedType(typeof(WinCLIPlugin), "winclipplugin")]
+public interface IAIFunctionGroup : ICloneable
 {
     string Name { get; }
 

@@ -17,7 +17,7 @@ public static class CommonCommands
 
     public static RoutedUICommand Branch = new RoutedUICommand("Branch", "Branch", typeof(CommonCommands));
 
-    public static RoutedUICommand ReProcess = new RoutedUICommand("ReProcess", "ReProcess", typeof(CommonCommands));
+    public static RoutedUICommand ReprocessDialog = new RoutedUICommand("Reprocess", "Reprocess", typeof(CommonCommands));
 
     private static ICommand? _copyCommand;
 

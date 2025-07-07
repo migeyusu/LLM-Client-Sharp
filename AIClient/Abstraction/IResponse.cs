@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.AI;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Abstraction;
 
 public interface IResponse : ITokenizable
 {

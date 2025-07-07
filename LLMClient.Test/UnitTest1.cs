@@ -17,18 +17,9 @@ public class UnitTest1
         this.output = output;
     }
 
-    [Fact]
-    public async void Test1()
-    {
-        var fileSystemPlugin = new FileSystemPlugin(new []{"D:\\Dev\\LLM-Client-Sharp\\AIClient\\bin\\Release\\net8.0-windows\\publish\\win-x64\\Dialogs"});
-        var listAllowedDirectories = fileSystemPlugin.ListAllowedDirectories();
-        output.WriteLine($"Listing allowed directories:{listAllowedDirectories}");
-    }
-    
-
 
     [Fact]
-    public async void GetGithubModels()
+    public async Task GetGithubModels()
     {
         HttpClientHandler handler = new HttpClientHandler()
             { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
@@ -48,7 +39,7 @@ public class UnitTest1
     }
 
     [Fact]
-    public async void UrlCheck()
+    public async Task UrlCheck()
     {
         using (var httpClient = new HttpClient())
         {
@@ -62,7 +53,7 @@ public class UnitTest1
     }
 
     [Fact]
-    public async void TestImageReqeust()
+    public async Task TestImageReqeust()
     {
         var url =
             "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://chutes.ai/&size=256";
@@ -86,7 +77,6 @@ public class UnitTest1
                 {
                     Debugger.Break();
                 }
-                
             }
         }
     }

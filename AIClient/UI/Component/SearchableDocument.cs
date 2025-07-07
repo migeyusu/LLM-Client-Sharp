@@ -7,7 +7,7 @@ public class SearchableDocument : BaseViewModel
 {
     public string RawText { get; }
 
-    private readonly List<TextRange> _foundTextRanges = new List<TextRange>();
+    private readonly List<TextRange> _foundTextRanges = [];
 
     private string? _cachedSearchText = null;
 
@@ -38,7 +38,7 @@ public class SearchableDocument : BaseViewModel
     {
         _cachedSearchText = searchText;
         HasMatched = !string.IsNullOrEmpty(searchText) &&
-                     RawText.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0;
+                     RawText.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         _isSearchApplied = !HasMatched;
         if (_foundTextRanges.Count > 0)
         {

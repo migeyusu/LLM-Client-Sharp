@@ -15,43 +15,32 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
+using LLMClient.UI.MCP.Servers;
 using MaterialDesignThemes.Wpf;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.Dialog;
 
-public class DialogViewModel : BaseViewModel
+public class DialogViewModel : FileBasedSessionBase
 {
-    public DateTime EditTime
-    {
-        get => _editTime;
-        set
-        {
-            if (value.Equals(_editTime)) return;
-            _editTime = value;
-            OnPropertyChanged();
-        }
-    }
-
-    /// <summary>
-    /// 用于跟踪对话对象，新实例自动创建
-    /// </summary>
-    public string FileName { get; set; } = Guid.NewGuid().ToString();
-
-    /// <summary>
-    /// indicate whether data is changed after loading.
-    /// </summary>
-    public bool IsDataChanged { get; set; } = false;
-
     /// <summary>
     /// 正在处理
     /// </summary>
-    public bool IsResponding
+    public override bool IsBusy
     {
         get => RespondingCount > 0;
+    }
+
+    private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveFolder)));
+
+    protected override string SaveFolderPath => SaveFolderPathLazy.Value;
+
+    protected override async Task SaveToStream(Stream stream)
+    {
+        var dialogModel = Mapper.Map<DialogViewModel, DialogPersistModel>(this);
+        await JsonSerializer.SerializeAsync(stream, dialogModel);
     }
 
     public int RespondingCount
@@ -62,7 +51,7 @@ public class DialogViewModel : BaseViewModel
             if (value == _respondingCount) return;
             _respondingCount = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(IsResponding));
+            OnPropertyChanged(nameof(IsBusy));
         }
     }
 
@@ -77,63 +66,8 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-
-    public long TokensConsumption
-    {
-        get => _tokensConsumption;
-        set
-        {
-            if (value == _tokensConsumption) return;
-            _tokensConsumption = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public double TotalPrice
-    {
-        get => _totalPrice;
-        set
-        {
-            if (value.Equals(_totalPrice)) return;
-            _totalPrice = value;
-            OnPropertyChanged();
-        }
-    }
-
     public ObservableCollection<IDialogItem> DialogItems { get; }
 
-    private ILLMClient _client;
-
-    public ILLMClient Client
-    {
-        get => _client;
-        set
-        {
-            if (Equals(value, _client)) return;
-            if (_client is INotifyPropertyChanged oldValue)
-            {
-                oldValue.PropertyChanged -= NotifyPropertyChangedOnPropertyChanged;
-            }
-
-            if (_client?.Parameters is INotifyPropertyChanged oldParameters)
-            {
-                oldParameters.PropertyChanged += NotifyPropertyChangedOnPropertyChanged;
-            }
-
-            _client = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(NewResponseCommand));
-            if (value is INotifyPropertyChanged newValue)
-            {
-                newValue.PropertyChanged += NotifyPropertyChangedOnPropertyChanged;
-            }
-
-            if (_client?.Parameters is INotifyPropertyChanged newParameters)
-            {
-                newParameters.PropertyChanged += NotifyPropertyChangedOnPropertyChanged;
-            }
-        }
-    }
 
     public string? Shortcut
     {
@@ -182,7 +116,7 @@ public class DialogViewModel : BaseViewModel
 
     public async void SequentialChain(IEnumerable<IDialogItem> dialogItems)
     {
-        var client = this.Client;
+        var client = this.DefaultClient;
         this.RespondingCount++;
         this.IsChaining = true;
         this.ChainingStep = 0;
@@ -467,7 +401,7 @@ public class DialogViewModel : BaseViewModel
                 return;
             }
 
-            this.Client = model;
+            this.DefaultClient = model;
         }
     }));
 
@@ -509,7 +443,7 @@ public class DialogViewModel : BaseViewModel
 
         var stringBuilder = new StringBuilder(8192);
         stringBuilder.AppendLine($"# {this.Topic}");
-        stringBuilder.AppendLine($"### {this.Client.Name}");
+        stringBuilder.AppendLine($"### {this.DefaultClient.Name}");
         foreach (var viewItem in this.DialogItems.Where((item => item.IsAvailableInContext)))
         {
             if (viewItem is MultiResponseViewItem multiResponseView &&
@@ -665,7 +599,7 @@ public class DialogViewModel : BaseViewModel
         await NewResponse(requestViewItem);
     }));
 
-    public ICommand CancelLastCommand => new ActionCommand((o =>
+    public ICommand CancelLastCommand => new ActionCommand((_ =>
     {
         var multiResponseViewItem = DialogItems.LastOrDefault() as MultiResponseViewItem;
         if (multiResponseViewItem?.AcceptedResponse is RespondingViewItem respondingViewItem)
@@ -695,7 +629,7 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public ICommand ScrollToPreviousCommand => new ActionCommand(o =>
+    public ICommand ScrollToPreviousCommand => new ActionCommand(_ =>
     {
         if (DialogItems.Count == 0)
         {
@@ -817,31 +751,32 @@ public class DialogViewModel : BaseViewModel
 
     private IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
 
+    public IPromptsResource PromptsResource
+    {
+        get { return ServiceLocator.GetService<IPromptsResource>()!; }
+    }
+
     private string? _promptString;
     private string _topic;
     private IDialogItem? _scrollViewItem;
-    private DateTime _editTime = DateTime.Now;
-    private long _tokensConsumption;
     private bool _isNewResponding;
     private int _respondingCount;
     private MultiResponseViewItem? _focusedResponse;
-    private double _totalPrice;
     private bool _isChaining;
     private int _chainStepCount;
     private int _chainingStep;
     private bool _mcpEnabled;
 
-    private string[] _notTrackingProperties = new[]
-    {
+    private readonly string[] _notTrackingProperties =
+    [
         nameof(ScrollViewItem),
         nameof(SearchText)
-    };
+    ];
 
     public DialogViewModel(string topic, ILLMClient modelClient,
-        IList<IDialogItem>? items = null)
+        IList<IDialogItem>? items = null) : base(modelClient)
     {
         this._topic = topic;
-        this._client = modelClient;
         this.PropertyChanged += (_, e) =>
         {
             var propertyName = e.PropertyName;
@@ -872,7 +807,7 @@ public class DialogViewModel : BaseViewModel
         var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
         dialogViewItems.Add(multiResponseViewItem);
         ScrollViewItem = dialogViewItems.LastOrDefault();
-        var completedResult = await SendRequestCore(this.Client, copy, multiResponseViewItem);
+        var completedResult = await SendRequestCore(this.DefaultClient, copy, multiResponseViewItem);
         if (completedResult.IsInterrupt)
         {
             dialogViewItems.Remove(multiResponseViewItem);
@@ -890,7 +825,7 @@ public class DialogViewModel : BaseViewModel
     {
         if (client.Model.SystemPromptEnable)
         {
-            client.Parameters.SystemPrompt = this.Client.Parameters.SystemPrompt;
+            client.Parameters.SystemPrompt = this.DefaultClient.Parameters.SystemPrompt;
         }
 
         //获得之前的所有请求
@@ -933,7 +868,7 @@ public class DialogViewModel : BaseViewModel
     private RequestViewItem NewRequest(string promptString)
     {
         IList<IAIFunctionGroup>? tools = null;
-        if (this.Client.Model.SupportFunctionCall && this.MCPEnabled)
+        if (this.DefaultClient.Model.SupportFunctionCall && this.MCPEnabled)
         {
             tools = McpServiceCollection.Where(group => group is { IsEnabled: true }).ToArray();
         }
@@ -993,7 +928,7 @@ public class DialogViewModel : BaseViewModel
         DialogItems.Add(multiResponseViewItem);
         ScrollViewItem = DialogItems.Last();
         IsNewResponding = true;
-        var completedResult = await SendRequestCore(this.Client, copy, multiResponseViewItem);
+        var completedResult = await SendRequestCore(this.DefaultClient, copy, multiResponseViewItem);
         IsNewResponding = false;
         if (!completedResult.IsInterrupt)
         {
@@ -1083,7 +1018,6 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-
     private static IList<IDialogItem> GenerateHistory(Memory<IDialogItem> memory)
     {
         var dialogViewItems = new Stack<IDialogItem>();
@@ -1103,12 +1037,6 @@ public class DialogViewModel : BaseViewModel
         }
 
         return list;
-    }
-
-    public FileInfo GetAssociateFile(string folderPath)
-    {
-        var fileName = Path.GetFullPath(this.FileName + ".json", folderPath);
-        return new FileInfo(fileName);
     }
 
     public static async Task<DialogViewModel?> LoadFromFile(FileInfo fileInfo,
@@ -1149,30 +1077,68 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public async Task SaveToLocal(string folderPath)
+    public const string SaveFolder = "Dialogs";
+
+    public static async IAsyncEnumerable<DialogViewModel> LoadFromLocal()
     {
-        if (this.IsDataChanged == false)
+        string fullPath = SaveFolderPathLazy.Value;
+        var directoryInfo = new DirectoryInfo(fullPath);
+        if (!directoryInfo.Exists)
         {
-            return;
+            directoryInfo.Create();
         }
 
-        var dialogModel = Mapper.Map<DialogViewModel, DialogPersistModel>(this);
-        var fileInfo = this.GetAssociateFile(folderPath);
-        if (fileInfo.Exists)
+        foreach (var fileInfo in directoryInfo.GetFiles())
         {
-            fileInfo.Delete();
+            var dialogViewModel = await LoadFromFile(fileInfo);
+            if (dialogViewModel == null)
+            {
+                continue;
+            }
+
+            yield return dialogViewModel;
         }
-        else
+    }
+
+    public static async IAsyncEnumerable<DialogViewModel> ImportFiles(IEnumerable<FileInfo> fileInfos)
+    {
+        var targetFolderPath = SaveFolderPathLazy.Value;
+        var targetDirectoryInfo = new DirectoryInfo(targetFolderPath);
+        if (!targetDirectoryInfo.Exists)
         {
-            fileInfo = new FileInfo(Path.Combine(folderPath, $"{Guid.NewGuid()}.json"));
+            targetDirectoryInfo.Create();
         }
 
-        await using (var fileStream = fileInfo.OpenWrite())
+        foreach (var fileInfo in fileInfos)
         {
-            await JsonSerializer.SerializeAsync(fileStream, dialogModel);
-        }
+            if (fileInfo.DirectoryName?.Equals(targetDirectoryInfo.FullName, StringComparison.OrdinalIgnoreCase) ==
+                false)
+            {
+                DialogViewModel? dialogViewModel = null;
+                try
+                {
+                    var newFilePath = Path.Combine(targetDirectoryInfo.FullName, fileInfo.Name);
+                    if (File.Exists(newFilePath))
+                    {
+                        MessageEventBus.Publish($"会话文件 {fileInfo.Name} 已存在，未进行复制。");
+                    }
+                    else
+                    {
+                        File.Copy(fileInfo.FullName, newFilePath, true);
+                        var info = new FileInfo(newFilePath);
+                        dialogViewModel = await LoadFromFile(info);
+                    }
+                }
+                catch (Exception e)
+                {
+                    MessageEventBus.Publish("导入出现问题" + e.Message);
+                    continue;
+                }
 
-        this.IsDataChanged = false;
+                if (dialogViewModel == null) continue;
+                yield return dialogViewModel;
+            }
+        }
     }
 
     public void InsertClearContextItem(IDialogItem item)
@@ -1187,10 +1153,5 @@ public class DialogViewModel : BaseViewModel
         this.EditTime = DateTime.Now;
         OnPropertyChangedAsync(nameof(Shortcut));
         OnPropertyChanged(nameof(CurrentContextTokens));
-    }
-
-    private void NotifyPropertyChangedOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        IsDataChanged = true;
     }
 }

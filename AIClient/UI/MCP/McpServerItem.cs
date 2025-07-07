@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
@@ -157,5 +158,11 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
     public async ValueTask DisposeAsync()
     {
         if (_client != null) await _client.DisposeAsync();
+    }
+
+    public object Clone()
+    {
+        var serialize = JsonSerializer.Serialize(this);
+        return JsonSerializer.Deserialize(serialize, this.GetType())!;
     }
 }

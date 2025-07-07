@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
@@ -66,6 +67,26 @@ public static class Extension
         return str + (exception != null
             ? $"{exception.GetType().Name}(\"{exception.Message}\")"
             : (resultContent.Result?.ToString() ?? "(null)") ?? "");
+    }
+
+    public static string GetEnumDescription(this Enum value)
+    {
+        var type = value.GetType();
+        var name = Enum.GetName(type, value);
+        if (name == null)
+            return string.Empty;
+
+        var fieldInfo = type.GetField(name);
+        if (fieldInfo == null)
+            return string.Empty;
+
+        var attributes = fieldInfo.GetCustomAttributes(typeof(DescriptionAttribute), false);
+        if (attributes.Length > 0)
+        {
+            return ((DescriptionAttribute)attributes[0]).Description;
+        }
+
+        return name; // 如果没有描述，返回枚举名称
     }
 
 

@@ -48,10 +48,10 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogViewModel, DialogP
             EditTime = source.EditTime,
             DialogItems = dialogItems,
             Topic = source.Topic,
-            EndPoint = source.Client.Endpoint.Name,
-            Model = source.Client.Name,
+            EndPoint = source.DefaultClient.Endpoint.Name,
+            Model = source.DefaultClient.Name,
             PromptString = source.PromptString,
-            Params = source.Client.Parameters,
+            Params = source.DefaultClient.Parameters,
             TokensConsumption = source.TokensConsumption,
             TotalPrice = source.TotalPrice,
         };

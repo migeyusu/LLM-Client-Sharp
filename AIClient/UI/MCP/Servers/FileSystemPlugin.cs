@@ -6,12 +6,15 @@
 //     the code is regenerated.
 // </auto-generated>
 // -------------------------------------------------------------------------------------------------
+#nullable enable
 
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows.Input;
 using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
@@ -24,44 +27,59 @@ using Microsoft.SemanticKernel;
 /// It provides functions for reading, writing, editing, and managing files and directories
 /// within a set of allowed directories.
 /// </summary>
-public class FileSystemPlugin
+public class FileSystemPlugin : KernelFunctionGroup
 {
-    private readonly IReadOnlyList<string> _allowedDirectories;
-    private readonly string _userHomeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    private ObservableCollection<string> _allowedPaths=new ObservableCollection<string>();
+    public ObservableCollection<string> AllowedPaths
+    {
+        get => _allowedPaths;
+        set
+        {
+            _allowedPaths = value; 
+        }
+    }
+    
+    public void AddAllowedPath(string path)
+    {
+        if (string.IsNullOrEmpty(path.Trim()))
+        {
+            return;
+        }
+        var normalizedPath = ExpandAndNormalizePath(path);
+        if (AllowedPaths.Contains(normalizedPath)) return;
+        AllowedPaths.Add(normalizedPath);
+    }
 
+    public void RemoveAllowedPath(string path)
+    {
+        if (string.IsNullOrEmpty(path.Trim()))
+        {
+            return;
+        }
+        var normalizedPath = ExpandAndNormalizePath(path);
+        if (AllowedPaths.Contains(normalizedPath))
+        {
+            AllowedPaths.Remove(normalizedPath);
+        }
+    }
+
+    
+    private readonly string _userHomeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="FileSystemPlugin"/> class.
     /// </summary>
-    /// <param name="allowedPaths">A list of absolute paths that the plugin is allowed to access.</param>
     /// <exception cref="ArgumentException">Thrown if any of the allowed paths are invalid, not absolute, or do not exist.</exception>
-    public FileSystemPlugin(IEnumerable<string> allowedPaths)
+    public FileSystemPlugin() : base("FileSystem")
     {
-        _allowedDirectories = allowedPaths
-            .Select(ExpandAndNormalizePath)
-            .Where(p => !string.IsNullOrWhiteSpace(p))
-            .ToList()
-            .AsReadOnly();
-
-        if (_allowedDirectories.Count == 0)
-        {
-            throw new ArgumentException("At least one allowed directory must be provided.", nameof(allowedPaths));
-        }
-
-        // Validate that all configured directories exist.
-        foreach (var dir in _allowedDirectories)
-        {
-            if (!Directory.Exists(dir))
-            {
-                throw new ArgumentException($"The configured allowed directory does not exist: {dir}", nameof(allowedPaths));
-            }
-        }
+        
     }
 
     [KernelFunction, Description("Returns the list of directories that this server is allowed to access. " +
                                  "Use this to understand which directories are available before trying to access files.")]
     public string ListAllowedDirectories()
     {
-        return $"Allowed directories:\n{string.Join('\n', _allowedDirectories)}";
+        return $"Allowed directories:\n{string.Join('\n', _allowedPaths)}";
     }
 
     [KernelFunction, Description("Read the complete contents of a file from the file system. Handles various text encodings and provides detailed error messages if the file cannot be read. Use this tool when you need to examine the contents of a single file. Use the 'head' parameter to read only the first N lines of a file, or the 'tail' parameter to read only the last N lines of a file. Only works within allowed directories.")]
@@ -449,6 +467,10 @@ public class FileSystemPlugin
     
     private async Task<string> ValidateAndResolvePathAsync(string requestedPath, bool checkParentOnly = false)
     {
+        if (!_allowedPaths.Any())
+        {
+            throw new InvalidOperationException("No allowed directories have been configured for this plugin.");
+        }
         if (string.IsNullOrWhiteSpace(requestedPath))
         {
             throw new ArgumentException("Path cannot be null or empty.", nameof(requestedPath));
@@ -463,7 +485,7 @@ public class FileSystemPlugin
         }
 
         // 1. Check if the path is within one of the allowed directories.
-        var isAllowed = _allowedDirectories.Any(dir => pathToValidate.StartsWith(dir, StringComparison.OrdinalIgnoreCase));
+        var isAllowed = _allowedPaths.Any(dir => pathToValidate.StartsWith(dir, StringComparison.OrdinalIgnoreCase));
         if (!isAllowed)
         {
             throw new UnauthorizedAccessException($"Access denied. The path '{requestedPath}' is outside the allowed directories.");
@@ -483,7 +505,7 @@ public class FileSystemPlugin
             realPath = pathToValidate;
         }
 
-        var isRealPathAllowed = _allowedDirectories.Any(dir => realPath.StartsWith(dir, StringComparison.OrdinalIgnoreCase));
+        var isRealPathAllowed = _allowedPaths.Any(dir => realPath.StartsWith(dir, StringComparison.OrdinalIgnoreCase));
         if (!isRealPathAllowed)
         {
             throw new UnauthorizedAccessException("Access denied. The path or its symbolic link target is outside the allowed directories.");
@@ -584,4 +606,5 @@ public class FileSystemPlugin
     }
     
     #endregion
+    
 }

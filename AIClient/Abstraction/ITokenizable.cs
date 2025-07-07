@@ -1,4 +1,4 @@
-﻿namespace LLMClient.UI.Dialog;
+﻿namespace LLMClient.Abstraction;
 
 public interface ITokenizable
 {

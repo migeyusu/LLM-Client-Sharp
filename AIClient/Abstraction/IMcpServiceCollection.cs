@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.AI;
-
-namespace LLMClient.Abstraction;
+﻿namespace LLMClient.Abstraction;
 
 public interface IMcpServiceCollection : IEnumerable<IAIFunctionGroup>
 {

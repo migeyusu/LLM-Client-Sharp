@@ -10,6 +10,7 @@ using LLMClient.Obsolete;
 using LLMClient.UI;
 using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
+using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
@@ -46,7 +47,8 @@ public class Program
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
                 .AddLogging((builder => builder.AddDebug()))
-                .AddSingleton<IMcpServiceCollection, McpServiceCollection>();
+                .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
+                .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>();
             collection.AddAutoMapper((provider, expression) =>
             {
                 expression.CreateMap<DialogPersistModel, DialogViewModel>().ConvertUsing<AutoMapModelTypeConverter>();
@@ -62,7 +64,7 @@ public class Program
                 // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
                 expression.ConstructServicesUsing(provider.GetService);
             }, AppDomain.CurrentDomain.GetAssemblies());
-            
+
             //debug mode
 #if DEBUG
             var resourceBuilder = ResourceBuilder
@@ -118,7 +120,7 @@ public class Program
             var mainViewModel = serviceProvider?.GetService<MainWindowViewModel>();
             if (mainViewModel is { IsInitialized: true })
             {
-                mainViewModel.SaveDialogsToLocal().Wait(TimeSpan.FromMinutes(1));
+                mainViewModel.SaveSessionsToLocal().Wait(TimeSpan.FromMinutes(1));
             }
 
             HttpContentCache.Instance.PersistIndexAsync().Wait(TimeSpan.FromSeconds(5));

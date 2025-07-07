@@ -12,6 +12,7 @@ using LLMClient.Render;
 using LLMClient.UI.Component;
 using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
+using LLMClient.UI.Project;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
@@ -59,7 +60,7 @@ public class MainWindowViewModel : BaseViewModel
         try
         {
             IsProcessing = true;
-            await SaveDialogsToLocal();
+            await SaveSessionsToLocal();
         }
         catch (Exception e)
         {
@@ -123,8 +124,9 @@ public class MainWindowViewModel : BaseViewModel
 
     #region dialog
 
-    public ICommand ImportDialogCommand => new ActionCommand((async o =>
+    public ICommand ImportCommand => new ActionCommand((async o =>
     {
+        var type = o.ToString();
         var openFileDialog = new OpenFileDialog()
         {
             AddExtension = true,
@@ -138,39 +140,14 @@ public class MainWindowViewModel : BaseViewModel
         }
 
         var fileInfos = openFileDialog.FileNames.Select((s => new FileInfo(s)));
-        var path = Path.GetFullPath(DialogSaveFolder);
-        var directoryInfo = new DirectoryInfo(path);
-        if (!directoryInfo.Exists)
+        IEnumerable<ILLMSession> sessions = type switch
         {
-            directoryInfo.Create();
-        }
+            "dialog" => DialogViewModel.ImportFiles(fileInfos).ToBlockingEnumerable(),
+            "project" => ProjectViewModel.ImportFiles(fileInfos).ToBlockingEnumerable(),
+            _ => throw new ArgumentOutOfRangeException()
+        };
 
-        try
-        {
-            var list = new List<FileInfo>();
-            foreach (var fileInfo in fileInfos)
-            {
-                if (fileInfo.DirectoryName?.Equals(directoryInfo.FullName, StringComparison.OrdinalIgnoreCase) == false)
-                {
-                    var newFilePath = Path.Combine(directoryInfo.FullName, fileInfo.Name);
-                    if (File.Exists(newFilePath))
-                    {
-                        MessageQueue.Enqueue($"会话文件 {fileInfo.Name} 已存在，未进行复制。");
-                    }
-                    else
-                    {
-                        File.Copy(fileInfo.FullName, newFilePath, true);
-                        list.Add(new FileInfo(newFilePath));
-                    }
-                }
-            }
-
-            await LoadDialogs(list);
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show("导入出现问题" + e.Message);
-        }
+        InsertSessions(sessions);
     }));
 
     public ICommand NewDialogCommand => new ActionCommand((async o =>
@@ -193,16 +170,23 @@ public class MainWindowViewModel : BaseViewModel
     {
         var dialogViewModel = new DialogViewModel(dialogName, client)
             { IsDataChanged = true };
-        dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
-        this.DialogViewModels.Insert(0, dialogViewModel);
-        PreDialog = dialogViewModel;
+        dialogViewModel.PropertyChanged += SessionOnEditTimeChanged;
+        this.SessionViewModels.Insert(0, dialogViewModel);
+        PreSession = dialogViewModel;
         return dialogViewModel;
     }
 
     public async void ForkPreDialog(IDialogItem viewModel)
     {
-        var preDialog = PreDialog;
-        if (preDialog == null)
+        var preSession = PreSession;
+        if (preSession is not DialogViewModel preDialog)
+        {
+            return;
+        }
+
+
+        var indexOf = this.SessionViewModels.IndexOf(preDialog);
+        if (indexOf < 0)
         {
             return;
         }
@@ -210,7 +194,7 @@ public class MainWindowViewModel : BaseViewModel
         var of = preDialog.DialogItems.IndexOf(viewModel);
         var dialogModelClone = _mapper.Map<DialogViewModel, DialogPersistModel>(preDialog);
         dialogModelClone.DialogItems = dialogModelClone.DialogItems?.Take(of + 1).ToArray();
-        var dirPath = Path.GetFullPath(DialogSaveFolder);
+        var dirPath = Path.GetFullPath(DialogViewModel.SaveFolder);
         var fileInfo = new FileInfo(Path.Combine(dirPath, $"{Guid.NewGuid()}.json"));
         await using (var fileStream = fileInfo.OpenWrite())
         {
@@ -219,17 +203,19 @@ public class MainWindowViewModel : BaseViewModel
 
         var dialogViewModel = _mapper.Map<DialogPersistModel, DialogViewModel>(dialogModelClone);
         dialogViewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
-        dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
+        dialogViewModel.PropertyChanged += SessionOnEditTimeChanged;
         dialogViewModel.IsDataChanged = false;
-        var indexOf = this.DialogViewModels.IndexOf(preDialog);
-        this.DialogViewModels.Insert(indexOf, dialogViewModel);
-        PreDialog = dialogViewModel;
+        this.SessionViewModels.Insert(indexOf, dialogViewModel);
+        PreSession = dialogViewModel;
     }
 
-    public ObservableCollection<DialogViewModel> DialogViewModels { get; set; } =
-        new ObservableCollection<DialogViewModel>();
+    public ObservableCollection<ILLMSession> SessionViewModels { get; set; } =
+        new ObservableCollection<ILLMSession>();
 
-    public DialogViewModel? PreDialog
+
+    private ILLMSession? _preDialog;
+
+    public ILLMSession? PreSession
     {
         get => _preDialog;
         set
@@ -239,8 +225,6 @@ public class MainWindowViewModel : BaseViewModel
             OnPropertyChanged();
         }
     }
-
-    private DialogViewModel? _preDialog;
 
     #endregion
 
@@ -273,89 +257,92 @@ public class MainWindowViewModel : BaseViewModel
         }
     }
 
-    public const string DialogSaveFolder = "Dialogs";
-
-    public async Task LoadDialogs(IEnumerable<FileInfo> fileInfos)
+    public async Task InitialSessionsFromLocal()
     {
-        var dialogViewModels = new List<DialogViewModel>();
-        foreach (var fileInfo in fileInfos)
+        var sessions = new List<ILLMSession>();
+        await foreach (var llmSession in DialogViewModel.LoadFromLocal())
         {
-            var dialogViewModel = await DialogViewModel.LoadFromFile(fileInfo);
-            if (dialogViewModel != null)
+            sessions.Add(llmSession);
+        }
+
+        await foreach (var projectViewModel in ProjectViewModel.LoadFromLocal())
+        {
+            sessions.Add(projectViewModel);
+        }
+    }
+
+    private void InsertSessions(IEnumerable<ILLMSession> sessions)
+    {
+        foreach (var session in sessions.OrderByDescending(model => model.EditTime))
+        {
+            ((INotifyPropertyChanged)session).PropertyChanged += SessionOnEditTimeChanged;
+            //默认将最新的会话放在最前面，也就是从大到小排序
+            var sessionEditTime = session.EditTime;
+            var firstOrDefault =
+                this.SessionViewModels.FirstOrDefault((llmSession => llmSession.EditTime < sessionEditTime));
+            if (firstOrDefault is not null)
             {
-                dialogViewModel.PropertyChanged += DialogOnEditTimeChanged;
-                dialogViewModels.Add(dialogViewModel);
+                var indexOf = this.SessionViewModels.IndexOf(firstOrDefault);
+                this.SessionViewModels.Insert(indexOf, session);
             }
             else
             {
-                MessageQueue.Enqueue($"加载会话{fileInfo.FullName}失败：文件内容为空或格式不正确");
+                //如果没有比当前会话更小的，则直接添加到列表末尾
+                this.SessionViewModels.Add(session);
             }
         }
-
-        foreach (var dialogViewModel in dialogViewModels.OrderByDescending(model => model.EditTime))
-        {
-            this.DialogViewModels.Add(dialogViewModel);
-        }
     }
 
-    public async Task InitialDialogsFromLocal(string dirPath = DialogSaveFolder)
+    private void SessionOnEditTimeChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var path = Path.GetFullPath(dirPath);
-        var directoryInfo = new DirectoryInfo(path);
-        if (!directoryInfo.Exists)
-        {
-            return;
-        }
-
-        await LoadDialogs(directoryInfo.GetFiles());
-    }
-
-    private void DialogOnEditTimeChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        var dialogViewModel = ((DialogViewModel?)sender)!;
+        var session = ((ILLMSession?)sender)!;
         switch (e.PropertyName)
         {
-            case nameof(DialogViewModel.EditTime):
-                var indexOf = this.DialogViewModels.IndexOf(dialogViewModel);
+            case nameof(ILLMSession.EditTime):
+                var indexOf = this.SessionViewModels.IndexOf(session);
                 if (indexOf != 0)
                 {
-                    this.DialogViewModels.Move(indexOf, 0);
+                    this.SessionViewModels.Move(indexOf, 0);
                 }
 
                 break;
         }
     }
 
-    public async Task SaveDialogsToLocal(string folder = DialogSaveFolder)
+    public async Task SaveSessionsToLocal()
     {
-        var dirPath = Path.GetFullPath(folder);
-        foreach (var dialogViewModel in DialogViewModels)
+        var projectDirPath = Path.GetFullPath(ProjectViewModel.SaveDir);
+        foreach (var sessionViewModel in SessionViewModels)
         {
-            await dialogViewModel.SaveToLocal(dirPath);
+            if (sessionViewModel is DialogViewModel dialogViewModel)
+            {
+                await dialogViewModel.SaveToLocal();
+            }
+            else if (sessionViewModel is ProjectViewModel projectViewModel)
+            {
+                await projectViewModel.SaveToLocal();
+            }
         }
+
+        MessageQueue.Enqueue("会话已保存到本地");
     }
 
-    public void DeleteDialog(DialogViewModel dialogViewModel, string folderPath = DialogSaveFolder)
+    public void DeleteSession(ILLMSession session)
     {
-        dialogViewModel.PropertyChanged -= DialogOnEditTimeChanged;
-        this.DialogViewModels.Remove(dialogViewModel);
-        this.PreDialog = this.DialogViewModels.FirstOrDefault();
-        var dirPath = Path.GetFullPath(folderPath);
-        var assossiateFile = dialogViewModel.GetAssociateFile(dirPath);
-        if (assossiateFile.Exists)
-        {
-            assossiateFile.Delete();
-        }
+        ((INotifyPropertyChanged)session).PropertyChanged -= SessionOnEditTimeChanged;
+        this.SessionViewModels.Remove(session);
+        this.PreSession = this.SessionViewModels.FirstOrDefault();
+        session.Delete();
     }
 
     public async void Initialize()
     {
         IsProcessing = true;
         await EndpointsViewModel.Initialize();
-        await InitialDialogsFromLocal(DialogSaveFolder);
-        if (DialogViewModels.Any())
+        await InitialSessionsFromLocal();
+        if (SessionViewModels.Any())
         {
-            this.PreDialog = DialogViewModels.First();
+            this.PreSession = SessionViewModels.First();
         }
 
         UpdateResource(_themeName);

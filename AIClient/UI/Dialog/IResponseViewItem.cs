@@ -1,4 +1,5 @@
-﻿using LLMClient.UI.Component;
+﻿using LLMClient.Abstraction;
+using LLMClient.UI.Component;
 
 namespace LLMClient.UI.Dialog;
 

@@ -99,11 +99,7 @@ public class APIClient : LlmClientBase
             .AddOpenAIChatCompletion(this.ModelInfo.Id, new Uri(_option.URL), _option.APIToken, "LLMClient", "1.0.0",
                 httpClient)
             .Build();
-        if (_chatClient != null)
-        {
-            _chatClient.Dispose();
-        }
-
+        _chatClient?.Dispose();
         _chatClient = _kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
     }
 

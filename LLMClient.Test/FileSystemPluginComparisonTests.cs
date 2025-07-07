@@ -25,7 +25,8 @@ public class FileSystemPluginComparisonTests : IClassFixture<FileSystemTestFixtu
 
         // IMPORTANT: Both the C# plugin and the TS MCP server must be configured
         // to use the same temporary directory as their allowed path.
-        _csPlugin = new FileSystemPlugin(new[] { _fixture.TestDirectory });
+        _csPlugin = new FileSystemPlugin();
+        _csPlugin.AddAllowedPath(_fixture.TestDirectory);
     }
 
     [Fact]
@@ -216,7 +217,7 @@ public class FileSystemPluginComparisonTests : IClassFixture<FileSystemTestFixtu
     {
         // Arrange
         var testDirectory = _fixture.TestDirectory;
-        
+
         // Act
         // Act for both C# plugin and MCP client
         var csResult = await _csPlugin.ListDirectoryWithSizesAsync(testDirectory, "name");
@@ -280,7 +281,7 @@ public class FileSystemPluginComparisonTests : IClassFixture<FileSystemTestFixtu
         Assert.True(File.Exists(Path.Combine(_fixture.TestDirectory, mcpDestPath)),
             "MCP destination file should exist.");
 
-        Assert.Equal(await File.ReadAllTextAsync(csDestPath), "move me");
+        Assert.Equal("move me", await File.ReadAllTextAsync(csDestPath));
     }
 
     [Fact]
@@ -294,7 +295,9 @@ public class FileSystemPluginComparisonTests : IClassFixture<FileSystemTestFixtu
         var csResult = await _csPlugin.SearchFilesAsync(_fixture.TestDirectory, searchPattern, excludePattern);
         var mcpResult = await _mcpClient.CallToolAsync("search_files",
             new Dictionary<string, object?>()
-                { ["path"] = _fixture.TestDirectory, ["pattern"] = searchPattern, ["excludePatterns"] = excludePattern });
+            {
+                ["path"] = _fixture.TestDirectory, ["pattern"] = searchPattern, ["excludePatterns"] = excludePattern
+            });
 
         // Assert
         var csPaths = SortLines(NormalizeOutput(csResult));
@@ -325,9 +328,9 @@ public class FileSystemPluginComparisonTests : IClassFixture<FileSystemTestFixtu
         var mcpInfo = ParseInfoToDictionary(mcpResult.GetTextContent());
 
         // Compare deterministic properties
-        Assert.Equal(csInfo["Type"], "File");
-        Assert.Equal(mcpInfo["isFile"], "true", ignoreCase: true);
-        Assert.Equal(mcpInfo["isDirectory"], "false", ignoreCase: true);
+        Assert.Equal("File", csInfo["Type"]);
+        Assert.Equal("true", mcpInfo["isFile"], ignoreCase: true);
+        Assert.Equal("false", mcpInfo["isDirectory"], ignoreCase: true);
 
         Assert.Equal(csInfo["Name"], mcpInfo["name"]);
         Assert.Equal(csInfo["Size"], mcpInfo["size"]); // Compare raw size string before formatting

@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
+using LLMClient.UI.Dialog;
 using Microsoft.Win32;
 
 namespace LLMClient.UI;
@@ -18,7 +19,7 @@ public partial class GlobalConfigView : UserControl
 
     private void OpenDialogs_OnClick(object sender, RoutedEventArgs e)
     {
-        var path = Path.GetFullPath(MainWindowViewModel.DialogSaveFolder);
+        var path = Path.GetFullPath(DialogViewModel.SaveFolder);
         var directoryInfo = new DirectoryInfo(path);
         if (!directoryInfo.Exists)
         {
