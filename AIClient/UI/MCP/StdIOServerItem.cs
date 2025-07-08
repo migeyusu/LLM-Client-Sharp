@@ -117,6 +117,12 @@ public class StdIOServerItem : McpServerItem
         }
     });
 
+    public override string GetUniqueId()
+    {
+        return $"stdio:{Name},{Command},{WorkingDirectory},{string.Join(",", Argument ?? new List<string>())}" +
+               $",{string.Join(";", EnvironmentVariable?.Select(ev => $"{ev.Name}={ev.Value}") ?? new List<string>())}";
+    }
+
     protected override IClientTransport GetTransport()
     {
         if (string.IsNullOrEmpty(Command))

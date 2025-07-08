@@ -112,7 +112,7 @@ public class ProjectTask : NotifyDataErrorInfoViewModelBase
     public ObservableCollection<IAIFunctionGroup> McpFunctions { get; set; } =
         new ObservableCollection<IAIFunctionGroup>();
 
-    public ObservableCollection<IDialogItem> Dialog { get; set; } = new ObservableCollection<IDialogItem>();
+    public DialogViewModel DialogViewModel { get; set; }
 }
 
 public enum ProjectTaskStatus

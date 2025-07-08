@@ -1,5 +1,7 @@
 ﻿using System.IO;
 using LLMClient.Abstraction;
+using LLMClient.UI.Component;
+using Microsoft.Win32;
 
 namespace LLMClient.UI;
 
@@ -34,6 +36,29 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     {
     }
 
+
+    public virtual async Task Backup()
+    {
+        var saveFileDialog = new SaveFileDialog()
+        {
+            AddExtension = true, DefaultExt = ".json", CheckPathExists = true,
+            Filter = "json files (*.json)|*.json"
+        };
+
+        if (saveFileDialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        var fileName = saveFileDialog.FileName;
+        var fileInfo = new FileInfo(fileName);
+        await using (var fileStream = fileInfo.OpenWrite())
+        {
+            await SaveToStream(fileStream);
+        }
+
+        MessageEventBus.Publish("已备份");
+    }
 
     public void Delete()
     {

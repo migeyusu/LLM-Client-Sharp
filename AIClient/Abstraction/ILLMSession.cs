@@ -6,6 +6,8 @@
 
         bool IsBusy { get; }
 
+        Task Backup();
+
         void Delete();
     }
 }

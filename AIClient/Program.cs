@@ -51,8 +51,10 @@ public class Program
                 .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>();
             collection.AddAutoMapper((provider, expression) =>
             {
-                expression.CreateMap<DialogSessionPersistModel, DialogSession>().ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<DialogSession, DialogSessionPersistModel>().ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<DialogSessionPersistModel, DialogSession>()
+                    .ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<DialogSession, DialogSessionPersistModel>()
+                    .ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<APIEndPoint, APIEndPoint>();
                 expression.CreateMap<APIDefaultOption, APIDefaultOption>();
                 expression.CreateMap<ResponseViewItem, ResponsePersistItem>();

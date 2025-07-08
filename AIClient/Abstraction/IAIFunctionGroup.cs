@@ -24,4 +24,6 @@ public interface IAIFunctionGroup : ICloneable
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task<IList<AIFunction>> GetToolsAsync(CancellationToken cancellationToken = default);
+    
+    string GetUniqueId();
 }

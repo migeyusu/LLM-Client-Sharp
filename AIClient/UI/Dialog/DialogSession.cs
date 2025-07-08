@@ -25,17 +25,14 @@ public class DialogSession : FileBasedSessionBase
         set => this.Dialog.IsDataChanged = value;
     }
 
-    public override bool IsBusy
-    {
-        get { return Dialog.IsBusy; }
-    }
+    public override bool IsBusy => Dialog.IsBusy;
 
     protected override string SaveFolderPath => SaveFolderPathLazy.Value;
 
     protected override async Task SaveToStream(Stream stream)
     {
-        var dialogModel = Mapper.Map<DialogSession, DialogSessionPersistModel>(this);
-        await JsonSerializer.SerializeAsync(stream, dialogModel);
+        var dialogSession = Mapper.Map<DialogSession, DialogSessionPersistModel>(this);
+        await JsonSerializer.SerializeAsync(stream, dialogSession);
     }
 
     public static async IAsyncEnumerable<DialogSession> LoadFromLocal()
@@ -155,29 +152,6 @@ public class DialogSession : FileBasedSessionBase
         }
     }
 
-    public async Task Backup()
-    {
-        var saveFileDialog = new SaveFileDialog()
-        {
-            AddExtension = true, DefaultExt = ".json", CheckPathExists = true,
-            Filter = "json files (*.json)|*.json"
-        };
-        var dialogModel = Mapper.Map<DialogSession, DialogSessionPersistModel>(this);
-        if (saveFileDialog.ShowDialog() != true)
-        {
-            return;
-        }
-
-        var fileName = saveFileDialog.FileName;
-        var fileInfo = new FileInfo(fileName);
-        await using (var fileStream = fileInfo.OpenWrite())
-        {
-            await JsonSerializer.SerializeAsync(fileStream, dialogModel);
-        }
-
-        MessageEventBus.Publish("已备份");
-    }
-
     private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
 
     private readonly string[] _notTrackingProperties =
@@ -210,7 +184,7 @@ public class DialogSession : FileBasedSessionBase
 
     private void DialogItemsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        EditTime = DateTime.Now;
+        this.EditTime = DateTime.Now;
         this.IsDataChanged = true;
     }
 }

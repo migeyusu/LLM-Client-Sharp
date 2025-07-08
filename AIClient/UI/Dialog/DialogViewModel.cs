@@ -12,6 +12,7 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
+using LLMClient.UI.MCP.Servers;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
@@ -28,7 +29,7 @@ public class DialogViewModel : BaseViewModel
     {
         get => RespondingCount > 0;
     }
-    
+
     /// <summary>
     /// indicate whether data is changed after loading.
     /// </summary>
@@ -378,6 +379,19 @@ public class DialogViewModel : BaseViewModel
     {
         get { return ServiceLocator.GetService<IMcpServiceCollection>()!; }
     }
+
+    public ObservableCollection<IAIFunctionGroup> McpFunctions { get; set; } =
+        new ObservableCollection<IAIFunctionGroup>();
+
+    public IBuiltInFunctionsCollection BuiltInFunctionsCollection
+    {
+        get { return ServiceLocator.GetService<IBuiltInFunctionsCollection>()!; }
+    }
+
+    public bool BuiltInFunctionEnabled { get; set; }
+
+    public ObservableCollection<IAIFunctionGroup> BuiltinFunctions { get; set; } =
+        new ObservableCollection<IAIFunctionGroup>();
 
     #endregion
 
@@ -1031,7 +1045,7 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    protected static IList<IDialogItem> GenerateHistory(Memory<IDialogItem> memory)
+    private static IList<IDialogItem> GenerateHistory(Memory<IDialogItem> memory)
     {
         var dialogViewItems = new Stack<IDialogItem>();
         var source = memory.Span;

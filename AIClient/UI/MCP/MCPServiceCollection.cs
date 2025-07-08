@@ -275,6 +275,20 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IAsync
         }
     }
 
+    public IAIFunctionGroup TryGet(IAIFunctionGroup functionGroup)
+    {
+        var hashCode = functionGroup.GetUniqueId();
+        foreach (var item in this.Items)
+        {
+            if (item.GetUniqueId() == hashCode)
+            {
+                return item;
+            }
+        }
+
+        return functionGroup;
+    }
+
     public async Task InitializeToolsAsync()
     {
         if (this.IsInitialized)

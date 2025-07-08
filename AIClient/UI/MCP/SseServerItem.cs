@@ -33,6 +33,11 @@ public class SseServerItem : McpServerItem
         }
     }
 
+    public override string GetUniqueId()
+    {
+        return $"sse:{Name},{Url}";
+    }
+
     protected override IClientTransport GetTransport()
     {
         if (string.IsNullOrEmpty(this.Url))

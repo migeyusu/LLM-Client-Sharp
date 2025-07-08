@@ -299,8 +299,8 @@
                             </Style>
                         </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type dialog:DialogViewModel}">
-                                <Grid>
+                            <DataTemplate DataType="{x:Type dialog:DialogSession}">
+                                <Grid DataContext="{Binding Dialog,Mode=OneTime}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition />
@@ -471,13 +471,15 @@
                         <component:TypeBasedDataTemplateSelector>
                             <component:DataTemplateTypePair>
                                 <component:DataTemplateTypePair.Template>
-                                    <DataTemplate DataType="{x:Type dialog:DialogViewModel}">
-                                        <dialog:DialogView>
+                                    <DataTemplate DataType="{x:Type dialog:DialogSession}">
+                                        <dialog:DialogView DataContext="{Binding Dialog,Mode=OneTime}">
                                             <dialog:DialogView.CommandBindings>
                                                 <CommandBinding Command="{x:Static ui:CommonCommands.Branch}"
                                                                 Executed="Branch_OnExecuted" />
                                                 <CommandBinding Command="{x:Static ui:CommonCommands.ReprocessDialog}"
                                                                 Executed="Reprocess_OnExecuted" />
+                                                <CommandBinding Command="{x:Static ui:CommonCommands.Backup}"
+                                                                Executed="BackupCommand_OnExecuted" />
                                             </dialog:DialogView.CommandBindings>
                                         </dialog:DialogView>
                                     </DataTemplate>

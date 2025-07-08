@@ -244,7 +244,7 @@ public class MainWindowViewModel : BaseViewModel
         }
     }
 
-    public async Task InitialSessionsFromLocal()
+    private async Task InitialSessionsFromLocal()
     {
         var sessions = new List<ILLMSession>();
         await foreach (var llmSession in DialogSession.LoadFromLocal())
@@ -255,6 +255,11 @@ public class MainWindowViewModel : BaseViewModel
         await foreach (var projectViewModel in ProjectViewModel.LoadFromLocal())
         {
             sessions.Add(projectViewModel);
+        }
+
+        foreach (var llmSession in sessions.OrderByDescending((session => session.EditTime)))
+        {
+            this.SessionViewModels.Add(llmSession);
         }
     }
 
@@ -298,7 +303,6 @@ public class MainWindowViewModel : BaseViewModel
 
     public async Task SaveSessionsToLocal()
     {
-        var projectDirPath = Path.GetFullPath(ProjectViewModel.SaveDir);
         foreach (var sessionViewModel in SessionViewModels)
         {
             if (sessionViewModel is DialogSession dialogViewModel)

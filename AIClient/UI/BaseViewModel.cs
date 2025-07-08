@@ -16,7 +16,7 @@ public class BaseViewModel : INotifyPropertyChanged
     private static IServiceProvider? _serviceProvider;
 
     /// <summary>
-    /// anti-pattern: Service Locator, but useful for this scenario
+    /// anti-pattern: Service Locator, but works well in this scenario
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
     public static IServiceProvider ServiceLocator

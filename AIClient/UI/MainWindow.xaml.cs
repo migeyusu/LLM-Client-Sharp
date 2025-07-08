@@ -11,6 +11,7 @@ using LLMClient.UI.Log;
 using LLMClient.UI.MCP;
 using MaterialDesignThemes.Wpf;
 using TextMateSharp.Grammars;
+using DialogSession = LLMClient.UI.Dialog.DialogSession;
 
 namespace LLMClient.UI;
 
@@ -119,5 +120,21 @@ public partial class MainWindow : ExtendedWindow
     {
         this._logWindow.Shutdown();
         base.OnClosed(e);
+    }
+
+    private async void BackupCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        try
+        {
+            var session = _mainWindowViewModel.PreSession;
+            if (session != null)
+            {
+                await session.Backup();
+            }
+        }
+        catch (Exception exception)
+        {
+            MessageEventBus.Publish("备份会话失败: " + exception.Message);
+        }
     }
 }

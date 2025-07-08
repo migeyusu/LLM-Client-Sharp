@@ -151,6 +151,8 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         return AvailableTools ?? new List<AIFunction>();
     }
 
+    public abstract string GetUniqueId();
+
     protected abstract IClientTransport GetTransport();
 
     public abstract bool Validate();

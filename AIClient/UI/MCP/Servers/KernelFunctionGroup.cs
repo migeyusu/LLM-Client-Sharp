@@ -62,6 +62,11 @@ public abstract class KernelFunctionGroup : BaseViewModel, IAIFunctionGroup
         return Task.FromResult(AvailableTools);
     }
 
+    public string GetUniqueId()
+    {
+        return $"{this.GetType().FullName}";
+    }
+
     public object Clone()
     {
         return Activator.CreateInstance(this.GetType())!;
