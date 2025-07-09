@@ -190,7 +190,7 @@ public class MainWindowViewModel : BaseViewModel
 
     public DialogSession AddNewDialog(ILLMClient client, string dialogName = "新建会话")
     {
-        var dialogSession = new DialogSession(dialogName, client) { IsDataChanged = true };
+        var dialogSession = new DialogSession(dialogName, client);
         dialogSession.PropertyChanged += SessionOnEditTimeChanged;
         this.SessionViewModels.Insert(0, dialogSession);
         PreSession = dialogSession;

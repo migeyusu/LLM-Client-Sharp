@@ -110,6 +110,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
             TokensConsumption = source.TokensConsumption,
             TotalPrice = source.TotalPrice,
             Functions = source.SelectedFunctions?.ToArray(),
+            SystemPrompt = source.SystemPrompt,
         };
     }
 
@@ -155,6 +156,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
 
         return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
         {
+            SystemPrompt = source.SystemPrompt,
             PromptString = source.PromptString,
             TokensConsumption = source.TokensConsumption,
             TotalPrice = source.TotalPrice,

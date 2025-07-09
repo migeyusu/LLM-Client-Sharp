@@ -57,14 +57,14 @@
                     <materialDesign:SplitButton.Content>
                         <TextBox materialDesign:TextFieldAssist.HasClearButton="True"
                                  TextWrapping="Wrap"
-                                 Text="{Binding  DialogPrompt,Mode=TwoWay}" />
+                                 Text="{Binding  SystemPrompt,Mode=TwoWay}" />
                     </materialDesign:SplitButton.Content>
                     <materialDesign:SplitButton.PopupContent>
                         <ListBox MaxWidth="800"
                                  MaxHeight="400"
                                  Margin="6"
                                  SelectionMode="Single"
-                                 SelectedItem="{Binding  DialogPrompt,Mode=TwoWay}"
+                                 SelectedItem="{Binding  SystemPrompt,Mode=TwoWay}"
                                  ItemsSource="{Binding PromptsResource.SystemPrompts,Mode=OneWay}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="{x:Type system:String}">

@@ -156,7 +156,7 @@
                     <Run
                         Text="{Binding SelectedModel.Endpoint.DisplayName, StringFormat=服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
                     <Run
-                        Text="{Binding SelectedModel,StringFormat=模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
+                        Text="{Binding SelectedModel.Name,StringFormat=模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
                 </TextBlock>
                 <StackPanel Grid.Column="1"
                             Margin="10,0,0,0"

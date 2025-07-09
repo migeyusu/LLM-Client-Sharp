@@ -26,6 +26,12 @@ public class ProjectCreationViewModel : ModelSelectionViewModel
             return;
         }
 
+        Project.Client = client;
+        if (!Project.Validate())
+        {
+            return;
+        }
+
         var frameworkElement = o as FrameworkElement;
         DialogHost.CloseDialogCommand.Execute(true, frameworkElement);
     });

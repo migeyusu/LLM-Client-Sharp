@@ -154,12 +154,6 @@ public class DialogSession : FileBasedSessionBase
 
     private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
 
-    private readonly string[] _notTrackingProperties =
-    [
-        nameof(DialogViewModel.ScrollViewItem),
-        nameof(DialogViewModel.SearchText)
-    ];
-
     public DialogSession(string topic, ILLMClient modelClient,
         IList<IDialogItem>? items = null) :
         this(new DialogViewModel(topic, modelClient, items))
@@ -170,21 +164,10 @@ public class DialogSession : FileBasedSessionBase
     {
         this.Dialog = dialogModel;
         this.Dialog.DialogItems.CollectionChanged += DialogItemsOnCollectionChanged;
-        this.Dialog.PropertyChanged += (_, e) =>
-        {
-            var propertyName = e.PropertyName;
-            if (_notTrackingProperties.Contains(propertyName))
-            {
-                return;
-            }
-
-            IsDataChanged = true;
-        };
     }
 
     private void DialogItemsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         this.EditTime = DateTime.Now;
-        this.IsDataChanged = true;
     }
 }

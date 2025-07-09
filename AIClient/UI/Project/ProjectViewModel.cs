@@ -1,8 +1,11 @@
 ﻿using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Windows.Input;
 using AutoMapper;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
@@ -15,13 +18,21 @@ public class ProjectViewModel : FileBasedSessionBase
 {
     public const string SaveDir = "Projects";
 
-    public ProjectViewModel() : base()
-    {
-    }
-
     private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
 
-    public override bool IsDataChanged { get; set; }
+    public override bool IsDataChanged
+    {
+        get => _isDataChanged;
+        set
+        {
+            _isDataChanged = value;
+            if (value)
+            {
+                this.EditTime = DateTime.Now;
+            }
+        }
+    }
+
     public override bool IsBusy { get; } = false;
 
     public ILLMClient Client
@@ -142,8 +153,9 @@ public class ProjectViewModel : FileBasedSessionBase
     private IList<string>? _languageNames;
     private string? _folderPath;
     private ProjectTask? _workingTask;
-    private string _name;
+    private string? _name;
     private ILLMClient _client = NullLlmModelClient.Instance;
+    private bool _isDataChanged = true;
 
     protected override string SaveFolderPath => SaveFolderPathLazy.Value;
 
@@ -155,7 +167,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     #endregion
 
-    public string Name
+    public string? Name
     {
         get => _name;
         set
@@ -215,12 +227,7 @@ public class ProjectViewModel : FileBasedSessionBase
     {
         get
         {
-            if (this.HasErrors)
-            {
-                return null;
-            }
-
-            if (LanguageNames == null || FolderPath == null || Description == null)
+            if (!Validate())
             {
                 return null;
             }
@@ -228,6 +235,22 @@ public class ProjectViewModel : FileBasedSessionBase
             return $"我正在Windows使用语言{string.Join(",", LanguageNames)}上开发位于{FolderPath}的一个软件项目，该项目是{Description}，";
         }
     }
+
+    public ICommand SelectFolderCommand => new RelayCommand(() =>
+    {
+        var dialog = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description = "请选择项目文件夹",
+            SelectedPath = string.IsNullOrEmpty(FolderPath)
+                ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                : FolderPath
+        };
+
+        if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+        {
+            FolderPath = dialog.SelectedPath;
+        }
+    });
 
     public string? FolderPath
     {
@@ -244,17 +267,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
             if (!Directory.Exists(value))
             {
-                try
-                {
-                    Directory.CreateDirectory(value);
-                }
-                catch (Exception e)
-                {
-                    var error = $"创建文件夹 {value} 失败: {e.Message}";
-                    Trace.TraceError(error);
-                    this.AddError(error);
-                    return;
-                }
+                this.AddError("FolderPath does not exist.");
             }
 
             _folderPath = value;
@@ -276,6 +289,61 @@ public class ProjectViewModel : FileBasedSessionBase
             _workingTask = value;
             OnPropertyChanged();
         }
+    }
+    
+    private readonly string[] _notTrackingProperties =
+    [
+        
+    ];
+    
+    public ProjectViewModel() : base()
+    {
+        this.PropertyChanged += (_, e) =>
+        {
+            var propertyName = e.PropertyName;
+            if (_notTrackingProperties.Contains(propertyName))
+            {
+                return;
+            }
+
+            IsDataChanged = true;
+        };
+        Tasks.CollectionChanged+= TasksOnCollectionChanged;
+    }
+
+    private void TasksOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        this.IsDataChanged = true;
+    }
+
+    public bool Validate()
+    {
+        if (this.HasErrors)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(Name))
+        {
+            this.AddError("Name cannot be null or empty.", nameof(Name));
+        }
+
+        if (string.IsNullOrEmpty(FolderPath))
+        {
+            this.AddError("FolderPath cannot be null or empty.", nameof(FolderPath));
+        }
+
+        if (string.IsNullOrEmpty(Description))
+        {
+            this.AddError("Description cannot be null or empty.", nameof(Description));
+        }
+
+        if (LanguageNames == null || LanguageNames.Count == 0)
+        {
+            this.AddError("LanguageNames cannot be null or empty.", nameof(LanguageNames));
+        }
+
+        return !this.HasErrors;
     }
 
     public void NewTaskRequest()

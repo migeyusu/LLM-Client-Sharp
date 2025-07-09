@@ -25,7 +25,8 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid DataContext="{Binding Project,Mode=OneTime}"
-              Width="500">
+              Width="500"
+              Margin="0,0,10,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -61,8 +62,9 @@
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                     Margin="0,0,5,0"
-                    Width="20"
-                    Height="20"
+                    Width="30"
+                    Height="30"
+                    Command="{Binding SelectFolderCommand}"
                     Content="{materialDesign:PackIcon Kind=FolderSettings,Size=16}"
                     Style="{StaticResource MaterialDesignIconForegroundButton}" />
         </Grid>
@@ -81,6 +83,12 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+        <GridSplitter Grid.Row="0" Grid.Column="0"
+                      Grid.RowSpan="3"
+                      VerticalAlignment="Stretch"
+                      HorizontalAlignment="Right"
+                      Background="DarkGray"
+                      Width="3" />
         <ListBox Grid.Row="0" Grid.Column="1"
                  Grid.RowSpan="2"
                  DisplayMemberPath="Name"
@@ -102,7 +110,7 @@
             <Run
                 Text="{Binding SelectedModel.Endpoint.DisplayName, StringFormat=服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
             <Run
-                Text="{Binding SelectedModel,StringFormat=模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
+                Text="{Binding SelectedModel.Name,StringFormat=模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
         </TextBlock>
         <Button Grid.Row="2" Grid.Column="1"
                 HorizontalAlignment="Right"

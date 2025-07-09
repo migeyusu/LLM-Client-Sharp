@@ -23,11 +23,12 @@ namespace LLMClient.UI.Project;
  * 2. 如何构建任务级别的上下文
  *
  */
-public class ProjectTask : NotifyDataErrorInfoViewModelBase
+public class ProjectTask : DialogCoreViewModel
 {
     private string? _name;
     private string? _taskPrompt; //"请描述任务的内容和目标。";
     private string? _summary;
+
     public ProjectTask()
     {
     }
@@ -64,6 +65,7 @@ public class ProjectTask : NotifyDataErrorInfoViewModelBase
                 AddError("TaskPrompt cannot be null or empty.");
                 return;
             }
+
             _taskPrompt = value;
             OnPropertyChanged();
         }
@@ -107,14 +109,6 @@ public class ProjectTask : NotifyDataErrorInfoViewModelBase
     public ProjectTaskType Type { get; set; }
 
     public ProjectTaskStatus Status { get; set; } = ProjectTaskStatus.InProgress;
-
-    public ObservableCollection<KernelFunctionGroup> LocalFunctions { get; set; } =
-        new ObservableCollection<KernelFunctionGroup>();
-
-    public ObservableCollection<IAIFunctionGroup> McpFunctions { get; set; } =
-        new ObservableCollection<IAIFunctionGroup>();
-
-    public DialogViewModel DialogViewModel { get; set; }
 }
 
 public enum ProjectTaskStatus
