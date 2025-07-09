@@ -9,6 +9,8 @@ namespace LLMClient.Endpoints;
 
 public class NullLlmModelClient : ILLMClient
 {
+    public static NullLlmModelClient Instance => new NullLlmModelClient();
+
     public string Name { get; } = "NullLlmModelClient";
 
     public ILLMEndpoint Endpoint

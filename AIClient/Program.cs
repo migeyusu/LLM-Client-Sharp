@@ -55,6 +55,10 @@ public class Program
                     .ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<DialogSession, DialogSessionPersistModel>()
                     .ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<DialogViewModel, DialogPersistModel>()
+                    .ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<DialogPersistModel, DialogViewModel>()
+                    .ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<APIEndPoint, APIEndPoint>();
                 expression.CreateMap<APIDefaultOption, APIDefaultOption>();
                 expression.CreateMap<ResponseViewItem, ResponsePersistItem>();

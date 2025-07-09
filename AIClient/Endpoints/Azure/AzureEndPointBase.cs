@@ -28,6 +28,8 @@ public abstract class AzureEndPointBase : BaseViewModel, ILLMEndpoint
     }
 
     public abstract bool IsDefault { get; }
+    
+    public bool IsEnabled { get; } = true;
 
     public abstract string Name { get; }
 
@@ -47,7 +49,11 @@ public abstract class AzureEndPointBase : BaseViewModel, ILLMEndpoint
 
     public abstract IReadOnlyCollection<string> AvailableModelNames { get; }
 
+    public abstract IReadOnlyCollection<ILLMModel> AvailableModels { get; }
+
     public abstract ILLMClient? NewClient(string modelName);
+    public abstract ILLMClient? NewClient(ILLMModel model);
+
     public abstract ILLMModel? GetModel(string modelName);
 
     public abstract Task InitializeAsync();

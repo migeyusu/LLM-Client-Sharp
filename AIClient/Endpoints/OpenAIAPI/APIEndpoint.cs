@@ -49,6 +49,8 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     }
 
     public virtual bool IsDefault { get; } = false;
+    
+    public bool IsEnabled { get; } = true;
 
     public string Name { get; set; } = Guid.NewGuid().ToString();
 
@@ -165,6 +167,11 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
 
     [JsonIgnore] public IReadOnlyCollection<string> AvailableModelNames => Models.Select(x => x.Name).ToArray();
 
+    public IReadOnlyCollection<ILLMModel> AvailableModels
+    {
+        get { return this._models; }
+    }
+
     private const string NewModelName = "测试名称";
 
     [JsonIgnore]
@@ -190,6 +197,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
 
         SelectedModelIndex = Models.IndexOf(apiModelInfo);
         OnPropertyChanged(nameof(AvailableModelNames));
+        OnPropertyChanged(nameof(AvailableModels));
     }));
 
     [JsonIgnore]
@@ -197,6 +205,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     {
         Models.Remove((APIModelInfo)o);
         OnPropertyChanged(nameof(AvailableModelNames));
+        OnPropertyChanged(nameof(AvailableModels));
     }));
 
     public ILLMClient? NewClient(string modelName)
@@ -205,6 +214,16 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         if (apiModelInfo == null)
             return null;
         return new APIClient(this, apiModelInfo, ConfigOption);
+    }
+
+    public ILLMClient? NewClient(ILLMModel model)
+    {
+        if (model is APIModelInfo apiModelInfo)
+        {
+            return new APIClient(this, apiModelInfo, ConfigOption);
+        }
+
+        return null;
     }
 
     public ILLMModel? GetModel(string modelName)

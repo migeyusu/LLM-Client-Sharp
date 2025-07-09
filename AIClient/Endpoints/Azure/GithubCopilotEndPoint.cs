@@ -42,6 +42,11 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         get { return _loadedModelInfos.Keys; }
     }
 
+    public override IReadOnlyCollection<ILLMModel> AvailableModels
+    {
+        get { return _loadedModelInfos.Values; }
+    }
+
     public IReadOnlyCollection<AzureModelInfo> AvailableModelsInfos
     {
         get { return _loadedModelInfos.Values; }
@@ -54,6 +59,16 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         {
             action(availableModelInfo);
             return new AzureClientBase(this, availableModelInfo);
+        }
+
+        return null;
+    }
+
+    public override ILLMClient? NewClient(ILLMModel model)
+    {
+        if (model is AzureModelInfo azureModelInfo)
+        {
+            return new AzureClientBase(this, azureModelInfo);
         }
 
         return null;

@@ -1,0 +1,113 @@
+﻿<UserControl x:Class="LLMClient.UI.Project.ProjectCreationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLMClient.UI.Project"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+             xmlns:render="clr-namespace:LLMClient.Render"
+             xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:ProjectCreationViewModel}"
+             d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.Resources>
+        <converters:ListToStringConverter x:Key="StringToListConverter" />
+    </UserControl.Resources>
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid DataContext="{Binding Project,Mode=OneTime}"
+              Width="500">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBox Margin="0,5"
+                     materialDesign:HintAssist.Hint="输入项目名称"
+                     Text="{Binding Name, Mode=TwoWay}" />
+            <TextBox Grid.Row="1"
+                     AcceptsReturn="True"
+                     VerticalScrollBarVisibility="Auto"
+                     TextWrapping="Wrap"
+                     Height="100"
+                     materialDesign:HintAssist.Hint="输入项目语言（换行分隔）"
+                     Margin="0,5"
+                     Text="{Binding LanguageNames,Mode=TwoWay,Converter={StaticResource StringToListConverter}}" />
+            <TextBox Grid.Row="2"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     materialDesign:HintAssist.Hint="输入项目描述"
+                     Margin="0,5"
+                     Height="200"
+                     Text="{Binding Description,Mode=TwoWay}" />
+            <TextBox Grid.Row="3"
+                     TextWrapping="NoWrap"
+                     Margin="0,5"
+                     materialDesign:HintAssist.Hint="输入项目文件夹路径"
+                     Text="{Binding FolderPath,Mode=TwoWay}"
+                     TextAlignment="Left" />
+            <Button Grid.Row="3"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Margin="0,0,5,0"
+                    Width="20"
+                    Height="20"
+                    Content="{materialDesign:PackIcon Kind=FolderSettings,Size=16}"
+                    Style="{StaticResource MaterialDesignIconForegroundButton}" />
+        </Grid>
+        <ListBox Grid.Row="1" Grid.Column="0"
+                 x:Name="AvailableEndpointsListBox"
+                 ItemsSource="{Binding EndpointService.AvailableEndpoints,Mode=OneWay}">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type abstraction:ILLMEndpoint}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Width="20"
+                               Height="20"
+                               Source="{Binding Icon,Mode=OneWay}" />
+                        <TextBlock Text="{Binding DisplayName,Mode=OneWay}"
+                                   Margin="5,0,0,0" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <ListBox Grid.Row="0" Grid.Column="1"
+                 Grid.RowSpan="2"
+                 DisplayMemberPath="Name"
+                 SelectedItem="{Binding SelectedModel,Mode=TwoWay}"
+                 ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem"
+                       BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                    <Setter Property="IsEnabled" Value="{Binding SupportFunctionCall,Mode=OneWay}" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
+        <TextBlock Grid.Row="2" Grid.Column="0"
+                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                   TextWrapping="Wrap"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis">
+            <Run
+                Text="{Binding SelectedModel.Endpoint.DisplayName, StringFormat=服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
+            <Run
+                Text="{Binding SelectedModel,StringFormat=模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
+        </TextBlock>
+        <Button Grid.Row="2" Grid.Column="1"
+                HorizontalAlignment="Right"
+                Content="提交"
+                Command="{Binding SubmitCommand}"
+                Margin="10,0" />
+    </Grid>
+</UserControl>

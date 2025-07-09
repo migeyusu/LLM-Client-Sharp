@@ -79,7 +79,7 @@ public class AzureModelInfo : ILLMModel
 
     [JsonPropertyName("description")] public string? DescriptionRaw { get; set; }
 
-    [JsonIgnore] public ILLMEndpoint? Endpoint { get; set; }
+    [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = NullLLMEndpoint.Instance;
 
     [JsonIgnore] public bool SystemPromptEnable { get; set; } = true;
 

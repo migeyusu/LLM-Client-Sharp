@@ -184,7 +184,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         }
     }
 
-    [JsonIgnore] public ILLMEndpoint? Endpoint { get; set; }
+    [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = new NullLLMEndpoint();
 
     public bool SystemPromptEnable
     {

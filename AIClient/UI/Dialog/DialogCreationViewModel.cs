@@ -28,13 +28,13 @@ public class DialogCreationViewModel : ModelSelectionViewModel
     
     public ICommand AcceptModelDialogCommand => new ActionCommand((o =>
     {
-        if (SelectedModelName == null || SelectedEndpoint == null)
+        if (SelectedModel == null )
         {
-            MessageBox.Show("Please select model and endpoint");
+            MessageBox.Show("Please select model.");
             return;
         }
 
-        var model = SelectedEndpoint.NewClient(SelectedModelName);
+        var model = SelectedModel.CreateClient();
         if (model == null)
         {
             MessageBox.Show("create model failed!");

@@ -10,12 +10,7 @@ public class PopupModelSelectionViewModel : ModelSelectionViewModel
 {
     public ICommand AcceptModelCommand => new ActionCommand((o =>
     {
-        if (this.SelectedEndpoint == null)
-        {
-            return;
-        }
-
-        if (SelectedModelName == null)
+        if (SelectedModel == null)
         {
             return;
         }

@@ -16,7 +16,7 @@ public interface ILLMModel : IModelParams
 
     int MaxContextSize { get; }
 
-    ILLMEndpoint? Endpoint { get; }
+    ILLMEndpoint Endpoint { get; }
 
     #region switch
 
@@ -31,7 +31,6 @@ public interface ILLMModel : IModelParams
     int TopKMax { get; }
     int MaxTokenLimit { get; }
     bool Reasonable { get; }
-    
     
     bool SupportAudioInput { get; }
     

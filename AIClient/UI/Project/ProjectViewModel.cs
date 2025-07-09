@@ -5,9 +5,9 @@ using System.Text.Json;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.VectorData;
 
 namespace LLMClient.UI.Project;
 
@@ -15,7 +15,7 @@ public class ProjectViewModel : FileBasedSessionBase
 {
     public const string SaveDir = "Projects";
 
-    public ProjectViewModel(ILLMClient defaultClient) : base()
+    public ProjectViewModel() : base()
     {
     }
 
@@ -23,6 +23,17 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public override bool IsDataChanged { get; set; }
     public override bool IsBusy { get; } = false;
+
+    public ILLMClient Client
+    {
+        get => _client;
+        set
+        {
+            if (Equals(value, _client)) return;
+            _client = value;
+            OnPropertyChanged();
+        }
+    }
 
     #region file
 
@@ -131,6 +142,8 @@ public class ProjectViewModel : FileBasedSessionBase
     private IList<string>? _languageNames;
     private string? _folderPath;
     private ProjectTask? _workingTask;
+    private string _name;
+    private ILLMClient _client = NullLlmModelClient.Instance;
 
     protected override string SaveFolderPath => SaveFolderPathLazy.Value;
 
@@ -142,6 +155,17 @@ public class ProjectViewModel : FileBasedSessionBase
 
     #endregion
 
+    public string Name
+    {
+        get => _name;
+        set
+        {
+            if (value == _name) return;
+            _name = value;
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>
     /// sample:this is a *** project
     /// </summary>
@@ -151,14 +175,16 @@ public class ProjectViewModel : FileBasedSessionBase
         set
         {
             if (value == _description) return;
-            _description = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(Context));
             this.ClearError();
             if (string.IsNullOrEmpty(value))
             {
                 this.AddError("Description cannot be null or empty.");
+                return;
             }
+
+            _description = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
         }
     }
 
@@ -168,16 +194,19 @@ public class ProjectViewModel : FileBasedSessionBase
         set
         {
             if (Equals(value, _languageNames)) return;
-            _languageNames = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(Context));
             this.ClearError();
             if (value == null)
             {
                 AddError("LanguageNames cannot be null.");
+                return;
             }
+
+            _languageNames = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
         }
     }
+
 
     /// <summary>
     /// 项目级别的上下文，在task间共享
@@ -206,9 +235,6 @@ public class ProjectViewModel : FileBasedSessionBase
         set
         {
             if (value == _folderPath) return;
-            _folderPath = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(Context));
             this.ClearError();
             if (string.IsNullOrEmpty(value))
             {
@@ -227,10 +253,17 @@ public class ProjectViewModel : FileBasedSessionBase
                     var error = $"创建文件夹 {value} 失败: {e.Message}";
                     Trace.TraceError(error);
                     this.AddError(error);
+                    return;
                 }
             }
+
+            _folderPath = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
         }
     }
+
+    public virtual string Type { get; } = "Standard";
 
     public ObservableCollection<ProjectTask> Tasks { get; set; } = new ObservableCollection<ProjectTask>();
 
@@ -251,6 +284,5 @@ public class ProjectViewModel : FileBasedSessionBase
         {
             return;
         }
-        
     }
 }

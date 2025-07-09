@@ -4,9 +4,9 @@ namespace LLMClient.UI;
 
 public class SuggestedModel
 {
-    public SuggestedModel(ILLMEndpoint endpoint, ILLMModel llmModel)
+    public SuggestedModel(ILLMModel llmModel)
     {
-        Endpoint = endpoint;
+        Endpoint = llmModel.Endpoint!;
         LlmModel = llmModel;
     }
 

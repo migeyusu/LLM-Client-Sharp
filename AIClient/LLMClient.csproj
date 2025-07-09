@@ -26,6 +26,7 @@
         <PackageReference Include="LambdaConverters" Version="4.0.0" />
         <PackageReference Include="Magick.NET-Q8-x64" Version="14.6.0" />
         <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.6" />
+        <PackageReference Include="MahApps.Metro.IconPacks.MaterialDesign" Version="5.1.0" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
         <PackageReference Include="MaterialDesignThemes" Version="5.2.2-ci998" />
         <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.6.0" />

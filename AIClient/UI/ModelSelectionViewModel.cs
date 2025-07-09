@@ -6,32 +6,18 @@ public class ModelSelectionViewModel : BaseViewModel
 {
     public IEndpointService EndpointService { get; set; }
 
-    public string? SelectedModelName
+    public ILLMModel? SelectedModel
     {
-        get => _selectedModelName;
+        get => _selectedModel;
         set
         {
-            if (value == _selectedModelName) return;
-            _selectedModelName = value;
+            if (Equals(value, _selectedModel)) return;
+            _selectedModel = value;
             OnPropertyChanged();
         }
     }
 
-    public ILLMEndpoint? SelectedEndpoint
-    {
-        get => _selectedEndpoint;
-        set
-        {
-            if (Equals(value, _selectedEndpoint)) return;
-            _selectedEndpoint = value;
-            OnPropertyChanged();
-        }
-    }
-
-
-    private string? _selectedModelName;
-
-    private ILLMEndpoint? _selectedEndpoint;
+    private ILLMModel? _selectedModel;
 
     public ModelSelectionViewModel(IEndpointService endpointService)
     {
@@ -40,12 +26,6 @@ public class ModelSelectionViewModel : BaseViewModel
 
     public ILLMClient? GetClient()
     {
-        if (this.SelectedModelName == null)
-        {
-            return null;
-        }
-
-        var model = this.SelectedEndpoint?.NewClient(this.SelectedModelName);
-        return model;
+        return this.SelectedModel?.CreateClient();
     }
 }

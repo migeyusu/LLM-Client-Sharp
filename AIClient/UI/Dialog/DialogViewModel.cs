@@ -375,23 +375,7 @@ public class DialogViewModel : BaseViewModel
         }
     }
 
-    public IMcpServiceCollection McpServiceCollection
-    {
-        get { return ServiceLocator.GetService<IMcpServiceCollection>()!; }
-    }
-
-    public ObservableCollection<IAIFunctionGroup> McpFunctions { get; set; } =
-        new ObservableCollection<IAIFunctionGroup>();
-
-    public IBuiltInFunctionsCollection BuiltInFunctionsCollection
-    {
-        get { return ServiceLocator.GetService<IBuiltInFunctionsCollection>()!; }
-    }
-
-    public bool BuiltInFunctionEnabled { get; set; }
-
-    public ObservableCollection<IAIFunctionGroup> BuiltinFunctions { get; set; } =
-        new ObservableCollection<IAIFunctionGroup>();
+    public IList<IAIFunctionGroup>? SelectedFunctions { get; set; }
 
     #endregion
 
@@ -896,7 +880,7 @@ public class DialogViewModel : BaseViewModel
         IList<IAIFunctionGroup>? tools = null;
         if (this.DefaultClient.Model.SupportFunctionCall && this.MCPEnabled)
         {
-            tools = McpServiceCollection.Where(group => group is { IsEnabled: true }).ToArray();
+            tools = this.SelectedFunctions;
         }
 
         return new RequestViewItem()

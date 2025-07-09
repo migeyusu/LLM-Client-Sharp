@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Azure.AI.Inference;
 using ImageMagick;
+using LLMClient.Abstraction;
 using LLMClient.Render;
 using Markdig;
 using Markdig.Wpf;
@@ -170,6 +171,12 @@ public static class Extension
         var rawText = jsonElement.GetRawText();*/
 
     #endregion
+
+    public static ILLMClient? CreateClient(this ILLMModel llmModel)
+    {
+        var endpoint = llmModel.Endpoint;
+        return !endpoint.IsEnabled ? null : endpoint?.NewClient(llmModel);
+    }
 
     public static void AddLine(this IList<string> list, string? msg = null)
     {

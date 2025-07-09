@@ -28,7 +28,6 @@ public class ProjectTask : NotifyDataErrorInfoViewModelBase
     private string? _name;
     private string? _taskPrompt; //"请描述任务的内容和目标。";
     private string? _summary;
-
     public ProjectTask()
     {
     }
@@ -41,13 +40,15 @@ public class ProjectTask : NotifyDataErrorInfoViewModelBase
         set
         {
             if (value == _name) return;
-            _name = value;
-            OnPropertyChanged();
             ClearError();
             if (string.IsNullOrEmpty(value))
             {
                 AddError("Name cannot be null or empty.");
+                return;
             }
+
+            _name = value;
+            OnPropertyChanged();
         }
     }
 
@@ -57,13 +58,14 @@ public class ProjectTask : NotifyDataErrorInfoViewModelBase
         set
         {
             if (value == _taskPrompt) return;
-            _taskPrompt = value;
-            OnPropertyChanged();
             ClearError();
             if (string.IsNullOrEmpty(value))
             {
                 AddError("TaskPrompt cannot be null or empty.");
+                return;
             }
+            _taskPrompt = value;
+            OnPropertyChanged();
         }
     }
 

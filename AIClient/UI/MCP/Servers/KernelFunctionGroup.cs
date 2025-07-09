@@ -8,7 +8,7 @@ namespace LLMClient.UI.MCP.Servers;
 public abstract class KernelFunctionGroup : BaseViewModel, IAIFunctionGroup
 {
     [JsonIgnore]
-    public IList<AIFunction>? AvailableTools
+    public IReadOnlyList<AIFunction>? AvailableTools
     {
         get => _availableTools;
         set
@@ -18,6 +18,10 @@ public abstract class KernelFunctionGroup : BaseViewModel, IAIFunctionGroup
             OnPropertyChanged();
         }
     }
+
+    public bool IsToolAvailable { get; } = true;
+    
+    
 
     [JsonIgnore] public string Name { get; }
 
@@ -35,7 +39,7 @@ public abstract class KernelFunctionGroup : BaseViewModel, IAIFunctionGroup
     }
 
 
-    private IList<AIFunction>? _availableTools;
+    private IReadOnlyList<AIFunction>? _availableTools;
 
     public KernelFunctionGroup(string pluginName)
     {
@@ -52,19 +56,14 @@ public abstract class KernelFunctionGroup : BaseViewModel, IAIFunctionGroup
 #pragma warning restore SKEXP0001
     }
 
-    public Task<IList<AIFunction>> GetToolsAsync(CancellationToken cancellationToken = default)
-    {
-        if (AvailableTools == null)
-        {
-            return Task.FromResult<IList<AIFunction>>(Array.Empty<AIFunction>());
-        }
-
-        return Task.FromResult(AvailableTools);
-    }
-
     public string GetUniqueId()
     {
         return $"{this.GetType().FullName}";
+    }
+
+    public Task EnsureAsync(CancellationToken token)
+    {
+        return Task.CompletedTask;
     }
 
     public object Clone()

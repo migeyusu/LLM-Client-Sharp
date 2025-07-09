@@ -277,6 +277,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IAsync
 
     public IAIFunctionGroup TryGet(IAIFunctionGroup functionGroup)
     {
+        //相同配置的mcp将使用唯一实例
         var hashCode = functionGroup.GetUniqueId();
         foreach (var item in this.Items)
         {

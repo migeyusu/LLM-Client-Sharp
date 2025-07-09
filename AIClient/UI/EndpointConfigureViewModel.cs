@@ -77,7 +77,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
             endPointsNode[APIEndPoint.KeyName] = JsonSerializer.SerializeToNode(apiEndpoints);
             var keyValuePairs = this.SuggestedModels
-                .Select(model => new KeyValuePair<string, string>(model.Endpoint.Name, model.LlmModel.Name))
+                .Select(model => new KeyValuePair<string, string>(model.LlmModel.Endpoint.Name, model.LlmModel.Name))
                 .ToArray();
             endPointsNode[SuggestedModelKey] = JsonSerializer.SerializeToNode(keyValuePairs);
             //todo: 添加template 保存
@@ -113,6 +113,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public ObservableCollection<SuggestedModel> SuggestedModels { get; } =
         new ObservableCollection<SuggestedModel>();
+
     public PopupModelSelectionViewModel PopupSelectViewModel { get; }
 
     public ICommand RemoveSuggestedModelCommand => new ActionCommand((o =>
@@ -144,16 +145,10 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             return;
         }
 
-        var selectedEndpoint = obj.SelectedEndpoint;
-        if (selectedEndpoint is null)
-            return;
-        var selectedModelName = obj.SelectedModelName;
-        if (selectedModelName is null)
-            return;
-        var llmModel = selectedEndpoint.GetModel(selectedModelName);
+        var llmModel = obj.SelectedModel;
         if (llmModel is null)
             return;
-        this.SuggestedModels.Add(new SuggestedModel(selectedEndpoint, llmModel));
+        this.SuggestedModels.Add(new SuggestedModel(llmModel));
     }
 
     private GithubCopilotEndPoint? _githubCopilotEndPoint;
@@ -200,7 +195,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                         var llmModel = llmEndpoint.GetModel(valuePair.Value);
                         if (llmModel != null)
                         {
-                            SuggestedModels.Add(new SuggestedModel(llmEndpoint, llmModel));
+                            SuggestedModels.Add(new SuggestedModel(llmModel));
                         }
                     }
                 }

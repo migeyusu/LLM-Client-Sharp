@@ -15,20 +15,6 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
 {
     [JsonIgnore] public abstract string Type { get; }
 
-    private bool _isEnabled = true;
-
-    [JsonIgnore]
-    public bool IsEnabled
-    {
-        get => _isEnabled;
-        set
-        {
-            if (value == _isEnabled) return;
-            _isEnabled = value;
-            OnPropertyChanged();
-        }
-    }
-
     [JsonIgnore]
     public string? ErrorMessage
     {
@@ -49,21 +35,22 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         set
         {
             if (value == _name) return;
-            _name = value;
-            OnPropertyChanged();
             ClearError();
             if (string.IsNullOrEmpty(value))
             {
                 AddError("Name cannot be null or empty.");
             }
+
+            _name = value;
+            OnPropertyChanged();
         }
     }
 
-    private IList<AIFunction>? _availableTools;
+    private IReadOnlyList<AIFunction>? _availableTools;
     private string? _errorMessage;
 
     [JsonIgnore]
-    public IList<AIFunction>? AvailableTools
+    public IReadOnlyList<AIFunction>? AvailableTools
     {
         get => _availableTools;
         set
@@ -141,17 +128,12 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
 
     private IMcpClient? _client;
 
-    public async Task<IList<AIFunction>> GetToolsAsync(CancellationToken cancellationToken = default)
-    {
-        if (AvailableTools == null)
-        {
-            await ListToolsAsync(cancellationToken);
-        }
-
-        return AvailableTools ?? new List<AIFunction>();
-    }
-
     public abstract string GetUniqueId();
+
+    public Task EnsureAsync(CancellationToken token)
+    {
+        return ListToolsAsync(token);
+    }
 
     protected abstract IClientTransport GetTransport();
 

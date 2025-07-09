@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints.Azure.Models;
 using LLMClient.Endpoints.OpenAIAPI;
 
@@ -20,19 +21,9 @@ public partial class DialogCreationView : UserControl
     private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
         var newValue = e.NewValue;
-        if (newValue is AzureModelInfo modelInfo)
+        if (newValue is ILLMModel modelInfo)
         {
-            ViewModel.SelectedModelName = modelInfo.FriendlyName;
-            ViewModel.SelectedEndpoint = modelInfo.Endpoint;
+            ViewModel.SelectedModel = modelInfo;
         }
-        else if (newValue is APIModelInfo apiModelInfo)
-        {
-            ViewModel.SelectedModelName = apiModelInfo.Name;
-            ViewModel.SelectedEndpoint = apiModelInfo.Endpoint;
-        }
-        /*else if (newValue is ILLMEndpoint endpoint)
-        {
-            if (ViewModel != null) ViewModel.SelectedEndpoint = endpoint;
-        }*/
     }
 }

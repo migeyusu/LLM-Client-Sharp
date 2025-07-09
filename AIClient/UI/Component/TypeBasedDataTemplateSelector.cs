@@ -4,6 +4,7 @@ using System.Windows.Markup;
 
 namespace LLMClient.UI.Component;
 
+[ContentProperty("Template")]
 public class DataTemplateTypePair
 {
     private DataTemplate? _template;

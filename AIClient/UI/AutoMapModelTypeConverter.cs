@@ -1,9 +1,12 @@
 ﻿using System.Collections.ObjectModel;
 using AutoMapper;
+using DocumentFormat.OpenXml.Wordprocessing;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Dialog;
+using LLMClient.UI.MCP;
+using LLMClient.UI.MCP.Servers;
 
 namespace LLMClient.UI;
 
@@ -106,8 +109,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
             Params = source.DefaultClient.Parameters,
             TokensConsumption = source.TokensConsumption,
             TotalPrice = source.TotalPrice,
-            BuiltInFunctions = source.BuiltinFunctions.ToArray(),
-            McpFunctions = source.BuiltinFunctions.Select((group => _mcpServiceCollection.TryGet(group))).ToArray()
+            Functions = source.SelectedFunctions?.ToArray(),
         };
     }
 
@@ -134,18 +136,29 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
         })).ToArray();
 
         var llmEndpoint = source.EndPoint == null ? null : _endpointService.GetEndpoint(source.EndPoint);
-        var llmModelClient = llmEndpoint?.NewClient(source.Model ?? string.Empty) ?? new NullLlmModelClient();
+        var llmModelClient = llmEndpoint?.NewClient(source.Model ?? string.Empty) ?? NullLlmModelClient.Instance;
         var sourceJsonModel = source.Params;
         if (sourceJsonModel != null)
         {
             llmModelClient.Parameters = sourceJsonModel;
         }
 
+        var aiFunctionGroups = source.Functions?.Select((function) =>
+        {
+            if (function is McpServerItem server)
+            {
+                return _mcpServiceCollection.TryGet(server);
+            }
+
+            return function;
+        }).ToArray();
+
         return new DialogViewModel(source.Topic, llmModelClient, sourceDialogItems)
         {
             PromptString = source.PromptString,
             TokensConsumption = source.TokensConsumption,
             TotalPrice = source.TotalPrice,
+            SelectedFunctions = aiFunctionGroups,
         };
     }
 }

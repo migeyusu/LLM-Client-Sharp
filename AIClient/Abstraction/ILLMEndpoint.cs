@@ -7,6 +7,8 @@ public interface ILLMEndpoint
     string DisplayName { get; }
 
     bool IsDefault { get; }
+    
+    bool IsEnabled { get; }
 
     /// <summary>
     /// 名称，必须唯一
@@ -17,7 +19,11 @@ public interface ILLMEndpoint
 
     IReadOnlyCollection<string> AvailableModelNames { get; }
 
+    IReadOnlyCollection<ILLMModel> AvailableModels { get; }
+
     ILLMClient? NewClient(string modelName);
+
+    ILLMClient? NewClient(ILLMModel model);
 
     ILLMModel? GetModel(string modelName);
 

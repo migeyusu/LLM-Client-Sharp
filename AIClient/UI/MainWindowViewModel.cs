@@ -123,6 +123,27 @@ public class MainWindowViewModel : BaseViewModel
 
     public IMcpServiceCollection McpServiceCollection { get; }
 
+    #region project
+
+    public ICommand NewProjectCommand => new ActionCommand((async o =>
+    {
+        var selectionViewModel = new ProjectCreationViewModel(this.EndpointsViewModel);
+        if (await DialogHost.Show(selectionViewModel) is true)
+        {
+            AddNewProject(selectionViewModel.Project);
+        }
+    }));
+
+    private void AddNewProject(ProjectViewModel projectViewModel)
+    {
+        projectViewModel.PropertyChanged += SessionOnEditTimeChanged;
+        this.SessionViewModels.Insert(0, projectViewModel);
+        PreSession = projectViewModel;
+    }
+
+    #endregion
+
+
     #region dialog
 
     public ICommand ImportCommand => new ActionCommand((o =>
@@ -200,15 +221,15 @@ public class MainWindowViewModel : BaseViewModel
         new ObservableCollection<ILLMSession>();
 
 
-    private ILLMSession? _preDialog;
+    private ILLMSession? _preSession;
 
     public ILLMSession? PreSession
     {
-        get => _preDialog;
+        get => _preSession;
         set
         {
-            if (Equals(value, _preDialog)) return;
-            _preDialog = value;
+            if (Equals(value, _preSession)) return;
+            _preSession = value;
             OnPropertyChanged();
         }
     }
@@ -329,6 +350,7 @@ public class MainWindowViewModel : BaseViewModel
     public async void Initialize()
     {
         IsProcessing = true;
+        await McpServiceCollection.LoadAsync();
         await EndpointsViewModel.Initialize();
         await InitialSessionsFromLocal();
         if (SessionViewModels.Any())

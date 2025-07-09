@@ -1,7 +1,9 @@
-﻿using System.Windows;
+﻿using System.Collections;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.UI.MCP;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -106,10 +108,27 @@ public partial class DialogView : UserControl
     {
         if (sender is PopupBox popupBox)
         {
-            if (popupBox.PopupContent is IMcpServiceCollection mcpServiceCollection)
+            var selectedFunctions = ViewModel.SelectedFunctions;
+            var selectionViewModel =
+                new AIFunctionSelectionViewModel(selectedFunctions ?? Array.Empty<IAIFunctionGroup>(), false);
+            foreach (var aiFunctionGroup in selectionViewModel.FunctionCollection)
             {
-                await mcpServiceCollection.EnsureAsync();
+                await aiFunctionGroup.Data.EnsureAsync(CancellationToken.None);
             }
+
+            popupBox.PopupContent = selectionViewModel;
+        }
+    }
+
+    private void McpPopupBox_OnClosed(object sender, RoutedEventArgs e)
+    {
+        if (sender is PopupBox popupBox)
+        {
+            var selectionViewModel = popupBox.PopupContent as AIFunctionSelectionViewModel;
+            this.ViewModel.SelectedFunctions =
+                selectionViewModel?.FunctionCollection
+                    .Where((group => group.IsSelected))
+                    .Select((model => model.Data)).ToArray();
         }
     }
 }

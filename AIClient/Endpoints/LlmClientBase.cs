@@ -101,12 +101,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
         return chatOptions;
     }
 
+    private void CombineMessages()
+    {
+    }
+
     private readonly Stopwatch _stopwatch = new Stopwatch();
 
     [Experimental("SKEXP0001")]
     public virtual async Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems,
-        string? systemPrompt = null,
-        CancellationToken cancellationToken = default)
+        string? systemPrompt = null, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -124,8 +127,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
             {
                 foreach (var functionGroup in requestViewItem.FunctionGroups)
                 {
-                    var availableTools = await functionGroup.GetToolsAsync(cancellationToken);
-                    if (availableTools.Count == 0)
+                    await functionGroup.EnsureAsync(cancellationToken);
+                    var availableTools = functionGroup.AvailableTools;
+                    if (availableTools == null || availableTools.Count == 0)
                     {
                         continue;
                     }
@@ -176,10 +180,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
             {
                 functionCallContents.Clear();
                 preUpdates.Clear();
-                finishReason = null;
                 UsageDetails? loopUsageDetails = null;
                 try
                 {
+                    ChatResponse? response = null;
                     if (this.Parameters.Streaming)
                     {
                         await foreach (var update in chatClient
@@ -189,57 +193,28 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                             preUpdates.Add(update);
                             //只收集文本内容
                             RespondingText.Add(update.Text);
-                            var message = new ChatMessage(update.Role ?? ChatRole.Assistant, update.Contents)
-                            {
-                                AdditionalProperties = update.AdditionalProperties,
-                                AuthorName = update.AuthorName,
-                                RawRepresentation = update.RawRepresentation,
-                                MessageId = update.MessageId,
-                            };
-                            responseMessages.Add(message);
-                            chatHistory.Add(message);
                         }
+
+                        response = preUpdates.ToChatResponse();
                     }
                     else
                     {
-                        var chatResponse =
-                            await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
-                        var details = chatResponse.Usage;
-                        if (loopUsageDetails == null)
-                        {
-                            loopUsageDetails = details;
-                        }
-                        else if (details != null)
-                        {
-                            loopUsageDetails.Add(details);
-                        }
-
-                        var chatMessages = chatResponse.Messages;
-                        chatHistory.AddRange(chatMessages);
-                        responseMessages.AddRange(chatMessages);
-                        preUpdates.AddRange(chatResponse.ToChatResponseUpdates());
+                        response = await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
                         //只收集文本内容
-                        RespondingText.Add(chatResponse.Text);
+                        RespondingText.Add(response.Text);
                     }
 
-                    foreach (var update in preUpdates)
+                    var chatMessages = response.Messages;
+                    chatHistory.AddRange(chatMessages);
+                    responseMessages.AddRange(chatMessages);
+                    foreach (var responseMessage in responseMessages)
                     {
-                        finishReason ??= update.FinishReason;
-                        foreach (var content in update.Contents)
+                        foreach (var content in responseMessage.Contents)
                         {
                             switch (content)
                             {
                                 case UsageContent usageContent:
-                                    var usage = usageContent.Details;
-                                    if (loopUsageDetails == null)
-                                    {
-                                        loopUsageDetails = usage;
-                                    }
-                                    else
-                                    {
-                                        loopUsageDetails.Add(usage);
-                                    }
-
+                                    (loopUsageDetails ??= new UsageDetails()).Add(usageContent.Details);
                                     break;
                                 case TextContent:
                                     //do nothing, textContent is already added to RespondingText
@@ -265,31 +240,33 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                         totalUsageDetails.Add(loopUsageDetails);
                     }
 
-                    if (finishReason != null)
+                    finishReason = response.FinishReason;
+                    if (finishReason == null)
                     {
-                        if (finishReason == ChatFinishReason.ToolCalls)
-                        {
-                            Trace.TraceInformation("Function call finished, need run function calls...");
-                        }
-                        else if (finishReason == ChatFinishReason.Stop)
-                        {
-                            Trace.TraceInformation("Response completed without function calls.");
-                            break;
-                        }
-                        else if (finishReason == ChatFinishReason.Length)
-                        {
-                            Trace.TraceInformation("Exceeded maximum response length.");
-                            break;
-                        }
-                        else if (finishReason == ChatFinishReason.ContentFilter)
-                        {
-                            Trace.TraceWarning("Response was filtered by content filter.");
-                            break;
-                        }
-                        else
-                        {
-                            Trace.TraceWarning($"Unexpected finish reason: {finishReason}");
-                        }
+                        //do nothing
+                    }
+                    else if (finishReason == ChatFinishReason.ToolCalls)
+                    {
+                        Trace.TraceInformation("Function call finished, need run function calls...");
+                    }
+                    else if (finishReason == ChatFinishReason.Stop)
+                    {
+                        Trace.TraceInformation("Response completed without function calls.");
+                        break;
+                    }
+                    else if (finishReason == ChatFinishReason.Length)
+                    {
+                        Trace.TraceInformation("Exceeded maximum response length.");
+                        break;
+                    }
+                    else if (finishReason == ChatFinishReason.ContentFilter)
+                    {
+                        Trace.TraceWarning("Response was filtered by content filter.");
+                        break;
+                    }
+                    else
+                    {
+                        Trace.TraceWarning($"Unexpected finish reason: {finishReason}");
                     }
 
                     if (functionCallContents.Count == 0)
@@ -384,7 +361,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
         }
     }
 
-    private static UsageDetails? GetUsageDetailsFromAdditional(List<ChatResponseUpdate> updates)
+    private static UsageDetails? GetUsageDetailsFromAdditional(IList<ChatResponseUpdate> updates)
     {
         UsageDetails? usageDetails = null;
         foreach (var update in updates)

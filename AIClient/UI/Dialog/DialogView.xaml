@@ -770,60 +770,12 @@
                                 <materialDesign:PopupBox Margin="6,0"
                                                          StaysOpen="True"
                                                          Opened="McpPopupBox_OnOpened"
+                                                         Closed="McpPopupBox_OnClosed"
                                                          ToggleContent="{materialDesign:PackIcon Kind=Tools,Size=16}"
                                                          VerticalAlignment="Center"
-                                                         ToolTip="对比其他模型"
-                                                         Style="{StaticResource MaterialDesignToolPopupBox}"
-                                                         PopupContent="{Binding McpServiceCollection,Mode=OneTime}">
-                                    <materialDesign:PopupBox.PopupContentTemplate>
-                                        <DataTemplate DataType="{x:Type mcp:McpServiceCollection}">
-                                            <Grid Width="400"
-                                                  Height="500">
-                                                <TreeView ItemsSource="{Binding Items,Mode=OneWay}">
-                                                    <TreeView.Resources>
-                                                        <HierarchicalDataTemplate DataType="{x:Type mcp:McpServerItem}"
-                                                            ItemsSource="{Binding AvailableTools,Mode=OneWay}">
-                                                            <CheckBox IsEnabled="{Binding IsToolAvailable,Mode=OneWay}"
-                                                                      IsChecked="{Binding IsEnabled,Mode=TwoWay}">
-                                                                <TextBlock TextWrapping="NoWrap"
-                                                                           TextTrimming="CharacterEllipsis"
-                                                                           MaxHeight="20"
-                                                                           MaxWidth="400">
-                                                                    <Run Text="{Binding Name,Mode=OneTime}" />
-                                                                    <Run> </Run>
-                                                                    <Run Text="{Binding ErrorMessage,Mode=OneWay}"
-                                                                         Foreground="Red" />
-                                                                </TextBlock>
-                                                            </CheckBox>
-                                                        </HierarchicalDataTemplate>
-                                                        <DataTemplate DataType="{x:Type ai:AIFunction}">
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <TextBlock Text="{Binding Name,Mode=OneTime}"
-                                                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
-                                                                <TextBlock Text="{Binding Description,Mode=OneWay}"
-                                                                           MaxHeight="20"
-                                                                           MaxWidth="300"
-                                                                           TextTrimming="CharacterEllipsis"
-                                                                           TextWrapping="Wrap"
-                                                                           Margin="5,0,0,0"
-                                                                           VerticalAlignment="Center"
-                                                                           FontSize="10"
-                                                                           Style="{StaticResource MaterialDesignCaptionTextBlock}" />
-                                                            </StackPanel>
-                                                        </DataTemplate>
-                                                    </TreeView.Resources>
-                                                </TreeView>
-                                                <Button Command="{Binding  ReloadCommand}"
-                                                        HorizontalAlignment="Right"
-                                                        VerticalAlignment="Bottom"
-                                                        ToolTip="重载MCP服务"
-                                                        Margin="0,0,10,10"
-                                                        Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
-                                                        Content="{materialDesign:PackIcon Refresh}" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </materialDesign:PopupBox.PopupContentTemplate>
-                                </materialDesign:PopupBox>
+                                                         ToolTip="MCP工具"
+                                                         PopupContentTemplate="{StaticResource FunctionSelectionDataTemplate}"
+                                                         Style="{StaticResource MaterialDesignToolPopupBox}"/>
                             </StackPanel>
                         </CheckBox>
                         <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"

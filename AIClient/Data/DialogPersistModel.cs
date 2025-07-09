@@ -19,9 +19,6 @@ public class DialogPersistModel
     public long TokensConsumption { get; set; }
 
     public double TotalPrice { get; set; }
-
-    public IAIFunctionGroup[]? BuiltInFunctions { get; set; }
-
-    //这里分开储存内置和MCP的函数
-    public IAIFunctionGroup[]? McpFunctions { get; set; }
+    
+    public IAIFunctionGroup[]? Functions { get; set; }
 }

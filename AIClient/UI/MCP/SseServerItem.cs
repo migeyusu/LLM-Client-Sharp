@@ -23,13 +23,13 @@ public class SseServerItem : McpServerItem
         set
         {
             if (value == _url) return;
-            _url = value;
-            OnPropertyChanged();
             ClearError();
             if (string.IsNullOrEmpty(value))
             {
                 AddError("Url cannot be null or empty.");
             }
+            _url = value;
+            OnPropertyChanged();
         }
     }
 

@@ -15,6 +15,8 @@
                           xmlns:mcp="clr-namespace:LLMClient.UI.MCP"
                           xmlns:dialog="clr-namespace:LLMClient.UI.Dialog"
                           xmlns:project="clr-namespace:LLMClient.UI.Project"
+                          xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                          xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -23,6 +25,28 @@
                           Width="1600"
                           Closing="MainWindow_OnClosing"
                           d:DataContext="{d:DesignInstance ui:MainWindowViewModel}">
+    <component:ExtendedWindow.Resources>
+        <Style x:Key="DeleteItemButtonStyle"
+               TargetType="{x:Type Button}"
+               BasedOn="{StaticResource MaterialDesignIconButton}">
+            <Setter Property="Background"
+                    Value="{DynamicResource MaterialDesignTextFieldBoxBackground}" />
+            <Setter Property="Command" Value="Delete" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Width" Value="30" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="10,0" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger
+                    Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                    Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </component:ExtendedWindow.Resources>
     <Window.Style>
         <Style TargetType="{x:Type ui:MainWindow}"
                BasedOn="{StaticResource MaterialDesignWindow}">
@@ -193,6 +217,13 @@
                                                       Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
+                <DataTemplate DataType="{x:Type project:ProjectCreationViewModel}">
+                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                            Header="Standard Project">
+                        <project:ProjectCreationView Width="900"
+                                                     Height="600" />
+                    </HeaderedContentControl>
+                </DataTemplate>
             </materialDesign:DialogHost.Resources>
             <Grid Margin="10"
                   IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
@@ -278,6 +309,9 @@
                              Margin="0,10,6,0"
                              BorderThickness="0"
                              ItemsSource="{Binding SessionViewModels,Mode=OneWay}">
+                        <ListBox.Resources>
+                            <converters:ListToStringConverter x:Key="StringToListConverter" Separator="," />
+                        </ListBox.Resources>
                         <ListBox.CommandBindings>
                             <CommandBinding Command="Delete" Executed="Delete_OnExecuted" />
                         </ListBox.CommandBindings>
@@ -298,120 +332,204 @@
                                         Value="Stretch" />
                             </Style>
                         </ListBox.ItemContainerStyle>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type dialog:DialogSession}">
-                                <Grid DataContext="{Binding Dialog,Mode=OneTime}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition />
-                                    </Grid.RowDefinitions>
-                                    <Image Grid.RowSpan="3"
-                                           Width="30"
-                                           Height="30"
-                                           Margin="10"
-                                           RenderOptions.BitmapScalingMode="HighQuality"
-                                           VerticalAlignment="Center"
-                                           Source="{Binding DefaultClient.Model.Icon.CurrentSource,Mode=OneWay}" />
-                                    <Grid Grid.Row="0" Grid.Column="1"
-                                          VerticalAlignment="Top"
-                                          HorizontalAlignment="Stretch">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition />
-                                            <ColumnDefinition Width="Auto"
-                                                              MaxWidth="120" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding DefaultClient.Name}"
-                                                   Foreground="DimGray"
-                                                   TextWrapping="NoWrap"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   VerticalAlignment="Center"
-                                                   Style="{StaticResource MaterialDesignCaptionTextBlock}" />
-                                        <TextBlock Grid.Column="1"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Right"
-                                                   Text="{Binding DefaultClient.Endpoint.DisplayName,Mode=OneWay}"
-                                                   Margin="6,0,0,0" />
-                                    </Grid>
-                                    <TextBlock VerticalAlignment="Center"
-                                               HorizontalAlignment="Left"
-                                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                               Grid.Row="1"
-                                               Grid.Column="1"
-                                               Text="{Binding Topic,Mode=OneWay}" />
-                                    <TextBlock Grid.Row="2" Grid.Column="1"
-                                               Text="{Binding Shortcut,Mode=OneWay}"
-                                               Foreground="DimGray"
-                                               VerticalAlignment="Bottom"
-                                               TextWrapping="NoWrap"
-                                               TextTrimming="CharacterEllipsis"
-                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
-                                    <Button Grid.Row="0"
-                                            Grid.Column="1"
-                                            Grid.RowSpan="3"
-                                            CommandParameter="{Binding}"
-                                            Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
-                                            x:Name="DeleteButton"
-                                            Command="Delete"
-                                            Height="30"
-                                            Width="30"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Center"
-                                            Margin="10,0">
-                                        <materialDesign:PackIcon Kind="DeleteOutline"
-                                                                 Width="18"
-                                                                 Height="18" />
-                                        <Button.Style>
-                                            <Style TargetType="{x:Type Button}"
-                                                   BasedOn="{StaticResource MaterialDesignIconButton}">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                <Style.Triggers>
-                                                    <DataTrigger
-                                                        Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
-                                                        Value="True">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                    <ProgressBar Grid.Row="2"
-                                                 Grid.Column="0"
-                                                 Grid.ColumnSpan="2"
-                                                 VerticalAlignment="Bottom"
-                                                 HorizontalAlignment="Stretch"
-                                                 Margin="-4,0,-4,-4"
-                                                 Background="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
-                                                 BorderBrush="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
-                                                 Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Dark}"
-                                                 Minimum="0"
-                                                 Maximum="{Binding ChainStepCount,Mode=OneWay}"
-                                                 Value="{Binding ChainingStep,Mode=OneWay}"
-                                                 IsIndeterminate="{Binding IsChaining,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}"
-                                                 Visibility="{Binding IsBusy,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
+                        <ListBox.ItemTemplateSelector>
+                            <component:TypeBasedDataTemplateSelector>
+                                <component:DataTemplateTypePair>
+                                    <component:DataTemplateTypePair.Template>
+                                        <DataTemplate DataType="{x:Type dialog:DialogSession}">
+                                            <Grid DataContext="{Binding Dialog,Mode=OneTime}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition />
+                                                </Grid.RowDefinitions>
+                                                <Image Grid.RowSpan="3"
+                                                       Width="30"
+                                                       Height="30"
+                                                       Margin="10"
+                                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                                       VerticalAlignment="Center"
+                                                       Source="{Binding DefaultClient.Model.Icon.CurrentSource,Mode=OneWay}" />
+                                                <Grid Grid.Row="0" Grid.Column="1"
+                                                      VerticalAlignment="Top"
+                                                      HorizontalAlignment="Stretch">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition />
+                                                        <ColumnDefinition Width="Auto"
+                                                                          MaxWidth="120" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding DefaultClient.Name}"
+                                                               Foreground="DimGray"
+                                                               TextWrapping="NoWrap"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center"
+                                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                                    <TextBlock Grid.Column="1"
+                                                               VerticalAlignment="Center"
+                                                               HorizontalAlignment="Right"
+                                                               Text="{Binding DefaultClient.Endpoint.DisplayName,Mode=OneWay}"
+                                                               Margin="6,0,0,0" />
+                                                </Grid>
+                                                <TextBlock VerticalAlignment="Center"
+                                                           HorizontalAlignment="Left"
+                                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                           Grid.Row="1"
+                                                           Grid.Column="1"
+                                                           Text="{Binding Topic,Mode=OneWay}" />
+                                                <TextBlock Grid.Row="2" Grid.Column="1"
+                                                           Text="{Binding Shortcut,Mode=OneWay}"
+                                                           Foreground="DimGray"
+                                                           VerticalAlignment="Bottom"
+                                                           TextWrapping="NoWrap"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                                <Button Grid.Row="0"
+                                                        Grid.Column="1"
+                                                        Grid.RowSpan="3"
+                                                        CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBoxItem}, Path=DataContext}"
+                                                        x:Name="DeleteButton"
+                                                        Style="{StaticResource DeleteItemButtonStyle}">
+                                                    <materialDesign:PackIcon Kind="DeleteOutline"
+                                                                             Width="18"
+                                                                             Height="18"
+                                                                             Foreground="DodgerBlue" />
+                                                </Button>
+                                                <ProgressBar Grid.Row="2"
+                                                             Grid.Column="0"
+                                                             Grid.ColumnSpan="2"
+                                                             VerticalAlignment="Bottom"
+                                                             HorizontalAlignment="Stretch"
+                                                             Margin="-4,0,-4,-4"
+                                                             Background="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                             BorderBrush="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                             Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Dark}"
+                                                             Minimum="0"
+                                                             Maximum="{Binding ChainStepCount,Mode=OneWay}"
+                                                             Value="{Binding ChainingStep,Mode=OneWay}"
+                                                             IsIndeterminate="{Binding IsChaining,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}"
+                                                             Visibility="{Binding IsBusy,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </component:DataTemplateTypePair.Template>
+                                </component:DataTemplateTypePair>
+                                <component:DataTemplateTypePair>
+                                    <DataTemplate DataType="{x:Type project:ProjectViewModel}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition />
+                                            </Grid.RowDefinitions>
+                                            <iconPacks:PackIconMaterialDesign Kind="Workspaces" Grid.RowSpan="3"
+                                                                              Width="30"
+                                                                              Height="30"
+                                                                              Margin="10"
+                                                                              VerticalAlignment="Center" />
+                                            <Grid Grid.Row="0" Grid.Column="1"
+                                                  VerticalAlignment="Top"
+                                                  HorizontalAlignment="Stretch">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition />
+                                                    <ColumnDefinition Width="Auto"
+                                                                      MaxWidth="120" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock
+                                                    Text="{Binding LanguageNames,Mode=OneWay,Converter={StaticResource StringToListConverter}}"
+                                                    Foreground="DimGray"
+                                                    TextWrapping="NoWrap"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    VerticalAlignment="Center"
+                                                    Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                                <TextBlock Grid.Column="1"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Right"
+                                                           Text="{Binding Type,Mode=OneTime}"
+                                                           Margin="6,0,0,0" />
+                                            </Grid>
+                                            <TextBlock VerticalAlignment="Center"
+                                                       HorizontalAlignment="Left"
+                                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                       Grid.Row="1"
+                                                       Grid.Column="1"
+                                                       Text="{Binding Name,Mode=OneWay}" />
+                                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                                       Text="{Binding Description,Mode=OneWay}"
+                                                       Foreground="DimGray"
+                                                       VerticalAlignment="Bottom"
+                                                       TextWrapping="NoWrap"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                            <Button Grid.Row="0"
+                                                    Grid.Column="1"
+                                                    Grid.RowSpan="3"
+                                                    CommandParameter="{Binding}"
+                                                    x:Name="DeleteButton"
+                                                    Style="{StaticResource DeleteItemButtonStyle}">
+                                                <materialDesign:PackIcon Kind="DeleteOutline"
+                                                                         Width="18"
+                                                                         Height="18"
+                                                                         Foreground="DodgerBlue" />
+                                            </Button>
+                                            <ProgressBar Grid.Row="2"
+                                                         Grid.Column="0"
+                                                         Grid.ColumnSpan="2"
+                                                         VerticalAlignment="Bottom"
+                                                         HorizontalAlignment="Stretch"
+                                                         Margin="-4,0,-4,-4"
+                                                         Background="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                         BorderBrush="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                         Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Dark}"
+                                                         IsIndeterminate="True"
+                                                         Visibility="{Binding IsBusy,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </component:DataTemplateTypePair>
+                            </component:TypeBasedDataTemplateSelector>
+                        </ListBox.ItemTemplateSelector>
                     </ListBox>
                     <StackPanel Grid.Row="1"
                                 VerticalAlignment="Bottom"
                                 HorizontalAlignment="Left"
                                 Orientation="Horizontal"
                                 Margin="10">
-                        <Button Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
-                                ToolTip="新建对话"
-                                Command="{Binding NewDialogCommand}">
-                            <materialDesign:PackIcon Width="18"
-                                                     Height="18"
-                                                     Kind="Plus" />
-                        </Button>
+                        <materialDesign:PopupBox PlacementMode="TopAndAlignCentres"
+                                                 Width="40"
+                                                 Height="40"
+                                                 Style="{StaticResource MaterialDesignMultiFloatingActionSecondaryPopupBox}">
+                            <materialDesign:PopupBox.ToggleCheckedContent>
+                                <materialDesign:PackIcon Width="24"
+                                                         Height="24"
+                                                         Kind="Pencil" />
+                            </materialDesign:PopupBox.ToggleCheckedContent>
+                            <StackPanel>
+                                <Button ToolTip="新建对话"
+                                        Margin="0,10,0,0"
+                                        Command="{Binding NewDialogCommand}">
+                                    <materialDesign:PackIcon Width="18"
+                                                             Height="18"
+                                                             Kind="Forum" />
+                                </Button>
+                                <Button ToolTip="新建工程"
+                                        Margin="0,10,0,10"
+                                        Command="{Binding NewProjectCommand}">
+                                    <iconPacks:PackIconMaterialDesign Kind="Workspaces"
+                                                                      Width="18"
+                                                                      Height="18" />
+                                </Button>
+                            </StackPanel>
+                        </materialDesign:PopupBox>
                         <Button Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
                                 Margin="10,0,0,0"
                                 ToolTip="导入对话"
+                                CommandParameter="dialog"
                                 Command="{Binding ImportCommand}">
                             <materialDesign:PackIcon Kind="ForumPlus"
                                                      Width="18"
@@ -475,9 +593,9 @@
                                         <dialog:DialogView DataContext="{Binding Dialog,Mode=OneTime}">
                                             <dialog:DialogView.CommandBindings>
                                                 <CommandBinding Command="{x:Static ui:CommonCommands.Branch}"
-                                                                Executed="Branch_OnExecuted" />
+                                                                Executed="DialogBranch_OnExecuted" />
                                                 <CommandBinding Command="{x:Static ui:CommonCommands.ReprocessDialog}"
-                                                                Executed="Reprocess_OnExecuted" />
+                                                                Executed="DialogReprocess_OnExecuted" />
                                                 <CommandBinding Command="{x:Static ui:CommonCommands.Backup}"
                                                                 Executed="BackupCommand_OnExecuted" />
                                             </dialog:DialogView.CommandBindings>
@@ -487,7 +605,9 @@
                             </component:DataTemplateTypePair>
                             <component:DataTemplateTypePair>
                                 <component:DataTemplateTypePair.Template>
-                                    <DataTemplate DataType="{x:Type project:ProjectViewModel}"></DataTemplate>
+                                    <DataTemplate DataType="{x:Type project:ProjectViewModel}">
+                                        <project:ProjectView />
+                                    </DataTemplate>
                                 </component:DataTemplateTypePair.Template>
                             </component:DataTemplateTypePair>
                         </component:TypeBasedDataTemplateSelector>

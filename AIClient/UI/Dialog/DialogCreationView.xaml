@@ -35,46 +35,8 @@
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Width="300"
-                      ItemsSource="{Binding  EndpointService.AvailableEndpoints,Mode=OneWay}">
-                <TreeView.Resources>
-                    <HierarchicalDataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}"
-                                              ItemsSource="{Binding AvailableModelsInfos, Mode=OneTime}">
-                        <StackPanel Orientation="Horizontal">
-                            <Image Source="{Binding Icon,Mode=OneTime}"
-                                   Width="26"
-                                   Height="26" />
-                            <TextBlock Margin="10,0"
-                                       VerticalAlignment="Center"
-                                       Text="{Binding DisplayName, Mode=OneTime}" />
-                        </StackPanel>
-                    </HierarchicalDataTemplate>
-                    <DataTemplate DataType="{x:Type models:AzureModelInfo}">
-                        <DockPanel>
-                            <Image DockPanel.Dock="Left"
-                                   Width="30"
-                                   Height="30"
-                                   Source="{Binding  Icon.CurrentSource,Mode=OneWay}" />
-                            <TextBlock Margin="10,2"
-                                       VerticalAlignment="Center"
-                                       Text="{Binding FriendlyName,Mode=OneTime }" />
-                        </DockPanel>
-                    </DataTemplate>
-                    <HierarchicalDataTemplate DataType="{x:Type openAiapi:APIEndPoint}"
-                                              ItemsSource="{Binding Models,Mode=OneWay}">
-                        <StackPanel Orientation="Horizontal">
-                            <Image Source="{Binding Icon,Mode=OneTime}"
-                                   Width="26"
-                                   Height="26" />
-                            <TextBlock Margin="10,0"
-                                       VerticalAlignment="Center"
-                                       Text="{Binding DisplayName,Mode=OneWay}" />
-                        </StackPanel>
-                    </HierarchicalDataTemplate>
-                    <DataTemplate DataType="{x:Type openAiapi:APIModelInfo}">
-                        <TextBlock Text="{Binding Name,Mode=OneWay}" />
-                    </DataTemplate>
-                </TreeView.Resources>
-            </TreeView>
+                      ItemsSource="{Binding  EndpointService.AvailableEndpoints,Mode=OneWay}"
+                      ItemTemplateSelector="{StaticResource ModelsDataTemplateSelector}" />
             <Separator Grid.Column="0"
                        VerticalAlignment="Stretch"
                        Background="DarkGray"
@@ -87,13 +49,11 @@
                 <ContentControl.ContentTemplateSelector>
                     <component:TypeBasedDataTemplateSelector>
                         <component:DataTemplateTypePair>
-                            <component:DataTemplateTypePair.Template>
-                                <DataTemplate DataType="{x:Type models:AzureModelInfo}">
-                                    <models:AzureModelInfoView Margin="10" />
-                                </DataTemplate>
-                            </component:DataTemplateTypePair.Template>
+                            <DataTemplate DataType="{x:Type models:AzureModelInfo}">
+                                <models:AzureModelInfoView Margin="10" />
+                            </DataTemplate>
                         </component:DataTemplateTypePair>
-                        <component:DataTemplateTypePair Template="{StaticResource ApiModelInfoDataTemplate}"/>
+                        <component:DataTemplateTypePair Template="{StaticResource ApiModelInfoDataTemplate}" />
                     </component:TypeBasedDataTemplateSelector>
                 </ContentControl.ContentTemplateSelector>
             </ContentControl>
@@ -104,8 +64,8 @@
                     Margin="10,0">
             <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}">
                 <Run
-                    Text="{Binding SelectedEndpoint.DisplayName, StringFormat=选择的服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
-                <Run Text="{Binding SelectedModelName,StringFormat=选择的模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
+                    Text="{Binding SelectedModel.Endpoint.DisplayName, StringFormat=选择的服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
+                <Run Text="{Binding SelectedModel.Name,StringFormat=选择的模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
             </TextBlock>
         </StackPanel>
         <StackPanel Grid.Row="2"

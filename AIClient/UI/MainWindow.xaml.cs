@@ -63,11 +63,13 @@ public partial class MainWindow : ExtendedWindow
         await this.ShowDialog(_globalConfig);
     }
 
+    #region dialog
+
     private void SnapNewDialog_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is SuggestedModel suggested)
         {
-            var llmModelClient = suggested.Endpoint.NewClient(suggested.LlmModel.Name);
+            var llmModelClient = suggested.LlmModel.CreateClient();
             if (llmModelClient != null)
             {
                 _mainWindowViewModel.AddNewDialog(llmModelClient);
@@ -79,7 +81,7 @@ public partial class MainWindow : ExtendedWindow
         }
     }
 
-    private void Branch_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    private void DialogBranch_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is IDialogItem dialogViewItem)
         {
@@ -87,7 +89,7 @@ public partial class MainWindow : ExtendedWindow
         }
     }
 
-    private async void Reprocess_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    private async void DialogReprocess_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is DialogViewModel oldDialog)
         {
@@ -107,6 +109,7 @@ public partial class MainWindow : ExtendedWindow
         }
     }
 
+    #endregion
 
     private readonly LoggerWindow _logWindow = new LoggerWindow();
 
