@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -41,8 +42,19 @@ public class ProjectViewModel : FileBasedSessionBase
         set
         {
             if (Equals(value, _client)) return;
+            if (_client is INotifyPropertyChanged oldValue)
+            {
+                oldValue.PropertyChanged -= TagDataChangedOnPropertyChanged;
+            }
+
+            if (_client.Parameters is INotifyPropertyChanged oldParameters)
+            {
+                oldParameters.PropertyChanged -= TagDataChangedOnPropertyChanged;
+            }
+
             _client = value;
             OnPropertyChanged();
+            TrackClientChanged(value);
         }
     }
 
@@ -165,6 +177,24 @@ public class ProjectViewModel : FileBasedSessionBase
         await JsonSerializer.SerializeAsync(stream, dialogModel);
     }
 
+    private void TagDataChangedOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        IsDataChanged = true;
+    }
+
+    private void TrackClientChanged(ILLMClient client)
+    {
+        if (client is INotifyPropertyChanged newValue)
+        {
+            newValue.PropertyChanged += TagDataChangedOnPropertyChanged;
+        }
+
+        if (client.Parameters is INotifyPropertyChanged newParameters)
+        {
+            newParameters.PropertyChanged += TagDataChangedOnPropertyChanged;
+        }
+    }
+
     #endregion
 
     public string? Name
@@ -236,7 +266,8 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     }
 
-    public ICommand SelectFolderCommand => new RelayCommand(() =>
+
+    public ICommand SelectProjectFolderCommand => new RelayCommand(() =>
     {
         var dialog = new System.Windows.Forms.FolderBrowserDialog
         {
@@ -252,6 +283,15 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     });
 
+    public ICommand AddAllowedFolderPathsCommand => new RelayCommand(() => { });
+
+    public ICommand RemoveAllowedFolderPathsCommand => new RelayCommand(() => { });
+
+    public ObservableCollection<string> AllowedFolderPaths { get; set; } = new ObservableCollection<string>();
+
+    /// <summary>
+    /// 项目路径，项目所在文件夹路径
+    /// </summary>
     public string? FolderPath
     {
         get => _folderPath;
@@ -270,7 +310,13 @@ public class ProjectViewModel : FileBasedSessionBase
                 this.AddError("FolderPath does not exist.");
             }
 
+            if (!string.IsNullOrEmpty(_folderPath))
+            {
+                AllowedFolderPaths.Remove(_folderPath);
+            }
+
             _folderPath = value;
+            AllowedFolderPaths.Add(value);
             OnPropertyChanged();
             OnPropertyChanged(nameof(Context));
         }
@@ -278,7 +324,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public virtual string Type { get; } = "Standard";
 
-    public ObservableCollection<ProjectTask> Tasks { get; set; } = new ObservableCollection<ProjectTask>();
+    public ObservableCollection<ProjectTask> Tasks { get; set; }
 
     public ProjectTask? WorkingTask
     {
@@ -290,14 +336,43 @@ public class ProjectViewModel : FileBasedSessionBase
             OnPropertyChanged();
         }
     }
-    
+
+    public long TokensConsumption
+    {
+        get => _tokensConsumption;
+        set
+        {
+            if (value == _tokensConsumption) return;
+            _tokensConsumption = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public float TotalPrice
+    {
+        get => _totalPrice;
+        set
+        {
+            if (value.Equals(_totalPrice)) return;
+            _totalPrice = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public IAIFunctionGroup[]? AllowedFunctions { get; set; }
+
     private readonly string[] _notTrackingProperties =
     [
-        
     ];
-    
-    public ProjectViewModel() : base()
+
+    private long _tokensConsumption;
+    private float _totalPrice;
+
+    public ProjectViewModel(IEnumerable<ProjectTask>? tasks = null) : base()
     {
+        this.Tasks = tasks == null
+            ? []
+            : new ObservableCollection<ProjectTask>(tasks);
         this.PropertyChanged += (_, e) =>
         {
             var propertyName = e.PropertyName;
@@ -308,7 +383,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
             IsDataChanged = true;
         };
-        Tasks.CollectionChanged+= TasksOnCollectionChanged;
+        Tasks.CollectionChanged += TasksOnCollectionChanged;
     }
 
     private void TasksOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

@@ -1,9 +1,5 @@
-﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics.Metrics;
-using LLMClient.Abstraction;
+﻿using System.ComponentModel;
 using LLMClient.UI.Dialog;
-using LLMClient.UI.MCP.Servers;
 
 namespace LLMClient.UI.Project;
 
@@ -26,10 +22,9 @@ namespace LLMClient.UI.Project;
 public class ProjectTask : DialogCoreViewModel
 {
     private string? _name;
-    private string? _taskPrompt; //"请描述任务的内容和目标。";
     private string? _summary;
 
-    public ProjectTask()
+    public ProjectTask(IList<IDialogItem>? items = null) : base(items)
     {
     }
 
@@ -53,24 +48,6 @@ public class ProjectTask : DialogCoreViewModel
         }
     }
 
-    public string? TaskPrompt
-    {
-        get => _taskPrompt;
-        set
-        {
-            if (value == _taskPrompt) return;
-            ClearError();
-            if (string.IsNullOrEmpty(value))
-            {
-                AddError("TaskPrompt cannot be null or empty.");
-                return;
-            }
-
-            _taskPrompt = value;
-            OnPropertyChanged();
-        }
-    }
-
     /// <summary>
     /// Task内的上下文
     /// </summary>
@@ -83,17 +60,17 @@ public class ProjectTask : DialogCoreViewModel
                 return null;
             }
 
-            if (string.IsNullOrEmpty(Name) || string.IsNullOrEmpty(TaskPrompt))
+            if (string.IsNullOrEmpty(Name) || string.IsNullOrEmpty(SystemPrompt))
             {
                 return null;
             }
 
-            return $"这是一个{Type.GetEnumDescription()}任务，我希望你能帮助我完成它。{TaskPrompt}";
+            return $"这是一个{Type.GetEnumDescription()}类型的任务，我希望你能帮助我完成它。{SystemPrompt}";
         }
     }
 
     /// <summary>
-    /// summary of the task, used to summarize the task for the user.
+    /// summary of the task, when task end, generate for total context.
     /// </summary>
     public string? Summary
     {
@@ -111,14 +88,14 @@ public class ProjectTask : DialogCoreViewModel
     public ProjectTaskStatus Status { get; set; } = ProjectTaskStatus.InProgress;
 }
 
-public enum ProjectTaskStatus
+public enum ProjectTaskStatus : int
 {
     InProgress,
     Completed,
     RolledBack
 }
 
-public enum ProjectTaskType
+public enum ProjectTaskType : int
 {
     [Description("需求变更")] NewDemand,
     [Description("修复Bug")] BugFix,

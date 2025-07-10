@@ -130,16 +130,20 @@
             </Style>
             <ControlTemplate x:Key="ItemDeleteButtonTemplate"
                              TargetType="{x:Type Button}">
+                <ControlTemplate.Resources>
+                    <SolidColorBrush x:Key="HoverBrush">#FF009587</SolidColorBrush>
+                </ControlTemplate.Resources>
                 <Grid>
                     <Ellipse x:Name="Bg"
                              Fill="#FFA6A6A6"
-                             Stroke="#FF009587"
+                             Stroke="{StaticResource HoverBrush}"
                              StrokeThickness="0" />
                     <materialDesign:PackIcon Width="12"
                                              Height="12"
                                              HorizontalAlignment="Center"
                                              VerticalAlignment="Center"
-                                             Kind="Close" />
+                                             Kind="Close"
+                                             x:Name="Icon" />
                 </Grid>
                 <ControlTemplate.Triggers>
                     <Trigger Property="IsMouseOver"
@@ -147,6 +151,9 @@
                         <Setter TargetName="Bg"
                                 Property="StrokeThickness"
                                 Value="1" />
+                        <Setter TargetName="Icon"
+                                Property="Foreground"
+                                Value="{StaticResource HoverBrush}" />
                     </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
@@ -404,6 +411,18 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+            </Style>
+            <Style x:Key="ListBoxHoverButtonStyle"
+                   TargetType="{x:Type Button}"
+                   BasedOn="{StaticResource MaterialDesignIconButton}">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <DataTrigger
+                        Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                        Value="True">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="UI/MarkdownResource.xaml" />

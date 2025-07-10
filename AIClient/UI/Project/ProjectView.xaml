@@ -4,17 +4,183 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:LLMClient.UI.Project"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+             xmlns:system="clr-namespace:System;assembly=System.Runtime"
+             xmlns:ui="clr-namespace:LLMClient.UI"
              mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="300">
+             d:DataContext="{d:DesignInstance local:ProjectViewModel}"
+             d:DesignHeight="800" d:DesignWidth="1200">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
         </Grid.RowDefinitions>
-        <ListBox>
-            <!--<ListBox.ItemTemplate>
-                
-            </ListBox.ItemTemplate>-->
+        <materialDesign:Card Grid.Row="0"
+                             Margin="5,0,5,5"
+                             Padding="10,4"
+                             Height="50">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding  Name,Mode=TwoWay}"
+                         Style="{StaticResource MaterialDesignFilledTextBox}"
+                         materialDesign:HintAssist.Hint="名称"
+                         HorizontalAlignment="Left"
+                         MaxHeight="40"
+                         Padding="6,10,6,0"
+                         VerticalScrollBarVisibility="Auto"
+                         MinWidth="100"
+                         MaxWidth="300"
+                         TextWrapping="Wrap" />
+                <TextBlock Grid.Column="1"
+                           Height="50"
+                           TextWrapping="Wrap"
+                           Text="{Binding  Description,Mode=OneWay}"
+                           Margin="0,0,10,0" />
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            IsEnabled="{Binding IsBusy,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+                    <StackPanel.Resources>
+                        <Style TargetType="{x:Type Button}"
+                               BasedOn="{StaticResource MaterialDesignIconButton}">
+                            <Setter Property="ToolTipService.InitialShowDelay" Value="0" />
+                            <Setter Property="Width"
+                                    Value="36" />
+                            <Setter Property="Height"
+                                    Value="36" />
+                        </Style>
+                    </StackPanel.Resources>
+                    <TextBlock MaxWidth="140"
+                               TextWrapping="Wrap"
+                               HorizontalAlignment="Right"
+                               Margin="0,0,10,0"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource MaterialDesignOverlineTextBlock}">
+                        <Run Text="{Binding TokensConsumption, Mode=OneWay,StringFormat=Total Tokens:{0}}" />
+                        <LineBreak />
+                        <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
+                    </TextBlock>
+                    <Button Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding Client,Mode=OneWay}"
+                            Style="{StaticResource MaterialDesignRaisedLightButton}"
+                            Margin="0,0,10,0"
+                            materialDesign:ButtonAssist.CornerRadius="15"
+                            Padding="10,5"
+                            ToolTip="配置模型">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding  Client.Model.Icon.CurrentSource,Mode=OneWay}"
+                                   Width="20"
+                                   Height="20" />
+                            <TextBlock Text="{Binding Client.Name,Mode=OneWay}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="120"
+                                       Margin="10,0,0,0" />
+                        </StackPanel>
+                    </Button>
+                    <Button ToolTip="model info"
+                            Visibility="{Binding Client.Model,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding Client.Model,Mode=OneWay}">
+                        <materialDesign:PackIcon Kind="InformationOutline"
+                                                 Width="20"
+                                                 Height="20" />
+                    </Button>
+                    <Button ToolTip="备份"
+                            Command="{x:Static ui:CommonCommands.Backup}">
+                        <materialDesign:PackIcon Kind="ContentSave"
+                                                 Width="20"
+                                                 Height="20" />
+                    </Button>
+                </StackPanel>
+                <Button Grid.Column="3"
+                        ToolTip="Add New Task"
+                        Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
+                        Content="{ materialDesign:PackIcon Kind=Add,Size=20}" />
+            </Grid>
+            <!--todo: 备份、添加新task、添加-->
+        </materialDesign:Card>
+        <ListBox Grid.Row="1"
+                 MaxHeight="220"
+                 SelectedItem="{Binding WorkingTask,Mode=TwoWay}"
+                 ItemsSource="{Binding Tasks,Mode=OneWay}">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel IsItemsHost="True" />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type local:ProjectTask}">
+                    <materialDesign:Card Width="200"
+                                         Height="90"
+                                         Padding="4"
+                                         BorderThickness="1"
+                                         BorderBrush="{Binding Status,Mode=OneWay,Converter={x:Static converters:SnapConverters.ProjectTaskStatusToBrush}}"
+                                         materialDesign:ElevationAssist.Elevation="Dp4"
+                                         Style="{StaticResource MaterialDesignOutlinedCard}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding Name,Mode=TwoWay}"
+                                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                     Margin="0"
+                                     Padding="0"
+                                     TextWrapping="NoWrap"
+                                     BorderThickness="0"
+                                     VerticalAlignment="Top"
+                                     FontSize="18"
+                                     FontWeight="Bold" />
+                            <StackPanel Grid.Row="0" Grid.Column="1"
+                                        Orientation="Horizontal">
+                                <Button HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Style="{StaticResource ListBoxHoverButtonStyle}"
+                                        Width="26"
+                                        Height="26"
+                                        Background="White"
+                                        Command="MoveLeft"
+                                        CommandParameter="{Binding}">
+                                    <materialDesign:PackIcon Kind="ArrowLeftBold"
+                                                             Width="20"
+                                                             Height="20" />
+                                </Button>
+                                <Button Style="{StaticResource MaterialDesignIconForegroundButton}"
+                                        Template="{StaticResource ItemDeleteButtonTemplate}"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Command="Delete"
+                                        Margin="6,0,0,0"
+                                        Width="26"
+                                        Height="26" />
+                            </StackPanel>
+                            <TextBlock Grid.Row="2" Grid.Column="0"
+                                       Grid.ColumnSpan="2"
+                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                       Text="{Binding  SystemPrompt,Mode=OneWay}" />
+                        </Grid>
+                    </materialDesign:Card>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.CommandBindings>
+                <CommandBinding Command="Delete"
+                                Executed="TaskDelete_OnExecuted" />
+                <CommandBinding Command="MoveLeft"
+                                Executed="TaskMoveLeft_OnExecuted" />
+            </ListBox.CommandBindings>
         </ListBox>
     </Grid>
 </UserControl>

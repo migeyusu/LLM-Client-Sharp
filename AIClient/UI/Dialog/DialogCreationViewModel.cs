@@ -8,13 +8,13 @@ namespace LLMClient.UI.Dialog;
 
 public class DialogCreationViewModel : ModelSelectionViewModel
 {
-    private string _dialogName = "新建会话";
-
     public DialogCreationViewModel(IEndpointService service) : base(service)
     {
         
     }
 
+    private string _dialogName = "新建会话";
+    
     public string DialogName
     {
         get => _dialogName;
@@ -40,8 +40,7 @@ public class DialogCreationViewModel : ModelSelectionViewModel
             MessageBox.Show("create model failed!");
             return;
         }
-
-
+        
         var frameworkElement = o as FrameworkElement;
         DialogHost.CloseDialogCommand.Execute(true, frameworkElement);
     }));

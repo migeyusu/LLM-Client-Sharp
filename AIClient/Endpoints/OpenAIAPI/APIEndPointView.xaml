@@ -140,23 +140,11 @@
                                 Background="White"
                                 Command="MoveUp"
                                 CommandParameter="{Binding}"
-                                x:Name="MoveUpButton">
+                                x:Name="MoveUpButton" 
+                                Style="{StaticResource ListBoxHoverButtonStyle}">
                             <materialDesign:PackIcon Kind="ArrowUpBold"
                                                      Width="17"
                                                      Height="17" />
-                            <Button.Style>
-                                <Style TargetType="Button"
-                                       BasedOn="{StaticResource MaterialDesignIconButton}">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger
-                                            Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
-                                            Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
                         </Button>
                     </Grid>
                 </DataTemplate>

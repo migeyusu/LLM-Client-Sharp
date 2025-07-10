@@ -1,12 +1,11 @@
 ﻿using System.Collections.ObjectModel;
 using AutoMapper;
-using DocumentFormat.OpenXml.Wordprocessing;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
-using LLMClient.UI.MCP.Servers;
+using LLMClient.UI.Project;
 
 namespace LLMClient.UI;
 
@@ -16,7 +15,11 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
     ITypeConverter<DialogSessionPersistModel, DialogSession>,
     ITypeConverter<MultiResponsePersistItem, MultiResponseViewItem>,
     ITypeConverter<MultiResponseViewItem, MultiResponsePersistItem>,
-    ITypeConverter<ResponsePersistItem, ResponseViewItem>
+    ITypeConverter<ResponsePersistItem, ResponseViewItem>,
+    ITypeConverter<ProjectPersistModel, ProjectViewModel>,
+    ITypeConverter<ProjectViewModel, ProjectPersistModel>,
+    ITypeConverter<ProjectTaskPersistModel, ProjectTask>,
+    ITypeConverter<ProjectTask, ProjectTaskPersistModel>
 {
     private readonly IEndpointService _endpointService;
 
@@ -161,6 +164,137 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
             TokensConsumption = source.TokensConsumption,
             TotalPrice = source.TotalPrice,
             SelectedFunctions = aiFunctionGroups,
+        };
+    }
+
+    public ProjectViewModel Convert(ProjectPersistModel source, ProjectViewModel destination, ResolutionContext context)
+    {
+        var llmEndpoint = source.EndPoint == null ? null : _endpointService.GetEndpoint(source.EndPoint);
+        var llmModelClient = llmEndpoint?.NewClient(source.Model ?? string.Empty) ?? NullLlmModelClient.Instance;
+        var sourceJsonModel = source.Params;
+        if (sourceJsonModel != null)
+        {
+            llmModelClient.Parameters = sourceJsonModel;
+        }
+
+        var aiFunctionGroups = source.AllowedFunctions?.Select((function) =>
+        {
+            if (function is McpServerItem server)
+            {
+                return _mcpServiceCollection.TryGet(server);
+            }
+
+            return function;
+        }).ToArray();
+        var mapper = context.Mapper;
+        var tasks = source.Tasks?
+            .Select((task) => mapper.Map<ProjectTaskPersistModel, ProjectTask>(task))
+            .ToArray();
+        return new ProjectViewModel(tasks)
+        {
+            Name = source.Name,
+            Description = source.Description,
+            LanguageNames = source.LanguageNames,
+            FolderPath = source.FolderPath,
+            AllowedFolderPaths = source.AllowedFolderPaths == null
+                ? []
+                : new ObservableCollection<string>(source.AllowedFolderPaths),
+            TokensConsumption = source.TokensConsumption,
+            TotalPrice = source.TotalPrice,
+            AllowedFunctions = aiFunctionGroups,
+        };
+    }
+
+    public ProjectPersistModel Convert(ProjectViewModel source, ProjectPersistModel destination,
+        ResolutionContext context)
+    {
+        var mapper = context.Mapper;
+        var projectTaskPersistModels = source.Tasks
+            ?.Select((task => mapper.Map<ProjectTask, ProjectTaskPersistModel>(task))).ToArray();
+        return new ProjectPersistModel()
+        {
+            Name = source.Name,
+            Description = source.Description,
+            LanguageNames = source.LanguageNames?.ToArray(),
+            FolderPath = source.FolderPath,
+            AllowedFolderPaths = source.AllowedFolderPaths?.ToArray(),
+            TokensConsumption = source.TokensConsumption,
+            TotalPrice = source.TotalPrice,
+            EndPoint = source.Client.Endpoint.Name,
+            Model = source.Client.Name,
+            Params = source.Client.Parameters,
+            Tasks = projectTaskPersistModels,
+            AllowedFunctions = source.AllowedFunctions,
+        };
+    }
+
+    public ProjectTask Convert(ProjectTaskPersistModel source, ProjectTask destination, ResolutionContext context)
+    {
+        var sourceDialogItems = source.DialogItems?.Select<IDialogPersistItem, IDialogItem>((item =>
+        {
+            if (item is MultiResponsePersistItem multiResponsePersistItem)
+            {
+                return context.Mapper.Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem);
+            }
+
+            if (item is RequestViewItem requestViewItem)
+            {
+                return requestViewItem;
+            }
+
+            if (item is EraseViewItem eraseViewItem)
+            {
+                return eraseViewItem;
+            }
+
+            throw new NotSupportedException();
+        })).ToArray();
+        return new ProjectTask(sourceDialogItems)
+        {
+            Name = source.Name,
+            Summary = source.Summary,
+            Type = source.Type,
+            Status = source.Status,
+            SystemPrompt = source.SystemPrompt,
+            PromptString = source.PromptString,
+            TokensConsumption = source.TokensConsumption,
+            TotalPrice = source.TotalPrice,
+        };
+    }
+
+    public ProjectTaskPersistModel Convert(ProjectTask source, ProjectTaskPersistModel destination,
+        ResolutionContext context)
+    {
+        var dialogItems = source.DialogItems.Select<IDialogItem, IDialogPersistItem>((item =>
+        {
+            if (item is EraseViewItem eraseViewItem)
+            {
+                return eraseViewItem;
+            }
+
+            if (item is RequestViewItem requestViewItem)
+            {
+                return requestViewItem;
+            }
+
+            if (item is MultiResponseViewItem multiResponseViewItem)
+            {
+                return context.Mapper.Map<MultiResponseViewItem, MultiResponsePersistItem>(multiResponseViewItem);
+            }
+
+            throw new NotSupportedException();
+        })).ToArray();
+        return new ProjectTaskPersistModel()
+        {
+            Name = source.Name,
+            Summary = source.Summary,
+            Type = source.Type,
+            Status = source.Status,
+            DialogItems = dialogItems,
+            PromptString = source.PromptString,
+            TokensConsumption = source.TokensConsumption,
+            TotalPrice = source.TotalPrice,
+            SystemPrompt = source.SystemPrompt,
         };
     }
 }

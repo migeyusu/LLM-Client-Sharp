@@ -443,7 +443,7 @@ public class DialogViewModel : DialogCoreViewModel
             TrackClientChanged(value);
         }
     }
-    
+
     private MultiResponseViewItem? _focusedResponse;
     private bool _isChaining;
     private int _chainStepCount;
@@ -455,8 +455,8 @@ public class DialogViewModel : DialogCoreViewModel
         nameof(DialogViewModel.SearchText)
     ];
 
-    public DialogViewModel(string topic, ILLMClient modelClient,
-        IList<IDialogItem>? items = null) : base(items)
+    public DialogViewModel(string topic, ILLMClient modelClient, IList<IDialogItem>? items = null)
+        : base(items)
     {
         this._topic = topic;
         this._defaultClient = modelClient;

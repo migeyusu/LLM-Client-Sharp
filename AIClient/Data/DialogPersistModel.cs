@@ -14,7 +14,6 @@ public class DialogPersistModel
 
     public string? PromptString { get; set; }
     
-
     public string? SystemPrompt { get; set; }
 
     public IModelParams? Params { get; set; }

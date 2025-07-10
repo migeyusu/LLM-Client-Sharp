@@ -9,8 +9,6 @@
              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
              xmlns:dialog="clr-namespace:LLMClient.UI.Dialog"
-             xmlns:mcp="clr-namespace:LLMClient.UI.MCP"
-             xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
              xmlns:system="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:DialogViewModel}"
