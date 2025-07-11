@@ -19,11 +19,7 @@ public class ProjectPersistModel
 
     public string? FolderPath { get; set; }
 
-    public string? EndPoint { get; set; }
-
-    public string? Model { get; set; }
-
-    public IModelParams? Params { get; set; }
+    public LLMClientPersistModel? Client { get; set; }
 
     public long TokensConsumption { get; set; }
 

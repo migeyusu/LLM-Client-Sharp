@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.UI.Dialog;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +21,63 @@ public class Version3Converter
     {
         this._service = service;
     }
+
+    /*public static async Task Convert(string folderPath)
+    {
+        var directoryInfo = new DirectoryInfo(folderPath);
+        if (!directoryInfo.Exists)
+        {
+            return;
+        }
+
+        var fileInfos = directoryInfo.GetFiles();
+        foreach (var fileInfo in fileInfos)
+        {
+            try
+            {
+                DialogSessionPersistModel? dialogSession = null;
+                //改进了client的序列化
+                await using (var fileStream = fileInfo.OpenRead())
+                {
+                    dialogSession = await JsonSerializer.DeserializeAsync<DialogSessionPersistModel>(fileStream);
+                    if (dialogSession == null)
+                    {
+                        continue;
+                    }
+
+                    dialogSession.Client = new LLMClientPersistModel()
+                    {
+                        EndPointName = dialogSession.EndPoint ?? string.Empty,
+                        ModelName = dialogSession.Model ?? String.Empty,
+                        Params = dialogSession.Params
+                    };
+                    if (dialogSession.DialogItems != null)
+                    {
+                        foreach (var dialogItem in dialogSession.DialogItems)
+                        {
+                            if (dialogItem is MultiResponsePersistItem multiResponseItem)
+                            {
+                                foreach (var responseItem in multiResponseItem.ResponseItems)
+                                {
+                                    responseItem.Client = new LLMClientPersistModel()
+                                    {
+                                        EndPointName = responseItem.EndPointName ?? string.Empty,
+                                        ModelName = responseItem.ModelName ?? string.Empty,
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+
+                await File.WriteAllTextAsync(fileInfo.FullName, JsonSerializer.Serialize(dialogSession));
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError($"加载会话{fileInfo.FullName}失败：{e}");
+            }
+        }
+    }*/
 
     /*public async Task ConvertToVersion3(string folderPath)
     {

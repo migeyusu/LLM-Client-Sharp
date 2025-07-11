@@ -434,6 +434,7 @@
                 <ResourceDictionary
                     Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.popupbox.xaml" />
                 <ResourceDictionary Source="UI/DataTemplateDictionary.xaml" />
+                <ResourceDictionary Source="UI/Dialog/DialogTemplateDictionary.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

@@ -140,6 +140,7 @@
                          ItemsSource="{Binding    EndpointService.AvailableEndpoints,Mode=OneWay}" />
                 <ListBox DockPanel.Dock="Right"
                          HorizontalAlignment="Stretch"
+                         DisplayMemberPath="Name"
                          SelectedItem="{Binding SelectedModel,Mode=TwoWay}"
                          ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}" />
             </DockPanel>

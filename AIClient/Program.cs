@@ -11,6 +11,7 @@ using LLMClient.UI;
 using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
+using LLMClient.UI.Project;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
@@ -23,13 +24,13 @@ namespace LLMClient;
 
 public class Program
 {
-    private static Mutex mutex = new Mutex(true, "LLMClient.WPF");
+    private static readonly Mutex Mutex = new Mutex(true, "LLMClient.WPF");
 
     [STAThread]
     static void Main(string[] args)
     {
         // 尝试获得互斥量的所有权
-        if (!Debugger.IsAttached && !mutex.WaitOne(TimeSpan.Zero, true))
+        if (!Debugger.IsAttached && !Mutex.WaitOne(TimeSpan.Zero, true))
         {
             // 如果获取失败，则表示已有实例在运行
             MessageBox.Show("程序已经在运行！", "提示");
@@ -51,6 +52,15 @@ public class Program
                 .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>();
             collection.AddAutoMapper((provider, expression) =>
             {
+                expression.CreateMap<IResponse, ResponseViewItem>();
+                expression.CreateMap<IModelParams, IModelParams>();
+                expression.CreateMap<IModelParams, DefaultModelParam>();
+                expression.CreateMap<IModelParams, ILLMModel>();
+                expression.CreateMap<IModelParams, APIModelInfo>();
+                expression.CreateMap<ILLMClient, LLMClientPersistModel>()
+                    .ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<LLMClientPersistModel, ILLMClient>()
+                    .ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<DialogSessionPersistModel, DialogSession>()
                     .ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<DialogSession, DialogSessionPersistModel>()
@@ -66,6 +76,14 @@ public class Program
                 expression.CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
                     .ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
+                    .ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<ProjectViewModel, ProjectPersistModel>()
+                    .ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<ProjectPersistModel, ProjectViewModel>()
+                    .ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<ProjectTask, ProjectTaskPersistModel>()
+                    .ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<ProjectTaskPersistModel, ProjectTask>()
                     .ConvertUsing<AutoMapModelTypeConverter>();
                 // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
                 expression.ConstructServicesUsing(provider.GetService);
@@ -139,7 +157,7 @@ public class Program
         {
             if (!Debugger.IsAttached)
             {
-                mutex.ReleaseMutex();
+                Mutex.ReleaseMutex();
             }
         }
     }

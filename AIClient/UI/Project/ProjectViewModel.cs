@@ -12,6 +12,7 @@ using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.Project;
 
@@ -35,6 +36,13 @@ public class ProjectViewModel : FileBasedSessionBase
     }
 
     public override bool IsBusy { get; } = false;
+
+    private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveDir)));
+
+    protected override string DefaultSaveFolderPath
+    {
+        get { return SaveFolderPathLazy.Value; }
+    }
 
     public ILLMClient Client
     {
@@ -86,7 +94,7 @@ public class ProjectViewModel : FileBasedSessionBase
                 }
 
                 var viewModel = Mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel);
-                viewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
+                viewModel.FileFullPath = fileInfo.FullName;
                 viewModel.IsDataChanged = false;
                 return viewModel;
             }
@@ -160,7 +168,6 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     }
 
-    private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveDir)));
     private string? _description = string.Empty;
     private IList<string>? _languageNames;
     private string? _folderPath;
@@ -168,8 +175,6 @@ public class ProjectViewModel : FileBasedSessionBase
     private string? _name;
     private ILLMClient _client = NullLlmModelClient.Instance;
     private bool _isDataChanged = true;
-
-    protected override string SaveFolderPath => SaveFolderPathLazy.Value;
 
     protected override async Task SaveToStream(Stream stream)
     {
@@ -324,6 +329,15 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public virtual string Type { get; } = "Standard";
 
+    #region tasks
+
+    public ICommand AddNewTask => new ActionCommand(o => { this.Tasks.Add(new ProjectTask()); });
+
+    public void DeleteTask(ProjectTask task)
+    {
+        this.Tasks.Remove(task);
+    }
+
     public ObservableCollection<ProjectTask> Tasks { get; set; }
 
     public ProjectTask? WorkingTask
@@ -336,6 +350,9 @@ public class ProjectViewModel : FileBasedSessionBase
             OnPropertyChanged();
         }
     }
+
+    #endregion
+
 
     public long TokensConsumption
     {

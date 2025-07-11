@@ -8,6 +8,7 @@ namespace LLMClient.UI;
 public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, ILLMSession
 {
     private DateTime _editTime;
+    private string? _fileFullPath;
 
     public DateTime EditTime
     {
@@ -21,9 +22,21 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     }
 
     /// <summary>
-    /// 用于跟踪对话对象，新实例自动创建id
+    /// 用于跟踪对话文件
     /// </summary>
-    public string FileName { get; set; } = Guid.NewGuid().ToString();
+    public string FileFullPath
+    {
+        get
+        {
+            if (_fileFullPath == null)
+            {
+                _fileFullPath = Path.GetFullPath($"{Guid.NewGuid()}.json", DefaultSaveFolderPath);
+            }
+
+            return _fileFullPath;
+        }
+        set => _fileFullPath = value;
+    }
 
     /// <summary>
     /// indicate whether data is changed after loading.
@@ -31,6 +44,8 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     public abstract bool IsDataChanged { get; set; }
 
     public abstract bool IsBusy { get; }
+
+    protected abstract string DefaultSaveFolderPath { get; }
 
     protected FileBasedSessionBase()
     {
@@ -69,13 +84,9 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
         }
     }
 
-    protected abstract string SaveFolderPath { get; }
-
     protected FileInfo GetAssociateFile()
     {
-        var fullPath = this.SaveFolderPath;
-        var fileName = Path.GetFullPath(this.FileName + ".json", fullPath);
-        return new FileInfo(fileName);
+        return new FileInfo(FileFullPath);
     }
 
     protected abstract Task SaveToStream(Stream stream);

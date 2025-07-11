@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
+using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
@@ -109,7 +110,7 @@ public class DialogCoreViewModel : NotifyDataErrorInfoViewModelBase
             OnPropertyChanged();
         }
     }
-    
+
     public ICommand ClearContextCommand => new ActionCommand((o =>
     {
         var item = new EraseViewItem();
@@ -235,9 +236,9 @@ public class DialogCoreViewModel : NotifyDataErrorInfoViewModelBase
     public ICommand ConclusionCommand => new ActionCommand((o => { ConclusionCurrent(); }));
 
     #endregion
-    
+
     #region scroll
-    
+
     private IDialogItem? _scrollViewItem;
 
     public IDialogItem? ScrollViewItem
@@ -335,10 +336,13 @@ public class DialogCoreViewModel : NotifyDataErrorInfoViewModelBase
     }));
 
     #endregion
-    
+
     #region core method
 
     protected IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
+    
+    private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
+
     protected static void FilterHistory(Span<IDialogItem> source, Stack<IDialogItem> dialogViewItems)
     {
         Guid? interactionId = null;
@@ -411,7 +415,9 @@ public class DialogCoreViewModel : NotifyDataErrorInfoViewModelBase
             var list = GenerateHistory(dialog);
             completedResult = await client.SendRequest(list,
                 cancellationToken: respondingViewItem.RequestTokenSource.Token, systemPrompt: this.SystemPrompt);
-            multiResponseViewItem.Append(new ResponseViewItem(client.Model, completedResult, client.Endpoint.Name));
+            var responseViewItem = new ResponseViewItem(client);
+            Mapper.Map<IResponse, ResponseViewItem>(completedResult, responseViewItem);
+            multiResponseViewItem.Append(responseViewItem);
         }
         catch (Exception exception)
         {
@@ -575,8 +581,7 @@ public class DialogCoreViewModel : NotifyDataErrorInfoViewModelBase
             return;
         }
 
-        var client = EndpointService.GetEndpoint(responseViewItem.EndPointName)?
-            .NewClient(responseViewItem.ModelName);
+        var client = responseViewItem.Client;
         if (client == null)
         {
             MessageEventBus.Publish("已无法找到模型！");
@@ -642,3 +647,38 @@ public class DialogCoreViewModel : NotifyDataErrorInfoViewModelBase
     );
     Debugger.Break();
 }*/
+
+public class AdditionalModelSelection : ModelSelectionViewModel
+{
+    public MultiResponseViewItem MultiResponseViewItem { get; }
+
+    public AdditionalModelSelection(IEndpointService endpointService, MultiResponseViewItem multiResponseViewItem)
+        : base(endpointService)
+    {
+        MultiResponseViewItem = multiResponseViewItem;
+    }
+
+    public ICommand AcceptModelCommand => new ActionCommand((async o =>
+    {
+        if (SelectedModel == null)
+        {
+            return;
+        }
+
+        var client = this.GetClient();
+        if (client == null)
+        {
+            return;
+        }
+
+        if (o is DialogViewModel dialogViewModel)
+        {
+            await dialogViewModel.AppendResponseOn(this.MultiResponseViewItem, client);
+        }
+
+        if (o is FrameworkElement frameworkElement)
+        {
+            PopupBox.ClosePopupCommand.Execute(this, frameworkElement);
+        }
+    }));
+}

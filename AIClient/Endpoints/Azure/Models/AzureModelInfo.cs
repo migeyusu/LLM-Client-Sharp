@@ -140,7 +140,7 @@ public class AzureModelInfo : ILLMModel
     public int MaxTokenLimit
     {
         get => MaxOutputTokens.HasValue ? (int)MaxOutputTokens.Value : 4096;
-        set => throw new NotImplementedException();
+        set => throw new NotSupportedException("MaxTokenLimit is read-only and should not be set directly.");
     }
 
     public bool Reasonable

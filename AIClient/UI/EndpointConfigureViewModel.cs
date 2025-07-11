@@ -80,7 +80,6 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                 .Select(model => new KeyValuePair<string, string>(model.LlmModel.Endpoint.Name, model.LlmModel.Name))
                 .ToArray();
             endPointsNode[SuggestedModelKey] = JsonSerializer.SerializeToNode(keyValuePairs);
-            //todo: 添加template 保存
             await EndPointsConfiguration.SaveDoc(root);
             MessageEventBus.Publish("已保存！");
         }

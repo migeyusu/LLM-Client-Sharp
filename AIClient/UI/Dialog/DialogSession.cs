@@ -7,7 +7,6 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Win32;
 
 namespace LLMClient.UI.Dialog;
 
@@ -17,8 +16,6 @@ public class DialogSession : FileBasedSessionBase
 
     public const string SaveFolder = "Dialogs";
 
-    public static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveFolder)));
-
     public override bool IsDataChanged
     {
         get => this.Dialog.IsDataChanged;
@@ -27,7 +24,12 @@ public class DialogSession : FileBasedSessionBase
 
     public override bool IsBusy => Dialog.IsBusy;
 
-    protected override string SaveFolderPath => SaveFolderPathLazy.Value;
+    public static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveFolder)));
+
+    protected override string DefaultSaveFolderPath
+    {
+        get { return SaveFolderPathLazy.Value; }
+    }
 
     protected override async Task SaveToStream(Stream stream)
     {
@@ -68,21 +70,21 @@ public class DialogSession : FileBasedSessionBase
         {
             await using (var fileStream = fileInfo.OpenRead())
             {
-                var dialogModel = await JsonSerializer.DeserializeAsync<DialogSessionPersistModel>(fileStream);
-                if (dialogModel == null)
+                var dialogSession = await JsonSerializer.DeserializeAsync<DialogSessionPersistModel>(fileStream);
+                if (dialogSession == null)
                 {
                     Trace.TraceError($"加载会话{fileInfo.FullName}失败：文件内容为空");
                     return null;
                 }
 
-                if (dialogModel.Version != version)
+                if (dialogSession.Version != version)
                 {
                     Trace.TraceError($"加载会话{fileInfo.FullName}失败：版本不匹配");
                     return null;
                 }
 
-                var viewModel = Mapper.Map<DialogSessionPersistModel, DialogSession>(dialogModel);
-                viewModel.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
+                var viewModel = Mapper.Map<DialogSessionPersistModel, DialogSession>(dialogSession);
+                viewModel.FileFullPath = fileInfo.FullName;
                 viewModel.IsDataChanged = false;
                 return viewModel;
             }
@@ -99,16 +101,9 @@ public class DialogSession : FileBasedSessionBase
         var of = this.Dialog.DialogItems.IndexOf(viewModel);
         var dialogSessionClone = Mapper.Map<DialogSession, DialogSessionPersistModel>(this);
         dialogSessionClone.DialogItems = dialogSessionClone.DialogItems?.Take(of + 1).ToArray();
-        var fileInfo = new FileInfo(Path.Combine(SaveFolderPath, $"{Guid.NewGuid()}.json"));
-        await using (var fileStream = fileInfo.OpenWrite())
-        {
-            await JsonSerializer.SerializeAsync(fileStream, dialogSessionClone);
-        }
-
-        var dialogSession = Mapper.Map<DialogSessionPersistModel, DialogSession>(dialogSessionClone);
-        dialogSession.FileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
-        dialogSession.IsDataChanged = false;
-        return dialogSession;
+        var cloneSession = Mapper.Map<DialogSessionPersistModel,DialogSession>(dialogSessionClone);
+        cloneSession.IsDataChanged = true;
+        return cloneSession;
     }
 
     public static async IAsyncEnumerable<DialogSession> ImportFiles(IEnumerable<FileInfo> fileInfos)

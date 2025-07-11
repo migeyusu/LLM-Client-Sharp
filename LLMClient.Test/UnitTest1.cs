@@ -2,7 +2,18 @@ using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using AutoMapper;
+using LLMClient.Abstraction;
+using LLMClient.Data;
+using LLMClient.Endpoints;
+using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.Obsolete;
+using LLMClient.UI;
+using LLMClient.UI.Dialog;
+using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
+using LLMClient.UI.Project;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace LLMClient.Test;
@@ -17,6 +28,53 @@ public class UnitTest1
         this.output = output;
     }
 
+    [Fact]
+    public async Task Convert()
+    {
+        // await Version3Converter.Convert("D:\\Dev\\LLM-Client-Sharp\\AIClient\\bin\\Debug\\net8.0-windows\\Dialogs");
+    }
+
+    [Fact]
+    public void Mapping()
+    {
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddSingleton<IEndpointService, EndpointConfigureViewModel>()
+            .AddSingleton<IMcpServiceCollection, McpServiceCollection>();
+        serviceCollection.AddAutoMapper((provider, expression) =>
+        {
+            expression.CreateMap<DialogSessionPersistModel, DialogSession>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<DialogSession, DialogSessionPersistModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<DialogViewModel, DialogPersistModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<DialogPersistModel, DialogViewModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<APIEndPoint, APIEndPoint>();
+            expression.CreateMap<APIDefaultOption, APIDefaultOption>();
+            expression.CreateMap<ResponseViewItem, ResponsePersistItem>();
+            expression.CreateMap<ResponsePersistItem, ResponseViewItem>().ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ProjectViewModel, ProjectPersistModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ProjectPersistModel, ProjectViewModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ProjectTask, ProjectTaskPersistModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ProjectTaskPersistModel, ProjectTask>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
+            expression.ConstructServicesUsing(provider.GetService);
+        }, AppDomain.CurrentDomain.GetAssemblies());
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        var mapper = serviceProvider.GetService<IMapper>();
+        var dialogSession = new DialogSession(new DialogViewModel("sadg", new NullLlmModelClient()));
+        var dialogSessionPersistModel = mapper?.Map<DialogSession, DialogSessionPersistModel>(dialogSession,new DialogSessionPersistModel());
+        Assert.NotNull(dialogSessionPersistModel);
+    }
 
     [Fact]
     public async Task GetGithubModels()

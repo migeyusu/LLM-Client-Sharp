@@ -8,7 +8,7 @@ namespace LLMClient.UI;
 
 public class PopupModelSelectionViewModel : ModelSelectionViewModel
 {
-    public ICommand AcceptModelCommand => new ActionCommand((o =>
+    public ICommand AcceptModelCommand => new ActionCommand(o =>
     {
         if (SelectedModel == null)
         {
@@ -20,7 +20,7 @@ public class PopupModelSelectionViewModel : ModelSelectionViewModel
         {
             PopupBox.ClosePopupCommand.Execute(this, frameworkElement);
         }
-    }));
+    });
 
     public Action<ModelSelectionViewModel>? OnModelSelected;
 

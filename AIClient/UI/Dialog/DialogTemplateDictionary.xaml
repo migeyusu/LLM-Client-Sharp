@@ -1,0 +1,101 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+                    xmlns:ui="clr-namespace:LLMClient.UI"
+                    xmlns:dialog1="clr-namespace:LLMClient.UI.Dialog"
+                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters">
+    <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
+                  DataType="{x:Type dialog1:RequestViewItem}">
+        <materialDesign:Card Padding="8"
+                             HorizontalAlignment="Right"
+                             Margin="50,0,0,0"
+                             UniformCornerRadius="8"
+                             BorderThickness="0"
+                             Background="{DynamicResource MaterialDesign.Brush.Primary.Light}"
+                             Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light.Foreground}">
+            <materialDesign:Card.ContextMenu>
+                <ContextMenu Padding="0">
+                    <MenuItem Header="复制"
+                              Command="{x:Static ui:CommonCommands.CopyCommand}"
+                              CommandParameter="{Binding TextMessage,Mode=OneTime}">
+                        <MenuItem.Icon>
+                            <materialDesign:PackIcon Kind="ContentCopy" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="排除之前对话"
+                              ToolTip="将之前的对话清出上下文"
+                              Command="{x:Static ui:CommonCommands.Exclude}"
+                              CommandParameter="{Binding}">
+                        <MenuItem.Icon>
+                            <materialDesign:PackIcon Kind="FormatAlignTop" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="清空之前对话"
+                              ToolTip="删除之前的对话内容"
+                              Command="{x:Static ui:CommonCommands.Clear}"
+                              CommandParameter="{Binding}">
+                        <MenuItem.Icon>
+                            <materialDesign:PackIcon Kind="DeleteSweepOutline" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="重发"
+                              Command="Redo"
+                              ToolTip="从此条消息起重发，将删除所有之后的消息"
+                              CommandParameter="{Binding}">
+                        <MenuItem.Icon>
+                            <materialDesign:PackIcon Kind="Redo" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="删除"
+                              Command="Delete"
+                              CommandParameter="{Binding}">
+                        <MenuItem.Icon>
+                            <materialDesign:PackIcon Kind="DeleteOutline" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </materialDesign:Card.ContextMenu>
+            <StackPanel>
+                <TextBox TextWrapping="Wrap"
+                         IsReadOnly="True"
+                         Margin="0"
+                         BorderThickness="0"
+                         materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                         Text="{Binding TextMessage,Mode=OneTime}" />
+                <ItemsControl ItemsSource="{Binding Attachments,Mode=OneTime}"
+                              Margin="0,8,0,0"
+                              Visibility="Visible">
+                    <b:Interaction.Triggers>
+                        <b:DataTrigger Binding="{Binding Attachments.Count}"
+                                       Value="0">
+                            <b:ChangePropertyAction PropertyName="Visibility"
+                                                    Value="Collapsed" />
+                        </b:DataTrigger>
+                    </b:Interaction.Triggers>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type dialog1:Attachment}">
+                            <materialDesign:Chip IsDeletable="False"
+                                                 MaxWidth="140"
+                                                 Margin="0"
+                                                 ToolTipService.InitialShowDelay="0"
+                                                 ToolTip="{Binding OriUri,Mode=OneTime}"
+                                                 Command="{Binding OpenFileCommand}"
+                                                 Content="{Binding Name,Mode=OneTime}">
+                                <materialDesign:Chip.Icon>
+                                    <materialDesign:PackIcon
+                                        Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
+                                </materialDesign:Chip.Icon>
+                            </materialDesign:Chip>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel IsItemsHost="True" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
+        </materialDesign:Card>
+    </DataTemplate>
+</ResourceDictionary>

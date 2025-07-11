@@ -2,8 +2,6 @@
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI.Dialog;
-using Microsoft.Extensions.AI;
-using Microsoft.SemanticKernel;
 
 namespace LLMClient.Endpoints;
 

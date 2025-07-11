@@ -49,10 +49,23 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         }
     }
 
-    public ObservableCollection<IResponseViewItem> Items { get; }
+    public ObservableCollection<IResponseViewItem> Items
+    {
+        get => _items;
+        set
+        {
+            if (Equals(value, _items)) return;
+            _items = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasAvailableMessage));
+            OnPropertyChanged(nameof(AcceptedResponse));
+            OnPropertyChanged(nameof(RemoveCommand));
+        }
+    }
 
     private int _acceptedIndex = -1;
     private bool _isMultiResponse = false;
+    private ObservableCollection<IResponseViewItem> _items;
 
     public int AcceptedIndex
     {
@@ -115,7 +128,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
             this.Remove(response);
         }
     });
-    
+
     public MultiResponseViewItem(IEnumerable<IResponseViewItem> items)
     {
         Items = new ObservableCollection<IResponseViewItem>(items);

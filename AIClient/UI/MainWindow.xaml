@@ -602,8 +602,6 @@
                                                                 Executed="DialogBranch_OnExecuted" />
                                                 <CommandBinding Command="{x:Static ui:CommonCommands.ReprocessDialog}"
                                                                 Executed="DialogReprocess_OnExecuted" />
-                                                <CommandBinding Command="{x:Static ui:CommonCommands.Backup}"
-                                                                Executed="BackupCommand_OnExecuted" />
                                             </dialog:DialogView.CommandBindings>
                                         </dialog:DialogView>
                                     </DataTemplate>
@@ -618,6 +616,10 @@
                             </component:DataTemplateTypePair>
                         </component:TypeBasedDataTemplateSelector>
                     </ContentControl.ContentTemplateSelector>
+                    <ContentControl.CommandBindings>
+                        <CommandBinding Command="{x:Static ui:CommonCommands.Backup}"
+                                        Executed="BackupCommand_OnExecuted" />
+                    </ContentControl.CommandBindings>
                 </ContentControl>
                 <materialDesign:Card Grid.Row="0" Grid.Column="0"
                                      Grid.ColumnSpan="2"

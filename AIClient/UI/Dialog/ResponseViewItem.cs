@@ -15,26 +15,34 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
         get { return Model?.Icon ?? ImageExtensions.APIIcon; }
     }
 
-    public string EndPointName { get; }
+    public string EndPointName
+    {
+        get { return Model?.Endpoint.Name ?? string.Empty; }
+    }
 
     public string ModelName
     {
         get { return Model?.Name ?? string.Empty; }
     }
 
-    public ILLMModel? Model { get; }
+    public ILLMModel? Model
+    {
+        get { return Client?.Model; }
+    }
+
+    public ILLMClient? Client { get; }
 
     /// <summary>
     /// 是否中断
     /// </summary>
-    public bool IsInterrupt { get; }
+    public bool IsInterrupt { get; set; }
 
-    public long Tokens { get; }
-    public int Latency { get; }
+    public long Tokens { get; set; }
+    public int Latency { get; set; }
 
-    public int Duration { get; }
+    public int Duration { get; set; }
 
-    public string? ErrorMessage { get; }
+    public string? ErrorMessage { get; set; }
 
     public double? Price { get; set; }
 
@@ -189,17 +197,10 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
 
     private const string ThinkingEndTag = "</think>";
 
-    public ResponseViewItem(ILLMModel? model, IResponse response, string endPointName)
+
+    public ResponseViewItem(ILLMClient client)
     {
-        Duration = response.Duration;
-        Model = model;
-        ResponseMessages = response.ResponseMessages;
-        Tokens = response.Tokens;
-        IsInterrupt = response.IsInterrupt;
-        ErrorMessage = response.ErrorMessage;
-        EndPointName = endPointName;
-        Latency = response.Latency;
-        Price = response.Price;
+        Client = client;
     }
 
     public async IAsyncEnumerable<ChatMessage> GetMessages([EnumeratorCancellation] CancellationToken cancellationToken)
