@@ -20,7 +20,7 @@ public class BuiltInFunctionsCollection : IBuiltInFunctionsCollection
 
     public IList<KernelFunctionGroup> KernelFunctionGroups { get; }
 
-    public IEnumerator<IAIFunctionGroup> GetEnumerator()
+    public IEnumerator<KernelFunctionGroup> GetEnumerator()
     {
         return KernelFunctionGroups.GetEnumerator();
     }

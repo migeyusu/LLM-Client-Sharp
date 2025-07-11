@@ -72,7 +72,19 @@ public class Program
                 expression.CreateMap<APIEndPoint, APIEndPoint>();
                 expression.CreateMap<APIDefaultOption, APIDefaultOption>();
                 expression.CreateMap<ResponseViewItem, ResponsePersistItem>();
-                expression.CreateMap<ResponsePersistItem, ResponseViewItem>().ConvertUsing<AutoMapModelTypeConverter>();
+                expression.CreateMap<ResponsePersistItem, ResponseViewItem>()
+                    .IncludeBase<IResponse, ResponseViewItem>()
+                    .ConstructUsing((source, context) =>
+                    {
+                        ILLMClient llmClient = NullLlmModelClient.Instance;
+                        var client = source.Client;
+                        if (client != null)
+                        {
+                            llmClient = context.Mapper.Map<LLMClientPersistModel, ILLMClient>(client);
+                        }
+
+                        return new ResponseViewItem(llmClient);
+                    });
                 expression.CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
                     .ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()

@@ -21,7 +21,7 @@ public class FunctionResultBlockRenderer : WpfObjectRenderer<FunctionResultBlock
         };
         expander.SetResourceReference(FrameworkElement.StyleProperty, FunctionResultBlockExpanderStyleKey);
         renderer.Push(expander);
-        expander.Content = obj.Lines.ToString().Trim();
+        expander.Content = obj.Lines.ToString().Trim('\n', '\r');
         renderer.Pop();
         renderer.Pop();
     }

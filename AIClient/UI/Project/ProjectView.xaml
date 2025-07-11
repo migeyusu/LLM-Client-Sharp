@@ -6,15 +6,14 @@
              xmlns:local="clr-namespace:LLMClient.UI.Project"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
-             xmlns:system="clr-namespace:System;assembly=System.Runtime"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:dialog="clr-namespace:LLMClient.UI.Dialog"
-             xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:ProjectViewModel}"
              d:DesignHeight="800" d:DesignWidth="1200">
-    <Grid>
+    <Grid Margin="10,0,10,10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -22,7 +21,7 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <materialDesign:Card Grid.Row="0"
-                             Margin="5,0,5,5"
+                             Margin="0,0,0,5"
                              Padding="10,4"
                              Height="50">
             <Grid>
@@ -37,16 +36,17 @@
                          materialDesign:HintAssist.Hint="名称"
                          HorizontalAlignment="Left"
                          MaxHeight="40"
-                         Padding="6,10,6,0"
+                         Padding="0,10,6,0"
                          VerticalScrollBarVisibility="Auto"
                          MinWidth="100"
                          MaxWidth="300"
                          TextWrapping="Wrap" />
-                <TextBlock Grid.Column="1"
-                           Height="50"
-                           TextWrapping="Wrap"
-                           Text="{Binding  Description,Mode=OneWay}"
-                           Margin="0,0,10,0" />
+                <component:PromptEditor Grid.Column="1"
+                                        Height="50"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,10,0"
+                                        Source="{Binding PromptsResource.SystemPrompts,Mode=OneWay}"
+                                        PromptString="{Binding Description,Mode=TwoWay}" />
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
@@ -59,6 +59,8 @@
                                     Value="36" />
                             <Setter Property="Height"
                                     Value="36" />
+                            <Setter Property="Margin"
+                                    Value="6,0" />
                         </Style>
                     </StackPanel.Resources>
                     <TextBlock MaxWidth="140"
@@ -71,6 +73,41 @@
                         <LineBreak />
                         <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                     </TextBlock>
+                    <materialDesign:SplitButton VerticalAlignment="Center"
+                                                Padding="6,0"
+                                                Command="{Binding SelectFunctionsCommand}"
+                                                Style="{StaticResource MaterialDesignPaperDarkSplitButton}"
+                                                materialDesign:ButtonAssist.CornerRadius="10">
+                        <materialDesign:SplitButton.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Function"
+                                                         Height="16"
+                                                         Width="16"
+                                                         VerticalAlignment="Center" />
+                                <TextBlock Text="Function Call"
+                                           Margin="6,0,0,0"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </materialDesign:SplitButton.Content>
+                        <materialDesign:SplitButton.PopupContent>
+                            <ScrollViewer MaxHeight="300"
+                                          VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding AllowedFunctions,Mode=OneWay}"
+                                              MinWidth="200">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type abstraction:IAIFunctionGroup}">
+                                            <TextBlock Text="{Binding Name,Mode=OneWay}"
+                                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                       Margin="6,3" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </materialDesign:SplitButton.PopupContent>
+                    </materialDesign:SplitButton>
+                    <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
+                            ToolTip="Config Project"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}" />
                     <Button Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                             CommandParameter="{Binding Client,Mode=OneWay}"
                             Style="{StaticResource MaterialDesignRaisedLightButton}"
@@ -90,28 +127,14 @@
                         </StackPanel>
                     </Button>
                     <Button ToolTip="model info"
+                            Content="{materialDesign:PackIcon Kind=InformationOutline,Size=20}"
                             Visibility="{Binding Client.Model,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                            CommandParameter="{Binding Client.Model,Mode=OneWay}">
-                        <materialDesign:PackIcon Kind="InformationOutline"
-                                                 Width="20"
-                                                 Height="20" />
-                    </Button>
+                            CommandParameter="{Binding Client.Model,Mode=OneWay}" />
                     <Button ToolTip="备份"
-                            Command="{x:Static ui:CommonCommands.Backup}">
-                        <materialDesign:PackIcon Kind="ContentSave"
-                                                 Width="20"
-                                                 Height="20" />
-                    </Button>
+                            Content="{materialDesign:PackIcon Kind=ContentSave,Size=20}"
+                            Command="{x:Static ui:CommonCommands.Backup}" />
                 </StackPanel>
-                <Button Grid.Column="3"
-                        ToolTip="Add New Task"
-                        Margin="16,0,0,0"
-                        Width="30"
-                        Height="30"
-                        Command="{Binding AddNewTask}"
-                        Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
-                        Content="{ materialDesign:PackIcon Kind=Add,Size=20}" />
             </Grid>
         </materialDesign:Card>
         <StackPanel Grid.Row="1"
@@ -122,19 +145,27 @@
                        BasedOn="{StaticResource MaterialDesignFloatingActionMiniSecondaryDarkButton}">
                     <Setter Property="VerticalAlignment"
                             Value="Center" />
+                    <Setter Property="Height"
+                            Value="30" />
+                    <Setter Property="Width"
+                            Value="30" />
                     <Setter Property="Margin"
                             Value="10,0,0,0" />
                 </Style>
             </StackPanel.Resources>
             <TextBlock Text="Tasks"
+                       VerticalAlignment="Center"
                        Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
             <Button Content="{materialDesign:PackIcon Kind=Add,Size=16}"
-                    Command="{Binding AddNewTask}" />
+                    Command="{Binding AddNewTask}"
+                    Margin="16,0,0,0"
+                    ToolTip="Add Tasks" />
             <!-- <Button Content="{materialDesign:PackIcon Kind=Remove,Size=16}" /> -->
         </StackPanel>
         <!--tasks listbox-->
         <ListBox Grid.Row="2"
                  MaxHeight="220"
+                 Margin="0,10"
                  SelectedItem="{Binding WorkingTask,Mode=TwoWay}"
                  ItemsSource="{Binding Tasks,Mode=OneWay}">
             <ListBox.ItemsPanel>
@@ -210,9 +241,16 @@
                                 Executed="TaskMoveLeft_OnExecuted" />
             </ListBox.CommandBindings>
         </ListBox>
-        <!--todo: 添加允许文件夹、plugin初始化、dialog plugin赋值、dialog界面、dialog client赋值和调用-->
+        <Separator Grid.Row="2"
+                   VerticalAlignment="Bottom"
+                   HorizontalAlignment="Stretch"
+                   Background="DarkGray"
+                   Margin="20,0"
+                   Height="3" />
+        <!--todo: 添加plugin、plugin初始化、dialog plugin赋值、dialog界面、dialog client赋值和调用-->
         <Grid Grid.Row="3"
-              DataContext="{Binding WorkingTask,Mode=OneWay}">
+              DataContext="{Binding WorkingTask,Mode=OneWay}"
+              Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition Height="Auto" />

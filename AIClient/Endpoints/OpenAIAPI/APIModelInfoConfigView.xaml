@@ -6,10 +6,7 @@
              xmlns:local="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
-             xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
-             xmlns:data="clr-namespace:LLMClient.Data"
-             xmlns:wpf="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="600"
              d:DataContext="{d:DesignInstance local:APIModelInfo}">

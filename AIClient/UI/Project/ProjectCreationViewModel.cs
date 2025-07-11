@@ -9,7 +9,7 @@ namespace LLMClient.UI.Project;
 
 public class ProjectCreationViewModel : ModelSelectionViewModel
 {
-    public ProjectViewModel Project { get; } = new ProjectViewModel();
+    public ProjectViewModel Project { get; set; } = new ProjectViewModel();
 
     public ICommand SubmitCommand => new ActionCommand(o =>
     {
@@ -31,7 +31,7 @@ public class ProjectCreationViewModel : ModelSelectionViewModel
         {
             return;
         }
-
+        Project.Initialize();
         var frameworkElement = o as FrameworkElement;
         DialogHost.CloseDialogCommand.Execute(true, frameworkElement);
     });

@@ -5,42 +5,69 @@ namespace LLMClient.UI.MCP;
 
 public class AIFunctionSelectionViewModel : BaseViewModel
 {
-    public IReadOnlyList<SelectableViewModel<IAIFunctionGroup>> FunctionCollection { get; }
+    public IReadOnlyList<SelectableFunctionGroupViewModel> CandidateFunctions { get; }
 
-    public IMcpServiceCollection McpServiceCollection
-    {
-        get { return ServiceLocator.GetService<IMcpServiceCollection>()!; }
-    }
+    public IReadOnlyList<SelectableFunctionGroupViewModel> McpServices { get; set; }
 
-    public IBuiltInFunctionsCollection BuiltInFunctionsCollection
+    public IReadOnlyList<SelectableFunctionGroupViewModel> BuiltInFunctions { get; set; }
+
+    private SelectableFunctionGroupViewModel? _focusedFunction;
+
+    public SelectableFunctionGroupViewModel? FocusedFunction
     {
-        get { return ServiceLocator.GetService<IBuiltInFunctionsCollection>()!; }
+        get => _focusedFunction;
+        set
+        {
+            if (Equals(value, _focusedFunction)) return;
+            _focusedFunction = value;
+            OnPropertyChanged();
+        }
     }
 
     public AIFunctionSelectionViewModel(IEnumerable<IAIFunctionGroup> selectedGroups, bool enableBuiltInFunctions)
     {
-        var list = new List<SelectableViewModel<IAIFunctionGroup>>();
-        list.AddRange(this.McpServiceCollection.Select((group => new SelectableViewModel<IAIFunctionGroup>(group))));
+        var mcpServiceCollection = ServiceLocator.GetService<IMcpServiceCollection>()!;
+        var builtInService = ServiceLocator.GetService<IBuiltInFunctionsCollection>()!;
+        McpServices = mcpServiceCollection.Select((group => new SelectableFunctionGroupViewModel(group)))
+            .ToArray();
+        BuiltInFunctions = builtInService.Select((function) =>
+            new SelectableFunctionGroupViewModel(function)).ToArray();
+        var list = new List<SelectableFunctionGroupViewModel>();
+        list.AddRange(McpServices);
         if (enableBuiltInFunctions)
         {
-            list.AddRange(this.BuiltInFunctionsCollection.Select((function) =>
-                new SelectableViewModel<IAIFunctionGroup>(function)));
+            list.AddRange(BuiltInFunctions);
         }
 
         foreach (var group in selectedGroups)
         {
-            SelectableViewModel<IAIFunctionGroup>? selectable = null;
+            SelectableFunctionGroupViewModel? selectable = null;
             if ((selectable = list.Find(model => AIFunctionGroupComparer.Instance.Equals(group, model.Data))) != null)
             {
                 selectable.IsSelected = true;
             }
             else
             {
-                list.Add(new SelectableViewModel<IAIFunctionGroup>(group) { IsSelected = true });
+                list.Add(new SelectableFunctionGroupViewModel(group) { IsSelected = true });
             }
         }
 
-        FunctionCollection = list;
+        CandidateFunctions = list;
+    }
+
+    public async Task EnsureAsync()
+    {
+        foreach (var aiFunctionGroup in this.CandidateFunctions)
+        {
+            await aiFunctionGroup.Data.EnsureAsync(CancellationToken.None);
+        }
+    }
+}
+
+public class SelectableFunctionGroupViewModel : SelectableViewModel<IAIFunctionGroup>
+{
+    public SelectableFunctionGroupViewModel(IAIFunctionGroup data) : base(data)
+    {
     }
 }
 

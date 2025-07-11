@@ -104,18 +104,14 @@ public partial class DialogView : UserControl
         }
     }
 
-    private async void McpPopupBox_OnOpened(object sender, RoutedEventArgs e)
+    private void McpPopupBox_OnOpened(object sender, RoutedEventArgs e)
     {
         if (sender is PopupBox popupBox)
         {
             var selectedFunctions = ViewModel.SelectedFunctions;
             var selectionViewModel =
                 new AIFunctionSelectionViewModel(selectedFunctions ?? Array.Empty<IAIFunctionGroup>(), false);
-            foreach (var aiFunctionGroup in selectionViewModel.FunctionCollection)
-            {
-                await aiFunctionGroup.Data.EnsureAsync(CancellationToken.None);
-            }
-
+            selectionViewModel.EnsureAsync();
             popupBox.PopupContent = selectionViewModel;
         }
     }
@@ -126,7 +122,7 @@ public partial class DialogView : UserControl
         {
             var selectionViewModel = popupBox.PopupContent as AIFunctionSelectionViewModel;
             this.ViewModel.SelectedFunctions =
-                selectionViewModel?.FunctionCollection
+                selectionViewModel?.CandidateFunctions
                     .Where((group => group.IsSelected))
                     .Select((model => model.Data)).ToArray();
         }

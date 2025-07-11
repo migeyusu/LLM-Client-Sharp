@@ -131,7 +131,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
 
     public MultiResponseViewItem(IEnumerable<IResponseViewItem> items)
     {
-        Items = new ObservableCollection<IResponseViewItem>(items);
+        _items = new ObservableCollection<IResponseViewItem>(items);
         IsMultiResponse = Items.Count > 1;
     }
 

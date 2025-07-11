@@ -7,8 +7,7 @@ namespace LLMClient.UI;
 
 public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, ILLMSession
 {
-    private DateTime _editTime;
-    private string? _fileFullPath;
+    private DateTime _editTime = DateTime.Now;
 
     public DateTime EditTime
     {
@@ -20,6 +19,8 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
             OnPropertyChanged();
         }
     }
+
+    private string? _fileFullPath;
 
     /// <summary>
     /// 用于跟踪对话文件

@@ -6,11 +6,11 @@
              xmlns:local="clr-namespace:LLMClient.UI.Project"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
-             xmlns:render="clr-namespace:LLMClient.Render"
              xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:ProjectCreationViewModel}"
-             d:DesignHeight="300" d:DesignWidth="300">
+             d:DesignHeight="600" d:DesignWidth="800">
     <UserControl.Resources>
         <converters:ListToStringConverter x:Key="StringToListConverter" />
     </UserControl.Resources>
@@ -20,7 +20,6 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -28,6 +27,8 @@
               Width="500"
               Margin="0,0,10,0">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -67,41 +68,91 @@
                     Command="{Binding SelectProjectFolderCommand}"
                     Content="{materialDesign:PackIcon Kind=FolderSettings,Size=16}"
                     Style="{StaticResource MaterialDesignIconForegroundButton}" />
+            <TextBlock Grid.Row="4"
+                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                       Text="项目可访问路径：" />
+            <ListBox Grid.Row="5"
+                     Margin="0,5,0,0"
+                     ItemsSource="{Binding AllowedFolderPaths,Mode=OneWay}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}"
+                           BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                        <Setter Property="HorizontalContentAlignment"
+                                Value="Stretch" />
+                        <Setter Property="Padding"
+                                Value="0,4,26,4" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type sys:String}">
+                        <Grid>
+                            <TextBlock Text="{Binding}"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                            <Button Width="20"
+                                    Height="20"
+                                    Template="{StaticResource ItemDeleteButtonTemplate}"
+                                    ToolTip="删除当前"
+                                    Margin="0,0,10,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding DataContext.RemoveAllowedFolderPathCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <Button Grid.Row="5"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Right"
+                    Margin="6"
+                    Width="30"
+                    Height="30"
+                    Content="{materialDesign:PackIcon Kind=Plus,Size=21}"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
+                    Command="{Binding AddAllowedFolderPathsCommand}" />
         </Grid>
-        <ListBox Grid.Row="1" Grid.Column="0"
-                 x:Name="AvailableEndpointsListBox"
-                 ItemsSource="{Binding EndpointService.AvailableEndpoints,Mode=OneWay}">
-            <ListBox.ItemTemplate>
-                <DataTemplate DataType="{x:Type abstraction:ILLMEndpoint}">
-                    <StackPanel Orientation="Horizontal">
-                        <Image Width="20"
-                               Height="20"
-                               Source="{Binding Icon,Mode=OneWay}" />
-                        <TextBlock Text="{Binding DisplayName,Mode=OneWay}"
-                                   Margin="5,0,0,0" />
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-        <GridSplitter Grid.Row="0" Grid.Column="0"
-                      Grid.RowSpan="3"
+        <Grid Grid.Row="0" Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <ListBox Grid.Row="0"
+                     MaxHeight="300"
+                     x:Name="AvailableEndpointsListBox"
+                     ItemsSource="{Binding EndpointService.AvailableEndpoints,Mode=OneWay}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type abstraction:ILLMEndpoint}">
+                                              <StackPanel Orientation="Horizontal">
+                            <Image Width="20"
+                                   Height="20"
+                                   Source="{Binding Icon,Mode=OneWay}" />
+                            <TextBlock Text="{Binding DisplayName,Mode=OneWay}"
+                                       Margin="5,0,0,0" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <ListBox Grid.Row="1"
+                     DisplayMemberPath="Name"
+                     SelectedItem="{Binding SelectedModel,Mode=TwoWay}"
+                     ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem"
+                           BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                        <Setter Property="IsEnabled" Value="{Binding SupportFunctionCall,Mode=OneWay}" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
+        </Grid>
+        <GridSplitter Grid.Row="0"
+                      Grid.Column="0"
                       VerticalAlignment="Stretch"
                       HorizontalAlignment="Right"
                       Background="DarkGray"
                       Width="3" />
-        <ListBox Grid.Row="0" Grid.Column="1"
-                 Grid.RowSpan="2"
-                 DisplayMemberPath="Name"
-                 SelectedItem="{Binding SelectedModel,Mode=TwoWay}"
-                 ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem"
-                       BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                    <Setter Property="IsEnabled" Value="{Binding SupportFunctionCall,Mode=OneWay}" />
-                </Style>
-            </ListBox.ItemContainerStyle>
-        </ListBox>
-        <TextBlock Grid.Row="2" Grid.Column="0"
+        <TextBlock Grid.Row="1" Grid.Column="0"
                    Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
                    TextWrapping="Wrap"
                    HorizontalAlignment="Left"
@@ -112,7 +163,8 @@
             <Run
                 Text="{Binding SelectedModel.Name,StringFormat=模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
         </TextBlock>
-        <Button Grid.Row="2" Grid.Column="1"
+        <Button Grid.Row="1"
+                Grid.Column="1"
                 HorizontalAlignment="Right"
                 Content="提交"
                 Command="{Binding SubmitCommand}"

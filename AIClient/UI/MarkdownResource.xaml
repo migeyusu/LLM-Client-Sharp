@@ -87,7 +87,6 @@
                                    StrokeDashArray="6,2"
                                    SnapsToDevicePixels="True"
                                    Margin="5" />
-
                         <DockPanel>
                             <ToggleButton x:Name="HeaderSite" ContentTemplate="{TemplateBinding HeaderTemplate}"
                                           Content="{TemplateBinding Header}"
@@ -299,6 +298,7 @@
                                 VerticalAlignment="Center">
                         <materialDesign:PackIcon Kind="Function"
                                                  Width="20"
+                                                 VerticalAlignment="Center"
                                                  Height="20"/>
                         <TextBlock Text="函数调用"
                                    VerticalAlignment="Center"

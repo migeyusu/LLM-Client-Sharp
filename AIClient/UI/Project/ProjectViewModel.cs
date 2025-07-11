@@ -11,6 +11,9 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
+using LLMClient.UI.MCP;
+using LLMClient.UI.MCP.Servers;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -27,6 +30,8 @@ public class ProjectViewModel : FileBasedSessionBase
         get => _isDataChanged;
         set
         {
+            if (_isDataChanged == value)
+                return;
             _isDataChanged = value;
             if (value)
             {
@@ -202,6 +207,8 @@ public class ProjectViewModel : FileBasedSessionBase
 
     #endregion
 
+    #region info
+
     public string? Name
     {
         get => _name;
@@ -271,6 +278,13 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     }
 
+    public ICommand SelectFunctionsCommand => new RelayCommand(async () =>
+    {
+        var functionSelection = new AIFunctionSelectionViewModel(this.AllowedFunctions ??
+                                                                 Enumerable.Empty<IAIFunctionGroup>(), true);
+        functionSelection.EnsureAsync();
+        await DialogHost.Show(functionSelection);
+    });
 
     public ICommand SelectProjectFolderCommand => new RelayCommand(() =>
     {
@@ -288,9 +302,33 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     });
 
-    public ICommand AddAllowedFolderPathsCommand => new RelayCommand(() => { });
+    public ICommand AddAllowedFolderPathsCommand => new RelayCommand(() =>
+    {
+        var dialog = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description = "请选择允许的文件夹路径",
+            SelectedPath = string.IsNullOrEmpty(FolderPath)
+                ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                : FolderPath
+        };
 
-    public ICommand RemoveAllowedFolderPathsCommand => new RelayCommand(() => { });
+        if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+        {
+            var selectedPath = dialog.SelectedPath;
+            if (!AllowedFolderPaths.Contains(selectedPath))
+            {
+                AllowedFolderPaths.Add(selectedPath);
+            }
+        }
+    });
+
+    public ICommand RemoveAllowedFolderPathCommand => new ActionCommand((o) =>
+    {
+        if (o is string s)
+        {
+            AllowedFolderPaths.Remove(s);
+        }
+    });
 
     public ObservableCollection<string> AllowedFolderPaths { get; set; } = new ObservableCollection<string>();
 
@@ -329,6 +367,8 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public virtual string Type { get; } = "Standard";
 
+    #endregion
+
     #region tasks
 
     public ICommand AddNewTask => new ActionCommand(o => { this.Tasks.Add(new ProjectTask()); });
@@ -353,7 +393,6 @@ public class ProjectViewModel : FileBasedSessionBase
 
     #endregion
 
-
     public long TokensConsumption
     {
         get => _tokensConsumption;
@@ -376,7 +415,21 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     }
 
-    public IAIFunctionGroup[]? AllowedFunctions { get; set; }
+    public IAIFunctionGroup[]? AllowedFunctions
+    {
+        get => _allowedFunctions;
+        set
+        {
+            if (Equals(value, _allowedFunctions)) return;
+            _allowedFunctions = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public IPromptsResource PromptsResource
+    {
+        get { return ServiceLocator.GetService<IPromptsResource>()!; }
+    }
 
     private readonly string[] _notTrackingProperties =
     [
@@ -384,6 +437,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private long _tokensConsumption;
     private float _totalPrice;
+    private IAIFunctionGroup[]? _allowedFunctions;
 
     public ProjectViewModel(IEnumerable<ProjectTask>? tasks = null) : base()
     {
@@ -401,6 +455,11 @@ public class ProjectViewModel : FileBasedSessionBase
             IsDataChanged = true;
         };
         Tasks.CollectionChanged += TasksOnCollectionChanged;
+    }
+
+    public virtual void Initialize()
+    {
+        AllowedFunctions = [new FileSystemPlugin(), new WinCLIPlugin()];
     }
 
     private void TasksOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

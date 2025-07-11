@@ -16,7 +16,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
     ITypeConverter<DialogSessionPersistModel, DialogSession>,
     ITypeConverter<MultiResponsePersistItem, MultiResponseViewItem>,
     ITypeConverter<MultiResponseViewItem, MultiResponsePersistItem>,
-    ITypeConverter<ResponsePersistItem, ResponseViewItem>,
     ITypeConverter<ProjectPersistModel, ProjectViewModel>,
     ITypeConverter<ProjectViewModel, ProjectPersistModel>,
     ITypeConverter<ProjectTaskPersistModel, ProjectTask>,
@@ -54,26 +53,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
         }
 
         return new DialogSession(dialogViewModel) { EditTime = source.EditTime };
-    }
-
-    public ResponseViewItem Convert(ResponsePersistItem source, ResponseViewItem? destination,
-        ResolutionContext context)
-    {
-        if (destination == null)
-        {
-            throw new NotSupportedException("Cannot set ResponsePersistItem to exist ResponseViewItem");
-        }
-
-        ILLMClient llmClient = NullLlmModelClient.Instance;
-        var client = source.Client;
-        if (client != null)
-        {
-            llmClient = context.Mapper.Map<LLMClientPersistModel, ILLMClient>(client);
-        }
-
-        var responseViewItem = new ResponseViewItem(llmClient);
-        context.Mapper.Map<IResponse, ResponseViewItem>(source, responseViewItem);
-        return responseViewItem;
     }
 
     public MultiResponseViewItem Convert(MultiResponsePersistItem source, MultiResponseViewItem? destination,
@@ -231,6 +210,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
             destination = new ProjectViewModel(tasks);
         }
 
+        destination.EditTime = source.EditTime;
         destination.Name = source.Name;
         destination.Description = source.Description;
         destination.LanguageNames = source.LanguageNames;
@@ -255,6 +235,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
             ?.Select((task => mapper.Map<ProjectTask, ProjectTaskPersistModel>(task))).ToArray();
         destination ??= new ProjectPersistModel();
         destination.Name = source.Name;
+        destination.EditTime = source.EditTime;
         destination.Description = source.Description;
         destination.LanguageNames = source.LanguageNames?.ToArray();
         destination.FolderPath = source.FolderPath;

@@ -26,7 +26,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <materialDesign:Card Grid.Row="0"
-                             Margin="5,0,5,5"
+                             Margin="0,0,0,5"
                              Padding="10,4"
                              Height="50">
             <Grid>
@@ -46,16 +46,40 @@
                          MinWidth="100"
                          MaxWidth="300"
                          TextWrapping="Wrap" />
-                <materialDesign:SplitButton Grid.Column="1"
+                <component:PromptEditor Grid.Column="1"
+                                        Height="60"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,10,0"
+                                        Source="{Binding PromptsResource.SystemPrompts,Mode=OneWay}"
+                                        PromptString="{Binding SystemPrompt,Mode=TwoWay}" />
+                <!--<materialDesign:SplitButton Grid.Column="1"
                                             Height="50"
                                             PopupElevation="Dp6"
                                             PopupUniformCornerRadius="6"
+                                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                             Style="{StaticResource MaterialDesignFlatSplitButton}"
                                             Margin="0,0,10,0">
+                    <materialDesign:SplitButton.CommandParameter>
+                        <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                Header="System Prompt"
+                                                Width="600">
+                            <TextBox Text="{Binding SystemPrompt,Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                     MaxHeight="300"
+                                     Height="200"
+                                     TextAlignment="Left"
+                                     Margin="0,10,0,0"
+                                     materialDesign:HintAssist.Hint="System prompt"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     AcceptsTab="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     SpellCheck.IsEnabled="True"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                        </HeaderedContentControl>
+                    </materialDesign:SplitButton.CommandParameter>
                     <materialDesign:SplitButton.Content>
-                        <TextBox materialDesign:TextFieldAssist.HasClearButton="True"
-                                 TextWrapping="Wrap"
-                                 Text="{Binding  SystemPrompt,Mode=TwoWay}" />
+                        <TextBlock TextWrapping="Wrap"
+                                   Text="{Binding  SystemPrompt,Mode=TwoWay}" />
                     </materialDesign:SplitButton.Content>
                     <materialDesign:SplitButton.PopupContent>
                         <ListBox MaxWidth="800"
@@ -73,7 +97,7 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
                     </materialDesign:SplitButton.PopupContent>
-                </materialDesign:SplitButton>
+                </materialDesign:SplitButton>-->
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
@@ -635,6 +659,7 @@
                          materialDesign:HintAssist.Hint="输入Prompt"
                          materialDesign:HintAssist.HintHorizontalAlignment="Left"
                          AcceptsReturn="True"
+                         AcceptsTab="True"
                          VerticalAlignment="Stretch"
                          HorizontalAlignment="Stretch"
                          MinHeight="40"

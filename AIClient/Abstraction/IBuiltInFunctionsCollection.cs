@@ -1,6 +1,8 @@
-﻿namespace LLMClient.Abstraction;
+﻿using LLMClient.UI.MCP.Servers;
 
-public interface IBuiltInFunctionsCollection : IEnumerable<IAIFunctionGroup>
+namespace LLMClient.Abstraction;
+
+public interface IBuiltInFunctionsCollection : IEnumerable<KernelFunctionGroup>
 {
     
 }

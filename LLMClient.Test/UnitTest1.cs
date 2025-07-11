@@ -53,7 +53,7 @@ public class UnitTest1
             expression.CreateMap<APIEndPoint, APIEndPoint>();
             expression.CreateMap<APIDefaultOption, APIDefaultOption>();
             expression.CreateMap<ResponseViewItem, ResponsePersistItem>();
-            expression.CreateMap<ResponsePersistItem, ResponseViewItem>().ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ResponsePersistItem, ResponseViewItem>();
             expression.CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
             expression.CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()

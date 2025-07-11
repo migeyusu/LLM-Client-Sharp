@@ -67,7 +67,7 @@
             </Grid.RowDefinitions>
             <ScrollViewer>
                 <ItemsControl x:Name="List"
-                              ItemsSource="{Binding FunctionCollection,Mode=OneWay}">
+                              ItemsSource="{Binding CandidateFunctions,Mode=OneWay}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Expander HorizontalAlignment="Stretch">
@@ -110,8 +110,6 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ScrollViewer>
-
-
             <!--<Button Grid.Row="0"
                     Command="{Binding  ReloadCommand}"
                     HorizontalAlignment="Right"
