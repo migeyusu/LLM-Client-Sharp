@@ -1,14 +1,22 @@
 ﻿using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
+using System.Security.AccessControl;
+using System.Windows;
 using System.Windows.Input;
+using LLMClient.Abstraction;
+using LLMClient.UI.Component;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.Dialog;
 
-public class MultiResponseViewItem : BaseViewModel, IDialogItem
+public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
 {
     public Guid InteractionId { get; set; }
+
+    public DialogSessionViewModel ParentSession { get; }
 
     public async IAsyncEnumerable<ChatMessage> GetMessages([EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -66,6 +74,39 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
     private int _acceptedIndex = -1;
     private bool _isMultiResponse = false;
     private ObservableCollection<IResponseViewItem> _items;
+    private ILLMModel? _selectedModel;
+
+    public IEndpointService EndpointService
+    {
+        get { return ServiceLocator.GetService<IEndpointService>()!; }
+    }
+
+    public ILLMModel? SelectedModel
+    {
+        get => _selectedModel;
+        set
+        {
+            if (Equals(value, _selectedModel)) return;
+            _selectedModel = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ICommand SubmitCommand => new ActionCommand(o =>
+    {
+        var llmClient = SelectedModel?.CreateClient();
+        if (llmClient == null)
+        {
+            return;
+        }
+
+        if (o is FrameworkElement frameworkElement)
+        {
+            PopupBox.ClosePopupCommand.Execute(this, frameworkElement);
+        }
+    });
+
+    public ICommand RefreshSelectedCommand => new ActionCommand(o => RetryCurrent());
 
     public int AcceptedIndex
     {
@@ -129,14 +170,35 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         }
     });
 
-    public MultiResponseViewItem(IEnumerable<IResponseViewItem> items)
+    public MultiResponseViewItem(IEnumerable<IResponseViewItem> items, DialogSessionViewModel parentSession)
     {
+        ParentSession = parentSession;
         _items = new ObservableCollection<IResponseViewItem>(items);
         IsMultiResponse = Items.Count > 1;
     }
 
-    public MultiResponseViewItem() : this([])
+    public MultiResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)
     {
+    }
+
+    public async void RetryCurrent()
+    {
+        // var index = multiResponseViewItem.AcceptedIndex;
+        if (this.AcceptedResponse is not ResponseViewItem responseViewItem)
+        {
+            MessageEventBus.Publish("未选择响应！");
+            return;
+        }
+
+        var client = responseViewItem.Client;
+        if (client == null)
+        {
+            MessageEventBus.Publish("已无法找到模型！");
+            return;
+        }
+
+        this.Remove(responseViewItem);
+        await ParentSession.AppendResponseOn(this, client);
     }
 
     public void Append(IResponseViewItem viewItem)

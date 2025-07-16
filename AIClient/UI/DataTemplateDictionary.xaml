@@ -10,7 +10,12 @@
                     xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
                     xmlns:azure="clr-namespace:LLMClient.Endpoints.Azure"
                     xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
-                    xmlns:system="clr-namespace:System;assembly=System.Runtime">
+                    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:dialog="clr-namespace:LLMClient.UI.Dialog">
+    <ItemsPanelTemplate x:Key="HorizontalItemsPanelTemplate">
+        <StackPanel Orientation="Horizontal"
+                    IsItemsHost="True" />
+    </ItemsPanelTemplate>
     <component:TypeBasedDataTemplateSelector x:Key="ModelsDataTemplateSelector">
         <component:DataTemplateTypePair>
             <HierarchicalDataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}"
@@ -127,8 +132,8 @@
             </Button>
         </Grid>
     </DataTemplate>
-    <DataTemplate x:Key="PopupSelectViewModelTemplate"
-                  DataType="{x:Type ui:PopupModelSelectionViewModel}">
+    <DataTemplate x:Key="PopupSelectModelDataTemplate"
+                  DataType="{x:Type ui:IModelSelection}">
         <StackPanel Margin="10"
                     Width="350">
             <DockPanel Height="200">
@@ -151,11 +156,14 @@
                            TextWrapping="Wrap"
                            HorizontalAlignment="Left"
                            VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis">
-                    <Run
-                        Text="{Binding SelectedModel.Endpoint.DisplayName, StringFormat=服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
-                    <Run
-                        Text="{Binding SelectedModel.Name,StringFormat=模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
+                           TextTrimming="CharacterEllipsis"
+                           DataContext="{Binding SelectedModel,Mode=OneWay}">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="服务：{0},模型：{1}">
+                            <Binding Path="Endpoint.DisplayName" TargetNullValue="无" />
+                            <Binding Path="Name" TargetNullValue="无" />
+                        </MultiBinding>
+                    </TextBlock.Text>
                 </TextBlock>
                 <StackPanel Grid.Column="1"
                             Margin="10,0,0,0"
@@ -165,10 +173,9 @@
                             Command="{x:Static materialDesign:PopupBox.ClosePopupCommand}"
                             Content="取消" />
                     <Button Style="{StaticResource MaterialDesignFlatLightButton}"
-                            Command="{Binding  AcceptModelCommand}"
+                            Command="{Binding  SubmitCommand}"
                             Content="确认"
-                            CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                    </Button>
+                            CommandParameter="{Binding RelativeSource={RelativeSource Self}}" />
                 </StackPanel>
             </Grid>
         </StackPanel>

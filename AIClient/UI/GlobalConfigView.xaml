@@ -19,7 +19,7 @@
         </Grid.RowDefinitions>
         <StackPanel Margin="10">
             <TextBlock Text="上下文总结Prompt：" />
-            <TextBox Text="{Binding TokenSummarizePrompt}"
+            <TextBox Text="{Binding TokenSummarizePromptString}"
                      Margin="0,10,0,0"
                      MaxHeight="200"
                      AcceptsReturn="True"

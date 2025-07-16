@@ -17,7 +17,6 @@ using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 using TextMateSharp.Grammars;
-using DialogSession = LLMClient.UI.Dialog.DialogSession;
 
 namespace LLMClient.UI;
 
@@ -127,19 +126,13 @@ public class MainWindowViewModel : BaseViewModel
 
     public ICommand NewProjectCommand => new ActionCommand((async o =>
     {
-        var selectionViewModel = new ProjectCreationViewModel(this.EndpointsViewModel);
+        var selectionViewModel = new ProjectConfigViewModel(this.EndpointsViewModel, new ProjectViewModel());
         if (await DialogHost.Show(selectionViewModel) is true)
         {
-            AddNewProject(selectionViewModel.Project);
+            selectionViewModel.Project.Initialize();
+            AddSession(selectionViewModel.Project);
         }
     }));
-
-    private void AddNewProject(ProjectViewModel projectViewModel)
-    {
-        projectViewModel.PropertyChanged += SessionOnEditTimeChanged;
-        this.SessionViewModels.Insert(0, projectViewModel);
-        PreSession = projectViewModel;
-    }
 
     #endregion
 
@@ -164,7 +157,7 @@ public class MainWindowViewModel : BaseViewModel
         var fileInfos = openFileDialog.FileNames.Select((s => new FileInfo(s)));
         IEnumerable<ILLMSession> sessions = type switch
         {
-            "dialog" => DialogSession.ImportFiles(fileInfos).ToBlockingEnumerable(),
+            "dialog" => DialogFileViewModel.ImportFiles(fileInfos).ToBlockingEnumerable(),
             "project" => ProjectViewModel.ImportFiles(fileInfos).ToBlockingEnumerable(),
             _ => throw new ArgumentOutOfRangeException()
         };
@@ -174,7 +167,7 @@ public class MainWindowViewModel : BaseViewModel
 
     public ICommand NewDialogCommand => new ActionCommand((async o =>
     {
-        var selectionViewModel = new DialogCreationViewModel(EndpointsViewModel);
+        var selectionViewModel = new ModelSelectionPopupViewModel(EndpointsViewModel);
         if (await DialogHost.Show(selectionViewModel) is true)
         {
             var model = selectionViewModel.GetClient();
@@ -184,23 +177,21 @@ public class MainWindowViewModel : BaseViewModel
                 return;
             }
 
-            AddNewDialog(model, selectionViewModel.DialogName);
+            AddNewDialog(model);
         }
     }));
 
-    public DialogSession AddNewDialog(ILLMClient client, string dialogName = "新建会话")
+    public DialogFileViewModel AddNewDialog(ILLMClient client, string dialogName = "新建会话")
     {
-        var dialogSession = new DialogSession(dialogName, client);
-        dialogSession.PropertyChanged += SessionOnEditTimeChanged;
-        this.SessionViewModels.Insert(0, dialogSession);
-        PreSession = dialogSession;
+        var dialogSession = new DialogFileViewModel(dialogName, client);
+        AddSession(dialogSession);
         return dialogSession;
     }
 
     public async void ForkPreDialog(IDialogItem item)
     {
         var preSession = PreSession;
-        if (preSession is not DialogSession preDialog)
+        if (preSession is not DialogFileViewModel preDialog)
         {
             return;
         }
@@ -212,15 +203,12 @@ public class MainWindowViewModel : BaseViewModel
         }
 
         var dialogSession = await preDialog.Fork(item);
-        dialogSession.PropertyChanged += SessionOnEditTimeChanged;
-        this.SessionViewModels.Insert(indexOf, dialogSession);
-        PreSession = dialogSession;
+        AddSession(dialogSession);
     }
 
     public ObservableCollection<ILLMSession> SessionViewModels { get; set; } =
         new ObservableCollection<ILLMSession>();
-
-
+    
     private ILLMSession? _preSession;
 
     public ILLMSession? PreSession
@@ -236,6 +224,13 @@ public class MainWindowViewModel : BaseViewModel
 
     #endregion
 
+    private void AddSession(ILLMSession projectViewModel)
+    {
+        ((INotifyPropertyChanged)projectViewModel).PropertyChanged += SessionOnEditTimeChanged;
+        this.SessionViewModels.Insert(0, projectViewModel);
+        PreSession = projectViewModel;
+    }
+    
     private bool _isProcessing;
 
     public MainWindowViewModel(IEndpointService configureViewModel, IMapper mapper, IPromptsResource promptsResource,
@@ -247,7 +242,7 @@ public class MainWindowViewModel : BaseViewModel
         McpServiceCollection = mcpServiceCollection;
         EndpointsViewModel = configureViewModel;
         var paletteHelper = new PaletteHelper();
-        Theme theme = paletteHelper.GetTheme();
+        var theme = paletteHelper.GetTheme();
         IsDarkTheme = theme.GetBaseTheme() == BaseTheme.Dark;
         /*if (theme is Theme internalTheme)
         {
@@ -268,7 +263,7 @@ public class MainWindowViewModel : BaseViewModel
     private async Task InitialSessionsFromLocal()
     {
         var sessions = new List<ILLMSession>();
-        await foreach (var llmSession in DialogSession.LoadFromLocal())
+        await foreach (var llmSession in DialogFileViewModel.LoadFromLocal())
         {
             sessions.Add(llmSession);
         }
@@ -326,7 +321,7 @@ public class MainWindowViewModel : BaseViewModel
     {
         foreach (var sessionViewModel in SessionViewModels)
         {
-            if (sessionViewModel is DialogSession dialogViewModel)
+            if (sessionViewModel is DialogFileViewModel dialogViewModel)
             {
                 await dialogViewModel.SaveToLocal();
             }

@@ -12,8 +12,8 @@ public static class CommonCommands
 
     public static RoutedCommand Clear = new RoutedUICommand("Clear", "Clear", typeof(CommonCommands));
     
-    public static RoutedUICommand Conclusion =
-        new RoutedUICommand("Conclusion", "Conclusion", typeof(CommonCommands));
+    public static RoutedUICommand ReBase =
+        new RoutedUICommand("Rebase", "Rebase", typeof(CommonCommands));
 
     public static RoutedUICommand Branch = new RoutedUICommand("Branch", "Branch", typeof(CommonCommands));
 

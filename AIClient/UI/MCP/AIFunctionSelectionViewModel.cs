@@ -7,22 +7,12 @@ public class AIFunctionSelectionViewModel : BaseViewModel
 {
     public IReadOnlyList<SelectableFunctionGroupViewModel> CandidateFunctions { get; }
 
+    public IList<IAIFunctionGroup> SelectedFunctions =>
+        CandidateFunctions.Where(model => model.IsSelected).Select(model => model.Data).ToArray();
+    
     public IReadOnlyList<SelectableFunctionGroupViewModel> McpServices { get; set; }
 
     public IReadOnlyList<SelectableFunctionGroupViewModel> BuiltInFunctions { get; set; }
-
-    private SelectableFunctionGroupViewModel? _focusedFunction;
-
-    public SelectableFunctionGroupViewModel? FocusedFunction
-    {
-        get => _focusedFunction;
-        set
-        {
-            if (Equals(value, _focusedFunction)) return;
-            _focusedFunction = value;
-            OnPropertyChanged();
-        }
-    }
 
     public AIFunctionSelectionViewModel(IEnumerable<IAIFunctionGroup> selectedGroups, bool enableBuiltInFunctions)
     {
@@ -55,7 +45,7 @@ public class AIFunctionSelectionViewModel : BaseViewModel
         CandidateFunctions = list;
     }
 
-    public async Task EnsureAsync()
+    public async void EnsureAsync()
     {
         foreach (var aiFunctionGroup in this.CandidateFunctions)
         {

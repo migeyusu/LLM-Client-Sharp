@@ -15,7 +15,13 @@ public class GlobalConfig : NotifyDataErrorInfoViewModelBase
     private const string DefaultSummarizePrompt =
         "Provide a concise and complete summarization of the entire dialog that does not exceed {0} words. \n\nThis summary must always:\n- Consider both user and assistant interactions\n- Maintain continuity for the purpose of further dialog\n- Include details from any existing summary\n- Focus on the most significant aspects of the dialog\n\nThis summary must never:\n- Critique, correct, interpret, presume, or assume\n- Identify faults, mistakes, misunderstanding, or correctness\n- Analyze what has not occurred\n- Exclude details from any existing summary";
 
-    public string TokenSummarizePrompt { get; set; } = DefaultSummarizePrompt;
+    [JsonPropertyName("TokenSummarizePrompt")]
+    public string TokenSummarizePromptString { get; set; } = DefaultSummarizePrompt;
+
+    public string TokenSummarizePrompt
+    {
+        get { return string.Format(TokenSummarizePromptString, SummarizeWordsCount); }
+    }
 
     public int SummarizeWordsCount
     {
@@ -29,6 +35,7 @@ public class GlobalConfig : NotifyDataErrorInfoViewModelBase
                 this.AddError("Summarize words count must be greater than 100.");
                 return;
             }
+
             _summarizeWordsCount = value;
             OnPropertyChanged();
         }

@@ -10,7 +10,15 @@ using MimeTypes;
 
 namespace LLMClient.UI.Dialog;
 
-public class RequestViewItem : BaseViewModel, IDialogItem, IDialogPersistItem
+public interface IRequestItem : IDialogItem
+{
+    /// <summary>
+    /// 标记一次请求-响应过程，和响应对应
+    /// </summary>
+    Guid InteractionId { get; set; }
+}
+
+public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
 {
     /// <summary>
     /// 标记一次请求-响应过程，和响应对应

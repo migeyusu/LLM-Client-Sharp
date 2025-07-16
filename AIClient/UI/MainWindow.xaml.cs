@@ -4,14 +4,10 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
-using LLMClient.Data;
 using LLMClient.UI.Component;
 using LLMClient.UI.Dialog;
 using LLMClient.UI.Log;
-using LLMClient.UI.MCP;
 using MaterialDesignThemes.Wpf;
-using TextMateSharp.Grammars;
-using DialogSession = LLMClient.UI.Dialog.DialogSession;
 
 namespace LLMClient.UI;
 
@@ -93,7 +89,7 @@ public partial class MainWindow : ExtendedWindow
     {
         if (e.Parameter is DialogViewModel oldDialog)
         {
-            var selectionViewModel = new DialogCreationViewModel(_mainWindowViewModel.EndpointsViewModel);
+            var selectionViewModel = new ModelSelectionPopupViewModel(_mainWindowViewModel.EndpointsViewModel);
             if (await DialogHost.Show(selectionViewModel) is true)
             {
                 var model = selectionViewModel.GetClient();

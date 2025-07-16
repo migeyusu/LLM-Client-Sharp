@@ -61,13 +61,13 @@ public class Program
                     .ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<LLMClientPersistModel, ILLMClient>()
                     .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<DialogSessionPersistModel, DialogSession>()
+                expression.CreateMap<DialogFilePersistModel, DialogFileViewModel>()
                     .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<DialogSession, DialogSessionPersistModel>()
+                expression.CreateMap<DialogFileViewModel, DialogFilePersistModel>()
                     .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<DialogViewModel, DialogPersistModel>()
+                expression.CreateMap<DialogViewModel, DialogFilePersistModel>()
                     .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<DialogPersistModel, DialogViewModel>()
+                expression.CreateMap<DialogFilePersistModel, DialogViewModel>()
                     .ConvertUsing<AutoMapModelTypeConverter>();
                 expression.CreateMap<APIEndPoint, APIEndPoint>();
                 expression.CreateMap<APIDefaultOption, APIDefaultOption>();

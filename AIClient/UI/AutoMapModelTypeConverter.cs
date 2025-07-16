@@ -6,14 +6,13 @@ using LLMClient.Endpoints;
 using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using LLMClient.UI.Project;
-using Microsoft.Extensions.Azure;
 
 namespace LLMClient.UI;
 
-public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSessionPersistModel>,
-    ITypeConverter<DialogViewModel, DialogPersistModel>,
-    ITypeConverter<DialogPersistModel, DialogViewModel>,
-    ITypeConverter<DialogSessionPersistModel, DialogSession>,
+public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, DialogFilePersistModel>,
+    ITypeConverter<DialogFilePersistModel, DialogFileViewModel>,
+    ITypeConverter<DialogViewModel, DialogFilePersistModel>,
+    ITypeConverter<DialogFilePersistModel, DialogViewModel>,
     ITypeConverter<MultiResponsePersistItem, MultiResponseViewItem>,
     ITypeConverter<MultiResponseViewItem, MultiResponsePersistItem>,
     ITypeConverter<ProjectPersistModel, ProjectViewModel>,
@@ -33,31 +32,43 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
         this._mcpServiceCollection = mcpServiceCollection;
     }
 
-    public DialogSessionPersistModel Convert(DialogSession from, DialogSessionPersistModel? destination,
+    public DialogFilePersistModel Convert(DialogFileViewModel from, DialogFilePersistModel? destination,
         ResolutionContext context)
     {
-        destination ??= new DialogSessionPersistModel();
+        destination ??= new DialogFilePersistModel();
         var source = from.Dialog;
-        context.Mapper.Map<DialogViewModel, DialogPersistModel>(source, destination);
+        context.Mapper.Map<DialogViewModel, DialogSessionPersistModel>(source, destination);
         destination.EditTime = from.EditTime;
+        var clientPersistModel = context.Mapper.Map<ILLMClient, LLMClientPersistModel>(source.Requester.DefaultClient);
+        destination.Topic = source.Topic;
+        destination.Client = clientPersistModel;
         return destination;
     }
 
-    public DialogSession Convert(DialogSessionPersistModel source, DialogSession? destination,
+    public DialogFileViewModel Convert(DialogFilePersistModel source, DialogFileViewModel? destination,
         ResolutionContext context)
     {
-        var dialogViewModel = context.Mapper.Map<DialogPersistModel, DialogViewModel>(source);
+        var dialogViewModel = context.Mapper.Map<DialogSessionPersistModel, DialogViewModel>(source);
         if (destination != null)
         {
             throw new NotSupportedException("Cannot set dialogViewModel to exist DialogSession");
         }
 
-        return new DialogSession(dialogViewModel) { EditTime = source.EditTime };
+        return new DialogFileViewModel(dialogViewModel)
+        {
+            EditTime = source.EditTime,
+        };
     }
 
     public MultiResponseViewItem Convert(MultiResponsePersistItem source, MultiResponseViewItem? destination,
         ResolutionContext context)
     {
+        if (!context.Items.TryGetValue(ParentDialogViewModelKey, out var parentDialogViewModel)
+            || !(parentDialogViewModel is DialogViewModel parentViewModel))
+        {
+            throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
+        }
+
         var items = source.ResponseItems.Select(x =>
             context.Mapper.Map<ResponsePersistItem, ResponseViewItem>(x));
         if (destination != null)
@@ -68,7 +79,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
             return destination;
         }
 
-        return new MultiResponseViewItem(items)
+        return new MultiResponseViewItem(items, parentViewModel)
         {
             AcceptedIndex = source.AcceptedIndex,
             InteractionId = source.InteractionId,
@@ -87,12 +98,12 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
         return destination;
     }
 
-    public DialogPersistModel Convert(DialogViewModel source, DialogPersistModel? destination,
+    public DialogFilePersistModel Convert(DialogViewModel source, DialogFilePersistModel? destination,
         ResolutionContext context)
     {
         if (destination == null)
         {
-            destination = new DialogPersistModel();
+            destination = new DialogFilePersistModel();
         }
 
         var dialogItems = source.DialogItems.Select<IDialogItem, IDialogPersistItem>(item =>
@@ -115,48 +126,56 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
             throw new NotSupportedException();
         }).ToArray();
         destination.DialogItems = dialogItems;
-        destination.Topic = source.Topic;
-        var clientPersistModel = context.Mapper.Map<ILLMClient, LLMClientPersistModel>(source.DefaultClient);
-        destination.Client = clientPersistModel;
-        destination.PromptString = source.PromptString;
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
-        destination.Functions = source.SelectedFunctions?.ToArray();
         destination.SystemPrompt = source.SystemPrompt;
+        var requester = source.Requester;
+        destination.PromptString = requester.PromptString;
+        destination.Functions = requester.SelectedFunctions?.ToArray();
         return destination;
     }
 
-    public DialogViewModel Convert(DialogPersistModel source, DialogViewModel? destination, ResolutionContext context)
+    private const string ParentDialogViewModelKey = "ParentDialogViewModel";
+
+    public DialogViewModel Convert(DialogFilePersistModel source, DialogViewModel? destination,
+        ResolutionContext context)
     {
-        var sourceDialogItems = source.DialogItems?.Select<IDialogPersistItem, IDialogItem>((item =>
-        {
-            return item switch
-            {
-                MultiResponsePersistItem multiResponsePersistItem => context.Mapper
-                    .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem),
-                RequestViewItem requestViewItem => requestViewItem,
-                EraseViewItem eraseViewItem => eraseViewItem,
-                _ => throw new NotSupportedException()
-            };
-        })).ToArray();
         var llmClient = source.Client == null
             ? NullLlmModelClient.Instance
             : context.Mapper.Map<LLMClientPersistModel, ILLMClient>(source.Client);
-
-        var aiFunctionGroups = source.Functions?.Select((function) =>
-        {
-            if (function is McpServerItem server)
-            {
-                return _mcpServiceCollection.TryGet(server);
-            }
-
-            return function;
-        }).ToArray();
         if (destination != null)
         {
             destination.Topic = source.Topic;
-            destination.DefaultClient = llmClient;
+            destination.Requester.DefaultClient = llmClient;
             destination.DialogItems.Clear();
+        }
+        else
+        {
+            destination = new DialogViewModel(source.Topic, llmClient);
+        }
+        context.Items.Add(ParentDialogViewModelKey, destination);
+        try
+        {
+            var sourceDialogItems = source.DialogItems?.Select<IDialogPersistItem, IDialogItem>((item =>
+            {
+                return item switch
+                {
+                    MultiResponsePersistItem multiResponsePersistItem => context.Mapper
+                        .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem),
+                    RequestViewItem requestViewItem => requestViewItem,
+                    EraseViewItem eraseViewItem => eraseViewItem,
+                    _ => throw new NotSupportedException()
+                };
+            })).ToArray();
+            var aiFunctionGroups = source.Functions?.Select((function) =>
+            {
+                if (function is McpServerItem server)
+                {
+                    return _mcpServiceCollection.TryGet(server);
+                }
+
+                return function;
+            }).ToArray();
             if (sourceDialogItems != null)
             {
                 foreach (var sourceDialogItem in sourceDialogItems)
@@ -164,17 +183,19 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
                     destination.DialogItems.Add(sourceDialogItem);
                 }
             }
+
+            destination.TokensConsumption = source.TokensConsumption;
+            destination.TotalPrice = source.TotalPrice;
+            destination.SystemPrompt = source.SystemPrompt;
+            var requester = destination.Requester;
+            requester.PromptString = source.PromptString;
+            requester.SelectedFunctions = aiFunctionGroups;
         }
-        else
+        finally
         {
-            destination = new DialogViewModel(source.Topic, llmClient, sourceDialogItems);
+            context.Items.Remove(ParentDialogViewModelKey);
         }
 
-        destination.SystemPrompt = source.SystemPrompt;
-        destination.PromptString = source.PromptString;
-        destination.TokensConsumption = source.TokensConsumption;
-        destination.TotalPrice = source.TotalPrice;
-        destination.SelectedFunctions = aiFunctionGroups;
         return destination;
     }
 
@@ -201,7 +222,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
             {
                 foreach (var projectTask in tasks)
                 {
-                    destination.Tasks.Add(projectTask);
+                    destination.AddTask(projectTask);
                 }
             }
         }
@@ -272,10 +293,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
         destination ??= new ProjectTask(sourceDialogItems);
         destination.Name = source.Name;
         destination.Summary = source.Summary;
+        destination.Description = source.Description;
         destination.Type = source.Type;
         destination.Status = source.Status;
-        destination.SystemPrompt = source.SystemPrompt;
-        destination.PromptString = source.PromptString;
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
         return destination;
@@ -309,10 +329,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogSession, DialogSes
         destination.Type = source.Type;
         destination.Status = source.Status;
         destination.DialogItems = dialogItems;
-        destination.PromptString = source.PromptString;
+        destination.Description = source.Description;
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
-        destination.SystemPrompt = source.SystemPrompt;
         return destination;
     }
 

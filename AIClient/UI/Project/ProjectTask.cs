@@ -19,10 +19,13 @@ namespace LLMClient.UI.Project;
  * 2. 如何构建任务级别的上下文
  *
  */
-public class ProjectTask : DialogCoreViewModel
+public class ProjectTask : DialogSessionViewModel
 {
     private string? _name;
     private string? _summary;
+    private ProjectTaskStatus _status = ProjectTaskStatus.InProgress;
+    private ProjectTaskType _type;
+    private string? _description;
 
     public ProjectTask(IList<IDialogItem>? items = null) : base(items)
     {
@@ -48,6 +51,18 @@ public class ProjectTask : DialogCoreViewModel
         }
     }
 
+    public string? Description
+    {
+        get => _description;
+        set
+        {
+            if (value == _description) return;
+            _description = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
+        }
+    }
+
     /// <summary>
     /// Task内的上下文
     /// </summary>
@@ -60,12 +75,12 @@ public class ProjectTask : DialogCoreViewModel
                 return null;
             }
 
-            if (string.IsNullOrEmpty(Name) || string.IsNullOrEmpty(SystemPrompt))
+            if (string.IsNullOrEmpty(Name) || string.IsNullOrEmpty(Description))
             {
                 return null;
             }
 
-            return $"这是一个{Type.GetEnumDescription()}类型的任务，我希望你能帮助我完成它。{SystemPrompt}";
+            return $"这是一个{Type.GetEnumDescription()}类型的任务，我希望你能帮助我完成它。{Description}";
         }
     }
 
@@ -83,9 +98,28 @@ public class ProjectTask : DialogCoreViewModel
         }
     }
 
-    public ProjectTaskType Type { get; set; }
+    public ProjectTaskType Type
+    {
+        get => _type;
+        set
+        {
+            if (value == _type) return;
+            _type = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
+        }
+    }
 
-    public ProjectTaskStatus Status { get; set; } = ProjectTaskStatus.InProgress;
+    public ProjectTaskStatus Status
+    {
+        get => _status;
+        set
+        {
+            if (value == _status) return;
+            _status = value;
+            OnPropertyChanged();
+        }
+    }
 }
 
 public enum ProjectTaskStatus : int

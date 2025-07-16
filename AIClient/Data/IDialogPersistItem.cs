@@ -7,6 +7,7 @@ namespace LLMClient.Data;
 [JsonDerivedType(typeof(EraseViewItem), "erase")]
 [JsonDerivedType(typeof(RequestViewItem), "request")]
 [JsonDerivedType(typeof(MultiResponsePersistItem), "multiResponse")]
+[JsonDerivedType(typeof(SummaryRequestViewItem),"summaryRequest")]
 public interface IDialogPersistItem
 {
 }

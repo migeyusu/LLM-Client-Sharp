@@ -166,8 +166,8 @@
                                    x:Name="MainDialogHost"
                                    DialogTheme="Inherit">
             <materialDesign:DialogHost.Resources>
-                <DataTemplate DataType="{x:Type dialog:DialogCreationViewModel}">
-                    <dialog:DialogCreationView Width="900"
+                <DataTemplate DataType="{x:Type dialog:ModelSelectionPopupViewModel}">
+                    <dialog:ModelSelectionView Width="900"
                                                Height="600" />
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type ui:EndpointConfigureViewModel}">
@@ -224,10 +224,10 @@
                                                       Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type project:ProjectCreationViewModel}">
+                <DataTemplate DataType="{x:Type project:ProjectConfigViewModel}">
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="Standard Project">
-                        <project:ProjectCreationView Width="900"
+                        <project:ProjectConfigView Width="900"
                                                      Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
@@ -343,7 +343,7 @@
                             <component:TypeBasedDataTemplateSelector>
                                 <component:DataTemplateTypePair>
                                     <component:DataTemplateTypePair.Template>
-                                        <DataTemplate DataType="{x:Type dialog:DialogSession}">
+                                        <DataTemplate DataType="{x:Type dialog:DialogFileViewModel}">
                                             <Grid DataContext="{Binding Dialog,Mode=OneTime}">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
@@ -360,16 +360,17 @@
                                                        Margin="10"
                                                        RenderOptions.BitmapScalingMode="HighQuality"
                                                        VerticalAlignment="Center"
-                                                       Source="{Binding DefaultClient.Model.Icon.CurrentSource,Mode=OneWay}" />
+                                                       Source="{Binding Requester.DefaultClient.Model.Icon.CurrentSource,Mode=OneWay}" />
                                                 <Grid Grid.Row="0" Grid.Column="1"
                                                       VerticalAlignment="Top"
+                                                      DataContext="{Binding Requester.DefaultClient,Mode=OneWay}"
                                                       HorizontalAlignment="Stretch">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition />
                                                         <ColumnDefinition Width="Auto"
                                                                           MaxWidth="120" />
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="{Binding DefaultClient.Name}"
+                                                    <TextBlock Text="{Binding Name}"
                                                                Foreground="DimGray"
                                                                TextWrapping="NoWrap"
                                                                TextTrimming="CharacterEllipsis"
@@ -378,7 +379,7 @@
                                                     <TextBlock Grid.Column="1"
                                                                VerticalAlignment="Center"
                                                                HorizontalAlignment="Right"
-                                                               Text="{Binding DefaultClient.Endpoint.DisplayName,Mode=OneWay}"
+                                                               Text="{Binding Endpoint.DisplayName,Mode=OneWay}"
                                                                Margin="6,0,0,0" />
                                                 </Grid>
                                                 <TextBlock VerticalAlignment="Center"
@@ -602,7 +603,7 @@
                         <component:TypeBasedDataTemplateSelector>
                             <component:DataTemplateTypePair>
                                 <component:DataTemplateTypePair.Template>
-                                    <DataTemplate DataType="{x:Type dialog:DialogSession}">
+                                    <DataTemplate DataType="{x:Type dialog:DialogFileViewModel}">
                                         <dialog:DialogView DataContext="{Binding Dialog,Mode=OneTime}">
                                             <dialog:DialogView.CommandBindings>
                                                 <CommandBinding Command="{x:Static ui:CommonCommands.Branch}"

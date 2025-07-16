@@ -6,16 +6,16 @@ using LLMClient.Endpoints.OpenAIAPI;
 
 namespace LLMClient.UI.Dialog;
 
-public partial class DialogCreationView : UserControl
+public partial class ModelSelectionView : UserControl
 {
-    public DialogCreationView()
+    public ModelSelectionView()
     {
         InitializeComponent();
     }
 
-    DialogCreationViewModel ViewModel
+    ModelSelectionPopupViewModel ViewModel
     {
-        get { return (DataContext as DialogCreationViewModel)!; }
+        get { return (DataContext as ModelSelectionPopupViewModel)!; }
     }
 
     private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)

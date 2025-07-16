@@ -10,6 +10,8 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI.Component;
+using LLMClient.UI.Dialog;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
@@ -113,7 +115,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
     public ObservableCollection<SuggestedModel> SuggestedModels { get; } =
         new ObservableCollection<SuggestedModel>();
 
-    public PopupModelSelectionViewModel PopupSelectViewModel { get; }
+    public ModelSelectionPopupViewModel PopupSelectViewModel { get; }
 
     public ICommand RemoveSuggestedModelCommand => new ActionCommand((o =>
     {
@@ -127,7 +129,8 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public EndpointConfigureViewModel()
     {
-        PopupSelectViewModel = new PopupModelSelectionViewModel(this, OnModelSelected);
+        PopupSelectViewModel = new ModelSelectionPopupViewModel(this, OnModelSelected)
+            { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
         Endpoints.CollectionChanged += EndpointsOnCollectionChanged;
     }
 

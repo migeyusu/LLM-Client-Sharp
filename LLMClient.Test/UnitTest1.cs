@@ -42,13 +42,13 @@ public class UnitTest1
             .AddSingleton<IMcpServiceCollection, McpServiceCollection>();
         serviceCollection.AddAutoMapper((provider, expression) =>
         {
-            expression.CreateMap<DialogSessionPersistModel, DialogSession>()
+            expression.CreateMap<DialogFilePersistModel, DialogFileViewModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<DialogSession, DialogSessionPersistModel>()
+            expression.CreateMap<DialogFileViewModel, DialogFilePersistModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<DialogViewModel, DialogPersistModel>()
+            expression.CreateMap<DialogViewModel, DialogFilePersistModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<DialogPersistModel, DialogViewModel>()
+            expression.CreateMap<DialogFilePersistModel, DialogViewModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
             expression.CreateMap<APIEndPoint, APIEndPoint>();
             expression.CreateMap<APIDefaultOption, APIDefaultOption>();
@@ -71,8 +71,8 @@ public class UnitTest1
         }, AppDomain.CurrentDomain.GetAssemblies());
         var serviceProvider = serviceCollection.BuildServiceProvider();
         var mapper = serviceProvider.GetService<IMapper>();
-        var dialogSession = new DialogSession(new DialogViewModel("sadg", new NullLlmModelClient()));
-        var dialogSessionPersistModel = mapper?.Map<DialogSession, DialogSessionPersistModel>(dialogSession,new DialogSessionPersistModel());
+        var dialogSession = new DialogFileViewModel(new DialogViewModel("sadg", new NullLlmModelClient()));
+        var dialogSessionPersistModel = mapper?.Map<DialogFileViewModel, DialogFilePersistModel>(dialogSession,new DialogFilePersistModel());
         Assert.NotNull(dialogSessionPersistModel);
     }
 

@@ -1,31 +1,34 @@
 ﻿// #define TESTMODE
 
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
-using LLMClient.Endpoints;
 using LLMClient.UI.Component;
-using LLMClient.UI.MCP.Servers;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
+using MessageBox = System.Windows.MessageBox;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace LLMClient.UI.Dialog;
 
-public class DialogViewModel : DialogCoreViewModel
+public class DialogViewModel : DialogSessionViewModel
 {
-    /// <summary>
-    /// indicate whether data is changed after loading.
-    /// </summary>
-    public bool IsDataChanged { get; set; } = true;
+    //创建新实例后默认为changed
+    private bool _isDataChanged = true;
+
+    public override bool IsDataChanged
+    {
+        get { return _isDataChanged | Requester.IsDataChanged; }
+        set
+        {
+            _isDataChanged = value;
+            Requester.IsDataChanged = value;
+        }
+    }
 
     private string _topic;
 
@@ -37,16 +40,6 @@ public class DialogViewModel : DialogCoreViewModel
             if (value == _topic) return;
             _topic = value;
             OnPropertyChanged();
-        }
-    }
-
-    public string? Shortcut
-    {
-        get
-        {
-            return DialogItems.OfType<MultiResponseViewItem>()
-                .FirstOrDefault(item => { return item.IsAvailableInContext; })
-                ?.CurrentResponse?.TextWithoutThinking;
         }
     }
 
@@ -87,14 +80,14 @@ public class DialogViewModel : DialogCoreViewModel
 
     public async void SequentialChain(IEnumerable<IDialogItem> dialogItems)
     {
-        var client = this.DefaultClient;
-        this.RespondingCount++;
-        this.IsChaining = true;
-        this.ChainingStep = 0;
+        var client = Requester.DefaultClient;
+        RespondingCount++;
+        IsChaining = true;
+        ChainingStep = 0;
         var pendingItems = dialogItems
             .Where(item => item is RequestViewItem || item is EraseViewItem)
             .ToArray();
-        this.ChainStepCount = pendingItems.Length;
+        ChainStepCount = pendingItems.Length;
         try
         {
             foreach (var oldDialogDialogItem in pendingItems)
@@ -104,11 +97,11 @@ public class DialogViewModel : DialogCoreViewModel
                     var newGuid = Guid.NewGuid();
                     var newItem = requestViewItem.Clone();
                     DialogItems.Add(newItem);
-                    var copy = DialogItems.ToArray();
+                    var copy = GenerateHistory();
                     int retryCount = 3;
                     while (retryCount > 0)
                     {
-                        var multiResponseViewItem = new MultiResponseViewItem() { InteractionId = newGuid };
+                        var multiResponseViewItem = new MultiResponseViewItem(this) { InteractionId = newGuid };
                         DialogItems.Add(multiResponseViewItem);
                         var completedResult =
                             await SendRequestCore(client, copy, multiResponseViewItem);
@@ -129,7 +122,7 @@ public class DialogViewModel : DialogCoreViewModel
                 }
                 else if (oldDialogDialogItem is EraseViewItem)
                 {
-                    this.DialogItems.Add(new EraseViewItem());
+                    DialogItems.Add(new EraseViewItem());
                 }
 
                 ChainingStep++;
@@ -141,8 +134,8 @@ public class DialogViewModel : DialogCoreViewModel
         }
         finally
         {
-            this.RespondingCount--;
-            this.IsChaining = false;
+            RespondingCount--;
+            IsChaining = false;
             /*this.ChainStepCount = 0;
             this.ChainingStep = 0;*/
             ScrollViewItem = DialogItems.Last();
@@ -151,195 +144,22 @@ public class DialogViewModel : DialogCoreViewModel
 
     #endregion
 
-    #region search
-
-    private string? _searchText;
-
-    public string? SearchText
+    public IPromptsResource PromptsResource
     {
-        get => _searchText;
-        set
-        {
-            if (value == _searchText) return;
-            _searchText = value;
-            OnPropertyChanged();
-        }
+        get { return ServiceLocator.GetService<IPromptsResource>()!; }
     }
 
-    public ICommand SearchCommand => new ActionCommand((o =>
-    {
-        foreach (var dialogViewItem in this.DialogItems)
-        {
-            if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
-            {
-                foreach (var responseViewItem in multiResponseViewItem.Items.OfType<ResponseViewItem>())
-                {
-                    responseViewItem.Document?.ApplySearch(_searchText);
-                }
-            }
-        }
+    private bool _isChaining;
+    private int _chainStepCount;
+    private int _chainingStep;
 
-        this.FocusedResponse = null;
-        if (this.ScrollViewItem is MultiResponseViewItem viewItem)
-        {
-            viewItem.CurrentResponse?.Document?.EnsureSearch();
-        }
-    }));
+    private readonly string[] _notTrackingProperties =
+    [
+        nameof(ScrollViewItem),
+        nameof(SearchText)
+    ];
 
-    private int _currentHighlightIndex = 0;
-
-    private MultiResponseViewItem? FocusedResponse
-    {
-        get => _focusedResponse;
-        set
-        {
-            _focusedResponse = value;
-            var document = value?.CurrentResponse?.Document;
-            if (document is { HasMatched: true })
-            {
-                document.EnsureSearch();
-            }
-        }
-    }
-
-    SearchableDocument? FocusedDocument
-    {
-        get { return FocusedResponse?.CurrentResponse?.Document; }
-    }
-
-    private void CheckFocusResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
-    {
-        if (FocusedResponse != null)
-        {
-            responseIndex = responseViewItems.IndexOf(FocusedResponse);
-            if (responseIndex == -1)
-            {
-                FocusedResponse = null;
-                responseIndex = 0;
-            }
-        }
-
-        if (FocusedResponse == null)
-        {
-            this.FocusedResponse = responseViewItems.First();
-        }
-    }
-
-    private void GoToHighlight()
-    {
-        ScrollViewItem = this.FocusedResponse;
-        var foundTextRange = FocusedDocument?.FoundTextRanges[_currentHighlightIndex];
-        if (foundTextRange == null)
-            return;
-        var parent = FocusedDocument?.Document.Parent;
-        if (parent is FlowDocumentScrollViewerEx ex)
-        {
-            ex.ScrollToRange(foundTextRange);
-        }
-    }
-
-    public ICommand GoToNextHighlightCommand => new ActionCommand((o =>
-    {
-        if (string.IsNullOrEmpty(SearchText))
-        {
-            return;
-        }
-
-        var responseViewItems = DialogItems.OfType<MultiResponseViewItem>()
-            .Where(item => item.AcceptedResponse is ResponseViewItem { Document.HasMatched: true }).ToArray();
-        if (responseViewItems.Length == 0)
-        {
-            MessageEventBus.Publish("没有找到匹配的结果！");
-            return;
-        }
-
-        var responseIndex = 0;
-        CheckFocusResponse(responseViewItems, ref responseIndex);
-        _currentHighlightIndex++;
-        if (_currentHighlightIndex >= FocusedDocument?.FoundTextRanges.Count)
-        {
-            //跳转到下一个FlowDocument
-            responseIndex++;
-            FocusedResponse = responseIndex < responseViewItems.Length
-                ? responseViewItems[responseIndex]
-                : responseViewItems[0];
-            _currentHighlightIndex = 0;
-        }
-
-        GoToHighlight();
-    }));
-
-    public ICommand GoToPreviousHighlightCommand => new ActionCommand((o =>
-    {
-        if (string.IsNullOrEmpty(SearchText))
-        {
-            return;
-        }
-
-        var responseViewItems = DialogItems.OfType<MultiResponseViewItem>()
-            .Where(item => item.AcceptedResponse is ResponseViewItem { Document.HasMatched: true }).ToArray();
-        if (responseViewItems.Length == 0)
-        {
-            MessageEventBus.Publish("没有找到匹配的结果！");
-            return;
-        }
-
-        var responseIndex = responseViewItems.Length - 1;
-        CheckFocusResponse(responseViewItems, ref responseIndex);
-        _currentHighlightIndex--;
-        if (_currentHighlightIndex < 0)
-        {
-            //跳转到上一个FlowDocument
-            FocusedResponse = responseIndex > 0
-                ? responseViewItems[--responseIndex]
-                : responseViewItems.Last();
-            _currentHighlightIndex = FocusedDocument?.FoundTextRanges.Count - 1 ?? 0;
-        }
-
-        GoToHighlight();
-    }));
-
-    #endregion
-
-    #region toolbar
-
-    public ICommand ClearUnavailableCommand => new ActionCommand((o =>
-    {
-        var deleteItems = new List<IDialogItem>();
-        Guid unusedInteractionId = Guid.Empty;
-        for (var index = DialogItems.Count - 1; index >= 0; index--)
-        {
-            var dialogViewItem = DialogItems[index];
-            if (dialogViewItem is MultiResponseViewItem item && !item.HasAvailableMessage)
-            {
-                deleteItems.Add(dialogViewItem);
-                unusedInteractionId = item.InteractionId;
-            }
-            else if (dialogViewItem is RequestViewItem requestViewItem &&
-                     requestViewItem.InteractionId == unusedInteractionId)
-            {
-                deleteItems.Add(requestViewItem);
-            }
-        }
-
-        deleteItems.ForEach(item => DialogItems.Remove(item));
-    }));
-
-    public ICommand ChangeModelCommand => new ActionCommand((async o =>
-    {
-        var selectionViewModel = new DialogCreationViewModel(EndpointService);
-        if (await DialogHost.Show(selectionViewModel) is true)
-        {
-            var model = selectionViewModel.GetClient();
-            if (model == null)
-            {
-                MessageBox.Show("No model created!");
-                return;
-            }
-
-            this.DefaultClient = model;
-        }
-    }));
+    public RequesterViewModel Requester { get; }
 
     public ICommand ExportCommand => new ActionCommand((async o =>
     {
@@ -355,9 +175,9 @@ public class DialogViewModel : DialogCoreViewModel
         }
 
         var stringBuilder = new StringBuilder(8192);
-        stringBuilder.AppendLine($"# {this.Topic}");
-        stringBuilder.AppendLine($"### {this.DefaultClient.Name}");
-        foreach (var viewItem in this.DialogItems.Where((item => item.IsAvailableInContext)))
+        /*stringBuilder.AppendLine($"# {this.Topic}");
+        stringBuilder.AppendLine($"### {this.DefaultClient.Name}");*/
+        foreach (var viewItem in DialogItems.Where((item => item.IsAvailableInContext)))
         {
             if (viewItem is MultiResponseViewItem multiResponseView &&
                 multiResponseView.AcceptedResponse is ResponseViewItem responseViewItem)
@@ -386,116 +206,38 @@ public class DialogViewModel : DialogCoreViewModel
         MessageEventBus.Publish("已导出");
     }));
 
+    #region core method
+
+    public async void ReBaseOn(RequestViewItem redoItem)
+    {
+        RemoveAfter(redoItem);
+        await Requester.GetResponse(redoItem);
+    }
+
+    public async void ClearBefore(RequestViewItem requestViewItem)
+    {
+        if ((await DialogHost.Show(new ConfirmView() { Header = "清空会话？" })) is true)
+        {
+            RemoveBefore(requestViewItem);
+        }
+    }
+
     #endregion
-
-    /*public ICommand TestCommand => new ActionCommand((async o =>
-    {
-        if (this.Client == null)
-        {
-            return;
-        }
-
-        var dialogViewItem = this.DialogItems.Last(item => item is MultiResponseViewItem && item.IsAvailableInContext);
-        var multiResponseViewItem = dialogViewItem as MultiResponseViewItem;
-        var endpoint = EndpointService.AvailableEndpoints[0];
-        var first = endpoint.AvailableModelNames.First();
-        var llmModelClient = new ModelSelectionViewModel(this.EndpointService)
-        {
-            SelectedModelName = first,
-            SelectedEndpoint = endpoint
-        }.GetClient();
-        if (llmModelClient == null)
-        {
-            return;
-        }
-
-        if (multiResponseViewItem != null)
-        {
-            await AppendResponseOn(multiResponseViewItem, llmModelClient);
-        }
-    }));*/
-
-    public IPromptsResource PromptsResource
-    {
-        get { return ServiceLocator.GetService<IPromptsResource>()!; }
-    }
-
-    private ILLMClient _defaultClient;
-
-    public override ILLMClient DefaultClient
-    {
-        get => _defaultClient;
-        set
-        {
-            if (Equals(value, _defaultClient)) return;
-            if (_defaultClient is INotifyPropertyChanged oldValue)
-            {
-                oldValue.PropertyChanged -= TagDataChangedOnPropertyChanged;
-            }
-
-            if (_defaultClient.Parameters is INotifyPropertyChanged oldParameters)
-            {
-                oldParameters.PropertyChanged -= TagDataChangedOnPropertyChanged;
-            }
-
-            _defaultClient = value;
-            OnPropertyChanged();
-            TrackClientChanged(value);
-        }
-    }
-
-    private MultiResponseViewItem? _focusedResponse;
-    private bool _isChaining;
-    private int _chainStepCount;
-    private int _chainingStep;
-
-    private readonly string[] _notTrackingProperties =
-    [
-        nameof(DialogViewModel.ScrollViewItem),
-        nameof(DialogViewModel.SearchText)
-    ];
 
     public DialogViewModel(string topic, ILLMClient modelClient, IList<IDialogItem>? items = null)
         : base(items)
     {
-        this._topic = topic;
-        this._defaultClient = modelClient;
-        this.TrackClientChanged(modelClient);
-        this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
-        this.PropertyChanged += (_, e) =>
+        _topic = topic;
+        Requester = new RequesterViewModel(modelClient, SendRequestCore);
+        PropertyChanged += (_, e) =>
         {
             var propertyName = e.PropertyName;
-            if (this._notTrackingProperties.Contains(propertyName))
+            if (_notTrackingProperties.Contains(propertyName))
             {
                 return;
             }
 
-            this.IsDataChanged = true;
+            IsDataChanged = true;
         };
-    }
-
-    private void TagDataChangedOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        IsDataChanged = true;
-    }
-
-    private void TrackClientChanged(ILLMClient client)
-    {
-        if (client is INotifyPropertyChanged newValue)
-        {
-            newValue.PropertyChanged += TagDataChangedOnPropertyChanged;
-        }
-
-        if (_defaultClient.Parameters is INotifyPropertyChanged newParameters)
-        {
-            newParameters.PropertyChanged += TagDataChangedOnPropertyChanged;
-        }
-    }
-
-    private void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        this.IsDataChanged = true;
-        OnPropertyChangedAsync(nameof(Shortcut));
-        OnPropertyChanged(nameof(CurrentContextTokens));
     }
 }

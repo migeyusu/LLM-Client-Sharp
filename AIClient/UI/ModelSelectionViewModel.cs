@@ -1,8 +1,18 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Windows.Input;
+using LLMClient.Abstraction;
 
 namespace LLMClient.UI;
 
-public class ModelSelectionViewModel : BaseViewModel
+public interface IModelSelection
+{
+    IEndpointService EndpointService { get; }
+
+    ILLMModel? SelectedModel { get; set; }
+
+    ICommand? SubmitCommand { get; }
+}
+
+public abstract class ModelSelectionViewModel : BaseViewModel, IModelSelection
 {
     public IEndpointService EndpointService { get; set; }
 
@@ -17,9 +27,11 @@ public class ModelSelectionViewModel : BaseViewModel
         }
     }
 
+    public abstract ICommand? SubmitCommand { get; }
+
     private ILLMModel? _selectedModel;
 
-    public ModelSelectionViewModel(IEndpointService endpointService)
+    protected ModelSelectionViewModel(IEndpointService endpointService)
     {
         EndpointService = endpointService;
     }

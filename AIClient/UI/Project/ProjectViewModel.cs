@@ -25,20 +25,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
 
-    public override bool IsDataChanged
-    {
-        get => _isDataChanged;
-        set
-        {
-            if (_isDataChanged == value)
-                return;
-            _isDataChanged = value;
-            if (value)
-            {
-                this.EditTime = DateTime.Now;
-            }
-        }
-    }
+    public override bool IsDataChanged { get; set; } = true;
 
     public override bool IsBusy { get; } = false;
 
@@ -70,6 +57,8 @@ public class ProjectViewModel : FileBasedSessionBase
             TrackClientChanged(value);
         }
     }
+
+    public ProjectConfigViewModel ConfigViewModel { get; }
 
     #region file
 
@@ -176,10 +165,8 @@ public class ProjectViewModel : FileBasedSessionBase
     private string? _description = string.Empty;
     private IList<string>? _languageNames;
     private string? _folderPath;
-    private ProjectTask? _workingTask;
     private string? _name;
     private ILLMClient _client = NullLlmModelClient.Instance;
-    private bool _isDataChanged = true;
 
     protected override async Task SaveToStream(Stream stream)
     {
@@ -283,7 +270,10 @@ public class ProjectViewModel : FileBasedSessionBase
         var functionSelection = new AIFunctionSelectionViewModel(this.AllowedFunctions ??
                                                                  Enumerable.Empty<IAIFunctionGroup>(), true);
         functionSelection.EnsureAsync();
-        await DialogHost.Show(functionSelection);
+        if ((await DialogHost.Show(functionSelection)) is true)
+        {
+            this.AllowedFunctions = functionSelection.SelectedFunctions.ToArray();
+        }
     });
 
     public ICommand SelectProjectFolderCommand => new RelayCommand(() =>
@@ -367,32 +357,6 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public virtual string Type { get; } = "Standard";
 
-    #endregion
-
-    #region tasks
-
-    public ICommand AddNewTask => new ActionCommand(o => { this.Tasks.Add(new ProjectTask()); });
-
-    public void DeleteTask(ProjectTask task)
-    {
-        this.Tasks.Remove(task);
-    }
-
-    public ObservableCollection<ProjectTask> Tasks { get; set; }
-
-    public ProjectTask? WorkingTask
-    {
-        get => _workingTask;
-        set
-        {
-            if (Equals(value, _workingTask)) return;
-            _workingTask = value;
-            OnPropertyChanged();
-        }
-    }
-
-    #endregion
-
     public long TokensConsumption
     {
         get => _tokensConsumption;
@@ -431,19 +395,74 @@ public class ProjectViewModel : FileBasedSessionBase
         get { return ServiceLocator.GetService<IPromptsResource>()!; }
     }
 
+    #endregion
+
+    #region tasks
+
+    public ICommand NewTaskCommand => new ActionCommand(o => { AddTask(new ProjectTask()); });
+
+    public void AddTask(ProjectTask task)
+    {
+        task.PropertyChanged += TaskOnPropertyChanged;
+        task.DialogItems.CollectionChanged += OnCollectionChanged;
+        this.Tasks.Add(task);
+    }
+
+    public void RemoveTask(ProjectTask task)
+    {
+        if (this.Tasks.Remove(task))
+        {
+            task.DialogItems.CollectionChanged -= OnCollectionChanged;
+            task.PropertyChanged -= TaskOnPropertyChanged;
+        }
+    }
+
+    private void TaskOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        this.IsDataChanged = true;
+    }
+
+    public ObservableCollection<ProjectTask> Tasks { get; set; }
+
+    private ProjectTask? _selectedTask;
+
+    public ProjectTask? SelectedTask
+    {
+        get => _selectedTask;
+        set
+        {
+            if (Equals(value, _selectedTask)) return;
+            _selectedTask = value;
+            OnPropertyChanged();
+        }
+    }
+
+    #endregion
+
     private readonly string[] _notTrackingProperties =
     [
+        nameof(EditTime),
+        nameof(SelectedTask)
     ];
 
     private long _tokensConsumption;
     private float _totalPrice;
     private IAIFunctionGroup[]? _allowedFunctions;
 
+    private IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
+
     public ProjectViewModel(IEnumerable<ProjectTask>? tasks = null) : base()
     {
-        this.Tasks = tasks == null
-            ? []
-            : new ObservableCollection<ProjectTask>(tasks);
+        this.ConfigViewModel = new ProjectConfigViewModel(this.EndpointService, this);
+        this.Tasks = new ObservableCollection<ProjectTask>();
+        if (tasks != null)
+        {
+            foreach (var projectTask in tasks)
+            {
+                this.AddTask(projectTask);
+            }
+        }
+
         this.PropertyChanged += (_, e) =>
         {
             var propertyName = e.PropertyName;
@@ -452,9 +471,10 @@ public class ProjectViewModel : FileBasedSessionBase
                 return;
             }
 
+            this.EditTime = DateTime.Now;
             IsDataChanged = true;
         };
-        Tasks.CollectionChanged += TasksOnCollectionChanged;
+        Tasks.CollectionChanged += OnCollectionChanged;
     }
 
     public virtual void Initialize()
@@ -462,7 +482,7 @@ public class ProjectViewModel : FileBasedSessionBase
         AllowedFunctions = [new FileSystemPlugin(), new WinCLIPlugin()];
     }
 
-    private void TasksOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         this.IsDataChanged = true;
     }
@@ -499,7 +519,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public void NewTaskRequest()
     {
-        if (this._workingTask == null)
+        if (this._selectedTask == null)
         {
             return;
         }

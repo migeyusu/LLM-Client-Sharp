@@ -178,7 +178,7 @@
                                          VerticalAlignment="Center"
                                          ToolTip="添加suggestion"
                                          Style="{StaticResource MaterialDesignToolPopupBox}"
-                                         PopupContentTemplate="{StaticResource  PopupSelectViewModelTemplate}"
+                                         PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}"
                                          PopupContent="{Binding   PopupSelectViewModel,Mode=OneTime}">
                     <materialDesign:PopupBox.ToggleContent>
                         <Border Width="23"

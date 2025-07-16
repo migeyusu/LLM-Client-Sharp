@@ -1,15 +1,18 @@
-﻿using LLMClient.UI;
+﻿using LLMClient.Abstraction;
 
 namespace LLMClient.Data;
 
-/// <summary>
-/// 用于持久化
-/// </summary>
-public class DialogSessionPersistModel : DialogPersistModel
+public class DialogSessionPersistModel
 {
-    public const int DialogPersistVersion = 3;
+    public IDialogPersistItem[]? DialogItems { get; set; }
 
-    public int Version { get; set; } = DialogPersistVersion;
+    public string? PromptString { get; set; }
 
-    public DateTime EditTime { get; set; }
+    public string? SystemPrompt { get; set; }
+
+    public long TokensConsumption { get; set; }
+
+    public double TotalPrice { get; set; }
+
+    public IAIFunctionGroup[]? Functions { get; set; }
 }

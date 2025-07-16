@@ -6,6 +6,7 @@ namespace LLMClient.Data;
 public class ProjectPersistModel
 {
     public const int CurrentVersion = 1;
+
     public int Version { get; set; } = CurrentVersion;
 
     public DateTime EditTime { get; set; }
@@ -35,23 +36,16 @@ public class ProjectPersistModel
     public ProjectTaskPersistModel[]? Tasks { get; set; }
 }
 
-public class ProjectTaskPersistModel
+public class ProjectTaskPersistModel : DialogSessionPersistModel
 {
     public string? Name { get; set; }
 
     public string? Summary { get; set; }
+    
+
+    public string? Description { get; set; }
 
     public ProjectTaskType Type { get; set; }
 
     public ProjectTaskStatus Status { get; set; }
-
-    public IDialogPersistItem[]? DialogItems { get; set; }
-
-    public string? PromptString { get; set; }
-
-    public string? SystemPrompt { get; set; }
-
-    public long TokensConsumption { get; set; }
-
-    public double TotalPrice { get; set; }
 }

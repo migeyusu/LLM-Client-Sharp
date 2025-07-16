@@ -2,9 +2,9 @@
 
 namespace LLMClient.UI.Project;
 
-public partial class ProjectCreationView : UserControl
+public partial class ProjectConfigView : UserControl
 {
-    public ProjectCreationView()
+    public ProjectConfigView()
     {
         InitializeComponent();
     }

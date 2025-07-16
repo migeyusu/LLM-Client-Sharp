@@ -19,7 +19,7 @@ public partial class GlobalConfigView : UserControl
 
     private void OpenDialogs_OnClick(object sender, RoutedEventArgs e)
     {
-        var path = DialogSession.SaveFolderPathLazy.Value;
+        var path = DialogFileViewModel.SaveFolderPathLazy.Value;
         var directoryInfo = new DirectoryInfo(path);
         if (!directoryInfo.Exists)
         {

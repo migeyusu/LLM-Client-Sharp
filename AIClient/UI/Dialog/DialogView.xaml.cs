@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -26,7 +27,7 @@ public partial class DialogView : UserControl
         }
     }
 
-    private void OnRedoExecuted(object sender, ExecutedRoutedEventArgs e)
+    private void OnReBaseExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
@@ -38,64 +39,10 @@ public partial class DialogView : UserControl
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
-            ViewModel.InsertClearContextItem(requestViewItem);
+            ViewModel.CutContext(requestViewItem);
         }
     }
-
-    private void Refresh_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.Parameter is MultiResponseViewItem multiResponseViewItem)
-        {
-            ViewModel.RetryCurrent(multiResponseViewItem);
-        }
-    }
-
-    private void EnterKeyInputBinding_OnChecked(object sender, RoutedEventArgs e)
-    {
-        if (this.FindResource("PromptKeyBinding") is InputBinding findResource)
-        {
-            PromptTextBox.InputBindings.Add(findResource);
-        }
-    }
-
-    private void EnterKeyInputBinding_OnUnchecked(object sender, RoutedEventArgs e)
-    {
-        if (this.FindResource("PromptKeyBinding") is InputBinding findResource)
-        {
-            PromptTextBox.InputBindings.Remove(findResource);
-        }
-    }
-
-    private void ModelComparePopupBox_OnOpened(object sender, RoutedEventArgs e)
-    {
-        if (sender is PopupBox popupBox)
-        {
-            var responseViewItem = popupBox.DataContext as MultiResponseViewItem;
-            if (responseViewItem == null)
-            {
-                return;
-            }
-
-            var endpointService = BaseViewModel.ServiceLocator.GetService<IEndpointService>()!;
-            popupBox.PopupContent = new PopupModelSelectionViewModel(endpointService,
-                async (selector) =>
-                {
-                    var client = selector.GetClient();
-                    if (client == null)
-                    {
-                        return;
-                    }
-
-                    await this.ViewModel.AppendResponseOn(responseViewItem, client);
-                });
-        }
-    }
-
-    private void Conclusion_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        ViewModel.ConclusionCurrent();
-    }
-
+    
     private void ClearBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is RequestViewItem requestViewItem)
@@ -103,28 +50,5 @@ public partial class DialogView : UserControl
             ViewModel.ClearBefore(requestViewItem);
         }
     }
-
-    private void McpPopupBox_OnOpened(object sender, RoutedEventArgs e)
-    {
-        if (sender is PopupBox popupBox)
-        {
-            var selectedFunctions = ViewModel.SelectedFunctions;
-            var selectionViewModel =
-                new AIFunctionSelectionViewModel(selectedFunctions ?? Array.Empty<IAIFunctionGroup>(), false);
-            selectionViewModel.EnsureAsync();
-            popupBox.PopupContent = selectionViewModel;
-        }
-    }
-
-    private void McpPopupBox_OnClosed(object sender, RoutedEventArgs e)
-    {
-        if (sender is PopupBox popupBox)
-        {
-            var selectionViewModel = popupBox.PopupContent as AIFunctionSelectionViewModel;
-            this.ViewModel.SelectedFunctions =
-                selectionViewModel?.CandidateFunctions
-                    .Where((group => group.IsSelected))
-                    .Select((model => model.Data)).ToArray();
-        }
-    }
+    
 }

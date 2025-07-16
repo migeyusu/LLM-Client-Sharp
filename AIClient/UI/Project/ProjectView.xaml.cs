@@ -28,7 +28,7 @@ public partial class ProjectView : UserControl
     {
         if (e.Parameter is ProjectTask task)
         {
-            ViewModel.DeleteTask(task);
+            ViewModel.RemoveTask(task);
         }
     }
 }
