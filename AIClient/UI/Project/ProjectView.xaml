@@ -43,8 +43,7 @@
                          MaxWidth="300"
                          TextWrapping="Wrap" />
                 <component:PromptEditor Grid.Column="1"
-                                        Height="50"
-                                        VerticalAlignment="Center"
+                                        VerticalAlignment="Stretch"
                                         Margin="0,0,10,0"
                                         Source="{Binding PromptsResource.SystemPrompts,Mode=OneWay}"
                                         PromptString="{Binding Description,Mode=TwoWay}" />
@@ -76,6 +75,8 @@
                     </TextBlock>
                     <materialDesign:SplitButton VerticalAlignment="Center"
                                                 Padding="6,0"
+                                                PopupUniformCornerRadius="6"
+                                                PopupElevation="Dp4"
                                                 Command="{Binding SelectFunctionsCommand}"
                                                 Style="{StaticResource MaterialDesignOutlinedDarkSplitButton}"
                                                 materialDesign:ButtonAssist.CornerRadius="10">
@@ -87,19 +88,21 @@
                                                          VerticalAlignment="Center" />
                                 <TextBlock Text="unction Call"
                                            FontStyle="Italic"
-                                           Margin="-8,0,6,2"
+                                           Margin="-10,0,6,2"
                                            VerticalAlignment="Bottom" />
                             </StackPanel>
                         </materialDesign:SplitButton.Content>
                         <materialDesign:SplitButton.PopupContent>
                             <ScrollViewer MaxHeight="300"
+                                          Margin="6"
                                           VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding AllowedFunctions,Mode=OneWay}"
-                                              MinWidth="200">
+                                              MinWidth="160">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type abstraction:IAIFunctionGroup}">
                                             <TextBlock Text="{Binding Name,Mode=OneWay}"
-                                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                       FontWeight="Medium"
+                                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
                                                        Margin="6,3" />
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -146,7 +149,6 @@
                     Command="{Binding NewTaskCommand}"
                     Margin="16,0,0,0"
                     ToolTip="Add Tasks" />
-            <!-- <Button Content="{materialDesign:PackIcon Kind=Remove,Size=16}" /> -->
         </StackPanel>
         <!--tasks listbox-->
         <ListBox Grid.Row="2"
@@ -196,12 +198,9 @@
                                         Width="26"
                                         Height="26"
                                         Background="White"
+                                        Content="{materialDesign:PackIcon Kind=ArrowLeftBold,Size=20}"
                                         Command="MoveLeft"
-                                        CommandParameter="{Binding Mode=OneTime}">
-                                    <materialDesign:PackIcon Kind="ArrowLeftBold"
-                                                             Width="20"
-                                                             Height="20" />
-                                </Button>
+                                        CommandParameter="{Binding Mode=OneTime}" />
                                 <Button Style="{StaticResource MaterialDesignIconForegroundButton}"
                                         Template="{StaticResource ItemDeleteButtonTemplate}"
                                         HorizontalAlignment="Right"
@@ -212,10 +211,53 @@
                                         Width="26"
                                         Height="26" />
                             </StackPanel>
+                            <TextBlock Grid.Row="1" Grid.Column="0"
+                                       Text="{Binding Type,Mode=OneWay,Converter={x:Static converters:SnapConverters.EnumToDescriptionConverter}}" />
                             <TextBlock Grid.Row="2" Grid.Column="0"
                                        Grid.ColumnSpan="2"
-                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                       Text="{Binding  SystemPrompt,Mode=OneWay}" />
+                                       Style="{StaticResource MaterialDesignOverlineTextBlock}"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxHeight="30"
+                                       Foreground="DimGray"
+                                       VerticalAlignment="Bottom"
+                                       Text="{Binding  Description,Mode=OneWay}" />
+                            <materialDesign:PopupBox Grid.Row="2" Grid.Column="1"
+                                                     StaysOpen="True"
+                                                     PopupUniformCornerRadius="4"
+                                                     HorizontalAlignment="Right">
+                                <StackPanel Width="300"
+                                            MaxHeight="500">
+                                    <StackPanel.Resources>
+                                        <Style TargetType="{x:Type TextBox}"
+                                               BasedOn="{StaticResource MaterialDesignTextBox}">
+                                            <Setter Property="Margin"
+                                                    Value="8,8,8,8" />
+                                            <Setter Property="materialDesign:HintAssist.IsFloating"
+                                                    Value="True" />
+                                            <Setter Property="TextAlignment"
+                                                    Value="Left" />
+                                            <Setter Property="SpellCheck.IsEnabled"
+                                                    Value="True" />
+                                        </Style>
+                                    </StackPanel.Resources>
+                                    <TextBox materialDesign:HintAssist.Hint="Name"
+                                             Text="{Binding Name,Mode=TwoWay}" />
+                                    <TextBox materialDesign:HintAssist.Hint="Description"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             AcceptsTab="True"
+                                             VerticalScrollBarVisibility="Auto"
+                                             MaxHeight="200"
+                                             Text="{Binding Description,Mode=TwoWay}" />
+                                    <ComboBox Margin="8"
+                                              ItemsSource="{Binding Source={component:EnumBindingSource {x:Type local:ProjectTaskType}}}"
+                                              SelectedValue="{Binding Type,Mode=TwoWay}"
+                                              materialDesign:HintAssist.Hint="Type"
+                                              materialDesign:HintAssist.IsFloating="True"
+                                              MaxDropDownHeight="200" />
+                                </StackPanel>
+                            </materialDesign:PopupBox>
                         </Grid>
                     </materialDesign:Card>
                 </DataTemplate>
@@ -233,7 +275,6 @@
                    Background="DarkGray"
                    Margin="20,0"
                    Height="3" />
-        <!--todo: plugin初始化、dialog plugin赋值、dialog界面、dialog client赋值和调用-->
         <Grid Grid.Row="3"
               DataContext="{Binding SelectedTask,Mode=OneWay}"
               Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
@@ -277,15 +318,14 @@
                                                                   Icon="{materialDesign:PackIcon Kind=WaveArrowDown}" />
                                                     </MenuItem>
                                                 </Menu>
-                                                <!--todo-->
-                                                <!--<materialDesign:PopupBox Padding="2,0"
-                                                                         Opened="ModelComparePopupBox_OnOpened"
+                                                <materialDesign:PopupBox Padding="2,0"
                                                                          StaysOpen="True"
                                                                          VerticalAlignment="Center"
                                                                          ToolTip="对比其他模型"
-                                                                         PopupContent="{materialDesign:PackIcon Kind=Add}"
+                                                                         ToggleContent="{materialDesign:PackIcon Kind=Add}"
                                                                          Style="{StaticResource MaterialDesignToolPopupBox}"
-                                                                         PopupContentTemplate="{StaticResource PopupSelectViewModelTemplate}" />-->
+                                                                         PopupContent="{Binding }"
+                                                                         PopupContentTemplate="{StaticResource PopupSelectModelDataTemplate}" />
                                                 <Button Style="{StaticResource RefreshButtonStyle}"
                                                         Command="{Binding  RefreshSelectedCommand}"
                                                         VerticalAlignment="Center"

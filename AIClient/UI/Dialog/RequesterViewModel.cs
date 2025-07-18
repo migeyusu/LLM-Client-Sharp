@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
+using LLMClient.UI.Component;
 using LLMClient.UI.MCP;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,23 +23,37 @@ public class RequesterViewModel : BaseViewModel
 
     public ICommand NewRequestCommand => new ActionCommand(async o =>
     {
-        var requestViewItem = this.NewRequest();
-        if (requestViewItem == null)
+        try
         {
-            return;
-        }
+            var requestViewItem = this.NewRequest();
+            if (requestViewItem == null)
+            {
+                return;
+            }
 
-        var completedResult = await _getResponse.Invoke(this.DefaultClient, requestViewItem);
-        if (!completedResult.IsInterrupt)
+            var completedResult = await _getResponse.Invoke(this.DefaultClient, requestViewItem);
+            if (!completedResult.IsInterrupt)
+            {
+                ClearRequest();
+            }
+        }
+        catch (Exception e)
         {
-            ClearRequest();
+            MessageEventBus.Publish(e.Message);
         }
     });
 
     public ICommand ConclusionCommand => new ActionCommand(async o =>
     {
-        var summaryRequest = SummaryRequestViewItem.NewSummaryRequest();
-        await _getResponse.Invoke(this._defaultClient, summaryRequest);
+        try
+        {
+            var summaryRequest = SummaryRequestViewItem.NewSummaryRequest();
+            await _getResponse.Invoke(this._defaultClient, summaryRequest);
+        }
+        catch (Exception e)
+        {
+            MessageEventBus.Publish(e.Message);
+        }
     });
 
     public ICommand ChangeModelCommand => new ActionCommand(async o =>
@@ -142,17 +157,6 @@ public class RequesterViewModel : BaseViewModel
 
     #endregion
 
-    public Task GetResponse(IRequestItem requestViewItem)
-    {
-        return _getResponse.Invoke(this.DefaultClient, requestViewItem);
-    }
-
-    public Task GetSummary()
-    {
-        var summaryRequest = SummaryRequestViewItem.NewSummaryRequest();
-        return GetResponse(summaryRequest);
-    }
-
     private readonly Func<ILLMClient, IRequestItem, Task<CompletedResult>> _getResponse;
 
     public RequesterViewModel(ILLMClient modelClient,
@@ -198,8 +202,7 @@ public class RequesterViewModel : BaseViewModel
 
         promptBuilder.Append(PromptString);
         IList<IAIFunctionGroup>? tools = null;
-        //todo:
-        if (this.FunctionSelector.MCPEnabled)
+        if (this.FunctionSelector.FunctionEnabled)
         {
             tools = this.FunctionSelector.SelectedFunctions;
         }

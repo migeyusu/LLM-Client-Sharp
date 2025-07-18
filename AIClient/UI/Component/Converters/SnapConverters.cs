@@ -45,4 +45,7 @@ internal static class SnapConverters
                     throw new ArgumentOutOfRangeException();
             }
         });
+
+    public static readonly IValueConverter EnumToDescriptionConverter =
+        ValueConverter.Create<Enum, string>(e => e.Value.GetEnumDescription());
 }

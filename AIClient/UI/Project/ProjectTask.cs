@@ -60,6 +60,13 @@ public class ProjectTask : DialogSessionViewModel
         set
         {
             if (value == _description) return;
+            ClearError();
+            if (string.IsNullOrEmpty(value))
+            {
+                AddError("Description cannot be null or empty.");
+                return;
+            }
+
             _description = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(SystemPrompt));
@@ -75,12 +82,7 @@ public class ProjectTask : DialogSessionViewModel
     {
         get
         {
-            if (this.HasErrors)
-            {
-                return null;
-            }
-
-            if (string.IsNullOrEmpty(Name) || string.IsNullOrEmpty(Description))
+            if (!Validate())
             {
                 return null;
             }
@@ -131,6 +133,28 @@ public class ProjectTask : DialogSessionViewModel
             _status = value;
             OnPropertyChanged();
         }
+    }
+
+    public bool Validate()
+    {
+        if (this.HasErrors)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(Name))
+        {
+            AddError("Name cannot be null or empty.", nameof(Name));
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(Description))
+        {
+            AddError("Description cannot be null or empty.", nameof(Description));
+            return false;
+        }
+
+        return true;
     }
 }
 

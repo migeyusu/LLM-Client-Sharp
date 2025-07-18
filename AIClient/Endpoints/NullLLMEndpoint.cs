@@ -18,22 +18,22 @@ namespace LLMClient.Endpoints
 
         public ILLMClient? NewClient(string modelName)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public ILLMClient? NewClient(ILLMModel model)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public ILLMModel? GetModel(string modelName)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public Task InitializeAsync()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 }

@@ -278,14 +278,12 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.AllowedFolderPaths = source.AllowedFolderPaths?.ToArray();
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
-        //todo: change mapping
         destination.Client = context.Mapper.Map<ILLMClient, LLMClientPersistModel>(source.Requester.DefaultClient);
         destination.Tasks = projectTaskPersistModels;
         destination.AllowedFunctions = source.AllowedFunctions;
         return destination;
     }
-
-    //todo: change mapping
+    
     public ProjectTask Convert(ProjectTaskPersistModel source, ProjectTask? destination, ResolutionContext context)
     {
         if (!context.Items.TryGetValue(ParentProjectViewModelKey, out var parentProjectViewModel)

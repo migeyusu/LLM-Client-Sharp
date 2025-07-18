@@ -479,7 +479,22 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private Task<CompletedResult> GetResponse(ILLMClient arg1, IRequestItem arg2)
     {
-        throw new NotImplementedException();
+        if (SelectedTask == null)
+        {
+            return Task.FromException<CompletedResult>(new NotSupportedException("未选择任务"));
+        }
+
+        if (!SelectedTask.Validate())
+        {
+            return Task.FromException<CompletedResult>(new InvalidOperationException("当前任务配置不合法"));
+        }
+
+        if (!this.Validate())
+        {
+            return Task.FromException<CompletedResult>(new InvalidOperationException("当前项目配置不合法"));
+        }
+
+        return SelectedTask.SendRequestCore(arg1, arg2);
     }
 
     public virtual void Initialize()

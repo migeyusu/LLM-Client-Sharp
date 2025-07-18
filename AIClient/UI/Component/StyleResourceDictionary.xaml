@@ -3,6 +3,22 @@
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:system="clr-namespace:System;assembly=System.Runtime"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters">
+    <Style x:Key="InputBoxStyle"
+           TargetType="{x:Type TextBox}"
+           BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
+        <Setter Property="TextAlignment"
+                Value="Left" />
+        <Setter Property="TextWrapping"
+                Value="Wrap" />
+        <Setter Property="AcceptsReturn"
+                Value="True" />
+        <Setter Property="AcceptsTab"
+                Value="True" />
+        <Setter Property="SpellCheck.IsEnabled"
+                Value="True" />
+        <Setter Property="VerticalScrollBarVisibility"
+                Value="Auto" />
+    </Style>
     <ControlTemplate x:Key="ItemDeleteButtonTemplate"
                      TargetType="{x:Type Button}">
         <ControlTemplate.Resources>

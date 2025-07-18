@@ -118,7 +118,7 @@ public class DialogViewModel : DialogSessionViewModel
                         var multiResponseViewItem = new MultiResponseViewItem(this) { InteractionId = newGuid };
                         DialogItems.Add(multiResponseViewItem);
                         var completedResult =
-                            await SendRequestCore(client, copy, multiResponseViewItem);
+                            await SendRequestCore(client, copy, multiResponseViewItem, this.SystemPrompt);
                         if (!completedResult.IsInterrupt)
                         {
                             break;

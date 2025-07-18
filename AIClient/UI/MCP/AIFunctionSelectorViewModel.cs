@@ -13,13 +13,14 @@ public class AIFunctionSelectorViewModel : BaseViewModel
 {
     private readonly Action? _afterSelect;
 
-    public bool MCPEnabled
+    private bool _functionEnabled;
+    public bool FunctionEnabled
     {
-        get => _mcpEnabled;
+        get => _functionEnabled;
         set
         {
-            if (value == _mcpEnabled) return;
-            _mcpEnabled = value;
+            if (value == _functionEnabled) return;
+            _functionEnabled = value;
             OnPropertyChanged();
         }
     }
@@ -34,7 +35,6 @@ public class AIFunctionSelectorViewModel : BaseViewModel
 
     private IReadOnlyList<SelectableFunctionGroupViewModel> _mcpServices = [];
     private IReadOnlyList<SelectableFunctionGroupViewModel> _builtInFunctions = [];
-    private bool _mcpEnabled;
 
     public IAIFunctionGroup[] SelectedFunctions
     {

@@ -199,16 +199,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         this.ScrollViewItem = scrollViewItem;
     }
 
-    public void ScrollToEnd()
-    {
-        throw new NotImplementedException();
-    }
-
-    public void ScrollToBegin()
-    {
-        throw new NotImplementedException();
-    }
-
     #endregion
 
     #region search
@@ -632,13 +622,14 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         return completedResult;
     }
 
-    protected Task<CompletedResult> SendRequestCore(ILLMClient client, IRequestItem requestViewItem)
+    public Task<CompletedResult> SendRequestCore(ILLMClient client, IRequestItem requestViewItem)
     {
         var items = this.DialogItems;
         items.Add(requestViewItem);
         var history = this.GenerateHistory();
         var multiResponseViewItem = new MultiResponseViewItem(this)
             { InteractionId = requestViewItem.InteractionId };
+        items.Add(multiResponseViewItem);
         this.IsNewResponding = true;
         return SendRequestCore(client, history, multiResponseViewItem, this.SystemPrompt)
             .ContinueWith<CompletedResult>(task =>

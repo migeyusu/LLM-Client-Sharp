@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:LLMClient.UI.Dialog"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+             xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
              d:DesignHeight="400" d:DesignWidth="800">
@@ -14,10 +15,24 @@
                     Key="Enter"
                     Command="{Binding NewRequestCommand}" />
     </UserControl.Resources>
-    <Border BorderThickness="1"
-            CornerRadius="8"
+    <Border CornerRadius="8"
             Padding="8"
-            BorderBrush="{DynamicResource MaterialDesign.Brush.TextBox.Border}">
+            BorderThickness="1.5">
+        <Border.Style>
+            <Style TargetType="{x:Type Border}">
+                <Setter Property="BorderBrush"
+                        Value="{DynamicResource MaterialDesign.Brush.TextBox.Border}" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding ElementName=PromptTextBox,Path=IsFocused,Mode=OneWay}"
+                                 Value="True">
+                        <DataTrigger.Setters>
+                            <Setter Property="BorderBrush"
+                                    Value="{DynamicResource MaterialDesign.Brush.Primary.Light}" />
+                        </DataTrigger.Setters>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
         <StackPanel Orientation="Vertical">
             <TextBox x:Name="PromptTextBox"
                      materialDesign:HintAssist.Hint="输入Prompt"
@@ -54,16 +69,16 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal">
                     <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                              IsChecked="{Binding FunctionSelector.MCPEnabled,Mode=TwoWay}"
+                              IsChecked="{Binding FunctionSelector.FunctionEnabled,Mode=TwoWay}"
                               Visibility="{Binding DefaultClient.Model.SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="MCP Tools" />
+                            <TextBlock Text="Tools" />
                             <materialDesign:PopupBox Margin="6,0"
                                                      StaysOpen="True"
                                                      Opened="McpPopupBox_OnOpened"
                                                      ToggleContent="{materialDesign:PackIcon Kind=Tools,Size=16}"
                                                      VerticalAlignment="Center"
-                                                     ToolTip="MCP工具"
+                                                     ToolTip="Function Call工具"
                                                      PopupContent="{Binding FunctionSelector,Mode=OneWay}"
                                                      PopupContentTemplate="{StaticResource FunctionSelectorDataTemplate}"
                                                      Style="{StaticResource MaterialDesignToolPopupBox}" />
