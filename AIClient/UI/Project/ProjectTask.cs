@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel;
+using System.Security.Principal;
+using System.Text;
 using LLMClient.UI.Dialog;
 
 namespace LLMClient.UI.Project;
@@ -27,8 +29,9 @@ public class ProjectTask : DialogSessionViewModel
     private ProjectTaskType _type;
     private string? _description;
 
-    public ProjectTask(IList<IDialogItem>? items = null) : base(items)
+    public ProjectTask(ProjectViewModel parentProject, IList<IDialogItem>? items = null) : base(items)
     {
+        ParentProject = parentProject;
     }
 
     public Guid ID { get; } = Guid.NewGuid();
@@ -59,14 +62,16 @@ public class ProjectTask : DialogSessionViewModel
             if (value == _description) return;
             _description = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(Context));
+            OnPropertyChanged(nameof(SystemPrompt));
         }
     }
+
+    private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
 
     /// <summary>
     /// Task内的上下文
     /// </summary>
-    public string? Context
+    public override string? SystemPrompt
     {
         get
         {
@@ -80,9 +85,16 @@ public class ProjectTask : DialogSessionViewModel
                 return null;
             }
 
-            return $"这是一个{Type.GetEnumDescription()}类型的任务，我希望你能帮助我完成它。{Description}";
+            _systemPromptBuilder.AppendLine(ParentProject.Context);
+            _systemPromptBuilder.AppendFormat("现在有一个{0}类型的任务，我希望你能帮助我完成它。", Type.GetEnumDescription());
+            _systemPromptBuilder.AppendLine();
+            _systemPromptBuilder.AppendLine(Description);
+            return _systemPromptBuilder.ToString();
         }
+        set => throw new NotSupportedException();
     }
+
+    public ProjectViewModel ParentProject { get; }
 
     /// <summary>
     /// summary of the task, when task end, generate for total context.
@@ -106,7 +118,7 @@ public class ProjectTask : DialogSessionViewModel
             if (value == _type) return;
             _type = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(Context));
+            OnPropertyChanged(nameof(SystemPrompt));
         }
     }
 

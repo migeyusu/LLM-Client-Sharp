@@ -9,7 +9,16 @@ namespace LLMClient.UI;
 public class BaseViewModel : INotifyPropertyChanged
 {
     private readonly Lazy<Dispatcher> _dispatcherLazy =
-        new Lazy<Dispatcher>((() => Application.Current.Dispatcher), (LazyThreadSafetyMode.PublicationOnly));
+        new Lazy<Dispatcher>((() =>
+        {
+            var appDispatcher = Application.Current?.Dispatcher;
+            if (appDispatcher != null)
+            {
+                return appDispatcher;
+            }
+
+            return Dispatcher.CurrentDispatcher;
+        }), (LazyThreadSafetyMode.PublicationOnly));
 
     protected Dispatcher Dispatcher => _dispatcherLazy.Value;
 

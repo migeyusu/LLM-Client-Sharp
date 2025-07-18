@@ -12,7 +12,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.Dialog;
 
-public class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
+public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
 {
     /// <summary>
     /// indicate whether data is changed after loading.
@@ -73,6 +73,19 @@ public class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         {
             if (value.Equals(_totalPrice)) return;
             _totalPrice = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private bool _isNewResponding;
+
+    public bool IsNewResponding
+    {
+        get => _isNewResponding;
+        private set
+        {
+            if (value == _isNewResponding) return;
+            _isNewResponding = value;
             OnPropertyChanged();
         }
     }
@@ -352,21 +365,10 @@ public class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
 
     #region items management
 
-    private string? _systemPrompt;
-
     /// <summary>
     /// dialog level prompt
     /// </summary>
-    public virtual string? SystemPrompt
-    {
-        get => _systemPrompt;
-        set
-        {
-            if (value == _systemPrompt) return;
-            _systemPrompt = value;
-            OnPropertyChanged();
-        }
-    }
+    public abstract string? SystemPrompt { get; set; }
 
     public ObservableCollection<IDialogItem> DialogItems { get; }
 
@@ -438,14 +440,22 @@ public class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         await SendRequestCore(client, dialogItems, responseViewItem, this.SystemPrompt);
     }
 
-    public void RemoveAfter(RequestViewItem request)
+    public void RemoveAfter(MultiResponseViewItem responseViewItem)
     {
         //删除之后的所有记录
-        var indexOf = DialogItems.IndexOf(request);
+        var indexOf = DialogItems.IndexOf(responseViewItem);
         var dialogCount = DialogItems.Count;
         for (int i = 0; i < dialogCount - indexOf; i++)
         {
             DialogItems.RemoveAt(indexOf);
+        }
+    }
+
+    public async void ClearBefore(RequestViewItem requestViewItem)
+    {
+        if ((await DialogHost.Show(new ConfirmView() { Header = "清空会话？" })) is true)
+        {
+            RemoveBefore(requestViewItem);
         }
     }
 
@@ -467,7 +477,7 @@ public class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     public ICommand ClearUnavailableCommand => new ActionCommand((o =>
     {
         var deleteItems = new List<IDialogItem>();
-        Guid unusedInteractionId = Guid.Empty;
+        var unusedInteractionId = Guid.Empty;
         for (var index = DialogItems.Count - 1; index >= 0; index--)
         {
             var dialogViewItem = DialogItems[index];
@@ -629,9 +639,11 @@ public class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         var history = this.GenerateHistory();
         var multiResponseViewItem = new MultiResponseViewItem(this)
             { InteractionId = requestViewItem.InteractionId };
+        this.IsNewResponding = true;
         return SendRequestCore(client, history, multiResponseViewItem, this.SystemPrompt)
             .ContinueWith<CompletedResult>(task =>
             {
+                IsNewResponding = false;
                 if (requestViewItem is SummaryRequestViewItem)
                 {
                     CutContext(requestViewItem);

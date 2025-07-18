@@ -8,8 +8,6 @@ public partial class TestWindow : Window
 {
     public TestWindow()
     {
-        var projectViewModel = new ProjectViewModel();
-        this.DataContext = projectViewModel;
         InitializeComponent();
     }
 }

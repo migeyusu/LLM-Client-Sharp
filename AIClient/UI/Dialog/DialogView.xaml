@@ -170,6 +170,10 @@
                                                           Command="{x:Static ui:CommonCommands.Branch}"
                                                           CommandParameter="{Binding}"
                                                           Icon="{materialDesign:PackIcon SourceBranchPlus}" />
+                                                <MenuItem Header="移除之后消息"
+                                                          Command="{Binding RebaseCommand}"
+                                                          ToolTip="保留当前消息并删除所有之后的消息"
+                                                          Icon="{materialDesign:PackIcon Kind=WaveArrowDown}" />
                                             </MenuItem>
                                         </Menu>
                                         <materialDesign:PopupBox Padding="2,0"
@@ -231,8 +235,6 @@
             <ListBox.CommandBindings>
                 <CommandBinding Command="Delete"
                                 Executed="OnDeleteExecuted" />
-                <CommandBinding Command="{x:Static ui:CommonCommands.ReBase}"
-                                Executed="OnReBaseExecuted" />
                 <CommandBinding Command="{x:Static ui:CommonCommands.Exclude}"
                                 Executed="OnExcludeExecuted" />
                 <CommandBinding Command="{x:Static ui:CommonCommands.Clear}"
@@ -249,7 +251,7 @@
                               IsEnabled="{Binding  RelativeSource={RelativeSource  FindAncestor, AncestorType=Grid},Path=DataContext.IsBusy,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}" />
         <Button Grid.Row="2"
                 Command="{Binding CancelLastCommand}"
-                Visibility="{Binding Requester.IsNewResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                 Style="{StaticResource MaterialDesignRaisedDarkButton}" />
     </Grid>
 </UserControl>

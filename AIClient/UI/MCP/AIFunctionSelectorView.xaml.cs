@@ -2,9 +2,9 @@
 
 namespace LLMClient.UI.MCP;
 
-public partial class AIFunctionSelectionView : UserControl
+public partial class AIFunctionSelectorView : UserControl
 {
-    public AIFunctionSelectionView()
+    public AIFunctionSelectorView()
     {
         InitializeComponent();
     }

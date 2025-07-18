@@ -1,5 +1,8 @@
 ﻿using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.UI.Component;
 using Microsoft.Win32;
 
@@ -47,6 +50,13 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     public abstract bool IsBusy { get; }
 
     protected abstract string DefaultSaveFolderPath { get; }
+
+    protected static JsonSerializerOptions SerializerOption = new JsonSerializerOptions()
+    {
+        WriteIndented = true,
+        ReferenceHandler = ReferenceHandler.Preserve,
+        TypeInfoResolver = LLM_DataSerializeContext.Default
+    };
 
     protected FileBasedSessionBase()
     {

@@ -106,6 +106,8 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
         }
     });
 
+    public ICommand RebaseCommand => new ActionCommand(o => { ParentSession.RemoveAfter(this); });
+
     public ICommand RefreshSelectedCommand => new ActionCommand(o => RetryCurrent());
 
     public int AcceptedIndex

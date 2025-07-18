@@ -10,6 +10,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.UI.Component;
+using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -18,7 +19,7 @@ namespace LLMClient.UI.MCP;
 /// <summary>
 /// 经过慎重考虑，设置为单例，因为mcp服务可能由客户端命令启动，重复启动会清空实例的上下文状态
 /// </summary>
-public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IAsyncDisposable
+public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunctionGroupSource, IAsyncDisposable
 {
     public const string FileName = "mcp_servers.json";
 
@@ -341,5 +342,10 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IAsync
         {
             await item.DisposeAsync();
         }
+    }
+
+    public IEnumerable<IAIFunctionGroup> GetFunctionGroups()
+    {
+        return this;
     }
 }

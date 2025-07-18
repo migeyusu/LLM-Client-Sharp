@@ -54,18 +54,18 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal">
                     <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                              IsChecked="{Binding MCPEnabled,Mode=TwoWay}"
+                              IsChecked="{Binding FunctionSelector.MCPEnabled,Mode=TwoWay}"
                               Visibility="{Binding DefaultClient.Model.SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="MCP Tools" />
                             <materialDesign:PopupBox Margin="6,0"
                                                      StaysOpen="True"
                                                      Opened="McpPopupBox_OnOpened"
-                                                     Closed="McpPopupBox_OnClosed"
                                                      ToggleContent="{materialDesign:PackIcon Kind=Tools,Size=16}"
                                                      VerticalAlignment="Center"
                                                      ToolTip="MCP工具"
-                                                     PopupContentTemplate="{StaticResource FunctionSelectionDataTemplate}"
+                                                     PopupContent="{Binding FunctionSelector,Mode=OneWay}"
+                                                     PopupContentTemplate="{StaticResource FunctionSelectorDataTemplate}"
                                                      Style="{StaticResource MaterialDesignToolPopupBox}" />
                         </StackPanel>
                     </CheckBox>

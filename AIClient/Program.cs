@@ -1,12 +1,9 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Windows;
-using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.Obsolete;
 using LLMClient.UI;
 using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
@@ -47,60 +44,12 @@ public class Program
                 .AddTransient<GlobalConfig>()
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
-                .AddLogging((builder => builder.AddDebug()))
+#if DEBUG
+                .AddLogging(builder => builder.AddDebug())
+#endif
                 .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
-                .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>();
-            collection.AddAutoMapper((provider, expression) =>
-            {
-                expression.CreateMap<IResponse, ResponseViewItem>();
-                expression.CreateMap<IModelParams, IModelParams>();
-                expression.CreateMap<IModelParams, DefaultModelParam>();
-                expression.CreateMap<IModelParams, ILLMModel>();
-                expression.CreateMap<IModelParams, APIModelInfo>();
-                expression.CreateMap<ILLMClient, LLMClientPersistModel>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<LLMClientPersistModel, ILLMClient>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<DialogFilePersistModel, DialogFileViewModel>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<DialogFileViewModel, DialogFilePersistModel>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<DialogViewModel, DialogFilePersistModel>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<DialogFilePersistModel, DialogViewModel>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<APIEndPoint, APIEndPoint>();
-                expression.CreateMap<APIDefaultOption, APIDefaultOption>();
-                expression.CreateMap<ResponseViewItem, ResponsePersistItem>();
-                expression.CreateMap<ResponsePersistItem, ResponseViewItem>()
-                    .IncludeBase<IResponse, ResponseViewItem>()
-                    .ConstructUsing((source, context) =>
-                    {
-                        ILLMClient llmClient = NullLlmModelClient.Instance;
-                        var client = source.Client;
-                        if (client != null)
-                        {
-                            llmClient = context.Mapper.Map<LLMClientPersistModel, ILLMClient>(client);
-                        }
-
-                        return new ResponseViewItem(llmClient);
-                    });
-                expression.CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<ProjectViewModel, ProjectPersistModel>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<ProjectPersistModel, ProjectViewModel>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<ProjectTask, ProjectTaskPersistModel>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                expression.CreateMap<ProjectTaskPersistModel, ProjectTask>()
-                    .ConvertUsing<AutoMapModelTypeConverter>();
-                // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
-                expression.ConstructServicesUsing(provider.GetService);
-            }, AppDomain.CurrentDomain.GetAssemblies());
-
+                .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()
+                .AddMap();
             //debug mode
 #if DEBUG
             var resourceBuilder = ResourceBuilder

@@ -33,8 +33,8 @@ public class DialogFileViewModel : FileBasedSessionBase
 
     protected override async Task SaveToStream(Stream stream)
     {
-        var dialogSession = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this);
-        await JsonSerializer.SerializeAsync(stream, dialogSession);
+        var dialogSession = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this,(options => {}));
+        await JsonSerializer.SerializeAsync(stream, dialogSession, SerializerOption);
     }
 
     public static async IAsyncEnumerable<DialogFileViewModel> LoadFromLocal()
@@ -70,7 +70,8 @@ public class DialogFileViewModel : FileBasedSessionBase
         {
             await using (var fileStream = fileInfo.OpenRead())
             {
-                var dialogSession = await JsonSerializer.DeserializeAsync<DialogFilePersistModel>(fileStream);
+                var dialogSession =
+                    await JsonSerializer.DeserializeAsync<DialogFilePersistModel>(fileStream, SerializerOption);
                 if (dialogSession == null)
                 {
                     Trace.TraceError($"加载会话{fileInfo.FullName}失败：文件内容为空");
@@ -83,7 +84,8 @@ public class DialogFileViewModel : FileBasedSessionBase
                     return null;
                 }
 
-                var viewModel = Mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSession,(options => {}));
+                var viewModel =
+                    Mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSession, (options => { }));
                 viewModel.FileFullPath = fileInfo.FullName;
                 viewModel.IsDataChanged = false;
                 return viewModel;
@@ -99,9 +101,9 @@ public class DialogFileViewModel : FileBasedSessionBase
     public async Task<DialogFileViewModel> Fork(IDialogItem viewModel)
     {
         var of = this.Dialog.DialogItems.IndexOf(viewModel);
-        var dialogSessionClone = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this);
+        var dialogSessionClone = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this,(options => {}));
         dialogSessionClone.DialogItems = dialogSessionClone.DialogItems?.Take(of + 1).ToArray();
-        var cloneSession = Mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone);
+        var cloneSession = Mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => { }));
         cloneSession.IsDataChanged = true;
         return cloneSession;
     }

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
@@ -23,9 +24,19 @@ public class UnitTest1
 {
     private ITestOutputHelper output;
 
+    IServiceProvider serviceProvider;
+
     public UnitTest1(ITestOutputHelper output)
     {
         this.output = output;
+        serviceProvider = new ServiceCollection()
+            .AddTransient<AutoMapModelTypeConverter>()
+            .AddTransient<GlobalConfig>()
+            .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
+            .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
+            .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
+            .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()
+            .AddMap().BuildServiceProvider();
     }
 
     [Fact]
@@ -37,43 +48,58 @@ public class UnitTest1
     [Fact]
     public void Mapping()
     {
-        var serviceCollection = new ServiceCollection();
-        serviceCollection.AddSingleton<IEndpointService, EndpointConfigureViewModel>()
-            .AddSingleton<IMcpServiceCollection, McpServiceCollection>();
-        serviceCollection.AddAutoMapper((provider, expression) =>
-        {
-            expression.CreateMap<DialogFilePersistModel, DialogFileViewModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<DialogFileViewModel, DialogFilePersistModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<DialogViewModel, DialogFilePersistModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<DialogFilePersistModel, DialogViewModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<APIEndPoint, APIEndPoint>();
-            expression.CreateMap<APIDefaultOption, APIDefaultOption>();
-            expression.CreateMap<ResponseViewItem, ResponsePersistItem>();
-            expression.CreateMap<ResponsePersistItem, ResponseViewItem>();
-            expression.CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ProjectViewModel, ProjectPersistModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ProjectPersistModel, ProjectViewModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ProjectTask, ProjectTaskPersistModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ProjectTaskPersistModel, ProjectTask>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
-            expression.ConstructServicesUsing(provider.GetService);
-        }, AppDomain.CurrentDomain.GetAssemblies());
-        var serviceProvider = serviceCollection.BuildServiceProvider();
         var mapper = serviceProvider.GetService<IMapper>();
         var dialogSession = new DialogFileViewModel(new DialogViewModel("sadg", new NullLlmModelClient()));
-        var dialogSessionPersistModel = mapper?.Map<DialogFileViewModel, DialogFilePersistModel>(dialogSession,new DialogFilePersistModel());
+        var dialogSessionPersistModel =
+            mapper?.Map<DialogFileViewModel, DialogFilePersistModel>(dialogSession, new DialogFilePersistModel());
         Assert.NotNull(dialogSessionPersistModel);
+    }
+
+    [Fact]
+    public void CircularMapping()
+    {
+        var mapper = serviceProvider.GetService<IMapper>();
+        var client = new TestLLMClient();
+        var dialogViewModel = new DialogViewModel("test", client);
+        var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
+        multiResponseViewItem.Append(new ResponseViewItem(client));
+        multiResponseViewItem.Append(new ResponseViewItem(client));
+        dialogViewModel.DialogItems.Add(multiResponseViewItem);
+        var dialogFileViewModel = new DialogFileViewModel(dialogViewModel);
+        var dialogFilePersistModel =
+            mapper?.Map<DialogFileViewModel, DialogFilePersistModel>(dialogFileViewModel, (options => { }));
+        Assert.NotNull(dialogFilePersistModel);
+        var multiResponsePersistItem = dialogFilePersistModel.DialogItems?.FirstOrDefault() as MultiResponsePersistItem;
+        Assert.NotNull(multiResponsePersistItem);
+        var persistItems = multiResponsePersistItem.ResponseItems;
+        Assert.Same(persistItems[0].Client, persistItems[1].Client);
+    }
+
+    [Fact]
+    public void CircularSerialize()
+    {
+        var mapper = serviceProvider.GetService<IMapper>()!;
+        var client = new TestLLMClient();
+        var dialogViewModel = new DialogViewModel("test", client);
+        var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
+        multiResponseViewItem.Append(new ResponseViewItem(client));
+        multiResponseViewItem.Append(new ResponseViewItem(client));
+        dialogViewModel.DialogItems.Add(multiResponseViewItem);
+        var dialogFileViewModel = new DialogFileViewModel(dialogViewModel);
+        var dialogFilePersistModel =
+            mapper.Map<DialogFileViewModel, DialogFilePersistModel>(dialogFileViewModel, (options => { }));
+        var serializerOptions = new JsonSerializerOptions()
+        {
+            WriteIndented = true, ReferenceHandler = ReferenceHandler.Preserve,
+        };
+        var serialize = JsonSerializer.Serialize(dialogFilePersistModel,
+            serializerOptions);
+        output.WriteLine(serialize);
+        var filePersistModel = JsonSerializer.Deserialize<DialogFilePersistModel>(serialize,serializerOptions);
+        var viewModel = mapper.Map<DialogFilePersistModel,DialogFileViewModel>(filePersistModel!,(options => {}));
+        var multiResponseViewItemDe = viewModel.Dialog.DialogItems.First() as MultiResponseViewItem;
+        var responseViewItems = multiResponseViewItemDe!.Items.OfType<ResponseViewItem>().ToArray();
+        Assert.Same(responseViewItems[0].Client, responseViewItems[1].Client);
     }
 
     [Fact]

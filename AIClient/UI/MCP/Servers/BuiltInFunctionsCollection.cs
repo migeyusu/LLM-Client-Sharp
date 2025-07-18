@@ -4,7 +4,7 @@ using LLMClient.Abstraction;
 
 namespace LLMClient.UI.MCP.Servers;
 
-public class BuiltInFunctionsCollection : IBuiltInFunctionsCollection
+public class BuiltInFunctionsCollection : IBuiltInFunctionsCollection, IFunctionGroupSource
 {
     public BuiltInFunctionsCollection()
     {
@@ -28,5 +28,10 @@ public class BuiltInFunctionsCollection : IBuiltInFunctionsCollection
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
+    }
+
+    public IEnumerable<IAIFunctionGroup> GetFunctionGroups()
+    {
+        return this;
     }
 }

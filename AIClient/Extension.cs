@@ -1,24 +1,22 @@
 ﻿using System.ComponentModel;
-using System.Diagnostics;
-using System.Drawing.Imaging;
 using System.IO;
-using System.Net;
-using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Windows;
-using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Azure.AI.Inference;
 using ImageMagick;
 using LLMClient.Abstraction;
-using LLMClient.Render;
-using Markdig;
-using Markdig.Wpf;
+using LLMClient.Data;
+using LLMClient.Endpoints;
+using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.UI;
+using LLMClient.UI.Dialog;
+using LLMClient.UI.Project;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LLMClient;
 
@@ -28,6 +26,62 @@ public static class Extension
     {
         var propertyInfo = client.GetType().GetField("_apiVersion", BindingFlags.Instance | BindingFlags.NonPublic);
         propertyInfo?.SetValue(client, apiVersion);
+    }
+
+    public static IServiceCollection AddMap(this IServiceCollection collection)
+    {
+        return collection.AddAutoMapper((provider, expression) =>
+        {
+            expression.CreateMap<IResponse, ResponseViewItem>();
+            expression.CreateMap<IModelParams, IModelParams>();
+            expression.CreateMap<IModelParams, DefaultModelParam>();
+            expression.CreateMap<IModelParams, ILLMModel>();
+            expression.CreateMap<IModelParams, APIModelInfo>();
+            expression.CreateMap<APIEndPoint, APIEndPoint>();
+            expression.CreateMap<APIDefaultOption, APIDefaultOption>();
+            expression.CreateMap<ILLMClient, LLMClientPersistModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<LLMClientPersistModel, ILLMClient>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<DialogFilePersistModel, DialogFileViewModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<DialogFileViewModel, DialogFilePersistModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<DialogViewModel, DialogFilePersistModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<DialogFilePersistModel, DialogViewModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ResponseViewItem, ResponsePersistItem>()
+                .PreserveReferences();
+            expression.CreateMap<ResponsePersistItem, ResponseViewItem>()
+                .PreserveReferences()
+                .IncludeBase<IResponse, ResponseViewItem>()
+                .ConstructUsing((source, context) =>
+                {
+                    ILLMClient llmClient = NullLlmModelClient.Instance;
+                    var client = source.Client;
+                    if (client != null)
+                    {
+                        llmClient = context.Mapper.Map<LLMClientPersistModel, ILLMClient>(client);
+                    }
+
+                    return new ResponseViewItem(llmClient);
+                });
+            expression.CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ProjectViewModel, ProjectPersistModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ProjectPersistModel, ProjectViewModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ProjectTask, ProjectTaskPersistModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ProjectTaskPersistModel, ProjectTask>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
+            expression.ConstructServicesUsing(provider.GetService);
+        }, AppDomain.CurrentDomain.GetAssemblies());
     }
 
     /// <summary>

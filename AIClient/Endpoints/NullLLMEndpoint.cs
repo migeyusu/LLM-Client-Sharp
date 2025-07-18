@@ -9,10 +9,10 @@ namespace LLMClient.Endpoints
         public static NullLLMEndpoint Instance { get; } = new NullLLMEndpoint();
         public string DisplayName { get; } = "Null Endpoint";
         public bool IsDefault { get; } = false;
-        
+
         public bool IsEnabled { get; } = false;
         public string Name { get; } = "NullEndpoint";
-        public ImageSource Icon { get; } = ImageExtensions.EndpointIcon;
+        public ImageSource Icon => ImageExtensions.EndpointIcon;
         public IReadOnlyCollection<string> AvailableModelNames => [];
         public IReadOnlyCollection<ILLMModel> AvailableModels => [];
 

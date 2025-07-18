@@ -8,6 +8,7 @@ using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Endpoints;
 using LLMClient.Render;
 using LLMClient.UI.Component;
 using LLMClient.UI.Dialog;
@@ -126,7 +127,8 @@ public class MainWindowViewModel : BaseViewModel
 
     public ICommand NewProjectCommand => new ActionCommand((async o =>
     {
-        var selectionViewModel = new ProjectConfigViewModel(this.EndpointsViewModel, new ProjectViewModel());
+        var selectionViewModel =
+            new ProjectConfigViewModel(this.EndpointsViewModel, new ProjectViewModel(NullLlmModelClient.Instance));
         if (await DialogHost.Show(selectionViewModel) is true)
         {
             selectionViewModel.Project.Initialize();
@@ -208,7 +210,7 @@ public class MainWindowViewModel : BaseViewModel
 
     public ObservableCollection<ILLMSession> SessionViewModels { get; set; } =
         new ObservableCollection<ILLMSession>();
-    
+
     private ILLMSession? _preSession;
 
     public ILLMSession? PreSession
@@ -230,7 +232,7 @@ public class MainWindowViewModel : BaseViewModel
         this.SessionViewModels.Insert(0, projectViewModel);
         PreSession = projectViewModel;
     }
-    
+
     private bool _isProcessing;
 
     public MainWindowViewModel(IEndpointService configureViewModel, IMapper mapper, IPromptsResource promptsResource,

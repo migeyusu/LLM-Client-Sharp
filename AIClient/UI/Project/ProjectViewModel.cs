@@ -11,6 +11,7 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
+using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
 using MaterialDesignThemes.Wpf;
@@ -36,29 +37,9 @@ public class ProjectViewModel : FileBasedSessionBase
         get { return SaveFolderPathLazy.Value; }
     }
 
-    public ILLMClient Client
-    {
-        get => _client;
-        set
-        {
-            if (Equals(value, _client)) return;
-            if (_client is INotifyPropertyChanged oldValue)
-            {
-                oldValue.PropertyChanged -= TagDataChangedOnPropertyChanged;
-            }
-
-            if (_client.Parameters is INotifyPropertyChanged oldParameters)
-            {
-                oldParameters.PropertyChanged -= TagDataChangedOnPropertyChanged;
-            }
-
-            _client = value;
-            OnPropertyChanged();
-            TrackClientChanged(value);
-        }
-    }
-
     public ProjectConfigViewModel ConfigViewModel { get; }
+
+    public RequesterViewModel Requester { get; }
 
     #region file
 
@@ -74,7 +55,8 @@ public class ProjectViewModel : FileBasedSessionBase
         {
             await using (var fileStream = fileInfo.OpenRead())
             {
-                var persistModel = await JsonSerializer.DeserializeAsync<ProjectPersistModel>(fileStream);
+                var persistModel =
+                    await JsonSerializer.DeserializeAsync<ProjectPersistModel>(fileStream, SerializerOption);
                 if (persistModel == null)
                 {
                     Trace.TraceError($"加载会话{fileInfo.FullName}失败：文件内容为空");
@@ -87,7 +69,7 @@ public class ProjectViewModel : FileBasedSessionBase
                     return null;
                 }
 
-                var viewModel = Mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel);
+                var viewModel = Mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, (options => { }));
                 viewModel.FileFullPath = fileInfo.FullName;
                 viewModel.IsDataChanged = false;
                 return viewModel;
@@ -166,12 +148,11 @@ public class ProjectViewModel : FileBasedSessionBase
     private IList<string>? _languageNames;
     private string? _folderPath;
     private string? _name;
-    private ILLMClient _client = NullLlmModelClient.Instance;
 
     protected override async Task SaveToStream(Stream stream)
     {
-        var dialogModel = Mapper.Map<ProjectViewModel, ProjectPersistModel>(this);
-        await JsonSerializer.SerializeAsync(stream, dialogModel);
+        var dialogModel = Mapper.Map<ProjectViewModel, ProjectPersistModel>(this, (options => { }));
+        await JsonSerializer.SerializeAsync(stream, dialogModel, SerializerOption);
     }
 
     private void TagDataChangedOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -261,18 +242,29 @@ public class ProjectViewModel : FileBasedSessionBase
                 return null;
             }
 
+            Debug.Assert(LanguageNames != null, nameof(LanguageNames) + " != null");
             return $"我正在Windows使用语言{string.Join(",", LanguageNames)}上开发位于{FolderPath}的一个软件项目，该项目是{Description}，";
         }
     }
 
+    private AIFunctionSelectorViewModel _functionSelector = new((() =>
+    {
+        DialogHost.CloseDialogCommand.Execute(true, null);
+    }));
+
     public ICommand SelectFunctionsCommand => new RelayCommand(async () =>
     {
-        var functionSelection = new AIFunctionSelectionViewModel(this.AllowedFunctions ??
-                                                                 Enumerable.Empty<IAIFunctionGroup>(), true);
-        functionSelection.EnsureAsync();
-        if ((await DialogHost.Show(functionSelection)) is true)
+        _functionSelector.ResetSource()
+            .EnsureAsync();
+        var selectedFunctions = this.AllowedFunctions;
+        if (selectedFunctions != null)
         {
-            this.AllowedFunctions = functionSelection.SelectedFunctions.ToArray();
+            _functionSelector.SelectedFunctions = selectedFunctions;
+        }
+
+        if ((await DialogHost.Show(_functionSelector)) is true)
+        {
+            this.AllowedFunctions = _functionSelector.SelectedFunctions;
         }
     });
 
@@ -399,7 +391,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     #region tasks
 
-    public ICommand NewTaskCommand => new ActionCommand(o => { AddTask(new ProjectTask()); });
+    public ICommand NewTaskCommand => new ActionCommand(o => { AddTask(new ProjectTask(this)); });
 
     public void AddTask(ProjectTask task)
     {
@@ -451,8 +443,10 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
 
-    public ProjectViewModel(IEnumerable<ProjectTask>? tasks = null) : base()
+    public ProjectViewModel(ILLMClient modelClient, IEnumerable<ProjectTask>? tasks = null) : base()
     {
+        Requester = new RequesterViewModel(modelClient, GetResponse);
+        Requester.FunctionSelector.ConnectSource(new ProxyFunctionGroupSource(FunctionGroupsFunc));
         this.ConfigViewModel = new ProjectConfigViewModel(this.EndpointService, this);
         this.Tasks = new ObservableCollection<ProjectTask>();
         if (tasks != null)
@@ -475,6 +469,17 @@ public class ProjectViewModel : FileBasedSessionBase
             IsDataChanged = true;
         };
         Tasks.CollectionChanged += OnCollectionChanged;
+        _functionSelector.ConnectDefault();
+    }
+
+    private IEnumerable<IAIFunctionGroup> FunctionGroupsFunc()
+    {
+        return this.AllowedFunctions ?? Enumerable.Empty<IAIFunctionGroup>();
+    }
+
+    private Task<CompletedResult> GetResponse(ILLMClient arg1, IRequestItem arg2)
+    {
+        throw new NotImplementedException();
     }
 
     public virtual void Initialize()

@@ -195,10 +195,10 @@
                                              Height="500" />
                     </HeaderedContentControl>
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type mcp:AIFunctionSelectionViewModel}">
+                <DataTemplate DataType="{x:Type mcp:AIFunctionSelectorViewModel}">
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="选择函数">
-                        <mcp:AIFunctionSelectionView Width="800"
+                        <mcp:AIFunctionSelectorView Width="800"
                                                      Height="500" />
                     </HeaderedContentControl>
                 </DataTemplate>

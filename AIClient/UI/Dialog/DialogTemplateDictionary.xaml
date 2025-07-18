@@ -20,50 +20,26 @@
                                      Height="30"
                                      VerticalAlignment="Top"
                                      Margin="0,4,0,0">
-                <Menu Padding="0">
-                    <Menu.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Vertical" />
-                        </ItemsPanelTemplate>
-                    </Menu.ItemsPanel>
+                <Menu Padding="0"
+                      ItemsPanel="{StaticResource VerticalItemsPanelTemplate}">
                     <MenuItem Header="复制"
                               Command="{x:Static ui:CommonCommands.CopyCommand}"
-                              CommandParameter="{Binding TextMessage,Mode=OneTime}">
-                        <MenuItem.Icon>
-                            <materialDesign:PackIcon Kind="ContentCopy" />
-                        </MenuItem.Icon>
-                    </MenuItem>
+                              CommandParameter="{Binding TextMessage,Mode=OneTime}"
+                              Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
                     <MenuItem Header="排除之前对话"
                               ToolTip="将之前的对话清出上下文"
                               Command="{x:Static ui:CommonCommands.Exclude}"
-                              CommandParameter="{Binding}">
-                        <MenuItem.Icon>
-                            <materialDesign:PackIcon Kind="FormatAlignTop" />
-                        </MenuItem.Icon>
-                    </MenuItem>
+                              CommandParameter="{Binding}"
+                              Icon="{materialDesign:PackIcon Kind=FormatAlignTop}" />
                     <MenuItem Header="清空之前对话"
                               ToolTip="删除之前的对话内容"
                               Command="{x:Static ui:CommonCommands.Clear}"
-                              CommandParameter="{Binding}">
-                        <MenuItem.Icon>
-                            <materialDesign:PackIcon Kind="DeleteSweepOutline" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="重发"
-                              Command="{x:Static ui:CommonCommands.ReBase}"
-                              ToolTip="从此条消息起重发，将删除所有之后的消息"
-                              CommandParameter="{Binding}">
-                        <MenuItem.Icon>
-                            <materialDesign:PackIcon Kind="Redo" />
-                        </MenuItem.Icon>
-                    </MenuItem>
+                              CommandParameter="{Binding}"
+                              Icon="{materialDesign:PackIcon Kind=WaveArrowUp}" />
                     <MenuItem Header="删除"
                               Command="Delete"
-                              CommandParameter="{Binding}">
-                        <MenuItem.Icon>
-                            <materialDesign:PackIcon Kind="DeleteOutline" />
-                        </MenuItem.Icon>
-                    </MenuItem>
+                              CommandParameter="{Binding}"
+                              Icon="{materialDesign:PackIcon Kind=DeleteOutline}" />
                 </Menu>
             </materialDesign:PopupBox>
             <materialDesign:Card Padding="8"

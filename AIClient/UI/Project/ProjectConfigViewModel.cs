@@ -19,7 +19,7 @@ public class ProjectConfigViewModel : ModelSelectionViewModel
             return;
         }
 
-        if (this.SelectedModel != Project.Client.Model)
+        if (this.SelectedModel != Project.Requester.DefaultClient.Model)
         {
             var client = this.GetClient();
             if (client == null)
@@ -28,7 +28,7 @@ public class ProjectConfigViewModel : ModelSelectionViewModel
                 return;
             }
 
-            Project.Client = client;
+            Project.Requester.DefaultClient = client;
         }
 
         if (!Project.Validate())
@@ -48,6 +48,6 @@ public class ProjectConfigViewModel : ModelSelectionViewModel
 
     public void Initialize()
     {
-        SelectedModel = this.Project.Client.Model;
+        SelectedModel = this.Project.Requester.DefaultClient.Model;
     }
 }

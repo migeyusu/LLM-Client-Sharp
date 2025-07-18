@@ -8,35 +8,6 @@
              ShutdownMode="OnLastWindowClose">
     <Application.Resources>
         <ResourceDictionary>
-            <ControlTemplate x:Key="ItemDeleteButtonTemplate"
-                             TargetType="{x:Type Button}">
-                <ControlTemplate.Resources>
-                    <SolidColorBrush x:Key="HoverBrush">#FF009587</SolidColorBrush>
-                </ControlTemplate.Resources>
-                <Grid>
-                    <Ellipse x:Name="Bg"
-                             Fill="#FFA6A6A6"
-                             Stroke="{StaticResource HoverBrush}"
-                             StrokeThickness="0" />
-                    <materialDesign:PackIcon Width="12"
-                                             Height="12"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center"
-                                             Kind="Close"
-                                             x:Name="Icon" />
-                </Grid>
-                <ControlTemplate.Triggers>
-                    <Trigger Property="IsMouseOver"
-                             Value="True">
-                        <Setter TargetName="Bg"
-                                Property="StrokeThickness"
-                                Value="1" />
-                        <Setter TargetName="Icon"
-                                Property="Foreground"
-                                Value="{StaticResource HoverBrush}" />
-                    </Trigger>
-                </ControlTemplate.Triggers>
-            </ControlTemplate>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <converters:KUnitConverter x:Key="KUnitConverter" />
             <materialDesign:InvertBooleanConverter x:Key="InvertBooleanConverter" />

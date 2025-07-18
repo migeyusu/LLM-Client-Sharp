@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
+using LLMClient.UI.MCP;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
@@ -19,19 +20,6 @@ public class RequesterViewModel : BaseViewModel
     /// </summary>
     public bool IsDataChanged { get; set; } = true;
 
-    private bool _isNewResponding;
-
-    public bool IsNewResponding
-    {
-        get => _isNewResponding;
-        private set
-        {
-            if (value == _isNewResponding) return;
-            _isNewResponding = value;
-            OnPropertyChanged();
-        }
-    }
-
     public ICommand NewRequestCommand => new ActionCommand(async o =>
     {
         var requestViewItem = this.NewRequest();
@@ -40,9 +28,7 @@ public class RequesterViewModel : BaseViewModel
             return;
         }
 
-        IsNewResponding = true;
         var completedResult = await _getResponse.Invoke(this.DefaultClient, requestViewItem);
-        IsNewResponding = false;
         if (!completedResult.IsInterrupt)
         {
             ClearRequest();
@@ -135,20 +121,7 @@ public class RequesterViewModel : BaseViewModel
 
     #region function call
 
-    private bool _mcpEnabled;
-
-    public bool MCPEnabled
-    {
-        get => _mcpEnabled;
-        set
-        {
-            if (value == _mcpEnabled) return;
-            _mcpEnabled = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public IList<IAIFunctionGroup>? SelectedFunctions { get; set; }
+    public AIFunctionSelectorViewModel FunctionSelector { get; }
 
     #endregion
 
@@ -171,9 +144,7 @@ public class RequesterViewModel : BaseViewModel
 
     public Task GetResponse(IRequestItem requestViewItem)
     {
-        IsNewResponding = true;
-        return _getResponse.Invoke(this.DefaultClient, requestViewItem)
-            .ContinueWith(t => IsNewResponding = false);
+        return _getResponse.Invoke(this.DefaultClient, requestViewItem);
     }
 
     public Task GetSummary()
@@ -185,8 +156,9 @@ public class RequesterViewModel : BaseViewModel
     private readonly Func<ILLMClient, IRequestItem, Task<CompletedResult>> _getResponse;
 
     public RequesterViewModel(ILLMClient modelClient,
-        Func<ILLMClient, IRequestItem,Task<CompletedResult>> getResponse)
+        Func<ILLMClient, IRequestItem, Task<CompletedResult>> getResponse)
     {
+        FunctionSelector = new AIFunctionSelectorViewModel();
         this._defaultClient = modelClient;
         _getResponse = getResponse;
         this.TrackClientChanged(modelClient);
@@ -226,9 +198,10 @@ public class RequesterViewModel : BaseViewModel
 
         promptBuilder.Append(PromptString);
         IList<IAIFunctionGroup>? tools = null;
-        if (this.MCPEnabled)
+        //todo:
+        if (this.FunctionSelector.MCPEnabled)
         {
-            tools = this.SelectedFunctions;
+            tools = this.FunctionSelector.SelectedFunctions;
         }
 
         return new RequestViewItem()

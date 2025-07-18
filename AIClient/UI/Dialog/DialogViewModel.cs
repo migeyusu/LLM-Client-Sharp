@@ -7,7 +7,8 @@ using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI.Component;
-using MaterialDesignThemes.Wpf;
+using LLMClient.UI.MCP;
+using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 using MessageBox = System.Windows.MessageBox;
@@ -27,6 +28,19 @@ public class DialogViewModel : DialogSessionViewModel
         {
             _isDataChanged = value;
             Requester.IsDataChanged = value;
+        }
+    }
+
+    private string? _systemPrompt;
+
+    public override string? SystemPrompt
+    {
+        get => _systemPrompt;
+        set
+        {
+            if (value == _systemPrompt) return;
+            _systemPrompt = value;
+            OnPropertyChanged();
         }
     }
 
@@ -206,29 +220,13 @@ public class DialogViewModel : DialogSessionViewModel
         MessageEventBus.Publish("已导出");
     }));
 
-    #region core method
-
-    public async void ReBaseOn(RequestViewItem redoItem)
-    {
-        RemoveAfter(redoItem);
-        await Requester.GetResponse(redoItem);
-    }
-
-    public async void ClearBefore(RequestViewItem requestViewItem)
-    {
-        if ((await DialogHost.Show(new ConfirmView() { Header = "清空会话？" })) is true)
-        {
-            RemoveBefore(requestViewItem);
-        }
-    }
-
-    #endregion
 
     public DialogViewModel(string topic, ILLMClient modelClient, IList<IDialogItem>? items = null)
         : base(items)
     {
         _topic = topic;
         Requester = new RequesterViewModel(modelClient, SendRequestCore);
+        Requester.FunctionSelector.ConnectDefault();
         PropertyChanged += (_, e) =>
         {
             var propertyName = e.PropertyName;
