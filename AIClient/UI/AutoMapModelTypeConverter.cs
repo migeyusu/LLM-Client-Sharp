@@ -137,7 +137,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     private const string ParentDialogViewModelKey = "ParentDialogViewModel";
 
     private const string ParentProjectViewModelKey = "ParentProjectViewModel";
-    
+
     private const string ParentProjectTaskViewModelKey = "ParentProjectTaskViewModel";
 
     public DialogViewModel Convert(DialogFilePersistModel source, DialogViewModel? destination,
@@ -171,15 +171,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                     _ => throw new NotSupportedException()
                 };
             })).ToArray();
-            var aiFunctionGroups = source.Functions?.Select((function) =>
-            {
-                if (function is McpServerItem server)
-                {
-                    return _mcpServiceCollection.TryGet(server);
-                }
-
-                return function;
-            }).ToArray();
             if (sourceDialogItems != null)
             {
                 foreach (var sourceDialogItem in sourceDialogItems)
@@ -193,6 +184,15 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination.SystemPrompt = source.SystemPrompt;
             var requester = destination.Requester;
             requester.PromptString = source.PromptString;
+            var aiFunctionGroups = source.Functions?.Select((function) =>
+            {
+                if (function is McpServerItem server)
+                {
+                    return _mcpServiceCollection.TryGet(server);
+                }
+
+                return function;
+            }).ToArray();
             requester.FunctionSelector.SelectedFunctions = aiFunctionGroups ?? [];
         }
         finally
@@ -206,15 +206,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     public ProjectViewModel Convert(ProjectPersistModel source, ProjectViewModel? destination,
         ResolutionContext context)
     {
-        var aiFunctionGroups = source.AllowedFunctions?.Select((function) =>
-        {
-            if (function is McpServerItem server)
-            {
-                return _mcpServiceCollection.TryGet(server);
-            }
-
-            return function;
-        }).ToArray();
         var mapper = context.Mapper;
         var defaultClient = source.Client == null
             ? NullLlmModelClient.Instance
@@ -253,7 +244,16 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                 : new ObservableCollection<string>(source.AllowedFolderPaths);
             destination.TokensConsumption = source.TokensConsumption;
             destination.TotalPrice = source.TotalPrice;
-            destination.AllowedFunctions = aiFunctionGroups;
+            var aiFunctionGroups = source.AllowedFunctions?.Select((function) =>
+            {
+                if (function is McpServerItem server)
+                {
+                    return _mcpServiceCollection.TryGet(server);
+                }
+
+                return function;
+            }).ToArray();
+            destination.AllowedFunctions = aiFunctionGroups ?? [];
         }
         finally
         {
@@ -268,7 +268,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     {
         var mapper = context.Mapper;
         var projectTaskPersistModels = source.Tasks
-            ?.Select((task => mapper.Map<ProjectTask, ProjectTaskPersistModel>(task))).ToArray();
+            ?.Select(task => mapper.Map<ProjectTask, ProjectTaskPersistModel>(task)).ToArray();
         destination ??= new ProjectPersistModel();
         destination.Name = source.Name;
         destination.EditTime = source.EditTime;
@@ -281,9 +281,10 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.Client = context.Mapper.Map<ILLMClient, LLMClientPersistModel>(source.Requester.DefaultClient);
         destination.Tasks = projectTaskPersistModels;
         destination.AllowedFunctions = source.AllowedFunctions;
+
         return destination;
     }
-    
+
     public ProjectTask Convert(ProjectTaskPersistModel source, ProjectTask? destination, ResolutionContext context)
     {
         if (!context.Items.TryGetValue(ParentProjectViewModelKey, out var parentProjectViewModel)

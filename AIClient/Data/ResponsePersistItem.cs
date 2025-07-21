@@ -4,7 +4,7 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Data;
 
-public class ResponsePersistItem : IResponse
+public class ResponsePersistItem
 {
     public LLMClientPersistModel? Client { get; set; }
 
@@ -16,7 +16,7 @@ public class ResponsePersistItem : IResponse
 
     public double? Price { get; set; }
     
-    public IList<ChatMessage>? ResponseMessages { get; set; }
+    public IList<ChatMessagePO>? ResponseMessages { get; set; }
 
     public ChatFinishReason? FinishReason { get; set; }
 

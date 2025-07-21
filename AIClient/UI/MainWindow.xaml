@@ -231,6 +231,10 @@
                                                      Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
+                <DataTemplate DataType="{x:Type endpoints:NullLlmModelClient}">
+                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                            Header="未定义的模型"/>
+                </DataTemplate>
             </materialDesign:DialogHost.Resources>
             <Grid Margin="10"
                   IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">

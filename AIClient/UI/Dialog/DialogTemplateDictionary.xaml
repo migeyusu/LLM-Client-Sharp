@@ -4,7 +4,6 @@
                     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
                     xmlns:ui="clr-namespace:LLMClient.UI"
                     xmlns:dialog="clr-namespace:LLMClient.UI.Dialog"
-                    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
                     xmlns:component="clr-namespace:LLMClient.UI.Component">
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
@@ -299,5 +298,137 @@
                 Value="28" />
         <Setter Property="Height"
                 Value="28" />
+    </Style>
+    <Style x:Key="AutoHideMenuItemStyle"
+           TargetType="MenuItem"
+           BasedOn="{StaticResource {x:Type MenuItem}}">
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Visibility" Value="Collapsed" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <DataTemplate x:Key="MultiResponseViewItemDataTemplate" DataType="{x:Type dialog:MultiResponseViewItem}">
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Bottom">
+                    <Image Source="{Binding  AcceptedResponse.Icon.CurrentSource,Mode=OneWay}"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           VerticalAlignment="Center"
+                           Width="26"
+                           Height="26" />
+                    <TextBlock Text="{Binding AcceptedResponse.ModelName,Mode=OneWay}"
+                               TextTrimming="CharacterEllipsis"
+                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                               VerticalAlignment="Center"
+                               Margin="10,0" />
+                    <Menu VerticalAlignment="Center">
+                        <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert}"
+                                  Width="20"
+                                  Height="50"
+                                  Padding="0">
+                            <MenuItem Header="由此创建新分支"
+                                      Command="{x:Static ui:CommonCommands.Branch}"
+                                      CommandParameter="{Binding}"
+                                      Icon="{materialDesign:PackIcon SourceBranchPlus}"
+                                      Style="{StaticResource AutoHideMenuItemStyle}" />
+                            <MenuItem Header="移除之后消息"
+                                      Command="{Binding RebaseCommand}"
+                                      ToolTip="保留当前消息并删除所有之后的消息"
+                                      Icon="{materialDesign:PackIcon Kind=WaveArrowDown}" />
+                        </MenuItem>
+                    </Menu>
+                    <materialDesign:PopupBox Padding="2,0"
+                                             StaysOpen="True"
+                                             VerticalAlignment="Center"
+                                             ToolTip="对比其他模型"
+                                             ToggleContent="{materialDesign:PackIcon Kind=Add,Size=16}"
+                                             Style="{StaticResource MaterialDesignToolPopupBox}"
+                                             PopupContent="{Binding }"
+                                             PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}" />
+                    <Button Style="{StaticResource RefreshButtonStyle}"
+                            VerticalAlignment="Center"
+                            Margin="6,0,0,0"
+                            Command="{Binding  RefreshSelectedCommand}"
+                            Content="{materialDesign:PackIcon Kind=Refresh,Size=20}" />
+                </StackPanel>
+                <ListBox Grid.Column="1"
+                         Height="60"
+                         Margin="16,0,0,0"
+                         HorizontalAlignment="Right"
+                         VerticalAlignment="Bottom"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         SelectedIndex="{Binding AcceptedIndex,Mode=TwoWay}"
+                         Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
+                         Style="{StaticResource MaterialDesignChoiceChipPrimaryListBox}"
+                         ItemsSource="{Binding Items,Mode=OneWay}"
+                         ItemTemplateSelector="{StaticResource MultiResponseHeaderTemplateSelector}"
+                         ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}" />
+            </Grid>
+            <materialDesign:Card Padding="0"
+                                 UniformCornerRadius="8"
+                                 HorizontalAlignment="Stretch"
+                                 BorderThickness="0"
+                                 Style="{StaticResource MaterialDesignOutlinedCard}">
+                <ContentControl Content="{Binding AcceptedResponse,Mode=OneWay}"
+                                ContentTemplateSelector="{StaticResource MultiResponseContentTemplateSelector}" />
+            </materialDesign:Card>
+            <TextBlock DataContext="{Binding AcceptedResponse,Mode=OneWay}"
+                       HorizontalAlignment="Left"
+                       Margin="0,6,0,0">
+                <TextBlock.Text>
+                    <MultiBinding
+                        StringFormat="Tokens: {0}, Price：{1:F4}$，Latency: {2}ms, Duration:{3}s, Speed:{4:F1}tps">
+                        <Binding Path="Tokens" Mode="OneTime" />
+                        <Binding Path="Price" Mode="OneTime" TargetNullValue="None" />
+                        <Binding Path="Latency" Mode="OneTime" />
+                        <Binding Path="Duration" Mode="OneTime" />
+                        <Binding Path="." Mode="OneTime"
+                                 Converter="{x:Static converters:TpsConverter.Instance}" />
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+        </StackPanel>
+    </DataTemplate>
+    <component:TypeBasedDataTemplateSelector x:Key="DialogTemplateSelector">
+        <component:DataTemplateTypePair Template="{StaticResource DefaultRequestViewItemDataTemplate}" />
+        <component:DataTemplateTypePair Template="{StaticResource MultiResponseViewItemDataTemplate}" />
+        <component:DataTemplateTypePair Template="{StaticResource EraseDataTemplate}" />
+    </component:TypeBasedDataTemplateSelector>
+    <Style x:Key="DialogListBoxStyle"
+           TargetType="{x:Type component:ListBoxEx}"
+           BasedOn="{StaticResource {x:Type ListBox}}">
+        <Setter Property="Margin" Value="0,0,5,5" />
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Item" />
+        <Setter Property="VirtualizingPanel.CacheLength" Value="15,15" />
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
+        <Setter Property="VirtualizingPanel.IsContainerVirtualizable" Value="True" />
+        <Setter Property="materialDesign:ListBoxItemAssist.ShowSelection" Value="False" />
+        <Setter Property="SelectionMode" Value="Single" />
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <component:CustomVirtualizingStackPanel IsItemsHost="True" />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ItemContainerStyle">
+            <Setter.Value>
+                <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource MaterialDesignListBoxItem}">
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Margin" Value="0,10,6,0" />
+                </Style>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ItemTemplateSelector"
+                Value="{StaticResource DialogTemplateSelector}" />
     </Style>
 </ResourceDictionary>

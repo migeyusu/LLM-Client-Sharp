@@ -29,6 +29,8 @@ using Microsoft.SemanticKernel;
 /// </summary>
 public class FileSystemPlugin : KernelFunctionGroup
 {
+    public Guid Id =Guid.NewGuid();
+    
     private ObservableCollection<string> _allowedPaths=new ObservableCollection<string>();
     public ObservableCollection<string> AllowedPaths
     {

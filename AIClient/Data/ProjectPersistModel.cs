@@ -22,7 +22,11 @@ public class ProjectPersistModel
 
     public string? FolderPath { get; set; }
 
+    #region requester
+
     public LLMClientPersistModel? Client { get; set; }
+
+    #endregion
 
     public long TokensConsumption { get; set; }
 
@@ -42,7 +46,8 @@ public class ProjectTaskPersistModel : DialogSessionPersistModel
 
     public string? Summary { get; set; }
     
-
+    public string? PromptString { get; set; }
+    
     public string? Description { get; set; }
 
     public ProjectTaskType Type { get; set; }

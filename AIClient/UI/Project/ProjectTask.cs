@@ -69,7 +69,6 @@ public class ProjectTask : DialogSessionViewModel
 
             _description = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(SystemPrompt));
         }
     }
 
@@ -87,6 +86,7 @@ public class ProjectTask : DialogSessionViewModel
                 return null;
             }
 
+            _systemPromptBuilder.Clear();
             _systemPromptBuilder.AppendLine(ParentProject.Context);
             _systemPromptBuilder.AppendFormat("现在有一个{0}类型的任务，我希望你能帮助我完成它。", Type.GetEnumDescription());
             _systemPromptBuilder.AppendLine();
@@ -120,7 +120,6 @@ public class ProjectTask : DialogSessionViewModel
             if (value == _type) return;
             _type = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(SystemPrompt));
         }
     }
 
@@ -148,7 +147,7 @@ public class ProjectTask : DialogSessionViewModel
             return false;
         }
 
-        if (!string.IsNullOrEmpty(Description))
+        if (string.IsNullOrEmpty(Description))
         {
             AddError("Description cannot be null or empty.", nameof(Description));
             return false;

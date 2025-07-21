@@ -31,7 +31,7 @@ public class ProjectConfigViewModel : ModelSelectionViewModel
             Project.Requester.DefaultClient = client;
         }
 
-        if (!Project.Validate())
+        if (!Project.Check())
         {
             return;
         }

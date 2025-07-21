@@ -1,5 +1,7 @@
 ﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using LLMClient.UI;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Data;
 

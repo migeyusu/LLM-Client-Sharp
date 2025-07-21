@@ -27,6 +27,20 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         }
     }
 
+    /// <summary>
+    /// mcp project url
+    /// </summary>
+    public Uri? ProjectUrl
+    {
+        get => _projectUrl;
+        set
+        {
+            if (Equals(value, _projectUrl)) return;
+            _projectUrl = value;
+            OnPropertyChanged();
+        }
+    }
+
     private string _name = string.Empty;
 
     public string Name
@@ -127,6 +141,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
     }
 
     private IMcpClient? _client;
+    private Uri? _projectUrl;
 
     public abstract string GetUniqueId();
 

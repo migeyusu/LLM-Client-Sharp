@@ -166,6 +166,10 @@ public class RequesterViewModel : BaseViewModel
         this._defaultClient = modelClient;
         _getResponse = getResponse;
         this.TrackClientChanged(modelClient);
+        this.PropertyChanged += (sender, args) =>
+        {
+            this.IsDataChanged = true;
+        };
     }
 
     private void TrackClientChanged(ILLMClient client)

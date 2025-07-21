@@ -276,33 +276,4 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <Style x:Key="DialogListBoxStyle"
-           TargetType="{x:Type component:ListBoxEx}"
-           BasedOn="{StaticResource {x:Type ListBox}}">
-        <Setter Property="Margin" Value="0,0,5,5" />
-        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
-        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
-        <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Item" />
-        <Setter Property="VirtualizingPanel.CacheLength" Value="15,15" />
-        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
-        <Setter Property="VirtualizingPanel.IsContainerVirtualizable" Value="True" />
-        <Setter Property="materialDesign:ListBoxItemAssist.ShowSelection" Value="False" />
-        <Setter Property="SelectionMode" Value="Single" />
-        <Setter Property="ItemsPanel">
-            <Setter.Value>
-                <ItemsPanelTemplate>
-                    <component:CustomVirtualizingStackPanel IsItemsHost="True" />
-                </ItemsPanelTemplate>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="ItemContainerStyle">
-            <Setter.Value>
-                <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource MaterialDesignListBoxItem}">
-                    <Setter Property="Padding" Value="0" />
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Margin" Value="0,10,6,0" />
-                </Style>
-            </Setter.Value>
-        </Setter>
-    </Style>
 </ResourceDictionary>

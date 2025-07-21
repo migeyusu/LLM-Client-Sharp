@@ -131,7 +131,6 @@ public class MainWindowViewModel : BaseViewModel
             new ProjectConfigViewModel(this.EndpointsViewModel, new ProjectViewModel(NullLlmModelClient.Instance));
         if (await DialogHost.Show(selectionViewModel) is true)
         {
-            selectionViewModel.Project.Initialize();
             AddSession(selectionViewModel.Project);
         }
     }));

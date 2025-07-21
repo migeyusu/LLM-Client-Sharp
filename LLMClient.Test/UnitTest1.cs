@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
@@ -14,6 +15,8 @@ using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
 using LLMClient.UI.Project;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
@@ -43,6 +46,100 @@ public class UnitTest1
     public async Task Convert()
     {
         // await Version3Converter.Convert("D:\\Dev\\LLM-Client-Sharp\\AIClient\\bin\\Debug\\net8.0-windows\\Dialogs");
+    }
+
+    [Fact]
+    public void FunctionCallSerialize()
+    {
+        var functionCallContent = new FunctionCallContent("123", "test", new Dictionary<string, object?>
+        {
+            { "param1", "value1" },
+            { "param2", 123 },
+            { "param3", true }
+        });
+        var serializerOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            ReferenceHandler = ReferenceHandler.Preserve,
+        };
+        var serialize = JsonSerializer.Serialize(functionCallContent, serializerOptions);
+        var callContent = JsonSerializer.Deserialize<FunctionCallContent>(serialize, serializerOptions);
+        Assert.NotNull(callContent);
+    }
+
+    [Fact]
+    public void FunctionCallGeneratorSerialize()
+    {
+        var projectPersistModel = new ProjectPersistModel
+        {
+            Tasks =
+            [
+                new ProjectTaskPersistModel()
+                {
+                    DialogItems = new IDialogPersistItem[]
+                    {
+                        new RequestViewItem()
+                        {
+                            TextMessage = "test",
+                            FunctionGroups = new IAIFunctionGroup[]
+                            {
+                                new FileSystemPlugin()
+                                {
+                                    AllowedPaths = new ObservableCollection<string> { "C:\\", "D:\\" },
+                                },
+                                new WinCLIPlugin()
+                            }
+                        },
+                        new MultiResponsePersistItem()
+                        {
+                            ResponseItems = new ResponsePersistItem[]
+                            {
+                                new ResponsePersistItem()
+                                {
+                                    ResponseMessages = new List<ChatMessagePO>()
+                                    {
+                                        new ChatMessagePO()
+                                        {
+                                            Role = ChatRole.Assistant,
+                                            Contents = new List<IAIContent>()
+                                            {
+                                                new TextContentPO() { Text = "haode" },
+                                                new FunctionCallContentPO()
+                                                {
+                                                    Name = "tool_0_FileSystem_WriteFile",
+                                                    CallId = "FileSystem_WriteFile",
+                                                    Arguments = new Dictionary<string, object?>()
+                                                    {
+                                                        { "filePath", "C:\\test.txt" },
+                                                        { "content", "Hello World!" }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        new ChatMessagePO()
+                                        {
+                                            Role = ChatRole.Tool,
+                                            Contents = new List<IAIContent>()
+                                            {
+                                                new FunctionResultContentPO()
+                                                {
+                                                    CallId = "tool_0_FileSystem_WriteFile",
+                                                    Result = "ok",
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        };
+        var options = FileBasedSessionBase.SerializerOption;
+        var serialize = JsonSerializer.Serialize(projectPersistModel, options);
+        var callContent = JsonSerializer.Deserialize<FunctionCallContent>(serialize, options);
+        Assert.NotNull(callContent);
     }
 
     [Fact]
@@ -95,8 +192,8 @@ public class UnitTest1
         var serialize = JsonSerializer.Serialize(dialogFilePersistModel,
             serializerOptions);
         output.WriteLine(serialize);
-        var filePersistModel = JsonSerializer.Deserialize<DialogFilePersistModel>(serialize,serializerOptions);
-        var viewModel = mapper.Map<DialogFilePersistModel,DialogFileViewModel>(filePersistModel!,(options => {}));
+        var filePersistModel = JsonSerializer.Deserialize<DialogFilePersistModel>(serialize, serializerOptions);
+        var viewModel = mapper.Map<DialogFilePersistModel, DialogFileViewModel>(filePersistModel!, (options => { }));
         var multiResponseViewItemDe = viewModel.Dialog.DialogItems.First() as MultiResponseViewItem;
         var responseViewItems = multiResponseViewItemDe!.Items.OfType<ResponseViewItem>().ToArray();
         Assert.Same(responseViewItems[0].Client, responseViewItems[1].Client);

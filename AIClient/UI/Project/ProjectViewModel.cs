@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Windows.Input;
 using AutoMapper;
@@ -15,6 +16,7 @@ using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -206,7 +208,6 @@ public class ProjectViewModel : FileBasedSessionBase
 
             _description = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(Context));
         }
     }
 
@@ -225,10 +226,10 @@ public class ProjectViewModel : FileBasedSessionBase
 
             _languageNames = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(Context));
         }
     }
 
+    private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
 
     /// <summary>
     /// 项目级别的上下文，在task间共享
@@ -237,13 +238,18 @@ public class ProjectViewModel : FileBasedSessionBase
     {
         get
         {
-            if (!Validate())
+            if (!Check())
             {
                 return null;
             }
 
+            _systemPromptBuilder.Clear();
             Debug.Assert(LanguageNames != null, nameof(LanguageNames) + " != null");
-            return $"我正在Windows使用语言{string.Join(",", LanguageNames)}上开发位于{FolderPath}的一个软件项目，该项目是{Description}，";
+            _systemPromptBuilder.AppendFormat("我正在Windows上使用语言{0}上开发位于{1}的一个软件项目。",
+                string.Join(",", LanguageNames), FolderPath);
+            _systemPromptBuilder.AppendLine();
+            _systemPromptBuilder.AppendLine(Description);
+            return _systemPromptBuilder.ToString();
         }
     }
 
@@ -252,19 +258,22 @@ public class ProjectViewModel : FileBasedSessionBase
         DialogHost.CloseDialogCommand.Execute(true, null);
     }));
 
-    public ICommand SelectFunctionsCommand => new RelayCommand(async () =>
+    public ICommand ChooseFunctionsCommand => new RelayCommand(async () =>
     {
         _functionSelector.ResetSource()
             .EnsureAsync();
-        var selectedFunctions = this.AllowedFunctions;
-        if (selectedFunctions != null)
+        _functionSelector.SelectedFunctions = this.AllowedFunctions;
+        if (await DialogHost.Show(_functionSelector) is true)
         {
-            _functionSelector.SelectedFunctions = selectedFunctions;
-        }
+            this.AllowedFunctions = _functionSelector.SelectedFunctions.Select((group =>
+            {
+                if (group is KernelFunctionGroup kernelFunctionGroup)
+                {
+                    return (kernelFunctionGroup.Clone() as KernelFunctionGroup)!;
+                }
 
-        if ((await DialogHost.Show(_functionSelector)) is true)
-        {
-            this.AllowedFunctions = _functionSelector.SelectedFunctions;
+                return group;
+            })).ToArray();
         }
     });
 
@@ -343,7 +352,6 @@ public class ProjectViewModel : FileBasedSessionBase
             _folderPath = value;
             AllowedFolderPaths.Add(value);
             OnPropertyChanged();
-            OnPropertyChanged(nameof(Context));
         }
     }
 
@@ -371,7 +379,7 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     }
 
-    public IAIFunctionGroup[]? AllowedFunctions
+    public IAIFunctionGroup[] AllowedFunctions
     {
         get => _allowedFunctions;
         set
@@ -439,16 +447,23 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private long _tokensConsumption;
     private float _totalPrice;
-    private IAIFunctionGroup[]? _allowedFunctions;
+    private IAIFunctionGroup[] _allowedFunctions = [new FileSystemPlugin(), new WinCLIPlugin()];
 
     private IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
 
     public ProjectViewModel(ILLMClient modelClient, IEnumerable<ProjectTask>? tasks = null) : base()
     {
-        Requester = new RequesterViewModel(modelClient, GetResponse);
+        Requester = new RequesterViewModel(modelClient, GetResponse)
+        {
+            FunctionSelector =
+            {
+                FunctionEnabled = true,
+                SelectedFunctions = this.AllowedFunctions,
+            }
+        };
         Requester.FunctionSelector.ConnectSource(new ProxyFunctionGroupSource(FunctionGroupsFunc));
         this.ConfigViewModel = new ProjectConfigViewModel(this.EndpointService, this);
-        this.Tasks = new ObservableCollection<ProjectTask>();
+        this.Tasks = [];
         if (tasks != null)
         {
             foreach (var projectTask in tasks)
@@ -474,7 +489,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private IEnumerable<IAIFunctionGroup> FunctionGroupsFunc()
     {
-        return this.AllowedFunctions ?? Enumerable.Empty<IAIFunctionGroup>();
+        return this.AllowedFunctions;
     }
 
     private Task<CompletedResult> GetResponse(ILLMClient arg1, IRequestItem arg2)
@@ -489,17 +504,13 @@ public class ProjectViewModel : FileBasedSessionBase
             return Task.FromException<CompletedResult>(new InvalidOperationException("当前任务配置不合法"));
         }
 
-        if (!this.Validate())
+        if (!this.Check())
         {
             return Task.FromException<CompletedResult>(new InvalidOperationException("当前项目配置不合法"));
         }
 
+        this.Ready();
         return SelectedTask.SendRequestCore(arg1, arg2);
-    }
-
-    public virtual void Initialize()
-    {
-        AllowedFunctions = [new FileSystemPlugin(), new WinCLIPlugin()];
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -507,7 +518,7 @@ public class ProjectViewModel : FileBasedSessionBase
         this.IsDataChanged = true;
     }
 
-    public bool Validate()
+    public bool Check()
     {
         if (this.HasErrors)
         {
@@ -534,7 +545,24 @@ public class ProjectViewModel : FileBasedSessionBase
             this.AddError("LanguageNames cannot be null or empty.", nameof(LanguageNames));
         }
 
+        if (!AllowedFolderPaths.Any())
+        {
+            MessageEventBus.Publish("AllowedFolderPaths cannot be empty.");
+            return false;
+        }
+
         return !this.HasErrors;
+    }
+
+    public void Ready()
+    {
+        foreach (var aiFunctionGroup in this.Requester.FunctionSelector.SelectedFunctions)
+        {
+            if (aiFunctionGroup is FileSystemPlugin fileSystemPlugin)
+            {
+                fileSystemPlugin.AllowedPaths = AllowedFolderPaths;
+            }
+        }
     }
 
     public void NewTaskRequest()

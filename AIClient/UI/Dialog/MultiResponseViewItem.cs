@@ -92,7 +92,10 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
         }
     }
 
-    public ICommand SubmitCommand => new ActionCommand(o =>
+    /// <summary>
+    /// used for append new response
+    /// </summary>
+    public ICommand SubmitCommand => new ActionCommand(async o =>
     {
         var llmClient = SelectedModel?.CreateClient();
         if (llmClient == null)
@@ -104,6 +107,8 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
         {
             PopupBox.ClosePopupCommand.Execute(this, frameworkElement);
         }
+
+        await ParentSession.AppendResponseOn(this, llmClient);
     });
 
     public ICommand RebaseCommand => new ActionCommand(o => { ParentSession.RemoveAfter(this); });

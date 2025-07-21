@@ -135,100 +135,6 @@
                              CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"
                              ItemsSource="{Binding DialogItems,Mode=OneWay}">
             <!--component:ListBoxHelper.CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"-->
-            <ListBox.ItemTemplateSelector>
-                <component:TypeBasedDataTemplateSelector>
-                    <component:DataTemplateTypePair Template="{StaticResource DefaultRequestViewItemDataTemplate}" />
-                    <component:DataTemplateTypePair>
-                        <DataTemplate DataType="{x:Type dialog:MultiResponseViewItem}">
-                            <StackPanel>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal"
-                                                VerticalAlignment="Bottom">
-                                        <Image Source="{Binding  AcceptedResponse.Icon.CurrentSource,Mode=OneWay}"
-                                               RenderOptions.BitmapScalingMode="HighQuality"
-                                               VerticalAlignment="Center"
-                                               Width="26"
-                                               Height="26" />
-                                        <TextBlock Text="{Binding AcceptedResponse.ModelName,Mode=OneWay}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                                   VerticalAlignment="Center"
-                                                   Margin="10,0" />
-                                        <Menu VerticalAlignment="Center">
-                                            <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert}"
-                                                      Width="20"
-                                                      Height="50"
-                                                      Padding="0">
-                                                <MenuItem Header="由此创建新分支"
-                                                          Command="{x:Static ui:CommonCommands.Branch}"
-                                                          CommandParameter="{Binding}"
-                                                          Icon="{materialDesign:PackIcon SourceBranchPlus}" />
-                                                <MenuItem Header="移除之后消息"
-                                                          Command="{Binding RebaseCommand}"
-                                                          ToolTip="保留当前消息并删除所有之后的消息"
-                                                          Icon="{materialDesign:PackIcon Kind=WaveArrowDown}" />
-                                            </MenuItem>
-                                        </Menu>
-                                        <materialDesign:PopupBox Padding="2,0"
-                                                                 StaysOpen="True"
-                                                                 VerticalAlignment="Center"
-                                                                 ToolTip="对比其他模型"
-                                                                 ToggleContent="{materialDesign:PackIcon Kind=Add,Size=16}"
-                                                                 Style="{StaticResource MaterialDesignToolPopupBox}"
-                                                                 PopupContent="{Binding }"
-                                                                 PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}" />
-                                        <Button Style="{StaticResource RefreshButtonStyle}"
-                                                VerticalAlignment="Center"
-                                                Margin="6,0,0,0"
-                                                Command="{Binding  RefreshSelectedCommand}"
-                                                Content="{materialDesign:PackIcon Kind=Refresh,Size=20}" />
-                                    </StackPanel>
-                                    <ListBox Grid.Column="1"
-                                             Height="60"
-                                             Margin="16,0,0,0"
-                                             HorizontalAlignment="Right"
-                                             VerticalAlignment="Bottom"
-                                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                             SelectedIndex="{Binding AcceptedIndex,Mode=TwoWay}"
-                                             Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
-                                             Style="{StaticResource MaterialDesignChoiceChipPrimaryListBox}"
-                                             ItemsSource="{Binding Items,Mode=OneWay}"
-                                             ItemTemplateSelector="{StaticResource MultiResponseHeaderTemplateSelector}"
-                                             ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}" />
-                                </Grid>
-                                <materialDesign:Card Padding="0"
-                                                     UniformCornerRadius="8"
-                                                     HorizontalAlignment="Stretch"
-                                                     BorderThickness="0"
-                                                     Style="{StaticResource MaterialDesignOutlinedCard}">
-                                    <ContentControl Content="{Binding AcceptedResponse,Mode=OneWay}"
-                                                    ContentTemplateSelector="{StaticResource MultiResponseContentTemplateSelector}" />
-                                </materialDesign:Card>
-                                <TextBlock DataContext="{Binding AcceptedResponse,Mode=OneWay}"
-                                           HorizontalAlignment="Left"
-                                           Margin="0,6,0,0">
-                                    <TextBlock.Text>
-                                        <MultiBinding
-                                            StringFormat="Tokens: {0}, Price：{1:F4}$，Latency: {2}ms, Duration:{3}s, Speed:{4:F1}tps">
-                                            <Binding Path="Tokens" Mode="OneTime" />
-                                            <Binding Path="Price" Mode="OneTime" TargetNullValue="None" />
-                                            <Binding Path="Latency" Mode="OneTime" />
-                                            <Binding Path="Duration" Mode="OneTime" />
-                                            <Binding Path="." Mode="OneTime"
-                                                     Converter="{x:Static converters:TpsConverter.Instance}" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </StackPanel>
-                        </DataTemplate>
-                    </component:DataTemplateTypePair>
-                    <component:DataTemplateTypePair Template="{StaticResource EraseDataTemplate}" />
-                </component:TypeBasedDataTemplateSelector>
-            </ListBox.ItemTemplateSelector>
             <ListBox.CommandBindings>
                 <CommandBinding Command="Delete"
                                 Executed="OnDeleteExecuted" />
@@ -247,8 +153,19 @@
                               Margin="0,10,0,0"
                               IsEnabled="{Binding  RelativeSource={RelativeSource  FindAncestor, AncestorType=Grid},Path=DataContext.IsBusy,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}" />
         <Button Grid.Row="2"
-                Command="{Binding CancelLastCommand}"
-                Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                Style="{StaticResource MaterialDesignRaisedDarkButton}" />
+                Command="{Binding CancelLastCommand}">
+            <Button.Style>
+                <Style TargetType="Button"
+                       BasedOn="{StaticResource StopButtonStyle}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsNewResponding}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
+
+        </Button>
     </Grid>
 </UserControl>

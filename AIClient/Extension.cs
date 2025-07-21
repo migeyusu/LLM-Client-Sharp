@@ -32,6 +32,42 @@ public static class Extension
     {
         return collection.AddAutoMapper((provider, expression) =>
         {
+            expression.CreateMap<ChatMessage, ChatMessagePO>();
+            expression.CreateMap<ChatMessagePO, ChatMessage>();
+            expression.CreateMap<TextContent, TextContentPO>();
+            expression.CreateMap<TextContentPO, TextContent>();
+            expression.CreateMap<FunctionCallContent, FunctionCallContentPO>();
+            expression.CreateMap<FunctionCallContentPO, FunctionCallContent>();
+            expression.CreateMap<DataContent, DataContentPO>()
+                .ForMember(po => po.Data, opt => opt.MapFrom(content => content.Data));
+            expression.CreateMap<DataContentPO, DataContent>()
+                .ConstructUsing(((po, context) =>
+                {
+                    if (po.Data != null)
+                    {
+                        return new DataContent(po.Data, po.MediaType);
+                    }
+
+                    if (po.Uri != null)
+                    {
+                        return new DataContent(po.Uri, po.MediaType);
+                    }
+
+                    throw new InvalidOperationException();
+                }));
+            expression.CreateMap<ErrorContent, ErrorContentPO>();
+            expression.CreateMap<ErrorContentPO, ErrorContent>();
+            expression.CreateMap<FunctionResultContent, FunctionResultContentPO>();
+            expression.CreateMap<FunctionResultContentPO, FunctionResultContent>()
+                .ConstructUsing((po, context) => new FunctionResultContent(po.CallId, po.Result)
+                    { Exception = po.Exception });
+            expression.CreateMap<TextReasoningContent, TextReasoningContentPO>();
+            expression.CreateMap<TextReasoningContentPO, TextReasoningContent>();
+            expression.CreateMap<UriContent, UriContentPO>();
+            expression.CreateMap<UriContentPO, UriContent>()
+                .ConstructUsing((po => new UriContent(po.Uri!, po.MediaType!)));
+            expression.CreateMap<UsageContent, UsageContentPO>();
+            expression.CreateMap<UsageContentPO, UsageContent>();
             expression.CreateMap<IResponse, ResponseViewItem>();
             expression.CreateMap<IModelParams, IModelParams>();
             expression.CreateMap<IModelParams, DefaultModelParam>();

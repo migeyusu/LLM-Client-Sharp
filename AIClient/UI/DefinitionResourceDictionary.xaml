@@ -1,0 +1,11 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:component="clr-namespace:LLMClient.UI.Component"
+                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters">
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    <converters:KUnitConverter x:Key="KUnitConverter" />
+    <materialDesign:InvertBooleanConverter x:Key="InvertBooleanConverter" />
+    <component:SiYuanFont x:Key="DefaultFontFamily" />
+</ResourceDictionary>

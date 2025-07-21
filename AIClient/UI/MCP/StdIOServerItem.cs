@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.SemanticKernel;
 using Microsoft.Win32;
 using ModelContextProtocol.Client;
 

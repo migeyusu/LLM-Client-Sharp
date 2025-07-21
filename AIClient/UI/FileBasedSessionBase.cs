@@ -51,17 +51,16 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
 
     protected abstract string DefaultSaveFolderPath { get; }
 
-    protected static JsonSerializerOptions SerializerOption = new JsonSerializerOptions()
+    public static readonly JsonSerializerOptions SerializerOption = new JsonSerializerOptions()
     {
         WriteIndented = true,
         ReferenceHandler = ReferenceHandler.Preserve,
-        TypeInfoResolver = LLM_DataSerializeContext.Default
+        TypeInfoResolver = LLM_DataSerializeContext.Default,
     };
 
     protected FileBasedSessionBase()
     {
     }
-
 
     public virtual async Task Backup()
     {
