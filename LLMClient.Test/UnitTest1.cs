@@ -138,7 +138,7 @@ public class UnitTest1
         };
         var options = FileBasedSessionBase.SerializerOption;
         var serialize = JsonSerializer.Serialize(projectPersistModel, options);
-        var callContent = JsonSerializer.Deserialize<FunctionCallContent>(serialize, options);
+        var callContent = JsonSerializer.Deserialize<ProjectPersistModel>(serialize, options);
         Assert.NotNull(callContent);
     }
 

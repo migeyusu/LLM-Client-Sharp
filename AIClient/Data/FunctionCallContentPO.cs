@@ -6,6 +6,14 @@ using Microsoft.Extensions.AI;
 // 它可以被源码生成器轻松处理
 namespace LLMClient.Data;
 
+[JsonDerivedType(typeof(FunctionCallContentPO), "function_call")]
+[JsonDerivedType(typeof(TextContentPO), "text")]
+[JsonDerivedType(typeof(DataContentPO), "data")]
+[JsonDerivedType(typeof(ErrorContentPO), "error")]
+[JsonDerivedType(typeof(FunctionResultContentPO), "function_result")]
+[JsonDerivedType(typeof(TextReasoningContentPO), "text_reasoning")]
+[JsonDerivedType(typeof(UriContentPO), "uri")]
+[JsonDerivedType(typeof(UsageContentPO), "usage")]
 public interface IAIContent
 {
 }
