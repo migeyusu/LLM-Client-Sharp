@@ -38,6 +38,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
     public bool IsInterrupt { get; set; }
 
     public long Tokens { get; set; }
+    
     public int Latency { get; set; }
 
     public int Duration { get; set; }

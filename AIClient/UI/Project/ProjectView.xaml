@@ -269,12 +269,12 @@
                                 Executed="TaskMoveLeft_OnExecuted" />
             </ListBox.CommandBindings>
         </ListBox>
-        <Separator Grid.Row="2"
+        <!--<Separator Grid.Row="2"
                    VerticalAlignment="Bottom"
                    HorizontalAlignment="Stretch"
                    Background="DarkGray"
                    Margin="20,0"
-                   Height="3" />
+                   Height="3" />-->
         <Grid Grid.Row="3"
               DataContext="{Binding SelectedTask,Mode=OneWay}"
               Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">

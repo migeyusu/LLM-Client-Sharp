@@ -11,6 +11,7 @@ public class ChatMessagePO
 
     [JsonPropertyName("messageId")] public string? MessageId { get; set; }
 
+    
     [JsonPropertyName("additionalProperties")]
     public AdditionalPropertiesDictionary? AdditionalProperties { get; set; }
 

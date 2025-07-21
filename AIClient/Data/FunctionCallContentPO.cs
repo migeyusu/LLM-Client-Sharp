@@ -29,49 +29,49 @@ public class FunctionCallContentPO : IAIContent
 
 public class TextContentPO : IAIContent
 {
-    [JsonPropertyName("text")] public string Text { get; set; } = string.Empty;
+    [JsonPropertyName("Text")] public string Text { get; set; } = string.Empty;
 }
 
 public class DataContentPO : IAIContent
 {
-    [JsonPropertyName("mediatype")] public string MediaType { get; set; } = string.Empty;
+    [JsonPropertyName("MediaType")] public string MediaType { get; set; } = string.Empty;
 
-    [JsonPropertyName("uri")] public string? Uri { get; set; }
+    [JsonPropertyName("Uri")] public string? Uri { get; set; }
 
-    [JsonPropertyName("data")] public byte[]? Data { get; set; }
+    [JsonPropertyName("Data")] public byte[]? Data { get; set; }
 }
 
 public class ErrorContentPO : IAIContent
 {
-    [JsonPropertyName("details")] public string? Details { get; set; }
+    [JsonPropertyName("Details")] public string? Details { get; set; }
 
-    [JsonPropertyName("message")] public string? Message { get; set; }
+    [JsonPropertyName("Message")] public string? Message { get; set; }
 
-    [JsonPropertyName("errorcode")] public string? ErrorCode { get; set; }
+    [JsonPropertyName("ErrorCode")] public string? ErrorCode { get; set; }
 }
 
 public class FunctionResultContentPO : IAIContent
 {
-    [JsonPropertyName("callid")] public string CallId { get; set; } = string.Empty;
+    [JsonPropertyName("CallId")] public string CallId { get; set; } = string.Empty;
 
-    [JsonPropertyName("exception")] public Exception? Exception { get; set; }
+    [JsonPropertyName("Exception")] public Exception? Exception { get; set; }
 
-    [JsonPropertyName("result")] public object? Result { get; set; }
+    [JsonPropertyName("Result")] public object? Result { get; set; }
 }
 
 public class TextReasoningContentPO : IAIContent
 {
-    [JsonPropertyName("text")] public string Text { get; set; } = string.Empty;
+    [JsonPropertyName("Text")] public string Text { get; set; } = string.Empty;
 }
 
 public class UriContentPO : IAIContent
 {
-    [JsonPropertyName("uri")] public Uri? Uri { get; set; }
+    [JsonPropertyName("Uri")] public Uri? Uri { get; set; }
 
-    [JsonPropertyName("mediatype")] public string? MediaType { get; set; }
+    [JsonPropertyName("MediaType")] public string? MediaType { get; set; }
 }
 
 public class UsageContentPO : IAIContent
 {
-    [JsonPropertyName("usagedetails")] public UsageDetails? UsageDetails { get; set; }
+    [JsonPropertyName("UsageDetails")] public UsageDetails? UsageDetails { get; set; }
 }

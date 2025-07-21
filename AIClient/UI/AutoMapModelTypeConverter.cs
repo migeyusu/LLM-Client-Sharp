@@ -61,7 +61,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     public MultiResponseViewItem Convert(MultiResponsePersistItem source, MultiResponseViewItem? destination,
         ResolutionContext context)
     {
-        if (!context.Items.TryGetValue(ParentDialogViewModelKey, out var parentDialogViewModel)
+        var contextItems = context.Items;
+        if (!contextItems.TryGetValue(ParentSessionViewModelKey, out var parentDialogViewModel)
             || !(parentDialogViewModel is DialogSessionViewModel parentViewModel))
         {
             throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
@@ -134,11 +135,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    private const string ParentDialogViewModelKey = "ParentDialogViewModel";
+    private const string ParentSessionViewModelKey = "ParentDialogViewModel";
 
     private const string ParentProjectViewModelKey = "ParentProjectViewModel";
-
-    private const string ParentProjectTaskViewModelKey = "ParentProjectTaskViewModel";
 
     public DialogViewModel Convert(DialogFilePersistModel source, DialogViewModel? destination,
         ResolutionContext context)
@@ -157,7 +156,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination = new DialogViewModel(source.Topic, llmClient);
         }
 
-        context.Items.Add(ParentDialogViewModelKey, destination);
+        context.Items.Add(ParentSessionViewModelKey, destination);
         try
         {
             var sourceDialogItems = source.DialogItems?.Select<IDialogPersistItem, IDialogItem>((item =>
@@ -197,7 +196,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
         finally
         {
-            context.Items.Remove(ParentDialogViewModelKey);
+            context.Items.Remove(ParentSessionViewModelKey);
         }
 
         return destination;
@@ -294,7 +293,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
 
         destination ??= new ProjectTask(projectViewModel);
-        context.Items.Add(ParentProjectTaskViewModelKey, destination);
+        context.Items.Add(ParentSessionViewModelKey, destination);
         try
         {
             var sourceDialogItems = source.DialogItems?.Select<IDialogPersistItem, IDialogItem>((item =>
@@ -335,7 +334,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
         finally
         {
-            context.Items.Remove(ParentProjectTaskViewModelKey);
+            context.Items.Remove(ParentSessionViewModelKey);
         }
 
         return destination;

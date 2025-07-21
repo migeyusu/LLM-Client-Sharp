@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -17,6 +18,7 @@ using LLMClient.UI.Dialog;
 using LLMClient.UI.Project;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
 namespace LLMClient;
 
@@ -32,6 +34,8 @@ public static class Extension
     {
         return collection.AddAutoMapper((provider, expression) =>
         {
+            expression.CreateMap<IAIContent, AIContent>().IncludeAllDerived();
+            expression.CreateMap<AIContent, IAIContent>().IncludeAllDerived();
             expression.CreateMap<ChatMessage, ChatMessagePO>();
             expression.CreateMap<ChatMessagePO, ChatMessage>();
             expression.CreateMap<TextContent, TextContentPO>();
@@ -91,7 +95,6 @@ public static class Extension
                 .PreserveReferences();
             expression.CreateMap<ResponsePersistItem, ResponseViewItem>()
                 .PreserveReferences()
-                .IncludeBase<IResponse, ResponseViewItem>()
                 .ConstructUsing((source, context) =>
                 {
                     ILLMClient llmClient = NullLlmModelClient.Instance;
@@ -226,13 +229,28 @@ public static class Extension
                 return null;
             }
 
-            using JsonDocument doc = JsonDocument.Parse(json);
-            var options = new JsonSerializerOptions
+            if (!json.StartsWith("{") || !json.StartsWith("[") || !json.EndsWith("}") || !json.EndsWith("]"))
             {
-                WriteIndented = true,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
-            return JsonSerializer.Serialize(doc, options);
+                // 如果不是合法的JSON对象或数组，直接返回原始字符串
+                return json;
+            }
+
+            var utf8Bytes = Encoding.UTF8.GetBytes(json);
+            var reader = new Utf8JsonReader(utf8Bytes);
+            if (JsonDocument.TryParseValue(ref reader, out JsonDocument? doc))
+            {
+                using (doc)
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+                    return JsonSerializer.Serialize(doc, options);
+                }
+            }
+
+            return json;
         }
         catch (Exception)
         {
