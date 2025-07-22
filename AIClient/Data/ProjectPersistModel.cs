@@ -30,7 +30,7 @@ public class ProjectPersistModel
 
     public long TokensConsumption { get; set; }
 
-    public float TotalPrice { get; set; }
+    public double TotalPrice { get; set; }
 
     /// <summary>
     /// 额外的mcp工具

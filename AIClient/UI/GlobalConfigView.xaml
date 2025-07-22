@@ -6,6 +6,8 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:data="clr-namespace:LLMClient.Data"
              xmlns:ui="clr-namespace:LLMClient.UI"
+             xmlns:dialog="clr-namespace:LLMClient.UI.Dialog"
+             xmlns:project="clr-namespace:LLMClient.UI.Project"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance ui:GlobalConfig}"
              d:DesignHeight="500" d:DesignWidth="800">
@@ -42,16 +44,21 @@
                     Orientation="Horizontal"
                     Margin="10">
             <Button Click="ClearHttpCache_OnClick"
-                    Content="清空HTTP缓存" 
+                    Content="清空HTTP缓存"
                     Style="{StaticResource MaterialDesignOutlinedButton}"
-                    Margin="20,0,0,0"/>
+                    Margin="20,0,0,0" />
             <Button Click="ImportEndpoints_OnClick"
-                    Content="导入Endpoints文件" 
+                    Content="导入Endpoints文件"
                     Style="{StaticResource MaterialDesignOutlinedButton}"
-                    Margin="20,0,0,0"/>
-            <Button Click="OpenDialogs_OnClick"
-                    WindowChrome.IsHitTestVisibleInChrome="True"
-                    Content="打开对话存储"
+                    Margin="20,0,0,0" />
+            <Button Content="打开对话存储"
+                    Command="{x:Static ui:CommonCommands.OpenFolderCommand}"
+                    CommandParameter="{x:Static dialog:DialogFileViewModel.SaveFolderPath}"
+                    Margin="20,0,0,0"
+                    Style="{StaticResource MaterialDesignOutlinedButton}" />
+            <Button Content="打开项目存储"
+                    Command="{x:Static ui:CommonCommands.OpenFolderCommand}"
+                    CommandParameter="{x:Static project:ProjectViewModel.SaveFolderPath}"
                     Margin="20,0,0,0"
                     Style="{StaticResource MaterialDesignOutlinedButton}" />
             <Button Command="{Binding SaveCommand}"

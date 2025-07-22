@@ -32,6 +32,24 @@ public class ProjectTask : DialogSessionViewModel
     public ProjectTask(ProjectViewModel parentProject, IList<IDialogItem>? items = null) : base(items)
     {
         ParentProject = parentProject;
+        this.PropertyChanged += OnPropertyChanged;
+    }
+
+    private readonly string[] _notTrackingProperties =
+    [
+        nameof(ScrollViewItem),
+        nameof(SearchText)
+    ];
+
+    private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        var propertyName = e.PropertyName;
+        if (_notTrackingProperties.Contains(propertyName))
+        {
+            return;
+        }
+
+        IsDataChanged = true;
     }
 
     public Guid ID { get; } = Guid.NewGuid();
@@ -69,6 +87,7 @@ public class ProjectTask : DialogSessionViewModel
 
             _description = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(SystemPrompt));
         }
     }
 
@@ -87,9 +106,10 @@ public class ProjectTask : DialogSessionViewModel
             }
 
             _systemPromptBuilder.Clear();
-            _systemPromptBuilder.AppendLine(ParentProject.Context);
+            _systemPromptBuilder.Append(ParentProject.Context);
             _systemPromptBuilder.AppendFormat("现在有一个{0}类型的任务，我希望你能帮助我完成它。", Type.GetEnumDescription());
             _systemPromptBuilder.AppendLine();
+            _systemPromptBuilder.Append("任务描述：");
             _systemPromptBuilder.AppendLine(Description);
             return _systemPromptBuilder.ToString();
         }
@@ -120,6 +140,7 @@ public class ProjectTask : DialogSessionViewModel
             if (value == _type) return;
             _type = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(SystemPrompt));
         }
     }
 

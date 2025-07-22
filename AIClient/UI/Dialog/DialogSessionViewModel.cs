@@ -19,6 +19,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     /// </summary>
     public virtual bool IsDataChanged { get; set; } = true;
 
+    public event Action<CompletedResult>? ResponseCompleted;
+
     public string? Shortcut
     {
         get
@@ -619,6 +621,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
 
         this.TokensConsumption += completedResult.Usage.TotalTokenCount ?? 0;
         this.TotalPrice += completedResult.Price ?? 0;
+        OnResponseCompleted(completedResult);
         return completedResult;
     }
 
@@ -662,5 +665,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     private void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         this.IsDataChanged = true;
+    }
+
+    protected virtual void OnResponseCompleted(CompletedResult obj)
+    {
+        ResponseCompleted?.Invoke(obj);
     }
 }

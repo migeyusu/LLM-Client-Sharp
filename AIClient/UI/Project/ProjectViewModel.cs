@@ -16,7 +16,6 @@ using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
 using MaterialDesignThemes.Wpf;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -28,12 +27,30 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
 
-    public override bool IsDataChanged { get; set; } = true;
+    private bool _isDataChanged = true;
+
+    public override bool IsDataChanged
+    {
+        get { return Tasks.Any(task => task.IsDataChanged) || _isDataChanged; }
+        set
+        {
+            _isDataChanged = value;
+            if (!value)
+            {
+                foreach (var projectTask in this.Tasks)
+                {
+                    projectTask.IsDataChanged = value;
+                }
+            }
+        }
+    }
 
     public override bool IsBusy { get; } = false;
 
     private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveDir)));
 
+    public static string SaveFolderPath => SaveFolderPathLazy.Value;
+    
     protected override string DefaultSaveFolderPath
     {
         get { return SaveFolderPathLazy.Value; }
@@ -208,6 +225,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
             _description = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
         }
     }
 
@@ -226,6 +244,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
             _languageNames = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
         }
     }
 
@@ -352,10 +371,13 @@ public class ProjectViewModel : FileBasedSessionBase
             _folderPath = value;
             AllowedFolderPaths.Add(value);
             OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
         }
     }
 
     public virtual string Type { get; } = "Standard";
+
+    private long _tokensConsumption;
 
     public long TokensConsumption
     {
@@ -368,7 +390,9 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     }
 
-    public float TotalPrice
+    private double _totalPrice;
+
+    public double TotalPrice
     {
         get => _totalPrice;
         set
@@ -378,6 +402,8 @@ public class ProjectViewModel : FileBasedSessionBase
             OnPropertyChanged();
         }
     }
+
+    private IAIFunctionGroup[] _allowedFunctions = [new FileSystemPlugin(), new WinCLIPlugin()];
 
     public IAIFunctionGroup[] AllowedFunctions
     {
@@ -403,23 +429,21 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public void AddTask(ProjectTask task)
     {
-        task.PropertyChanged += TaskOnPropertyChanged;
-        task.DialogItems.CollectionChanged += OnCollectionChanged;
+        task.ResponseCompleted += TaskOnResponseCompleted;
         this.Tasks.Add(task);
     }
 
     public void RemoveTask(ProjectTask task)
     {
-        if (this.Tasks.Remove(task))
-        {
-            task.DialogItems.CollectionChanged -= OnCollectionChanged;
-            task.PropertyChanged -= TaskOnPropertyChanged;
-        }
+        task.ResponseCompleted -= TaskOnResponseCompleted;
+        this.Tasks.Remove(task);
     }
 
-    private void TaskOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+
+    private void TaskOnResponseCompleted(CompletedResult obj)
     {
-        this.IsDataChanged = true;
+        this.TokensConsumption += obj.Tokens;
+        this.TotalPrice += (obj.Price ?? 0);
     }
 
     public ObservableCollection<ProjectTask> Tasks { get; set; }
@@ -444,10 +468,6 @@ public class ProjectViewModel : FileBasedSessionBase
         nameof(EditTime),
         nameof(SelectedTask)
     ];
-
-    private long _tokensConsumption;
-    private float _totalPrice;
-    private IAIFunctionGroup[] _allowedFunctions = [new FileSystemPlugin(), new WinCLIPlugin()];
 
     private IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
 

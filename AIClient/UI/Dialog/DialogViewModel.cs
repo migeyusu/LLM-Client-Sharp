@@ -7,8 +7,6 @@ using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI.Component;
-using LLMClient.UI.MCP;
-using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 using MessageBox = System.Windows.MessageBox;

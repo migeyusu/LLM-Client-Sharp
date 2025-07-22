@@ -24,7 +24,9 @@ public class DialogFileViewModel : FileBasedSessionBase
 
     public override bool IsBusy => Dialog.IsBusy;
 
-    public static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveFolder)));
+    private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveFolder)));
+
+    public static string SaveFolderPath => SaveFolderPathLazy.Value;
 
     protected override string DefaultSaveFolderPath
     {
@@ -33,7 +35,7 @@ public class DialogFileViewModel : FileBasedSessionBase
 
     protected override async Task SaveToStream(Stream stream)
     {
-        var dialogSession = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this,(options => {}));
+        var dialogSession = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
         await JsonSerializer.SerializeAsync(stream, dialogSession, SerializerOption);
     }
 
@@ -101,9 +103,10 @@ public class DialogFileViewModel : FileBasedSessionBase
     public async Task<DialogFileViewModel> Fork(IDialogItem viewModel)
     {
         var of = this.Dialog.DialogItems.IndexOf(viewModel);
-        var dialogSessionClone = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this,(options => {}));
+        var dialogSessionClone = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
         dialogSessionClone.DialogItems = dialogSessionClone.DialogItems?.Take(of + 1).ToArray();
-        var cloneSession = Mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => { }));
+        var cloneSession =
+            Mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => { }));
         cloneSession.IsDataChanged = true;
         return cloneSession;
     }

@@ -16,19 +16,7 @@ public partial class GlobalConfigView : UserControl
     {
         InitializeComponent();
     }
-
-    private void OpenDialogs_OnClick(object sender, RoutedEventArgs e)
-    {
-        var path = DialogFileViewModel.SaveFolderPathLazy.Value;
-        var directoryInfo = new DirectoryInfo(path);
-        if (!directoryInfo.Exists)
-        {
-            return;
-        }
-
-        Process.Start("explorer.exe", path);
-    }
-
+    
     private async void ImportEndpoints_OnClick(object sender, RoutedEventArgs e)
     {
         var openFileDialog = new OpenFileDialog()

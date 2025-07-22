@@ -11,14 +11,15 @@ public static class CommonCommands
     public static RoutedUICommand Exclude = new RoutedUICommand("Exclude", "Exclude", typeof(CommonCommands));
 
     public static RoutedCommand Clear = new RoutedUICommand("Clear", "Clear", typeof(CommonCommands));
-    
+
     public static RoutedUICommand ReBase =
         new RoutedUICommand("Rebase", "Rebase", typeof(CommonCommands));
 
     public static RoutedUICommand Branch = new RoutedUICommand("Branch", "Branch", typeof(CommonCommands));
 
-    public static RoutedUICommand ReprocessDialog = new RoutedUICommand("Reprocess", "Reprocess", typeof(CommonCommands));
-    
+    public static RoutedUICommand ReprocessDialog =
+        new RoutedUICommand("Reprocess", "Reprocess", typeof(CommonCommands));
+
     public static RoutedUICommand Backup = new RoutedUICommand("Backup", "Backup", typeof(CommonCommands));
 
     private static ICommand? _copyCommand;
@@ -73,4 +74,27 @@ public static class CommonCommands
             }));
         }
     }
+
+    public static ICommand OpenFolderCommand => new ActionCommand(o =>
+    {
+        if (o is string path && !string.IsNullOrEmpty(path))
+        {
+            try
+            {
+                var directoryInfo = new DirectoryInfo(path);
+                if (directoryInfo.Exists)
+                {
+                    System.Diagnostics.Process.Start("explorer.exe", directoryInfo.FullName);
+                }
+                else
+                {
+                    MessageBox.Show("Directory does not exist.");
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+    });
 }
