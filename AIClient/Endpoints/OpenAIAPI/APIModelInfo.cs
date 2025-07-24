@@ -504,13 +504,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         {
             if (!string.IsNullOrEmpty(IconUrl))
             {
-                this.Icon = new AsyncThemedIcon(((async () =>
-                {
-                    var imageSource = await new Uri(this.IconUrl).GetIcon();
-                    if (imageSource != null)
-                        return imageSource;
-                    return ImageExtensions.APIIcon.CurrentSource;
-                })), null);
+                this.Icon = AsyncThemedIcon.FromUri(new Uri(this.IconUrl));
             }
         }
         else

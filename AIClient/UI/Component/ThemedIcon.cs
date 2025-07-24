@@ -1,6 +1,7 @@
-﻿using System.Windows;
-using System.Windows.Media;
+﻿using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using LLMClient.Data;
+using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.UI.Component;
 
@@ -69,6 +70,12 @@ public class LocalThemedIcon : ThemedIcon
         base(lightModeSource, darkModeSource != null, darkModeSource)
     {
     }
+
+    public static LocalThemedIcon FromPackIcon(PackIconKind kind)
+    {
+        var imageSource = kind.PackIconToSource();
+        return new LocalThemedIcon(imageSource);
+    }
 }
 
 public class AsyncThemedIcon : ThemedIcon
@@ -93,5 +100,13 @@ public class AsyncThemedIcon : ThemedIcon
         }
 
         OnPropertyChangedAsync(nameof(CurrentSource));
+    }
+
+    public static AsyncThemedIcon FromUri(Uri lightModeUri, Uri? darkModeUri = null, ImageSource? emptyIcon = null)
+    {
+        emptyIcon ??= EmptyIcon.CurrentSource;
+        return new AsyncThemedIcon(
+            async () => await lightModeUri.GetIcon() ?? emptyIcon,
+            darkModeUri != null ? async () => await darkModeUri.GetIcon() ?? emptyIcon : null);
     }
 }

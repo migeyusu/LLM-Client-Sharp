@@ -132,7 +132,13 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
             IsResponding = true;
             var dialogItems = context.DialogItems;
             var systemPrompt = context.SystemPrompt;
-            var requestViewItem = dialogItems.LastOrDefault() as RequestViewItem;
+            var requestViewItem = context.Request;
+            var searchService = requestViewItem?.SearchService;
+            if (searchService != null)
+            {
+                await searchService.ApplySearch(context);
+            }
+
             var chatHistory = new List<ChatMessage>();
             AITool[]? tools = null;
             var kernelPluginCollection = new KernelPluginCollection();

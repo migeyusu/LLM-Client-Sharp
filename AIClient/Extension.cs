@@ -305,9 +305,16 @@ public static class Extension
         }
     }
 
-    public static ImageSource SVGStreamToImageSource(this Stream stream)
+
+    public static ImageSource SVGStreamToImageSource(this Stream stream, uint width = 32, uint height = 32)
     {
-        var magickImage = new MagickImage(stream);
+        var magickImage = new MagickImage(stream, new MagickReadSettings()
+        {
+            Width = width,
+            Height = height,
+            BackgroundColor = MagickColors.Transparent,
+            
+        });
         var bitmapSource = magickImage.ToBitmapSource();
         bitmapSource.Freeze();
         return bitmapSource;

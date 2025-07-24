@@ -50,8 +50,5 @@ public abstract class KernelFunctionGroup : BaseViewModel, IBuiltInFunctionGroup
         return Task.CompletedTask;
     }
 
-    public object Clone()
-    {
-        return Activator.CreateInstance(this.GetType())!;
-    }
+    public abstract object Clone();
 }

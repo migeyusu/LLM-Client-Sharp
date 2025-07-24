@@ -145,4 +145,12 @@ public sealed class WinCLIPlugin : KernelFunctionGroup
 
     public override string? AdditionPrompt =>
         $"{Name} function group is designed to execute command-line commands in Windows. ";
+
+    public override object Clone()
+    {
+        return new WinCLIPlugin()
+        {
+            DeniedCommands = new HashSet<string>(DeniedCommands)
+        };
+    }
 }

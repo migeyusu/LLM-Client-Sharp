@@ -1,9 +1,16 @@
-﻿namespace LLMClient.Abstraction;
+﻿using LLMClient.UI.Component;
 
-public interface ISearchService
+namespace LLMClient.Abstraction;
+
+public interface ISearchService : ICloneable
 {
-    bool CheckAvailable(ILLMModel model);
-    
+    string Name { get; }
+
+    string GetUniqueId();
+
+    ThemedIcon Icon { get; }
+
+    bool CheckCompatible(ILLMModel model);
+
     Task ApplySearch(DialogContext context);
 }
-

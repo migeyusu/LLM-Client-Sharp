@@ -1,5 +1,8 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Windows.Media;
+using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
@@ -30,8 +33,18 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
             OnPropertyChanged();
         }
     }
+    public string GetUniqueId()
+    {
+        return "MaxResult:" + MaxResult + ",SearchPrompt:" + SearchPrompt;
+    }
 
-    public bool CheckAvailable(ILLMModel model)
+    public ThemedIcon Icon => AsyncThemedIcon.FromUri(new Uri(
+        @"pack://application:,,,/LLMClient;component/Resources/Images/openrouter_logo.svg"
+        , UriKind.Absolute));
+
+    public string Name => "OpenRouter Search";
+
+    public bool CheckCompatible(ILLMModel model)
     {
         if (model.Endpoint is APIEndPoint apiEndPoint && apiEndPoint.ConfigOption.URL == "https://openrouter.ai/api/v1")
         {
@@ -64,5 +77,14 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
             }}
         ]";
         return Task.CompletedTask;
+    }
+
+    public object Clone()
+    {
+        return new OpenRouterSearchService()
+        {
+            MaxResult = MaxResult,
+            SearchPrompt = SearchPrompt,
+        };
     }
 }

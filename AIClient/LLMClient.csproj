@@ -249,6 +249,10 @@
         <Resource Include="Resources\Images\llm\yi-dark.png"/>
         <None Remove="Resources\Images\llm\yi-light.png"/>
         <Resource Include="Resources\Images\llm\yi-light.png"/>
+        <None Remove="Resources\Images\openrouter_logo.svg" />
+        <Resource Include="Resources\Images\openrouter_logo.svg" />
+        <None Remove="Resources\Images\geekai.png" />
+        <Resource Include="Resources\Images\geekai.png" />
     </ItemGroup>
 
 </Project>

@@ -148,8 +148,8 @@ public class RequesterViewModel : BaseViewModel
 
     #endregion
 
-    public SearchConfigViewModel SearchConfig { get; set; } = new SearchConfigViewModel();
-    
+    public SearchConfigViewModel SearchConfig { get; }
+
     #region input
 
     private string? _promptString;
@@ -173,8 +173,9 @@ public class RequesterViewModel : BaseViewModel
         Func<ILLMClient, IRequestItem, Task<CompletedResult>> getResponse)
     {
         FunctionSelector = new AIFunctionSelectorViewModel();
+        SearchConfig = new SearchConfigViewModel();
         this._defaultClient = modelClient;
-        _getResponse = getResponse;
+        this._getResponse = getResponse;
         this.BindClient(modelClient);
         this.PropertyChanged += (sender, args) => { this.IsDataChanged = true; };
     }
@@ -197,6 +198,7 @@ public class RequesterViewModel : BaseViewModel
         }
 
         client.FunctionInterceptor = _authorizationInterceptor;
+        this.SearchConfig.ResetSearchFunction(client.Model);
     }
 
     public void ClearRequest()
@@ -225,12 +227,15 @@ public class RequesterViewModel : BaseViewModel
             tools = this.FunctionSelector.SelectedFunctions;
         }
 
+        //每次搜索的条件可能不同，所以传递的是副本
+        var searchService = this.SearchConfig.SelectedSearchFunction?.Clone() as ISearchService;
         return new RequestViewItem()
         {
             InteractionId = Guid.NewGuid(),
             TextMessage = promptBuilder.ToString().Trim(),
             Attachments = Attachments.ToList(),
             FunctionGroups = tools == null ? [] : [..tools],
+            SearchService = searchService
         };
     }
 

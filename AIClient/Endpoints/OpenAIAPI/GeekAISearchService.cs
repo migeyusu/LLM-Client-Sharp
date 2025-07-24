@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using LLMClient.Abstraction;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
@@ -20,7 +21,6 @@ public class GeekAISearchService : BaseViewModel, ISearchService
     public SearchEngineType? SearchEngine { get; set; }
 
     private bool _searchConfigReturnResult = false;
-
     public bool ReturnResult
     {
         get => _searchConfigReturnResult;
@@ -32,7 +32,17 @@ public class GeekAISearchService : BaseViewModel, ISearchService
         }
     }
 
-    public bool CheckAvailable(ILLMModel model)
+    public string Name => "GeekAI Search Service";
+
+    public string GetUniqueId()
+    {
+        return "ReturnResult:" + ReturnResult + ",SearchEngine:" + SearchEngine;
+    }
+
+    public ThemedIcon Icon =>
+        AsyncThemedIcon.FromUri(new Uri("pack://application:,,,/LLMClient;component/Resources/Images/geekai.png"));
+
+    public bool CheckCompatible(ILLMModel model)
     {
         if (model.Endpoint is APIEndPoint apiEndPoint && apiEndPoint.ConfigOption.URL == "https://geekai.co/api/v1")
         {
@@ -63,5 +73,14 @@ public class GeekAISearchService : BaseViewModel, ISearchService
 
         // 如果没有设置搜索引擎和返回结果，则不需要设置 search_config
         return Task.CompletedTask;
+    }
+
+    public object Clone()
+    {
+        return new GeekAISearchService()
+        {
+            SearchEngine = this.SearchEngine,
+            ReturnResult = this.ReturnResult
+        };
     }
 }

@@ -613,4 +613,12 @@ public class FileSystemPlugin : KernelFunctionGroup
         $"{Name} function group provides secure access to the local file system. " +
         "You can read, write, edit files, and manage directories within the allowed paths. " +
         "Ensure you specify paths relative to the allowed directories configured for this plugin. ";
+
+    public override object Clone()
+    {
+        return new FileSystemPlugin()
+        {
+            AllowedPaths = new ObservableCollection<string>(AllowedPaths)
+        };
+    }
 }

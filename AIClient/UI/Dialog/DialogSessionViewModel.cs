@@ -403,7 +403,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     public virtual void DeleteItem(IDialogItem item)
     {
         var indexOf = this.DialogItems.IndexOf(item);
-        if (item is RequestViewItem requestViewItem)
+        if (item is IRequestItem requestViewItem)
         {
             var interactionId = requestViewItem.InteractionId;
             // 删除所有与该请求相关的响应

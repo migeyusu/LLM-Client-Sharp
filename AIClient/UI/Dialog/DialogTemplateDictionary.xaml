@@ -402,6 +402,17 @@
             <DataTemplate DataType="{x:Type dialog:SummaryRequestViewItem}">
                 <Grid HorizontalAlignment="Right"
                       Margin="50,0,0,0">
+                    <Grid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="删除"
+                                      Command="Delete"
+                                      CommandParameter="{Binding}">
+                                <MenuItem.Icon>
+                                    <materialDesign:PackIcon Kind="DeleteOutline" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </Grid.ContextMenu>
                     <Rectangle Stroke="Black"
                                StrokeThickness="1.5"
                                RadiusX="8" RadiusY="8"

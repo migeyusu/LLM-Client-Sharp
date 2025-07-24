@@ -24,17 +24,17 @@ public static class ImageExtensions
 
     private static readonly Lazy<ImageSource> EndpointIconImageLazy = new Lazy<ImageSource>(() =>
     {
-        return PackIconToIcon(PackIconKind.Web);
+        return PackIconToSource(PackIconKind.Web);
     });
 
     public static ThemedIcon APIIcon => APIIconImageLazy.Value;
 
     private static readonly Lazy<ThemedIcon> APIIconImageLazy = new Lazy<ThemedIcon>(() =>
     {
-        return new LocalThemedIcon(PackIconToIcon(PackIconKind.Api));
+        return new LocalThemedIcon(PackIconToSource(PackIconKind.Api));
     });
 
-    private static ImageSource PackIconToIcon(PackIconKind kind)
+    public static ImageSource PackIconToSource(this PackIconKind kind)
     {
         var packIcon = new PackIcon() { Kind = kind };
         var packIconData = packIcon.Data;
@@ -109,57 +109,56 @@ public static class ImageExtensions
             }
 
             var uriScheme = uri.Scheme;
+            Stream stream;
+            string fullPath;
             if (uriScheme == "pack" && uri.IsAbsoluteUri)
             {
-                var absolutePath = uri.AbsolutePath;
-                var extension = Path.GetExtension(absolutePath);
-                if (!IsSupportedImageExtension(extension))
+                fullPath = uri.AbsolutePath;
+                var resourceStream = Application.GetResourceStream(uri);
+                if (resourceStream == null)
                 {
-                    return null;
+                    throw new FileNotFoundException("Resource not found", uri.ToString());
                 }
 
-                return IconCache.GetOrAdd(uri,
-                    (uri1 =>
-                    {
-                        var resourceStream = Application.GetResourceStream(uri);
-                        if (resourceStream == null)
-                        {
-                            throw new Exception("Resource stream not found");
-                        }
-
-                        var result = new BitmapImage(uri);
-                        result.Freeze();
-                        return result;
-                    }));
+                stream = resourceStream.Stream;
             }
-
-            if (uriScheme == Uri.UriSchemeHttp || uriScheme == Uri.UriSchemeHttps)
+            else if (uriScheme == Uri.UriSchemeHttp || uriScheme == Uri.UriSchemeHttps)
             {
-                return await FromHttp(uri);
-            }
-
-            if (uri.IsFile)
-            {
-                //对于文件，首先检查是否位于cache/images文件夹内，如果否，则先拷贝到该文件夹
-                var filePath = uri.LocalPath;
-                var extension = Path.GetExtension(filePath);
-                if (!IsSupportedImageExtension(extension))
+                fullPath = await HttpContentCache.Instance.GetOrCreateAsync(uri.AbsoluteUri);
+                if (string.IsNullOrEmpty(fullPath))
                 {
-                    return null;
+                    throw new Exception("Failed to download image from " + uri);
                 }
 
-                var fileInfo = new FileInfo(filePath);
+                stream = File.OpenRead(fullPath);
+            }
+            else if (uri.IsFile)
+            {
+                fullPath = uri.LocalPath;
+                var fileInfo = new FileInfo(fullPath);
                 if (!fileInfo.Exists)
                 {
-                    return null;
+                    throw new FileNotFoundException("File not found", fullPath);
                 }
 
-                await using (var fileStream = fileInfo.OpenRead())
+                stream = fileInfo.OpenRead();
+            }
+            else
+            {
+                throw new NotSupportedException("Unsupported URI scheme: " + uri.Scheme);
+            }
+
+            await using (stream)
+            {
+                var extension = Path.GetExtension(fullPath);
+                if (!IsSupportedImageExtension(extension))
                 {
-                    return extension == ".svg"
-                        ? fileStream.SVGStreamToImageSource()
-                        : fileStream.ToDefaultImageSource();
+                    throw new NotSupportedException("Unsupported image extension: " + extension);
                 }
+
+                return extension == ".svg"
+                    ? stream.SVGStreamToImageSource()
+                    : stream.ToDefaultImageSource();
             }
         }
         catch (OperationCanceledException)
@@ -173,39 +172,6 @@ public static class ImageExtensions
 
         Trace.WriteLine($"read {uri} failed,not match any scheme.");
         return null;
-    }
-    
-    private static async Task<ImageSource?> FromHttp(Uri uri)
-    {
-        var url = uri.AbsoluteUri;
-        string filePath;
-        try
-        {
-            filePath = await HttpContentCache.Instance.GetOrCreateAsync(url);
-        }
-        catch (Exception e)
-        {
-            Trace.WriteLine(e.Message);
-            return null;
-        }
-
-        var extension = Path.GetExtension(filePath);
-        if (!IsSupportedImageExtension(extension))
-        {
-            return null;
-        }
-
-        return IconCache.GetOrAdd(uri, (uri1) =>
-        {
-            var fileInfo = new FileInfo(filePath);
-            using (var fileStream = fileInfo.OpenRead())
-            {
-                var result = extension == ".svg"
-                    ? fileStream.SVGStreamToImageSource()
-                    : fileStream.ToDefaultImageSource();
-                return result;
-            }
-        });
     }
 
     public static async Task<(bool Supported, string? Extension)> CheckImageSupportAsync(string url)
@@ -248,7 +214,6 @@ public static class ImageExtensions
             return (false, null);
         }
     }
-
 
     public static ImageSource ToDefaultImageSource(this Stream stream)
     {

@@ -6,9 +6,8 @@
              xmlns:local="clr-namespace:LLMClient.UI.Dialog"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
-             xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:mcp="clr-namespace:LLMClient.UI.MCP"
-             xmlns:component="clr-namespace:LLMClient.UI.Component"
+             xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
              d:DesignHeight="300" d:DesignWidth="800">
@@ -19,6 +18,7 @@
     </UserControl.Resources>
     <Border CornerRadius="8"
             ClipToBounds="True"
+            Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
             BorderThickness="1.5">
         <Border.Style>
             <Style TargetType="{x:Type Border}">
@@ -77,6 +77,7 @@
                                 Orientation="Horizontal">
                         <materialDesign:Card Padding="8,0"
                                              UniformCornerRadius="12"
+                                             Height="32"
                                              Visibility="{Binding IsModelSupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                              materialDesign:ElevationAssist.Elevation="Dp3">
                             <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
@@ -98,10 +99,10 @@
                         <materialDesign:Card Padding="8,0"
                                              Margin="6,0,0,0"
                                              UniformCornerRadius="12"
+                                             Height="32"
                                              materialDesign:ElevationAssist.Elevation="Dp3">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PopupBox StaysOpen="True"
-                                                         Opened="McpPopupBox_OnOpened"
                                                          ToggleContent="{materialDesign:PackIcon Kind=Web,Size=16}"
                                                          VerticalAlignment="Center"
                                                          ToolTip="Web Search工具"
@@ -109,14 +110,21 @@
                                                          Style="{StaticResource MaterialDesignToolPopupBox}">
                                     <materialDesign:PopupBox.PopupContentTemplate>
                                         <DataTemplate DataType="{x:Type mcp:SearchConfigViewModel}">
-                                            <ListBox ItemsSource="{Binding SelectableSearchFunctions,Mode=OneTime}">
-                                                <ListBox.ItemTemplateSelector>
-                                                    <component:TypeBasedDataTemplateSelector>
-                                                        <component:DataTemplateTypePair>
-                                                            
-                                                        </component:DataTemplateTypePair>
-                                                    </component:TypeBasedDataTemplateSelector>
-                                                </ListBox.ItemTemplateSelector>
+                                            <ListBox ItemsSource="{Binding SelectableSearchFunctions,Mode=OneTime}"
+                                                     SelectedItem="{Binding SelectedSearchFunction,Mode=TwoWay}"
+                                                     SelectionMode="Single">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type abstraction:ISearchService}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
+                                                                   Width="21"
+                                                                   Height="21" />
+                                                            <TextBlock Text="{Binding Name,Mode=OneTime}"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="6,0,0,0" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
                                             </ListBox>
                                         </DataTemplate>
                                     </materialDesign:PopupBox.PopupContentTemplate>
@@ -124,7 +132,7 @@
                                 <TextBlock Text="Search"
                                            Margin="6,0"
                                            VerticalAlignment="Center" />
-                                <ToggleButton IsChecked="True" />
+                                <ToggleButton IsChecked="{Binding SearchConfig.SearchEnable,Mode=TwoWay}" />
                             </StackPanel>
                         </materialDesign:Card>
                     </StackPanel>

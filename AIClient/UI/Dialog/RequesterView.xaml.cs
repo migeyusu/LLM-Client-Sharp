@@ -39,4 +39,9 @@ public partial class RequesterView : UserControl
             PromptTextBox.InputBindings.Remove(findResource);
         }
     }
+
+    private void SearchPopupBox_OnOpened(object sender, RoutedEventArgs e)
+    {
+        
+    }
 }

@@ -1,6 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 using Google.Apis.Services;
 using LLMClient.Abstraction;
+using LLMClient.UI.Component;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel.Data;
 using Microsoft.SemanticKernel.Plugins.Web.Google;
@@ -23,6 +25,7 @@ public class GoogleSearchPlugin : BaseViewModel, IBuiltInFunctionGroup, ISearchS
     }
 
     [JsonIgnore] public string Name { get; } = KernelPluginName;
+    public ThemedIcon Icon => LocalThemedIcon.FromPackIcon(PackIconKind.Google);
     public string? AdditionPrompt { get; } = null;
 
     [JsonIgnore]
@@ -48,7 +51,7 @@ public class GoogleSearchPlugin : BaseViewModel, IBuiltInFunctionGroup, ISearchS
         return $"{this.GetType().FullName}";
     }
 
-    private GoogleSearchConfig? _config;
+    private GoogleSearchOption? _config;
 
     public async Task EnsureAsync(CancellationToken token)
     {
@@ -68,7 +71,7 @@ public class GoogleSearchPlugin : BaseViewModel, IBuiltInFunctionGroup, ISearchS
         }
     }
 
-    public bool CheckAvailable(ILLMModel model)
+    public bool CheckCompatible(ILLMModel model)
     {
         return model.SupportFunctionCall;
     }
