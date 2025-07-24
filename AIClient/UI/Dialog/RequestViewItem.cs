@@ -27,7 +27,14 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
 
     [JsonPropertyName("MessageContent")] public string TextMessage { get; set; } = string.Empty;
 
-    public IList<IAIFunctionGroup>? FunctionGroups { get; set; }
+    public List<IAIFunctionGroup>? FunctionGroups { get; set; }
+
+    public ISearchService? SearchService { get; set; }
+
+    /// <summary>
+    /// 对Request附加的额外属性
+    /// </summary>
+    public AdditionalPropertiesDictionary? RequestAdditionalProperties { get; set; }
 
     private ChatMessage? _message = null;
 

@@ -167,6 +167,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
 
     [JsonIgnore] public IReadOnlyCollection<string> AvailableModelNames => Models.Select(x => x.Name).ToArray();
 
+    [JsonIgnore]
     public IReadOnlyCollection<ILLMModel> AvailableModels
     {
         get { return this._models; }

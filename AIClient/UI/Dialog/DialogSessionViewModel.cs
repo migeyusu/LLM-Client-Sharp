@@ -543,7 +543,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     private static IDialogItem[] GenerateHistory(IList<IDialogItem> total)
     {
         var lastRequest = total[^1];
-        if (lastRequest is not RequestViewItem)
+        if (lastRequest is not IRequestItem)
         {
             throw new InvalidOperationException("最后一条记录不是请求");
         }
@@ -600,9 +600,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         try
         {
             multiResponseViewItem.Append(respondingViewItem);
-            completedResult = await client.SendRequest(history,
-                cancellationToken: respondingViewItem.RequestTokenSource.Token,
-                systemPrompt: systemPrompt);
+            completedResult = await client.SendRequest(new DialogContext(history, systemPrompt),
+                cancellationToken: respondingViewItem.RequestTokenSource.Token);
             var responseViewItem = new ResponseViewItem(client);
             Mapper.Map<IResponse, ResponseViewItem>(completedResult, responseViewItem);
             multiResponseViewItem.Append(responseViewItem);
@@ -625,7 +624,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         return completedResult;
     }
 
-    public Task<CompletedResult> SendRequestCore(ILLMClient client, IRequestItem requestViewItem)
+    public async Task<CompletedResult> NewRequest(ILLMClient client, IRequestItem requestViewItem)
     {
         var items = this.DialogItems;
         items.Add(requestViewItem);
@@ -634,17 +633,15 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
             { InteractionId = requestViewItem.InteractionId };
         items.Add(multiResponseViewItem);
         this.IsNewResponding = true;
-        return SendRequestCore(client, history, multiResponseViewItem, this.SystemPrompt)
-            .ContinueWith<CompletedResult>(task =>
-            {
-                IsNewResponding = false;
-                if (requestViewItem is SummaryRequestViewItem)
-                {
-                    CutContext(requestViewItem);
-                }
-
-                return task.Result;
-            });
+        try
+        {
+            var result = await SendRequestCore(client, history, multiResponseViewItem, this.SystemPrompt);
+            return result;
+        }
+        finally
+        {
+            IsNewResponding = false;
+        }
     }
 
     #endregion

@@ -60,6 +60,19 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         }
     }
 
+    private string? _additionPrompt;
+
+    public string? AdditionPrompt
+    {
+        get => _additionPrompt;
+        set
+        {
+            if (value == _additionPrompt) return;
+            _additionPrompt = value;
+            OnPropertyChanged();
+        }
+    }
+
     private IReadOnlyList<AIFunction>? _availableTools;
     private string? _errorMessage;
 

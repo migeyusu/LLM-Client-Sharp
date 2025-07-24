@@ -165,9 +165,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                 {
                     MultiResponsePersistItem multiResponsePersistItem => context.Mapper
                         .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem),
-                    RequestViewItem requestViewItem => requestViewItem,
-                    EraseViewItem eraseViewItem => eraseViewItem,
-                    _ => throw new NotSupportedException()
+                    _ => (IDialogItem)item
                 };
             })).ToArray();
             if (sourceDialogItems != null)

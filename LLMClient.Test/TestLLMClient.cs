@@ -3,6 +3,7 @@ using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI.Dialog;
+using LLMClient.UI.MCP;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Test;
@@ -25,9 +26,11 @@ public class TestLLMClient : ILLMClient
 
     public bool IsResponding { get; set; } = false;
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
+
+    public IFunctionInterceptor FunctionInterceptor { get; set; } = FunctionAuthorizationInterceptor.Instance;
     public ObservableCollection<string> RespondingText { get; } = new ObservableCollection<string>();
 
-    public Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems, string? systemPrompt = null,
+    public Task<CompletedResult> SendRequest(DialogContext context,
         CancellationToken cancellationToken = default)
     {
         // 模拟一个完成的结果

@@ -47,19 +47,20 @@ public sealed class WinCLIPlugin : KernelFunctionGroup
     /// 一个可选的、包含禁止执行的命令的列表。
     /// 如果不提供，将使用一个内置的默认危险命令列表 (DefaultDeniedCommands)。
     /// </param>
-    public WinCLIPlugin(IEnumerable<string> deniedCommands): base("WinCLI")
+    public WinCLIPlugin(IEnumerable<string> deniedCommands) : base("WinCLI")
     {
         // 将所有禁止的命令转换为小写并存入 HashSet，便于快速、不区分大小写地查找
         DeniedCommands = new HashSet<string>(deniedCommands.Select(cmd => cmd.ToLowerInvariant()));
     }
 
     [KernelFunction]
-    [Description("在指定的 shell（PowerShell 或 CMD）中执行一个命令行命令。会阻止执行黑名单中的危险命令。")]
+    [Description(
+        "Executes a command-line command in the specified shell (PowerShell or CMD). Blocks the execution of dangerous commands on the denylist.")]
     public async Task<string> ExecuteCommandAsync(
         Kernel kernel,
-        [Description("要执行的完整命令，例如 'Get-Process -Name chrome' 或 'ipconfig /all'。")]
+        [Description("The full command to execute, for example, 'Get-Process -Name chrome' or 'ipconfig /all'.")]
         string command,
-        [Description("要使用的 shell 类型。可以是 'powershell' 或 'cmd'。默认为 'powershell'。")]
+        [Description("The type of shell to use. Can be 'powershell' or 'cmd'. Defaults to 'powershell'.")]
         string shell = "powershell")
     {
         if (string.IsNullOrWhiteSpace(command))
@@ -141,5 +142,7 @@ public sealed class WinCLIPlugin : KernelFunctionGroup
             return $"执行命令时发生意外错误: {ex.Message}";
         }
     }
-    
+
+    public override string? AdditionPrompt =>
+        $"{Name} function group is designed to execute command-line commands in Windows. ";
 }

@@ -2,7 +2,7 @@
 
 namespace LLMClient.Abstraction;
 
-public interface IBuiltInFunctionsCollection : IEnumerable<KernelFunctionGroup>
+public interface IBuiltInFunctionsCollection : IEnumerable<IBuiltInFunctionGroup>
 {
     
 }

@@ -50,7 +50,7 @@ public class ProjectViewModel : FileBasedSessionBase
     private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveDir)));
 
     public static string SaveFolderPath => SaveFolderPathLazy.Value;
-    
+
     protected override string DefaultSaveFolderPath
     {
         get { return SaveFolderPathLazy.Value; }
@@ -286,9 +286,9 @@ public class ProjectViewModel : FileBasedSessionBase
         {
             this.AllowedFunctions = _functionSelector.SelectedFunctions.Select((group =>
             {
-                if (group is KernelFunctionGroup kernelFunctionGroup)
+                if (group is IBuiltInFunctionGroup kernelFunctionGroup)
                 {
-                    return (kernelFunctionGroup.Clone() as KernelFunctionGroup)!;
+                    return (kernelFunctionGroup.Clone() as IBuiltInFunctionGroup)!;
                 }
 
                 return group;
@@ -439,7 +439,6 @@ public class ProjectViewModel : FileBasedSessionBase
         this.Tasks.Remove(task);
     }
 
-
     private void TaskOnResponseCompleted(CompletedResult obj)
     {
         this.TokensConsumption += obj.Tokens;
@@ -530,7 +529,7 @@ public class ProjectViewModel : FileBasedSessionBase
         }
 
         this.Ready();
-        return SelectedTask.SendRequestCore(arg1, arg2);
+        return SelectedTask.NewRequest(arg1, arg2);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

@@ -20,7 +20,7 @@ public class BaseViewModel : INotifyPropertyChanged
             return Dispatcher.CurrentDispatcher;
         }), (LazyThreadSafetyMode.PublicationOnly));
 
-    protected Dispatcher Dispatcher => _dispatcherLazy.Value;
+    private Dispatcher Dispatcher => _dispatcherLazy.Value;
 
     private static IServiceProvider? _serviceProvider;
 

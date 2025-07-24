@@ -11,16 +11,16 @@ public class BuiltInFunctionsCollection : IBuiltInFunctionsCollection, IFunction
         //从当前程序集加载所有实现了KernelFunctionGroup的类型
         var kernelFunctionGroupTypes = Assembly.GetExecutingAssembly()
             .GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract && typeof(KernelFunctionGroup).IsAssignableFrom(t))
+            .Where(t => t.IsClass && !t.IsAbstract && typeof(IBuiltInFunctionGroup).IsAssignableFrom(t))
             .ToList();
         //创建KernelFunctionGroup的实例并添加到集合中
         KernelFunctionGroups =
-            kernelFunctionGroupTypes.Select(t => (KernelFunctionGroup)Activator.CreateInstance(t)!).ToArray();
+            kernelFunctionGroupTypes.Select(t => (IBuiltInFunctionGroup)Activator.CreateInstance(t)!).ToArray();
     }
 
-    public IList<KernelFunctionGroup> KernelFunctionGroups { get; }
+    public IList<IBuiltInFunctionGroup> KernelFunctionGroups { get; }
 
-    public IEnumerator<KernelFunctionGroup> GetEnumerator()
+    public IEnumerator<IBuiltInFunctionGroup> GetEnumerator()
     {
         return KernelFunctionGroups.GetEnumerator();
     }

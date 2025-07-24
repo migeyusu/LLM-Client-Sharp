@@ -88,6 +88,8 @@
         </ListBox>
         <ScrollViewer Grid.Row="0"
                       Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
                       Margin="10,16,0,0"
                       Height="200">
             <ContentControl Content="{Binding ElementName=ModelsListBox,Path=SelectedItem,Mode=OneWay}">
@@ -171,6 +173,17 @@
                                        Text="项目地址:" />
                             <TextBox Grid.Row="5" Grid.Column="1"
                                      Text="{Binding ProjectUrl,Mode=TwoWay}" />
+                            <TextBlock Grid.Row="6" Grid.Column="0"
+                                       Text="Prompt:" />
+                            <TextBox Grid.Row="6" Grid.Column="1"
+                                     AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextWrapping="Wrap"
+                                     MaxHeight="100"
+                                     MinHeight="50"
+                                     VerticalContentAlignment="Top"
+                                     materialDesign:HintAssist.Hint="为MCP附加额外的Prompt"
+                                     Text="{Binding AdditionPrompt,Mode=TwoWay}" />
                         </Grid>
                     </DataTemplate>
                     <DataTemplate DataType="{x:Type mcp:SseServerItem}">
@@ -200,6 +213,8 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
@@ -216,6 +231,17 @@
                                        Text="项目地址:" />
                             <TextBox Grid.Row="2" Grid.Column="1"
                                      Text="{Binding ProjectUrl,Mode=TwoWay}" />
+                            <TextBlock Grid.Row="3" Grid.Column="0"
+                                       Text="Prompt:" />
+                            <TextBox Grid.Row="3" Grid.Column="1"
+                                     AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextWrapping="Wrap"
+                                     MaxHeight="100"
+                                     MinHeight="50"
+                                     VerticalContentAlignment="Top"
+                                     materialDesign:HintAssist.Hint="为MCP附加额外的Prompt"
+                                     Text="{Binding AdditionPrompt,Mode=TwoWay}" />
                         </Grid>
                     </DataTemplate>
                 </ContentControl.Resources>

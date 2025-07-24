@@ -223,7 +223,7 @@ public class DialogViewModel : DialogSessionViewModel
         : base(items)
     {
         _topic = topic;
-        Requester = new RequesterViewModel(modelClient, SendRequestCore);
+        Requester = new RequesterViewModel(modelClient, NewRequest);
         Requester.FunctionSelector.ConnectDefault();
         PropertyChanged += (_, e) =>
         {

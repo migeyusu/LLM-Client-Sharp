@@ -8,6 +8,7 @@ using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 using LLMClient.UI.MCP;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
@@ -47,7 +48,7 @@ public class RequesterViewModel : BaseViewModel
     {
         try
         {
-            var summaryRequest = SummaryRequestViewItem.NewSummaryRequest();
+            var summaryRequest = await SummaryRequestViewItem.NewSummaryRequest();
             await _getResponse.Invoke(this._defaultClient, summaryRequest);
         }
         catch (Exception e)
@@ -91,9 +92,11 @@ public class RequesterViewModel : BaseViewModel
                 oldParameters.PropertyChanged -= TagDataChanged;
             }
 
+            _defaultClient.FunctionInterceptor = FunctionAuthorizationInterceptor.Instance;
             _defaultClient = value;
             OnPropertyChanged();
-            TrackClientChanged(value);
+            OnPropertyChanged(nameof(IsModelSupportFunctionCall));
+            BindClient(value);
         }
     }
 
@@ -138,8 +141,15 @@ public class RequesterViewModel : BaseViewModel
 
     public AIFunctionSelectorViewModel FunctionSelector { get; }
 
+    public bool IsModelSupportFunctionCall
+    {
+        get { return DefaultClient.Model.SupportFunctionCall; }
+    }
+
     #endregion
 
+    public SearchConfigViewModel SearchConfig { get; set; } = new SearchConfigViewModel();
+    
     #region input
 
     private string? _promptString;
@@ -165,14 +175,16 @@ public class RequesterViewModel : BaseViewModel
         FunctionSelector = new AIFunctionSelectorViewModel();
         this._defaultClient = modelClient;
         _getResponse = getResponse;
-        this.TrackClientChanged(modelClient);
-        this.PropertyChanged += (sender, args) =>
-        {
-            this.IsDataChanged = true;
-        };
+        this.BindClient(modelClient);
+        this.PropertyChanged += (sender, args) => { this.IsDataChanged = true; };
     }
 
-    private void TrackClientChanged(ILLMClient client)
+    private readonly FunctionAuthorizationInterceptor _authorizationInterceptor = new FunctionAuthorizationInterceptor()
+    {
+        Filters = { new CommandAuthorization() }
+    };
+
+    private void BindClient(ILLMClient client)
     {
         if (client is INotifyPropertyChanged newValue)
         {
@@ -183,6 +195,8 @@ public class RequesterViewModel : BaseViewModel
         {
             newParameters.PropertyChanged += TagDataChanged;
         }
+
+        client.FunctionInterceptor = _authorizationInterceptor;
     }
 
     public void ClearRequest()
@@ -216,12 +230,27 @@ public class RequesterViewModel : BaseViewModel
             InteractionId = Guid.NewGuid(),
             TextMessage = promptBuilder.ToString().Trim(),
             Attachments = Attachments.ToList(),
-            FunctionGroups = tools,
+            FunctionGroups = tools == null ? [] : [..tools],
         };
     }
 
     private void TagDataChanged(object? sender, PropertyChangedEventArgs e)
     {
         IsDataChanged = true;
+    }
+}
+
+public class CommandAuthorization : IFunctionAuthorizationFilter
+{
+    public bool Matches(FunctionCallContent functionCall)
+    {
+        return functionCall.Name == "WinCLI_ExecuteCommand";
+    }
+
+    public async Task<bool> AuthorizeAsync(FunctionCallContent functionCall, CancellationToken cancellationToken)
+    {
+        return MessageBox.Show(
+            $"Function call {functionCall.Name} is requested, parameters: {functionCall.GetDebuggerString()}.\r\n permmit?",
+            "Function Call Request", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
     }
 }

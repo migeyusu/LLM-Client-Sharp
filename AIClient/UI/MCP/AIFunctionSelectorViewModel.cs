@@ -1,7 +1,6 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows.Input;
-using CommunityToolkit.Mvvm.Collections;
+﻿using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI.Component;
 using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,11 +8,37 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.MCP;
 
+public class SearchConfigViewModel : BaseViewModel
+{
+    private bool _searchEnable;
+
+    public bool SearchEnable
+    {
+        get => _searchEnable;
+        set
+        {
+            if (value == _searchEnable) return;
+            _searchEnable = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public IList<ISearchService> SelectableSearchFunctions { get; set; } = new ISearchService[]
+    {
+        new GeekAISearchService(),
+        new GoogleSearchPlugin(),
+        new OpenRouterSearchService(),
+    };
+
+    public ISearchService? SelectedSearchFunction { get; set; }
+}
+
 public class AIFunctionSelectorViewModel : BaseViewModel
 {
     private readonly Action? _afterSelect;
 
     private bool _functionEnabled;
+
     public bool FunctionEnabled
     {
         get => _functionEnabled;
@@ -24,7 +49,7 @@ public class AIFunctionSelectorViewModel : BaseViewModel
             OnPropertyChanged();
         }
     }
-
+    
     public SuspendableObservableCollection<SelectableFunctionGroupViewModel> CandidateFunctions
     {
         get { return _candidateFunctions; }
@@ -128,7 +153,7 @@ public class AIFunctionSelectorViewModel : BaseViewModel
         }
 
         McpServices = _candidateFunctions.Where((model => model.Data is McpServerItem)).ToArray();
-        BuiltInFunctions = _candidateFunctions.Where((model => model.Data is KernelFunctionGroup)).ToArray();
+        BuiltInFunctions = _candidateFunctions.Where((model => model.Data is IBuiltInFunctionGroup)).ToArray();
         return this;
     }
 

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -18,6 +19,9 @@ using LLMClient.UI.Project;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.SemanticKernel.Data;
+using Microsoft.SemanticKernel.Plugins.Web.Bing;
+using Microsoft.SemanticKernel.Plugins.Web.Google;
 using Xunit.Abstractions;
 
 namespace LLMClient.Test;
@@ -46,6 +50,85 @@ public class UnitTest1
     public async Task Convert()
     {
         // await Version3Converter.Convert("D:\\Dev\\LLM-Client-Sharp\\AIClient\\bin\\Debug\\net8.0-windows\\Dialogs");
+    }
+
+    [Fact]
+    public void ChatMapping()
+    {
+        var chatMessage = new ChatMessage(ChatRole.Assistant, "Hello World!");
+        var mapper = serviceProvider.GetService<IMapper>();
+        var chatMessagePo = mapper!.Map<ChatMessage,ChatMessagePO>(chatMessage);
+        Assert.NotNull(chatMessagePo);
+    }
+    
+
+    [Fact]
+    [Experimental("SKEXP0050")]
+    public async Task Search()
+    {
+        // Create an ITextSearch instance using Google search
+        var textSearch = new GoogleTextSearch(
+            initializer: new()
+                { ApiKey = "" }, "");
+        var query = "What is the Semantic Kernel?";
+
+// Search and return results as string items
+        KernelSearchResults<string> stringResults = await textSearch.SearchAsync(query, new() { Top = 4, Skip = 0 });
+        output.WriteLine("——— String Results ———\n");
+        await foreach (string result in stringResults.Results)
+        {
+            output.WriteLine(result);
+        }
+
+// Search and return results as TextSearchResult items
+        KernelSearchResults<TextSearchResult> textResults =
+            await textSearch.GetTextSearchResultsAsync(query, new() { Top = 4, Skip = 4 });
+        output.WriteLine("\n——— Text Search Results ———\n");
+        await foreach (TextSearchResult result in textResults.Results)
+        {
+            output.WriteLine($"Name:  {result.Name}");
+            output.WriteLine($"Value: {result.Value}");
+            output.WriteLine($"Link:  {result.Link}");
+        }
+
+// Search and return results as Google.Apis.CustomSearchAPI.v1.Data.Result items
+        KernelSearchResults<object> fullResults =
+            await textSearch.GetSearchResultsAsync(query, new() { Top = 4, Skip = 8 });
+        output.WriteLine("\n——— Google Web Page Results ———\n");
+        await foreach (Google.Apis.CustomSearchAPI.v1.Data.Result result in fullResults.Results)
+        {
+            output.WriteLine($"Title:       {result.Title}");
+            output.WriteLine($"Snippet:     {result.Snippet}");
+            output.WriteLine($"Link:        {result.Link}");
+            output.WriteLine($"DisplayLink: {result.DisplayLink}");
+            output.WriteLine($"Kind:        {result.Kind}");
+        }
+    }
+
+    [Fact]
+    [Experimental("SKEXP0050")]
+    public void GetSearchTools()
+    {
+        var textSearch = new GoogleTextSearch(
+            initializer: new()
+                { ApiKey = "" }, "");
+        var searchPlugin = textSearch.CreateWithGetTextSearchResults("GoogleTextSearch");
+        output.WriteLine("Plugin Name: " + searchPlugin.Name);
+        output.WriteLine("Plugin Description: " + searchPlugin.Description);
+        output.WriteLine("Plugin Functions: " + searchPlugin.FunctionCount);
+        foreach (var function in searchPlugin)
+        {
+            output.WriteLine("Function Name: " + function.Name);
+            output.WriteLine("Function Description: " + function.Description);
+            foreach (var parameter in function.Metadata.Parameters)
+            {
+                output.WriteLine($"  Parameter: {parameter.Name}");
+                output.WriteLine($"    Description: {parameter.Description}");
+                output.WriteLine($"    Type: {parameter.ParameterType}");
+                output.WriteLine($"    Is Required: {parameter.IsRequired}");
+                output.WriteLine($"    Default Value: {parameter.DefaultValue}");
+            }
+        }
     }
 
     [Fact]
@@ -81,7 +164,7 @@ public class UnitTest1
                         new RequestViewItem()
                         {
                             TextMessage = "test",
-                            FunctionGroups = new IAIFunctionGroup[]
+                            FunctionGroups = new List<IAIFunctionGroup>()
                             {
                                 new FileSystemPlugin()
                                 {
@@ -141,7 +224,8 @@ public class UnitTest1
         var callContent = JsonSerializer.Deserialize<ProjectPersistModel>(serialize, options);
         Assert.NotNull(callContent);
     }
-
+    
+    
     [Fact]
     public void Mapping()
     {
@@ -166,7 +250,8 @@ public class UnitTest1
         var dialogFilePersistModel =
             mapper?.Map<DialogFileViewModel, DialogFilePersistModel>(dialogFileViewModel, (options => { }));
         Assert.NotNull(dialogFilePersistModel);
-        var multiResponsePersistItem = dialogFilePersistModel.DialogItems?.FirstOrDefault() as MultiResponsePersistItem;
+        var multiResponsePersistItem =
+            dialogFilePersistModel.DialogItems?.FirstOrDefault() as MultiResponsePersistItem;
         Assert.NotNull(multiResponsePersistItem);
         var persistItems = multiResponsePersistItem.ResponseItems;
         Assert.Same(persistItems[0].Client, persistItems[1].Client);
@@ -193,7 +278,8 @@ public class UnitTest1
             serializerOptions);
         output.WriteLine(serialize);
         var filePersistModel = JsonSerializer.Deserialize<DialogFilePersistModel>(serialize, serializerOptions);
-        var viewModel = mapper.Map<DialogFilePersistModel, DialogFileViewModel>(filePersistModel!, (options => { }));
+        var viewModel =
+            mapper.Map<DialogFilePersistModel, DialogFileViewModel>(filePersistModel!, (options => { }));
         var multiResponseViewItemDe = viewModel.Dialog.DialogItems.First() as MultiResponseViewItem;
         var responseViewItems = multiResponseViewItemDe!.Items.OfType<ResponseViewItem>().ToArray();
         Assert.Same(responseViewItems[0].Client, responseViewItems[1].Client);
@@ -206,7 +292,8 @@ public class UnitTest1
             { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
         using (var httpClient = new HttpClient(handler))
         {
-            using (var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://xiaoai.plus/api/pricing"))
+            using (var httpRequestMessage =
+                   new HttpRequestMessage(HttpMethod.Get, "https://xiaoai.plus/api/pricing"))
             {
                 httpRequestMessage.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
                 using (var message = await httpClient.SendAsync(httpRequestMessage))

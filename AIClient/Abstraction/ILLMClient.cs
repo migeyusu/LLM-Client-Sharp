@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using LLMClient.Endpoints;
 using LLMClient.UI.Dialog;
+using LLMClient.UI.MCP;
 
 namespace LLMClient.Abstraction;
 
@@ -19,8 +20,29 @@ public interface ILLMClient
 
     IModelParams Parameters { get; set; }
 
+    IFunctionInterceptor FunctionInterceptor { get; set; }
+
     ObservableCollection<string> RespondingText { get; }
 
-    Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems, string? systemPrompt = null,
+    Task<CompletedResult> SendRequest(DialogContext context,
         CancellationToken cancellationToken = default);
+}
+
+public class DialogContext
+{
+    public DialogContext(IList<IDialogItem> dialogItems, string? systemPrompt = null)
+    {
+        DialogItems = dialogItems;
+        SystemPrompt = systemPrompt;
+        if (DialogItems.Last() is RequestViewItem request)
+        {
+            Request = request;
+        }
+    }
+
+    public string? SystemPrompt { get; }
+
+    public IList<IDialogItem> DialogItems { get; }
+
+    public RequestViewItem? Request { get; }
 }

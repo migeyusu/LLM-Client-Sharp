@@ -1,12 +1,14 @@
 ﻿using System.Text.Json.Serialization;
-using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 
 namespace LLMClient.UI.MCP.Servers;
 
-public abstract class KernelFunctionGroup : BaseViewModel, IAIFunctionGroup
+public abstract class KernelFunctionGroup : BaseViewModel, IBuiltInFunctionGroup
 {
+    public abstract string? AdditionPrompt { get; }
+
+    private IReadOnlyList<AIFunction>? _availableTools;
     [JsonIgnore]
     public IReadOnlyList<AIFunction>? AvailableTools
     {
@@ -21,25 +23,7 @@ public abstract class KernelFunctionGroup : BaseViewModel, IAIFunctionGroup
 
     public bool IsToolAvailable { get; } = true;
     
-    
-
     [JsonIgnore] public string Name { get; }
-
-    private bool _isEnabled;
-
-    public bool IsEnabled
-    {
-        get => _isEnabled;
-        set
-        {
-            if (value == _isEnabled) return;
-            _isEnabled = value;
-            OnPropertyChanged();
-        }
-    }
-
-
-    private IReadOnlyList<AIFunction>? _availableTools;
 
     public KernelFunctionGroup(string pluginName)
     {

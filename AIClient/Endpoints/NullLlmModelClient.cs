@@ -2,6 +2,7 @@
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI.Dialog;
+using LLMClient.UI.MCP;
 
 namespace LLMClient.Endpoints;
 
@@ -23,10 +24,10 @@ public class NullLlmModelClient : ILLMClient
 
     public bool IsResponding { get; set; } = false;
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
+    public IFunctionInterceptor FunctionInterceptor { get; set; } = FunctionAuthorizationInterceptor.Instance;
     public ObservableCollection<string> RespondingText { get; } = new ObservableCollection<string>();
 
-    public Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems,
-        string? systemPrompt = null,
+    public Task<CompletedResult> SendRequest(DialogContext context,
         CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("This client does not support sending requests.");

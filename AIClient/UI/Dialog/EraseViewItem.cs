@@ -7,13 +7,12 @@ namespace LLMClient.UI.Dialog;
 
 public class EraseViewItem : IDialogItem, IDialogPersistItem
 {
-    public async IAsyncEnumerable<ChatMessage> GetMessages([EnumeratorCancellation] CancellationToken cancellationToken)
+    public virtual IAsyncEnumerable<ChatMessage> GetMessages(CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        yield break;
+        throw new NotSupportedException();
     }
 
-    [JsonIgnore] public bool IsAvailableInContext { get; } = false;
+    [JsonIgnore] public virtual bool IsAvailableInContext { get; } = false;
 
-    public long Tokens { get; } = 0;
+    public virtual long Tokens { get; } = 0;
 }

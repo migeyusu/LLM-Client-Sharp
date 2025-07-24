@@ -398,6 +398,22 @@
     <component:TypeBasedDataTemplateSelector x:Key="DialogTemplateSelector">
         <component:DataTemplateTypePair Template="{StaticResource DefaultRequestViewItemDataTemplate}" />
         <component:DataTemplateTypePair Template="{StaticResource MultiResponseViewItemDataTemplate}" />
+        <component:DataTemplateTypePair>
+            <DataTemplate DataType="{x:Type dialog:SummaryRequestViewItem}">
+                <Grid HorizontalAlignment="Right"
+                      Margin="50,0,0,0">
+                    <Rectangle Stroke="Black"
+                               StrokeThickness="1.5"
+                               RadiusX="8" RadiusY="8"
+                               StrokeDashArray="6,2"
+                               SnapsToDevicePixels="True" />
+                    <TextBlock TextWrapping="Wrap"
+                               Margin="8"
+                               materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                               Text="{Binding SummaryPrompt,Mode=OneTime}" />
+                </Grid>
+            </DataTemplate>
+        </component:DataTemplateTypePair>
         <component:DataTemplateTypePair Template="{StaticResource EraseDataTemplate}" />
     </component:TypeBasedDataTemplateSelector>
     <Style x:Key="DialogListBoxStyle"

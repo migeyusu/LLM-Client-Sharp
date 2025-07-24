@@ -109,9 +109,10 @@ public class APIClient : LlmClientBase
         return _chatClient!;
     }
 
-    protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages, string? systemPrompt = null)
+    protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages, IList<AITool>? tools = null,
+        string? systemPrompt = null)
     {
-        var chatOptions = base.CreateChatOptions(messages, systemPrompt);
+        var chatOptions = base.CreateChatOptions(messages, tools, systemPrompt);
         /*chatOptions.AdditionalProperties = new AdditionalPropertiesDictionary(new Dictionary<string, object?>()
         {
             { "max_completion_tokens", this.ModelInfo.MaxTokens },

@@ -7,6 +7,51 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
 
+public class GoogleSearchConfig : BaseViewModel
+{
+    private string? _apiKey;
+    private string? _searchEngineId;
+
+    public string? ApiKey
+    {
+        get => _apiKey;
+        set
+        {
+            if (value == _apiKey) return;
+            _apiKey = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsValid));
+        }
+    }
+
+    public string? SearchEngineId
+    {
+        get => _searchEngineId;
+        set
+        {
+            if (value == _searchEngineId) return;
+            _searchEngineId = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsValid));
+        }
+    }
+
+    public bool IsValid => !string.IsNullOrEmpty(ApiKey) && !string.IsNullOrEmpty(SearchEngineId);
+
+    protected bool Equals(GoogleSearchConfig other)
+    {
+        return _apiKey == other._apiKey && _searchEngineId == other._searchEngineId;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((GoogleSearchConfig)obj);
+    }
+}
+
 public class GlobalConfig : NotifyDataErrorInfoViewModelBase
 {
     private int _summarizeWordsCount = 1000;
@@ -18,6 +63,7 @@ public class GlobalConfig : NotifyDataErrorInfoViewModelBase
     [JsonPropertyName("TokenSummarizePrompt")]
     public string TokenSummarizePromptString { get; set; } = DefaultSummarizePrompt;
 
+    [JsonIgnore]
     public string TokenSummarizePrompt
     {
         get { return string.Format(TokenSummarizePromptString, SummarizeWordsCount); }
@@ -41,6 +87,8 @@ public class GlobalConfig : NotifyDataErrorInfoViewModelBase
         }
     }
 
+    public GoogleSearchConfig? GoogleSearchConfig { get; set; }
+
     [JsonIgnore]
     public ICommand SaveCommand => new ActionCommand(async (param) =>
     {
@@ -52,7 +100,7 @@ public class GlobalConfig : NotifyDataErrorInfoViewModelBase
         }
     });
 
-    public static GlobalConfig LoadOrCreate()
+    public static async Task<GlobalConfig> LoadOrCreate()
     {
         var fileInfo = new FileInfo(DEFAULT_GLOBAL_CONFIG_FILE);
         if (fileInfo.Exists)
@@ -61,7 +109,7 @@ public class GlobalConfig : NotifyDataErrorInfoViewModelBase
             {
                 using (var fileStream = fileInfo.OpenRead())
                 {
-                    var config = JsonSerializer.Deserialize<GlobalConfig>(fileStream);
+                    var config = await JsonSerializer.DeserializeAsync<GlobalConfig>(fileStream);
                     if (config != null)
                     {
                         return config;

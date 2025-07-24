@@ -7,16 +7,18 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:mcp="clr-namespace:LLMClient.UI.MCP"
+             xmlns:component="clr-namespace:LLMClient.UI.Component"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
-             d:DesignHeight="400" d:DesignWidth="800">
+             d:DesignHeight="300" d:DesignWidth="800">
     <UserControl.Resources>
         <KeyBinding x:Key="PromptKeyBinding"
                     Key="Enter"
                     Command="{Binding NewRequestCommand}" />
     </UserControl.Resources>
     <Border CornerRadius="8"
-            Padding="8"
+            ClipToBounds="True"
             BorderThickness="1.5">
         <Border.Style>
             <Style TargetType="{x:Type Border}">
@@ -35,6 +37,7 @@
         </Border.Style>
         <StackPanel Orientation="Vertical">
             <TextBox x:Name="PromptTextBox"
+                     Margin="8"
                      materialDesign:HintAssist.Hint="输入Prompt"
                      materialDesign:HintAssist.HintHorizontalAlignment="Left"
                      AcceptsReturn="True"
@@ -61,108 +64,148 @@
                     </Style>
                 </TextBox.Style>
             </TextBox>
-            <Grid Margin="0,6,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal">
-                    <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                              IsChecked="{Binding FunctionSelector.FunctionEnabled,Mode=TwoWay}"
-                              Visibility="{Binding DefaultClient.Model.SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Tools" />
-                            <materialDesign:PopupBox Margin="6,0"
-                                                     StaysOpen="True"
-                                                     Opened="McpPopupBox_OnOpened"
-                                                     ToggleContent="{materialDesign:PackIcon Kind=Tools,Size=16}"
-                                                     VerticalAlignment="Center"
-                                                     ToolTip="Function Call工具"
-                                                     PopupContent="{Binding FunctionSelector,Mode=OneWay}"
-                                                     PopupContentTemplate="{StaticResource FunctionSelectorDataTemplate}"
-                                                     Style="{StaticResource MaterialDesignToolPopupBox}" />
-                        </StackPanel>
-                    </CheckBox>
-                </StackPanel>
-                <DockPanel Grid.Column="1">
-                    <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                            Command="{Binding AddImageCommand}"
-                            Height="32"
-                            Width="32"
-                            Margin="10,0,0,0"
-                            Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <materialDesign:PackIcon Kind="FileImagePlusOutline"
-                                                 Width="15"
-                                                 Height="15" />
-                    </Button>
-                    <ScrollViewer VerticalScrollBarVisibility="Disabled"
-                                  HorizontalScrollBarVisibility="Auto"
-                                  DockPanel.Dock="Right"
-                                  Margin="6,0">
-                        <ItemsControl Padding="0"
-                                      ItemsSource="{Binding Attachments,Mode=OneWay}"
-                                      VerticalAlignment="Bottom">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal"
-                                                IsItemsHost="True" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type local:Attachment}">
-                                    <materialDesign:Chip IsDeletable="True"
-                                                         MaxWidth="140"
-                                                         Margin="0"
-                                                         IconBackground="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
-                                                         IconForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
-                                                         ToolTipService.InitialShowDelay="0"
-                                                         ToolTip="{Binding OriUri,Mode=OneTime}"
-                                                         Command="{Binding OpenFileCommand}"
-                                                         CommandParameter="{Binding}"
-                                                         Content="{Binding Name,Mode=OneTime}"
-                                                         DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"
-                                                         DeleteCommandParameter="{Binding  }">
-                                        <materialDesign:Chip.Icon>
-                                            <materialDesign:PackIcon
-                                                Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
-                                        </materialDesign:Chip.Icon>
-                                    </materialDesign:Chip>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </DockPanel>
-
-                <StackPanel Grid.Column="2"
-                            Orientation="Horizontal"
-                            Margin="0,4,0,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Bottom">
-                    <!--<ToggleButton ToolTip="推理"
+            <Border Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                    Height="45">
+                <Grid Margin="8,0"
+                      VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal">
+                        <materialDesign:Card Padding="8,0"
+                                             UniformCornerRadius="12"
+                                             Visibility="{Binding IsModelSupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                             materialDesign:ElevationAssist.Elevation="Dp3">
+                            <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
+                                      IsChecked="{Binding FunctionSelector.FunctionEnabled,Mode=TwoWay}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Tools" />
+                                    <materialDesign:PopupBox Margin="6,0"
+                                                             StaysOpen="True"
+                                                             Opened="McpPopupBox_OnOpened"
+                                                             ToggleContent="{materialDesign:PackIcon Kind=Tools,Size=16}"
+                                                             VerticalAlignment="Center"
+                                                             ToolTip="Function Call工具"
+                                                             PopupContent="{Binding FunctionSelector,Mode=OneWay}"
+                                                             PopupContentTemplate="{StaticResource FunctionSelectorDataTemplate}"
+                                                             Style="{StaticResource MaterialDesignToolPopupBox}" />
+                                </StackPanel>
+                            </CheckBox>
+                        </materialDesign:Card>
+                        <materialDesign:Card Padding="8,0"
+                                             Margin="6,0,0,0"
+                                             UniformCornerRadius="12"
+                                             materialDesign:ElevationAssist.Elevation="Dp3">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PopupBox StaysOpen="True"
+                                                         Opened="McpPopupBox_OnOpened"
+                                                         ToggleContent="{materialDesign:PackIcon Kind=Web,Size=16}"
+                                                         VerticalAlignment="Center"
+                                                         ToolTip="Web Search工具"
+                                                         PopupContent="{Binding SearchConfig,Mode=OneTime}"
+                                                         Style="{StaticResource MaterialDesignToolPopupBox}">
+                                    <materialDesign:PopupBox.PopupContentTemplate>
+                                        <DataTemplate DataType="{x:Type mcp:SearchConfigViewModel}">
+                                            <ListBox ItemsSource="{Binding SelectableSearchFunctions,Mode=OneTime}">
+                                                <ListBox.ItemTemplateSelector>
+                                                    <component:TypeBasedDataTemplateSelector>
+                                                        <component:DataTemplateTypePair>
+                                                            
+                                                        </component:DataTemplateTypePair>
+                                                    </component:TypeBasedDataTemplateSelector>
+                                                </ListBox.ItemTemplateSelector>
+                                            </ListBox>
+                                        </DataTemplate>
+                                    </materialDesign:PopupBox.PopupContentTemplate>
+                                </materialDesign:PopupBox>
+                                <TextBlock Text="Search"
+                                           Margin="6,0"
+                                           VerticalAlignment="Center" />
+                                <ToggleButton IsChecked="True" />
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </StackPanel>
+                    <DockPanel Grid.Column="1">
+                        <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                Command="{Binding AddImageCommand}"
+                                Height="32"
+                                Width="32"
+                                Margin="10,0,0,0"
+                                Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <materialDesign:PackIcon Kind="FileImagePlusOutline"
+                                                     Width="15"
+                                                     Height="15" />
+                        </Button>
+                        <ScrollViewer VerticalScrollBarVisibility="Disabled"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      DockPanel.Dock="Right"
+                                      Margin="6,0">
+                            <ItemsControl Padding="0"
+                                          ItemsSource="{Binding Attachments,Mode=OneWay}"
+                                          VerticalAlignment="Bottom">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"
+                                                    IsItemsHost="True" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type local:Attachment}">
+                                        <materialDesign:Chip IsDeletable="True"
+                                                             MaxWidth="140"
+                                                             Margin="0"
+                                                             IconBackground="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                             IconForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
+                                                             ToolTipService.InitialShowDelay="0"
+                                                             ToolTip="{Binding OriUri,Mode=OneTime}"
+                                                             Command="{Binding OpenFileCommand}"
+                                                             CommandParameter="{Binding}"
+                                                             Content="{Binding Name,Mode=OneTime}"
+                                                             DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"
+                                                             DeleteCommandParameter="{Binding  }">
+                                            <materialDesign:Chip.Icon>
+                                                <materialDesign:PackIcon
+                                                    Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
+                                            </materialDesign:Chip.Icon>
+                                        </materialDesign:Chip>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                Margin="0,4,0,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom">
+                        <!--<ToggleButton ToolTip="推理"
                               Margin="16,0,0,0"
                               VerticalAlignment="Center"
                               Visibility="{Binding Client.Info.ReasoningEnable,Mode=TwoWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                               Style="{StaticResource MaterialDesignSwitchToggleButton}" />-->
-                    <CheckBox Content="回车发送"
-                              Margin="16,0,0,0"
-                              Checked="EnterKeyInputBinding_OnChecked"
-                              Unchecked="EnterKeyInputBinding_OnUnchecked"
-                              materialDesign:CheckBoxAssist.CheckBoxSize="30" />
-                    <Button Command="{Binding NewRequestCommand}"
-                            Width="80"
-                            Height="30"
-                            Margin="16,0,0,0"
-                            Style="{StaticResource MaterialDesignRaisedDarkButton}"
-                            Content="发送" />
-                    <Button Command="{Binding ConclusionCommand}"
-                            Margin="16,0,0,0"
-                            Content="总结"
-                            Style="{StaticResource MaterialDesignPaperLightButton}" />
-                    <!--<Button Command="{Binding TestCommand}"
+                        <CheckBox Content="回车发送"
+                                  Margin="16,0,0,0"
+                                  Checked="EnterKeyInputBinding_OnChecked"
+                                  Unchecked="EnterKeyInputBinding_OnUnchecked"
+                                  materialDesign:CheckBoxAssist.CheckBoxSize="30" />
+                        <Button Command="{Binding NewRequestCommand}"
+                                Width="80"
+                                Height="30"
+                                Margin="16,0,0,0"
+                                Style="{StaticResource MaterialDesignRaisedDarkButton}"
+                                Content="发送" />
+                        <Button Command="{Binding ConclusionCommand}"
+                                Margin="16,0,0,0"
+                                Content="总结"
+                                Style="{StaticResource MaterialDesignPaperLightButton}" />
+                        <!--<Button Command="{Binding TestCommand}"
                         Content="测试" />-->
-                </StackPanel>
-            </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </StackPanel>
     </Border>
 </UserControl>

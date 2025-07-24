@@ -1,11 +1,13 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using LLMClient.UI.Dialog;
+using LLMClient.UI.MCP;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -44,12 +46,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 
+    public IFunctionInterceptor FunctionInterceptor { get; set; } = FunctionAuthorizationInterceptor.Instance;
+
     [JsonIgnore]
     public virtual ObservableCollection<string> RespondingText { get; } = new ObservableCollection<string>();
 
     protected abstract IChatClient GetChatClient();
 
-    protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages, string? systemPrompt = null)
+    protected virtual ChatOptions CreateChatOptions(IList<ChatMessage> messages, IList<AITool>? tools = null,
+        string? systemPrompt = null)
     {
         var modelInfo = this.Model;
         var modelParams = this.Parameters;
@@ -98,33 +103,44 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
             chatOptions.Seed = modelParams.Seed.Value;
         }
 
+        if (tools != null)
+        {
+            if (this.Model.SupportFunctionCall)
+            {
+                chatOptions.Tools = tools;
+            }
+            else
+            {
+                throw new NotSupportedException(
+                    "This model does not support function calls, but tools were provided.");
+            }
+        }
+
         return chatOptions;
     }
 
-    private void CombineMessages()
-    {
-    }
 
     private readonly Stopwatch _stopwatch = new Stopwatch();
 
     [Experimental("SKEXP0001")]
-    public virtual async Task<CompletedResult> SendRequest(IList<IDialogItem> dialogItems,
-        string? systemPrompt = null, CancellationToken cancellationToken = default)
+    public virtual async Task<CompletedResult> SendRequest(DialogContext context,
+        CancellationToken cancellationToken = default)
     {
         try
         {
             RespondingText.Clear();
             IsResponding = true;
+            var dialogItems = context.DialogItems;
+            var systemPrompt = context.SystemPrompt;
+            var requestViewItem = dialogItems.LastOrDefault() as RequestViewItem;
             var chatHistory = new List<ChatMessage>();
-            var requestOptions = this.CreateChatOptions(chatHistory, systemPrompt);
-            if (dialogItems.LastOrDefault() is not RequestViewItem requestViewItem)
-            {
-                throw new NotSupportedException("RequestViewItem is required in dialog items.");
-            }
+            AITool[]? tools = null;
             var kernelPluginCollection = new KernelPluginCollection();
-            if (requestViewItem.FunctionGroups != null)
+            var toolsPromptBuilder = new StringBuilder();
+            var functionGroups = requestViewItem?.FunctionGroups;
+            if (functionGroups != null && functionGroups.Any())
             {
-                foreach (var functionGroup in requestViewItem.FunctionGroups)
+                foreach (var functionGroup in functionGroups)
                 {
                     await functionGroup.EnsureAsync(cancellationToken);
                     var availableTools = functionGroup.AvailableTools;
@@ -133,26 +149,30 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                         continue;
                     }
 
+                    toolsPromptBuilder.AppendLine(functionGroup.AdditionPrompt);
                     kernelPluginCollection.AddFromFunctions(functionGroup.Name,
                         availableTools.Select((function => function.AsKernelFunction())));
                 }
 
-                var aiTools = kernelPluginCollection.SelectMany((plugin => plugin)).ToArray<AITool>();
-                if (aiTools.Length > 0)
-                {
-                    if (!this.Model.SupportFunctionCall)
-                    {
-                        throw new NotSupportedException("Function call is not supported.");
-                    }
-
-                    requestOptions.Tools = aiTools;
-                }
-                else
+                tools = kernelPluginCollection.SelectMany((plugin => plugin)).ToArray<AITool>();
+                if (!tools.Any())
                 {
                     Trace.TraceWarning("No available tools found in function groups.");
                 }
             }
 
+            if (toolsPromptBuilder.Length > 0)
+            {
+                systemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
+                    ? toolsPromptBuilder.ToString()
+                    : $"{systemPrompt}\n{toolsPromptBuilder}";
+            }
+            else if (string.IsNullOrWhiteSpace(systemPrompt))
+            {
+                systemPrompt = "No tools available.";
+            }
+
+            var requestOptions = this.CreateChatOptions(chatHistory, tools, systemPrompt);
             foreach (var dialogItem in dialogItems)
             {
                 await foreach (var message in dialogItem.GetMessages(cancellationToken))
@@ -306,9 +326,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
 
                         try
                         {
-                            var invokeResult = await kernelFunction.InvokeAsync(
-                                new AIFunctionArguments(functionCallContent.Arguments),
-                                cancellationToken);
+                            var arguments = new AIFunctionArguments(functionCallContent.Arguments);
+                            //调用拦截器
+                            var invokeResult = await this.FunctionInterceptor.InvokeAsync(
+                                kernelFunction, arguments, functionCallContent, cancellationToken);
                             RespondingText.NewLine(
                                 $"Function '{functionCallContent.Name}' invoked successfully, result: {invokeResult}");
                             chatMessage.Contents.Add(

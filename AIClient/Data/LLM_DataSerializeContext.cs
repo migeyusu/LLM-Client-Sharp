@@ -1,7 +1,5 @@
 ﻿using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
-using LLMClient.UI;
-using Microsoft.Extensions.AI;
+using OpenAI.Chat;
 
 namespace LLMClient.Data;
 
@@ -12,6 +10,7 @@ namespace LLMClient.Data;
 [JsonSerializable(typeof(string))]         
 [JsonSerializable(typeof(int))]           
 [JsonSerializable(typeof(List<object>))]
+[JsonSerializable(typeof(ChatTokenUsage))]
 internal partial class LLM_DataSerializeContext : JsonSerializerContext
 {
 }

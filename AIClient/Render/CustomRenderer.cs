@@ -15,6 +15,7 @@ public class CustomRenderer : WpfRenderer
 
         ObjectRenderers.Add(new TextMateCodeRenderer());
         ObjectRenderers.Add(new ThinkBlockRenderer());
+        ObjectRenderers.Add(new LinkInlineRendererEx());
         base.LoadRenderers();
         _isRendererLoaded = true;
     }
