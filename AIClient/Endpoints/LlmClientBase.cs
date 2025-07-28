@@ -6,11 +6,9 @@ using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
-using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
 using OpenAI.Chat;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -126,6 +124,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
     public virtual async Task<CompletedResult> SendRequest(DialogContext context,
         CancellationToken cancellationToken = default)
     {
+        var result = new CompletedResult();
         try
         {
             RespondingText.Clear();
@@ -173,10 +172,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                     ? toolsPromptBuilder.ToString()
                     : $"{systemPrompt}\n{toolsPromptBuilder}";
             }
-            else if (string.IsNullOrWhiteSpace(systemPrompt))
-            {
-                systemPrompt = "No tools available.";
-            }
 
             var requestOptions = this.CreateChatOptions(chatHistory, tools, systemPrompt);
             foreach (var dialogItem in dialogItems)
@@ -184,6 +179,16 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                 await foreach (var message in dialogItem.GetMessages(cancellationToken))
                 {
                     chatHistory.Add(message);
+                }
+            }
+
+            requestOptions.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+            var additionalProperties = requestViewItem?.AdditionalProperties;
+            if (additionalProperties != null)
+            {
+                foreach (var additionalProperty in additionalProperties)
+                {
+                    requestOptions.AdditionalProperties[additionalProperty.Key] = additionalProperty.Value;
                 }
             }
 
@@ -210,26 +215,36 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                 try
                 {
                     ChatResponse? preResponse = null;
-                    if (this.Parameters.Streaming)
+                    var streaming = this.Parameters.Streaming;
+                    var clientContext = new ClientContext(requestViewItem?.AdditionalProperties)
+                        { Streaming = streaming };
+                    using (ChatContext<ClientContext>.Create(clientContext))
                     {
-                        await foreach (var update in chatClient
-                                           .GetStreamingResponseAsync(chatHistory, requestOptions, cancellationToken))
+                        if (streaming)
                         {
-                            latency ??= (int)_stopwatch.ElapsedMilliseconds;
-                            preUpdates.Add(update);
-                            //只收集文本内容
-                            RespondingText.Add(update.Text);
+                            await foreach (var update in chatClient
+                                               .GetStreamingResponseAsync(chatHistory, requestOptions,
+                                                   cancellationToken))
+                            {
+                                latency ??= (int)_stopwatch.ElapsedMilliseconds;
+                                preUpdates.Add(update);
+                                //只收集文本内容
+                                RespondingText.Add(update.Text);
+                            }
+
+                            preResponse = preUpdates.ToChatResponse();
+                            // await clientContext.CompleteResponse(preResponse, result);
                         }
-
-                        preResponse = preUpdates.ToChatResponse();
+                        else
+                        {
+                            preResponse =
+                                await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
+                            //只收集文本内容
+                            RespondingText.Add(preResponse.Text);
+                        }
                     }
-                    else
-                    {
-                        preResponse = await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
-                        //只收集文本内容
-                        RespondingText.Add(preResponse.Text);
-                    }
 
+                    await clientContext.CompleteResponse(preResponse, result);
                     var preResponseMessages = preResponse.Messages;
                     chatHistory.AddRange(preResponseMessages);
                     responseMessages.AddRange(preResponseMessages);
@@ -252,6 +267,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                                 case FunctionResultContent functionResultContent:
                                     RespondingText.NewLine(functionResultContent.GetDebuggerString());
                                     break;
+                                case TextReasoningContent reasoningContent:
+                                    var text = reasoningContent.Text;
+                                    if (!string.IsNullOrEmpty(text))
+                                    {
+                                        RespondingText.NewLine(text);
+                                    }
+
+                                    break;
                                 default:
                                     Trace.TraceWarning("unsupported content: " + content.GetType().Name);
                                     RespondingText.NewLine(
@@ -262,7 +285,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                         }
                     }
 
-                    loopUsageDetails ??= GetUsageDetailsFromAdditional(preUpdates);
+                    loopUsageDetails ??= GetUsageDetailsFromAdditional(preResponse);
                     if (loopUsageDetails != null)
                     {
                         totalUsageDetails.Add(loopUsageDetails);
@@ -271,9 +294,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                     finishReason = preResponse.FinishReason;
                     if (finishReason == null)
                     {
-                        //do nothing
+                        finishReason = GetFinishReasonFromAdditional(preResponse);
                     }
-                    else if (finishReason == ChatFinishReason.ToolCalls)
+
+                    if (finishReason == ChatFinishReason.ToolCalls)
                     {
                         Trace.TraceInformation("Function call finished, need run function calls...");
                     }
@@ -374,14 +398,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
 
             var duration = (int)(_stopwatch.ElapsedMilliseconds / 1000);
             var price = this.Model.PriceCalculator?.Calculate(totalUsageDetails);
-            return new CompletedResult(totalUsageDetails, responseMessages)
-            {
-                ErrorMessage = errorMessage,
-                Latency = latency ?? 0,
-                Duration = duration,
-                FinishReason = finishReason,
-                Price = price,
-            };
+            result.Usage = totalUsageDetails;
+            result.ResponseMessages = responseMessages;
+            result.ErrorMessage = errorMessage;
+            result.Latency = latency ?? 0;
+            result.Duration = duration;
+            result.FinishReason = finishReason;
+            result.Price = price;
+            return result;
         }
         finally
         {
@@ -389,60 +413,87 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
         }
     }
 
-    private static UsageDetails? GetUsageDetailsFromAdditional(IList<ChatResponseUpdate> updates)
+    private static ChatFinishReason? GetFinishReasonFromAdditional(ChatResponse? response)
     {
-        UsageDetails? usageDetails = null;
-        foreach (var update in updates)
+        if (response != null)
         {
-            var additionalProperties = update.AdditionalProperties;
-            if (additionalProperties != null)
+            var messages = response.Messages;
+            foreach (var message in messages)
             {
-                // 方法1: 检查 Metadata 中的 Usage 信息
-                if (additionalProperties.TryGetValue("Usage", out var usageObj))
+                var additionalProperties = message.AdditionalProperties;
+                if (additionalProperties != null)
                 {
-                    if (usageObj is ChatTokenUsage chatTokenUsage)
+                    if (additionalProperties.TryGetValue("FinishReason", out var finishReasonObj))
                     {
-                        var details = new UsageDetails()
+                        if (finishReasonObj is string finishReason)
                         {
-                            InputTokenCount = chatTokenUsage.InputTokenCount,
-                            OutputTokenCount = chatTokenUsage.OutputTokenCount,
-                            TotalTokenCount = chatTokenUsage.TotalTokenCount,
-                        };
-                        if (usageDetails == null)
-                        {
-                            usageDetails = details;
-                        }
-                        else
-                        {
-                            usageDetails.Add(details);
+                            return new ChatFinishReason(finishReason);
                         }
                     }
-
-                    /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
-                    {
-                        // tokenCount = Convert.ToInt32(totalTokensObj);
-                    }*/
                 }
-                else
-                {
-                    Debugger.Break();
-                }
-                // 方法2: 部分 AI 服务可能使用不同的元数据键
-                /*if (usageDetails == null &&
-                    dictionary.TryGetValue("CompletionTokenCount", out var completionTokensObj))
-                {
-                    // tokenCount = Convert.ToInt32(completionTokensObj);
-                }
-
-                // 方法3: 有些版本可能在 ModelResult 中提供 usage
-                if (usageDetails == null &&
-                    dictionary.TryGetValue("ModelResults", out var modelResultsObj))
-                {
-                    //do what?
-                }*/
             }
         }
 
+        return null;
+    }
+
+    private static UsageDetails? GetUsageDetailsFromAdditional(ChatResponse? response)
+    {
+        UsageDetails? usageDetails = null;
+        if (response != null)
+        {
+            var messages = response.Messages;
+            foreach (var message in messages)
+            {
+                var additionalProperties = message.AdditionalProperties;
+                if (additionalProperties != null)
+                {
+                    // 方法1: 检查 Metadata 中的 Usage 信息
+                    if (additionalProperties.TryGetValue("Usage", out var usageObj))
+                    {
+                        if (usageObj is ChatTokenUsage chatTokenUsage)
+                        {
+                            var details = new UsageDetails()
+                            {
+                                InputTokenCount = chatTokenUsage.InputTokenCount,
+                                OutputTokenCount = chatTokenUsage.OutputTokenCount,
+                                TotalTokenCount = chatTokenUsage.TotalTokenCount,
+                            };
+                            if (usageDetails == null)
+                            {
+                                usageDetails = details;
+                            }
+                            else
+                            {
+                                usageDetails.Add(details);
+                            }
+                        }
+
+                        /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
+                        {
+                            // tokenCount = Convert.ToInt32(totalTokensObj);
+                        }*/
+                    }
+                    else
+                    {
+                        Debugger.Break();
+                    }
+                    // 方法2: 部分 AI 服务可能使用不同的元数据键
+                    /*if (usageDetails == null &&
+                        dictionary.TryGetValue("CompletionTokenCount", out var completionTokensObj))
+                    {
+                        // tokenCount = Convert.ToInt32(completionTokensObj);
+                    }
+
+                    // 方法3: 有些版本可能在 ModelResult 中提供 usage
+                    if (usageDetails == null &&
+                        dictionary.TryGetValue("ModelResults", out var modelResultsObj))
+                    {
+                        //do what?
+                    }*/
+                }
+            }
+        }
 
         return usageDetails;
     }

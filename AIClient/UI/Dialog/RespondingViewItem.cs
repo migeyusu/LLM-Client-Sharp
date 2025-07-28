@@ -1,8 +1,11 @@
 ﻿using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Endpoints.Messages;
 using LLMClient.UI.Component;
-using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
+using OpenAI.Chat;
+using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.UI.Dialog;
 
@@ -53,6 +56,8 @@ public class RespondingViewItem : BaseViewModel, IResponseViewItem
 
     public double? Price { get; } = 0;
     public IList<ChatMessage>? ResponseMessages { get; } = null;
+
+    public IList<ChatAnnotation>? Annotations { get; set; } = null;
 
     public ChatFinishReason? FinishReason { get; set; }
 }

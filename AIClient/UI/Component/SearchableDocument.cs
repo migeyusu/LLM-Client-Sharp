@@ -27,7 +27,14 @@ public class SearchableDocument : BaseViewModel
         }
 
         RawText = rawText;
-        Document = rawText.ToFlowDocument();
+        Document = rawText.RenderOnFlowDocument();
+    }
+
+    public SearchableDocument(FlowDocument document)
+    {
+        //从flow文档中获取原始文本
+        Document = document;
+        RawText = new TextRange(document.ContentStart, document.ContentEnd).Text;
     }
 
     /// <summary>

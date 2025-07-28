@@ -18,12 +18,11 @@ public partial class MainWindow : ExtendedWindow
 {
     private readonly MainWindowViewModel _mainWindowViewModel;
 
-    private readonly GlobalConfig _globalConfig;
+    private GlobalOptions? _globalConfig;
 
-    public MainWindow(MainWindowViewModel mainWindowViewModel, GlobalConfig globalConfig)
+    public MainWindow(MainWindowViewModel mainWindowViewModel)
     {
         this._mainWindowViewModel = mainWindowViewModel;
-        this._globalConfig = globalConfig;
         this.DataContext = mainWindowViewModel;
         InitializeComponent();
     }
@@ -45,17 +44,37 @@ public partial class MainWindow : ExtendedWindow
         }
     }
 
-    private void MainWindow_OnClosing(object? sender, CancelEventArgs e)
+    private bool _closing = false;
+
+    private bool _closeRequest = false;
+
+    private async void MainWindow_OnClosing(object? sender, CancelEventArgs e)
     {
-        if (this._mainWindowViewModel.SessionViewModels.Any((session => session.IsBusy)))
+        e.Cancel = !_closeRequest;
+        if (_closeRequest)
         {
-            e.Cancel = true;
+            return;
+        }
+
+        if (this._mainWindowViewModel.IsBusy)
+        {
             _mainWindowViewModel.MessageQueue.Enqueue("请等待当前响应完成后再关闭窗口");
+            return;
+        }
+
+        if (!_closing)
+        {
+            _closing = true;
+            await _mainWindowViewModel.SaveSessions();
+            _closing = false;
+            _closeRequest = true;
+            this.Close();
         }
     }
 
     private async void OpenConfig_OnClick(object sender, RoutedEventArgs e)
     {
+        _globalConfig ??= await GlobalOptions.LoadOrCreate();
         await this.ShowDialog(_globalConfig);
     }
 

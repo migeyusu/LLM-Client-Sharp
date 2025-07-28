@@ -5,28 +5,18 @@ namespace LLMClient.Render;
 
 internal static class RendererExtensions
 {
-    private static readonly CustomRenderer Renderer;
-
-    private static readonly MarkdownPipeline DefaultPipeline =
-        new MarkdownPipelineBuilder()
-            .UseAdvancedExtensions()
-            .UseThinkBlock()
-            .UseFunctionCallBlock()
-            .UseFunctionResultBlock()
-            .UseGenericAttributes()
-            .Build();
-
     static RendererExtensions()
     {
-        Renderer = new CustomRenderer();
-        Renderer.Initialize();
-        DefaultPipeline.Setup(Renderer);
     }
 
-    public static FlowDocument ToFlowDocument(this string raw)
+    public static FlowDocument RenderOnFlowDocument(this string raw, FlowDocument? result = null)
     {
-        return Markdig.Wpf.Markdown.ToFlowDocument(raw, DefaultPipeline, Renderer);
+        result ??= new FlowDocument();
+        CustomRenderer.Instance.RenderRaw(raw, result);
+        return result;
     }
+
+    //todo: markdig渲染 改进： 1. 支持动态增加obj，每次循环后在原有FlowDocument基础上增加 2. 支持动态增加文本
 
     internal static string SubstringAtIndexes(this string str, int startIndex, int endIndex)
     {
@@ -40,6 +30,7 @@ internal static class RendererExtensions
         return pipeline;
     }
 
+    [Obsolete]
     public static MarkdownPipelineBuilder UseFunctionCallBlock(
         this MarkdownPipelineBuilder pipeline)
     {
@@ -47,6 +38,7 @@ internal static class RendererExtensions
         return pipeline;
     }
 
+    [Obsolete]
     public static MarkdownPipelineBuilder UseFunctionResultBlock(
         this MarkdownPipelineBuilder pipeline)
     {

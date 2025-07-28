@@ -227,15 +227,16 @@ public class RequesterViewModel : BaseViewModel
             tools = this.FunctionSelector.SelectedFunctions;
         }
 
+
         //每次搜索的条件可能不同，所以传递的是副本
-        var searchService = this.SearchConfig.SelectedSearchFunction?.Clone() as ISearchService;
+
         return new RequestViewItem()
         {
             InteractionId = Guid.NewGuid(),
             TextMessage = promptBuilder.ToString().Trim(),
             Attachments = Attachments.ToList(),
             FunctionGroups = tools == null ? [] : [..tools],
-            SearchService = searchService
+            SearchService = SearchConfig.GetUserSearchService()
         };
     }
 

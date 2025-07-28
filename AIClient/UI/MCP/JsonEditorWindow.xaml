@@ -15,7 +15,7 @@
         </Grid.RowDefinitions>
         <TextBlock Text="Json Configuration:"
                    Style="{StaticResource MaterialDesignBody2TextBlock}"
-                   FontWeight="Black"/>
+                   FontWeight="Black" />
         <avalonedit:TextEditor Grid.Row="1"
                                FontFamily="Consolas"
                                FontSize="14"
@@ -26,8 +26,9 @@
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
-            <Button Padding="10,0"
+            <Button Padding="16,0"
                     Content="Cancel"
+                    Style="{StaticResource MaterialDesignPaperLightButton}"
                     Click="Cancel_OnClick" />
             <Button Margin="10,0,0,0"
                     Content="OK"

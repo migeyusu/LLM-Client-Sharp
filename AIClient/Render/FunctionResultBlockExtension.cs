@@ -3,6 +3,7 @@ using Markdig.Renderers;
 
 namespace LLMClient.Render;
 
+[Obsolete]
 public class FunctionResultBlockExtension : IMarkdownExtension
 {
     public void Setup(MarkdownPipelineBuilder pipeline)

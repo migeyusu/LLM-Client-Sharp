@@ -2,9 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
-using System.Windows.Shapes;
 using Markdig.Renderers;
-using Markdig.Renderers.Html;
 using Markdig.Syntax;
 using Markdig.Wpf;
 using TextMateSharp.Grammars;

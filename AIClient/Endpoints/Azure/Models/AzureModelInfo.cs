@@ -215,7 +215,7 @@ public class AzureModelInfo : ILLMModel
 
             if (_description == null)
             {
-                _description = DescriptionRaw.ToFlowDocument();
+                _description = DescriptionRaw.RenderOnFlowDocument();
             }
 
             return _description;
@@ -242,7 +242,7 @@ public class AzureModelInfo : ILLMModel
 
             if (_notes == null)
             {
-                _notes = NotesRaw.ToFlowDocument();
+                _notes = NotesRaw.RenderOnFlowDocument();
             }
 
             return _notes;
@@ -265,7 +265,7 @@ public class AzureModelInfo : ILLMModel
 
             if (_evaluation == null)
             {
-                _evaluation = EvaluationRaw.ToFlowDocument();
+                _evaluation = EvaluationRaw.RenderOnFlowDocument();
             }
 
             return _evaluation;

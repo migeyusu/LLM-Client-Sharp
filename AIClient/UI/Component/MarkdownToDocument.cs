@@ -12,7 +12,7 @@ public class MarkdownToDocumentConverter : IValueConverter
     {
         if (value is string str)
         {
-            return str.ToFlowDocument();
+            return str.RenderOnFlowDocument();
         }
 
         return null;

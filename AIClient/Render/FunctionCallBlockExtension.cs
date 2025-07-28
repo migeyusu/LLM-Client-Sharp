@@ -3,6 +3,7 @@ using Markdig.Renderers;
 
 namespace LLMClient.Render;
 
+[Obsolete]
 public class FunctionCallBlockExtension : IMarkdownExtension
 {
     public void Setup(MarkdownPipelineBuilder pipeline)

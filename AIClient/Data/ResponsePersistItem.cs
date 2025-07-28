@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
-using LLMClient.Abstraction;
-using Microsoft.Extensions.AI;
+using LLMClient.Endpoints.Messages;
+using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 
 namespace LLMClient.Data;
 
@@ -15,8 +15,10 @@ public class ResponsePersistItem
     public string? ErrorMessage { get; set; }
 
     public double? Price { get; set; }
-    
+
     public IList<ChatMessagePO>? ResponseMessages { get; set; }
+
+    public IList<ChatAnnotation>? Annotations { get; set; }
 
     public ChatFinishReason? FinishReason { get; set; }
 

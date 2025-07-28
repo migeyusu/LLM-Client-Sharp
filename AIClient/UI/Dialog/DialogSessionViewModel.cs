@@ -628,6 +628,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     {
         var items = this.DialogItems;
         items.Add(requestViewItem);
+        this.ScrollViewItem = requestViewItem;
         var history = this.GenerateHistory();
         var multiResponseViewItem = new MultiResponseViewItem(this)
             { InteractionId = requestViewItem.InteractionId };

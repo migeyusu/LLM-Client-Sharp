@@ -4,8 +4,6 @@ using TextMateSharp.Grammars;
 
 namespace LLMClient.Render;
 
-
-
 public class TextmateColoredRun : Run
 {
     public IToken Token { get; }

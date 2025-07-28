@@ -1,4 +1,5 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Text.Json.Serialization;
+using LLMClient.Abstraction;
 using LLMClient.UI.Component;
 
 namespace LLMClient.UI.Agent;
@@ -8,12 +9,15 @@ namespace LLMClient.UI.Agent;
  */
 public class SearchAgent : IAgent, ISearchService
 {
+    [JsonIgnore]
     public string Name => "Search Agent";
+    
     public string GetUniqueId()
     {
         return "search-agent";
     }
 
+    [JsonIgnore]
     public ThemedIcon Icon => ThemedIcon.EmptyIcon;
 
     public bool CheckCompatible(ILLMModel model)

@@ -6,11 +6,9 @@ using Markdig.Renderers.Wpf;
 
 namespace LLMClient.Render;
 
+[Obsolete]
 public class FunctionResultBlockRenderer : WpfObjectRenderer<FunctionResultBlock>
 {
-    public static ComponentResourceKey FunctionResultBlockExpanderStyleKey { get; } =
-        new(typeof(FunctionResultBlockRenderer), (object)nameof(FunctionResultBlockExpanderStyleKey));
-
     protected override void Write(WpfRenderer renderer, FunctionResultBlock obj)
     {
         var blockUiContainer = new BlockUIContainer();
@@ -19,7 +17,7 @@ public class FunctionResultBlockRenderer : WpfObjectRenderer<FunctionResultBlock
         {
             IsExpanded = false,
         };
-        expander.SetResourceReference(FrameworkElement.StyleProperty, FunctionResultBlockExpanderStyleKey);
+        expander.SetResourceReference(FrameworkElement.StyleProperty, CustomRenderer.FunctionResultStyleKey);
         renderer.Push(expander);
         expander.Content = obj.Lines.ToString().Trim('\n', '\r');
         renderer.Pop();

@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.AI;
+﻿using LLMClient.Endpoints.Messages;
+using OpenAI.Chat;
+using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Abstraction;
 
@@ -21,6 +24,8 @@ public interface IResponse : ITokenizable
     double? Price { get; }
 
     IList<ChatMessage>? ResponseMessages { get; }
+
+    IList<ChatAnnotation>? Annotations { get; set; }
 
     ChatFinishReason? FinishReason { get; set; }
 }

@@ -44,6 +44,8 @@ public class MainWindowViewModel : BaseViewModel
         }
     }
 
+    public bool IsBusy => SessionViewModels.Any(session => session.IsBusy);
+
     public ICommand LoadCommand => new ActionCommand((o =>
     {
         try
@@ -233,6 +235,7 @@ public class MainWindowViewModel : BaseViewModel
     }
 
     private bool _isProcessing;
+    private string _loadingMessage = "Loading...";
 
     public MainWindowViewModel(IEndpointService configureViewModel, IMapper mapper, IPromptsResource promptsResource,
         IMcpServiceCollection mcpServiceCollection)
@@ -360,7 +363,16 @@ public class MainWindowViewModel : BaseViewModel
         IsInitialized = true;
     }
 
-    public ProgressViewModel LoadingProgress { get; } = new ProgressViewModel("Loading...");
+    public string LoadingMessage
+    {
+        get => _loadingMessage;
+        set
+        {
+            if (value == _loadingMessage) return;
+            _loadingMessage = value;
+            OnPropertyChanged();
+        }
+    }
 
     private static void ModifyTheme(Action<Theme> modificationAction)
     {
@@ -368,5 +380,20 @@ public class MainWindowViewModel : BaseViewModel
         Theme theme = paletteHelper.GetTheme();
         modificationAction?.Invoke(theme);
         paletteHelper.SetTheme(theme);
+    }
+
+    public async Task SaveSessions()
+    {
+        try
+        {
+            this.LoadingMessage = "Saving sessions...";
+            this.IsProcessing = true;
+            await this.SaveSessionsToLocal();
+            await HttpContentCache.Instance.PersistIndexAsync();
+        }
+        catch (Exception e)
+        {
+            Trace.WriteLine(e.Message);
+        }
     }
 }

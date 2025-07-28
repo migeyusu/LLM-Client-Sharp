@@ -1,13 +1,24 @@
-﻿using System.ComponentModel;
+﻿using System.ClientModel;
+using System.ClientModel.Primitives;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Endpoints.Converters;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using OpenAI;
+using OpenAI.Chat;
+using OpenAI.Responses;
+using BinaryContent = System.ClientModel.BinaryContent;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
@@ -89,34 +100,42 @@ public class APIClient : LlmClientBase
 
     private void EnsureKernel()
     {
-        var httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
+        var apiToken = _option.APIToken;
+        var apiUri = new Uri(_option.URL);
+        var httpClient = new HttpClient(new DebugMessageLogger()) { Timeout = TimeSpan.FromMinutes(10) };
+        var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
+        {
+            Endpoint = apiUri,
+            Transport = new HttpClientPipelineTransport(httpClient)
+        });
         var builder = Kernel.CreateBuilder();
 #if DEBUG
         var loggerFactory = ServiceLocator.GetService<ILoggerFactory>() ??
                             throw new ArgumentNullException("ServiceLocator.GetService<ILoggerFactory>()");
         builder.Services.AddSingleton(loggerFactory);
 #endif
-        _kernel = builder
-            .AddOpenAIChatCompletion(this.ModelInfo.Id, new Uri(_option.URL), _option.APIToken, "LLMClient", "1.0.0",
-                httpClient)
+
+        _kernel = builder.AddOpenAIChatCompletion(this.Model.Id, openAiClient)
             .Build();
-        _chatClient?.Dispose();
         _chatClient = _kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
+        _chatClient?.Dispose();
     }
 
     protected override IChatClient GetChatClient()
     {
-        return _chatClient!;
+        if (_chatClient == null)
+        {
+            throw new NullReferenceException(
+                "Chat client is not initialized. Ensure that the EnsureKernel method has been called.");
+        }
+
+        return _chatClient;
     }
 
     protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages, IList<AITool>? tools = null,
         string? systemPrompt = null)
     {
         var chatOptions = base.CreateChatOptions(messages, tools, systemPrompt);
-        /*chatOptions.AdditionalProperties = new AdditionalPropertiesDictionary(new Dictionary<string, object?>()
-        {
-            { "max_completion_tokens", this.ModelInfo.MaxTokens },
-        });*/
         /*if (this.ModelInfo.ReasoningEnable)
         {
             chatOptions.AdditionalProperties = new AdditionalPropertiesDictionary(new Dictionary<string, object?>()
@@ -131,21 +150,114 @@ public class APIClient : LlmClientBase
     }
 }
 
-public class SendMessageLogger : DelegatingHandler
+public class DebugMessageLogger : DelegatingHandler
 {
+    public DebugMessageLogger() : base(new HttpClientHandler())
+    {
+    }
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
         var requestContent = request.Content;
         if (requestContent != null)
         {
-            var stringAsync = await requestContent.ReadAsStringAsync(cancellationToken);
-            Debug.WriteLine(stringAsync);
+            var requestString = await requestContent.ReadAsStringAsync(cancellationToken);
+            Debug.WriteLine(requestString);
         }
 
-        return await base.SendAsync(request, cancellationToken);
+        var httpResponseMessage = await base.SendAsync(request, cancellationToken);
+        var response = await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken);
+        Debug.WriteLine(response);
+        return httpResponseMessage;
     }
 }
 
 #pragma warning restore SKEXP0010
 #pragma warning restore SKEXP0001
+
+public class CustomChatClient : DelegatingChatClient
+{
+    protected CustomChatClient(IChatClient innerClient) : base(innerClient)
+    {
+    }
+
+    public override Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        return base.GetResponseAsync(messages, options, cancellationToken);
+    }
+}
+
+public class OpenAIClientEx : OpenAIClient
+{
+    private readonly ApiKeyCredential _credential;
+    private readonly OpenAIClientOptions _options;
+
+    public OpenAIClientEx(ApiKeyCredential credential, OpenAIClientOptions options) : base(credential, options)
+    {
+        _credential = credential;
+        _options = options;
+    }
+
+    public override ChatClient GetChatClient(string model)
+    {
+        return new OpenAIChatClientEx(model, _credential, this._options);
+    }
+}
+
+public class OpenAIChatClientEx : ChatClient
+{
+    public OpenAIChatClientEx(string model, ApiKeyCredential credential, OpenAIClientOptions options)
+        : base(model, credential, options)
+    {
+    }
+
+    public override async Task<ClientResult> CompleteChatAsync(BinaryContent content, RequestOptions? options = null)
+    {
+        var clientContext = ChatContext<ClientContext>.Current;
+        if (clientContext != null)
+        {
+            if (clientContext.AdditionalObjects.Count != 0)
+            {
+                await using (var oriStream = new MemoryStream())
+                {
+                    await content
+                        .WriteToAsync(oriStream);
+                    oriStream.Position = 0;
+                    var jsonNode = await JsonNode.ParseAsync(oriStream);
+                    if (jsonNode == null)
+                    {
+                        throw new InvalidOperationException("Content is not valid JSON.");
+                    }
+
+                    foreach (var additionalObject in clientContext.AdditionalObjects)
+                    {
+                        var node = JsonSerializer.SerializeToNode(additionalObject.Value);
+                        jsonNode[additionalObject.Key] = node;
+                    }
+
+                    oriStream.SetLength(0);
+                    await using (var writer = new Utf8JsonWriter(oriStream))
+                    {
+                        jsonNode.WriteTo(writer);
+                        await writer.FlushAsync();
+                    }
+
+                    oriStream.Position = 0;
+                    var modifiedData = await BinaryData.FromStreamAsync(oriStream);
+                    content = BinaryContent.Create(modifiedData);
+                }
+            }
+        }
+
+        var result = await base.CompleteChatAsync(content, options);
+        if (clientContext != null)
+        {
+            //may be streaming mode or not, streaming mode coordinate to a page
+            clientContext.Result = result;
+        }
+
+        return result;
+    }
+}

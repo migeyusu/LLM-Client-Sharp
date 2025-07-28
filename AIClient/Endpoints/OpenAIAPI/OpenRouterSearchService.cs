@@ -1,6 +1,6 @@
-﻿using System.Windows.Media;
+﻿using System.Diagnostics;
+using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
-using LLMClient.Data;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
@@ -33,16 +33,18 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
             OnPropertyChanged();
         }
     }
+
     public string GetUniqueId()
     {
         return "MaxResult:" + MaxResult + ",SearchPrompt:" + SearchPrompt;
     }
 
+    [JsonIgnore]
     public ThemedIcon Icon => AsyncThemedIcon.FromUri(new Uri(
         @"pack://application:,,,/LLMClient;component/Resources/Images/openrouter_logo.svg"
         , UriKind.Absolute));
 
-    public string Name => "OpenRouter Search";
+    [JsonIgnore] public string Name => "OpenRouter Search";
 
     public bool CheckCompatible(ILLMModel model)
     {
@@ -62,20 +64,32 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
             return Task.CompletedTask;
         }
 
+        requestViewItem.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         if (string.IsNullOrEmpty(SearchPrompt))
         {
-            throw new InvalidOperationException("SearchPrompt cannot be null or empty");
+            Trace.WriteLine("SearchPrompt cannot be null or empty");
+            requestViewItem.AdditionalProperties["plugins"] =
+                new PluginConfig[]
+                {
+                    new PluginConfig()
+                    {
+                        Id = "web",
+                    }
+                };
+        }
+        else
+        {
+            requestViewItem.AdditionalProperties["plugins"] = new PluginConfig[]
+            {
+                new PluginConfig()
+                {
+                    Id = "web",
+                    MaxResults = MaxResult,
+                    SearchPrompt = SearchPrompt,
+                }
+            };
         }
 
-        requestViewItem.RequestAdditionalProperties ??= new AdditionalPropertiesDictionary();
-        requestViewItem.RequestAdditionalProperties["plugins"] = $@"
-        [
-            {{
-                ""id"": ""web"",
-                ""max_results"": {MaxResult},
-                ""search_prompt"": ""{SearchPrompt}""
-            }}
-        ]";
         return Task.CompletedTask;
     }
 
@@ -86,5 +100,19 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
             MaxResult = MaxResult,
             SearchPrompt = SearchPrompt,
         };
+    }
+    
+    public class PluginConfig
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+        
+        [JsonPropertyName("max_results")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? MaxResults { get; set; }
+        
+        [JsonPropertyName("search_prompt")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? SearchPrompt { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace LLMClient.Render;
 
+[Obsolete]
 public class FunctionCallBlockParser : SingleTagBlockParser<FunctionCallBlock>
 {
     public const string FunctionCallTag = "<function_call>";

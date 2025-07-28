@@ -34,7 +34,8 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
     /// <summary>
     /// 对Request附加的额外属性
     /// </summary>
-    public AdditionalPropertiesDictionary? RequestAdditionalProperties { get; set; }
+    [JsonPropertyName("RequestAdditionalProperties")]
+    public AdditionalPropertiesDictionary? AdditionalProperties { get; set; }
 
     private ChatMessage? _message = null;
 

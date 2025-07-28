@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
 using LambdaConverters;
@@ -48,4 +49,12 @@ internal static class SnapConverters
 
     public static readonly IValueConverter EnumToDescriptionConverter =
         ValueConverter.Create<Enum, string>(e => e.Value.GetEnumDescription());
+
+    private static readonly JsonSerializerOptions ObjectSerializeOptions =
+        new JsonSerializerOptions() { WriteIndented = true };
+
+    public static readonly IValueConverter ObjectToJsonConverter =
+        ValueConverter.Create<object?, string>(e => e.Value != null
+            ? JsonSerializer.Serialize(e.Value, ObjectSerializeOptions)
+            : string.Empty);
 }

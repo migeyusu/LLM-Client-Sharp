@@ -32,7 +32,7 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
 
     public static async Task<SummaryRequestViewItem> NewSummaryRequest()
     {
-        var config = await GlobalConfig.LoadOrCreate();
+        var config = await GlobalOptions.LoadOrCreate();
         return new SummaryRequestViewItem()
         {
             SummaryPrompt = config.TokenSummarizePrompt,

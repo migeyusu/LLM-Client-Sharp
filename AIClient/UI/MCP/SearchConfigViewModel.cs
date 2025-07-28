@@ -16,35 +16,67 @@ public class SearchConfigViewModel : BaseViewModel
             if (value == _searchEnable) return;
             _searchEnable = value;
             OnPropertyChanged();
+            if (SelectedSearchService == null)
+            {
+                this.SelectedSearchService = SelectableSearchServices?.FirstOrDefault();
+            }
         }
     }
 
-    public ISearchService[]? SelectableSearchFunctions
+    public ISearchService[]? SelectableSearchServices
     {
-        get => _selectableSearchFunctions;
+        get => _selectableSearchServices;
         set
         {
-            if (Equals(value, _selectableSearchFunctions)) return;
-            _selectableSearchFunctions = value;
+            if (Equals(value, _selectableSearchServices)) return;
+            _selectableSearchServices = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsSearchAvailable));
+        }
+    }
+
+    public bool IsSearchAvailable
+    {
+        get => _selectableSearchServices is { Length: > 0 };
+    }
+
+    //对于已选中的搜索服务不持久化，因为集合是预设的，而选中项是反序列化获取的，很难对得上实例
+    public ISearchService? SelectedSearchService
+    {
+        get => _selectedSearchService;
+        set
+        {
+            if (Equals(value, _selectedSearchService)) return;
+            _selectedSearchService = value;
             OnPropertyChanged();
         }
     }
 
-    //对于已选中的搜索服务不持久化，因为集合是预设的，而选中项是反序列化获取的，很难对得上实例
-    public ISearchService? SelectedSearchFunction { get; set; }
-
-    ISearchService[] _builtInSearchServices = new ISearchService[]
-    {
+    private readonly ISearchService[] _builtInSearchServices =
+    [
         new GeekAISearchService(),
         new GoogleSearchPlugin(),
-        new OpenRouterSearchService(),
-    };
+        new OpenRouterSearchService()
+    ];
 
-    private ISearchService[]? _selectableSearchFunctions;
+    private ISearchService[]? _selectableSearchServices;
+    private ISearchService? _selectedSearchService;
 
     public void ResetSearchFunction(ILLMModel model)
     {
-        this.SelectableSearchFunctions =
+        this.SelectableSearchServices =
             _builtInSearchServices.Where(service => service.CheckCompatible(model)).ToArray();
+    }
+
+    public ISearchService? GetUserSearchService()
+    {
+        ISearchService? searchService = null;
+        if (this is { SearchEnable: true, IsSearchAvailable: true })
+        {
+            var selectedSearchService = this.SelectedSearchService ?? this.SelectableSearchServices?.FirstOrDefault();
+            searchService = selectedSearchService?.Clone() as ISearchService;
+        }
+
+        return searchService;
     }
 }

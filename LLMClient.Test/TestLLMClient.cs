@@ -34,11 +34,13 @@ public class TestLLMClient : ILLMClient
         CancellationToken cancellationToken = default)
     {
         // 模拟一个完成的结果
-        var result = new CompletedResult(new UsageDetails(), new List<ChatMessage>
+        var result = new CompletedResult()
         {
-            new ChatMessage(ChatRole.Assistant, "This is a test response from the LLM client.")
-        })
-        {
+            Usage = new UsageDetails(),
+            ResponseMessages = new List<ChatMessage>
+            {
+                new ChatMessage(ChatRole.Assistant, "This is a test response from the LLM client.")
+            },
             FinishReason = ChatFinishReason.Stop,
             Latency = 100,
             Duration = 200,

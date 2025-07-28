@@ -12,6 +12,7 @@ using Markdig.Wpf;
 
 namespace LLMClient.Render;
 
+[Obsolete]
 public class LinkInlineRendererEx : LinkInlineRenderer
 {
     protected override void Write(WpfRenderer renderer, LinkInline link)
@@ -37,7 +38,9 @@ public class LinkInlineRendererEx : LinkInlineRenderer
                 byte[] bytes = Convert.FromBase64String(s);
                 using (var ms = new MemoryStream(bytes))
                 {
-                    var imageSource = ms.ToDefaultImageSource();
+                    var extension = url.Substring(url.IndexOf("image/", StringComparison.Ordinal) + 6,
+                        url.IndexOf(';') - (url.IndexOf("image/", StringComparison.Ordinal) + 6));
+                    var imageSource = ms.ToImageSource("." + extension);
                     image.SetValue(Image.SourceProperty, imageSource);
                 }
             }

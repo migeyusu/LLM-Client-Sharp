@@ -2,10 +2,14 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
                     xmlns:llmClient="clr-namespace:LLMClient"
+                    x:Class="LLMClient.UI.MarkdownResource"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:render="clr-namespace:LLMClient.Render"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
-                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters">
+                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+                    xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
+                    xmlns:chat="clr-namespace:OpenAI.Chat;assembly=OpenAI"
+                    xmlns:messages="clr-namespace:LLMClient.Endpoints.Messages">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary
             Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.button.xaml" />
@@ -264,7 +268,7 @@
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"/>
+                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline" />
                         <TextBlock Text="已完成思考"
                                    VerticalAlignment="Center"
                                    Margin="6,0,0,0"
@@ -288,34 +292,48 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render:FunctionCallBlockRenderer.FunctionCallBlockExpanderStyleKey}">
+           x:Key="{x:Static render:CustomRenderer.FunctionCallStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
             <Setter.Value>
-                <DataTemplate>
+                <DataTemplate DataType="{x:Type ai:FunctionCallContent}">
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center">
                         <materialDesign:PackIcon Kind="Function"
                                                  Width="20"
                                                  VerticalAlignment="Center"
-                                                 Height="20"/>
-                        <TextBlock Text="函数调用"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                                                 Height="20" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Margin="6,0,0,0"
+                            FontWeight="Bold"
+                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}[{0}]-函数调用：{1}">
+                                    <Binding Path="CallId" Mode="OneTime" />
+                                    <Binding Path="Name" Mode="OneTime" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
                     </StackPanel>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate>
+                <DataTemplate DataType="{x:Type ai:FunctionCallContent}">
                     <TextBlock Foreground="DarkGray"
                                FontStyle="Italic"
-                               TextWrapping="Wrap"
-                               Text="{Binding}" />
+                               TextWrapping="Wrap">
+                        <Run Text="{Binding CallId,Mode=OneTime,StringFormat=CallID:{0}}" />
+                        <LineBreak />
+                        <Run Text="{Binding Name,Mode=OneTime,StringFormat=Function Name:{0}}" />
+                        <LineBreak />
+                        <Run>Arguments:</Run>
+                        <Run
+                            Text="{Binding Arguments,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToJsonConverter}}" />
+                    </TextBlock>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
@@ -323,18 +341,19 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render:FunctionResultBlockRenderer.FunctionResultBlockExpanderStyleKey}">
+           x:Key="{x:Static render:CustomRenderer.TextReasoningStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
             <Setter.Value>
-                <DataTemplate>
+                <DataTemplate DataType="{x:Type ai:TextReasoningContent}">
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="CallReceived"
+                        <materialDesign:PackIcon Kind="Function"
                                                  Width="20"
-                                                 Height="20"/>
-                        <TextBlock Text="函数调用结果"
+                                                 VerticalAlignment="Center"
+                                                 Height="20" />
+                        <TextBlock Text="已完成思考"
                                    VerticalAlignment="Center"
                                    Margin="6,0,0,0"
                                    FontWeight="Bold"
@@ -345,11 +364,104 @@
         </Setter>
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate>
+                <DataTemplate DataType="{x:Type ai:TextReasoningContent}">
                     <TextBlock Foreground="DarkGray"
                                FontStyle="Italic"
                                TextWrapping="Wrap"
-                               Text="{Binding}" />
+                               Text="{Binding Text,Mode=OneTime}" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type Expander}"
+           BasedOn="{StaticResource AIContentExpander}"
+           x:Key="{x:Static render:CustomRenderer.FunctionResultStyleKey}">
+        <Setter Property="Padding"
+                Value="16" />
+        <Setter Property="HeaderTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type ai:FunctionResultContent}">
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="CallReceived"
+                                                 Width="20"
+                                                 Height="20" />
+                        <TextBlock Text="{Binding CallId,Mode=OneTime,StringFormat={}[{0}]-函数调用结果}"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                    </StackPanel>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type ai:FunctionResultContent}">
+                    <StackPanel>
+                        <TextBlock Foreground="DarkGray"
+                                   FontStyle="Italic"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding Result,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToJsonConverter}}" />
+                        <TextBlock Foreground="Red"
+                                   Visibility="{Binding Exception,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                   Text="{Binding Exception,Mode=OneTime,StringFormat=Exception:{0}}" />
+                    </StackPanel>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type Expander}"
+           BasedOn="{StaticResource AIContentExpander}"
+           x:Key="{x:Static render:CustomRenderer.AnnotationStyleKey}">
+        <Setter Property="Padding"
+                Value="16" />
+        <Setter Property="HeaderTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type  messages:ChatAnnotation}">
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="SearchWeb"
+                                                 Width="20"
+                                                 Height="20" />
+                        <TextBlock Text="{Binding UrlCitation.Title,Mode=OneTime,StringFormat={}{0}-结果项}"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                    </StackPanel>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type messages:ChatAnnotation}">
+                    <TextBlock Foreground="DarkGray"
+                               FontStyle="Italic"
+                               DataContext="{Binding UrlCitation,Mode=OneTime}"
+                               TextWrapping="Wrap">
+                        <Hyperlink NavigateUri="{Binding  Url,Mode=OneTime}"
+                                   TextDecorations="Underline"
+                                   RequestNavigate="Hyperlink_OnRequestNavigate">
+                            <Hyperlink.Style>
+                                <Style TargetType="{x:Type Hyperlink}"
+                                       BasedOn="{StaticResource {x:Type Hyperlink}}">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver"
+                                                 Value="True">
+                                            <Setter Property="Foreground"
+                                                    Value="DodgerBlue" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Hyperlink.Style>
+                            <Run Text="{Binding Url,Mode=OneTime}" />
+                        </Hyperlink>
+                        <LineBreak />
+                        <Run Text="{Binding Content,Mode=OneTime}" />
+                    </TextBlock>
                 </DataTemplate>
             </Setter.Value>
         </Setter>

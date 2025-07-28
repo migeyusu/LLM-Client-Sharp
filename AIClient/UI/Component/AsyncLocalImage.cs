@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Windows.Media;
 using LLMClient.Data;
 
@@ -20,14 +21,16 @@ public class AsyncLocalImage : BaseViewModel
             }
 
             var extension = fileInfo.Extension;
-            if (!ImageExtensions.IsSupportedImageExtension(extension))
-            {
-                return;
-            }
-
             using (var fileStream = fileInfo.OpenRead())
             {
-                Source = extension == ".svg" ? fileStream.SVGStreamToImageSource() : fileStream.ToDefaultImageSource();
+                try
+                {
+                    Source = fileStream.ToImageSource(extension);
+                }
+                catch (Exception e)
+                {
+                    Trace.TraceError(e.Message);
+                }
             }
         });
     }

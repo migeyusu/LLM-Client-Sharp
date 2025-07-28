@@ -100,18 +100,19 @@
                                              Margin="6,0,0,0"
                                              UniformCornerRadius="12"
                                              Height="32"
+                                             Visibility="{Binding SearchConfig.IsSearchAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                              materialDesign:ElevationAssist.Elevation="Dp3">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PopupBox StaysOpen="True"
                                                          ToggleContent="{materialDesign:PackIcon Kind=Web,Size=16}"
                                                          VerticalAlignment="Center"
                                                          ToolTip="Web Search工具"
-                                                         PopupContent="{Binding SearchConfig,Mode=OneTime}"
+                                                         PopupContent="{Binding SearchConfig,Mode=OneWay}"
                                                          Style="{StaticResource MaterialDesignToolPopupBox}">
                                     <materialDesign:PopupBox.PopupContentTemplate>
                                         <DataTemplate DataType="{x:Type mcp:SearchConfigViewModel}">
-                                            <ListBox ItemsSource="{Binding SelectableSearchFunctions,Mode=OneTime}"
-                                                     SelectedItem="{Binding SelectedSearchFunction,Mode=TwoWay}"
+                                            <ListBox ItemsSource="{Binding SelectableSearchServices,Mode=OneWay}"
+                                                     SelectedItem="{Binding SelectedSearchService,Mode=TwoWay}"
                                                      SelectionMode="Single">
                                                 <ListBox.ItemTemplate>
                                                     <DataTemplate DataType="{x:Type abstraction:ISearchService}">

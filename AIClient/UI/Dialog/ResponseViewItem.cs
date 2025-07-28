@@ -1,10 +1,16 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Windows.Documents;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Endpoints.Messages;
 using LLMClient.Render;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
+using OpenAI.Chat;
+using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.UI.Dialog;
 
@@ -38,7 +44,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
     public bool IsInterrupt { get; set; }
 
     public long Tokens { get; set; }
-    
+
     public int Latency { get; set; }
 
     public int Duration { get; set; }
@@ -61,69 +67,46 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
             // 如果已经有了，则直接返回
             if (_flowDocument == null)
             {
-                var stringBuilder = new StringBuilder();
+                var flowDocument = new FlowDocument();
+                var renderer = CustomRenderer.NewRenderer(flowDocument);
+                if (this.Annotations != null)
+                {
+                    foreach (var annotation in this.Annotations)
+                    {
+                        renderer.RenderItem(annotation,
+                            CustomRenderer.AnnotationStyleKey);
+                    }
+                }
+
                 foreach (var message in ResponseMessages)
                 {
                     foreach (var content in message.Contents)
                     {
                         switch (content)
                         {
+                            case TextReasoningContent reasoningContent:
+                                renderer.RenderItem(reasoningContent,
+                                    CustomRenderer.TextReasoningStyleKey);
+                                break;
                             case TextContent textContent:
-                                stringBuilder.Append(textContent.Text);
+                                renderer.RenderRaw(textContent.Text);
                                 break;
                             case FunctionCallContent functionCallContent:
-                                stringBuilder.AppendLine();
-                                stringBuilder.Append(FunctionCallBlockParser.FunctionCallTag);
-                                stringBuilder.Append("CallId:");
-                                stringBuilder.Append(functionCallContent.CallId);
-                                stringBuilder.Append(',');
-                                stringBuilder.Append("FunctionName:");
-                                stringBuilder.Append(functionCallContent.Name);
-                                stringBuilder.Append(',');
-                                var arguments = functionCallContent.Arguments;
-                                if (arguments != null)
-                                {
-                                    stringBuilder.Append("Arguments:");
-                                    stringBuilder.Append(string.Join(", ",
-                                        arguments.Select(kv => $"{kv.Key}={kv.Value}")));
-                                }
-                                else
-                                {
-                                    stringBuilder.Append("Arguments: null");
-                                }
-
-                                stringBuilder.Append(FunctionCallBlockParser.FunctionCallEndTag);
+                                renderer.RenderItem(functionCallContent,
+                                    CustomRenderer.FunctionCallStyleKey);
                                 break;
                             case FunctionResultContent functionResultContent:
-                                stringBuilder.AppendLine();
-                                stringBuilder.Append(FunctionResultBlockParser.FunctionResultTag);
-                                stringBuilder.Append("CallId:");
-                                stringBuilder.Append(functionResultContent.CallId);
-                                stringBuilder.Append(',');
-                                var exception = functionResultContent.Exception;
-                                if (exception != null)
-                                {
-                                    stringBuilder.Append(exception.GetType().Name);
-                                    stringBuilder.Append(':');
-                                    stringBuilder.Append(exception.Message);
-                                }
-                                else
-                                {
-                                    var result = functionResultContent.Result?.ToString();
-                                    var formatJson = Extension.FormatJson(result);
-                                    stringBuilder.Append(formatJson ?? result);
-                                }
-
-                                stringBuilder.Append(FunctionResultBlockParser.FunctionResultEndTag);
+                                renderer.RenderItem(functionResultContent,
+                                    CustomRenderer.FunctionResultStyleKey);
                                 break;
                             default:
-                                stringBuilder.Append($"Unknown content type: {content.GetType().FullName}");
+                                Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");
                                 break;
                         }
                     }
                 }
 
-                _flowDocument = new SearchableDocument(stringBuilder.ToString());
+                _flowDocument = new SearchableDocument(flowDocument);
             }
 
             return _flowDocument;
@@ -198,6 +181,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
 
     private const string ThinkingEndTag = "</think>";
 
+    public IList<ChatAnnotation>? Annotations { get; set; }
 
     public ResponseViewItem(ILLMClient client)
     {

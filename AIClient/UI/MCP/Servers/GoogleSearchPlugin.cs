@@ -25,6 +25,8 @@ public class GoogleSearchPlugin : BaseViewModel, IBuiltInFunctionGroup, ISearchS
     }
 
     [JsonIgnore] public string Name { get; } = KernelPluginName;
+    
+    [JsonIgnore]
     public ThemedIcon Icon => LocalThemedIcon.FromPackIcon(PackIconKind.Google);
     public string? AdditionPrompt { get; } = null;
 
@@ -55,8 +57,8 @@ public class GoogleSearchPlugin : BaseViewModel, IBuiltInFunctionGroup, ISearchS
 
     public async Task EnsureAsync(CancellationToken token)
     {
-        var config = (await GlobalConfig.LoadOrCreate()).GoogleSearchConfig;
-        if (config?.IsValid == true && !config.Equals(_config))
+        var config = (await GlobalOptions.LoadOrCreate()).GoogleSearchOption;
+        if (config.IsValid && !config.Equals(_config))
         {
 #pragma warning disable SKEXP0050
             var textSearch = new GoogleTextSearch(

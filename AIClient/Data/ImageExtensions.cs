@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using ImageMagick;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
@@ -74,29 +75,33 @@ public static class ImageExtensions
             darkUri != null ? GetIcon(darkUri).Result : null);
     }
 
-    private static readonly Lazy<string[]> SupportedImageExtensionsLazy = new Lazy<string[]>(() =>
+    private static readonly Lazy<string[]> LocalSupportedImageExtensionsLazy = new Lazy<string[]>(() =>
     {
-        var addition = new[] { ".svg" };
         var myCodecs = ImageCodecInfo.GetImageDecoders();
-        if (myCodecs.Length == 0)
-            return addition;
-        return addition.Concat(myCodecs.SelectMany((info =>
+        return myCodecs.SelectMany(info =>
         {
             return info.FilenameExtension?.Split(';').Select((s => s.TrimStart('*').ToLower())) ?? [];
-        }))).ToArray();
+        }).ToArray();
     });
 
-    public static string[] SupportedImageExtensions
+    private static readonly Lazy<string[]> MagickNetSupportedImageExtensionsLazy = new Lazy<string[]>(() =>
     {
-        get => SupportedImageExtensionsLazy.Value;
-    }
+        var supportedFormats = MagickNET.SupportedFormats;
+        // 过滤并打印出所有可读写的格式
+        return supportedFormats
+            .Where(f => f.SupportsReading)
+            .Select(f => "." + f.Format.ToString().ToLowerInvariant())
+            .ToArray();
+    });
 
     private static readonly ConcurrentDictionary<Uri, ImageSource?> IconCache =
         new ConcurrentDictionary<Uri, ImageSource?>();
 
     public static bool IsSupportedImageExtension(string extension)
     {
-        return SupportedImageExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase);
+        return LocalSupportedImageExtensionsLazy.Value.Contains(extension, StringComparer.OrdinalIgnoreCase)
+               || MagickNetSupportedImageExtensionsLazy.Value
+                   .Contains(extension, StringComparer.OrdinalIgnoreCase);
     }
 
     public static async Task<ImageSource?> GetIcon(this Uri uri)
@@ -151,14 +156,7 @@ public static class ImageExtensions
             await using (stream)
             {
                 var extension = Path.GetExtension(fullPath);
-                if (!IsSupportedImageExtension(extension))
-                {
-                    throw new NotSupportedException("Unsupported image extension: " + extension);
-                }
-
-                return extension == ".svg"
-                    ? stream.SVGStreamToImageSource()
-                    : stream.ToDefaultImageSource();
+                return stream.ToImageSource(extension);
             }
         }
         catch (OperationCanceledException)
@@ -215,16 +213,36 @@ public static class ImageExtensions
         }
     }
 
-    public static ImageSource ToDefaultImageSource(this Stream stream)
+    public static ImageSource ToImageSource(this Stream stream, string extension, uint width = 32, uint height = 32)
     {
-        var image = new BitmapImage();
-        image.BeginInit();
-        image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
-        image.CacheOption = BitmapCacheOption.OnLoad;
-        image.UriSource = null;
-        image.StreamSource = stream;
-        image.EndInit();
-        image.Freeze();
-        return image;
+        if (LocalSupportedImageExtensionsLazy.Value.Contains(extension, StringComparer.OrdinalIgnoreCase))
+        {
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.UriSource = null;
+            image.StreamSource = stream;
+            image.EndInit();
+            image.Freeze();
+            return image;
+        }
+
+        if (MagickNetSupportedImageExtensionsLazy.Value.Contains(extension,
+                StringComparer.OrdinalIgnoreCase))
+
+        {
+            var magickImage = new MagickImage(stream, new MagickReadSettings()
+            {
+                Width = width,
+                Height = height,
+                BackgroundColor = MagickColors.Transparent,
+            });
+            var bitmapSource = magickImage.ToBitmapSource();
+            bitmapSource.Freeze();
+            return bitmapSource;
+        }
+
+        throw new NotSupportedException("Unsupported image extension: " + extension);
     }
 }

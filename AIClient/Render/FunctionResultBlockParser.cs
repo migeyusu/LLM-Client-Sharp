@@ -1,5 +1,6 @@
 ﻿namespace LLMClient.Render;
 
+[Obsolete]
 public class FunctionResultBlockParser : SingleTagBlockParser<FunctionResultBlock>
 {
     public const string FunctionResultTag = "<function_result>";

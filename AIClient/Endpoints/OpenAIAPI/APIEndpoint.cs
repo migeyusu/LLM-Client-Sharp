@@ -49,7 +49,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     }
 
     public virtual bool IsDefault { get; } = false;
-    
+
     public bool IsEnabled { get; } = true;
 
     public string Name { get; set; } = Guid.NewGuid().ToString();
@@ -73,13 +73,6 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         {
             if (value == _iconUrl) return;
             ClearError();
-            if ((!string.IsNullOrEmpty(value)) &&
-                !ImageExtensions.SupportedImageExtensions.Contains(Path.GetExtension(value)))
-            {
-                AddError("The image extension is not supported.");
-                return;
-            }
-
             _iconUrl = value;
             OnPropertyChanged();
             UpdateIcon();
@@ -111,10 +104,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         {
             foreach (var apiModelInfo in this.Models)
             {
-                if (!ModelMapping.MapInfo(apiModelInfo))
-                {
-                    apiModelInfo.IsNotAvailable = true;
-                }
+                apiModelInfo.IsNotAvailable = !ModelMapping.MapInfo(apiModelInfo);
             }
         }
 
@@ -281,6 +271,10 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         {
             this._icon = await new Uri(this.IconUrl).GetIcon();
             OnPropertyChangedAsync(nameof(Icon));
+        }
+        else
+        {
+            this._icon = null;
         }
     }
 

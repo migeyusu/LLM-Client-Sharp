@@ -304,21 +304,7 @@ public static class Extension
             list.Add(msg);
         }
     }
-
-
-    public static ImageSource SVGStreamToImageSource(this Stream stream, uint width = 32, uint height = 32)
-    {
-        var magickImage = new MagickImage(stream, new MagickReadSettings()
-        {
-            Width = width,
-            Height = height,
-            BackgroundColor = MagickColors.Transparent,
-            
-        });
-        var bitmapSource = magickImage.ToBitmapSource();
-        bitmapSource.Freeze();
-        return bitmapSource;
-    }
+    
 
     public static ImageSource LoadSvgFromBase64(string src)
     {
@@ -326,7 +312,7 @@ public static class Extension
         byte[] binaryData = Convert.FromBase64String(src);
         using (var mem = new MemoryStream(binaryData))
         {
-            return mem.SVGStreamToImageSource();
+            return mem.ToImageSource(".svg");
         }
     }
 

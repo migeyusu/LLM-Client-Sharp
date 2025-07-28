@@ -132,7 +132,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
             }
 
             ErrorMessage = exception.Message;
-            MessageEventBus.Publish($"Error refreshing tools: {e.Message}");
+            MessageEventBus.Publish($"Error refreshing tools {this.Name}: {e.Message}");
             return false;
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.UI;
 using LLMClient.UI.Component;
@@ -21,6 +22,7 @@ public class GeekAISearchService : BaseViewModel, ISearchService
     public SearchEngineType? SearchEngine { get; set; }
 
     private bool _searchConfigReturnResult = false;
+
     public bool ReturnResult
     {
         get => _searchConfigReturnResult;
@@ -32,19 +34,20 @@ public class GeekAISearchService : BaseViewModel, ISearchService
         }
     }
 
-    public string Name => "GeekAI Search Service";
+    [JsonIgnore] public string Name => "GeekAI Search Service";
 
     public string GetUniqueId()
     {
         return "ReturnResult:" + ReturnResult + ",SearchEngine:" + SearchEngine;
     }
 
+    [JsonIgnore]
     public ThemedIcon Icon =>
         AsyncThemedIcon.FromUri(new Uri("pack://application:,,,/LLMClient;component/Resources/Images/geekai.png"));
 
     public bool CheckCompatible(ILLMModel model)
     {
-        if (model.Endpoint is APIEndPoint apiEndPoint && apiEndPoint.ConfigOption.URL == "https://geekai.co/api/v1")
+        if (model.Endpoint is APIEndPoint { ConfigOption.URL: "https://geekai.co/api/v1" })
         {
             return true;
         }
@@ -60,14 +63,14 @@ public class GeekAISearchService : BaseViewModel, ISearchService
             return Task.CompletedTask;
         }
 
-        requestViewItem.RequestAdditionalProperties ??= new AdditionalPropertiesDictionary();
-        requestViewItem.RequestAdditionalProperties["enable_search"] = true;
-        if (SearchEngine != null || ReturnResult)
+        requestViewItem.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        requestViewItem.AdditionalProperties["enable_search"] = true;
+        if (SearchEngine != null)
         {
-            requestViewItem.RequestAdditionalProperties["search_config"] = new
+            requestViewItem.AdditionalProperties["search_config"] = new SearchConfig()
             {
-                search_engine = SearchEngine?.ToString(),
-                return_result = ReturnResult
+                Engine = SearchEngine.GetEnumDescription(),
+                ReturnResult = ReturnResult
             };
         }
 
@@ -82,5 +85,16 @@ public class GeekAISearchService : BaseViewModel, ISearchService
             SearchEngine = this.SearchEngine,
             ReturnResult = this.ReturnResult
         };
+    }
+
+    public class SearchConfig
+    {
+        [JsonPropertyName("engine")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Engine { get; set; }
+
+        [JsonPropertyName("return_result")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool ReturnResult { get; set; } = false;
     }
 }

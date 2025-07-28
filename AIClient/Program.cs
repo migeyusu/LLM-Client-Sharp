@@ -41,7 +41,6 @@ public class Program
             var collection = serviceCollection.AddSingleton<MainWindowViewModel>()
                 .AddSingleton<MainWindow>()
                 .AddTransient<AutoMapModelTypeConverter>()
-                .AddTransient<GlobalConfig>()
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
 #if DEBUG
@@ -99,21 +98,6 @@ public class Program
         {
             MessageBox.Show("An error occured: " + e + "process will be terminated.");
         }
-
-        try
-        {
-            var mainViewModel = serviceProvider?.GetService<MainWindowViewModel>();
-            if (mainViewModel is { IsInitialized: true })
-            {
-                mainViewModel.SaveSessionsToLocal().Wait(TimeSpan.FromMinutes(1));
-            }
-
-            HttpContentCache.Instance.PersistIndexAsync().Wait(TimeSpan.FromSeconds(5));
-        }
-        catch (Exception e)
-        {
-            Trace.WriteLine(e.Message);
-        }
         finally
         {
             if (!Debugger.IsAttached)
@@ -121,5 +105,6 @@ public class Program
                 Mutex.ReleaseMutex();
             }
         }
+        
     }
 }

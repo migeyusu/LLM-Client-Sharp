@@ -7,7 +7,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
 
-public class GlobalConfig : NotifyDataErrorInfoViewModelBase
+public class GlobalOptions : NotifyDataErrorInfoViewModelBase
 {
     private int _summarizeWordsCount = 1000;
     private const string DEFAULT_GLOBAL_CONFIG_FILE = "globalconfig.json";
@@ -42,7 +42,7 @@ public class GlobalConfig : NotifyDataErrorInfoViewModelBase
         }
     }
 
-    public GoogleSearchOption? GoogleSearchConfig { get; set; }
+    public GoogleSearchOption GoogleSearchOption { get; set; } = new GoogleSearchOption();
 
     [JsonIgnore]
     public ICommand SaveCommand => new ActionCommand(async (param) =>
@@ -55,7 +55,7 @@ public class GlobalConfig : NotifyDataErrorInfoViewModelBase
         }
     });
 
-    public static async Task<GlobalConfig> LoadOrCreate()
+    public static async Task<GlobalOptions> LoadOrCreate()
     {
         var fileInfo = new FileInfo(DEFAULT_GLOBAL_CONFIG_FILE);
         if (fileInfo.Exists)
@@ -64,7 +64,7 @@ public class GlobalConfig : NotifyDataErrorInfoViewModelBase
             {
                 using (var fileStream = fileInfo.OpenRead())
                 {
-                    var config = await JsonSerializer.DeserializeAsync<GlobalConfig>(fileStream);
+                    var config = await JsonSerializer.DeserializeAsync<GlobalOptions>(fileStream);
                     if (config != null)
                     {
                         return config;
@@ -77,6 +77,6 @@ public class GlobalConfig : NotifyDataErrorInfoViewModelBase
             }
         }
 
-        return new GlobalConfig();
+        return new GlobalOptions();
     }
 }

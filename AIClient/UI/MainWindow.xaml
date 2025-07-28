@@ -132,7 +132,7 @@
             <Button VerticalAlignment="Center"
                     Width="32"
                     Height="32"
-                    Margin="16,0,0,0"
+                    Margin="8,0,0,0"
                     ToolTip="打开日志"
                     Click="OpenLogger_OnClick"
                     WindowChrome.IsHitTestVisibleInChrome="True"
@@ -188,7 +188,7 @@
                         <models:AzureModelInfoView Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type ui:GlobalConfig}">
+                <DataTemplate DataType="{x:Type ui:GlobalOptions}">
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="软件配置">
                         <ui:GlobalConfigView Width="800"
@@ -199,7 +199,7 @@
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="选择函数">
                         <mcp:AIFunctionSelectorView Width="800"
-                                                     Height="500" />
+                                                    Height="500" />
                     </HeaderedContentControl>
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type ui:PromptsResourceViewModel}">
@@ -228,12 +228,12 @@
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="Standard Project">
                         <project:ProjectConfigView Width="900"
-                                                     Height="600" />
+                                                   Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type endpoints:NullLlmModelClient}">
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
-                                            Header="未定义的模型"/>
+                                            Header="未定义的模型" />
                 </DataTemplate>
             </materialDesign:DialogHost.Resources>
             <Grid Margin="10"
@@ -638,14 +638,14 @@
                                      Visibility="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                      VerticalAlignment="Center"
                                      HorizontalAlignment="Center">
-                    <StackPanel Margin="30" DataContext="{Binding LoadingProgress,Mode=OneTime}">
+                    <StackPanel Margin="30">
                         <ProgressBar IsIndeterminate="True"
                                      Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                     Value="{Binding ProgressValue,Mode=OneWay}" />
+                                     Value="50" />
                         <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
                                    TextWrapping="Wrap"
                                    Margin="0,15,0,0"
-                                   Text="{Binding Message,Mode=OneTime}" />
+                                   Text="{Binding LoadingMessage,Mode=OneWay}" />
                     </StackPanel>
                 </materialDesign:Card>
                 <GridSplitter Grid.Row="0" Grid.Column="0"

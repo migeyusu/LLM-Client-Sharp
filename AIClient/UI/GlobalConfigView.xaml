@@ -4,12 +4,11 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:data="clr-namespace:LLMClient.Data"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:dialog="clr-namespace:LLMClient.UI.Dialog"
              xmlns:project="clr-namespace:LLMClient.UI.Project"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance ui:GlobalConfig}"
+             d:DataContext="{d:DesignInstance ui:GlobalOptions}"
              d:DesignHeight="500" d:DesignWidth="800">
     <UserControl.Resources>
 
@@ -19,48 +18,68 @@
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <StackPanel Margin="10">
-            <TextBlock Text="上下文总结Prompt：" />
-            <TextBox Text="{Binding TokenSummarizePromptString}"
-                     Margin="0,10,0,0"
-                     MaxHeight="200"
-                     AcceptsReturn="True"
-                     AcceptsTab="True"
-                     Style="{StaticResource MaterialDesignFilledTextBox}" />
-            <DockPanel HorizontalAlignment="Left"
-                       Margin="0,10,0,0">
-                <TextBlock Text="上下文总结大小："
-                           VerticalAlignment="Center" />
-                <TextBox materialDesign:TextFieldAssist.SuffixText="词"
-                         Width="60"
-                         Margin="5,0,0,0"
-                         Text="{Binding SummarizeWordsCount,Mode=TwoWay}" />
-            </DockPanel>
-
-        </StackPanel>
+        <TabControl Padding="8">
+            <TabItem Header="总结">
+                <StackPanel>
+                    <TextBlock Text="上下文总结Prompt：" />
+                    <TextBox Text="{Binding TokenSummarizePromptString}"
+                             Margin="0,10,0,0"
+                             MaxHeight="200"
+                             AcceptsReturn="True"
+                             AcceptsTab="True"
+                             Style="{StaticResource MaterialDesignFilledTextBox}" />
+                    <DockPanel HorizontalAlignment="Left"
+                               Margin="0,10,0,0">
+                        <TextBlock Text="上下文总结大小："
+                                   VerticalAlignment="Center" />
+                        <TextBox materialDesign:TextFieldAssist.SuffixText="词"
+                                 Width="60"
+                                 Margin="5,0,0,0"
+                                 Text="{Binding SummarizeWordsCount,Mode=TwoWay}" />
+                    </DockPanel>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="文件夹">
+                <WrapPanel>
+                    <Button Click="ImportEndpoints_OnClick"
+                            Content="导入Endpoints"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Margin="0,0,0,0" />
+                    <Button Content="打开对话存储"
+                            Command="{x:Static ui:CommonCommands.OpenFolderCommand}"
+                            CommandParameter="{x:Static dialog:DialogFileViewModel.SaveFolderPath}"
+                            Margin="20,0,0,0"
+                            Style="{StaticResource MaterialDesignOutlinedButton}" />
+                    <Button Content="打开工程存储"
+                            Command="{x:Static ui:CommonCommands.OpenFolderCommand}"
+                            CommandParameter="{x:Static project:ProjectViewModel.SaveFolderPath}"
+                            Margin="20,0,0,0"
+                            Style="{StaticResource MaterialDesignOutlinedButton}" />
+                </WrapPanel>
+            </TabItem>
+            <TabItem Header="Google Search">
+                <StackPanel DataContext="{Binding GoogleSearchOption,Mode=OneTime}">
+                    <TextBlock Text="Google Search API Key：" />
+                    <TextBox Text="{Binding ApiKey,Mode=TwoWay}"
+                             Margin="0,10,0,0"
+                             Style="{StaticResource MaterialDesignFilledTextBox}" />
+                    <TextBlock Text="Google Search Engine ID："
+                               Margin="0,10,0,0" />
+                    <TextBox Text="{Binding SearchEngineId,Mode=TwoWay}"
+                             Margin="0,10,0,0"
+                             Style="{StaticResource MaterialDesignFilledTextBox}" />
+                </StackPanel>
+            </TabItem>
+        </TabControl>
         <StackPanel Grid.Row="1"
                     VerticalAlignment="Bottom"
                     HorizontalAlignment="Right"
                     Orientation="Horizontal"
                     Margin="10">
-            <Button Click="ClearHttpCache_OnClick"
+            <!--<Button Click="ClearHttpCache_OnClick"
                     Content="清空HTTP缓存"
                     Style="{StaticResource MaterialDesignOutlinedButton}"
-                    Margin="20,0,0,0" />
-            <Button Click="ImportEndpoints_OnClick"
-                    Content="导入Endpoints文件"
-                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                    Margin="20,0,0,0" />
-            <Button Content="打开对话存储"
-                    Command="{x:Static ui:CommonCommands.OpenFolderCommand}"
-                    CommandParameter="{x:Static dialog:DialogFileViewModel.SaveFolderPath}"
-                    Margin="20,0,0,0"
-                    Style="{StaticResource MaterialDesignOutlinedButton}" />
-            <Button Content="打开项目存储"
-                    Command="{x:Static ui:CommonCommands.OpenFolderCommand}"
-                    CommandParameter="{x:Static project:ProjectViewModel.SaveFolderPath}"
-                    Margin="20,0,0,0"
-                    Style="{StaticResource MaterialDesignOutlinedButton}" />
+                    Margin="20,0,0,0" />-->
             <Button Command="{Binding SaveCommand}"
                     Margin="20,0,0,0"
                     Content="保存"
