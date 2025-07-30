@@ -27,7 +27,8 @@ public class ClientContext
             return;
         }
 
-        var stream = this.Result.GetRawResponse().ContentStream;
+        var rawResponse = this.Result.GetRawResponse();
+        var stream = rawResponse.ContentStream;
         if (stream == null)
         {
             return;
@@ -37,6 +38,7 @@ public class ClientContext
         {
             return;
         }
+
         stream.Position = 0;
 
         var jsonNode = await JsonNode.ParseAsync(stream);
@@ -70,8 +72,17 @@ public class ClientContext
                     var message = choiceObject["message"]?.AsObject();
                     if (message != null)
                     {
-                        var reasoning = message["reasoning"]?.ToString();
-                        if (reasoning != null)
+                        string? reasoning = null;
+                        if (message.ContainsKey("reasoning"))
+                        {
+                            reasoning = message["reasoning"]?.ToString();
+                        }
+                        else if (message.ContainsKey("reasoning_content"))
+                        {
+                            reasoning = message["reasoning_content"]?.ToString();
+                        }
+
+                        if (!string.IsNullOrEmpty(reasoning))
                         {
                             chatMessage.Contents.Insert(0, new TextReasoningContent(reasoning));
                         }

@@ -138,6 +138,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                 await searchService.ApplySearch(context);
             }
 
+            var thinkingConfig = requestViewItem?.ThinkingConfig;
+            thinkingConfig?.EnableThinking(requestViewItem!);
             var chatHistory = new List<ChatMessage>();
             AITool[]? tools = null;
             var kernelPluginCollection = new KernelPluginCollection();
@@ -218,7 +220,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                     var streaming = this.Parameters.Streaming;
                     var clientContext = new ClientContext(requestViewItem?.AdditionalProperties)
                         { Streaming = streaming };
-                    using (ChatContext<ClientContext>.Create(clientContext))
+                    using (AsyncContext<ClientContext>.Create(clientContext))
                     {
                         if (streaming)
                         {

@@ -33,6 +33,7 @@ public class AIFunctionSelectorViewModel : BaseViewModel
         new SuspendableObservableCollection<SelectableFunctionGroupViewModel>();
 
     private IReadOnlyList<SelectableFunctionGroupViewModel> _mcpServices = [];
+    
     private IReadOnlyList<SelectableFunctionGroupViewModel> _builtInFunctions = [];
 
     public IAIFunctionGroup[] SelectedFunctions

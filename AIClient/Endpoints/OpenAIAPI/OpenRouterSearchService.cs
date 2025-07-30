@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
+using LLMClient.Endpoints.Converters;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
@@ -46,14 +47,9 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
 
     [JsonIgnore] public string Name => "OpenRouter Search";
 
-    public bool CheckCompatible(ILLMModel model)
+    public bool CheckCompatible(ILLMClient client)
     {
-        if (model.Endpoint is APIEndPoint apiEndPoint && apiEndPoint.ConfigOption.URL == "https://openrouter.ai/api/v1")
-        {
-            return true;
-        }
-
-        return false;
+        return client.Endpoint is APIEndPoint { ModelsSource: ModelSource.OpenRouter };
     }
 
     public Task ApplySearch(DialogContext context)
@@ -64,7 +60,6 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
             return Task.CompletedTask;
         }
 
-        requestViewItem.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         if (string.IsNullOrEmpty(SearchPrompt))
         {
             Trace.WriteLine("SearchPrompt cannot be null or empty");
@@ -101,16 +96,15 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
             SearchPrompt = SearchPrompt,
         };
     }
-    
+
     public class PluginConfig
     {
-        [JsonPropertyName("id")]
-        public string Id { get; set; } = string.Empty;
-        
+        [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
+
         [JsonPropertyName("max_results")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public int? MaxResults { get; set; }
-        
+
         [JsonPropertyName("search_prompt")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? SearchPrompt { get; set; }

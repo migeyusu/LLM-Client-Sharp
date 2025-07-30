@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI.MCP.Servers;
 using OpenAI.Chat;
@@ -25,6 +26,8 @@ namespace LLMClient.Data;
 [JsonSerializable(typeof(GoogleSearchPlugin))]
 [JsonSerializable(typeof(GeekAISearchService.SearchConfig))]
 [JsonSerializable(typeof(OpenRouterSearchService.PluginConfig[]))]
+[JsonSerializable(typeof(GeekAIThinkingConfig))]
+[JsonSerializable(typeof(OpenRouterReasoningConfig))]
 internal partial class LLM_DataSerializeContext : JsonSerializerContext
 {
 }

@@ -26,5 +26,7 @@ public class ResponsePersistItem
 
     public int Duration { get; set; }
 
+    public bool IsManualValid { get; set; }
+
     [JsonPropertyName("IsEnable")] public bool IsAvailableInContext { get; set; }
 }

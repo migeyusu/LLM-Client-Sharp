@@ -3,7 +3,7 @@
 // TInstance 可以是您希望在上下文中传递的任何类型
 namespace LLMClient.Endpoints;
 
-public static class ChatContext<TInstance> where TInstance : class
+public static class AsyncContext<TInstance> where TInstance : class
 {
     // 内部类，用于持有上下文实例和指向父级上下文的链接
     private sealed class ChatContextHolder

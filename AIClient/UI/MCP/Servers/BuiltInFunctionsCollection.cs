@@ -11,8 +11,7 @@ public class BuiltInFunctionsCollection : IBuiltInFunctionsCollection, IFunction
         //从当前程序集加载所有实现了KernelFunctionGroup的类型
         var kernelFunctionGroupTypes = Assembly.GetExecutingAssembly()
             .GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract && typeof(IBuiltInFunctionGroup).IsAssignableFrom(t))
-            .ToList();
+            .Where(t => t.IsClass && !t.IsAbstract && typeof(IBuiltInFunctionGroup).IsAssignableFrom(t));
         //创建KernelFunctionGroup的实例并添加到集合中
         KernelFunctionGroups =
             kernelFunctionGroupTypes.Select(t => (IBuiltInFunctionGroup)Activator.CreateInstance(t)!).ToArray();

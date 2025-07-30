@@ -113,6 +113,15 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
 
     public ICommand RebaseCommand => new ActionCommand(o => { ParentSession.RemoveAfter(this); });
 
+    //标记为有效结果
+    public ICommand MarkValid => new ActionCommand((o =>
+    {
+        if (this.AcceptedResponse is ResponseViewItem responseViewItem)
+        {
+            responseViewItem.IsManualValid = true;
+        }
+    }));
+
     public ICommand RefreshSelectedCommand => new ActionCommand(o => RetryCurrent());
 
     public int AcceptedIndex

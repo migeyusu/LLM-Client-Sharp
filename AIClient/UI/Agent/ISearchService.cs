@@ -20,7 +20,7 @@ public class SearchAgent : IAgent, ISearchService
     [JsonIgnore]
     public ThemedIcon Icon => ThemedIcon.EmptyIcon;
 
-    public bool CheckCompatible(ILLMModel model)
+    public bool CheckCompatible(ILLMClient client)
     {
         return true;
     }

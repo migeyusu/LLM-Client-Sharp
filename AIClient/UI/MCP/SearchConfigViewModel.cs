@@ -62,7 +62,7 @@ public class SearchConfigViewModel : BaseViewModel
     private ISearchService[]? _selectableSearchServices;
     private ISearchService? _selectedSearchService;
 
-    public void ResetSearchFunction(ILLMModel model)
+    public void ResetSearchFunction(ILLMClient model)
     {
         this.SelectableSearchServices =
             _builtInSearchServices.Where(service => service.CheckCompatible(model)).ToArray();

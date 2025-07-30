@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 using MimeTypes;
 
@@ -35,9 +36,26 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
     /// 对Request附加的额外属性
     /// </summary>
     [JsonPropertyName("RequestAdditionalProperties")]
-    public AdditionalPropertiesDictionary? AdditionalProperties { get; set; }
+    public AdditionalPropertiesDictionary AdditionalProperties { get; set; } = new AdditionalPropertiesDictionary();
 
     private ChatMessage? _message = null;
+
+    [JsonPropertyName("IsEnable")] public bool IsAvailableInContext { get; set; } = true;
+
+    public List<Attachment>? Attachments { get; set; }
+
+    public IThinkingConfig? ThinkingConfig { get; set; }
+
+    [JsonIgnore]
+    public long Tokens
+    {
+        //估计tokens
+        get => (long)(TextMessage.Length / 2.5);
+    }
+
+    public RequestViewItem() : base()
+    {
+    }
 
     public async IAsyncEnumerable<ChatMessage> GetMessages([EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -73,29 +91,5 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
         }
 
         yield return _message;
-    }
-
-    [JsonPropertyName("IsEnable")] public bool IsAvailableInContext { get; set; } = true;
-
-    public List<Attachment>? Attachments { get; set; }
-
-    [JsonIgnore]
-    public long Tokens
-    {
-        //估计tokens
-        get => (long)(TextMessage.Length / 2.5);
-    }
-
-    public RequestViewItem() : base()
-    {
-    }
-
-    private static JsonSerializerOptions _options = new JsonSerializerOptions()
-        { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
-
-    public RequestViewItem Clone()
-    {
-        var serialize = JsonSerializer.Serialize(this);
-        return JsonSerializer.Deserialize<RequestViewItem>(serialize, _options)!;
     }
 }

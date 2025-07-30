@@ -548,7 +548,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
             throw new InvalidOperationException("最后一条记录不是请求");
         }
 
-        return FilterHistory(total).Reverse().Append(lastRequest).ToArray();
+        //从倒数第二条开始
+        return FilterHistory(total, total.Count - 2).Reverse().Append(lastRequest).ToArray();
     }
 
     public IDialogItem[] GenerateHistory(MultiResponseViewItem? response = null)

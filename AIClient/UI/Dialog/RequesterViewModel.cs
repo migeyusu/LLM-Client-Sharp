@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Input;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
@@ -94,9 +95,10 @@ public class RequesterViewModel : BaseViewModel
 
             _defaultClient.FunctionInterceptor = FunctionAuthorizationInterceptor.Instance;
             _defaultClient = value;
+            BindClient(value);
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsModelSupportFunctionCall));
-            BindClient(value);
+            OnPropertyChanged(nameof(ThinkingAvailable));
         }
     }
 
@@ -150,6 +152,21 @@ public class RequesterViewModel : BaseViewModel
 
     public SearchConfigViewModel SearchConfig { get; }
 
+    public ThinkingConfigViewModel ThinkingConfig { get; } = new ThinkingConfigViewModel();
+
+    public bool ThinkingAvailable
+    {
+        get
+        {
+            if (!this.DefaultClient.Model.Reasonable)
+            {
+                return false;
+            }
+
+            return this.ThinkingConfig.Config != null;
+        }
+    }
+
     #region input
 
     private string? _promptString;
@@ -185,6 +202,7 @@ public class RequesterViewModel : BaseViewModel
         Filters = { new CommandAuthorization() }
     };
 
+
     private void BindClient(ILLMClient client)
     {
         if (client is INotifyPropertyChanged newValue)
@@ -198,7 +216,8 @@ public class RequesterViewModel : BaseViewModel
         }
 
         client.FunctionInterceptor = _authorizationInterceptor;
-        this.SearchConfig.ResetSearchFunction(client.Model);
+        this.SearchConfig.ResetSearchFunction(client);
+        this.ThinkingConfig.ResetConfig(client);
     }
 
     public void ClearRequest()
@@ -227,16 +246,23 @@ public class RequesterViewModel : BaseViewModel
             tools = this.FunctionSelector.SelectedFunctions;
         }
 
+        var thinkingConfig = this.ThinkingConfig.Enable ? this.ThinkingConfig.Config : null;
+        if (thinkingConfig != null)
+        {
+            var mapper = ServiceLocator.GetService<IMapper>();
+            mapper!.Map<IThinkingConfig, IThinkingConfig>(this.ThinkingConfig,
+                thinkingConfig);
+        }
 
         //每次搜索的条件可能不同，所以传递的是副本
-
         return new RequestViewItem()
         {
             InteractionId = Guid.NewGuid(),
             TextMessage = promptBuilder.ToString().Trim(),
             Attachments = Attachments.ToList(),
             FunctionGroups = tools == null ? [] : [..tools],
-            SearchService = SearchConfig.GetUserSearchService()
+            SearchService = SearchConfig.GetUserSearchService(),
+            ThinkingConfig = thinkingConfig,
         };
     }
 

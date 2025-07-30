@@ -9,7 +9,7 @@ using Microsoft.SemanticKernel.Plugins.Web.Google;
 
 namespace LLMClient.UI.MCP.Servers;
 
-public class GoogleSearchPlugin : BaseViewModel, IBuiltInFunctionGroup, ISearchService
+public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchService
 {
     private IReadOnlyList<AIFunction>? _availableTools;
 
@@ -73,9 +73,9 @@ public class GoogleSearchPlugin : BaseViewModel, IBuiltInFunctionGroup, ISearchS
         }
     }
 
-    public bool CheckCompatible(ILLMModel model)
+    public bool CheckCompatible(ILLMClient client)
     {
-        return model.SupportFunctionCall;
+        return client.Model.SupportFunctionCall;
     }
 
     public Task ApplySearch(DialogContext context)

@@ -97,17 +97,17 @@ public class DialogViewModel : DialogSessionViewModel
         IsChaining = true;
         ChainingStep = 0;
         var pendingItems = dialogItems
-            .Where(item => item is RequestViewItem || item is EraseViewItem)
+            .Where(item => item is IRequestItem || item is EraseViewItem)
             .ToArray();
         ChainStepCount = pendingItems.Length;
         try
         {
             foreach (var oldDialogDialogItem in pendingItems)
             {
-                if (oldDialogDialogItem is RequestViewItem requestViewItem)
+                if (oldDialogDialogItem is IRequestItem requestViewItem)
                 {
                     var newGuid = Guid.NewGuid();
-                    var newItem = requestViewItem.Clone();
+                    var newItem = Extension.Clone(requestViewItem);
                     DialogItems.Add(newItem);
                     var copy = GenerateHistory();
                     int retryCount = 3;

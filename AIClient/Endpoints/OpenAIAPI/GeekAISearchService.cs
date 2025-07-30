@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
+using LLMClient.Endpoints.Converters;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
@@ -45,14 +46,9 @@ public class GeekAISearchService : BaseViewModel, ISearchService
     public ThemedIcon Icon =>
         AsyncThemedIcon.FromUri(new Uri("pack://application:,,,/LLMClient;component/Resources/Images/geekai.png"));
 
-    public bool CheckCompatible(ILLMModel model)
+    public bool CheckCompatible(ILLMClient client)
     {
-        if (model.Endpoint is APIEndPoint { ConfigOption.URL: "https://geekai.co/api/v1" })
-        {
-            return true;
-        }
-
-        return false;
+        return client.Endpoint is APIEndPoint { ModelsSource: ModelSource.GeekAI };
     }
 
     public Task ApplySearch(DialogContext context)
@@ -62,8 +58,7 @@ public class GeekAISearchService : BaseViewModel, ISearchService
         {
             return Task.CompletedTask;
         }
-
-        requestViewItem.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        
         requestViewItem.AdditionalProperties["enable_search"] = true;
         if (SearchEngine != null)
         {

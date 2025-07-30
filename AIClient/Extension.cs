@@ -34,6 +34,8 @@ public static class Extension
     {
         return collection.AddAutoMapper((provider, expression) =>
         {
+            expression.CreateMap<IThinkingConfig, GeekAIThinkingConfig>();
+            expression.CreateMap<IThinkingConfig, OpenRouterReasoningConfig>();
             expression.CreateMap<IAIContent, AIContent>().IncludeAllDerived();
             expression.CreateMap<AIContent, IAIContent>().IncludeAllDerived();
             expression.CreateMap<ChatMessage, ChatMessagePO>();
@@ -304,7 +306,7 @@ public static class Extension
             list.Add(msg);
         }
     }
-    
+
 
     public static ImageSource LoadSvgFromBase64(string src)
     {
@@ -347,5 +349,11 @@ public static class Extension
             return parent;
         else
             return FindVisualParent<T>(parentObject);
+    }
+
+    public static T Clone<T>(T source) where T : class
+    {
+        var json = JsonSerializer.Serialize(source);
+        return JsonSerializer.Deserialize<T>(json) ?? throw new InvalidOperationException("Deserialization failed.");
     }
 }

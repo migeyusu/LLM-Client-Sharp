@@ -2,23 +2,17 @@
 using System.ClientModel.Primitives;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using AutoMapper;
 using LLMClient.Abstraction;
-using LLMClient.Endpoints.Converters;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using OpenAI;
-using OpenAI.Chat;
-using OpenAI.Responses;
-using BinaryContent = System.ClientModel.BinaryContent;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
@@ -102,7 +96,7 @@ public class APIClient : LlmClientBase
     {
         var apiToken = _option.APIToken;
         var apiUri = new Uri(_option.URL);
-        var httpClient = new HttpClient(new DebugMessageLogger()) { Timeout = TimeSpan.FromMinutes(10) };
+        var httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
         var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
         {
             Endpoint = apiUri,
@@ -163,7 +157,17 @@ public class DebugMessageLogger : DelegatingHandler
         if (requestContent != null)
         {
             var requestString = await requestContent.ReadAsStringAsync(cancellationToken);
-            Debug.WriteLine(requestString);
+            var jsonNode = JsonNode.Parse(requestString);
+            var foo = new[]
+            {
+                new
+                {
+                    id = "web",
+                }
+            };
+            var node = JsonSerializer.SerializeToNode(foo);
+            jsonNode["plugins"] = node;
+            request.Content = new StringContent(JsonSerializer.Serialize(jsonNode));
         }
 
         var httpResponseMessage = await base.SendAsync(request, cancellationToken);
@@ -186,78 +190,5 @@ public class CustomChatClient : DelegatingChatClient
         CancellationToken cancellationToken = new CancellationToken())
     {
         return base.GetResponseAsync(messages, options, cancellationToken);
-    }
-}
-
-public class OpenAIClientEx : OpenAIClient
-{
-    private readonly ApiKeyCredential _credential;
-    private readonly OpenAIClientOptions _options;
-
-    public OpenAIClientEx(ApiKeyCredential credential, OpenAIClientOptions options) : base(credential, options)
-    {
-        _credential = credential;
-        _options = options;
-    }
-
-    public override ChatClient GetChatClient(string model)
-    {
-        return new OpenAIChatClientEx(model, _credential, this._options);
-    }
-}
-
-public class OpenAIChatClientEx : ChatClient
-{
-    public OpenAIChatClientEx(string model, ApiKeyCredential credential, OpenAIClientOptions options)
-        : base(model, credential, options)
-    {
-    }
-
-    public override async Task<ClientResult> CompleteChatAsync(BinaryContent content, RequestOptions? options = null)
-    {
-        var clientContext = ChatContext<ClientContext>.Current;
-        if (clientContext != null)
-        {
-            if (clientContext.AdditionalObjects.Count != 0)
-            {
-                await using (var oriStream = new MemoryStream())
-                {
-                    await content
-                        .WriteToAsync(oriStream);
-                    oriStream.Position = 0;
-                    var jsonNode = await JsonNode.ParseAsync(oriStream);
-                    if (jsonNode == null)
-                    {
-                        throw new InvalidOperationException("Content is not valid JSON.");
-                    }
-
-                    foreach (var additionalObject in clientContext.AdditionalObjects)
-                    {
-                        var node = JsonSerializer.SerializeToNode(additionalObject.Value);
-                        jsonNode[additionalObject.Key] = node;
-                    }
-
-                    oriStream.SetLength(0);
-                    await using (var writer = new Utf8JsonWriter(oriStream))
-                    {
-                        jsonNode.WriteTo(writer);
-                        await writer.FlushAsync();
-                    }
-
-                    oriStream.Position = 0;
-                    var modifiedData = await BinaryData.FromStreamAsync(oriStream);
-                    content = BinaryContent.Create(modifiedData);
-                }
-            }
-        }
-
-        var result = await base.CompleteChatAsync(content, options);
-        if (clientContext != null)
-        {
-            //may be streaming mode or not, streaming mode coordinate to a page
-            clientContext.Result = result;
-        }
-
-        return result;
     }
 }

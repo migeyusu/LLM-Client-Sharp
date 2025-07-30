@@ -155,6 +155,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
     public ChatFinishReason? FinishReason { get; set; }
 
     private string? _responseWithoutThinking;
+    private bool _isManualValid = false;
 
     public string? TextWithoutThinking
     {
@@ -200,8 +201,31 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem
         }
     }
 
+    /// <summary>
+    /// 手动标记为有效 
+    /// </summary>
+    public bool IsManualValid
+    {
+        get => _isManualValid;
+        set
+        {
+            if (value == _isManualValid) return;
+            _isManualValid = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAvailableInContext));
+        }
+    }
+
     public bool IsAvailableInContext
     {
-        get { return !IsInterrupt; }
+        get
+        {
+            if (IsManualValid)
+            {
+                return true;
+            }
+
+            return !IsInterrupt;
+        }
     }
 }
