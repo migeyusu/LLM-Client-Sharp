@@ -8,7 +8,7 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Test;
 
-public class TestLLMClient : ILLMClient
+public class FakeLLMClient : ILLMClient
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 

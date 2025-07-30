@@ -1,0 +1,67 @@
+﻿<Window x:Class="LLMClient.UI.MCP.KeyValueConfigWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:LLMClient.UI.MCP"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance local:KeyValueConfigWindow}"
+        Height="450"
+        Width="800">
+    <Window.Resources>
+        <Style TargetType="TextBlock" x:Key="NoItemsTextBlockStyle">
+            <Setter Property="Text" Value="无变量" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding UserVariables.Count}"
+                             Value="0">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ToolBar DockPanel.Dock="Top"
+                 Style="{StaticResource MaterialDesignToolBar}"
+                 Padding="0">
+            <Button Content="{materialDesign:PackIcon Kind=Plus,Size=16}"
+                    Command="{Binding AddUserVariableCommand}" ToolTip="添加" />
+            <Button Content="{materialDesign:PackIcon Kind=Minus,Size=16}"
+                    Command="{Binding RemoveUserVariableCommand}" ToolTip="移除" />
+            <Button Command="{Binding PasteUserVariableCommand}"
+                    Content="{materialDesign:PackIcon Kind=ContentPaste,Size=16}" />
+        </ToolBar>
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding UserVariables}"
+                  SelectedItem="{Binding SelectedUserVariable, Mode=TwoWay}"
+                  AutoGenerateColumns="False" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="名称" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="*" />
+                <DataGridTextColumn Header="值" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="2*" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <TextBlock Grid.Row="1"
+                   Style="{StaticResource NoItemsTextBlockStyle}" />
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,10,0,0">
+            <Button Content="确定" Width="80" Margin="0,0,10,0" IsDefault="True"
+                    Click="OK_OnClick"/>
+            <Button Content="取消" Width="80" IsCancel="True"
+                    Style="{StaticResource MaterialDesignPaperButton}"
+                    Click="Cancel_OnClick"/>
+        </StackPanel>
+    </Grid>
+</Window>

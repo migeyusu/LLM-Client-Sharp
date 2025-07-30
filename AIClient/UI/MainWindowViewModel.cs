@@ -142,7 +142,7 @@ public class MainWindowViewModel : BaseViewModel
 
     #region dialog
 
-    public ICommand ImportCommand => new ActionCommand((o =>
+    public ICommand ImportCommand => new ActionCommand((async o =>
     {
         var type = o.ToString();
         var openFileDialog = new OpenFileDialog()
@@ -158,14 +158,26 @@ public class MainWindowViewModel : BaseViewModel
         }
 
         var fileInfos = openFileDialog.FileNames.Select((s => new FileInfo(s)));
-        IEnumerable<ILLMSession> sessions = type switch
+        IAsyncEnumerable<ILLMSession> sessions;
+        switch (type)
         {
-            "dialog" => DialogFileViewModel.ImportFiles(fileInfos).ToBlockingEnumerable(),
-            "project" => ProjectViewModel.ImportFiles(fileInfos).ToBlockingEnumerable(),
-            _ => throw new ArgumentOutOfRangeException()
-        };
+            case "dialog":
+                sessions = DialogFileViewModel.ImportFiles(fileInfos);
+                break;
+            case "project":
+                sessions = ProjectViewModel.ImportFiles(fileInfos);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
 
-        InsertSessions(sessions);
+        var sessionList = new List<ILLMSession>();
+        await foreach (var llmSession in sessions)
+        {
+            sessionList.Add(llmSession);
+        }
+
+        InsertSessions(sessionList);
     }));
 
     public ICommand NewDialogCommand => new ActionCommand((async o =>

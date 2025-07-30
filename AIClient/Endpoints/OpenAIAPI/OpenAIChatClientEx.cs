@@ -1,11 +1,8 @@
 ﻿using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.IO;
-using System.Net.ServerSentEvents;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Azure;
 using OpenAI;
 using OpenAI.Chat;
 
@@ -64,6 +61,6 @@ public class OpenAIChatClientEx : ChatClient
 
         return result;
     }
-    
-    
+
 }
+

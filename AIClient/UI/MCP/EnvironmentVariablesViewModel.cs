@@ -11,14 +11,13 @@ namespace LLMClient.UI.MCP;
 public class EnvironmentVariablesViewModel : BaseViewModel
 {
     private bool _isSystemVariablesIncluded = true;
-    private EnvironmentVariableItem? _selectedUserVariable;
-    private IList<EnvironmentVariableItem>? _systemVariables;
 
     // 用户环境变量列表 (可观察集合，用于UI自动更新)
-    public ObservableCollection<EnvironmentVariableItem> UserVariables { get; }
+    public ObservableCollection<VariableItem> UserVariables { get; }
 
+    private IList<VariableItem>? _systemVariables;
     // 系统环境变量列表 (加载一次后不变)
-    public IList<EnvironmentVariableItem>? SystemVariables
+    public IList<VariableItem>? SystemVariables
     {
         get => _systemVariables;
         set
@@ -29,8 +28,9 @@ public class EnvironmentVariablesViewModel : BaseViewModel
         }
     }
 
+    private VariableItem? _selectedUserVariable;
     // 当前选中的用户变量
-    public EnvironmentVariableItem? SelectedUserVariable
+    public VariableItem? SelectedUserVariable
     {
         get => _selectedUserVariable;
         set
@@ -77,7 +77,7 @@ public class EnvironmentVariablesViewModel : BaseViewModel
                 var value = parts[1].Trim();
                 if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(value))
                 {
-                    UserVariables.Add(new EnvironmentVariableItem { Name = name, Value = value });
+                    UserVariables.Add(new VariableItem { Name = name, Value = value });
                 }
             }
         }
@@ -88,7 +88,7 @@ public class EnvironmentVariablesViewModel : BaseViewModel
         if (o is IList list)
         {
             var stringBuilder = new StringBuilder();
-            foreach (var item in list.Cast<EnvironmentVariableItem>())
+            foreach (var item in list.Cast<VariableItem>())
             {
                 stringBuilder.AppendLine($"{item.Name}={item.Value}");
             }
@@ -127,14 +127,14 @@ public class EnvironmentVariablesViewModel : BaseViewModel
                 .Concat(Environment.GetEnvironmentVariables(EnvironmentVariableTarget.User).Cast<DictionaryEntry>())
                 .GroupBy(de => de.Key.ToString(), StringComparer.OrdinalIgnoreCase)
                 .Select(g => g.First());
-            SystemVariables = variables.OrderBy(de => de.Key.ToString()).Select(entry => new EnvironmentVariableItem
+            SystemVariables = variables.OrderBy(de => de.Key.ToString()).Select(entry => new VariableItem
                 { Name = entry.Key.ToString(), Value = entry.Value?.ToString() }).ToArray();
         }));
     }
 
     private void AddUserVariable()
     {
-        var newItem = new EnvironmentVariableItem { Name = "NEW_VARIABLE", Value = "Value" };
+        var newItem = new VariableItem { Name = "NEW_VARIABLE", Value = "Value" };
         UserVariables.Add(newItem);
         SelectedUserVariable = newItem; // 添加后自动选中
     }

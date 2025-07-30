@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.UI.MCP;
 
-public class EnvironmentVariableItem : BaseViewModel
+public class VariableItem : BaseViewModel
 {
     private string? _name;
     private string? _value;

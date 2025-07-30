@@ -619,7 +619,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
             RespondingCount--;
         }
 
-        this.TokensConsumption += completedResult.Usage.TotalTokenCount ?? 0;
+        this.TokensConsumption += completedResult.Usage?.TotalTokenCount ?? 0;
         this.TotalPrice += completedResult.Price ?? 0;
         OnResponseCompleted(completedResult);
         return completedResult;

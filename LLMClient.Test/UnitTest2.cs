@@ -1,5 +1,6 @@
 ﻿using System.ClientModel;
 using System.ClientModel.Primitives;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -14,8 +15,10 @@ using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using OpenAI;
 using OpenAI.Chat;
 using Xunit.Abstractions;
+using ChatMessage = OpenAI.Chat.ChatMessage;
 
 namespace LLMClient.Test;
 
@@ -317,6 +320,37 @@ public class UnitTest2
         foreach (var format in readableFormats)
         {
             output.WriteLine(format);
+        }
+    }
+    
+    [Fact]
+    public async Task AnnotationResult()
+    {
+        var options = new OpenAIClientOptions()
+        {
+            Endpoint = new Uri("https://openrouter.ai/api/v1"),
+            Transport = new HttpClientPipelineTransport(new HttpClient(new DebugMessageLogger())),
+        };
+        options.AddPolicy();
+        var chatClient = new OpenAIChatClientEx("google/gemini-2.5-pro-preview",
+            new ApiKeyCredential("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"),
+            options);
+        await foreach (var update in chatClient.CompleteChatStreamingAsync(new ChatMessage[]
+                       {
+                           new UserChatMessage("华为最早支持nfc的手机是什么型号？")
+                       }, new ChatCompletionOptions()))
+        {
+            var chatMessageContent = update.ContentUpdate;
+            if (chatMessageContent != null)
+            {
+                foreach (var contentPart in chatMessageContent)
+                {
+                    if (contentPart.Kind == ChatMessageContentPartKind.Text)
+                    {
+                        Debug.WriteLine(contentPart.Text);
+                    }
+                }
+            }
         }
     }
 }

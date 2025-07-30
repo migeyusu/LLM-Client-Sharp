@@ -2,6 +2,7 @@
 using LLMClient.Abstraction;
 using LLMClient.UI.Component;
 using LLMClient.UI.MCP.Servers;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 

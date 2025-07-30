@@ -13,7 +13,7 @@ public class StdIOServerItem : McpServerItem
     private string? _workingDirectory;
     private IList<string>? _argument;
     private string? _environmentString;
-    private IList<EnvironmentVariableItem>? _environmentVariable;
+    private IList<VariableItem>? _environmentVariable;
     public override string Type => "stdio";
 
     public override bool Validate()
@@ -65,7 +65,7 @@ public class StdIOServerItem : McpServerItem
         }
     }
 
-    public IList<EnvironmentVariableItem>? EnvironmentVariable
+    public IList<VariableItem>? EnvironmentVariable
     {
         get => _environmentVariable;
         set

@@ -9,6 +9,7 @@
              xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+             xmlns:client="clr-namespace:ModelContextProtocol.Client;assembly=ModelContextProtocol.Core"
              Loaded="MCPServiceCollectionView_OnLoaded"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
@@ -90,9 +91,9 @@
                       Grid.Column="1"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
-                      Margin="10,16,0,0"
                       Height="200">
-            <ContentControl Content="{Binding ElementName=ModelsListBox,Path=SelectedItem,Mode=OneWay}">
+            <ContentControl Content="{Binding ElementName=ModelsListBox,Path=SelectedItem,Mode=OneWay}"
+                            Margin="10,0">
                 <ContentControl.Resources>
                     <converters:ListToStringConverter x:Key="StringToListConverter" />
                     <DataTemplate DataType="{x:Type mcp:StdIOServerItem}">
@@ -129,7 +130,7 @@
                                 <RowDefinition />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="110" />
                                 <ColumnDefinition />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="名称:" />
@@ -183,7 +184,7 @@
                                      MinHeight="50"
                                      VerticalContentAlignment="Top"
                                      materialDesign:HintAssist.Hint="为MCP附加额外的Prompt"
-                                     Text="{Binding AdditionPrompt,Mode=TwoWay}" />
+                                     Text="{Binding UserPrompt,Mode=TwoWay}" />
                         </Grid>
                     </DataTemplate>
                     <DataTemplate DataType="{x:Type mcp:SseServerItem}">
@@ -215,10 +216,12 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="110" />
                                 <ColumnDefinition />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="名称:" />
@@ -231,9 +234,38 @@
                                        Text="项目地址:" />
                             <TextBox Grid.Row="2" Grid.Column="1"
                                      Text="{Binding ProjectUrl,Mode=TwoWay}" />
-                            <TextBlock Grid.Row="3" Grid.Column="0"
-                                       Text="Prompt:" />
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Http Headers:" />
                             <TextBox Grid.Row="3" Grid.Column="1"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     Margin="0,5"
+                                     Padding="6,2"
+                                     VerticalContentAlignment="Center"
+                                     HorizontalContentAlignment="Left"
+                                     MinHeight="30"
+                                     IsReadOnly="True"
+                                     TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto"
+                                     MaxHeight="100"
+                                     Text="{Binding AdditionalHeaders,Mode=OneWay,Converter={x:Static converters:SnapConverters.ObjectToJsonConverter}}" />
+                            <Button Grid.Row="3" Grid.Column="1"
+                                    Width="30"
+                                    Height="30"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Content="{materialDesign:PackIcon Kind=ReceiptText,Size=15}"
+                                    Style="{StaticResource MaterialDesignIconForegroundButton}"
+                                    Command="{Binding  ConfigHeadersCommand}" />
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Transport Mode:" />
+                            <ComboBox Grid.Row="4" Grid.Column="1"
+                                      MinWidth="80"
+                                      Padding="12,6"
+                                      Margin="0,5"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                      SelectedItem="{Binding TransportMode,Mode=TwoWay}"
+                                      ItemsSource="{Binding Source={component:EnumBindingSource {x:Type client:HttpTransportMode}}}" />
+                            <TextBlock Grid.Row="5" Grid.Column="0"
+                                       Text="Prompt:" />
+                            <TextBox Grid.Row="5" Grid.Column="1"
                                      AcceptsReturn="True"
                                      VerticalScrollBarVisibility="Auto"
                                      TextWrapping="Wrap"
@@ -241,7 +273,7 @@
                                      MinHeight="50"
                                      VerticalContentAlignment="Top"
                                      materialDesign:HintAssist.Hint="为MCP附加额外的Prompt"
-                                     Text="{Binding AdditionPrompt,Mode=TwoWay}" />
+                                     Text="{Binding UserPrompt,Mode=TwoWay}" />
                         </Grid>
                     </DataTemplate>
                 </ContentControl.Resources>
@@ -268,8 +300,12 @@
                    Visibility="{Binding SelectedServerItem.IsToolAvailable,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
                    Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                    Margin="16,16,0,0"
-                   Text="{Binding SelectedServerItem.ErrorMessage,Mode=OneWay,StringFormat=未获取到工具：{0}}"
-                   Foreground="Red" />
+                   TextWrapping="Wrap"
+                   Foreground="Red">
+            <Run Text="未获取到工具：" />
+            <LineBreak />
+            <Run Text="{Binding SelectedServerItem.ErrorMessage,Mode=OneWay}" />
+        </TextBlock>
         <Separator Grid.Row="0" Grid.Column="1"
                    VerticalAlignment="Bottom"
                    HorizontalAlignment="Stretch"

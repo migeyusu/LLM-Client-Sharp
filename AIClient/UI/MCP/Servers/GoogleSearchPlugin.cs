@@ -25,10 +25,10 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
     }
 
     [JsonIgnore] public string Name { get; } = KernelPluginName;
-    
-    [JsonIgnore]
-    public ThemedIcon Icon => LocalThemedIcon.FromPackIcon(PackIconKind.Google);
-    public string? AdditionPrompt { get; } = null;
+
+    [JsonIgnore] public ThemedIcon Icon => LocalThemedIcon.FromPackIcon(PackIconKind.Google);
+
+    public string? AdditionPrompt => $"{this.Name} enables performing web searches using Google. ";
 
     [JsonIgnore]
     public IReadOnlyList<AIFunction>? AvailableTools

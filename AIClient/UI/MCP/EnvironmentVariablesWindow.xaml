@@ -102,6 +102,7 @@
                     CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" />
             <Button Content="取消" Width="80" IsCancel="True"
                     Command="{Binding CancelCommand}"
+                      Style="{StaticResource MaterialDesignPaperButton}"
                     CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" />
         </StackPanel>
     </Grid>
