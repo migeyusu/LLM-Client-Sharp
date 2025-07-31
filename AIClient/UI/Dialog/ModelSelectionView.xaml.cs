@@ -1,8 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using LLMClient.Abstraction;
-using LLMClient.Endpoints.Azure.Models;
-using LLMClient.Endpoints.OpenAIAPI;
 
 namespace LLMClient.UI.Dialog;
 

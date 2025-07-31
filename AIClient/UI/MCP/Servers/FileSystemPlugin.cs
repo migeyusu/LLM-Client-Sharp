@@ -18,6 +18,7 @@ using System.Windows.Input;
 using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
+using LLMClient;
 using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.SemanticKernel;
@@ -321,7 +322,7 @@ public class FileSystemPlugin : KernelFunctionGroup
     {
         var fullPath = await ValidateAndResolvePathAsync(path);
         var rootEntry = await BuildTreeAsync(new DirectoryInfo(fullPath));
-        return JsonSerializer.Serialize(rootEntry, new JsonSerializerOptions { WriteIndented = true });
+        return JsonSerializer.Serialize(rootEntry, Extension.DefaultJsonSerializerOptions);
     }
 
     [KernelFunction, Description("Move or rename files and directories. Can move files between directories " +

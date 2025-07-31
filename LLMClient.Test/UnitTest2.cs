@@ -331,7 +331,7 @@ public class UnitTest2
             Endpoint = new Uri("https://openrouter.ai/api/v1"),
             Transport = new HttpClientPipelineTransport(new HttpClient(new DebugMessageLogger())),
         };
-        options.AddPolicy();
+        // options.AddPolicy();
         var chatClient = new OpenAIChatClientEx("google/gemini-2.5-pro-preview",
             new ApiKeyCredential("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"),
             options);

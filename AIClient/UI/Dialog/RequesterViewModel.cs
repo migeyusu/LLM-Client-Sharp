@@ -8,6 +8,7 @@ using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 using LLMClient.UI.MCP;
+using LLMClient.UI.MCP.Servers;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -141,7 +142,7 @@ public class RequesterViewModel : BaseViewModel
 
     #region function call
 
-    public AIFunctionSelectorViewModel FunctionSelector { get; }
+    public AIFunctionTreeSelectorViewModel FunctionTreeSelector { get; }
 
     public bool IsModelSupportFunctionCall
     {
@@ -152,7 +153,7 @@ public class RequesterViewModel : BaseViewModel
 
     public SearchConfigViewModel SearchConfig { get; }
 
-    public ThinkingConfigViewModel ThinkingConfig { get; } = new ThinkingConfigViewModel();
+    public ThinkingConfigViewModel ThinkingConfig { get; }
 
     public bool ThinkingAvailable
     {
@@ -189,8 +190,9 @@ public class RequesterViewModel : BaseViewModel
     public RequesterViewModel(ILLMClient modelClient,
         Func<ILLMClient, IRequestItem, Task<CompletedResult>> getResponse)
     {
-        FunctionSelector = new AIFunctionSelectorViewModel();
+        FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
+        ThinkingConfig = new ThinkingConfigViewModel();
         this._defaultClient = modelClient;
         this._getResponse = getResponse;
         this.BindClient(modelClient);
@@ -201,7 +203,6 @@ public class RequesterViewModel : BaseViewModel
     {
         Filters = { new CommandAuthorization() }
     };
-
 
     private void BindClient(ILLMClient client)
     {
@@ -226,6 +227,8 @@ public class RequesterViewModel : BaseViewModel
         this.PromptString = null;
     }
 
+    public IFunctionGroupSource? Source { get; set; }
+
     public RequestViewItem? NewRequest(string additionalPrompt = "")
     {
         if (string.IsNullOrEmpty(this.PromptString))
@@ -241,9 +244,9 @@ public class RequesterViewModel : BaseViewModel
 
         promptBuilder.Append(PromptString);
         IList<IAIFunctionGroup>? tools = null;
-        if (this.FunctionSelector.FunctionEnabled)
+        if (this.FunctionTreeSelector.FunctionEnabled)
         {
-            tools = this.FunctionSelector.SelectedFunctions;
+            tools = this.Source?.GetFunctionGroups().ToArray();
         }
 
         var thinkingConfig = this.ThinkingConfig.Enable ? this.ThinkingConfig.Config : null;
@@ -279,10 +282,10 @@ public class CommandAuthorization : IFunctionAuthorizationFilter
         return functionCall.Name == "WinCLI_ExecuteCommand";
     }
 
-    public async Task<bool> AuthorizeAsync(FunctionCallContent functionCall, CancellationToken cancellationToken)
+    public Task<bool> AuthorizeAsync(FunctionCallContent functionCall, CancellationToken cancellationToken)
     {
-        return MessageBox.Show(
+        return Task.FromResult(MessageBox.Show(
             $"Function call {functionCall.Name} is requested, parameters: {functionCall.GetDebuggerString()}.\r\n permmit?",
-            "Function Call Request", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+            "Function Call Request", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes);
     }
 }

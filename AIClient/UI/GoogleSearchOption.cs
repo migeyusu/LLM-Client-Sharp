@@ -43,4 +43,9 @@ public class GoogleSearchOption : BaseViewModel
         if (obj.GetType() != this.GetType()) return false;
         return Equals((GoogleSearchOption)obj);
     }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_apiKey, _searchEngineId);
+    }
 }

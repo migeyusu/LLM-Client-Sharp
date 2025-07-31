@@ -3,8 +3,6 @@ using System.ClientModel.Primitives;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using AutoMapper;
 using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
@@ -157,7 +155,7 @@ public class DebugMessageLogger : DelegatingHandler
         if (requestContent != null)
         {
             var requestString = await requestContent.ReadAsStringAsync(cancellationToken);
-            var jsonNode = JsonNode.Parse(requestString);
+            /*var jsonNode = JsonNode.Parse(requestString);
             var foo = new[]
             {
                 new
@@ -167,7 +165,7 @@ public class DebugMessageLogger : DelegatingHandler
             };
             var node = JsonSerializer.SerializeToNode(foo);
             jsonNode["plugins"] = node;
-            request.Content = new StringContent(JsonSerializer.Serialize(jsonNode));
+            request.Content = new StringContent(JsonSerializer.Serialize(jsonNode));*/
         }
 
         var httpResponseMessage = await base.SendAsync(request, cancellationToken);

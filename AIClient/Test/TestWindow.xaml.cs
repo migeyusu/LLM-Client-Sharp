@@ -1,6 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows;
-using LLMClient.UI.Project;
+﻿using System.Windows;
 
 namespace LLMClient.Test;
 

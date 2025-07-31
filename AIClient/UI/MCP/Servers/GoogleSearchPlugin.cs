@@ -39,15 +39,9 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
             if (Equals(value, _availableTools)) return;
             _availableTools = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(IsToolAvailable));
         }
     }
-
-    public bool IsToolAvailable
-    {
-        get { return AvailableTools is { Count: > 0 }; }
-    }
-
+    
     public string GetUniqueId()
     {
         return $"{this.GetType().FullName}";

@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using System.Windows.Data;
 using LLMClient.Abstraction;
-using LLMClient.UI.Dialog;
 
 namespace LLMClient.UI.Component.Converters;
 

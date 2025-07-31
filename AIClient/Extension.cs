@@ -8,7 +8,6 @@ using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Media;
 using Azure.AI.Inference;
-using ImageMagick;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
@@ -18,12 +17,21 @@ using LLMClient.UI.Dialog;
 using LLMClient.UI.Project;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
-using ChatRole = Microsoft.Extensions.AI.ChatRole;
 
 namespace LLMClient;
 
 public static class Extension
 {
+    public static JsonSerializerOptions DefaultJsonSerializerOptions { get; } = new()
+    {
+        Converters =
+        {
+            new JsonStringEnumConverter(),
+        },
+        IgnoreReadOnlyProperties = true,
+        WriteIndented = true,
+    };
+
     public static void UpgradeAPIVersion(this ChatCompletionsClient client, string apiVersion = "2024-12-01-preview")
     {
         var propertyInfo = client.GetType().GetField("_apiVersion", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -116,9 +124,9 @@ public static class Extension
                 .ConvertUsing<AutoMapModelTypeConverter>();
             expression.CreateMap<ProjectPersistModel, ProjectViewModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ProjectTask, ProjectTaskPersistModel>()
+            expression.CreateMap<ProjectTaskViewModel, ProjectTaskPersistModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ProjectTaskPersistModel, ProjectTask>()
+            expression.CreateMap<ProjectTaskPersistModel, ProjectTaskViewModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
             // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
             expression.ConstructServicesUsing(provider.GetService);
@@ -243,12 +251,7 @@ public static class Extension
             {
                 using (doc)
                 {
-                    var options = new JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                    };
-                    return JsonSerializer.Serialize(doc, options);
+                    return JsonSerializer.Serialize(doc, DefaultJsonSerializerOptions);
                 }
             }
 

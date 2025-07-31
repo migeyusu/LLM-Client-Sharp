@@ -4,7 +4,6 @@ using System.IO;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using MaterialDesignThemes.Wpf;
 using MimeTypes;
 
 namespace LLMClient.Data;
@@ -90,7 +89,7 @@ public class HttpContentCache
             }
         }
 
-        var json = JsonSerializer.Serialize(dictionaryToPersist, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(dictionaryToPersist, Extension.DefaultJsonSerializerOptions);
         await File.WriteAllTextAsync(_indexPath, json);
         Trace.WriteLine($"[Cache] Persisted {dictionaryToPersist.Count} items to index.");
     }

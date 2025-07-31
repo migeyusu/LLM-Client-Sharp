@@ -1,23 +1,11 @@
 ﻿using System.ComponentModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Reflection;
-using System.Text;
 using System.Text.Json.Serialization;
 using AutoMapper;
-using Azure;
-using Azure.AI.Inference;
 using LLMClient.Abstraction;
-using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.UI;
-using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using OpenAI;
-using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
-using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Endpoints.Azure.Models;
 

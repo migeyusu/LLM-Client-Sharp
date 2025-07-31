@@ -1,5 +1,4 @@
-﻿using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 using System.Windows.Input;
 using LLMClient.UI.Dialog;
 
@@ -41,7 +40,7 @@ public partial class ProjectView : UserControl
 
     private void TaskMoveLeft_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is ProjectTask task)
+        if (e.Parameter is ProjectTaskViewModel task)
         {
             var i = ViewModel.Tasks.IndexOf(task);
             if (i > 0)
@@ -53,7 +52,7 @@ public partial class ProjectView : UserControl
 
     private void TaskDelete_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is ProjectTask task)
+        if (e.Parameter is ProjectTaskViewModel task)
         {
             ViewModel.RemoveTask(task);
         }

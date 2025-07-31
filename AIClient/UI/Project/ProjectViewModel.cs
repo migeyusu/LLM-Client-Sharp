@@ -15,7 +15,6 @@ using LLMClient.UI.Component;
 using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
-using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -272,30 +271,6 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     }
 
-    private AIFunctionSelectorViewModel _functionSelector = new((() =>
-    {
-        DialogHost.CloseDialogCommand.Execute(true, null);
-    }));
-
-    public ICommand ChooseFunctionsCommand => new RelayCommand(async () =>
-    {
-        _functionSelector.ResetSource()
-            .EnsureAsync();
-        _functionSelector.SelectedFunctions = this.AllowedFunctions;
-        if (await DialogHost.Show(_functionSelector) is true)
-        {
-            this.AllowedFunctions = _functionSelector.SelectedFunctions.Select((group =>
-            {
-                if (group is IBuiltInFunctionGroup kernelFunctionGroup)
-                {
-                    return (kernelFunctionGroup.Clone() as IBuiltInFunctionGroup)!;
-                }
-
-                return group;
-            })).ToArray();
-        }
-    });
-
     public ICommand SelectProjectFolderCommand => new RelayCommand(() =>
     {
         var dialog = new System.Windows.Forms.FolderBrowserDialog
@@ -405,17 +380,6 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private IAIFunctionGroup[] _allowedFunctions = [new FileSystemPlugin(), new WinCLIPlugin()];
 
-    public IAIFunctionGroup[] AllowedFunctions
-    {
-        get => _allowedFunctions;
-        set
-        {
-            if (Equals(value, _allowedFunctions)) return;
-            _allowedFunctions = value;
-            OnPropertyChanged();
-        }
-    }
-
     public IPromptsResource PromptsResource
     {
         get { return ServiceLocator.GetService<IPromptsResource>()!; }
@@ -425,15 +389,15 @@ public class ProjectViewModel : FileBasedSessionBase
 
     #region tasks
 
-    public ICommand NewTaskCommand => new ActionCommand(o => { AddTask(new ProjectTask(this)); });
+    public ICommand NewTaskCommand => new ActionCommand(o => { AddTask(new ProjectTaskViewModel(this)); });
 
-    public void AddTask(ProjectTask task)
+    public void AddTask(ProjectTaskViewModel task)
     {
         task.ResponseCompleted += TaskOnResponseCompleted;
         this.Tasks.Add(task);
     }
 
-    public void RemoveTask(ProjectTask task)
+    public void RemoveTask(ProjectTaskViewModel task)
     {
         task.ResponseCompleted -= TaskOnResponseCompleted;
         this.Tasks.Remove(task);
@@ -445,11 +409,11 @@ public class ProjectViewModel : FileBasedSessionBase
         this.TotalPrice += (obj.Price ?? 0);
     }
 
-    public ObservableCollection<ProjectTask> Tasks { get; set; }
+    public ObservableCollection<ProjectTaskViewModel> Tasks { get; set; }
 
-    private ProjectTask? _selectedTask;
+    private ProjectTaskViewModel? _selectedTask;
 
-    public ProjectTask? SelectedTask
+    public ProjectTaskViewModel? SelectedTask
     {
         get => _selectedTask;
         set
@@ -457,6 +421,7 @@ public class ProjectViewModel : FileBasedSessionBase
             if (Equals(value, _selectedTask)) return;
             _selectedTask = value;
             OnPropertyChanged();
+            Requester.Source = value;
         }
     }
 
@@ -470,17 +435,19 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
 
-    public ProjectViewModel(ILLMClient modelClient, IEnumerable<ProjectTask>? tasks = null) : base()
+    public ProjectViewModel(ILLMClient modelClient, IEnumerable<ProjectTaskViewModel>? tasks = null) : base()
     {
         Requester = new RequesterViewModel(modelClient, GetResponse)
         {
-            FunctionSelector =
+            FunctionTreeSelector =
             {
                 FunctionEnabled = true,
-                SelectedFunctions = this.AllowedFunctions,
             }
         };
-        Requester.FunctionSelector.ConnectSource(new ProxyFunctionGroupSource(FunctionGroupsFunc));
+        var functionTreeSelector = Requester.FunctionTreeSelector;
+        functionTreeSelector.ConnectDefault()
+            .ConnectSource(new ProxyFunctionGroupSource((() => this.SelectedTask?.SelectedFunctionGroups)));
+        functionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
         this.ConfigViewModel = new ProjectConfigViewModel(this.EndpointService, this);
         this.Tasks = [];
         if (tasks != null)
@@ -503,12 +470,17 @@ public class ProjectViewModel : FileBasedSessionBase
             IsDataChanged = true;
         };
         Tasks.CollectionChanged += OnCollectionChanged;
-        _functionSelector.ConnectDefault();
     }
 
-    private IEnumerable<IAIFunctionGroup> FunctionGroupsFunc()
+    private void FunctionTreeSelectorOnAfterSelect()
     {
-        return this.AllowedFunctions;
+        if (this.SelectedTask == null)
+        {
+            return;
+        }
+
+        this.SelectedTask.SelectedFunctionGroups =
+            this.Requester.FunctionTreeSelector.FunctionGroups.Where(tree => tree.IsSelected).ToArray();
     }
 
     private Task<CompletedResult> GetResponse(ILLMClient arg1, IRequestItem arg2)
@@ -575,11 +547,15 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public void Ready()
     {
-        foreach (var aiFunctionGroup in this.Requester.FunctionSelector.SelectedFunctions)
+        var functionGroups = this.SelectedTask?.SelectedFunctionGroups;
+        if (functionGroups != null)
         {
-            if (aiFunctionGroup is FileSystemPlugin fileSystemPlugin)
+            foreach (var aiFunctionGroup in functionGroups)
             {
-                fileSystemPlugin.AllowedPaths = AllowedFolderPaths;
+                if (aiFunctionGroup.Data is FileSystemPlugin fileSystemPlugin)
+                {
+                    fileSystemPlugin.AllowedPaths = AllowedFolderPaths;
+                }
             }
         }
     }

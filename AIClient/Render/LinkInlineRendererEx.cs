@@ -12,7 +12,6 @@ using Markdig.Wpf;
 
 namespace LLMClient.Render;
 
-[Obsolete]
 public class LinkInlineRendererEx : LinkInlineRenderer
 {
     protected override void Write(WpfRenderer renderer, LinkInline link)

@@ -2,13 +2,9 @@
 using System.Windows;
 using LLMClient.Abstraction;
 using LLMClient.Data;
-using LLMClient.Endpoints;
-using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
-using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
-using LLMClient.UI.Project;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;

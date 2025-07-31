@@ -1,6 +1,4 @@
-﻿using LLMClient.Abstraction;
-
-namespace LLMClient.Data;
+﻿namespace LLMClient.Data;
 
 public class DialogSessionPersistModel
 {
@@ -12,5 +10,5 @@ public class DialogSessionPersistModel
 
     public double TotalPrice { get; set; }
 
-    public IAIFunctionGroup[]? Functions { get; set; }
+    public AIFunctionGroupPersistObject[]? AllowedFunctions { get; set; }
 }

@@ -100,7 +100,7 @@ public class DialogFileViewModel : FileBasedSessionBase
         }
     }
 
-    public async Task<DialogFileViewModel> Fork(IDialogItem viewModel)
+    public DialogFileViewModel Fork(IDialogItem viewModel)
     {
         var of = this.Dialog.DialogItems.IndexOf(viewModel);
         var dialogSessionClone = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));

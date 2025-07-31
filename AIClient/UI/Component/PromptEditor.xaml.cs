@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using MaterialDesignThemes.Wpf;

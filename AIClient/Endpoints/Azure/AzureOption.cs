@@ -1,6 +1,4 @@
-﻿using LLMClient.UI;
-
-namespace LLMClient.Endpoints.Azure;
+﻿namespace LLMClient.Endpoints.Azure;
 
 public class AzureOption : APIDefaultOption
 {

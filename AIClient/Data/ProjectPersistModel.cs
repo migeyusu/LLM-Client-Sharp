@@ -1,5 +1,4 @@
-﻿using LLMClient.Abstraction;
-using LLMClient.UI.Project;
+﻿using LLMClient.UI.Project;
 
 namespace LLMClient.Data;
 
@@ -31,11 +30,6 @@ public class ProjectPersistModel
     public long TokensConsumption { get; set; }
 
     public double TotalPrice { get; set; }
-
-    /// <summary>
-    /// 额外的mcp工具
-    /// </summary>
-    public IAIFunctionGroup[]? AllowedFunctions { get; set; }
 
     public ProjectTaskPersistModel[]? Tasks { get; set; }
 }

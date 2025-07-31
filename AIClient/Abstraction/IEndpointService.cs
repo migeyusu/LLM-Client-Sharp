@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 
 namespace LLMClient.Abstraction;

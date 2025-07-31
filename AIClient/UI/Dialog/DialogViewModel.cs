@@ -7,6 +7,8 @@ using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI.Component;
+using LLMClient.UI.MCP;
+using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 using MessageBox = System.Windows.MessageBox;
@@ -14,7 +16,7 @@ using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace LLMClient.UI.Dialog;
 
-public class DialogViewModel : DialogSessionViewModel
+public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
 {
     //创建新实例后默认为changed
     private bool _isDataChanged = true;
@@ -173,6 +175,8 @@ public class DialogViewModel : DialogSessionViewModel
 
     public RequesterViewModel Requester { get; }
 
+    public IList<CheckableFunctionGroupTree>? SelectedFunctionGroup { get; set; }
+
     public ICommand ExportCommand => new ActionCommand((async o =>
     {
         var saveFileDialog = new SaveFileDialog()
@@ -223,8 +227,12 @@ public class DialogViewModel : DialogSessionViewModel
         : base(items)
     {
         _topic = topic;
-        Requester = new RequesterViewModel(modelClient, NewRequest);
-        Requester.FunctionSelector.ConnectDefault();
+        Requester = new RequesterViewModel(modelClient, NewRequest)
+        {
+            Source = this
+        };
+        Requester.FunctionTreeSelector.ConnectDefault()
+            .ConnectSource(new ProxyFunctionGroupSource((() => this.SelectedFunctionGroup)));
         PropertyChanged += (_, e) =>
         {
             var propertyName = e.PropertyName;
@@ -235,5 +243,21 @@ public class DialogViewModel : DialogSessionViewModel
 
             IsDataChanged = true;
         };
+    }
+
+    public IEnumerable<IAIFunctionGroup> GetFunctionGroups()
+    {
+        if (SelectedFunctionGroup == null)
+        {
+            yield break;
+        }
+
+        foreach (var functionGroupTree in SelectedFunctionGroup)
+        {
+            if (functionGroupTree.IsSelected)
+            {
+                yield return functionGroupTree;
+            }
+        }
     }
 }

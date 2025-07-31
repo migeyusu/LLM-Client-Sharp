@@ -17,10 +17,12 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     ITypeConverter<MultiResponseViewItem, MultiResponsePersistItem>,
     ITypeConverter<ProjectPersistModel, ProjectViewModel>,
     ITypeConverter<ProjectViewModel, ProjectPersistModel>,
-    ITypeConverter<ProjectTaskPersistModel, ProjectTask>,
-    ITypeConverter<ProjectTask, ProjectTaskPersistModel>,
+    ITypeConverter<ProjectTaskPersistModel, ProjectTaskViewModel>,
+    ITypeConverter<ProjectTaskViewModel, ProjectTaskPersistModel>,
     ITypeConverter<ILLMClient, LLMClientPersistModel>,
-    ITypeConverter<LLMClientPersistModel, ILLMClient>
+    ITypeConverter<LLMClientPersistModel, ILLMClient>,
+    ITypeConverter<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>,
+    ITypeConverter<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>
 {
     private readonly IEndpointService _endpointService;
 
@@ -105,6 +107,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination = new DialogFilePersistModel();
         }
 
+        var mapper = context.Mapper;
         var dialogItems = source.DialogItems.Select<IDialogItem, IDialogPersistItem>(item =>
         {
             if (item is EraseViewItem eraseViewItem)
@@ -119,7 +122,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
             if (item is MultiResponseViewItem multiResponseViewItem)
             {
-                return context.Mapper.Map<MultiResponseViewItem, MultiResponsePersistItem>(multiResponseViewItem);
+                return mapper.Map<MultiResponseViewItem, MultiResponsePersistItem>(multiResponseViewItem);
             }
 
             throw new NotSupportedException();
@@ -130,8 +133,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.SystemPrompt = source.SystemPrompt;
         var requester = source.Requester;
         destination.PromptString = requester.PromptString;
-        destination.Functions = requester.FunctionSelector.SelectedFunctions.ToArray();
-        destination.Client = context.Mapper.Map<ILLMClient, LLMClientPersistModel>(requester.DefaultClient);
+        destination.AllowedFunctions = source.SelectedFunctionGroup
+            ?.Select((tree => mapper.Map<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>(tree))).ToArray();
+        destination.Client = mapper.Map<ILLMClient, LLMClientPersistModel>(requester.DefaultClient);
         return destination;
     }
 
@@ -142,9 +146,10 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     public DialogViewModel Convert(DialogFilePersistModel source, DialogViewModel? destination,
         ResolutionContext context)
     {
+        var mapper = context.Mapper;
         var llmClient = source.Client == null
             ? NullLlmModelClient.Instance
-            : context.Mapper.Map<LLMClientPersistModel, ILLMClient>(source.Client);
+            : mapper.Map<LLMClientPersistModel, ILLMClient>(source.Client);
         if (destination != null)
         {
             destination.Topic = source.Topic;
@@ -163,7 +168,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             {
                 return item switch
                 {
-                    MultiResponsePersistItem multiResponsePersistItem => context.Mapper
+                    MultiResponsePersistItem multiResponsePersistItem => mapper
                         .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem),
                     _ => (IDialogItem)item
                 };
@@ -181,16 +186,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination.SystemPrompt = source.SystemPrompt;
             var requester = destination.Requester;
             requester.PromptString = source.PromptString;
-            var aiFunctionGroups = source.Functions?.Select((function) =>
-            {
-                if (function is McpServerItem server)
-                {
-                    return _mcpServiceCollection.TryGet(server);
-                }
-
-                return function;
-            }).ToArray();
-            requester.FunctionSelector.SelectedFunctions = aiFunctionGroups ?? [];
+            destination.SelectedFunctionGroup = source.AllowedFunctions?.Select((o =>
+                mapper.Map<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>(o))).ToArray();
         }
         finally
         {
@@ -221,7 +218,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         {
             destination.Tasks.Clear();
             var tasks = source.Tasks?
-                .Select(task => mapper.Map<ProjectTaskPersistModel, ProjectTask>(task))
+                .Select(task => mapper.Map<ProjectTaskPersistModel, ProjectTaskViewModel>(task))
                 .ToArray();
             if (tasks != null)
             {
@@ -241,16 +238,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                 : new ObservableCollection<string>(source.AllowedFolderPaths);
             destination.TokensConsumption = source.TokensConsumption;
             destination.TotalPrice = source.TotalPrice;
-            var aiFunctionGroups = source.AllowedFunctions?.Select((function) =>
-            {
-                if (function is McpServerItem server)
-                {
-                    return _mcpServiceCollection.TryGet(server);
-                }
-
-                return function;
-            }).ToArray();
-            destination.AllowedFunctions = aiFunctionGroups ?? [];
         }
         finally
         {
@@ -265,7 +252,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     {
         var mapper = context.Mapper;
         var projectTaskPersistModels = source.Tasks
-            ?.Select(task => mapper.Map<ProjectTask, ProjectTaskPersistModel>(task)).ToArray();
+            ?.Select(task => mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(task)).ToArray();
         destination ??= new ProjectPersistModel();
         destination.Name = source.Name;
         destination.EditTime = source.EditTime;
@@ -277,12 +264,11 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.TotalPrice = source.TotalPrice;
         destination.Client = context.Mapper.Map<ILLMClient, LLMClientPersistModel>(source.Requester.DefaultClient);
         destination.Tasks = projectTaskPersistModels;
-        destination.AllowedFunctions = source.AllowedFunctions;
-
         return destination;
     }
 
-    public ProjectTask Convert(ProjectTaskPersistModel source, ProjectTask? destination, ResolutionContext context)
+    public ProjectTaskViewModel Convert(ProjectTaskPersistModel source, ProjectTaskViewModel? destination,
+        ResolutionContext context)
     {
         if (!context.Items.TryGetValue(ParentProjectViewModelKey, out var parentProjectViewModel)
             || !(parentProjectViewModel is ProjectViewModel projectViewModel))
@@ -290,15 +276,16 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             throw new InvalidOperationException("Parent ProjectViewModel is not set in context.");
         }
 
-        destination ??= new ProjectTask(projectViewModel);
+        destination ??= new ProjectTaskViewModel(projectViewModel);
         context.Items.Add(ParentSessionViewModelKey, destination);
+        var mapper = context.Mapper;
         try
         {
             var sourceDialogItems = source.DialogItems?.Select<IDialogPersistItem, IDialogItem>((item =>
             {
                 if (item is MultiResponsePersistItem multiResponsePersistItem)
                 {
-                    return context.Mapper
+                    return mapper
                         .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem);
                 }
 
@@ -329,6 +316,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination.Status = source.Status;
             destination.TokensConsumption = source.TokensConsumption;
             destination.TotalPrice = source.TotalPrice;
+            destination.SelectedFunctionGroups = source.AllowedFunctions?
+                .Select((o => mapper.Map<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>(o)))
+                .ToArray();
         }
         finally
         {
@@ -339,9 +329,10 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     }
 
 
-    public ProjectTaskPersistModel Convert(ProjectTask source, ProjectTaskPersistModel? destination,
+    public ProjectTaskPersistModel Convert(ProjectTaskViewModel source, ProjectTaskPersistModel? destination,
         ResolutionContext context)
     {
+        var mapper = context.Mapper;
         var dialogItems = source.DialogItems.Select<IDialogItem, IDialogPersistItem>(item =>
         {
             if (item is EraseViewItem eraseViewItem)
@@ -356,7 +347,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
             if (item is MultiResponseViewItem multiResponseViewItem)
             {
-                return context.Mapper.Map<MultiResponseViewItem, MultiResponsePersistItem>(multiResponseViewItem);
+                return mapper.Map<MultiResponseViewItem, MultiResponsePersistItem>(multiResponseViewItem);
             }
 
             throw new NotSupportedException();
@@ -370,6 +361,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.Description = source.Description;
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
+        destination.AllowedFunctions = source.SelectedFunctionGroups?
+            .Select(tree => mapper.Map<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>(tree))
+            .ToArray();
         return destination;
     }
 
@@ -417,5 +411,39 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
         context.InstanceCache.TryAdd(contextCacheKey, llmModelClient);
         return llmModelClient;
+    }
+
+    public AIFunctionGroupPersistObject Convert(CheckableFunctionGroupTree source,
+        AIFunctionGroupPersistObject? destination,
+        ResolutionContext context)
+    {
+        destination ??= new AIFunctionGroupPersistObject();
+        destination.FunctionGroup = source.Data;
+        destination.SelectedFunctionNames = source.Functions
+            .Where(function => function.IsSelected)
+            .Select(function => function.FunctionName!)
+            .ToArray();
+        return destination;
+    }
+
+    public CheckableFunctionGroupTree Convert(AIFunctionGroupPersistObject source,
+        CheckableFunctionGroupTree? destination,
+        ResolutionContext context)
+    {
+        var sourceFunctionGroup = source.FunctionGroup;
+        var group = sourceFunctionGroup is McpServerItem server
+            ? _mcpServiceCollection.TryGet(server)
+            : sourceFunctionGroup;
+        if (group == null)
+        {
+            throw new InvalidOperationException("Function group cannot be null.");
+        }
+
+        destination ??= new CheckableFunctionGroupTree(group);
+        var virtualFunctionViewModels = source.SelectedFunctionNames?.Select((s => new VirtualFunctionViewModel(s)))
+            .ToArray();
+        destination.Functions.Clear();
+        destination.Functions.AddRange(virtualFunctionViewModels ?? []);
+        return destination;
     }
 }

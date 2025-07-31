@@ -11,7 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.UI.Component;
 using LLMClient.UI.MCP.Servers;
-using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.MCP;
@@ -187,12 +187,19 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
             return;
         }
 
-        var fullPath = Path.GetFullPath(FileName);
-        var json = JsonSerializer.Serialize(this.Items, new JsonSerializerOptions
+        var builtinPluginNames = ServiceLocator.GetService<IBuiltInFunctionsCollection>()!.Select((group => group.Name))
+            .ToArray();
+        foreach (var item in Items)
         {
-            WriteIndented = true,
-            Converters = { new JsonStringEnumConverter() }
-        });
+            if (builtinPluginNames.Contains(item.Name))
+            {
+                MessageEventBus.Publish($"服务名称 {item.Name} 已被系统保留，请更换名称！");
+                return;
+            }
+        }
+
+        var fullPath = Path.GetFullPath(FileName);
+        var json = JsonSerializer.Serialize(this.Items, Extension.DefaultJsonSerializerOptions);
         File.WriteAllText(fullPath, json);
         MessageEventBus.Publish("已保存MCP服务器配置");
     });
@@ -224,6 +231,13 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
         }
     });
 
+    private JsonSerializerOptions options = new JsonSerializerOptions()
+    {
+        WriteIndented = true, Converters =
+        {
+            new JsonStringEnumConverter()
+        }
+    };
 
     public async Task LoadAsync()
     {
@@ -247,7 +261,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
 
             await using (var fileStream = fileInfo.OpenRead())
             {
-                var deserialize = JsonSerializer.Deserialize<IList<McpServerItem>>(fileStream);
+                var deserialize = JsonSerializer.Deserialize<IList<McpServerItem>>(fileStream, options);
                 if (deserialize != null)
                 {
                     this.Items = new ObservableCollection<McpServerItem>(deserialize);

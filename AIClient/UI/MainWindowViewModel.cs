@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
@@ -12,7 +11,6 @@ using LLMClient.Endpoints;
 using LLMClient.Render;
 using LLMClient.UI.Component;
 using LLMClient.UI.Dialog;
-using LLMClient.UI.MCP;
 using LLMClient.UI.Project;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
@@ -203,7 +201,7 @@ public class MainWindowViewModel : BaseViewModel
         return dialogSession;
     }
 
-    public async void ForkPreDialog(IDialogItem item)
+    public void ForkPreDialog(IDialogItem item)
     {
         var preSession = PreSession;
         if (preSession is not DialogFileViewModel preDialog)
@@ -217,7 +215,7 @@ public class MainWindowViewModel : BaseViewModel
             return;
         }
 
-        var dialogSession = await preDialog.Fork(item);
+        var dialogSession =  preDialog.Fork(item);
         AddSession(dialogSession);
     }
 

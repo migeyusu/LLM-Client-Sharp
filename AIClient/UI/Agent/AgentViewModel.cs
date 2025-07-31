@@ -1,6 +1,4 @@
-﻿using LLMClient.Abstraction;
-
-namespace LLMClient.UI.Agent;
+﻿namespace LLMClient.UI.Agent;
 
 /*public class AgentViewModel : BaseViewModel, ILLMSession
 {

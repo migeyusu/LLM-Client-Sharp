@@ -72,43 +72,6 @@
                         <LineBreak />
                         <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                     </TextBlock>
-                    <materialDesign:SplitButton VerticalAlignment="Center"
-                                                Padding="6,0"
-                                                PopupUniformCornerRadius="6"
-                                                PopupElevation="Dp4"
-                                                Command="{Binding ChooseFunctionsCommand}"
-                                                Style="{StaticResource MaterialDesignOutlinedDarkSplitButton}"
-                                                materialDesign:ButtonAssist.CornerRadius="10">
-                        <materialDesign:SplitButton.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Function"
-                                                         Height="30"
-                                                         Width="30"
-                                                         VerticalAlignment="Center" />
-                                <TextBlock Text="unction Call"
-                                           FontStyle="Italic"
-                                           Margin="-10,0,6,2"
-                                           VerticalAlignment="Bottom" />
-                            </StackPanel>
-                        </materialDesign:SplitButton.Content>
-                        <materialDesign:SplitButton.PopupContent>
-                            <ScrollViewer MaxHeight="300"
-                                          Margin="6"
-                                          VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding AllowedFunctions,Mode=OneWay}"
-                                              MinWidth="160">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="{x:Type abstraction:IAIFunctionGroup}">
-                                            <TextBlock Text="{Binding Name,Mode=OneWay}"
-                                                       FontWeight="Medium"
-                                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                                       Margin="6,3" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-                        </materialDesign:SplitButton.PopupContent>
-                    </materialDesign:SplitButton>
                     <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
                             ToolTip="Config Project"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
@@ -184,7 +147,7 @@
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type local:ProjectTask}">
+                    <DataTemplate DataType="{x:Type local:ProjectTaskViewModel}">
                         <materialDesign:Card Width="200"
                                              Height="90"
                                              Padding="4"

@@ -12,7 +12,6 @@ public class FileSystemPluginComparisonTests : IClassFixture<FileSystemTestFixtu
     private readonly FileSystemPlugin _csPlugin;
     private readonly IMcpClient _mcpClient;
     private readonly FileSystemTestFixture _fixture;
-    private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private readonly ITestOutputHelper _output;
 

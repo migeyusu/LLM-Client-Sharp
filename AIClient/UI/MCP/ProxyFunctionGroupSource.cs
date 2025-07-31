@@ -5,15 +5,15 @@ namespace LLMClient.UI.MCP;
 
 public class ProxyFunctionGroupSource : IFunctionGroupSource
 {
-    private readonly Func<IEnumerable<IAIFunctionGroup>> _functionGroupsFunc;
+    private readonly Func<IEnumerable<IAIFunctionGroup>?> _functionGroupsFunc;
 
-    public ProxyFunctionGroupSource(Func<IEnumerable<IAIFunctionGroup>> functionGroupsFunc)
+    public ProxyFunctionGroupSource(Func<IEnumerable<IAIFunctionGroup>?> functionGroupsFunc)
     {
         _functionGroupsFunc = functionGroupsFunc;
     }
 
     public IEnumerable<IAIFunctionGroup> GetFunctionGroups()
     {
-        return _functionGroupsFunc.Invoke();
+        return _functionGroupsFunc.Invoke() ?? [];
     }
 }

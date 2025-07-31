@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using LLMClient.Data;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.UI.Dialog;

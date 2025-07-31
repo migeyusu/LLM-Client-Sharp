@@ -1,10 +1,8 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using LLMClient.Data;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI.Component;
 

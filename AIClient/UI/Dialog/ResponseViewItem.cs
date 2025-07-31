@@ -8,7 +8,6 @@ using LLMClient.Endpoints.Messages;
 using LLMClient.Render;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
-using OpenAI.Chat;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 

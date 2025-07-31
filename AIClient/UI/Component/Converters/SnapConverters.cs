@@ -55,6 +55,28 @@ internal static class SnapConverters
 
     public static readonly IValueConverter ObjectToJsonConverter =
         ValueConverter.Create<object?, string>(e => e.Value != null
-            ? JsonSerializer.Serialize(e.Value, ObjectSerializeOptions)
+            ? JsonSerializer.Serialize(e.Value, Extension.DefaultJsonSerializerOptions)
             : string.Empty);
+
+    public static readonly IValueConverter EnumerableToVisibilityConverter =
+        ValueConverter.Create<IEnumerable<object>?, Visibility>(e =>
+        {
+            if (e.Value == null || !e.Value.Any())
+            {
+                return Visibility.Collapsed;
+            }
+
+            return Visibility.Visible;
+        });
+
+    public static readonly IValueConverter EnumerableToBoolConverter =
+        ValueConverter.Create<IEnumerable<object>?, bool>(e =>
+        {
+            if (e.Value == null || !e.Value.Any())
+            {
+                return false;
+            }
+
+            return true;
+        });
 }

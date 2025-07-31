@@ -25,8 +25,8 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0"/>
         <PackageReference Include="DiffPlex" Version="1.8.0"/>
         <PackageReference Include="LambdaConverters" Version="4.0.0"/>
-        <PackageReference Include="Magick.NET-Q8-x64" Version="14.6.0"/>
-        <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.6"/>
+        <PackageReference Include="Magick.NET-Q8-x64" Version="14.7.0" />
+        <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.7" />
         <PackageReference Include="MahApps.Metro.IconPacks.MaterialDesign" Version="5.1.0"/>
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
         <PackageReference Include="MaterialDesignThemes" Version="5.2.2-ci998"/>

@@ -4,7 +4,6 @@ using System.Windows.Documents;
 using System.Windows.Markup;
 using Markdig;
 using Markdig.Renderers;
-using Markdig.Syntax;
 using Markdig.Wpf;
 using Markdown = Markdig.Markdown;
 
@@ -51,7 +50,7 @@ public class CustomRenderer : WpfRenderer
         expander.Content = obj;
         expander.Header = obj;
         var blockUiContainer = new BlockUIContainer(expander);
-        ((IAddChild)Document).AddChild(blockUiContainer);
+        ((IAddChild)Document!).AddChild(blockUiContainer);
     }
 
     public static ComponentResourceKey FunctionCallStyleKey { get; } =

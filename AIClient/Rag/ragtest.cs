@@ -1,6 +1,5 @@
 ﻿namespace LLMClient.Rag;
 
-
     /*public async Task AddFileToContext(FileInfo fileInfo)
     {
         var build = Kernel.CreateBuilder().Build();

@@ -1,8 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
-using LLMClient.Endpoints.Azure.Models;
-using LLMClient.Endpoints.OpenAIAPI;
 
 namespace LLMClient.UI;
 

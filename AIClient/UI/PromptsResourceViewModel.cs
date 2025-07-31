@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
-using System.Windows.Controls;
 using System.Windows.Input;
 using LLMClient.Data;
 using LLMClient.UI.Component;

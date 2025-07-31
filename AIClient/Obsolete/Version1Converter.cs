@@ -1,14 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Text.Json;
-using AutoMapper;
-using LLMClient.Abstraction;
-using LLMClient.Data;
-using LLMClient.UI.Dialog;
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.DependencyInjection;
-
-namespace LLMClient.Obsolete;
+﻿namespace LLMClient.Obsolete;
 
 /// <summary>
 /// 将版本2的对话转换为版本3的对话格式

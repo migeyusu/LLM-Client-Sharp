@@ -1,7 +1,9 @@
-﻿using System.ComponentModel;
-using System.Security.Principal;
+using System.ComponentModel;
 using System.Text;
+using LLMClient.Abstraction;
 using LLMClient.UI.Dialog;
+using LLMClient.UI.MCP;
+using LLMClient.UI.MCP.Servers;
 
 namespace LLMClient.UI.Project;
 
@@ -19,9 +21,8 @@ namespace LLMClient.UI.Project;
  * 待实现的功能：
  * 1. 如何构建工程级别的上下文
  * 2. 如何构建任务级别的上下文
- *
  */
-public class ProjectTask : DialogSessionViewModel
+public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
 {
     private string? _name;
     private string? _summary;
@@ -29,10 +30,15 @@ public class ProjectTask : DialogSessionViewModel
     private ProjectTaskType _type;
     private string? _description;
 
-    public ProjectTask(ProjectViewModel parentProject, IList<IDialogItem>? items = null) : base(items)
+    public IList<CheckableFunctionGroupTree>? SelectedFunctionGroups { get; set; }
+
+    public ProjectTaskViewModel(ProjectViewModel parentProject,
+        IList<CheckableFunctionGroupTree>? functionGroupTrees = null,
+        IList<IDialogItem>? items = null) : base(items)
     {
         ParentProject = parentProject;
-        this.PropertyChanged += OnPropertyChanged;
+        SelectedFunctionGroups = functionGroupTrees;
+        PropertyChanged += OnPropertyChanged;
     }
 
     private readonly string[] _notTrackingProperties =
@@ -176,24 +182,20 @@ public class ProjectTask : DialogSessionViewModel
 
         return true;
     }
-}
 
-public enum ProjectTaskStatus : int
-{
-    InProgress,
-    Completed,
-    RolledBack
-}
+    public IEnumerable<IAIFunctionGroup> GetFunctionGroups()
+    {
+        if (SelectedFunctionGroups == null)
+        {
+            yield break;
+        }
 
-public enum ProjectTaskType : int
-{
-    [Description("需求变更")] NewDemand,
-    [Description("修复Bug")] BugFix,
-    [Description("代码翻译")] Translation,
-    [Description("代码重构")] CodeRefactor,
-    [Description("代码审查")] CodeReview,
-    [Description("代码生成")] CodeGeneration,
-    [Description("代码优化")] CodeOptimization,
-    [Description("代码文档编写")] CodeDocumentation,
-    [Description("单元测试编写")] UnitTestConstruction,
+        foreach (var checkableFunctionGroupTree in SelectedFunctionGroups)
+        {
+            if (checkableFunctionGroupTree.IsSelected)
+            {
+                yield return checkableFunctionGroupTree;
+            }
+        }
+    }
 }

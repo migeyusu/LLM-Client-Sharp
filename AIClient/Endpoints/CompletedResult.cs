@@ -1,10 +1,6 @@
-﻿using DocumentFormat.OpenXml.Office2013.Excel;
-using LLMClient.Abstraction;
+﻿using LLMClient.Abstraction;
 using LLMClient.Endpoints.Messages;
-using LLMClient.UI;
-using LLMClient.UI.Dialog;
 using Microsoft.Extensions.AI;
-using OpenAI.Chat;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 

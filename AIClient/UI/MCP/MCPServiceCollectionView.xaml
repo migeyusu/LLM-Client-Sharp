@@ -297,7 +297,7 @@
             </ItemsControl>
         </ScrollViewer>
         <TextBlock Grid.Row="1" Grid.Column="1"
-                   Visibility="{Binding SelectedServerItem.IsToolAvailable,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
+                   Visibility="{Binding SelectedServerItem.AvailableTools,Mode=OneWay,Converter={x:Static converters:SnapConverters.EnumerableToVisibilityConverter}}"
                    Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                    Margin="16,16,0,0"
                    TextWrapping="Wrap"

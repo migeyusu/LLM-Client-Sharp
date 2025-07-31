@@ -1,5 +1,3 @@
-using LLMClient.Render;
-
 namespace LLMClient.UI.Component;
 
 public static class UITheme

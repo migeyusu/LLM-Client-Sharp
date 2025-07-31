@@ -1,6 +1,4 @@
-﻿using System.IO;
-using System.Text.Json.Serialization;
-using System.Windows.Media;
+﻿using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI;

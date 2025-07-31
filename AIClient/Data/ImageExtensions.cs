@@ -1,9 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Windows;

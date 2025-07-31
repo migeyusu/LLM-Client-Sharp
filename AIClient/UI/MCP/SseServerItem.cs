@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using ModelContextProtocol.Client;

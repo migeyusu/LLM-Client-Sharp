@@ -1,4 +1,5 @@
-﻿using LLMClient.UI.Dialog;
+﻿using System.Runtime.CompilerServices;
+using LLMClient.UI.Dialog;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.UI.Agent;
@@ -30,7 +31,7 @@ public class PromptAgent : AgentBase
 {
     public string Prompt { get; set; } = string.Empty;
 
-    public async override IAsyncEnumerable<ChatMessage> GetMessages(CancellationToken cancellationToken)
+    public override async IAsyncEnumerable<ChatMessage> GetMessages([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(Prompt))
         {

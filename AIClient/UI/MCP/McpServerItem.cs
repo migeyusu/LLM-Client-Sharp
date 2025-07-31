@@ -85,16 +85,9 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
             if (Equals(value, _availableTools)) return;
             _availableTools = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(IsToolAvailable));
         }
     }
-
-    [JsonIgnore]
-    public bool IsToolAvailable
-    {
-        get => _availableTools?.Count > 0;
-    }
-
+    
     public ICommand RefreshToolsCommand => new RelayCommand(async () => { await ListToolsAsync(); });
 
     public ICommand ResetToolsCommand => new RelayCommand(async () => { await ResetToolsAsync(); });

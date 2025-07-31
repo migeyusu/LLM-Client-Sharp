@@ -15,12 +15,12 @@ public partial class RequesterView : UserControl
 
     private RequesterViewModel ViewModel => (RequesterViewModel)this.DataContext;
 
-    private void McpPopupBox_OnOpened(object sender, RoutedEventArgs e)
+    private async void McpPopupBox_OnOpened(object sender, RoutedEventArgs e)
     {
-        if (sender is PopupBox { PopupContent: AIFunctionSelectorViewModel selector })
+        if (sender is PopupBox { PopupContent: AIFunctionTreeSelectorViewModel selector })
         {
-            selector.ResetSource();
-            selector.EnsureAsync();
+            selector.ResetItemSource();
+            await selector.EnsureAsync();
         }
     }
 
@@ -42,6 +42,5 @@ public partial class RequesterView : UserControl
 
     private void SearchPopupBox_OnOpened(object sender, RoutedEventArgs e)
     {
-        
     }
 }
