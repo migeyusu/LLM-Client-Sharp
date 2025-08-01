@@ -60,15 +60,26 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         }
     }
 
-    private string? _additionPrompt;
-
     public string? AdditionPrompt
     {
-        get => _additionPrompt;
+        get
+        {
+            if (string.IsNullOrEmpty(UserPrompt))
+            {
+                return null;
+            }
+
+            return $"{Name}:{UserPrompt}";
+        }
+    }
+
+    public string? UserPrompt
+    {
+        get => _userPrompt;
         set
         {
-            if (value == _additionPrompt) return;
-            _additionPrompt = value;
+            if (value == _userPrompt) return;
+            _userPrompt = value;
             OnPropertyChanged();
         }
     }
@@ -87,7 +98,19 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
             OnPropertyChanged();
         }
     }
-    
+
+    [JsonIgnore]
+    public bool IsAvailable
+    {
+        get => _isAvailable;
+        set
+        {
+            if (value == _isAvailable) return;
+            _isAvailable = value;
+            OnPropertyChanged();
+        }
+    }
+
     public ICommand RefreshToolsCommand => new RelayCommand(async () => { await ListToolsAsync(); });
 
     public ICommand ResetToolsCommand => new RelayCommand(async () => { await ResetToolsAsync(); });
@@ -114,10 +137,12 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
 
             this.AvailableTools =
                 (await _client.ListToolsAsync(cancellationToken: cancellationToken)).ToArray<AIFunction>();
+            this.IsAvailable = AvailableTools?.Count > 0;
             return true;
         }
         catch (Exception e)
         {
+            this.IsAvailable = false;
             var exception = e;
             while (exception.InnerException != null)
             {
@@ -148,6 +173,8 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
 
     private IMcpClient? _client;
     private Uri? _projectUrl;
+    private string? _userPrompt;
+    private bool _isAvailable;
 
     public abstract string GetUniqueId();
 

@@ -21,6 +21,8 @@ public abstract class KernelFunctionGroup : BaseViewModel, IBuiltInFunctionGroup
         }
     }
 
+    public virtual bool IsAvailable { get; } = true;
+
     public bool IsToolAvailable { get; } = true;
     
     [JsonIgnore] public string Name { get; }

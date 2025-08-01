@@ -14,6 +14,7 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using LLMClient.UI.Dialog;
+using LLMClient.UI.MCP;
 using LLMClient.UI.Project;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,6 +43,10 @@ public static class Extension
     {
         return collection.AddAutoMapper((provider, expression) =>
         {
+            expression.CreateMap<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
             expression.CreateMap<IThinkingConfig, GeekAIThinkingConfig>();
             expression.CreateMap<IThinkingConfig, OpenRouterReasoningConfig>();
             expression.CreateMap<IAIContent, AIContent>().IncludeAllDerived();

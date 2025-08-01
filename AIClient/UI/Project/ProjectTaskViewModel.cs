@@ -192,7 +192,7 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
 
         foreach (var checkableFunctionGroupTree in SelectedFunctionGroups)
         {
-            if (checkableFunctionGroupTree.IsSelected)
+            if (checkableFunctionGroupTree.IsSelected != false)
             {
                 yield return checkableFunctionGroupTree;
             }

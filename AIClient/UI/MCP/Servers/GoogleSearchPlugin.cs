@@ -41,7 +41,9 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
             OnPropertyChanged();
         }
     }
-    
+
+    public bool IsAvailable => true;
+
     public string GetUniqueId()
     {
         return $"{this.GetType().FullName}";

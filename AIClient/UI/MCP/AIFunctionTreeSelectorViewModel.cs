@@ -21,7 +21,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
             OnPropertyChanged();
         }
     }
-    
+
     private IReadOnlyList<CheckableFunctionGroupTree> _mcpServices = [];
 
     public IReadOnlyList<CheckableFunctionGroupTree> McpServices
@@ -35,7 +35,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
         }
     }
 
-        
+
     private IReadOnlyList<CheckableFunctionGroupTree> _builtInFunctions = [];
 
     public IReadOnlyList<CheckableFunctionGroupTree> BuiltInFunctions
@@ -53,13 +53,11 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
 
     public ICommand SelectCommand => new ActionCommand((o) => { AfterSelect?.Invoke(); });
 
+    public ICommand RefreshSourceCommand => new ActionCommand(async (o) => { await RefreshSourceAsync(); });
+
     public IEnumerable<CheckableFunctionGroupTree>? SelectedFunctionGroups
     {
-        get
-        {
-            return FunctionGroups.Where(tree =>
-                tree.IsSelected && (tree.Functions?.Any(model => model.IsSelected)) == true);
-        }
+        get { return FunctionGroups.Where(tree => tree.IsSelected != false); }
     }
 
     public event Action? AfterSelect;
@@ -87,7 +85,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
             .ConnectSource(ServiceLocator.GetService<IBuiltInFunctionsCollection>() as BuiltInFunctionsCollection);
     }
 
-    /// <summary>
+    /*/// <summary>
     /// 可以使用<see cref="AIFunctionTreeSelectorViewModel"/>或普通的<see cref="IAIFunctionGroup"/>作为参数
     /// </summary>
     /// <param name="functionGroups"></param>
@@ -122,24 +120,120 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
                 }
             }
         }
-    }
-
-    public void ResetItemSource()
+    }*/
+    public bool IsEnsuring
     {
-        FunctionGroups.Clear();
-        foreach (var source in _sources)
+        get => _isEnsuring;
+        private set
         {
-            UpdateCandidateFunctions(source.GetFunctionGroups(), false);
+            if (value == _isEnsuring) return;
+            _isEnsuring = value;
+            OnPropertyChanged();
         }
-        McpServices = FunctionGroups.Where((model => model.Data is McpServerItem)).ToArray();
-        BuiltInFunctions = FunctionGroups.Where((model => model.Data is IBuiltInFunctionGroup)).ToArray();
     }
 
-    public async Task EnsureAsync()
+    private bool _isInitialized = false;
+    private bool _isEnsuring = false;
+
+    public async Task InitializeAsync()
     {
-        foreach (var aiFunctionGroup in this.FunctionGroups)
+        if (_isInitialized)
         {
-            await aiFunctionGroup.EnsureAsync(CancellationToken.None);
+            return;
+        }
+
+        await RefreshSourceAsync();
+        _isInitialized = true;
+    }
+
+    public async Task RefreshSourceAsync()
+    {
+        if (IsEnsuring)
+        {
+            return;
+        }
+
+        IsEnsuring = true;
+        try
+        {
+            var newFunctionGroups = new List<CheckableFunctionGroupTree>();
+            var functionGroupComparer = AIFunctionGroupComparer.Instance;
+            foreach (var source in _sources)
+            {
+                foreach (var newFunctionGroup in source.GetFunctionGroups())
+                {
+                    var duplicatedTree = newFunctionGroups.FirstOrDefault(model =>
+                        functionGroupComparer.Equals(newFunctionGroup, model));
+                    if (newFunctionGroup is CheckableFunctionGroupTree checkable)
+                    {
+                        if (duplicatedTree != null)
+                        {
+                            newFunctionGroups.Remove(duplicatedTree);
+                        }
+
+                        newFunctionGroups.Add(checkable);
+                    }
+                    else
+                    {
+                        if (duplicatedTree == null)
+                        {
+                            newFunctionGroups.Add(new CheckableFunctionGroupTree(newFunctionGroup)
+                            {
+                                IsSelected = false
+                            });
+                        }
+                    }
+                }
+            }
+
+            //关键步骤，清空上一次函数
+            foreach (var virtualFunctionViewModel in newFunctionGroups.SelectMany(newFunctionGroup =>
+                         newFunctionGroup.Functions))
+            {
+                virtualFunctionViewModel.ApplyFunction(null);
+            }
+
+            List<CheckableFunctionGroupTree> functionGroupsToRemove = [];
+            foreach (var obsoleteFunctionGroup in FunctionGroups)
+            {
+                var newFunctionGroup = newFunctionGroups.FirstOrDefault(group =>
+                    functionGroupComparer.Equals(group, obsoleteFunctionGroup));
+                if (newFunctionGroup != null)
+                {
+                    obsoleteFunctionGroup.SyncSelect(newFunctionGroup);
+                    newFunctionGroups.Remove(newFunctionGroup);
+                }
+                else
+                {
+                    functionGroupsToRemove.Add(obsoleteFunctionGroup);
+                }
+            }
+
+            foreach (var functionGroup in newFunctionGroups)
+            {
+                FunctionGroups.Add(functionGroup);
+            }
+
+            foreach (var functionGroup in functionGroupsToRemove)
+            {
+                FunctionGroups.Remove(functionGroup);
+            }
+
+            McpServices = FunctionGroups.Where((model => model.Data is McpServerItem)).ToArray();
+            BuiltInFunctions = FunctionGroups.Where((model => model.Data is IBuiltInFunctionGroup)).ToArray();
+            foreach (var aiFunctionGroup in this.FunctionGroups.ToArray())
+            {
+                await aiFunctionGroup.EnsureAsync(CancellationToken.None);
+            }
+
+            foreach (var functionGroup in this.FunctionGroups)
+            {
+                functionGroup.RefreshCheckState();
+            }
+        }
+        finally
+        {
+            IsEnsuring = false;
         }
     }
 }

@@ -11,6 +11,8 @@ namespace LLMClient.Endpoints.Azure;
 
 public sealed class GithubCopilotEndPoint : AzureEndPointBase
 {
+    public const string ModelInfoUrl = "//https://github.com/models/available";
+    
     public const string GithubCopilotName = "Github Copilot";
 
     private readonly Dictionary<string, Action<AzureModelInfo>> _predefinedModels;

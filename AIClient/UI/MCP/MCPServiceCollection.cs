@@ -119,7 +119,10 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
                         if (await item.ListToolsAsync())
                         {
                             MessageEventBus.Publish($"已导入MCP服务器: {item.Name},工具数量: {item.AvailableTools?.Count ?? 0}");
-                            return;
+                        }
+                        else
+                        {
+                            MessageEventBus.Publish($"导入MCP服务器发生异常：{item.ErrorMessage}，请检查服务或配置是否正确！");
                         }
                     }
                     else

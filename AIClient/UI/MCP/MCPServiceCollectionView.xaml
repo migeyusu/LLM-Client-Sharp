@@ -273,7 +273,7 @@
                                      MinHeight="50"
                                      VerticalContentAlignment="Top"
                                      materialDesign:HintAssist.Hint="为MCP附加额外的Prompt"
-                                     Text="{Binding UserPrompt,Mode=TwoWay}" />
+                                     Text="{Binding UserPrompts,Mode=TwoWay}" />
                         </Grid>
                     </DataTemplate>
                 </ContentControl.Resources>
@@ -297,7 +297,7 @@
             </ItemsControl>
         </ScrollViewer>
         <TextBlock Grid.Row="1" Grid.Column="1"
-                   Visibility="{Binding SelectedServerItem.AvailableTools,Mode=OneWay,Converter={x:Static converters:SnapConverters.EnumerableToVisibilityConverter}}"
+                   Visibility="{Binding SelectedServerItem.AvailableTools,Mode=OneWay,Converter={x:Static converters:SnapConverters.EnumerableToVisibilityInverseConverter}}"
                    Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                    Margin="16,16,0,0"
                    TextWrapping="Wrap"

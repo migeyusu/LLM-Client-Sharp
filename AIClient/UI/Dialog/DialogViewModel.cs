@@ -9,6 +9,7 @@ using LLMClient.Data;
 using LLMClient.UI.Component;
 using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 using MessageBox = System.Windows.MessageBox;
@@ -173,9 +174,20 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         nameof(SearchText)
     ];
 
+    private IList<CheckableFunctionGroupTree>? _selectedFunctionGroups;
+
     public RequesterViewModel Requester { get; }
 
-    public IList<CheckableFunctionGroupTree>? SelectedFunctionGroup { get; set; }
+    public IList<CheckableFunctionGroupTree>? SelectedFunctionGroups
+    {
+        get => _selectedFunctionGroups;
+        set
+        {
+            if (Equals(value, _selectedFunctionGroups)) return;
+            _selectedFunctionGroups = value;
+            OnPropertyChanged();
+        }
+    }
 
     public ICommand ExportCommand => new ActionCommand((async o =>
     {
@@ -232,7 +244,8 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
             Source = this
         };
         Requester.FunctionTreeSelector.ConnectDefault()
-            .ConnectSource(new ProxyFunctionGroupSource((() => this.SelectedFunctionGroup)));
+            .ConnectSource(new ProxyFunctionGroupSource((() => this.SelectedFunctionGroups)));
+        Requester.FunctionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
         PropertyChanged += (_, e) =>
         {
             var propertyName = e.PropertyName;
@@ -245,16 +258,23 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         };
     }
 
+    private void FunctionTreeSelectorOnAfterSelect()
+    {
+        this.SelectedFunctionGroups =
+            this.Requester.FunctionTreeSelector.FunctionGroups.Where(tree => tree.IsSelected != false).ToArray();
+        PopupBox.ClosePopupCommand.Execute(null, null);
+    }
+
     public IEnumerable<IAIFunctionGroup> GetFunctionGroups()
     {
-        if (SelectedFunctionGroup == null)
+        if (SelectedFunctionGroups == null)
         {
             yield break;
         }
 
-        foreach (var functionGroupTree in SelectedFunctionGroup)
+        foreach (var functionGroupTree in SelectedFunctionGroups)
         {
-            if (functionGroupTree.IsSelected)
+            if (functionGroupTree.IsSelected != false)
             {
                 yield return functionGroupTree;
             }

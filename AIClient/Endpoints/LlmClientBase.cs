@@ -147,11 +147,16 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
             toolsPromptBuilder.AppendLine(
                 "For the following functions, you can call them by name with the required parameters:");
             var functionGroups = requestViewItem?.FunctionGroups;
-            if (functionGroups != null && functionGroups.Any())
+            if (functionGroups != null)
             {
                 foreach (var functionGroup in functionGroups)
                 {
                     await functionGroup.EnsureAsync(cancellationToken);
+                    if (functionGroup.IsAvailable)
+                    {
+                        continue;
+                    }
+
                     var availableTools = functionGroup.AvailableTools;
                     if (availableTools == null || availableTools.Count == 0)
                     {

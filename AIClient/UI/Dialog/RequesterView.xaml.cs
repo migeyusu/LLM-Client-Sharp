@@ -19,24 +19,23 @@ public partial class RequesterView : UserControl
     {
         if (sender is PopupBox { PopupContent: AIFunctionTreeSelectorViewModel selector })
         {
-            selector.ResetItemSource();
-            await selector.EnsureAsync();
+            await selector.InitializeAsync();
         }
     }
 
     private void EnterKeyInputBinding_OnChecked(object sender, RoutedEventArgs e)
     {
-        if (this.FindResource("PromptKeyBinding") is InputBinding findResource)
+        if (this.FindResource("PromptKeyBinding") is InputBinding inputBinding)
         {
-            PromptTextBox.InputBindings.Add(findResource);
+            PromptTextBox.InputBindings.Add(inputBinding);
         }
     }
 
     private void EnterKeyInputBinding_OnUnchecked(object sender, RoutedEventArgs e)
     {
-        if (this.FindResource("PromptKeyBinding") is InputBinding findResource)
+        if (this.FindResource("PromptKeyBinding") is InputBinding inputBinding)
         {
-            PromptTextBox.InputBindings.Remove(findResource);
+            PromptTextBox.InputBindings.Remove(inputBinding);
         }
     }
 

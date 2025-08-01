@@ -7,8 +7,12 @@ namespace LLMClient.UI.MCP;
 /// </summary>
 public class VirtualFunctionViewModel : BaseViewModel
 {
+    private readonly CheckableFunctionGroupTree _parentNode;
+
     private bool _isSelected;
-    private AIFunction? _function;
+    private string? _functionName;
+    private string? _description;
+    private bool _isEnabled;
 
     public bool IsSelected
     {
@@ -18,41 +22,72 @@ public class VirtualFunctionViewModel : BaseViewModel
             if (value == _isSelected) return;
             _isSelected = value;
             OnPropertyChanged();
+            _parentNode?.RefreshCheckState();
         }
     }
 
-    public AIFunction? Function
+    public void ApplyFunction(AIFunction? value)
     {
-        get => _function;
-        set
+        if (value == null)
         {
-            if (Equals(value, _function)) return;
-            _function = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsEnabled));
+            IsEnabled = false;
+        }
+        else
+        {
+            FunctionName = value.Name;
+            Description = value.Description;
+            IsEnabled = true;
         }
     }
 
     public bool IsEnabled
     {
-        get { return Function != null; }
+        get => _isEnabled;
+        set
+        {
+            if (value == _isEnabled) return;
+            _isEnabled = value;
+            OnPropertyChanged();
+        }
     }
 
-    public string? FunctionName { get; set; }
+    public string? Description
+    {
+        get => _description;
+        set
+        {
+            if (value == _description) return;
+            _description = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? FunctionName
+    {
+        get => _functionName;
+        set
+        {
+            if (value == _functionName) return;
+            _functionName = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsEnabled));
+        }
+    }
 
     public bool IsMatch(AIFunction function)
     {
         return this.FunctionName == function.Name;
     }
 
-    public VirtualFunctionViewModel(AIFunction function)
+    public VirtualFunctionViewModel(AIFunction function, CheckableFunctionGroupTree parentNode)
     {
-        this.FunctionName = function.Name;
-        this.Function = function;
+        this._parentNode = parentNode;
+        this.ApplyFunction(function);
     }
 
-    public VirtualFunctionViewModel(string functionName)
+    public VirtualFunctionViewModel(string functionName, CheckableFunctionGroupTree parentNode)
     {
         this.FunctionName = functionName;
+        this._parentNode = parentNode;
     }
 }

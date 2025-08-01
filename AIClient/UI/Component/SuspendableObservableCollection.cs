@@ -20,9 +20,32 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
         if (--_suspendCount == 0)
         {
             _isSuspended = false;
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
+            OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
+    }
+    
+    public void AddRange(IEnumerable<T> items)
+    {
+        BeginInit();
+        foreach (var item in items)
+        {
+            Items.Add(item);
+        }
+
+        EndInit();
+    }
+    
+    public void ResetWith(IEnumerable<T> items)
+    {
+        BeginInit();
+        Items.Clear();
+        foreach (var item in items)
+        {
+            Items.Add(item);
+        }
+        EndInit();
     }
 
     protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)

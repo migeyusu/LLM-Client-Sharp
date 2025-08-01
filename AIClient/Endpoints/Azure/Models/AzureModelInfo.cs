@@ -9,6 +9,8 @@ using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.Azure.Models;
 
+//https://github.com/models/available
+
 public class AzureModelInfo : ILLMModel
 {
     [JsonPropertyName("friendly_name")] public string FriendlyName { get; set; } = string.Empty;

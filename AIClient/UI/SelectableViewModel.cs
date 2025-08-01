@@ -1,13 +1,13 @@
-﻿namespace LLMClient.UI.MCP;
+﻿namespace LLMClient.UI;
 
 public class SelectableViewModel<T> : BaseViewModel
 {
-    private bool _isSelected;
-
     public SelectableViewModel(T data)
     {
         Data = data;
     }
+
+    private bool _isSelected;
 
     public bool IsSelected
     {

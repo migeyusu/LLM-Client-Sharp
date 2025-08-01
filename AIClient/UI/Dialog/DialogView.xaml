@@ -76,6 +76,7 @@
                                            ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                            Model="{Binding Requester.DefaultClient.Model,Mode=OneWay}" />
                     <component:SearchBox Margin="10,0"
+                                         
                                          Padding="8,4,8,4"
                                          Panel.ZIndex="1"
                                          VerticalAlignment="Center"

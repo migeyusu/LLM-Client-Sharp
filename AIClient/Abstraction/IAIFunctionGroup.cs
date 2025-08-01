@@ -26,6 +26,8 @@ public interface IAIFunctionGroup : ICloneable
     /// </summary>
     /// <returns></returns>
     IReadOnlyList<AIFunction>? AvailableTools { get; }
+    
+    bool IsAvailable { get; }
 
     string GetUniqueId();
 

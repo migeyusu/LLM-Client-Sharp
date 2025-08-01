@@ -78,10 +78,10 @@
                 <TreeView.Resources>
                     <HierarchicalDataTemplate DataType="{x:Type mcp:CheckableFunctionGroupTree}"
                                               ItemsSource="{Binding Functions,Mode=OneWay}">
-                        <CheckBox
-                            IsEnabled="{Binding Functions,Mode=OneWay,Converter={x:Static converters:SnapConverters.EnumerableToBoolConverter}}"
-                            IsChecked="{Binding IsSelected,Mode=TwoWay}"
-                            materialDesign:CheckBoxAssist.CheckBoxSize="20">
+                        <CheckBox IsThreeState="True"
+                                  IsEnabled="{Binding Data.IsAvailable,Mode=OneWay}"
+                                  IsChecked="{Binding IsSelected,Mode=TwoWay}"
+                                  materialDesign:CheckBoxAssist.CheckBoxSize="20">
                             <TextBlock TextWrapping="NoWrap"
                                        TextTrimming="CharacterEllipsis"
                                        FontWeight="Bold"
@@ -92,32 +92,57 @@
                         </CheckBox>
                     </HierarchicalDataTemplate>
                     <DataTemplate DataType="{x:Type mcp:VirtualFunctionViewModel}">
-                        <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                      IsEnabled="{Binding IsEnabled,Mode=OneWay}">
-                                <TextBlock MaxHeight="20"
-                                           MaxWidth="300"
-                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                           TextTrimming="CharacterEllipsis"
-                                           TextWrapping="Wrap"
-                                           Margin="5,5,0,0"
-                                           VerticalAlignment="Center">
-                                    <Run Text="{Binding FunctionName,Mode=OneTime}" />
-                                    <Run Text="{Binding Function.Description,Mode=OneWay}"
-                                         FontSize="10"
-                                         FontWeight="Normal" />
-                                </TextBlock>
-                            </CheckBox>
-                        </StackPanel>
+                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                  IsEnabled="{Binding IsEnabled,Mode=OneWay}"
+                                  ToolTip="{Binding Description,Mode=OneWay}"
+                                  ToolTipService.InitialShowDelay="0"
+                                  ToolTipService.Placement="Top"
+                                  VerticalContentAlignment="Center">
+                            <TextBlock MaxHeight="20"
+                                       MaxWidth="300"
+                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="Wrap"
+                                       Margin="5,0,0,0">
+                                <Run Text="{Binding FunctionName,Mode=OneTime}" />
+                                <Run Text="{Binding Description,Mode=OneWay}"
+                                     FontSize="10"
+                                     FontWeight="Normal" />
+                            </TextBlock>
+                        </CheckBox>
                     </DataTemplate>
                 </TreeView.Resources>
             </TreeView>
-            <Button Grid.Row="1"
-                    Content="确定"
-                    Style="{StaticResource MaterialDesignRaisedButton}"
-                    Padding="12,6"
-                    HorizontalAlignment="Right"
-                    Command="{Binding SelectCommand}" />
+            <materialDesign:Card Grid.Row="0"
+                                 Padding="4"
+                                 VerticalAlignment="Center"
+                                 HorizontalAlignment="Center"
+                                 Visibility="{Binding IsEnsuring,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
+                                 UniformCornerRadius="14">
+                <StackPanel Margin="10">
+                    <ProgressBar IsIndeterminate="True"
+                                 Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                 Value="50" />
+                    <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                               TextWrapping="Wrap"
+                               Margin="0,15,0,0"
+                               Text="正在刷新服务。。。。。" />
+                </StackPanel>
+            </materialDesign:Card>
+            <StackPanel Grid.Row="1"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal"
+                        Margin="0,10,0,0">
+                <Button Content="刷新"
+                        Command="{Binding RefreshSourceCommand}"
+                        Style="{StaticResource MaterialDesignPaperButton}"
+                        Width="90" />
+                <Button Content="确定"
+                        Margin="16,0,0,0"
+                        Style="{StaticResource MaterialDesignRaisedButton}"
+                        Width="90"
+                        Command="{Binding SelectCommand}" />
+            </StackPanel>
         </Grid>
     </DataTemplate>
     <DataTemplate x:Key="PopupSelectModelDataTemplate"

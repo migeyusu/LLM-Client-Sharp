@@ -133,7 +133,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.SystemPrompt = source.SystemPrompt;
         var requester = source.Requester;
         destination.PromptString = requester.PromptString;
-        destination.AllowedFunctions = source.SelectedFunctionGroup
+        destination.AllowedFunctions = source.SelectedFunctionGroups
             ?.Select((tree => mapper.Map<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>(tree))).ToArray();
         destination.Client = mapper.Map<ILLMClient, LLMClientPersistModel>(requester.DefaultClient);
         return destination;
@@ -186,7 +186,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination.SystemPrompt = source.SystemPrompt;
             var requester = destination.Requester;
             requester.PromptString = source.PromptString;
-            destination.SelectedFunctionGroup = source.AllowedFunctions?.Select((o =>
+            destination.SelectedFunctionGroups = source.AllowedFunctions?.Select((o =>
                 mapper.Map<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>(o))).ToArray();
         }
         finally
@@ -440,10 +440,10 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
 
         destination ??= new CheckableFunctionGroupTree(group);
-        var virtualFunctionViewModels = source.SelectedFunctionNames?.Select((s => new VirtualFunctionViewModel(s)))
+        var virtualFunctionViewModels = source.SelectedFunctionNames
+            ?.Select(s => new VirtualFunctionViewModel(s, destination){ IsSelected = true})
             .ToArray();
-        destination.Functions.Clear();
-        destination.Functions.AddRange(virtualFunctionViewModels ?? []);
+        destination.Functions.ResetWith(virtualFunctionViewModels ?? []);
         return destination;
     }
 }

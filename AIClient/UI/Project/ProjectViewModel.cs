@@ -15,6 +15,7 @@ using LLMClient.UI.Component;
 using LLMClient.UI.Dialog;
 using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -480,7 +481,8 @@ public class ProjectViewModel : FileBasedSessionBase
         }
 
         this.SelectedTask.SelectedFunctionGroups =
-            this.Requester.FunctionTreeSelector.FunctionGroups.Where(tree => tree.IsSelected).ToArray();
+            this.Requester.FunctionTreeSelector.FunctionGroups.Where(tree => tree.IsSelected != false).ToArray();
+        PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
     private Task<CompletedResult> GetResponse(ILLMClient arg1, IRequestItem arg2)
