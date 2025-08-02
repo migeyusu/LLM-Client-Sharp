@@ -22,6 +22,12 @@ public static class CommonCommands
 
     public static RoutedUICommand Backup = new RoutedUICommand("Backup", "Backup", typeof(CommonCommands));
 
+    public static RoutedCommand Clone =
+        new RoutedUICommand("Clone", "Clone", typeof(CommonCommands));
+
+    public static RoutedCommand Conclusion =
+        new RoutedUICommand("Conclusion", "Conclusion", typeof(CommonCommands));
+
     private static ICommand? _copyCommand;
 
     public static ICommand CopyCommand

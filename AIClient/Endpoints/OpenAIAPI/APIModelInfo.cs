@@ -170,6 +170,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     private bool _supportImageInput;
     private bool _supoortVideoGeneration;
     private bool _supportAudioGeneration;
+    private bool _supportStreaming = true;
 
     public int MaxContextSize
     {
@@ -359,6 +360,21 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
             if (value == _reasonable) return;
             _reasonable = value;
             OnPropertyChanged();
+        }
+    }
+
+    public bool SupportStreaming
+    {
+        get => _supportStreaming;
+        set
+        {
+            if (value == _supportStreaming) return;
+            _supportStreaming = value;
+            OnPropertyChanged();
+            if (!value)
+            {
+                Streaming = false;
+            }
         }
     }
 

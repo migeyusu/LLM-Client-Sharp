@@ -101,7 +101,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
             chatOptions.Seed = modelParams.Seed.Value;
         }
 
-        if (tools != null)
+        if (tools != null && tools.Any())
         {
             if (this.Model.SupportFunctionCall)
             {
@@ -216,19 +216,20 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                 TotalTokenCount = 0,
             };
             ChatFinishReason? finishReason = null;
-            while (true)
+            var streaming = this.Model.SupportStreaming && this.Parameters.Streaming;
+            var clientContext = new ClientContext(requestViewItem?.AdditionalProperties)
+                { Streaming = streaming };
+            using (AsyncContext<ClientContext>.Create(clientContext))
             {
-                preFunctionCalls.Clear();
-                preUpdates.Clear();
-                UsageDetails? loopUsageDetails = null;
-                try
+                while (true)
                 {
-                    ChatResponse? preResponse = null;
-                    var streaming = this.Parameters.Streaming;
-                    var clientContext = new ClientContext(requestViewItem?.AdditionalProperties)
-                        { Streaming = streaming };
-                    using (AsyncContext<ClientContext>.Create(clientContext))
+                    preFunctionCalls.Clear();
+                    preUpdates.Clear();
+                    UsageDetails? loopUsageDetails = null;
+                    try
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        ChatResponse? preResponse = null;
                         if (streaming)
                         {
                             await foreach (var update in chatClient
@@ -251,158 +252,160 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                             //只收集文本内容
                             RespondingText.Add(preResponse.Text);
                         }
-                    }
 
-                    await clientContext.CompleteResponse(preResponse, result);
-                    var preResponseMessages = preResponse.Messages;
-                    chatHistory.AddRange(preResponseMessages);
-                    responseMessages.AddRange(preResponseMessages);
-                    foreach (var preResponseMessage in preResponseMessages)
-                    {
-                        foreach (var content in preResponseMessage.Contents)
+
+                        await clientContext.CompleteResponse(preResponse, result);
+                        var preResponseMessages = preResponse.Messages;
+                        chatHistory.AddRange(preResponseMessages);
+                        responseMessages.AddRange(preResponseMessages);
+                        foreach (var preResponseMessage in preResponseMessages)
                         {
-                            switch (content)
+                            foreach (var content in preResponseMessage.Contents)
                             {
-                                case UsageContent usageContent:
-                                    (loopUsageDetails ??= new UsageDetails()).Add(usageContent.Details);
-                                    break;
-                                case TextContent:
-                                    //do nothing, textContent is already added to RespondingText
-                                    break;
-                                case FunctionCallContent functionCallContent:
-                                    preFunctionCalls.Add(functionCallContent);
-                                    RespondingText.NewLine(functionCallContent.GetDebuggerString());
-                                    break;
-                                case FunctionResultContent functionResultContent:
-                                    RespondingText.NewLine(functionResultContent.GetDebuggerString());
-                                    break;
-                                case TextReasoningContent reasoningContent:
-                                    var text = reasoningContent.Text;
-                                    if (!string.IsNullOrEmpty(text))
-                                    {
-                                        RespondingText.NewLine(text);
-                                    }
+                                switch (content)
+                                {
+                                    case UsageContent usageContent:
+                                        (loopUsageDetails ??= new UsageDetails()).Add(usageContent.Details);
+                                        break;
+                                    case TextContent:
+                                        //do nothing, textContent is already added to RespondingText
+                                        break;
+                                    case FunctionCallContent functionCallContent:
+                                        preFunctionCalls.Add(functionCallContent);
+                                        RespondingText.NewLine(functionCallContent.GetDebuggerString());
+                                        break;
+                                    case FunctionResultContent functionResultContent:
+                                        RespondingText.NewLine(functionResultContent.GetDebuggerString());
+                                        break;
+                                    case TextReasoningContent reasoningContent:
+                                        var text = reasoningContent.Text;
+                                        if (!string.IsNullOrEmpty(text))
+                                        {
+                                            RespondingText.NewLine(text);
+                                        }
 
-                                    break;
-                                default:
-                                    Trace.TraceWarning("unsupported content: " + content.GetType().Name);
-                                    RespondingText.NewLine(
-                                        $"Unsupported content type: {content.GetType().Name}");
-                                    RespondingText.Add(content.RawRepresentation?.ToString() ?? string.Empty);
-                                    break;
+                                        break;
+                                    default:
+                                        Trace.TraceWarning("unsupported content: " + content.GetType().Name);
+                                        RespondingText.NewLine(
+                                            $"Unsupported content type: {content.GetType().Name}");
+                                        RespondingText.Add(content.RawRepresentation?.ToString() ?? string.Empty);
+                                        break;
+                                }
                             }
                         }
-                    }
 
-                    loopUsageDetails ??= GetUsageDetailsFromAdditional(preResponse);
-                    if (loopUsageDetails != null)
-                    {
-                        totalUsageDetails.Add(loopUsageDetails);
-                    }
-
-                    finishReason = preResponse.FinishReason;
-                    if (finishReason == null)
-                    {
-                        finishReason = GetFinishReasonFromAdditional(preResponse);
-                    }
-
-                    if (finishReason == ChatFinishReason.ToolCalls)
-                    {
-                        Trace.TraceInformation("Function call finished, need run function calls...");
-                    }
-                    else if (finishReason == ChatFinishReason.Stop)
-                    {
-                        Trace.TraceInformation("Response completed without function calls.");
-                        break;
-                    }
-                    else if (finishReason == ChatFinishReason.Length)
-                    {
-                        Trace.TraceInformation("Exceeded maximum response length.");
-                        break;
-                    }
-                    else if (finishReason == ChatFinishReason.ContentFilter)
-                    {
-                        Trace.TraceWarning("Response was filtered by content filter.");
-                        break;
-                    }
-                    else
-                    {
-                        Trace.TraceWarning($"Unexpected finish reason: {finishReason}");
-                    }
-
-                    if (preFunctionCalls.Count == 0)
-                    {
-                        Trace.TraceInformation("No function calls were requested, response completed.");
-                        break;
-                    }
-
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        errorMessage = "Operation was canceled.";
-                        break;
-                    }
-
-                    if (kernelPluginCollection.Count == 0)
-                    {
-                        errorMessage =
-                            $"No functions available to call. But {preFunctionCalls.Count} function calls were requested.";
-                        break;
-                    }
-
-                    RespondingText.NewLine("Processing function calls...");
-                    var chatMessage = new ChatMessage() { Role = ChatRole.Tool, };
-                    chatHistory.Add(chatMessage);
-                    responseMessages.Add(chatMessage);
-                    foreach (var functionCallContent in preFunctionCalls)
-                    {
-                        if (!kernelPluginCollection.TryGetFunction(null, functionCallContent.Name,
-                                out var kernelFunction))
+                        loopUsageDetails ??= GetUsageDetailsFromAdditional(preResponse);
+                        if (loopUsageDetails != null)
                         {
-                            errorMessage =
-                                $"Function '{functionCallContent.Name}' not found, call failed. Procedure interrupted.";
+                            totalUsageDetails.Add(loopUsageDetails);
+                        }
+
+                        finishReason = preResponse.FinishReason;
+                        if (finishReason == null)
+                        {
+                            finishReason = GetFinishReasonFromAdditional(preResponse);
+                        }
+
+                        if (finishReason == ChatFinishReason.ToolCalls)
+                        {
+                            Trace.TraceInformation("Function call finished, need run function calls...");
+                        }
+                        else if (finishReason == ChatFinishReason.Stop)
+                        {
+                            Trace.TraceInformation("Response completed without function calls.");
+                            break;
+                        }
+                        else if (finishReason == ChatFinishReason.Length)
+                        {
+                            Trace.TraceInformation("Exceeded maximum response length.");
+                            break;
+                        }
+                        else if (finishReason == ChatFinishReason.ContentFilter)
+                        {
+                            Trace.TraceWarning("Response was filtered by content filter.");
+                            break;
+                        }
+                        else
+                        {
+                            Trace.TraceWarning($"Unexpected finish reason: {finishReason}");
+                        }
+
+                        if (preFunctionCalls.Count == 0)
+                        {
+                            Trace.TraceInformation("No function calls were requested, response completed.");
                             break;
                         }
 
-                        try
+                        if (cancellationToken.IsCancellationRequested)
                         {
-                            var arguments = new AIFunctionArguments(functionCallContent.Arguments);
-                            //调用拦截器
-                            var invokeResult = await this.FunctionInterceptor.InvokeAsync(
-                                kernelFunction, arguments, functionCallContent, cancellationToken);
-                            RespondingText.NewLine(
-                                $"Function '{functionCallContent.Name}' invoked successfully, result: {invokeResult}");
-                            chatMessage.Contents.Add(
-                                new FunctionResultContent(functionCallContent.CallId, invokeResult));
+                            errorMessage = "Operation was canceled.";
+                            break;
                         }
-                        catch (Exception e)
+
+                        if (kernelPluginCollection.Count == 0)
                         {
-                            RespondingText.NewLine("Function call failed: " + e.Message);
-                            chatMessage.Contents.Add(new FunctionResultContent(functionCallContent.CallId, null)
-                                { Exception = e });
-                            if (IsQuitWhenFunctionCallFailed)
+                            errorMessage =
+                                $"No functions available to call. But {preFunctionCalls.Count} function calls were requested.";
+                            break;
+                        }
+
+                        RespondingText.NewLine("Processing function calls...");
+                        var chatMessage = new ChatMessage() { Role = ChatRole.Tool, };
+                        chatHistory.Add(chatMessage);
+                        responseMessages.Add(chatMessage);
+                        foreach (var functionCallContent in preFunctionCalls)
+                        {
+                            if (!kernelPluginCollection.TryGetFunction(null, functionCallContent.Name,
+                                    out var kernelFunction))
                             {
-                                errorMessage = $"Function '{functionCallContent.Name}' invocation failed: {e.Message}";
+                                errorMessage =
+                                    $"Function '{functionCallContent.Name}' not found, call failed. Procedure interrupted.";
                                 break;
+                            }
+
+                            try
+                            {
+                                var arguments = new AIFunctionArguments(functionCallContent.Arguments);
+                                //调用拦截器
+                                var invokeResult = await this.FunctionInterceptor.InvokeAsync(
+                                    kernelFunction, arguments, functionCallContent, cancellationToken);
+                                RespondingText.NewLine(
+                                    $"Function '{functionCallContent.Name}' invoked successfully, result: {invokeResult}");
+                                chatMessage.Contents.Add(
+                                    new FunctionResultContent(functionCallContent.CallId, invokeResult));
+                            }
+                            catch (Exception e)
+                            {
+                                RespondingText.NewLine("Function call failed: " + e.Message);
+                                chatMessage.Contents.Add(new FunctionResultContent(functionCallContent.CallId, null)
+                                    { Exception = e });
+                                if (IsQuitWhenFunctionCallFailed)
+                                {
+                                    errorMessage =
+                                        $"Function '{functionCallContent.Name}' invocation failed: {e.Message}";
+                                    break;
+                                }
                             }
                         }
                     }
-                }
-                catch (OperationCanceledException)
-                {
-                    errorMessage = "Operation was canceled.";
-                }
-                catch (Exception ex)
-                {
-                    errorMessage = ex.Message;
-                    Trace.TraceError($"Error during response: {ex}");
-                }
+                    catch (OperationCanceledException)
+                    {
+                        errorMessage = "Operation was canceled.";
+                    }
+                    catch (Exception ex)
+                    {
+                        errorMessage = ex.Message;
+                        Trace.TraceError($"Error during response: {ex}");
+                    }
 
-                if (errorMessage != null)
-                {
-                    break;
-                }
+                    if (errorMessage != null)
+                    {
+                        break;
+                    }
 
-                RespondingText.NewLine();
+                    RespondingText.NewLine();
+                }
             }
 
             var duration = (int)(_stopwatch.ElapsedMilliseconds / 1000);

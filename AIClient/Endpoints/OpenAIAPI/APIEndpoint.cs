@@ -23,7 +23,6 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
             if (Equals(value, _models)) return;
             _models = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(AvailableModelNames));
             OnPropertyChanged(nameof(AddNewCommand));
             OnPropertyChanged(nameof(RemoveCommand));
         }
@@ -153,9 +152,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
             OnPropertyChanged(nameof(AddNewCommand));
         }
     }
-
-    [JsonIgnore] public IReadOnlyCollection<string> AvailableModelNames => Models.Select(x => x.Name).ToArray();
-
+    
     [JsonIgnore]
     public IReadOnlyCollection<ILLMModel> AvailableModels
     {
@@ -186,7 +183,6 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         }
 
         SelectedModelIndex = Models.IndexOf(apiModelInfo);
-        OnPropertyChanged(nameof(AvailableModelNames));
         OnPropertyChanged(nameof(AvailableModels));
     }));
 
@@ -194,7 +190,6 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     public ICommand RemoveCommand => new ActionCommand((o =>
     {
         Models.Remove((APIModelInfo)o);
-        OnPropertyChanged(nameof(AvailableModelNames));
         OnPropertyChanged(nameof(AvailableModels));
     }));
 

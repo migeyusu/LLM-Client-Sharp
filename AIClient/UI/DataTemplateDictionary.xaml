@@ -23,7 +23,7 @@
     <component:TypeBasedDataTemplateSelector x:Key="ModelsDataTemplateSelector">
         <component:DataTemplateTypePair>
             <HierarchicalDataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}"
-                                      ItemsSource="{Binding AvailableModelsInfos, Mode=OneTime}">
+                                      ItemsSource="{Binding AvailableModels, Mode=OneTime}">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="{Binding Icon,Mode=OneTime}"
                            Width="26"

@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.Abstraction
 {
-    public interface ILLMSession
+    public interface ILLMSession : ICloneable
     {
         DateTime EditTime { get; }
 

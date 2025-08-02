@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows.Media;
@@ -11,8 +13,8 @@ namespace LLMClient.Endpoints.Azure;
 
 public sealed class GithubCopilotEndPoint : AzureEndPointBase
 {
-    public const string ModelInfoUrl = "//https://github.com/models/available";
-    
+    public const string ModelInfoUrl = "https://github.com/models/available";
+
     public const string GithubCopilotName = "Github Copilot";
 
     private readonly Dictionary<string, Action<AzureModelInfo>> _predefinedModels;
@@ -39,17 +41,16 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         get { return Source.Value; }
     }
 
-    public override IReadOnlyCollection<string> AvailableModelNames
-    {
-        get { return _loadedModelInfos.Keys; }
-    }
-
     public override IReadOnlyCollection<ILLMModel> AvailableModels
     {
-        get { return _loadedModelInfos.Values; }
+        get
+        {
+            return this._loadedModelInfos.Values.Where(info => info.IsEnabled).ToArray();
+            ;
+        }
     }
 
-    public IReadOnlyCollection<AzureModelInfo> AvailableModelsInfos
+    public IReadOnlyCollection<AzureModelInfo> TotalModelsInfos
     {
         get { return _loadedModelInfos.Values; }
     }
@@ -132,7 +133,6 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             info.FrequencyPenalty = 0;
         };
         Action<AzureModelInfo> empty = (info) => { };
-        Action<AzureModelInfo> noPrompt = (info) => info.SystemPromptEnable = false;
         Action<AzureModelInfo> deepSeek_R1 = (info) => { info.MaxTokens = 2048; };
         Action<AzureModelInfo> deepSeek_V3 = (info) =>
         {
@@ -161,8 +161,6 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             { "OpenAI GPT-4o mini", baseModel },
 
             { "OpenAI o1", empty },
-            { "OpenAI o1-mini", noPrompt },
-            { "OpenAI o1-preview", noPrompt },
 
             { "OpenAI o3", empty },
             { "OpenAI o3-mini", empty },
@@ -200,7 +198,19 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         };
     }
 
-    public override async Task InitializeAsync()
+    private async Task FetchModelsFromHttp()
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var responseMessage = await httpClient.GetAsync(ModelInfoUrl);
+            await using (var stream = await responseMessage.Content.ReadAsStreamAsync())
+            {
+                await DeserializeModels(stream);
+            }
+        }
+    }
+
+    private async Task FetchModelsFromLocal()
     {
         //load models
         var path = Path.GetFullPath(Path.Combine("EndPoints", "Azure", "Models", "models.json"));
@@ -214,29 +224,42 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         {
             using (var fileStream = fileInfo.OpenRead())
             {
-                var azureModelInfos = await JsonSerializer.DeserializeAsync<AzureModelInfo[]>(fileStream);
-                if (azureModelInfos == null)
-                {
-                    return;
-                }
-
-                foreach (var modelInfo in
-                         azureModelInfos.Where((info => info.ModelTask == AzureModelInfo.FilteredTask
-                                                        && info.SupportedInputModalities?.Contains(AzureModelInfo
-                                                            .FilteredInputText) == true)))
-                {
-                    var modelInfoName = modelInfo.FriendlyName;
-                    if (_predefinedModels.ContainsKey(modelInfoName))
-                    {
-                        modelInfo.Endpoint = this;
-                        _loadedModelInfos.Add(modelInfoName, modelInfo);
-                    }
-                }
+                await DeserializeModels(fileStream);
             }
         }
         catch (Exception e)
         {
             Trace.TraceError(e.ToString());
         }
+    }
+
+    private async Task DeserializeModels(Stream stream)
+    {
+        _loadedModelInfos.Clear();
+        var azureModelInfos = await JsonSerializer.DeserializeAsync<AzureModelInfo[]>(stream);
+        if (azureModelInfos == null)
+        {
+            return;
+        }
+
+        foreach (var modelInfo in
+                 azureModelInfos.Where((info => info.ModelTask == AzureModelInfo.FilteredTask
+                                                && info.SupportedInputModalities?.Contains(AzureModelInfo
+                                                    .FilteredInputText) == true)))
+        {
+            var modelInfoName = modelInfo.FriendlyName;
+            if (_predefinedModels.ContainsKey(modelInfoName))
+            {
+                modelInfo.Endpoint = this;
+                modelInfo.IsEnabled = true;
+            }
+
+            _loadedModelInfos.Add(modelInfoName, modelInfo);
+        }
+    }
+
+    public override async Task InitializeAsync()
+    {
+        await FetchModelsFromLocal();
     }
 }

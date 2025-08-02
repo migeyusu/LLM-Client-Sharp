@@ -607,6 +607,8 @@
                                                                 Executed="DialogBranch_OnExecuted" />
                                                 <CommandBinding Command="{x:Static ui:CommonCommands.ReprocessDialog}"
                                                                 Executed="DialogReprocess_OnExecuted" />
+                                                <CommandBinding Command="{x:Static ui:CommonCommands.Clone}"
+                                                                Executed="CloneCommand_OnExecuted" />
                                             </dialog:DialogView.CommandBindings>
                                         </dialog:DialogView>
                                     </DataTemplate>
@@ -622,6 +624,7 @@
                         </component:TypeBasedDataTemplateSelector>
                     </ContentControl.ContentTemplateSelector>
                     <ContentControl.CommandBindings>
+                        <!--session 级别command-->
                         <CommandBinding Command="{x:Static ui:CommonCommands.Backup}"
                                         Executed="BackupCommand_OnExecuted" />
                     </ContentControl.CommandBindings>

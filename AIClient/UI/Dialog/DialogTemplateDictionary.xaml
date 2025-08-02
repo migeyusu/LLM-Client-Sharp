@@ -25,6 +25,10 @@
                               Command="{x:Static ui:CommonCommands.CopyCommand}"
                               CommandParameter="{Binding TextMessage,Mode=OneTime}"
                               Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
+                    <MenuItem Header="总结之前对话"
+                              Command="{x:Static ui:CommonCommands.Conclusion}"
+                              CommandParameter="{Binding}"
+                              Icon="{materialDesign:PackIcon Kind=TagText}" />
                     <MenuItem Header="排除之前对话"
                               ToolTip="将之前的对话清出上下文"
                               Command="{x:Static ui:CommonCommands.Exclude}"

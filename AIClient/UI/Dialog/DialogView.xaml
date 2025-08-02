@@ -76,7 +76,6 @@
                                            ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                            Model="{Binding Requester.DefaultClient.Model,Mode=OneWay}" />
                     <component:SearchBox Margin="10,0"
-                                         
                                          Padding="8,4,8,4"
                                          Panel.ZIndex="1"
                                          VerticalAlignment="Center"
@@ -85,31 +84,33 @@
                                          GoToPreviousCommand="{Binding GoToPreviousHighlightCommand}" />
                     <Button ToolTip="清空对话"
                             Command="{Binding ClearDialogCommand}">
-                        <materialDesign:PackIcon
-                            Kind="Delete"
-                            Width="20"
-                            Height="20" />
+                        <materialDesign:PackIcon Kind="Delete"
+                                                 Width="20"
+                                                 Height="20" />
                     </Button>
                     <Button ToolTip="清空上下文"
                             Command="{Binding ClearContextCommand}">
-                        <materialDesign:PackIcon
-                            Kind="Eraser"
-                            Width="20"
-                            Height="20" />
+                        <materialDesign:PackIcon Kind="Eraser"
+                                                 Width="20"
+                                                 Height="20" />
                     </Button>
                     <Button ToolTip="导出对话为Markdown"
                             Command="{Binding ExportCommand}">
-                        <materialDesign:PackIcon
-                            Kind="FileExport"
-                            Width="20"
-                            Height="20" />
+                        <materialDesign:PackIcon Kind="FileExport"
+                                                 Width="20"
+                                                 Height="20" />
                     </Button>
                     <Button ToolTip="备份"
                             Command="{x:Static ui:CommonCommands.Backup}">
-                        <materialDesign:PackIcon
-                            Kind="ContentSave"
-                            Width="20"
-                            Height="20" />
+                        <materialDesign:PackIcon Kind="Archive"
+                                                 Width="20"
+                                                 Height="20" />
+                    </Button>
+                    <Button ToolTip="克隆"
+                            Command="{x:Static ui:CommonCommands.Clone}">
+                        <materialDesign:PackIcon Kind="BoxShadow"
+                                                 Width="20"
+                                                 Height="20" />
                     </Button>
                     <materialDesign:PopupBox StaysOpen="True">
                         <WrapPanel MaxWidth="200"
@@ -137,6 +138,8 @@
                                 Executed="OnExcludeExecuted" />
                 <CommandBinding Command="{x:Static ui:CommonCommands.Clear}"
                                 Executed="ClearBefore_OnExecuted" />
+                <CommandBinding Command="{x:Static ui:CommonCommands.Conclusion}"
+                                Executed="ConclusionBefore_OnExecuted" />
             </ListBox.CommandBindings>
         </component:ListBoxEx>
         <component:DialogScrollViewer Grid.Row="1"

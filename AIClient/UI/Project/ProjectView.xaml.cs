@@ -13,7 +13,6 @@ public partial class ProjectView : UserControl
 
     private void OnDeleteExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        
         if (e.Parameter is IDialogItem dialogViewItem)
         {
             ViewModel.SelectedTask?.DeleteItem(dialogViewItem);
@@ -55,6 +54,14 @@ public partial class ProjectView : UserControl
         if (e.Parameter is ProjectTaskViewModel task)
         {
             ViewModel.RemoveTask(task);
+        }
+    }
+
+    private void ConclusionBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is RequestViewItem requestViewItem)
+        {
+            ViewModel.SelectedTask?.ConclusionBefore(requestViewItem, ViewModel.Requester.DefaultClient);
         }
     }
 }

@@ -12,6 +12,7 @@
         <CheckBox Content="Streaming"
                   Margin="0,10,0,0"
                   materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                  IsEnabled="{Binding Model.SupportStreaming,Mode=OneWay}"
                   IsChecked="{Binding Parameters.Streaming,Mode=TwoWay}" />
         <endpoints:ParamView PropertyName="Top P"
                              Value="{Binding Parameters.TopP,Mode=TwoWay}"

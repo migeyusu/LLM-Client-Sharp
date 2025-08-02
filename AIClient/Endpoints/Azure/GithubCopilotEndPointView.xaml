@@ -6,6 +6,7 @@
              xmlns:azure="clr-namespace:LLMClient.Endpoints.Azure"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance azure:GithubCopilotEndPoint}"
              d:DesignHeight="300" d:DesignWidth="600">
@@ -35,18 +36,22 @@
         </Grid>
         <ScrollViewer Grid.Row="1"
                       Margin="0,10">
-            <ItemsControl ItemsSource="{Binding AvailableModelsInfos,Mode=OneWay}"
+            <ItemsControl ItemsSource="{Binding TotalModelsInfos,Mode=OneWay}"
                           VirtualizingStackPanel.IsVirtualizing="True"
                           VirtualizingStackPanel.VirtualizationMode="Recycling">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type models:AzureModelInfo}">
-                        <StackPanel Orientation="Horizontal"
-                                    Height="40">
+                        <Grid Height="40">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
                             <Image Width="32"
                                    Height="32"
                                    VerticalAlignment="Center"
                                    Source="{Binding Icon.CurrentSource,Mode=OneWay}" />
-                            <TextBlock Margin="10,0"
+                            <TextBlock Grid.Column="1"
+                                       Margin="10,0"
                                        VerticalAlignment="Center"
                                        TextWrapping="NoWrap"
                                        TextTrimming="CharacterEllipsis"
@@ -60,7 +65,14 @@
                                     </MultiBinding>
                                 </TextBlock.Text>
                             </TextBlock>
-                        </StackPanel>
+                            <materialDesign:PackIcon Grid.Column="1"
+                                                     HorizontalAlignment="Right"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,10,0"
+                                                     Kind="CheckBold"
+                                                     Visibility="{Binding IsEnabled,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
+                                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary.Dark}" />
+                        </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

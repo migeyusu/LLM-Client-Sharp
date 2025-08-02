@@ -112,7 +112,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
                     var newGuid = Guid.NewGuid();
                     var newItem = Extension.Clone(requestViewItem);
                     DialogItems.Add(newItem);
-                    var copy = GenerateHistory();
+                    var copy = GenerateHistoryFromSelf();
                     int retryCount = 3;
                     while (retryCount > 0)
                     {
@@ -239,13 +239,14 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         : base(items)
     {
         _topic = topic;
-        Requester = new RequesterViewModel(modelClient, NewRequest)
+        Requester = new RequesterViewModel(modelClient, (client, item) => NewRequest(client, item))
         {
             Source = this
         };
-        Requester.FunctionTreeSelector.ConnectDefault()
-            .ConnectSource(new ProxyFunctionGroupSource((() => this.SelectedFunctionGroups)));
-        Requester.FunctionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
+        var functionTreeSelector = Requester.FunctionTreeSelector;
+        functionTreeSelector.ConnectDefault()
+            .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedFunctionGroups));
+        functionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
         PropertyChanged += (_, e) =>
         {
             var propertyName = e.PropertyName;
@@ -278,6 +279,25 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
             {
                 yield return functionGroupTree;
             }
+        }
+    }
+
+    public async void ConclusionBefore(RequestViewItem requestViewItem)
+    {
+        try
+        {
+            var indexOf = this.DialogItems.IndexOf(requestViewItem);
+            if (indexOf <= 0)
+            {
+                return;
+            }
+
+            var summaryRequest = await SummaryRequestViewItem.NewSummaryRequest();
+            await NewRequest(Requester.DefaultClient, summaryRequest, indexOf);
+        }
+        catch (Exception e)
+        {
+            MessageEventBus.Publish(e.Message);
         }
     }
 }

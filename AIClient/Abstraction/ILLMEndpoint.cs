@@ -16,9 +16,7 @@ public interface ILLMEndpoint
     string Name { get; }
 
     ImageSource Icon { get; }
-
-    IReadOnlyCollection<string> AvailableModelNames { get; }
-
+    
     IReadOnlyCollection<ILLMModel> AvailableModels { get; }
 
     ILLMClient? NewClient(string modelName);

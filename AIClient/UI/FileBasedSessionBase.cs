@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI.Component;
@@ -62,6 +64,8 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     {
     }
 
+    public ICommand BackupCommand => new AsyncRelayCommand(Backup);
+
     public virtual async Task Backup()
     {
         var saveFileDialog = new SaveFileDialog()
@@ -84,6 +88,8 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
 
         MessageEventBus.Publish("已备份");
     }
+
+    public abstract object Clone();
 
     public void Delete()
     {

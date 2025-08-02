@@ -174,6 +174,15 @@ public class ProjectViewModel : FileBasedSessionBase
         await JsonSerializer.SerializeAsync(stream, dialogModel, SerializerOption);
     }
 
+    public override object Clone()
+    {
+        var projectPersistModel = Mapper.Map<ProjectViewModel, ProjectPersistModel>(this, (options => { }));
+        var cloneProject = Mapper.Map<ProjectPersistModel, ProjectViewModel>(projectPersistModel, (options => { }));
+        cloneProject.IsDataChanged = true;
+        return cloneProject;
+    }
+
+
     private void TagDataChangedOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         IsDataChanged = true;
@@ -423,6 +432,7 @@ public class ProjectViewModel : FileBasedSessionBase
             _selectedTask = value;
             OnPropertyChanged();
             Requester.Source = value;
+            Requester.FunctionTreeSelector.Reset();
         }
     }
 
@@ -447,7 +457,7 @@ public class ProjectViewModel : FileBasedSessionBase
         };
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
-            .ConnectSource(new ProxyFunctionGroupSource((() => this.SelectedTask?.SelectedFunctionGroups)));
+            .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedTask?.SelectedFunctionGroups));
         functionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
         this.ConfigViewModel = new ProjectConfigViewModel(this.EndpointService, this);
         this.Tasks = [];
@@ -559,14 +569,6 @@ public class ProjectViewModel : FileBasedSessionBase
                     fileSystemPlugin.AllowedPaths = AllowedFolderPaths;
                 }
             }
-        }
-    }
-
-    public void NewTaskRequest()
-    {
-        if (this._selectedTask == null)
-        {
-            return;
         }
     }
 }

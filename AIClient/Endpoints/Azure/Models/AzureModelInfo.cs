@@ -13,6 +13,8 @@ namespace LLMClient.Endpoints.Azure.Models;
 
 public class AzureModelInfo : ILLMModel
 {
+    [JsonIgnore] public bool IsEnabled { get; set; }
+
     [JsonPropertyName("friendly_name")] public string FriendlyName { get; set; } = string.Empty;
 
     [JsonIgnore]
@@ -23,13 +25,15 @@ public class AzureModelInfo : ILLMModel
 
     [JsonPropertyName("name")] public string ModelName { get; set; } = string.Empty;
 
+    [JsonPropertyName("registry")] public string? Registry { get; set; }
+
     [JsonIgnore]
     public string Name
     {
         get { return FriendlyName; }
     }
 
-    [JsonIgnore] public bool Streaming { get; set; } = true;
+    [JsonIgnore] public bool Streaming { get; set; }
 
     private ThemedIcon? _themedIcon;
 
@@ -83,7 +87,7 @@ public class AzureModelInfo : ILLMModel
 
     [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = NullLLMEndpoint.Instance;
 
-    [JsonIgnore] public bool SystemPromptEnable { get; set; } = true;
+    [JsonIgnore] public bool SystemPromptEnable => true;
 
     [JsonIgnore] public bool TopPEnable { get; set; }
 
@@ -148,6 +152,16 @@ public class AzureModelInfo : ILLMModel
     public bool Reasonable
     {
         get { return Tags?.Contains("reasoning") == true; }
+    }
+
+    [JsonIgnore]
+    public bool SupportStreaming
+    {
+        get
+        {
+            return Capabilities?.ContainsKey("streaming") == true &&
+                   Capabilities["streaming"] is true;
+        }
     }
 
     public bool SupportTextGeneration
@@ -301,6 +315,8 @@ public class AzureModelInfo : ILLMModel
     [JsonPropertyName("tags")]
     public string[]? Tags { get; set; }
 
+    [JsonPropertyName("publisherSlug")] public string? PublisherSlug { get; set; }
+
     public const string FilteredInputText = "text";
 
     [JsonPropertyName("supported_input_modalities")]
@@ -309,5 +325,127 @@ public class AzureModelInfo : ILLMModel
     [JsonPropertyName("supported_output_modalities")]
     public string[]? SupportedOutputModalities { get; set; }
 
-    [JsonPropertyName("capabilities")] public JsonObject? Capabilities { get; set; }
+    [JsonPropertyName("capabilities")] public Dictionary<string, object?>? Capabilities { get; set; }
+
+    [JsonPropertyName("isRestricted")] public bool? IsRestricted { get; set; }
+}
+
+public class AzureDetailModelInfo
+{
+    [JsonPropertyName("model")] public AzureModelInfo? ModelInfo { get; set; }
+
+    [JsonPropertyName("modelEvaluation")] public ModelEvaluation? Evaluation { get; set; }
+
+    [JsonPropertyName("modelInputSchema")] public ModelInputSchema? InputSchema { get; set; }
+
+    [JsonPropertyName("modelReadme")] public string? Readme { get; set; }
+
+    [JsonPropertyName("modelTransparencyContent")]
+    public string? TransparencyContent { get; set; }
+
+    [JsonPropertyName("playgroundUrl")] public string? PlaygroundUrl { get; set; }
+
+    public class ModelEvaluation
+    {
+        [JsonPropertyName("examples")] public List<Example>? Examples { get; init; }
+
+        [JsonPropertyName("sampleInputs")] public List<SampleInput>? SampleInputs { get; init; }
+
+        [JsonPropertyName("inputs")] public List<ParameterDefinition>? Inputs { get; init; }
+
+        [JsonPropertyName("outputs")] public List<ParameterDefinition>? Outputs { get; init; }
+
+        [JsonPropertyName("fixedParameters")] public List<ParameterDefinition>? FixedParameters { get; init; }
+
+        [JsonPropertyName("capabilities")] public Dictionary<string, object?>? Capabilities { get; init; }
+
+        [JsonPropertyName("type")] public string? Type { get; init; }
+
+        [JsonPropertyName("version")] public string? Version { get; init; }
+
+        [JsonPropertyName("behavior")] public string? Behavior { get; init; }
+
+        [JsonPropertyName("parameters")] public List<Parameter>? Parameters { get; init; }
+    }
+
+    public class Example
+    {
+        [JsonPropertyName("chatHistory")] public List<Message>? ChatHistory { get; init; }
+    }
+
+    public class SampleInput
+    {
+        [JsonPropertyName("messages")] public List<Message>? Messages { get; init; }
+    }
+
+    public class Message
+    {
+        [JsonPropertyName("role")] public string? Role { get; init; }
+
+        [JsonPropertyName("content")] public string? Content { get; init; }
+    }
+
+    /// <summary>
+    /// 通用参数定义，兼容 inputs、outputs、fixedParameters
+    /// </summary>
+    public class ParameterDefinition
+    {
+        [JsonPropertyName("key")] public string? Key { get; init; }
+
+        [JsonPropertyName("friendlyName")] public string? FriendlyName { get; init; }
+
+        [JsonPropertyName("type")] public string? Type { get; init; }
+
+        [JsonPropertyName("payloadPath")] public string? PayloadPath { get; init; }
+
+        [JsonPropertyName("required")] public bool? Required { get; init; }
+
+        [JsonPropertyName("leftRole")] public string? LeftRole { get; init; }
+
+        [JsonPropertyName("default")] public object? Default { get; init; }
+    }
+
+    public class Parameter
+    {
+        [JsonPropertyName("key")] public string? Key { get; init; }
+
+        [JsonPropertyName("friendlyName")] public string? FriendlyName { get; init; }
+
+        [JsonPropertyName("description")] public string? Description { get; init; }
+
+        [JsonPropertyName("type")] public string? Type { get; init; }
+
+        [JsonPropertyName("payloadPath")] public string? PayloadPath { get; init; }
+
+        [JsonPropertyName("default")] public object? Default { get; init; }
+
+        [JsonPropertyName("min")] public object? Min { get; init; }
+
+        [JsonPropertyName("max")] public object? Max { get; init; }
+
+        [JsonPropertyName("required")] public bool? Required { get; init; }
+    }
+
+    public class ModelInputSchema
+    {
+        [JsonPropertyName("examples")] public List<Example>? Examples { get; init; }
+
+        [JsonPropertyName("sampleInputs")] public List<SampleInput>? SampleInputs { get; init; }
+
+        [JsonPropertyName("inputs")] public List<ParameterDefinition>? Inputs { get; init; }
+
+        [JsonPropertyName("outputs")] public List<ParameterDefinition>? Outputs { get; init; }
+
+        [JsonPropertyName("fixedParameters")] public List<ParameterDefinition>? FixedParameters { get; init; }
+
+        [JsonPropertyName("capabilities")] public Dictionary<string, object?>? Capabilities { get; init; }
+
+        [JsonPropertyName("type")] public string? Type { get; init; }
+
+        [JsonPropertyName("version")] public string? Version { get; init; }
+
+        [JsonPropertyName("behavior")] public string? Behavior { get; init; }
+
+        [JsonPropertyName("parameters")] public List<Parameter>? Parameters { get; init; }
+    }
 }

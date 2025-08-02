@@ -280,6 +280,8 @@
                                     Executed="OnExcludeExecuted" />
                     <CommandBinding Command="{x:Static ui:CommonCommands.Clear}"
                                     Executed="ClearBefore_OnExecuted" />
+                    <CommandBinding Command="{x:Static ui:CommonCommands.Conclusion}"
+                                    Executed="ConclusionBefore_OnExecuted" />
                 </ListBox.CommandBindings>
             </component:ListBoxEx>
             <component:DialogScrollViewer Grid.Row="0"

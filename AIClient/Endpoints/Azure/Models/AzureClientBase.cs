@@ -91,35 +91,4 @@ public class AzureClientBase : LlmClientBase, ILLMClient
         _info?.SetValue(chatCompletionsClient, "2024-12-01-preview");
         return chatCompletionsClient.AsIChatClient();
     }*/
-
-#pragma warning disable SKEXP0010
-    public static void Test()
-    {
-        /*Kernel kernel = Kernel.CreateBuilder()
-            .AddOpenAIChatCompletion(
-                modelId: "claude-3.5-sonnet",
-                apiKey: "",
-                endpoint: new Uri("https://api.individual.githubcopilot.com"))
-
-            .Build();
-        var invokePromptAsync = await kernel.InvokePromptAsync("hello");
-        var s = invokePromptAsync.ToString();*/
-
-        /*var credential = new AzureKeyCredential("");
-        var chatCompletionsClient = new ChatCompletionsClient(new Uri("https://api.individual.githubcopilot.com"),
-            credential,
-            new AzureAIInferenceClientOptions());
-        var completeAsync = await chatCompletionsClient.CompleteAsync(
-            new ChatCompletionsOptions()
-            {
-                Model = "claude-3.5-sonne",
-                Messages = [new ChatRequestUserMessage("您好")]
-            });
-        if (completeAsync.HasValue)
-        {
-            var valueContent = completeAsync.Value.Content;
-        }*/
-    }
-#pragma warning restore SKEXP0010
-#pragma warning restore SKEXP0001
 }

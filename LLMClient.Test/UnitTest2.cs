@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 using ImageMagick;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Endpoints.Azure.Models;
 using LLMClient.Endpoints.Messages;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
@@ -41,6 +42,25 @@ public class UnitTest2
             .AddMap().BuildServiceProvider();
     }
 
+    [Fact]
+    public async Task AzureDetailAsync()
+    {
+        using (var httpClient = new HttpClient())
+        {
+            using (var responseMessage = await httpClient.GetAsync("https://github.com/models/available"))
+            {
+                using (var httpContent = responseMessage.Content)
+                {
+                    var message = await httpContent.ReadAsStringAsync();
+                    var jsonNode = JsonNode.Parse(message);
+                    var node = jsonNode["payload"];
+                    var modelInfo = node.Deserialize<AzureDetailModelInfo>();
+                    output.WriteLine(modelInfo.ToString());
+                }
+            }
+        }
+    }
+    
     [Fact]
     public async Task Convert()
     {

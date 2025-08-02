@@ -94,11 +94,11 @@ public class APIClient : LlmClientBase
     {
         var apiToken = _option.APIToken;
         var apiUri = new Uri(_option.URL);
-        var httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
+        // var httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
         var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
         {
             Endpoint = apiUri,
-            Transport = new HttpClientPipelineTransport(httpClient)
+            // Transport = new HttpClientPipelineTransport(httpClient)
         });
         var builder = Kernel.CreateBuilder();
 #if DEBUG

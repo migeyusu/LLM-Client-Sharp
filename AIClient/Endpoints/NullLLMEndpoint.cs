@@ -13,7 +13,7 @@ namespace LLMClient.Endpoints
         public bool IsEnabled { get; } = false;
         public string Name { get; } = "NullEndpoint";
         public ImageSource Icon => ImageExtensions.EndpointIcon;
-        public IReadOnlyCollection<string> AvailableModelNames => [];
+        
         public IReadOnlyCollection<ILLMModel> AvailableModels => [];
 
         public ILLMClient? NewClient(string modelName)

@@ -377,7 +377,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         if (requestViewItem != null)
         {
             var indexOf = DialogItems.IndexOf(requestViewItem);
-            if (indexOf < 0)
+            if (indexOf <= 0)
             {
                 return;
             }
@@ -428,7 +428,14 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
 
     public async Task AppendResponseOn(MultiResponseViewItem responseViewItem, ILLMClient client)
     {
-        var dialogItems = GenerateHistory(responseViewItem);
+        //获得之前的所有请求
+        var indexOf = DialogItems.IndexOf(responseViewItem);
+        if (indexOf < 1)
+        {
+            return;
+        }
+
+        var dialogItems = GenerateHistoryFromSelf(indexOf - 1);
         await SendRequestCore(client, dialogItems, responseViewItem, this.SystemPrompt);
     }
 
@@ -455,7 +462,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     {
         //删除之前的所有记录
         var indexOf = DialogItems.IndexOf(request);
-        if (indexOf < 0)
+        if (indexOf <= 0)
         {
             return;
         }
@@ -540,38 +547,22 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         }
     }
 
-    private static IDialogItem[] GenerateHistory(IList<IDialogItem> total)
+    public IDialogItem[] GenerateHistoryFromSelf(int? endIndex = null)
     {
-        var lastRequest = total[^1];
+        if (DialogItems.Count == 0)
+        {
+            return [];
+        }
+
+        var index = endIndex == null ? DialogItems.Count - 1 : endIndex.Value;
+        var lastRequest = DialogItems[index];
         if (lastRequest is not IRequestItem)
         {
             throw new InvalidOperationException("最后一条记录不是请求");
         }
 
         //从倒数第二条开始
-        return FilterHistory(total, total.Count - 2).Reverse().Append(lastRequest).ToArray();
-    }
-
-    public IDialogItem[] GenerateHistory(MultiResponseViewItem? response = null)
-    {
-        IDialogItem[] dialogViewItems;
-        if (response != null)
-        {
-            //获得之前的所有请求
-            var indexOf = DialogItems.IndexOf(response);
-            if (indexOf < 1)
-            {
-                return [];
-            }
-
-            dialogViewItems = DialogItems.Take(indexOf).ToArray();
-        }
-        else
-        {
-            dialogViewItems = DialogItems.ToArray(); //copy
-        }
-
-        return GenerateHistory(dialogViewItems);
+        return FilterHistory(DialogItems, index - 1).Reverse().Append(lastRequest).ToArray();
     }
 
     public ICommand CancelLastCommand => new ActionCommand(_ =>
@@ -625,24 +616,55 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         return completedResult;
     }
 
-    public async Task<CompletedResult> NewRequest(ILLMClient client, IRequestItem requestViewItem)
+    public async Task<CompletedResult> NewRequest(ILLMClient client, IRequestItem requestViewItem,
+        int? insertIndex = null)
     {
-        var items = this.DialogItems;
-        items.Add(requestViewItem);
-        this.ScrollViewItem = requestViewItem;
-        var history = this.GenerateHistory();
         var multiResponseViewItem = new MultiResponseViewItem(this)
             { InteractionId = requestViewItem.InteractionId };
-        items.Add(multiResponseViewItem);
+        var items = this.DialogItems;
+        if (insertIndex == null)
+        {
+            items.Add(requestViewItem);
+            items.Add(multiResponseViewItem);
+            insertIndex = items.Count - 2;
+        }
+        else
+        {
+            var index = insertIndex.Value;
+            items.Insert(index, requestViewItem);
+            index += 1;
+            items.Insert(index, multiResponseViewItem);
+        }
+
+        this.ScrollViewItem = multiResponseViewItem;
+        var history = this.GenerateHistoryFromSelf(insertIndex);
         this.IsNewResponding = true;
         try
         {
-            var result = await SendRequestCore(client, history, multiResponseViewItem, this.SystemPrompt);
-            return result;
+            return await SendRequestCore(client, history, multiResponseViewItem, this.SystemPrompt);
         }
         finally
         {
             IsNewResponding = false;
+        }
+    }
+
+    public async void ConclusionBefore(RequestViewItem requestViewItem, ILLMClient client)
+    {
+        try
+        {
+            var indexOf = this.DialogItems.IndexOf(requestViewItem);
+            if (indexOf <= 0)
+            {
+                return;
+            }
+
+            var summaryRequest = await SummaryRequestViewItem.NewSummaryRequest();
+            await NewRequest(client, summaryRequest, indexOf);
+        }
+        catch (Exception e)
+        {
+            MessageEventBus.Publish(e.Message);
         }
     }
 

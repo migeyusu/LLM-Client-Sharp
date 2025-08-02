@@ -111,7 +111,7 @@
                       Content="Support Reasoning"
                       HorizontalAlignment="Left"
                       VerticalAlignment="Center" />
-            <CheckBox IsChecked="{Binding Streaming,Mode=TwoWay}"
+            <CheckBox IsChecked="{Binding SupportStreaming,Mode=TwoWay}"
                       Content="Support Streaming" />
             <CheckBox IsChecked="{Binding SupportImageInput,Mode=TwoWay}"
                       Content="Support Image Input" />

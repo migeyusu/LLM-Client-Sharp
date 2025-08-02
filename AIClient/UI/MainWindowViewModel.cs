@@ -237,7 +237,7 @@ public class MainWindowViewModel : BaseViewModel
 
     #endregion
 
-    private void AddSession(ILLMSession projectViewModel)
+    public void AddSession(ILLMSession projectViewModel)
     {
         ((INotifyPropertyChanged)projectViewModel).PropertyChanged += SessionOnEditTimeChanged;
         this.SessionViewModels.Insert(0, projectViewModel);

@@ -27,12 +27,20 @@ public partial class DialogView : UserControl
             ViewModel.CutContext(requestViewItem);
         }
     }
-    
+
     private void ClearBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
             ViewModel.ClearBefore(requestViewItem);
+        }
+    }
+
+    private void ConclusionBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is RequestViewItem requestViewItem)
+        {
+            ViewModel.ConclusionBefore(requestViewItem, ViewModel.Requester.DefaultClient);
         }
     }
 }

@@ -134,6 +134,14 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
 
     private bool _isInitialized = false;
     private bool _isEnsuring = false;
+    
+    /// <summary>
+    /// 重置状态，表示需要重新初始化
+    /// </summary>
+    public void Reset()
+    {
+        _isInitialized = false;
+    }
 
     public async Task InitializeAsync()
     {

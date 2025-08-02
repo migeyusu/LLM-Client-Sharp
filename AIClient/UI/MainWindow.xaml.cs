@@ -123,6 +123,31 @@ public partial class MainWindow : ExtendedWindow
             }
         }
     }
+    
+    private void CloneCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        try
+        {
+            var session = _mainWindowViewModel.PreSession;
+            if (session != null)
+            {
+                var clone = session.Clone();
+                if (clone is ILLMSession sessionClone)
+                {
+                    _mainWindowViewModel.AddSession(sessionClone);
+                    _mainWindowViewModel.MessageQueue.Enqueue("克隆会话成功");
+                }
+                else
+                {
+                    _mainWindowViewModel.MessageQueue.Enqueue("克隆会话失败: 无法克隆该类型的会话");
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            MessageEventBus.Publish("克隆会话失败: " + exception.Message);
+        }
+    }
 
     #endregion
 
