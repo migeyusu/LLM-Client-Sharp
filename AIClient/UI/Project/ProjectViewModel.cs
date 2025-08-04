@@ -491,7 +491,8 @@ public class ProjectViewModel : FileBasedSessionBase
         }
 
         this.SelectedTask.SelectedFunctionGroups =
-            this.Requester.FunctionTreeSelector.FunctionGroups.Where(tree => tree.IsSelected != false).ToArray();
+            this.Requester.FunctionTreeSelector.FunctionGroups.Where(tree => tree.IsSelected != false)
+                .Select((tree => (CheckableFunctionGroupTree)tree.Clone())).ToArray();
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 

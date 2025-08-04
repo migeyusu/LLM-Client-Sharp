@@ -168,6 +168,11 @@ public class CheckableFunctionGroupTree : BaseViewModel, IAIFunctionGroup
 
     public object Clone()
     {
-        throw new NotSupportedException();
+        return new CheckableFunctionGroupTree(this.Data)
+        {
+            IsSelected = this.IsSelected,
+            Functions = new SuspendableObservableCollection<VirtualFunctionViewModel>(
+                this.Functions.Select(function => (VirtualFunctionViewModel)function.Clone()))
+        };
     }
 }

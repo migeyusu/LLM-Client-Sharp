@@ -9,6 +9,14 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
     private bool _isSuspended;
     private int _suspendCount;
 
+    public SuspendableObservableCollection() : base()
+    {
+    }
+
+    public SuspendableObservableCollection(IEnumerable<T> enumerable) : base(enumerable)
+    {
+    }
+
     public void BeginInit()
     {
         _suspendCount++;
@@ -25,7 +33,7 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
     }
-    
+
     public void AddRange(IEnumerable<T> items)
     {
         BeginInit();
@@ -36,7 +44,7 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
 
         EndInit();
     }
-    
+
     public void ResetWith(IEnumerable<T> items)
     {
         BeginInit();
@@ -45,6 +53,7 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
         {
             Items.Add(item);
         }
+
         EndInit();
     }
 

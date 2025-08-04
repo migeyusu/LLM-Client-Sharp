@@ -30,7 +30,16 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
     private ProjectTaskType _type;
     private string? _description;
 
-    public IList<CheckableFunctionGroupTree>? SelectedFunctionGroups { get; set; }
+    public IList<CheckableFunctionGroupTree>? SelectedFunctionGroups
+    {
+        get => _selectedFunctionGroups;
+        set
+        {
+            if (Equals(value, _selectedFunctionGroups)) return;
+            _selectedFunctionGroups = value;
+            OnPropertyChanged();
+        }
+    }
 
     public ProjectTaskViewModel(ProjectViewModel parentProject,
         IList<CheckableFunctionGroupTree>? functionGroupTrees = null,
@@ -98,6 +107,7 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
     }
 
     private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
+    private IList<CheckableFunctionGroupTree>? _selectedFunctionGroups;
 
     /// <summary>
     /// Task内的上下文
@@ -192,6 +202,7 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
 
         foreach (var checkableFunctionGroupTree in SelectedFunctionGroups)
         {
+            checkableFunctionGroupTree.RefreshCheckState();
             if (checkableFunctionGroupTree.IsSelected != false)
             {
                 yield return checkableFunctionGroupTree;

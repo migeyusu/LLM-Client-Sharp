@@ -5,7 +5,7 @@ namespace LLMClient.UI.MCP;
 /// <summary>
 /// 虚加载的函数视图模型
 /// </summary>
-public class VirtualFunctionViewModel : BaseViewModel
+public class VirtualFunctionViewModel : BaseViewModel, ICloneable
 {
     private readonly CheckableFunctionGroupTree _parentNode;
 
@@ -85,9 +85,20 @@ public class VirtualFunctionViewModel : BaseViewModel
         this.ApplyFunction(function);
     }
 
-    public VirtualFunctionViewModel(string functionName, CheckableFunctionGroupTree parentNode)
+    public VirtualFunctionViewModel(string? functionName, CheckableFunctionGroupTree parentNode)
     {
         this.FunctionName = functionName;
         this._parentNode = parentNode;
+    }
+
+
+    public object Clone()
+    {
+        return new VirtualFunctionViewModel(this.FunctionName, this._parentNode)
+        {
+            IsSelected = this.IsSelected,
+            Description = this.Description,
+            IsEnabled = this.IsEnabled
+        };
     }
 }

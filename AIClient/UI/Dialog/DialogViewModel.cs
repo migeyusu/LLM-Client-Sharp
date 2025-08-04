@@ -275,6 +275,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
 
         foreach (var functionGroupTree in SelectedFunctionGroups)
         {
+            functionGroupTree.RefreshCheckState();
             if (functionGroupTree.IsSelected != false)
             {
                 yield return functionGroupTree;

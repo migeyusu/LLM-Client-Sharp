@@ -152,7 +152,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                 foreach (var functionGroup in functionGroups)
                 {
                     await functionGroup.EnsureAsync(cancellationToken);
-                    if (functionGroup.IsAvailable)
+                    if (!functionGroup.IsAvailable)
                     {
                         continue;
                     }
