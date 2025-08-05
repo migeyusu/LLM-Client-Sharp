@@ -10,7 +10,7 @@ namespace LLMClient.UI.Dialog;
 
 public class RespondingViewItem : BaseViewModel, IResponseViewItem
 {
-    public IAsyncEnumerable<ChatMessage> GetMessages(CancellationToken cancellationToken)
+    public IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken)
     {
         throw new NotSupportedException();
     }

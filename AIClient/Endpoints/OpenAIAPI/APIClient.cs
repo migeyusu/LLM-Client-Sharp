@@ -60,32 +60,7 @@ public class APIClient : LlmClientBase
     {
         EnsureKernel();
     }
-
-    /*Kernel? _kernel = null;
-
-    [Experimental("SKEXP0050")]
-    private Kernel Kernel
-    {
-        get
-        {
-            if (_kernel == null)
-            {
-                var endpoint = new Uri(this._option.URL);
-                var apiToken = _option.APIToken;
-                var kernelBuilder = Kernel.CreateBuilder();
-                kernelBuilder.Services.AddSingleton<IMemoryStore>(new VolatileMemoryStore())
-                    .AddSingleton<ISemanticTextMemory, SemanticTextMemory>();
-                _kernel = kernelBuilder.AddOpenAIChatCompletion(this.ModelInfo.Id, endpoint, apiToken)
-                    .AddOpenAITextEmbeddingGeneration("text-embedding-v3",
-                        new OpenAIClient(new ApiKeyCredential(apiToken),
-                            new OpenAIClientOptions() { Endpoint = endpoint }))
-                    .Build();
-            }
-
-            return _kernel;
-        }
-    }*/
-
+    
     private Kernel? _kernel;
 
     private IChatClient? _chatClient;
@@ -94,11 +69,11 @@ public class APIClient : LlmClientBase
     {
         var apiToken = _option.APIToken;
         var apiUri = new Uri(_option.URL);
-        // var httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
+        var httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
         var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
         {
             Endpoint = apiUri,
-            // Transport = new HttpClientPipelineTransport(httpClient)
+            Transport = new HttpClientPipelineTransport(httpClient)
         });
         var builder = Kernel.CreateBuilder();
 #if DEBUG

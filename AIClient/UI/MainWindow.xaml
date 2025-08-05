@@ -228,6 +228,13 @@
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="未定义的模型" />
                 </DataTemplate>
+                <DataTemplate DataType="{x:Type dialog:EditableResponseViewItem}">
+                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                            Header="响应内容编辑">
+                        <dialog:ResponseViewItemEditView Width="900"
+                                                         Height="600" />
+                    </HeaderedContentControl>
+                </DataTemplate>
             </materialDesign:DialogHost.Resources>
             <Grid Margin="10"
                   IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
@@ -257,7 +264,7 @@
                                     CommandParameter="{Binding EndpointsViewModel,Mode=OneTime}">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Connection" />
-                                    <TextBlock Text="配置服务"
+                                    <TextBlock Text="Endpoints"
                                                Margin="5,0,0,0"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
@@ -267,7 +274,7 @@
                                     CommandParameter="{Binding PromptsResource,Mode=OneTime}">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="CodeString" />
-                                    <TextBlock Text="预设Prompts"
+                                    <TextBlock Text="System Prompts"
                                                Margin="5,0,0,0"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
@@ -277,7 +284,17 @@
                                     CommandParameter="{Binding McpServiceCollection,Mode=OneTime}">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="ServerNetwork" />
-                                    <TextBlock Text="配置MCP"
+                                    <TextBlock Text="MCP"
+                                               Margin="5,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="10,0,0,0"
+                                    Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                    CommandParameter="{Binding McpServiceCollection,Mode=OneTime}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FileDocumentOutline" />
+                                    <TextBlock Text="Document"
                                                Margin="5,0,0,0"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
@@ -627,6 +644,8 @@
                         <!--session 级别command-->
                         <CommandBinding Command="{x:Static ui:CommonCommands.Backup}"
                                         Executed="BackupCommand_OnExecuted" />
+                        <CommandBinding Command="{x:Static ui:CommonCommands.OpenFile}"
+                                        Executed="OpenSessioFile_OnExecuted" />
                     </ContentControl.CommandBindings>
                 </ContentControl>
                 <materialDesign:Card Grid.Row="0" Grid.Column="0"

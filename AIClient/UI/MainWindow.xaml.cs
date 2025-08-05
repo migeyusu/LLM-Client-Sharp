@@ -1,6 +1,7 @@
 ﻿// #define TESTMODE
 
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
@@ -123,7 +124,7 @@ public partial class MainWindow : ExtendedWindow
             }
         }
     }
-    
+
     private void CloneCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         try
@@ -178,6 +179,14 @@ public partial class MainWindow : ExtendedWindow
         catch (Exception exception)
         {
             MessageEventBus.Publish("备份会话失败: " + exception.Message);
+        }
+    }
+
+    private void OpenSessioFile_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (_mainWindowViewModel.PreSession is FileBasedSessionBase fileBasedSession)
+        {
+            Process.Start("explorer.exe", $"/select,\"{fileBasedSession.FileFullPath}\"");
         }
     }
 }

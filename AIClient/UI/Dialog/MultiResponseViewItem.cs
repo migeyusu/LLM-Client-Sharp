@@ -17,19 +17,23 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
 
     public DialogSessionViewModel ParentSession { get; }
 
-    public async IAsyncEnumerable<ChatMessage> GetMessages([EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (AcceptedResponse == null)
         {
             yield break;
         }
 
-        await foreach (var chatMessage in AcceptedResponse.GetMessages(cancellationToken))
+        await foreach (var chatMessage in AcceptedResponse.GetMessagesAsync(cancellationToken))
         {
             yield return chatMessage;
         }
     }
 
+    /// <summary>
+    /// warning: 禁止用于绑定，因为没有实现属性通知
+    /// </summary>
     public bool IsAvailableInContext
     {
         get { return AcceptedResponse?.IsAvailableInContext == true; }
@@ -132,9 +136,24 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
             _acceptedIndex = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(AcceptedResponse));
-            OnPropertyChanged(nameof(IsAvailableInContext));
         }
     }
+
+    public ICommand SetAsAvailableCommand => new ActionCommand(o =>
+    {
+        if (o is IResponseViewItem response)
+        {
+            if (response is ResponseViewItem responseViewItem)
+            {
+                responseViewItem.SwitchAvailableInContext();
+            }
+            else if (response is RespondingViewItem)
+            {
+                MessageEventBus.Publish("正在回复！");
+            }
+        }
+    });
+
 
     public ResponseViewItem? CurrentResponse
     {
@@ -182,6 +201,15 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
         if (o is ResponseViewItem response)
         {
             this.Remove(response);
+        }
+    });
+
+    public ICommand EditCommand => new ActionCommand(o =>
+    {
+        if (AcceptedResponse is ResponseViewItem response)
+        {
+            var editView = response.EditViewModel;
+            DialogHost.Show(editView);
         }
     });
 

@@ -19,6 +19,11 @@ public class ClientContext
 
     public ClientResult? Result { get; set; }
 
+    public async Task CompleteStreamResponse(CompletedResult result)
+    {
+        
+    }
+    
     public async Task CompleteResponse(ChatResponse response, CompletedResult result)
     {
         if (this.Result == null)

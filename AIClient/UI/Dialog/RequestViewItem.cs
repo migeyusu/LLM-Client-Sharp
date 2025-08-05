@@ -18,7 +18,7 @@ public interface IRequestItem : IDialogItem
     Guid InteractionId { get; set; }
 }
 
-public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
+public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, CommonCommands.ICopyable
 {
     /// <summary>
     /// 标记一次请求-响应过程，和响应对应
@@ -56,7 +56,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
     {
     }
 
-    public async IAsyncEnumerable<ChatMessage> GetMessages([EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<ChatMessage> GetMessagesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (_message == null)
         {
@@ -90,5 +90,10 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
         }
 
         yield return _message;
+    }
+
+    public string GetCopyText()
+    {
+        return TextMessage;
     }
 }

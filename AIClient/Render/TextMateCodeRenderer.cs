@@ -76,12 +76,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
             contentControl.Content = codeContext;
             if (name != null)
             {
-                var scope = Options.GetScopeByLanguageId(name);
-                if (scope == null)
-                {
-                    scope = Options.GetScopeByExtension("." + name);
-                }
-
+                var scope = Options.GetScopeByLanguageId(name) ?? Options.GetScopeByExtension("." + name);
                 if (!string.IsNullOrEmpty(scope))
                 {
                     codeContext.Extension = Path.GetExtension(scope);

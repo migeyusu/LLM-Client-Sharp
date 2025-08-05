@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using LLMClient.UI.Component;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -8,6 +9,15 @@ namespace LLMClient.UI;
 
 public static class CommonCommands
 {
+    public interface ICopyable
+    {
+        /// <summary>
+        /// 获取可复制的文本
+        /// </summary>
+        /// <returns></returns>
+        string GetCopyText();
+    }
+
     public static RoutedUICommand Exclude = new RoutedUICommand("Exclude", "Exclude", typeof(CommonCommands));
 
     public static RoutedCommand Clear = new RoutedUICommand("Clear", "Clear", typeof(CommonCommands));
@@ -27,6 +37,9 @@ public static class CommonCommands
 
     public static RoutedCommand Conclusion =
         new RoutedUICommand("Conclusion", "Conclusion", typeof(CommonCommands));
+    
+    public static RoutedCommand OpenFile =
+        new RoutedUICommand("OpenFile", "OpenFile", typeof(CommonCommands));
 
     private static ICommand? _copyCommand;
 
@@ -36,15 +49,20 @@ public static class CommonCommands
         {
             return _copyCommand ??= new ActionCommand((o =>
             {
-                if (o is string text && !string.IsNullOrEmpty(text))
+                if (o is ICopyable copyable)
                 {
-                    try
+                    var copyText = copyable.GetCopyText();
+                    if (!string.IsNullOrEmpty(copyText))
                     {
-                        Clipboard.SetText(text);
-                    }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show(e.Message);
+                        try
+                        {
+                            Clipboard.SetText(copyText);
+                            MessageEventBus.Publish("已复制");
+                        }
+                        catch (Exception e)
+                        {
+                            MessageBox.Show(e.Message);
+                        }
                     }
                 }
             }));

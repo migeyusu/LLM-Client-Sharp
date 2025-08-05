@@ -243,4 +243,5 @@ public static class ImageExtensions
 
         throw new NotSupportedException("Unsupported image extension: " + extension);
     }
+    
 }

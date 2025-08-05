@@ -34,12 +34,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     {
         get
         {
-            if (_fileFullPath == null)
-            {
-                _fileFullPath = Path.GetFullPath($"{Guid.NewGuid()}.json", DefaultSaveFolderPath);
-            }
-
-            return _fileFullPath;
+            return _fileFullPath ??= Path.GetFullPath($"{Guid.NewGuid()}.json", DefaultSaveFolderPath);
         }
         set => _fileFullPath = value;
     }

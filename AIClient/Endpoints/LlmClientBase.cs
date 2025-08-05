@@ -185,7 +185,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
             var requestOptions = this.CreateChatOptions(chatHistory, tools, systemPrompt);
             foreach (var dialogItem in dialogItems)
             {
-                await foreach (var message in dialogItem.GetMessages(cancellationToken))
+                await foreach (var message in dialogItem.GetMessagesAsync(cancellationToken))
                 {
                     chatHistory.Add(message);
                 }
@@ -223,12 +223,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
             {
                 while (true)
                 {
-                    preFunctionCalls.Clear();
-                    preUpdates.Clear();
+                    cancellationToken.ThrowIfCancellationRequested();
                     UsageDetails? loopUsageDetails = null;
                     try
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
                         ChatResponse? preResponse = null;
                         if (streaming)
                         {
@@ -243,7 +241,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                             }
 
                             preResponse = preUpdates.ToChatResponse();
-                            // await clientContext.CompleteResponse(preResponse, result);
+                            preUpdates.Clear();
+                            await clientContext.CompleteStreamResponse(result);
                         }
                         else
                         {
@@ -251,10 +250,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                                 await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
                             //只收集文本内容
                             RespondingText.Add(preResponse.Text);
+                            await clientContext.CompleteResponse(preResponse, result);
                         }
 
-
-                        await clientContext.CompleteResponse(preResponse, result);
                         var preResponseMessages = preResponse.Messages;
                         chatHistory.AddRange(preResponseMessages);
                         responseMessages.AddRange(preResponseMessages);
@@ -392,9 +390,18 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                     catch (OperationCanceledException)
                     {
                         errorMessage = "Operation was canceled.";
+                        if (preUpdates.Count != 0)
+                        {
+                            responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
+                        }
                     }
                     catch (Exception ex)
                     {
+                        if (preUpdates.Count != 0)
+                        {
+                            responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
+                        }
+
                         errorMessage = ex.Message;
                         Trace.TraceError($"Error during response: {ex}");
                     }
@@ -404,6 +411,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMClient
                         break;
                     }
 
+                    preFunctionCalls.Clear();
                     RespondingText.NewLine();
                 }
             }

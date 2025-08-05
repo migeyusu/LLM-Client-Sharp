@@ -7,6 +7,7 @@ using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -27,7 +28,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         {
             return DialogItems.OfType<MultiResponseViewItem>()
                 .FirstOrDefault(item => item.IsAvailableInContext)
-                ?.CurrentResponse?.TextWithoutThinking;
+                ?.CurrentResponse?.TextContent?.Substring(0, 20);
         }
     }
 

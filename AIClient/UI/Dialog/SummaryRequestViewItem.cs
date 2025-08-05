@@ -15,7 +15,7 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
         get => (long)((SummaryPrompt?.Length / 2.5) ?? 0);
     }
 
-    public override async IAsyncEnumerable<ChatMessage> GetMessages(
+    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(SummaryPrompt))

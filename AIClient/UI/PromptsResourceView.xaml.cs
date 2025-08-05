@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using LLMClient.UI.Component;
 
@@ -15,8 +16,15 @@ public partial class PromptsResourceView : UserControl
     {
         if (e.OriginalSource is TextBlock textBlock)
         {
-            CommonCommands.CopyCommand.Execute(textBlock.Text);
-            MessageEventBus.Publish("已复制");
+            try
+            {
+                Clipboard.SetText(textBlock.Text);
+                MessageEventBus.Publish("已复制");
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(exception.Message);
+            }
         }
     }
 }

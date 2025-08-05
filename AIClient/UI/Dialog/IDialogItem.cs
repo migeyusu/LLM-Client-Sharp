@@ -5,7 +5,7 @@ namespace LLMClient.UI.Dialog;
 
 public interface IDialogItem : ITokenizable
 {
-    IAsyncEnumerable<ChatMessage> GetMessages(CancellationToken cancellationToken);
+    IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken);
     
     bool IsAvailableInContext { get; }
 }

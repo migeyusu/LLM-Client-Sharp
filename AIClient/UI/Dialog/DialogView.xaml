@@ -6,7 +6,6 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
-             xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
              xmlns:dialog="clr-namespace:LLMClient.UI.Dialog"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:DialogViewModel}"
@@ -79,6 +78,7 @@
                                          Padding="8,4,8,4"
                                          Panel.ZIndex="1"
                                          VerticalAlignment="Center"
+                                         Text="{Binding SearchText,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                                          SearchCommand="{Binding SearchCommand}"
                                          GoToNextCommand="{Binding GoToNextHighlightCommand}"
                                          GoToPreviousCommand="{Binding GoToPreviousHighlightCommand}" />
@@ -113,15 +113,17 @@
                                                  Height="20" />
                     </Button>
                     <materialDesign:PopupBox StaysOpen="True">
-                        <WrapPanel MaxWidth="200"
-                                   MaxHeight="200">
+                        <StackPanel MaxWidth="200"
+                                    MaxHeight="200">
                             <Button Content="对话重执行"
                                     ToolTip="基于现有对话，使用新模型重新执行"
                                     CommandParameter="{Binding}"
                                     Command="{x:Static ui:CommonCommands.ReprocessDialog}" />
                             <Button Content="清空无效对话"
                                     Command="{Binding ClearUnavailableCommand}" />
-                        </WrapPanel>
+                            <Button Content="打开文件"
+                                    Command="{x:Static ui:CommonCommands.OpenFile}" />
+                        </StackPanel>
                     </materialDesign:PopupBox>
                 </StackPanel>
             </Grid>

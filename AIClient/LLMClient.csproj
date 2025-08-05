@@ -49,8 +49,8 @@
         <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0"/>
         <PackageReference Include="System.Drawing.Common" Version="10.0.0-preview.5.25277.114"/>
         <PackageReference Include="System.Text.Json" Version="9.0.7" />
-        <PackageReference Include="TextMateSharp" Version="1.0.69"/>
-        <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.0"/>
+        <PackageReference Include="TextMateSharp" Version="1.0.70" />
+        <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.2" />
     </ItemGroup>
 
     <ItemGroup>

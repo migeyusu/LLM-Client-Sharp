@@ -21,7 +21,7 @@ public abstract class AgentBase : IAgent, IRequestItem
 {
     public virtual long Tokens { get; } = 0;
 
-    public abstract IAsyncEnumerable<ChatMessage> GetMessages(CancellationToken cancellationToken);
+    public abstract IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken);
 
     public bool IsAvailableInContext { get; } = true;
     public Guid InteractionId { get; set; }
@@ -31,7 +31,7 @@ public class PromptAgent : AgentBase
 {
     public string Prompt { get; set; } = string.Empty;
 
-    public override async IAsyncEnumerable<ChatMessage> GetMessages([EnumeratorCancellation] CancellationToken cancellationToken)
+    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(Prompt))
         {

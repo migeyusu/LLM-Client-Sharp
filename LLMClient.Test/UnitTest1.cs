@@ -56,6 +56,14 @@ public class UnitTest1
     [Fact]
     public async Task Convert()
     {
+        if (Uri.TryCreate("./syntaxes/qml.tmLanguage.json", UriKind.RelativeOrAbsolute, out var uri))
+        {
+            var resultAbsolutePath = uri.IsAbsoluteUri;
+            var uriScheme = uri.Scheme;
+            var uriIsFile = uri.IsFile;
+            output.WriteLine(uriIsFile.ToString());    
+        }
+        
         // await Version3Converter.Convert("D:\\Dev\\LLM-Client-Sharp\\AIClient\\bin\\Debug\\net8.0-windows\\Dialogs");
     }
 

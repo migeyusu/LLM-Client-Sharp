@@ -6,7 +6,7 @@ namespace LLMClient.UI.Dialog;
 
 public class EraseViewItem : IDialogItem, IDialogPersistItem
 {
-    public virtual IAsyncEnumerable<ChatMessage> GetMessages(CancellationToken cancellationToken)
+    public virtual IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken)
     {
         throw new NotSupportedException();
     }
