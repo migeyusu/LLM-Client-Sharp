@@ -33,6 +33,11 @@ public class CompletedResult : IResponse
 
     public ChatFinishReason? FinishReason { get; set; }
 
+    public string? TextResponse
+    {
+        get { return ResponseMessages?.FirstOrDefault()?.Text; }
+    }
+    
     public IList<ChatMessage>? ResponseMessages { get; set; }
 
     public IList<ChatAnnotation>? Annotations { get; set; }

@@ -32,10 +32,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     /// </summary>
     public string FileFullPath
     {
-        get
-        {
-            return _fileFullPath ??= Path.GetFullPath($"{Guid.NewGuid()}.json", DefaultSaveFolderPath);
-        }
+        get { return _fileFullPath ??= Path.GetFullPath($"{Guid.NewGuid()}.json", DefaultSaveFolderPath); }
         set => _fileFullPath = value;
     }
 
@@ -109,16 +106,24 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
             return;
         }
 
-        var fileInfo = this.GetAssociateFile();
-        if (fileInfo.Exists)
+        //不要直接保存到文件流，防止保存错误导致数据完全丢失。
+        await using (var memoryStream = new MemoryStream())
         {
-            fileInfo.Delete();
+            await SaveToStream(memoryStream);
+            var fileInfo = this.GetAssociateFile();
+            if (fileInfo.Exists)
+            {
+                fileInfo.Delete();
+            }
+
+            await using (var fileStream = fileInfo.OpenWrite())
+            {
+                memoryStream.Position = 0;
+                await memoryStream.CopyToAsync(fileStream);
+                await fileStream.FlushAsync();
+            }
         }
 
-        await using (var fileStream = fileInfo.OpenWrite())
-        {
-            await SaveToStream(fileStream);
-        }
 
         this.IsDataChanged = false;
     }

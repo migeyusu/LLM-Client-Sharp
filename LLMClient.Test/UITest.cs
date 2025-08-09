@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.Rag.Document;
 
 namespace LLMClient.Test;
 
@@ -12,13 +13,13 @@ public class UITest
         {
             var app = new App();
             app.InitializeComponent();
-            app.Run(new TestWindow());
+            app.Run(new PDFExtractorWindow(new PDFExtractor(@"C:\Users\jie.zhu\Desktop\semantic-kernel.pdf")));
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
         thread.Join();
     }
-
+    
     [Fact]
     public void SerializeInfo()
     {

@@ -17,6 +17,7 @@
                           xmlns:project="clr-namespace:LLMClient.UI.Project"
                           xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
                           xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+                          xmlns:rag="clr-namespace:LLMClient.Rag"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -25,28 +26,6 @@
                           Width="1600"
                           Closing="MainWindow_OnClosing"
                           d:DataContext="{d:DesignInstance ui:MainWindowViewModel}">
-    <component:ExtendedWindow.Resources>
-        <Style x:Key="DeleteItemButtonStyle"
-               TargetType="{x:Type Button}"
-               BasedOn="{StaticResource MaterialDesignIconButton}">
-            <Setter Property="Background"
-                    Value="{DynamicResource MaterialDesignTextFieldBoxBackground}" />
-            <Setter Property="Command" Value="Delete" />
-            <Setter Property="Height" Value="30" />
-            <Setter Property="Width" Value="30" />
-            <Setter Property="HorizontalAlignment" Value="Right" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="10,0" />
-            <Setter Property="Visibility" Value="Collapsed" />
-            <Style.Triggers>
-                <DataTrigger
-                    Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
-                    Value="True">
-                    <Setter Property="Visibility" Value="Visible" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-    </component:ExtendedWindow.Resources>
     <Window.Style>
         <Style TargetType="{x:Type ui:MainWindow}"
                BasedOn="{StaticResource MaterialDesignWindow}">
@@ -235,6 +214,13 @@
                                                          Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
+                <DataTemplate DataType="{x:Type rag:RagSourceCollection}">
+                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                            Header="Rag Sources">
+                        <rag:RagSourceCollectionView Width="900"
+                                                     Height="600" />
+                    </HeaderedContentControl>
+                </DataTemplate>
             </materialDesign:DialogHost.Resources>
             <Grid Margin="10"
                   IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
@@ -291,7 +277,7 @@
                             </Button>
                             <Button Margin="10,0,0,0"
                                     Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                    CommandParameter="{Binding McpServiceCollection,Mode=OneTime}">
+                                    CommandParameter="{Binding RagSourceCollection,Mode=OneTime}">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="FileDocumentOutline" />
                                     <TextBlock Text="Document"
@@ -644,8 +630,8 @@
                         <!--session 级别command-->
                         <CommandBinding Command="{x:Static ui:CommonCommands.Backup}"
                                         Executed="BackupCommand_OnExecuted" />
-                        <CommandBinding Command="{x:Static ui:CommonCommands.OpenFile}"
-                                        Executed="OpenSessioFile_OnExecuted" />
+                        <CommandBinding Command="{x:Static ui:CommonCommands.OpenSource}"
+                                        Executed="OpenSessionFile_OnExecuted" />
                     </ContentControl.CommandBindings>
                 </ContentControl>
                 <materialDesign:Card Grid.Row="0" Grid.Column="0"

@@ -1,7 +1,9 @@
-﻿using System.Windows;
+﻿using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.Dialog;
@@ -18,6 +20,11 @@ public class ModelSelectionPopupViewModel : ModelSelectionViewModel
         SuccessAction = successAction;
     }
 
+    public ModelSelectionPopupViewModel(Action<ModelSelectionViewModel>? successAction = null)
+        : this(ServiceLocator.GetRequiredService<IEndpointService>(), successAction)
+    {
+    }
+
     public override ICommand SubmitCommand => new ActionCommand((o =>
     {
         if (SelectedModel == null)
@@ -30,5 +37,4 @@ public class ModelSelectionPopupViewModel : ModelSelectionViewModel
         var frameworkElement = o as FrameworkElement;
         SuccessRoutedCommand?.Execute(true, frameworkElement);
     }));
-    
 }

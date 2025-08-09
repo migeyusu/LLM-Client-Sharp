@@ -117,7 +117,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
             if (item is RequestViewItem requestViewItem)
             {
-                return requestViewItem;
+                return mapper.Map<RequestViewItem, RequestPersistItem>(requestViewItem);
             }
 
             if (item is MultiResponseViewItem multiResponseViewItem)
@@ -170,6 +170,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                 {
                     MultiResponsePersistItem multiResponsePersistItem => mapper
                         .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem),
+                    RequestPersistItem requestPersistItem => mapper
+                        .Map<RequestPersistItem, RequestViewItem>(requestPersistItem),
                     _ => (IDialogItem)item
                 };
             })).ToArray();
@@ -289,9 +291,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                         .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem);
                 }
 
-                if (item is RequestViewItem requestViewItem)
+                if (item is RequestPersistItem requestViewItem)
                 {
-                    return requestViewItem;
+                    return mapper.Map<RequestPersistItem, RequestViewItem>(requestViewItem);
                 }
 
                 if (item is EraseViewItem eraseViewItem)
@@ -342,7 +344,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
             if (item is RequestViewItem requestViewItem)
             {
-                return requestViewItem;
+                return mapper.Map<RequestViewItem, RequestPersistItem>(requestViewItem);
             }
 
             if (item is MultiResponseViewItem multiResponseViewItem)
@@ -441,9 +443,15 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
         destination ??= new CheckableFunctionGroupTree(group);
         var virtualFunctionViewModels = source.SelectedFunctionNames
-            ?.Select(s => new VirtualFunctionViewModel(s, destination){ IsSelected = true})
+            ?.Select(s => new VirtualFunctionViewModel(s, destination) { IsSelected = true })
             .ToArray();
         destination.Functions.ResetWith(virtualFunctionViewModels ?? []);
         return destination;
+    }
+
+    public IAIFunctionGroup Convert(AIFunctionGroupPersistObject source, IAIFunctionGroup destination,
+        ResolutionContext context)
+    {
+        throw new NotImplementedException();
     }
 }

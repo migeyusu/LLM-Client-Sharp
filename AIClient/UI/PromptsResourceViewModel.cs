@@ -93,7 +93,7 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
         }
     }));
 
-    public ICommand SaveCommand => new ActionCommand((o =>
+    public ICommand SaveCommand => new ActionCommand((async o =>
     {
         var fileInfo = new FileInfo(PromptsFileName);
         fileInfo.Directory?.Create();
@@ -108,7 +108,7 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
         {
             using (var fileStream = fileInfo.Open(FileMode.Create, FileAccess.Write))
             {
-                JsonSerializer.SerializeAsync<IList<string>>(fileStream, this.Prompts);
+                await JsonSerializer.SerializeAsync<IList<string>>(fileStream, this.Prompts);
             }
         }
 

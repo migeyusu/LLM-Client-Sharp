@@ -122,7 +122,7 @@
                             <Button Content="清空无效对话"
                                     Command="{Binding ClearUnavailableCommand}" />
                             <Button Content="打开文件"
-                                    Command="{x:Static ui:CommonCommands.OpenFile}" />
+                                    Command="{x:Static ui:CommonCommands.OpenSource}" />
                         </StackPanel>
                     </materialDesign:PopupBox>
                 </StackPanel>

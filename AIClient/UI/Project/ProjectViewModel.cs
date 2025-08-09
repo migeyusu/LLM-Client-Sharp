@@ -110,7 +110,7 @@ public class ProjectViewModel : FileBasedSessionBase
             directoryInfo.Create();
         }
 
-        foreach (var fileInfo in directoryInfo.GetFiles())
+        foreach (var fileInfo in directoryInfo.GetFiles("*.json"))
         {
             var dialogViewModel = await LoadFromFile(fileInfo);
             if (dialogViewModel == null)

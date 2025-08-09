@@ -1,0 +1,95 @@
+﻿<UserControl x:Class="LLMClient.Rag.RagSourceCollectionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLMClient.Rag"
+             xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:RagSourceCollection}"
+             d:DesignHeight="400" d:DesignWidth="600">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ListBox ItemsSource="{Binding  FileSources,Mode=OneWay}">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="{x:Type ListBoxItem}"
+                       BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                    <Setter Property="BorderThickness"
+                            Value="0,0,0,1" />
+                    <Setter Property="Padding"
+                            Value="4" />
+                    <Setter Property="BorderBrush"
+                            Value="DimGray" />
+                    <Setter Property="VerticalContentAlignment"
+                            Value="Stretch" />
+                    <Setter Property="HorizontalContentAlignment"
+                            Value="Stretch" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type local:IRagFileSource}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <Image Grid.RowSpan="2"
+                               VerticalAlignment="Center"
+                               Width="30"
+                               Height="30"
+                               Margin="16,0"
+                               Source="{Binding FileType,Mode=OneWay,Converter={x:Static converters:SnapConverters.DocumentTypeToImageConverter}}" />
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Name,Mode=OneWay}"
+                                 FontWeight="Black"
+                                 Padding="0,6"
+                                 BorderThickness="0"
+                                 FontSize="16"
+                                 materialDesign:TextFieldAssist.DecorationVisibility="Collapsed" />
+                        <TextBlock Grid.Row="1" Grid.Column="1"
+                                   VerticalAlignment="Center">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}{0} - {1} - {2}">
+                                    <Binding Path="FilePath" />
+                                    <Binding Path="EditTime" />
+                                    <Binding Path="FileSize" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <Button Grid.Row="0"
+                                Grid.Column="1"
+                                Grid.RowSpan="2"
+                                Margin="0,0,10,0"
+                                Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.RemoveFileCommand}"
+                                CommandParameter="{Binding }"
+                                Style="{StaticResource DeleteItemButtonStyle}">
+                            <materialDesign:PackIcon Kind="DeleteOutline"
+                                                     Width="22"
+                                                     Height="22"
+                                                     Foreground="IndianRed" />
+                        </Button>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <StackPanel Grid.Row="1"
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Margin="5">
+            <Button Content="添加文件"
+                    Margin="10,0,0,0"
+                    Command="{Binding AddFileCommand}"
+                    HorizontalAlignment="Right" />
+            <Button Content="保存"
+                    Command="{Binding SaveCommand}"
+                    Margin="10,0,0,0" />
+        </StackPanel>
+    </Grid>
+</UserControl>

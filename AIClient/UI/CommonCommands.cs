@@ -37,9 +37,40 @@ public static class CommonCommands
 
     public static RoutedCommand Conclusion =
         new RoutedUICommand("Conclusion", "Conclusion", typeof(CommonCommands));
-    
-    public static RoutedCommand OpenFile =
-        new RoutedUICommand("OpenFile", "OpenFile", typeof(CommonCommands));
+
+    public static RoutedCommand OpenSource =
+        new RoutedUICommand("OpenSource", "OpenSource", typeof(CommonCommands));
+
+    private static ICommand? _openFileCommand;
+
+    public static ICommand OpenFileCommand
+    {
+        get
+        {
+            return _openFileCommand ??= new ActionCommand((o =>
+            {
+                if (o is string filePath && !string.IsNullOrEmpty(filePath))
+                {
+                    try
+                    {
+                        var fileInfo = new FileInfo(filePath);
+                        if (fileInfo.Exists)
+                        {
+                            System.Diagnostics.Process.Start("explorer.exe", fileInfo.FullName);
+                        }
+                        else
+                        {
+                            MessageBox.Show("File does not exist.");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                    }
+                }
+            }));
+        }
+    }
 
     private static ICommand? _copyCommand;
 

@@ -57,7 +57,7 @@ public class DialogFileViewModel : FileBasedSessionBase
             directoryInfo.Create();
         }
 
-        foreach (var fileInfo in directoryInfo.GetFiles())
+        foreach (var fileInfo in directoryInfo.GetFiles("*.json"))
         {
             var dialogSession = await LoadFromFile(fileInfo);
             if (dialogSession == null)

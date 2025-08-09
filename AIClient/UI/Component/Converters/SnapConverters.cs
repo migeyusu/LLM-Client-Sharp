@@ -1,10 +1,13 @@
 ﻿using System.Diagnostics;
-using System.Drawing;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Media;
 using LambdaConverters;
+using LLMClient.Data;
+using LLMClient.Rag;
 using LLMClient.UI.Project;
+using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.UI.Component.Converters;
 
@@ -70,13 +73,24 @@ internal static class SnapConverters
         });
 
     public static readonly IValueConverter EnumerableToBoolConverter =
-        ValueConverter.Create<IEnumerable<object>?, bool>(e =>
-        {
-            if (e.Value == null || !e.Value.Any())
-            {
-                return false;
-            }
+        ValueConverter.Create<IEnumerable<object>?, bool>(e => e.Value != null && e.Value.Any());
 
-            return true;
+    public static readonly IValueConverter DocumentTypeToImageConverter =
+        ValueConverter.Create<DocumentFileType?, ImageSource>(e =>
+        {
+            var dodgerBlue = Brushes.RoyalBlue;
+            switch (e.Value)
+            {
+                case DocumentFileType.Text:
+                    return PackIconKind.Text.PackIconToSource(dodgerBlue);
+                case DocumentFileType.Word:
+                    return PackIconKind.MicrosoftWord.PackIconToSource(dodgerBlue);
+                case DocumentFileType.Pdf:
+                    return PackIconKind.FilePdfBox.PackIconToSource(dodgerBlue);
+                case DocumentFileType.Excel:
+                    return PackIconKind.MicrosoftExcel.PackIconToSource(dodgerBlue);
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         });
 }

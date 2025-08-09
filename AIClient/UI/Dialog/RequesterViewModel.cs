@@ -243,10 +243,10 @@ public class RequesterViewModel : BaseViewModel
         }
 
         promptBuilder.Append(PromptString);
-        IList<IAIFunctionGroup>? tools = null;
+        IList<CheckableFunctionGroupTree>? tools = null;
         if (this.FunctionTreeSelector.FunctionEnabled)
         {
-            tools = this.Source?.GetFunctionGroups().ToArray();
+            tools = this.Source?.GetFunctionGroups().OfType<CheckableFunctionGroupTree>().ToArray();
         }
 
         var thinkingConfig = this.ThinkingConfig.Enable ? this.ThinkingConfig.Config : null;

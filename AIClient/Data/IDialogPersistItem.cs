@@ -4,7 +4,7 @@ using LLMClient.UI.Dialog;
 namespace LLMClient.Data;
 
 [JsonDerivedType(typeof(EraseViewItem), "erase")]
-[JsonDerivedType(typeof(RequestViewItem), "request")]
+[JsonDerivedType(typeof(RequestPersistItem), "request")]
 [JsonDerivedType(typeof(MultiResponsePersistItem), "multiResponse")]
 [JsonDerivedType(typeof(SummaryRequestViewItem),"summaryRequest")]
 public interface IDialogPersistItem

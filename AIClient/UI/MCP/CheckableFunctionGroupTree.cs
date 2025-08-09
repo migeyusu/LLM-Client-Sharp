@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using LLMClient.Abstraction;
 using LLMClient.UI.Component;
+using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.UI.MCP;
@@ -63,7 +64,11 @@ public class CheckableFunctionGroupTree : BaseViewModel, IAIFunctionGroup
 
             // 过滤掉未选中或不可用的函数
             return availableTools
-                .Where(function => this.Functions.Any(model => model.FunctionName == function.Name))
+                .Where(function =>
+                {
+                    var functionName = function.Name;
+                    return this.Functions.Any(model => model.FunctionName == functionName);
+                })
                 .ToArray();
         }
     }

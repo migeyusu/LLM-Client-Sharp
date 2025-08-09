@@ -91,7 +91,7 @@
                                     CommandParameter="{Binding FolderPath,Mode=OneWay}"
                                     Command="{x:Static ui:CommonCommands.OpenFolderCommand}" />
                             <Button Content="打开文件"
-                                    Command="{x:Static ui:CommonCommands.OpenFile}" />
+                                    Command="{x:Static ui:CommonCommands.OpenSource}" />
                         </StackPanel>
                     </materialDesign:PopupBox>
                 </StackPanel>

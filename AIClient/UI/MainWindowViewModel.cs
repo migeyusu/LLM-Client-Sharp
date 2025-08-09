@@ -123,6 +123,8 @@ public class MainWindowViewModel : BaseViewModel
 
     public IMcpServiceCollection McpServiceCollection { get; }
 
+    public IRagSourceCollection RagSourceCollection { get; }
+
     #region project
 
     public ICommand NewProjectCommand => new ActionCommand((async o =>
@@ -215,7 +217,7 @@ public class MainWindowViewModel : BaseViewModel
             return;
         }
 
-        var dialogSession =  preDialog.Fork(item);
+        var dialogSession = preDialog.Fork(item);
         AddSession(dialogSession);
     }
 
@@ -248,12 +250,13 @@ public class MainWindowViewModel : BaseViewModel
     private string _loadingMessage = "Loading...";
 
     public MainWindowViewModel(IEndpointService configureViewModel, IMapper mapper, IPromptsResource promptsResource,
-        IMcpServiceCollection mcpServiceCollection)
+        IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection)
     {
         MessageEventBus.MessageReceived += s => this.MessageQueue.Enqueue(s);
         _mapper = mapper;
         PromptsResource = promptsResource;
         McpServiceCollection = mcpServiceCollection;
+        RagSourceCollection = ragSourceCollection;
         EndpointsViewModel = configureViewModel;
         var paletteHelper = new PaletteHelper();
         var theme = paletteHelper.GetTheme();
@@ -360,6 +363,7 @@ public class MainWindowViewModel : BaseViewModel
     {
         IsProcessing = true;
         await McpServiceCollection.LoadAsync();
+        await this.RagSourceCollection.LoadAsync();
         await EndpointsViewModel.Initialize();
         await InitialSessionsFromLocal();
         if (SessionViewModels.Any())
@@ -394,16 +398,9 @@ public class MainWindowViewModel : BaseViewModel
 
     public async Task SaveSessions()
     {
-        try
-        {
-            this.LoadingMessage = "Saving sessions...";
-            this.IsProcessing = true;
-            await this.SaveSessionsToLocal();
-            await HttpContentCache.Instance.PersistIndexAsync();
-        }
-        catch (Exception e)
-        {
-            Trace.WriteLine(e.Message);
-        }
+        this.LoadingMessage = "Saving sessions...";
+        this.IsProcessing = true;
+        await this.SaveSessionsToLocal();
+        await HttpContentCache.Instance.PersistIndexAsync();
     }
 }

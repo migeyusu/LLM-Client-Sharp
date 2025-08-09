@@ -26,7 +26,6 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
     private McpServerItem? _selectedServerItem;
     private ObservableCollection<McpServerItem> _items = new ObservableCollection<McpServerItem>();
     private bool _isInitialized;
-    private bool _isLoaded;
 
     public ObservableCollection<McpServerItem> Items
     {
@@ -42,6 +41,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
         }
     }
 
+    private bool _isLoaded;
     public bool IsLoaded
     {
         get => _isLoaded;
@@ -173,7 +173,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
         }
     }
 
-    public ICommand SaveCommand => new RelayCommand(() =>
+    public ICommand SaveCommand => new RelayCommand(async () =>
     {
         foreach (var item in Items)
         {
@@ -203,7 +203,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
 
         var fullPath = Path.GetFullPath(FileName);
         var json = JsonSerializer.Serialize(this.Items, Extension.DefaultJsonSerializerOptions);
-        File.WriteAllText(fullPath, json);
+        await File.WriteAllTextAsync(fullPath, json);
         MessageEventBus.Publish("已保存MCP服务器配置");
     });
 
@@ -234,14 +234,6 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
         }
     });
 
-    private JsonSerializerOptions options = new JsonSerializerOptions()
-    {
-        WriteIndented = true, Converters =
-        {
-            new JsonStringEnumConverter()
-        }
-    };
-
     public async Task LoadAsync()
     {
         if (IsLoaded)
@@ -264,7 +256,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
 
             await using (var fileStream = fileInfo.OpenRead())
             {
-                var deserialize = JsonSerializer.Deserialize<IList<McpServerItem>>(fileStream, options);
+                var deserialize = JsonSerializer.Deserialize<IList<McpServerItem>>(fileStream,  Extension.DefaultJsonSerializerOptions);
                 if (deserialize != null)
                 {
                     this.Items = new ObservableCollection<McpServerItem>(deserialize);

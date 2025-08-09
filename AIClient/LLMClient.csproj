@@ -30,14 +30,17 @@
         <PackageReference Include="MahApps.Metro.IconPacks.MaterialDesign" Version="5.1.0"/>
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
         <PackageReference Include="MaterialDesignThemes" Version="5.2.2-ci998"/>
-        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.6.0"/>
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.7.1" />
         <PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" Version="9.6.0-preview.1.25310.2"/>
         <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.6.0-preview.1.25310.2"/>
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0-preview.5.25277.114"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0-preview.5.25277.114"/>
         <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.0-preview.5.25277.114"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-preview.5.25277.114"/>
+        <PackageReference Include="Microsoft.KernelMemory.AI.OpenAI" Version="0.98.250508.3" />
+        <PackageReference Include="Microsoft.KernelMemory.Core" Version="0.98.250508.3" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.60.0" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.61.0-preview" />
         <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.60.0" />
         <PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.57.0-alpha"/>
         <PackageReference Include="Microsoft.SemanticKernel.Plugins.Memory" Version="1.57.0-alpha"/>
@@ -51,6 +54,8 @@
         <PackageReference Include="System.Text.Json" Version="9.0.7" />
         <PackageReference Include="TextMateSharp" Version="1.0.70" />
         <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.2" />
+        <PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
+        <PackageReference Include="UglyToad.PdfPig.DocumentLayoutAnalysis" Version="1.7.0-custom-5" />
     </ItemGroup>
 
     <ItemGroup>

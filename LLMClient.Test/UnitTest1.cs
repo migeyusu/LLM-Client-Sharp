@@ -190,14 +190,14 @@ public class UnitTest1
                         new RequestViewItem()
                         {
                             TextMessage = "test",
-                            FunctionGroups = new List<IAIFunctionGroup>()
+                            /*FunctionGroups = new List<IAIFunctionGroup>()
                             {
                                 new FileSystemPlugin()
                                 {
                                     AllowedPaths = new ObservableCollection<string> { "C:\\", "D:\\" },
                                 },
                                 new WinCLIPlugin()
-                            }
+                            }*/
                         },
                         new MultiResponsePersistItem()
                         {

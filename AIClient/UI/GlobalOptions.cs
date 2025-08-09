@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Input;
+using LLMClient.Rag.Document;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
@@ -43,6 +44,8 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     }
 
     public GoogleSearchOption GoogleSearchOption { get; set; } = new GoogleSearchOption();
+
+    public RagOption RagOption { get; set; } = new RagOption();
 
     [JsonIgnore]
     public ICommand SaveCommand => new ActionCommand(async (param) =>

@@ -57,7 +57,7 @@ public partial class MainWindow : ExtendedWindow
             return;
         }
 
-        if (this._mainWindowViewModel.IsBusy)
+        if (_mainWindowViewModel.IsBusy)
         {
             _mainWindowViewModel.MessageQueue.Enqueue("请等待当前响应完成后再关闭窗口");
             return;
@@ -65,11 +65,22 @@ public partial class MainWindow : ExtendedWindow
 
         if (!_closing)
         {
-            _closing = true;
-            await _mainWindowViewModel.SaveSessions();
-            _closing = false;
-            _closeRequest = true;
-            this.Close();
+            Task.Run((async () =>
+            {
+                _closing = true;
+                try
+                {
+                    await _mainWindowViewModel.SaveSessions();
+                }
+                catch (Exception exception)
+                {
+                    MessageBox.Show(exception.Message);
+                }
+
+                _closing = false;
+                _closeRequest = true;
+                Dispatcher.Invoke(this.Close);
+            }));
         }
     }
 
@@ -182,7 +193,7 @@ public partial class MainWindow : ExtendedWindow
         }
     }
 
-    private void OpenSessioFile_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    private void OpenSessionFile_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (_mainWindowViewModel.PreSession is FileBasedSessionBase fileBasedSession)
         {

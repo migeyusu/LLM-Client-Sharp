@@ -74,16 +74,18 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
         return client.Model.SupportFunctionCall;
     }
 
-    public Task ApplySearch(DialogContext context)
+    public async Task ApplySearch(DialogContext context)
     {
         var requestViewItem = context.Request;
         if (requestViewItem == null)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         requestViewItem.FunctionGroups ??= [];
-        requestViewItem.FunctionGroups.Add(this);
-        return Task.CompletedTask;
+        var functionGroupTree = new CheckableFunctionGroupTree(this);
+        await functionGroupTree.EnsureAsync(CancellationToken.None);
+        functionGroupTree.IsSelected = true;
+        requestViewItem.FunctionGroups.Add(functionGroupTree);
     }
 }

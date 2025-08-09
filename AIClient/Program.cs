@@ -2,6 +2,7 @@
 using System.Windows;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Rag;
 using LLMClient.UI;
 using LLMClient.UI.MCP;
 using LLMClient.UI.MCP.Servers;
@@ -39,6 +40,7 @@ public class Program
                 .AddTransient<AutoMapModelTypeConverter>()
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
+                .AddSingleton<IRagSourceCollection, RagSourceCollection>()
 #if DEBUG
                 .AddLogging(builder => builder.AddDebug())
 #endif
@@ -101,6 +103,5 @@ public class Program
                 Mutex.ReleaseMutex();
             }
         }
-        
     }
 }

@@ -87,6 +87,8 @@ public static class Extension
                 .ConstructUsing((po => new UriContent(po.Uri!, po.MediaType!)));
             expression.CreateMap<UsageContent, UsageContentPO>();
             expression.CreateMap<UsageContentPO, UsageContent>();
+            expression.CreateMap<RequestViewItem, RequestPersistItem>();
+            expression.CreateMap<RequestPersistItem, RequestViewItem>();
             expression.CreateMap<IResponse, ResponseViewItem>();
             expression.CreateMap<IModelParams, IModelParams>();
             expression.CreateMap<IModelParams, DefaultModelParam>();

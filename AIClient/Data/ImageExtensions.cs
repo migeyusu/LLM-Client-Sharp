@@ -33,15 +33,23 @@ public static class ImageExtensions
         return new LocalThemedIcon(PackIconToSource(PackIconKind.Api));
     });
 
-    public static ImageSource PackIconToSource(this PackIconKind kind)
+
+    private static ConcurrentDictionary<PackIconKind, ImageSource> _packIconCache
+        = new ConcurrentDictionary<PackIconKind, ImageSource>();
+
+    public static ImageSource PackIconToSource(this PackIconKind kind, Brush? foreground = null)
     {
-        var packIcon = new PackIcon() { Kind = kind };
-        var packIconData = packIcon.Data;
-        var geometry = Geometry.Parse(packIconData);
-        var drawingImage =
-            new DrawingImage(new GeometryDrawing(Brushes.Black, new Pen(Brushes.White, 0), geometry));
-        drawingImage.Freeze();
-        return drawingImage;
+        return _packIconCache.GetOrAdd(kind, k =>
+        {
+            var packIcon = new PackIcon() { Kind = k};
+            var packIconData = packIcon.Data;
+            var geometry = Geometry.Parse(packIconData);
+            foreground ??= Brushes.Black;
+            var drawingImage =
+                new DrawingImage(new GeometryDrawing(foreground, new Pen(Brushes.White, 0), geometry));
+            drawingImage.Freeze();
+            return drawingImage;
+        });
     }
 
     public static ThemedIcon GetIcon(ModelIconType iconType)
@@ -243,5 +251,4 @@ public static class ImageExtensions
 
         throw new NotSupportedException("Unsupported image extension: " + extension);
     }
-    
 }

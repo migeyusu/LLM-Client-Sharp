@@ -48,8 +48,8 @@ public class O3FanModelMapping : ModelMapping
                         {
                             _modelInfos = modelInfo
                                 .Where((info =>
-                                    !string.IsNullOrEmpty(info.Id) && info.Status == StatusAvailable &&
-                                    info.ModelAblity?.Contains(ModelAbilityChat) == true))
+                                    !string.IsNullOrEmpty(info.Id) && StatusAvailable.Contains(info.Status) &&
+                                    info.ModelAbility?.Contains(ModelAbilityChat) == true))
                                 .ToArray();
                             return true;
                         }
@@ -99,11 +99,11 @@ public class O3FanModelMapping : ModelMapping
             modelInfo.IconUrl = $"https://o3.fan/info/models/assess/{modelLogo}.png";
         }
 
-        modelInfo.Description = modelInfo.Description;
+        modelInfo.Description = modelInfoSimple.Description;
         modelInfo.MaxContextSize = (modelInfoSimple.ContextLength ?? 0) * 1000;
         modelInfo.MaxTokensEnable = modelInfoSimple.MaxOutput != null;
         modelInfo.MaxTokenLimit = (modelInfoSimple.MaxOutput ?? 0) * 1000;
-        var modelAbility = modelInfoSimple.ModelAblity;
+        var modelAbility = modelInfoSimple.ModelAbility;
         if (modelAbility != null)
         {
             modelInfo.SupportTextGeneration = modelAbility.Contains("对话");
@@ -126,7 +126,7 @@ public class O3FanModelMapping : ModelMapping
         return true;
     }
 
-    const string StatusAvailable = "published";
+    string[] StatusAvailable = ["published", "draft"];
 
     const string ModelAbilityChat = "对话";
 
@@ -156,7 +156,7 @@ public class O3FanModelMapping : ModelMapping
 
         [JsonPropertyName("tag")] public List<string>? Tag { get; set; }
 
-        [JsonPropertyName("model_ablity")] public List<string>? ModelAblity { get; set; }
+        [JsonPropertyName("model_ablity")] public List<string>? ModelAbility { get; set; }
 
         [JsonPropertyName("data_type")] public string? DataType { get; set; }
     }

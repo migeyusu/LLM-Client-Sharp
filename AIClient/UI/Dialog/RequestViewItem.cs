@@ -5,18 +5,11 @@ using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
+using LLMClient.UI.MCP;
 using Microsoft.Extensions.AI;
 using MimeTypes;
 
 namespace LLMClient.UI.Dialog;
-
-public interface IRequestItem : IDialogItem
-{
-    /// <summary>
-    /// 标记一次请求-响应过程，和响应对应
-    /// </summary>
-    Guid InteractionId { get; set; }
-}
 
 public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, CommonCommands.ICopyable
 {
@@ -25,27 +18,25 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     /// </summary>
     public Guid InteractionId { get; set; }
 
-    [JsonPropertyName("MessageContent")] public string TextMessage { get; set; } = string.Empty;
+    public string TextMessage { get; set; } = string.Empty;
 
-    public List<IAIFunctionGroup>? FunctionGroups { get; set; }
+    public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
 
     public ISearchService? SearchService { get; set; }
 
     /// <summary>
     /// 对Request附加的额外属性
     /// </summary>
-    [JsonPropertyName("RequestAdditionalProperties")]
     public AdditionalPropertiesDictionary AdditionalProperties { get; set; } = new AdditionalPropertiesDictionary();
 
     private ChatMessage? _message = null;
-
-    [JsonPropertyName("IsEnable")] public bool IsAvailableInContext { get; set; } = true;
+    
+    public bool IsAvailableInContext { get; } = true;
 
     public List<Attachment>? Attachments { get; set; }
 
     public IThinkingConfig? ThinkingConfig { get; set; }
-
-    [JsonIgnore]
+    
     public long Tokens
     {
         //估计tokens
