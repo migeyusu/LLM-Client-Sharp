@@ -41,7 +41,7 @@ public static class ImageExtensions
     {
         return _packIconCache.GetOrAdd(kind, k =>
         {
-            var packIcon = new PackIcon() { Kind = k};
+            var packIcon = new PackIcon() { Kind = k };
             var packIconData = packIcon.Data;
             var geometry = Geometry.Parse(packIconData);
             foreground ??= Brushes.Black;
@@ -77,8 +77,8 @@ public static class ImageExtensions
                 , UriKind.Absolute);
         }
 
-        return new LocalThemedIcon(GetIcon(lightUri).Result ?? APIIcon.CurrentSource,
-            darkUri != null ? GetIcon(darkUri).Result : null);
+        return new AsyncThemedIcon(async () => await GetIcon(lightUri) ?? APIIcon.CurrentSource,
+            darkUri != null ? (async () => (await GetIcon(darkUri)) ?? APIIcon.CurrentSource) : null);
     }
 
     private static readonly Lazy<string[]> LocalSupportedImageExtensionsLazy = new Lazy<string[]>(() =>
@@ -100,8 +100,8 @@ public static class ImageExtensions
             .ToArray();
     });
 
-    private static readonly ConcurrentDictionary<Uri, ImageSource?> IconCache =
-        new ConcurrentDictionary<Uri, ImageSource?>();
+    private static readonly ConcurrentDictionary<Uri, Lazy<Task<ImageSource?>>> IconCache =
+        new ConcurrentDictionary<Uri, Lazy<Task<ImageSource?>>>();
 
     public static bool IsSupportedImageExtension(string extension)
     {
@@ -110,15 +110,15 @@ public static class ImageExtensions
                    .Contains(extension, StringComparer.OrdinalIgnoreCase);
     }
 
-    public static async Task<ImageSource?> GetIcon(this Uri uri)
+    public static Task<ImageSource?> GetIcon(this Uri uri)
+    {
+        return IconCache.GetOrAdd(uri, u => new Lazy<Task<ImageSource?>>(() => CreateImageSourceAsync(u))).Value;
+    }
+
+    private static async Task<ImageSource?> CreateImageSourceAsync(Uri uri)
     {
         try
         {
-            if (IconCache.TryGetValue(uri, out var value))
-            {
-                return value;
-            }
-
             var uriScheme = uri.Scheme;
             Stream stream;
             string fullPath;
@@ -154,9 +154,25 @@ public static class ImageExtensions
 
                 stream = fileInfo.OpenRead();
             }
+            else if (uriScheme == "data")
+            {
+                var url = uri.ToString();
+                var indexOf = url.IndexOf("base64,", StringComparison.Ordinal);
+                if (indexOf < 0)
+                {
+                    throw new NotSupportedException("Unsupported data: " + url);
+                }
+
+                var s = url.Substring(indexOf + 7);
+                var bytes = Convert.FromBase64String(s);
+                fullPath = url.Substring(url.IndexOf("image/", StringComparison.Ordinal) + 6,
+                    url.IndexOf(';') - (url.IndexOf("image/", StringComparison.Ordinal) + 6));
+                fullPath = "." + fullPath; // 添加点前缀以匹配扩展名
+                stream = new MemoryStream(bytes);
+            }
             else
             {
-                throw new NotSupportedException("Unsupported URI scheme: " + uri.Scheme);
+                throw new NotSupportedException("Unsupported URI scheme: " + uriScheme);
             }
 
             await using (stream)
@@ -175,8 +191,11 @@ public static class ImageExtensions
         }
 
         Trace.WriteLine($"read {uri} failed,not match any scheme.");
+        // 如果发生异常，从缓存中移除失败的任务
+        IconCache.TryRemove(uri, out _);
         return null;
     }
+
 
     public static async Task<(bool Supported, string? Extension)> CheckImageSupportAsync(string url)
     {

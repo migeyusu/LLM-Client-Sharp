@@ -14,7 +14,7 @@ namespace LLMClient.Render;
 
 public class LinkInlineRendererEx : LinkInlineRenderer
 {
-    protected override void Write(WpfRenderer renderer, LinkInline link)
+    protected override async void Write(WpfRenderer renderer, LinkInline link)
     {
         if (renderer == null) throw new ArgumentNullException(nameof(renderer));
         if (link == null) throw new ArgumentNullException(nameof(link));
@@ -32,15 +32,13 @@ public class LinkInlineRendererEx : LinkInlineRenderer
             var image = new FrameworkElementFactory(typeof(Image));
             if (url.StartsWith("data:image"))
             {
-                var indexOf = url.IndexOf("base64,", StringComparison.Ordinal);
-                var s = url.Substring(indexOf + 7);
-                byte[] bytes = Convert.FromBase64String(s);
-                using (var ms = new MemoryStream(bytes))
+                if (Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))
                 {
-                    var extension = url.Substring(url.IndexOf("image/", StringComparison.Ordinal) + 6,
-                        url.IndexOf(';') - (url.IndexOf("image/", StringComparison.Ordinal) + 6));
-                    var imageSource = ms.ToImageSource("." + extension);
-                    image.SetValue(Image.SourceProperty, imageSource);
+                    var imageSource = await uri.GetIcon();
+                    if (imageSource != null)
+                    {
+                        image.SetValue(Image.SourceProperty, imageSource);
+                    }
                 }
             }
             else if (Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))

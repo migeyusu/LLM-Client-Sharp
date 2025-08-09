@@ -40,7 +40,9 @@
                 <materialDesign:PopupBox.ToggleCheckedContent>
                     <materialDesign:PackIcon Width="20"
                                              Height="20"
-                                             Kind="Pencil" />
+                                             Kind="Pencil" 
+                                             VerticalAlignment="Center"
+                                             HorizontalAlignment="Center"/>
                 </materialDesign:PopupBox.ToggleCheckedContent>
                 <StackPanel>
                     <Button ToolTip="OpenAI API兼容"
