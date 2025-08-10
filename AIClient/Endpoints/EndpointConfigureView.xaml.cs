@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace LLMClient.UI;
+namespace LLMClient.Endpoints;
 
 public partial class EndpointConfigureView : UserControl
 {

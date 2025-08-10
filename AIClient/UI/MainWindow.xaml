@@ -149,8 +149,8 @@
                     <dialog:ModelSelectionView Width="900"
                                                Height="600" />
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type ui:EndpointConfigureViewModel}">
-                    <ui:EndpointConfigureView Width="800"
+                <DataTemplate DataType="{x:Type endpoints:EndpointConfigureViewModel}">
+                    <endpoints:EndpointConfigureView Width="800"
                                               Height="600" />
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type endpoints:LlmClientBase}">

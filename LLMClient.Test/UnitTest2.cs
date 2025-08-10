@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 using ImageMagick;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure.Models;
 using LLMClient.Endpoints.Messages;
 using LLMClient.Endpoints.OpenAIAPI;

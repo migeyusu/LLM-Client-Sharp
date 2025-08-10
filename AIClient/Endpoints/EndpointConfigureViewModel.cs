@@ -6,15 +6,15 @@ using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
-using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.UI;
 using LLMClient.UI.Component;
 using LLMClient.UI.Dialog;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.UI;
+namespace LLMClient.Endpoints;
 
 /// <summary>
 /// 作为终结点的配置中心

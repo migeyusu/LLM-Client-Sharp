@@ -1,5 +1,7 @@
 ﻿using System.ClientModel.Primitives;
 
+namespace LLMClient.Endpoints.OpenAIAPI;
+
 public class RawCapturePipelinePolicy : PipelinePolicy
 {
     private readonly Func<PipelineMessage, CancellationToken, Task> _onResponse;

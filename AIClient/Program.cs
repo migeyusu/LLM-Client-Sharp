@@ -2,6 +2,7 @@
 using System.Windows;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Endpoints;
 using LLMClient.Rag;
 using LLMClient.UI;
 using LLMClient.UI.MCP;

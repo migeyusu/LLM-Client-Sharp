@@ -59,10 +59,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Grammars\*.*">
+        <Content Include="Resources\Grammars\*.*">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-        <Content Include="Grammars\**\*.*">
+        <Content Include="Resources\Grammars\**\*.*">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
         <!--<None Update="Grammars\qml\language-configuration.json">
@@ -92,17 +92,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Grammars\verilog\syntaxes\bsv.g4"/>
-        <Content Include="Grammars\vhdl\syntaxes\bsv.g4"/>
-    </ItemGroup>
-
-    <ItemGroup>
         <Page Update="Azure\AzureOptionView.xaml">
-            <Generator>MSBuild:Compile</Generator>
-            <XamlRuntime>Wpf</XamlRuntime>
-            <SubType>Designer</SubType>
-        </Page>
-        <Page Update="UI\EndpointConfigureView.xaml">
             <Generator>MSBuild:Compile</Generator>
             <XamlRuntime>Wpf</XamlRuntime>
             <SubType>Designer</SubType>
@@ -140,15 +130,43 @@
             <XamlRuntime>Wpf</XamlRuntime>
             <SubType>Designer</SubType>
         </Page>
-        <Page Update="UI\Dialog\DialogView.xaml">
-            <Generator>MSBuild:Compile</Generator>
-            <XamlRuntime>Wpf</XamlRuntime>
-            <SubType>Designer</SubType>
+        <Page Update="Endpoints\EndpointConfigureView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+          <XamlRuntime>Wpf</XamlRuntime>
+          <SubType>Designer</SubType>
         </Page>
-        <Page Update="UI\Dialog\ModelSelectionView.xaml">
-            <Generator>MSBuild:Compile</Generator>
-            <XamlRuntime>Wpf</XamlRuntime>
-            <SubType>Designer</SubType>
+        <Page Update="MCP\EnvironmentVariablesWindow.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="MCP\JsonEditorWindow.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="MCP\MCPServiceCollectionView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="MCP\KeyValueConfigWindow.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Dialog\ModelSelectionView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Dialog\DialogView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Dialog\DialogTemplateDictionary.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Dialog\RequesterView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Dialog\ResponseViewItemEditView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Project\ProjectConfigView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="Project\ProjectView.xaml">
+          <Generator>MSBuild:Compile</Generator>
         </Page>
     </ItemGroup>
 

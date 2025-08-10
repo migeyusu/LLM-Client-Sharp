@@ -47,7 +47,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
 
     public TextMateCodeRenderer()
     {
-        Options.LoadFromLocalDir("Grammars");
+        Options.LoadFromLocalDir(@"Resources\Grammars");
         _registry = new Registry(Options);
     }
 
