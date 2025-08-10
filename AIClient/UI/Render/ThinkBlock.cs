@@ -1,6 +1,6 @@
 ﻿using Markdig.Parsers;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class ThinkBlock : CustomBlock
 {

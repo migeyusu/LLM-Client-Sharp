@@ -1,5 +1,5 @@
 ﻿using System.Windows.Documents;
-using LLMClient.Render;
+using LLMClient.UI.Render;
 
 namespace LLMClient.UI.Component;
 

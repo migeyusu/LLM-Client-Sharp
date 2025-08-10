@@ -11,7 +11,7 @@ using TextMateSharp.Themes;
 using CodeBlockRenderer = Markdig.Renderers.Wpf.CodeBlockRenderer;
 using Path = System.IO.Path;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class TextMateCodeRenderer : CodeBlockRenderer
 {

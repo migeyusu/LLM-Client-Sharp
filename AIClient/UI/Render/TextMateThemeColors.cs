@@ -2,7 +2,7 @@
 using System.Windows.Media;
 using TextMateSharp.Themes;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class TextMateThemeColors
 {

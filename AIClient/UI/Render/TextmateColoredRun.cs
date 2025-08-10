@@ -2,7 +2,7 @@
 using System.Windows.Documents;
 using TextMateSharp.Grammars;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class TextmateColoredRun : Run
 {

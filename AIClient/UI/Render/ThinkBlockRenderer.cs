@@ -4,7 +4,7 @@ using System.Windows.Documents;
 using Markdig.Renderers;
 using Markdig.Renderers.Wpf;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class ThinkBlockRenderer : WpfObjectRenderer<ThinkBlock>
 {

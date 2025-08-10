@@ -1,4 +1,4 @@
-﻿namespace LLMClient.Render;
+﻿namespace LLMClient.UI.Render;
 
 public class ThinkBlockParser : SingleTagBlockParser<ThinkBlock>
 {

@@ -6,7 +6,7 @@ using Markdig.Helpers;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class CodeContext
 {

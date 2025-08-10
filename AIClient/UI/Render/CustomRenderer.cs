@@ -7,7 +7,7 @@ using Markdig.Renderers;
 using Markdig.Wpf;
 using Markdown = Markdig.Markdown;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class CustomRenderer : WpfRenderer
 {

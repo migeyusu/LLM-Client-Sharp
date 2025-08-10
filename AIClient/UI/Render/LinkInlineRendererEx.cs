@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -10,7 +9,7 @@ using Markdig.Renderers.Wpf.Inlines;
 using Markdig.Syntax.Inlines;
 using Markdig.Wpf;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class LinkInlineRendererEx : LinkInlineRenderer
 {

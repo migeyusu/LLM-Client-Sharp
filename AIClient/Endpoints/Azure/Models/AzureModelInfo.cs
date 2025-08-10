@@ -4,8 +4,8 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using LLMClient.Abstraction;
 using LLMClient.Data;
-using LLMClient.Render;
 using LLMClient.UI.Component;
+using LLMClient.UI.Render;
 
 namespace LLMClient.Endpoints.Azure.Models;
 

@@ -4,12 +4,12 @@
                     xmlns:llmClient="clr-namespace:LLMClient"
                     x:Class="LLMClient.UI.MarkdownResource"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-                    xmlns:render="clr-namespace:LLMClient.Render"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
                     xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
                     xmlns:chat="clr-namespace:OpenAI.Chat;assembly=OpenAI"
-                    xmlns:messages="clr-namespace:LLMClient.Endpoints.Messages">
+                    xmlns:messages="clr-namespace:LLMClient.Endpoints.Messages"
+                    xmlns:render="clr-namespace:LLMClient.UI.Render">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary
             Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.button.xaml" />

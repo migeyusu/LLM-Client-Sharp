@@ -2,7 +2,7 @@
 using Markdig.Parsers;
 using Markdig.Syntax;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class CustomBlock : LeafBlock
 {

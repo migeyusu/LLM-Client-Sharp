@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 using System.Windows.Data;
-using LLMClient.Render;
+using LLMClient.UI.Render;
 
 namespace LLMClient.UI.Component;
 

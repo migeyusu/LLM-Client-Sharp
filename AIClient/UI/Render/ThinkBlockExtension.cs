@@ -1,7 +1,7 @@
 ﻿using Markdig;
 using Markdig.Renderers;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class ThinkBlockExtension : IMarkdownExtension
 {

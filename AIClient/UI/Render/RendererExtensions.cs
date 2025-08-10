@@ -1,7 +1,7 @@
 ﻿using System.Windows.Documents;
 using Markdig;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 internal static class RendererExtensions
 {

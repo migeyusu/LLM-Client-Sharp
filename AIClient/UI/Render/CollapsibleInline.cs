@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Documents;
 
-namespace LLMClient.Render;
+namespace LLMClient.UI.Render;
 
 public class CollapsibleInline : Span
 {

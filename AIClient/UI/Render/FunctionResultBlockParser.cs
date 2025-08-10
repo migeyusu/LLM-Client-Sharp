@@ -1,4 +1,4 @@
-﻿namespace LLMClient.Render;
+﻿namespace LLMClient.UI.Render;
 
 [Obsolete]
 public class FunctionResultBlockParser : SingleTagBlockParser<FunctionResultBlock>
