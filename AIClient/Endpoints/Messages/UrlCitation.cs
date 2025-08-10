@@ -2,13 +2,6 @@
 
 namespace LLMClient.Endpoints.Messages;
 
-public class ChatAnnotation
-{
-    [JsonPropertyName("type")] public string? Type { get; set; }
-
-    [JsonPropertyName("url_citation")] public UrlCitation? UrlCitation { get; set; }
-}
-
 public class UrlCitation
 {
     [JsonPropertyName("end_index")] public int EndIndex { get; set; }

@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 
 namespace LLMClient.Endpoints;
 
-public static class EndPointsConfiguration
+public static class EndPointsOptions
 {
     /* format:
      * EndPoints:{
