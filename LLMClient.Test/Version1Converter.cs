@@ -1,4 +1,4 @@
-﻿namespace LLMClient.Obsolete;
+﻿namespace LLMClient.Test;
 
 /// <summary>
 /// 将版本2的对话转换为版本3的对话格式

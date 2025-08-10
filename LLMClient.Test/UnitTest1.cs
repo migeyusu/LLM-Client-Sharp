@@ -15,7 +15,6 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.MCP;
 using LLMClient.MCP.Servers;
-using LLMClient.Obsolete;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Azure;
