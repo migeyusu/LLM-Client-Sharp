@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
-using LLMClient.UI.MCP;
-using LLMClient.UI.MCP.Servers;
+using LLMClient.MCP;
+using LLMClient.MCP.Servers;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;

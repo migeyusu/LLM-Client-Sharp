@@ -4,7 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using ModelContextProtocol.Client;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public class StdIOServerItem : McpServerItem
 {

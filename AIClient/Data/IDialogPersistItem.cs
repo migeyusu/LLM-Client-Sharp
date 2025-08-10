@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Serialization;
-using LLMClient.UI.Dialog;
+using LLMClient.Dialog;
 
 namespace LLMClient.Data;
 

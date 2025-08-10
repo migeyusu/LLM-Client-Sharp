@@ -1,7 +1,7 @@
 ﻿using LLMClient.Abstraction;
-using LLMClient.UI.MCP.Servers;
+using LLMClient.MCP.Servers;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public class ProxyFunctionGroupSource : IFunctionGroupSource
 {

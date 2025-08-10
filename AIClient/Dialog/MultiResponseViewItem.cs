@@ -3,13 +3,14 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
 {

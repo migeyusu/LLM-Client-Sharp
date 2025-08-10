@@ -5,8 +5,9 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Dialog;
+using LLMClient.Endpoints;
 using LLMClient.UI.Component;
-using LLMClient.UI.Dialog;
 using LLMClient.UI.Log;
 using MaterialDesignThemes.Wpf;
 

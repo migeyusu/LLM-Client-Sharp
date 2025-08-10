@@ -3,15 +3,6 @@ using LLMClient.Abstraction;
 
 namespace LLMClient.UI;
 
-public interface IModelSelection
-{
-    IEndpointService EndpointService { get; }
-
-    ILLMModel? SelectedModel { get; set; }
-
-    ICommand? SubmitCommand { get; }
-}
-
 public abstract class ModelSelectionViewModel : BaseViewModel, IModelSelection
 {
     public IEndpointService EndpointService { get; set; }

@@ -1,4 +1,6 @@
-﻿namespace LLMClient.UI.MCP;
+﻿using LLMClient.UI;
+
+namespace LLMClient.MCP;
 
 public class VariableItem : BaseViewModel
 {

@@ -9,12 +9,13 @@ using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.MCP.Servers;
+using LLMClient.UI;
 using LLMClient.UI.Component;
-using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 /// <summary>
 /// 经过慎重考虑，设置为单例，因为mcp服务可能由客户端命令启动，重复启动会清空实例的上下文状态

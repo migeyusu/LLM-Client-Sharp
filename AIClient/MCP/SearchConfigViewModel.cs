@@ -1,8 +1,9 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.UI.MCP.Servers;
+using LLMClient.MCP.Servers;
+using LLMClient.UI;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public class SearchConfigViewModel : BaseViewModel
 {

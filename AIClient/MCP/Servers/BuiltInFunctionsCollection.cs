@@ -2,7 +2,7 @@
 using System.Reflection;
 using LLMClient.Abstraction;
 
-namespace LLMClient.UI.MCP.Servers;
+namespace LLMClient.MCP.Servers;
 
 public class BuiltInFunctionsCollection : IBuiltInFunctionsCollection, IFunctionGroupSource
 {

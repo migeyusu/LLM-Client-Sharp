@@ -18,7 +18,7 @@
                 <ResourceDictionary Source="UI/Component/StyleResourceDictionary.xaml" />
                 <ResourceDictionary Source="UI/MarkdownResource.xaml" />
                 <ResourceDictionary Source="UI/DataTemplateDictionary.xaml" />
-                <ResourceDictionary Source="UI/Dialog/DialogTemplateDictionary.xaml" />
+                <ResourceDictionary Source="Dialog/DialogTemplateDictionary.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

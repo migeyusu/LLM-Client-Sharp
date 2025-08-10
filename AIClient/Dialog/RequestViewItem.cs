@@ -1,15 +1,15 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using LLMClient.UI.MCP;
+using LLMClient.MCP;
+using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using MimeTypes;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, CommonCommands.ICopyable
 {

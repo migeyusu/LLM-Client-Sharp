@@ -6,16 +6,17 @@ using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
+using LLMClient.MCP;
+using LLMClient.MCP.Servers;
+using LLMClient.UI;
 using LLMClient.UI.Component;
-using LLMClient.UI.MCP;
-using LLMClient.UI.MCP.Servers;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public class RequesterViewModel : BaseViewModel
 {

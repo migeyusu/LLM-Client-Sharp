@@ -1,4 +1,4 @@
-﻿using LLMClient.UI.MCP.Servers;
+﻿using LLMClient.MCP.Servers;
 
 namespace LLMClient.Abstraction;
 

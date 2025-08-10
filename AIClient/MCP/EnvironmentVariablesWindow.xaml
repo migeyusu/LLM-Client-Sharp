@@ -1,15 +1,15 @@
-﻿<Window x:Class="LLMClient.UI.MCP.EnvironmentVariablesWindow"
+﻿<Window x:Class="LLMClient.MCP.EnvironmentVariablesWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:LLMClient.UI.MCP"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:mcp="clr-namespace:LLMClient.MCP"
         mc:Ignorable="d"
         Title="环境变量" Height="600" Width="800"
         MinHeight="450" MinWidth="500">
     <Window.DataContext>
-        <local:EnvironmentVariablesViewModel />
+        <mcp:EnvironmentVariablesViewModel />
     </Window.DataContext>
     <Window.Resources>
         <Style TargetType="TextBlock" x:Key="NoItemsTextBlockStyle">

@@ -5,7 +5,7 @@ using System.Windows.Input;
 using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public class Attachment
 {

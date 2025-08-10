@@ -1,4 +1,4 @@
-namespace LLMClient.UI.Project;
+namespace LLMClient.Project;
 
 public enum ProjectTaskStatus : int
 {

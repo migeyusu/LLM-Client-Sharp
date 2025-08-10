@@ -2,9 +2,9 @@
 using System.Text;
 using System.Windows;
 using LLMClient.Abstraction;
+using LLMClient.Dialog;
 using LLMClient.Rag.Document;
 using LLMClient.UI;
-using LLMClient.UI.Dialog;
 using Newtonsoft.Json;
 
 namespace LLMClient.Rag;

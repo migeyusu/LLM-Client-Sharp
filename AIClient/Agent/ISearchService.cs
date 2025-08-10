@@ -2,7 +2,7 @@
 using LLMClient.Abstraction;
 using LLMClient.UI.Component;
 
-namespace LLMClient.UI.Agent;
+namespace LLMClient.Agent;
 
 /**
  * search agent 会自动根据内容产生搜索请求，并将结果添加到对话中。

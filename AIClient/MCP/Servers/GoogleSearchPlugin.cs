@@ -1,13 +1,14 @@
 ﻿using System.Text.Json.Serialization;
 using Google.Apis.Services;
 using LLMClient.Abstraction;
+using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel.Data;
 using Microsoft.SemanticKernel.Plugins.Web.Google;
 
-namespace LLMClient.UI.MCP.Servers;
+namespace LLMClient.MCP.Servers;
 
 public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchService
 {

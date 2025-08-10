@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.UI.MCP;
+using LLMClient.MCP;
 
 namespace LLMClient.Endpoints;
 

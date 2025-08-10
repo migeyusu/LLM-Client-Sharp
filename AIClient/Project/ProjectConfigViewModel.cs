@@ -1,11 +1,12 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.UI;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
 using MessageBox = System.Windows.Forms.MessageBox;
 
-namespace LLMClient.UI.Project;
+namespace LLMClient.Project;
 
 public class ProjectConfigViewModel : ModelSelectionViewModel
 {

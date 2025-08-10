@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public partial class ResponseViewItemEditView : UserControl
 {

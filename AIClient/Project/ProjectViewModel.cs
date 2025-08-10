@@ -10,16 +10,17 @@ using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Dialog;
 using LLMClient.Endpoints;
+using LLMClient.MCP;
+using LLMClient.MCP.Servers;
+using LLMClient.UI;
 using LLMClient.UI.Component;
-using LLMClient.UI.Dialog;
-using LLMClient.UI.MCP;
-using LLMClient.UI.MCP.Servers;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.UI.Project;
+namespace LLMClient.Project;
 
 public class ProjectViewModel : FileBasedSessionBase
 {

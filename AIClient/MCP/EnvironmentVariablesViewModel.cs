@@ -4,9 +4,10 @@ using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.UI;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public class EnvironmentVariablesViewModel : BaseViewModel
 {

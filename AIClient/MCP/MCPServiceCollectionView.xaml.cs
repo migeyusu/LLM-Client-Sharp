@@ -2,7 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public partial class MCPServiceCollectionView : UserControl
 {

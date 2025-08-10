@@ -5,8 +5,8 @@ using System.Windows.Data;
 using System.Windows.Media;
 using LambdaConverters;
 using LLMClient.Data;
+using LLMClient.Project;
 using LLMClient.Rag;
-using LLMClient.UI.Project;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.UI.Component.Converters;

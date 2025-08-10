@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace LLMClient.UI.Project;
+namespace LLMClient.Project;
 
 public enum ProjectTaskType : int
 {

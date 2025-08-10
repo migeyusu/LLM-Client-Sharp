@@ -1,12 +1,13 @@
 ﻿using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.Messages;
+using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public class RespondingViewItem : BaseViewModel, IResponseViewItem
 {

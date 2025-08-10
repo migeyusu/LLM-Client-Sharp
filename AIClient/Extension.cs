@@ -10,12 +10,12 @@ using System.Windows.Media;
 using Azure.AI.Inference;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.MCP;
+using LLMClient.Project;
 using LLMClient.UI;
-using LLMClient.UI.Dialog;
-using LLMClient.UI.MCP;
-using LLMClient.UI.Project;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 

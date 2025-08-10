@@ -1,7 +1,7 @@
 ﻿using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public partial class DialogView : UserControl
 {

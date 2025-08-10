@@ -1,4 +1,4 @@
-﻿namespace LLMClient.UI.Agent;
+﻿namespace LLMClient.Agent;
 
 /*public class AgentViewModel : BaseViewModel, ILLMSession
 {

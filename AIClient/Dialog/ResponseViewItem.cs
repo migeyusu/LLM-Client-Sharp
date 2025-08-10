@@ -7,6 +7,7 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints.Messages;
 using LLMClient.Render;
+using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
@@ -14,7 +15,7 @@ using Microsoft.Xaml.Behaviors.Core;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands.ICopyable
 {

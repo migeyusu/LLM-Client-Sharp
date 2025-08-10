@@ -2,7 +2,7 @@
 using System.Windows.Controls;
 using LLMClient.Abstraction;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public partial class ModelSelectionView : UserControl
 {

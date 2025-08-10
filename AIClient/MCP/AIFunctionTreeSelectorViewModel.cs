@@ -1,11 +1,12 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using LLMClient.Abstraction;
-using LLMClient.UI.MCP.Servers;
+using LLMClient.MCP.Servers;
+using LLMClient.UI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public class AIFunctionTreeSelectorViewModel : BaseViewModel
 {

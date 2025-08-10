@@ -1,6 +1,6 @@
 ﻿using LLMClient.Abstraction;
 
-namespace LLMClient.UI;
+namespace LLMClient.Endpoints;
 
 public class SuggestedModel
 {

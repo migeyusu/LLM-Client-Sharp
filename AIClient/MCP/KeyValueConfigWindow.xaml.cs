@@ -5,7 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public partial class KeyValueConfigWindow : Window, INotifyPropertyChanged
 {

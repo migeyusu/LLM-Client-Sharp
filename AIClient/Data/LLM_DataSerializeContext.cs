@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.UI.MCP.Servers;
+using LLMClient.MCP.Servers;
 using OpenAI.Chat;
 
 namespace LLMClient.Data;

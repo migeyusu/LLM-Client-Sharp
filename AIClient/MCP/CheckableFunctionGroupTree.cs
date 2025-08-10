@@ -1,10 +1,9 @@
-﻿using System.Collections.ObjectModel;
-using LLMClient.Abstraction;
+﻿using LLMClient.Abstraction;
+using LLMClient.UI;
 using LLMClient.UI.Component;
-using LLMClient.UI.MCP.Servers;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public class CheckableFunctionGroupTree : BaseViewModel, IAIFunctionGroup
 {

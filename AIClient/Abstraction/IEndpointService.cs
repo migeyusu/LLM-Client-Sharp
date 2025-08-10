@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using LLMClient.Endpoints;
 using LLMClient.UI;
 
 namespace LLMClient.Abstraction;

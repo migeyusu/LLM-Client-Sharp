@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:LLMClient.UI.Component"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:dialog="clr-namespace:LLMClient.UI.Dialog"
+             xmlns:dialog="clr-namespace:LLMClient.Dialog"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:DialogSessionViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">

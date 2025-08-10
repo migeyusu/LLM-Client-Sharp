@@ -2,10 +2,10 @@
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using LLMClient.UI.Dialog;
-using LLMClient.UI.MCP;
-using LLMClient.UI.Project;
+using LLMClient.MCP;
+using LLMClient.Project;
 
 namespace LLMClient.UI;
 

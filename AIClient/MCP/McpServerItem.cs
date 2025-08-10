@@ -3,11 +3,12 @@ using System.Text.Json.Serialization;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 [JsonDerivedType(typeof(StdIOServerItem), "stdio")]
 [JsonDerivedType(typeof(SseServerItem), "sse")]

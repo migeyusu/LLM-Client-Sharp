@@ -1,4 +1,4 @@
-﻿namespace LLMClient.UI.Dialog;
+﻿namespace LLMClient.Dialog;
 
 public enum AttachmentType
 {

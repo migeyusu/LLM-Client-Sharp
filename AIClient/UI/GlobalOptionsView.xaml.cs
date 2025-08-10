@@ -8,9 +8,9 @@ using Microsoft.Win32;
 
 namespace LLMClient.UI;
 
-public partial class GlobalConfigView : UserControl
+public partial class GlobalOptionsView : UserControl
 {
-    public GlobalConfigView()
+    public GlobalOptionsView()
     {
         InitializeComponent();
     }

@@ -12,12 +12,12 @@
                           xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                           xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
                           xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
-                          xmlns:mcp="clr-namespace:LLMClient.UI.MCP"
-                          xmlns:dialog="clr-namespace:LLMClient.UI.Dialog"
-                          xmlns:project="clr-namespace:LLMClient.UI.Project"
                           xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
                           xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
                           xmlns:rag="clr-namespace:LLMClient.Rag"
+                          xmlns:dialog="clr-namespace:LLMClient.Dialog"
+                          xmlns:mcp="clr-namespace:LLMClient.MCP"
+                          xmlns:project="clr-namespace:LLMClient.Project"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -170,7 +170,7 @@
                 <DataTemplate DataType="{x:Type ui:GlobalOptions}">
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="软件配置">
-                        <ui:GlobalConfigView Width="800"
+                        <ui:GlobalOptionsView Width="800"
                                              Height="500" />
                     </HeaderedContentControl>
                 </DataTemplate>
@@ -572,7 +572,7 @@
                             <ItemsControl ItemsSource="{Binding  EndpointsViewModel.SuggestedModels,Mode=OneWay}"
                                           Margin="10">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type ui:SuggestedModel}">
+                                    <DataTemplate DataType="{x:Type endpoints:SuggestedModel}">
                                         <StackPanel Orientation="Horizontal">
                                             <Button Command="Select"
                                                     CommandParameter="{Binding}"

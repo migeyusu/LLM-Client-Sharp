@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.MCP.Servers;
 using LLMClient.UI.Component;
-using LLMClient.UI.MCP.Servers;
 
 namespace LLMClient.Abstraction;
 

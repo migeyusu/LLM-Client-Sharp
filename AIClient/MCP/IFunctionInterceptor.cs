@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.AI;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public interface IFunctionInterceptor
 {

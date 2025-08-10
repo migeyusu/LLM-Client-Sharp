@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
+using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using LLMClient.UI.Dialog;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Data;

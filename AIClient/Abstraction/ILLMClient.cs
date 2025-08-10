@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
+using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using LLMClient.UI.Dialog;
-using LLMClient.UI.MCP;
+using LLMClient.MCP;
 
 namespace LLMClient.Abstraction;
 

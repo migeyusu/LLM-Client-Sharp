@@ -1,8 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
-using LLMClient.UI.Dialog;
+using LLMClient.Dialog;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.UI.Agent;
+namespace LLMClient.Agent;
 
 public static class Agents
 {

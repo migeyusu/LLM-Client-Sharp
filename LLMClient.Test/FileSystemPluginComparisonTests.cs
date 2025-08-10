@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using LLMClient.UI.MCP.Servers;
 using ModelContextProtocol.Client;
 using Xunit.Abstractions;
 

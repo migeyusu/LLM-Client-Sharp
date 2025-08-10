@@ -1,8 +1,8 @@
 ﻿using System.Windows.Controls;
 using System.Windows.Input;
-using LLMClient.UI.Dialog;
+using LLMClient.Dialog;
 
-namespace LLMClient.UI.Project;
+namespace LLMClient.Project;
 
 public partial class ProjectView : UserControl
 {

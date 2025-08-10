@@ -1,7 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
+using LLMClient.UI;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public class SummaryRequestViewItem : EraseViewItem, IRequestItem
 {

@@ -3,9 +3,9 @@
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
                     xmlns:ui="clr-namespace:LLMClient.UI"
-                    xmlns:dialog="clr-namespace:LLMClient.UI.Dialog"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
-                    xmlns:component="clr-namespace:LLMClient.UI.Component">
+                    xmlns:component="clr-namespace:LLMClient.UI.Component"
+                    xmlns:dialog="clr-namespace:LLMClient.Dialog">
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
                   DataType="{x:Type dialog:RequestViewItem}">
         <Grid HorizontalAlignment="Right"

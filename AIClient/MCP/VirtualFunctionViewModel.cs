@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.AI;
+﻿using LLMClient.UI;
+using Microsoft.Extensions.AI;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 /// <summary>
 /// 虚加载的函数视图模型

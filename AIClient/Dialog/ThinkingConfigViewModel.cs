@@ -1,8 +1,9 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Endpoints;
+using LLMClient.UI;
 using OpenAI.Chat;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinkingConfig
 {

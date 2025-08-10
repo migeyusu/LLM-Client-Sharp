@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.AI;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public interface IFunctionAuthorizationFilter
 {

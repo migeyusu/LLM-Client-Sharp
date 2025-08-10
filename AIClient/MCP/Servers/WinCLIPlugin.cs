@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using Microsoft.SemanticKernel;
 
-namespace LLMClient.UI.MCP.Servers;
+namespace LLMClient.MCP.Servers;
 
 /// <summary>
 /// (黑名单版本) 一个用于在 Windows 命令行 (CMD) 或 PowerShell 中执行命令的插件。

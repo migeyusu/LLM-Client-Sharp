@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace LLMClient.UI.Project;
+namespace LLMClient.Project;
 
 public partial class ProjectConfigView : UserControl
 {

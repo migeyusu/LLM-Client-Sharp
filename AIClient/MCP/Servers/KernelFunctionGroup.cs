@@ -1,8 +1,9 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 
-namespace LLMClient.UI.MCP.Servers;
+namespace LLMClient.MCP.Servers;
 
 public abstract class KernelFunctionGroup : BaseViewModel, IBuiltInFunctionGroup
 {

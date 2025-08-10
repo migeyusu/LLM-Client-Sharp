@@ -1,7 +1,7 @@
 ﻿using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public interface IDialogItem : ITokenizable
 {

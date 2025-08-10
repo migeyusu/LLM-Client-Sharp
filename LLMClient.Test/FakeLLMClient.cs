@@ -2,8 +2,7 @@
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.UI.Dialog;
-using LLMClient.UI.MCP;
+using LLMClient.MCP;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Test;

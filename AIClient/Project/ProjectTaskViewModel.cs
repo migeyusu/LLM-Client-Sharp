@@ -1,11 +1,11 @@
 using System.ComponentModel;
 using System.Text;
 using LLMClient.Abstraction;
-using LLMClient.UI.Dialog;
-using LLMClient.UI.MCP;
-using LLMClient.UI.MCP.Servers;
+using LLMClient.Dialog;
+using LLMClient.MCP;
+using LLMClient.MCP.Servers;
 
-namespace LLMClient.UI.Project;
+namespace LLMClient.Project;
 
 /**
  * 基本思路，基于以下几个前提：

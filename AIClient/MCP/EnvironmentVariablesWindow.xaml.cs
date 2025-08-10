@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public partial class EnvironmentVariablesWindow : Window
 {

@@ -2,7 +2,7 @@
 using LLMClient.Data;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public class EraseViewItem : IDialogItem, IDialogPersistItem
 {

@@ -5,13 +5,13 @@ using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
+using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
 {

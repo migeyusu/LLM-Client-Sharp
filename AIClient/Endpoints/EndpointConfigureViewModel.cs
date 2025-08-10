@@ -6,11 +6,11 @@ using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Dialog;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using LLMClient.UI.Component;
-using LLMClient.UI.Dialog;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
 

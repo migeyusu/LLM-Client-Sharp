@@ -1,7 +1,7 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.UI.Component;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public interface IResponseViewItem : IResponse, IDialogItem
 {

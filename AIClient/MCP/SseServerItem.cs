@@ -3,7 +3,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using ModelContextProtocol.Client;
 
-namespace LLMClient.UI.MCP;
+namespace LLMClient.MCP;
 
 public class SseServerItem : McpServerItem
 {

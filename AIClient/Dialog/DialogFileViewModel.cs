@@ -5,10 +5,11 @@ using System.Text.Json;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public class DialogFileViewModel : FileBasedSessionBase
 {

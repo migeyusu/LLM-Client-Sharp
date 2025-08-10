@@ -1,10 +1,10 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using LLMClient.UI.MCP;
+using LLMClient.MCP;
 using MaterialDesignThemes.Wpf;
 
-namespace LLMClient.UI.Dialog;
+namespace LLMClient.Dialog;
 
 public partial class RequesterView : UserControl
 {

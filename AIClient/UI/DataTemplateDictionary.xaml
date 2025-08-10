@@ -6,12 +6,12 @@
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
                     xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
                     xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
-                    xmlns:mcp="clr-namespace:LLMClient.UI.MCP"
                     xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
                     xmlns:azure="clr-namespace:LLMClient.Endpoints.Azure"
                     xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters">
+                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+                    xmlns:mcp="clr-namespace:LLMClient.MCP">
     <ItemsPanelTemplate x:Key="HorizontalItemsPanelTemplate">
         <StackPanel Orientation="Horizontal"
                     IsItemsHost="True" />

@@ -1,8 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Text;
 using System.Windows;
-using DocumentFormat.OpenXml.Packaging;
-using LLMClient.Rag;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis;
@@ -11,6 +9,8 @@ using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 using UglyToad.PdfPig.Outline;
 using UglyToad.PdfPig.Outline.Destinations;
+
+namespace LLMClient.Rag.Document;
 
 public class PDFExtractor : IDisposable
 {

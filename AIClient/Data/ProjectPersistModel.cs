@@ -1,4 +1,4 @@
-﻿using LLMClient.UI.Project;
+﻿using LLMClient.Project;
 
 namespace LLMClient.Data;
 

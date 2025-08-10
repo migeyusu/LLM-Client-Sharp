@@ -19,7 +19,7 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using LLMClient;
-using LLMClient.UI.MCP.Servers;
+using LLMClient.MCP.Servers;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.SemanticKernel;
 
