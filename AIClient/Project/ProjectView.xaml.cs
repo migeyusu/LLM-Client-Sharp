@@ -61,7 +61,12 @@ public partial class ProjectView : UserControl
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
-            ViewModel.SelectedTask?.ConclusionBefore(requestViewItem, ViewModel.Requester.DefaultClient);
+            var indexOf = this.ViewModel.SelectedTask?.DialogItems.IndexOf(requestViewItem);
+            if (indexOf <= 0)
+            {
+                return;
+            }
+            ViewModel.Requester.Summarize();
         }
     }
 }

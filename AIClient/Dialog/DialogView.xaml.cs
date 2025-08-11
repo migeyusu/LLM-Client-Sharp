@@ -40,7 +40,12 @@ public partial class DialogView : UserControl
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
-            ViewModel.ConclusionBefore(requestViewItem, ViewModel.Requester.DefaultClient);
+            var indexOf = this.ViewModel.DialogItems.IndexOf(requestViewItem);
+            if (indexOf <= 0)
+            {
+                return;
+            }
+            ViewModel.Requester.Summarize(indexOf);
         }
     }
 }

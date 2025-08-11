@@ -4,47 +4,9 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Data;
 using OpenAI;
 
 namespace LLMClient.Rag;
-
-public class SKDocChunk
-{
-    [VectorStoreKey] public Guid Key { get; set; } = Guid.Empty;
-
-    /// <summary>
-    /// raw data
-    /// </summary>
-    [VectorStoreData(IsFullTextIndexed = true)]
-    [TextSearchResultValue]
-    public string Text { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 文档的唯一标识符
-    /// </summary>
-    [VectorStoreData]
-    public string DocumentId { get; set; } = string.Empty;
-
-    [VectorStoreData(IsFullTextIndexed = true)]
-    public string Summary { get; set; } = string.Empty;
-
-    /// <summary>
-    /// pdf:bookmark
-    /// </summary>
-    [VectorStoreData(IsFullTextIndexed = true)]
-    public string Title { get; set; } = string.Empty;
-
-    [VectorStoreData] public int Level { get; set; }
-
-    [VectorStoreData] public Guid ParentKey { get; set; } = Guid.Empty;
-
-    [VectorStoreData] public bool HasChild { get; set; }
-
-    [VectorStoreVector(1536)] public string TextEmbedding => Text;
-
-    [VectorStoreVector(1536)] public string SummaryEmbedding => Summary;
-}
 
 public class SemanticKernelStore
 {
@@ -61,7 +23,7 @@ public class SemanticKernelStore
 
     private Kernel? _kernel;
 
-    public SemanticKernelStore(string dbConnectionString)
+    public SemanticKernelStore(string dbConnectionString = "Data Source=mydatabase.db")
     {
         _dbConnectionString = dbConnectionString;
     }
@@ -72,7 +34,7 @@ public class SemanticKernelStore
         var kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder.Services.AddOpenAIEmbeddingGenerator("text-embedding-v3", client)
             // 添加 SQLite 向量存储（连接字符串指向本地文件）
-            .AddSqliteVectorStore(connectionStringProvider: sp => "Data Source=mydatabase.db"); // 自动创建 db 文件
+            .AddSqliteVectorStore(connectionStringProvider: sp => _dbConnectionString); // 自动创建 db 文件
         _kernel = kernelBuilder.Build();
     }
 

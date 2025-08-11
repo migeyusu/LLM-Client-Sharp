@@ -650,25 +650,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         }
     }
 
-    public async void ConclusionBefore(RequestViewItem requestViewItem, ILLMClient client)
-    {
-        try
-        {
-            var indexOf = this.DialogItems.IndexOf(requestViewItem);
-            if (indexOf <= 0)
-            {
-                return;
-            }
-
-            var summaryRequest = await SummaryRequestViewItem.NewSummaryRequest();
-            await NewRequest(client, summaryRequest, indexOf);
-        }
-        catch (Exception e)
-        {
-            MessageEventBus.Publish(e.Message);
-        }
-    }
-
     #endregion
 
     public DialogSessionViewModel(IList<IDialogItem>? dialogItems = null)

@@ -497,7 +497,7 @@ public class ProjectViewModel : FileBasedSessionBase
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
-    private Task<CompletedResult> GetResponse(ILLMClient arg1, IRequestItem arg2)
+    private Task<CompletedResult> GetResponse(ILLMClient arg1, IRequestItem arg2, int? index = null)
     {
         if (SelectedTask == null)
         {
@@ -515,7 +515,7 @@ public class ProjectViewModel : FileBasedSessionBase
         }
 
         this.Ready();
-        return SelectedTask.NewRequest(arg1, arg2);
+        return SelectedTask.NewRequest(arg1, arg2, index);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

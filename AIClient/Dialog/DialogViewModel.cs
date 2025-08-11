@@ -239,7 +239,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         : base(items)
     {
         _topic = topic;
-        Requester = new RequesterViewModel(modelClient, (client, item) => NewRequest(client, item))
+        Requester = new RequesterViewModel(modelClient, NewRequest)
         {
             Source = this
         };
@@ -280,25 +280,6 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
             {
                 yield return functionGroupTree;
             }
-        }
-    }
-
-    public async void ConclusionBefore(RequestViewItem requestViewItem)
-    {
-        try
-        {
-            var indexOf = this.DialogItems.IndexOf(requestViewItem);
-            if (indexOf <= 0)
-            {
-                return;
-            }
-
-            var summaryRequest = await SummaryRequestViewItem.NewSummaryRequest();
-            await NewRequest(Requester.DefaultClient, summaryRequest, indexOf);
-        }
-        catch (Exception e)
-        {
-            MessageEventBus.Publish(e.Message);
         }
     }
 }

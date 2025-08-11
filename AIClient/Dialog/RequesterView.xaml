@@ -311,12 +311,31 @@
                                 Width="80"
                                 Height="30"
                                 Margin="16,0,0,0"
-                                Style="{StaticResource MaterialDesignRaisedDarkButton}"
-                                Content="发送" />
-                        <Button Command="{Binding ConclusionCommand}"
+                                Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Send"
+                                                         Width="16"
+                                                         Height="16"
+                                                         VerticalAlignment="Center" />
+                                <TextBlock Text="发送"
+                                           Margin="6,0,0,0"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding SummarizeCommand}"
                                 Margin="16,0,0,0"
-                                Content="总结"
-                                Style="{StaticResource MaterialDesignPaperLightButton}" />
+                                Style="{StaticResource MaterialDesignPaperLightButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="LightbulbOnOutline"
+                                                         Width="16"
+                                                         Height="16"
+                                                         VerticalAlignment="Center" />
+                                <TextBlock Text="总结"
+                                           Margin="6,0,0,0"
+                                           VerticalAlignment="Center" />
+                                
+                            </StackPanel>
+                        </Button>
                         <!--<Button Command="{Binding TestCommand}"
                         Content="测试" />-->
                     </StackPanel>

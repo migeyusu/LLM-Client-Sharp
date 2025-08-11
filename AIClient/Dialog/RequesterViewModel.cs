@@ -35,7 +35,7 @@ public class RequesterViewModel : BaseViewModel
                 return;
             }
 
-            var completedResult = await _getResponse.Invoke(this.DefaultClient, requestViewItem);
+            var completedResult = await _getResponse.Invoke(this.DefaultClient, requestViewItem, null);
             if (!completedResult.IsInterrupt)
             {
                 ClearRequest();
@@ -47,18 +47,7 @@ public class RequesterViewModel : BaseViewModel
         }
     });
 
-    public ICommand ConclusionCommand => new ActionCommand(async o =>
-    {
-        try
-        {
-            var summaryRequest = await SummaryRequestViewItem.NewSummaryRequest();
-            await _getResponse.Invoke(this._defaultClient, summaryRequest);
-        }
-        catch (Exception e)
-        {
-            MessageEventBus.Publish(e.Message);
-        }
-    });
+    public ICommand SummarizeCommand => new ActionCommand(_ => { Summarize(); });
 
     public ICommand ChangeModelCommand => new ActionCommand(async o =>
     {
@@ -186,10 +175,10 @@ public class RequesterViewModel : BaseViewModel
 
     #endregion
 
-    private readonly Func<ILLMClient, IRequestItem, Task<CompletedResult>> _getResponse;
+    private readonly Func<ILLMClient, IRequestItem, int?, Task<CompletedResult>> _getResponse;
 
     public RequesterViewModel(ILLMClient modelClient,
-        Func<ILLMClient, IRequestItem, Task<CompletedResult>> getResponse)
+        Func<ILLMClient, IRequestItem, int?, Task<CompletedResult>> getResponse)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
@@ -229,6 +218,26 @@ public class RequesterViewModel : BaseViewModel
     }
 
     public IFunctionGroupSource? Source { get; set; }
+
+    public async void Summarize(int? index = null)
+    {
+        try
+        {
+            var options = await GlobalOptions.LoadOrCreate();
+            var summaryRequest = new SummaryRequestViewItem()
+            {
+                SummaryPrompt = options.TokenSummarizePrompt,
+                OutputLength = options.SummarizeWordsCount,
+                InteractionId = Guid.NewGuid(),
+            };
+            var summarizeModel = options.SummarizeClient ?? this.DefaultClient;
+            await _getResponse.Invoke(summarizeModel, summaryRequest, index);
+        }
+        catch (Exception e)
+        {
+            MessageEventBus.Publish(e.Message);
+        }
+    }
 
     public RequestViewItem? NewRequest(string additionalPrompt = "")
     {

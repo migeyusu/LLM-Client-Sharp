@@ -9,4 +9,9 @@ public class LLMClientPersistModel
     public string ModelName { get; set; } = string.Empty;
 
     public IModelParams? Params { get; set; }
+
+    public override string ToString()
+    {
+        return $"{EndPointName} - {ModelName}";
+    }
 }

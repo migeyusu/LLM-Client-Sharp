@@ -3,14 +3,35 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Input;
+using AutoMapper;
+using LLMClient.Abstraction;
+using LLMClient.Data;
+using LLMClient.Dialog;
 using LLMClient.Rag.Document;
+using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI;
 
 public class GlobalOptions : NotifyDataErrorInfoViewModelBase
 {
-    private int _summarizeWordsCount = 1000;
+    public GlobalOptions()
+    {
+        PopupSelectViewModel = PopupSelectViewModel =
+            new ModelSelectionPopupViewModel((model =>
+                {
+                    var llmClient = model.GetClient();
+                    if (llmClient == null)
+                    {
+                        return;
+                    }
+
+                    this.SummarizeClient = llmClient;
+                }))
+                { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
+    }
+
     private const string DEFAULT_GLOBAL_CONFIG_FILE = "globalconfig.json";
 
     private const string DefaultSummarizePrompt =
@@ -24,6 +45,8 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     {
         get { return string.Format(TokenSummarizePromptString, SummarizeWordsCount); }
     }
+
+    private int _summarizeWordsCount = 1000;
 
     public int SummarizeWordsCount
     {
@@ -42,6 +65,48 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             OnPropertyChanged();
         }
     }
+
+    [JsonIgnore]
+    public ILLMClient? SummarizeClient
+    {
+        get
+        {
+            if (SummarizeModelPersistModel == null)
+            {
+                return null;
+            }
+
+            return ServiceLocator.GetService<IMapper>()?
+                .Map<LLMClientPersistModel, ILLMClient>(SummarizeModelPersistModel);
+        }
+        set
+        {
+            if (value == null)
+            {
+                SummarizeModelPersistModel = null;
+                return;
+            }
+
+            SummarizeModelPersistModel = ServiceLocator.GetService<IMapper>()?
+                .Map<ILLMClient, LLMClientPersistModel>(value, (options => { }));
+        }
+    }
+
+    private LLMClientPersistModel? _summarizeModelPersistModel;
+
+    public LLMClientPersistModel? SummarizeModelPersistModel
+    {
+        get => _summarizeModelPersistModel;
+        set
+        {
+            if (Equals(value, _summarizeModelPersistModel)) return;
+            _summarizeModelPersistModel = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SummarizeClient));
+        }
+    }
+
+    [JsonIgnore] public ModelSelectionPopupViewModel PopupSelectViewModel { get; }
 
     public GoogleSearchOption GoogleSearchOption { get; set; } = new GoogleSearchOption();
 

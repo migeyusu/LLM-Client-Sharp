@@ -40,9 +40,9 @@
                 <materialDesign:PopupBox.ToggleCheckedContent>
                     <materialDesign:PackIcon Width="20"
                                              Height="20"
-                                             Kind="Pencil" 
+                                             Kind="Pencil"
                                              VerticalAlignment="Center"
-                                             HorizontalAlignment="Center"/>
+                                             HorizontalAlignment="Center" />
                 </materialDesign:PopupBox.ToggleCheckedContent>
                 <StackPanel>
                     <Button ToolTip="OpenAI API兼容"
@@ -124,51 +124,6 @@
                 <ColumnDefinition />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <ListBox Grid.Column="1"
-                     VerticalAlignment="Center"
-                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                     Style="{StaticResource MaterialDesignChoiceChipPrimaryOutlineListBox}"
-                     ItemsSource="{Binding SuggestedModels,Mode=OneWay}"
-                     Margin="6,0">
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel IsItemsHost="True"
-                                    CanHorizontallyScroll="True"
-                                    CanVerticallyScroll="False"
-                                    Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type endpoints:SuggestedModel}">
-                        <StackPanel Height="30"
-                                    ToolTipService.InitialShowDelay="0"
-                                    Orientation="Horizontal">
-                            <StackPanel.ToolTip>
-                                <TextBlock
-                                    Text="{Binding  Endpoint.DisplayName, Mode=OneWay}"
-                                    MaxWidth="300"
-                                    TextWrapping="Wrap" />
-                            </StackPanel.ToolTip>
-                            <Image Width="26"
-                                   Height="26"
-                                   Source="{Binding LlmModel.Icon.CurrentSource,Mode=OneWay}" />
-                            <TextBlock Text="{Binding LlmModel.Name}"
-                                       VerticalAlignment="Center"
-                                       MaxWidth="120"
-                                       Margin="10,0,0,0" />
-                            <Button Width="18"
-                                    Height="18"
-                                    Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveSuggestedModelCommand}"
-                                    CommandParameter="{Binding  }"
-                                    Margin="6,0,0,0"
-                                    VerticalAlignment="Center"
-                                    ToolTip="删除当前"
-                                    Template="{StaticResource ItemDeleteButtonTemplate}" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
             <StackPanel Grid.Column="0"
                         Orientation="Horizontal">
                 <TextBlock Text="Suggestion:"
@@ -195,6 +150,41 @@
                     </materialDesign:PopupBox.ToggleContent>
                 </materialDesign:PopupBox>
             </StackPanel>
+            <ScrollViewer Grid.Column="1"
+                          Margin="6,0"
+                          Style="{StaticResource HorizontalArrowScrollViewer}">
+                <ItemsControl VerticalAlignment="Center"
+                              ItemsSource="{Binding SuggestedModels,Mode=OneWay}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel IsItemsHost="True"
+                                        CanHorizontallyScroll="True"
+                                        CanVerticallyScroll="False"
+                                        Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type endpoints:SuggestedModel}">
+                            <materialDesign:Chip IsDeletable="True"
+                                                 MaxWidth="180"
+                                                 Height="30"
+                                                 Margin="0"
+                                                 Padding="5,0"
+                                                 ToolTipService.InitialShowDelay="0"
+                                                 IconBackground="White"
+                                                 ToolTip="{Binding LlmModel.Endpoint.DisplayName,Mode=OneTime}"
+                                                 DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveSuggestedModelCommand}"
+                                                 Content="{Binding LlmModel.Name,Mode=OneTime}">
+                                <materialDesign:Chip.Icon>
+                                    <Image Source="{Binding LlmModel.Icon.CurrentSource,Mode=OneWay}" 
+                                           Width="26"
+                                           Height="26"/>
+                                </materialDesign:Chip.Icon>
+                            </materialDesign:Chip>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
             <StackPanel Grid.Column="2"
                         Margin="10"
                         HorizontalAlignment="Right"
