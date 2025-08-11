@@ -1,5 +1,4 @@
-﻿using System.Windows;
-using LLMClient.Rag.Document;
+﻿using LLMClient.Rag.Document;
 using Xunit.Abstractions;
 
 namespace LLMClient.Test;

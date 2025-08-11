@@ -6,7 +6,6 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
-using LLMClient.Rag.Document;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Win32;
@@ -16,7 +15,17 @@ namespace LLMClient.Rag;
 
 public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 {
-    public ObservableCollection<IRagFileSource> FileSources { get; set; } = new ObservableCollection<IRagFileSource>();
+    public ObservableCollection<IRagFileSource> FileSources { get; set; } = new ObservableCollection<IRagFileSource>()
+    {
+        new ExcelFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.NotConstructed },
+        new PdfFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.NotConstructed },
+        new TextFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.NotConstructed },
+        new WordFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.NotConstructed },
+        new PdfFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.Constructing },
+        new TextFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.Constructed },
+        new WordFile(new FileInfo(@"D:\cygwin64\Cygwin.ico"))
+            { Status = ConstructStatus.Error, ErrorMessage = "Word文件解析失败，请检查文件格式或内容。" },
+    };
 
     public ICommand AddFileCommand => new ActionCommand((async o =>
     {
@@ -74,10 +83,14 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
         }
     }));
 
-    public ICommand RemoveFileCommand => new ActionCommand(o =>
+    public ICommand RemoveFileCommand => new ActionCommand(async o =>
     {
-        if (o is IRagFileSource fileSource)
+        if (o is RagFileBase fileSource)
         {
+            if (fileSource.Status == ConstructStatus.Constructing)
+            {
+                await fileSource.StopConstruct();
+            }
             FileSources.Remove(fileSource);
         }
     });

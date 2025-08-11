@@ -11,24 +11,13 @@ namespace LLMClient.Rag;
 
 public class PdfFile : RagFileBase
 {
-    private readonly PDFExtractor _pdfExtractor;
-
-    private Thickness margin;
-
     [JsonConstructor]
     public PdfFile()
     {
     }
 
-
     public PdfFile(FileInfo fileInfo) : base(fileInfo)
     {
-        var pdfExtractor = new PDFExtractor(fileInfo.FullName);
-        var pdfExtractorWindow = new PDFExtractorWindow(pdfExtractor);
-        if (pdfExtractorWindow.ShowDialog() == true)
-        {
-            margin = pdfExtractorWindow.FileMargin;
-        }
     }
 
     public override DocumentFileType FileType
@@ -72,26 +61,57 @@ public class PdfFile : RagFileBase
         };
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <exception cref="InvalidOperationException"></exception>
     protected override async Task ConstructCore(CancellationToken cancellationToken = default)
     {
-        /*if (_pdfExtractor == null)
+        using (var pdfExtractor = new PDFExtractor(FilePath))
         {
-            throw new InvalidOperationException("PDFExtractor is not initialized.");
+            var pdfExtractorWindow = new PDFExtractorWindow(pdfExtractor);
+            Thickness margin;
+            if (pdfExtractorWindow.ShowDialog() == true)
+            {
+                margin = pdfExtractorWindow.FileMargin;
+            }
+
+            await Task.Yield();
+            pdfExtractor.Initialize(margin);
+            var ragOption = (await GlobalOptions.LoadOrCreate()).RagOption;
+            ragOption.ThrowIfNotValid();
+            var dbConnection = ragOption.DBConnection;
+            var digestClient = ragOption.DigestClient;
+            if (digestClient == null)
+            {
+                throw new InvalidOperationException("Digest client is not set.");
+            }
+
+            var embeddingClient = ragOption.EmbeddingClient;
+            if (embeddingClient == null)
+            {
+                throw new InvalidOperationException("Embedding client is not set.");
+            }
+
+            var contentNodes = pdfExtractor.Analyze();
+            var docChunks =
+                await contentNodes.ToSKDocChunks(this.Id.ToString(), CreateLLMCall(digestClient), cancellationToken);
+            var semanticKernelStore = new SemanticKernelStore(dbConnection);
+            await semanticKernelStore.AddFile(this.DocumentId, docChunks, cancellationToken);
         }
-
-        await Task.Yield();
-        _pdfExtractor.Initialize(margin);
-        var ragOption = (await GlobalOptions.LoadOrCreate()).RagOption;
-        ragOption.DBConnection;
-
-        var contentNodes = _pdfExtractor.Analyze();
-        var docChunks = await contentNodes.ToSKDocChunks(this.Id.ToString(),CreateLLMCall());
-        var semanticKernelStore = new SemanticKernelStore();
-        await semanticKernelStore.AddFileToContext(docChunks, cancellationToken);*/
     }
 
-    public override Task<ISearchResult> QueryAsync(string query, CancellationToken cancellationToken = default)
+    public override async Task<ISearchResult> QueryAsync(string query, dynamic options,
+        CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var ragOption = (await GlobalOptions.LoadOrCreate()).RagOption;
+        ragOption.ThrowIfNotValid();
+        var dbConnection = ragOption.DBConnection;
+        var semanticKernelStore = new SemanticKernelStore(dbConnection);
+        IEnumerable<string> matchResult = await semanticKernelStore.SearchAsync(query, this.DocumentId,
+            options.SearchAlgorithm ?? SemanticKernelStore.SearchAlgorithm.Default,
+            options.TopK ?? 5, cancellationToken);
+        return new SimpleQueryResult(this.DocumentId, matchResult.ToArray());
     }
 }

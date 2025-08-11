@@ -31,7 +31,7 @@
                 </Style>
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
-                <DataTemplate DataType="{x:Type local:IRagFileSource}">
+                <DataTemplate DataType="{x:Type local:RagFileBase}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -47,34 +47,158 @@
                                Height="30"
                                Margin="16,0"
                                Source="{Binding FileType,Mode=OneWay,Converter={x:Static converters:SnapConverters.DocumentTypeToImageConverter}}" />
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Name,Mode=OneWay}"
+                        <materialDesign:Card Grid.Row="0" Grid.Column="0"
+                                             Grid.RowSpan="2"
+                                             Grid.ColumnSpan="2"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center">
+                            <materialDesign:Card.Style>
+                                <Style TargetType="{x:Type materialDesign:Card}">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Status,Mode=OneWay}"
+                                                     Value="{x:Static local:ConstructStatus.Constructing}">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </materialDesign:Card.Style>
+                            <ProgressBar IsIndeterminate="True"
+                                         Width="35"
+                                         Height="35"
+                                         Margin="10"
+                                         Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                         Value="50" />
+                        </materialDesign:Card>
+                        <TextBox Grid.Row="0" Grid.Column="1"
+                                 Text="{Binding Name,Mode=OneWay}"
+                                 TextWrapping="NoWrap"
+                                 MaxWidth="300"
                                  FontWeight="Black"
                                  Padding="0,6"
                                  BorderThickness="0"
                                  FontSize="16"
+                                 HorizontalAlignment="Left"
                                  materialDesign:TextFieldAssist.DecorationVisibility="Collapsed" />
-                        <TextBlock Grid.Row="1" Grid.Column="1"
-                                   VerticalAlignment="Center">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}{0} - {1} - {2}">
-                                    <Binding Path="FilePath" />
-                                    <Binding Path="EditTime" />
-                                    <Binding Path="FileSize" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                        <Button Grid.Row="0"
-                                Grid.Column="1"
-                                Grid.RowSpan="2"
-                                Margin="0,0,10,0"
-                                Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.RemoveFileCommand}"
-                                CommandParameter="{Binding }"
-                                Style="{StaticResource DeleteItemButtonStyle}">
-                            <materialDesign:PackIcon Kind="DeleteOutline"
-                                                     Width="22"
-                                                     Height="22"
-                                                     Foreground="IndianRed" />
-                        </Button>
+                        <StackPanel Grid.Row="1" Grid.Column="1"
+                                    Orientation="Horizontal">
+                            <ContentControl Margin="0,0,20,0"
+                                            VerticalAlignment="Center"
+                                            Content="{Binding}">
+                                <ContentControl.Style>
+                                    <Style TargetType="{x:Type ContentControl}">
+                                        <Style.Resources>
+                                            <DataTemplate x:Key="ConstructedTemplate">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="已构建"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,10,0"
+                                                               FontWeight="Bold" />
+                                                    <materialDesign:PackIcon Kind="CheckCircle"
+                                                                             Width="22"
+                                                                             Height="22"
+                                                                             Foreground="Green" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                            <DataTemplate x:Key="ConstructingTemplate">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="正在构建"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,10,0"
+                                                               FontWeight="Bold" />
+                                                    <materialDesign:PackIcon Kind="Loading"
+                                                                             Width="22"
+                                                                             Height="22"
+                                                                             Foreground="DodgerBlue" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                            <DataTemplate x:Key="ErrorTemplate">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock VerticalAlignment="Center"
+                                                               Text="{Binding ErrorMessage,Mode=OneWay,StringFormat=构建失败: {0}}"
+                                                               Foreground="Red"
+                                                               Margin="0,0,10,0"
+                                                               FontWeight="Bold" />
+                                                    <materialDesign:PackIcon Kind="AlertCircle"
+                                                                             Width="22"
+                                                                             Height="22"
+                                                                             Foreground="Red" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                            <DataTemplate x:Key="DefaultTemplate">
+                                                <TextBlock Text="未构建"
+                                                           VerticalAlignment="Center"
+                                                           FontWeight="Bold" />
+                                            </DataTemplate>
+                                        </Style.Resources>
+                                        <Setter Property="ContentTemplate" Value="{StaticResource DefaultTemplate}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status,Mode=OneWay}"
+                                                         Value="{x:Static local:ConstructStatus.Constructed}">
+                                                <Setter Property="ContentTemplate"
+                                                        Value="{StaticResource ConstructedTemplate}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status,Mode=OneWay}"
+                                                         Value="{x:Static local:ConstructStatus.Constructing}">
+                                                <Setter Property="ContentTemplate"
+                                                        Value="{StaticResource ConstructingTemplate}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status,Mode=OneWay}"
+                                                         Value="{x:Static local:ConstructStatus.Error}">
+                                                <Setter Property="ContentTemplate"
+                                                        Value="{StaticResource ErrorTemplate}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentControl.Style>
+                            </ContentControl>
+                            <TextBlock Foreground="DimGray"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0} - {1} - {2}">
+                                        <Binding Path="FilePath" />
+                                        <Binding Path="EditTime" />
+                                        <Binding Path="FileSize" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal"
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    Grid.RowSpan="2"
+                                    Margin="0,0,10,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center">
+                            <Button Command="{Binding }"
+                                    Content="{materialDesign:PackIcon Kind=Play}">
+                                <Button.Style>
+                                    <Style TargetType="{x:Type Button}"
+                                           BasedOn="{StaticResource MaterialDesignIconButton}">
+                                        <Setter Property="Visibility"
+                                                Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status,Mode=OneWay}"
+                                                         Value="{x:Static local:ConstructStatus.Constructing}">
+                                                <Setter Property="Visibility"
+                                                        Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <Button Margin="16,0,0,0"
+                                    Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.RemoveFileCommand}"
+                                    CommandParameter="{Binding StartConstructCommand}"
+                                    Style="{StaticResource DeleteItemButtonStyle}">
+                                <materialDesign:PackIcon Kind="DeleteOutline"
+                                                         Width="22"
+                                                         Height="22"
+                                                         Foreground="IndianRed" />
+                            </Button>
+                        </StackPanel>
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>

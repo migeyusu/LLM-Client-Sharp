@@ -160,8 +160,8 @@
                                    Style="{StaticResource MaterialDesignBody2TextBlock}">
                             <TextBlock.Text>
                                 <MultiBinding StringFormat="{}终结点：{0} 模型：{1}">
-                                    <Binding Path="SummaryModel.EndPointName" Mode="TwoWay" />
-                                    <Binding Path="SummaryModel.ModelName" Mode="OneWay" />
+                                    <Binding Path="DigestClientPersist.EndPointName" Mode="TwoWay" />
+                                    <Binding Path="DigestClientPersist.ModelName" Mode="OneWay" />
                                 </MultiBinding>
                             </TextBlock.Text>
                         </TextBlock>

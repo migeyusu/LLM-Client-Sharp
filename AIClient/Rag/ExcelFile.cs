@@ -29,12 +29,12 @@ public class ExcelFile : RagFileBase
         throw new NotImplementedException();
     }
 
-    protected override Task ConstructCore(CancellationToken cancellationToken = default)
+    public override Task<ISearchResult> QueryAsync(string query, dynamic options, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override Task<ISearchResult> QueryAsync(string query, CancellationToken cancellationToken = default)
+    protected override Task ConstructCore(CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

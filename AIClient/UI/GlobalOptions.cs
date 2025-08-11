@@ -7,6 +7,7 @@ using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Dialog;
+using LLMClient.Rag;
 using LLMClient.Rag.Document;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;

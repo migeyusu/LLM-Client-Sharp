@@ -1,6 +1,4 @@
-﻿using System.Windows.Shell;
-
-namespace LLMClient.Rag;
+﻿namespace LLMClient.Rag;
 
 public interface ISearchResult
 {

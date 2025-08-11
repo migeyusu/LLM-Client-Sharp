@@ -1,13 +1,16 @@
 ﻿using System.IO;
 using System.Text.Json.Serialization;
+using System.Windows.Input;
 using LLMClient.UI;
+using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Rag;
 
 public abstract class RagFileBase : BaseViewModel, IRagFileSource
 {
     private string _name = string.Empty;
-    private bool _hasConstructed;
+    private string? _errorMessage;
+    private ConstructStatus _status = ConstructStatus.NotConstructed;
 
     public string Name
     {
@@ -38,29 +41,120 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     public DateTime EditTime { get; set; }
     public long FileSize { get; set; } = 0;
 
-    public bool HasConstructed
+    public ConstructStatus Status
     {
-        get => _hasConstructed;
+        get => _status;
         set
         {
-            if (value == _hasConstructed) return;
-            _hasConstructed = value;
+            if (value == _status) return;
+            _status = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? ErrorMessage
+    {
+        get => _errorMessage;
+        set
+        {
+            if (value == _errorMessage) return;
+            _errorMessage = value;
             OnPropertyChanged();
         }
     }
 
     [JsonIgnore] public abstract DocumentFileType FileType { get; }
 
+    [JsonIgnore]
+    public virtual string DocumentId
+    {
+        get { return $"{FileType}_{Id}"; }
+    }
+
     public abstract Task LoadAsync();
 
-    public virtual Task ConstructAsync(CancellationToken cancellationToken = default)
+    private CancellationTokenSource? _constructionCancellationTokenSource;
+    private Task? _constructionTask;
+
+    public ICommand StartConstructCommand => new ActionCommand(async o =>
     {
-        return HasConstructed ? Task.CompletedTask : ConstructCore(cancellationToken);
+        if (_constructionTask is { IsCompleted: false })
+        {
+            // If already constructing, cancel the previous operation and wait for it to complete.
+            await StopConstruct();
+        }
+
+        _constructionCancellationTokenSource = new CancellationTokenSource();
+        _constructionTask = ConstructAsync(_constructionCancellationTokenSource.Token);
+        try
+        {
+            await _constructionTask;
+        }
+        finally
+        {
+            _constructionCancellationTokenSource?.Dispose();
+            _constructionCancellationTokenSource = null;
+        }
+    });
+
+    public ICommand StopConstructCommand => new ActionCommand(async o => { await StopConstruct(); });
+
+    public virtual async Task ConstructAsync(CancellationToken cancellationToken = default)
+    {
+        if (Status == ConstructStatus.Constructing ||
+            Status == ConstructStatus.Constructed)
+        {
+            // Already constructing or constructed or error, no need to construct again.
+            return;
+        }
+
+        Status = ConstructStatus.Constructing;
+        try
+        {
+            ErrorMessage = null;
+            await ConstructCore(cancellationToken);
+            Status = ConstructStatus.Constructed;
+        }
+        catch (Exception e)
+        {
+            ErrorMessage = e.Message;
+            Status = ConstructStatus.Error;
+        }
+    }
+
+    public async Task StopConstruct()
+    {
+        if (_constructionCancellationTokenSource != null && _constructionTask != null)
+        {
+            await _constructionCancellationTokenSource.CancelAsync();
+            try
+            {
+                await _constructionTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected, suppress to prevent unhandled exception.
+            }
+        }
     }
 
     public abstract Task DeleteAsync(CancellationToken cancellationToken = default);
 
     protected abstract Task ConstructCore(CancellationToken cancellationToken = default);
 
-    public abstract Task<ISearchResult> QueryAsync(string query, CancellationToken cancellationToken = default);
+    public abstract Task<ISearchResult> QueryAsync(string query, dynamic options,
+        CancellationToken cancellationToken = default);
+}
+
+public class SimpleQueryResult : ISearchResult
+{
+    public string? DocumentId { get; set; }
+
+    public IList<string>? TextBlocks { get; set; }
+
+    public SimpleQueryResult(string documentId, IList<string>? textBlocks)
+    {
+        DocumentId = documentId;
+        TextBlocks = textBlocks;
+    }
 }
