@@ -10,7 +10,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 namespace LLMClient.Endpoints.Azure.Models;
 
 #pragma warning disable SKEXP0001
-public class AzureClientBase : LlmClientBase, ILLMClient
+public class AzureClientBase : LlmClientBase, ILLMChatClient
 {
     private static readonly Mapper Mapper = new Mapper((new MapperConfiguration((expression =>
     {

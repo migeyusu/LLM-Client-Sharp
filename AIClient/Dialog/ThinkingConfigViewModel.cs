@@ -108,7 +108,7 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
         }
     }
 
-    public void ResetConfig(ILLMClient client)
+    public void ResetConfig(ILLMChatClient client)
     {
         this.Config = IThinkingConfig.Get(client.Model);
     }

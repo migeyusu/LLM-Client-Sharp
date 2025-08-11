@@ -66,9 +66,9 @@ public class RequesterViewModel : BaseViewModel
         }
     });
 
-    private ILLMClient _defaultClient;
+    private ILLMChatClient _defaultClient;
 
-    public ILLMClient DefaultClient
+    public ILLMChatClient DefaultClient
     {
         get => _defaultClient;
         set
@@ -175,10 +175,10 @@ public class RequesterViewModel : BaseViewModel
 
     #endregion
 
-    private readonly Func<ILLMClient, IRequestItem, int?, Task<CompletedResult>> _getResponse;
+    private readonly Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> _getResponse;
 
-    public RequesterViewModel(ILLMClient modelClient,
-        Func<ILLMClient, IRequestItem, int?, Task<CompletedResult>> getResponse)
+    public RequesterViewModel(ILLMChatClient modelClient,
+        Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> getResponse)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
@@ -194,7 +194,7 @@ public class RequesterViewModel : BaseViewModel
         Filters = { new CommandAuthorization() }
     };
 
-    private void BindClient(ILLMClient client)
+    private void BindClient(ILLMChatClient client)
     {
         if (client is INotifyPropertyChanged newValue)
         {

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text;
 using System.Windows;
+using Markdig.Extensions.JiraLinks;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis;
@@ -90,7 +91,7 @@ public class PDFExtractor : IDisposable
     {
         foreach (var page in Document.GetPages())
         {
-            var words = page.GetWords(NearestNeighbourWordExtractor.Instance);
+            var words = page.GetWords(NearestNeighbourWordExtractor.Instance).ToArray();
             if (words.Any() && padding != null)
             {
                 var box = page.CropBox.Bounds;
@@ -107,7 +108,7 @@ public class PDFExtractor : IDisposable
                            boundingBox.Top > thickness.Bottom && // 单词的上边缘要高于页脚线
                            boundingBox.Left > thickness.Left && // 单词的左边缘要在页边距右侧; 
                            boundingBox.Right < thickness.Right; // 单词的右边缘要在页边距左侧
-                }).ToList();
+                }).ToArray();
             }
 
             var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
@@ -387,9 +388,7 @@ public static class PDFExtractorExtensions
 
         return docChunks;
     }
-
-    private const int SummaryTrigger = 1000; // 摘要触发长度
-
+    
     private static async Task<SKDocChunk> ApplyRaptor(string docId, PDFExtractor.ContentNode node,
         List<SKDocChunk> chunks,
         Func<string, Task<string>> llmCall, Guid? parentId = null)
@@ -420,27 +419,35 @@ public static class PDFExtractorExtensions
         }
         else
         {
+            var nodeContentBuilder = new StringBuilder();
             if (node.Paragraphs.Count > 0)
             {
-                var nodeContentBuilder = new StringBuilder();
                 foreach (var paragraph in node.Paragraphs)
                 {
                     var paragraphContentBuilder = new StringBuilder();
+                    if (!paragraph.Blocks.Any())
+                    {
+                        continue;
+                    }
+
                     foreach (var block in paragraph.Blocks)
                     {
                         paragraphContentBuilder.AppendLine(block.Text);
                     }
 
                     var paragraphContent = paragraphContentBuilder.ToString();
+                    if (string.IsNullOrEmpty(paragraphContent.Trim()))
+                    {
+                        continue; // 跳过空段落
+                    }
+
                     nodeContentBuilder.AppendLine(paragraphContent);
                     chunks.Add(new SKDocChunk()
                     {
                         Key = Guid.NewGuid(),
                         DocumentId = docId,
                         Text = paragraphContent,
-                        Summary = paragraphContent.Length > SummaryTrigger
-                            ? await llmCall(paragraphContent)
-                            : paragraphContent,
+                        Summary = await llmCall(paragraphContent),
                         Level = nodeLevel + 1,
                         ParentKey = nodeChunk.Key,
                         HasChild = false
@@ -448,13 +455,21 @@ public static class PDFExtractorExtensions
                 }
 
                 nodeChunk.HasChild = true;
-                nodeChunk.Summary = await llmCall(nodeContentBuilder.ToString());
             }
-            else
+
+            var nodeContent = nodeContentBuilder.ToString();
+            if (string.IsNullOrEmpty(nodeContent.Trim()))
             {
                 nodeChunk.HasChild = false;
                 nodeChunk.Text = node.Title;
                 nodeChunk.Summary = node.Title;
+            }
+            else
+            {
+                //存在段落
+                nodeChunk.HasChild = false;
+                nodeChunk.Summary = await llmCall(nodeContent);
+                //存在子节点时，Text为空，表示需要进一步查找
             }
         }
 

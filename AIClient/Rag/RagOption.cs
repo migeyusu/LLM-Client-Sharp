@@ -33,7 +33,7 @@ public class RagOption : BaseViewModel
         set => EmbeddingEndpointName = value?.Name;
     }
 
-    public ILLMClient? EmbeddingClient => string.IsNullOrEmpty(EmbeddingEndpointName)
+    public ILLMChatClient? EmbeddingClient => string.IsNullOrEmpty(EmbeddingEndpointName)
         ? null
         : EmbeddingEndpoint?.NewClient(EmbeddingEndpointName);
 
@@ -66,7 +66,7 @@ public class RagOption : BaseViewModel
     }
 
     [JsonIgnore]
-    public ILLMClient? DigestClient
+    public ILLMChatClient? DigestClient
     {
         get
         {
@@ -76,7 +76,7 @@ public class RagOption : BaseViewModel
             }
 
             return ServiceLocator.GetService<IMapper>()?
-                .Map<LLMClientPersistModel, ILLMClient>(this.DigestClientPersist, (o) => { });
+                .Map<LLMClientPersistModel, ILLMChatClient>(this.DigestClientPersist, (o) => { });
         }
         set
         {
@@ -87,7 +87,7 @@ public class RagOption : BaseViewModel
             }
 
             this.DigestClientPersist = ServiceLocator.GetService<IMapper>()?
-                .Map<ILLMClient, LLMClientPersistModel>(value, (options => { }));
+                .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
         }
     }
 

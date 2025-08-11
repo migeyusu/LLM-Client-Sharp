@@ -125,7 +125,9 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         {
             Width = pageWidth,
             Height = pageHeight,
-            Fill = Brushes.White
+            Fill = Brushes.White,
+            Stroke = Brushes.Black,
+            StrokeThickness = 1
         };
         Canvas.SetLeft(background, 0);
         Canvas.SetTop(background, 0);
@@ -157,15 +159,22 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
             Canvas.SetLeft(rect, x);
             Canvas.SetTop(rect, y);
             canvasPage.Children.Add(rect);
-            var txt = new TextBlock
+            foreach (var textLine in block.TextLines)
             {
-                Text = block.Text,
-                FontSize = 10, // 近似；实际从Letters获取字体大小
-                Foreground = Brushes.Black
-            };
-            Canvas.SetLeft(txt, x);
-            Canvas.SetTop(txt, y);
-            canvasPage.Children.Add(txt);
+                var textLineBoundingBox = textLine.BoundingBox;
+                var x0 = textLineBoundingBox.BottomLeft.X; // PDF左下原点
+                var y0 = pageHeight - textLineBoundingBox.TopRight.Y;
+                var fontSize = textLine.Words.FirstOrDefault()?.Letters.FirstOrDefault()?.FontSize;
+                var txt = new TextBlock
+                {
+                    Text = textLine.Text,
+                    FontSize = fontSize ?? 10, // 近似；实际从Letters获取字体大小
+                    Foreground = Brushes.Black
+                };
+                Canvas.SetLeft(txt, x0);
+                Canvas.SetTop(txt, y0);
+                canvasPage.Children.Add(txt);
+            }
         }
 
         // 绘制四条margin线（红色虚线）
@@ -173,7 +182,6 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         DrawMarginLine(0, pageHeight - BottomMargin, pageWidth, pageHeight - BottomMargin, true); // Bottom (WPF坐标翻转)
         DrawMarginLine(LeftMargin, 0, LeftMargin, pageHeight, false); // Left
         DrawMarginLine(pageWidth - RightMargin, 0, pageWidth - RightMargin, pageHeight, false); // Right
-
         // 绘制Letters（可选：精确文本渲染；注释掉以简化，但可启用）
         // foreach (var letter in page.Letters)
         // {

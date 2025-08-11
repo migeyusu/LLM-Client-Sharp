@@ -19,7 +19,7 @@ public class WordFile : RagFileBase
         get { return DocumentFileType.Word; }
     }
 
-    public override Task LoadAsync()
+    public override Task InitializeAsync()
     {
         throw new NotImplementedException();
     }

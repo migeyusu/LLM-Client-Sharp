@@ -96,9 +96,9 @@ public static class Extension
             expression.CreateMap<IModelParams, APIModelInfo>();
             expression.CreateMap<APIEndPoint, APIEndPoint>();
             expression.CreateMap<APIDefaultOption, APIDefaultOption>();
-            expression.CreateMap<ILLMClient, LLMClientPersistModel>()
+            expression.CreateMap<ILLMChatClient, LLMClientPersistModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<LLMClientPersistModel, ILLMClient>()
+            expression.CreateMap<LLMClientPersistModel, ILLMChatClient>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
             expression.CreateMap<DialogFilePersistModel, DialogFileViewModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
@@ -114,11 +114,11 @@ public static class Extension
                 .PreserveReferences()
                 .ConstructUsing((source, context) =>
                 {
-                    ILLMClient llmClient = NullLlmModelClient.Instance;
+                    ILLMChatClient llmClient = NullLlmModelClient.Instance;
                     var client = source.Client;
                     if (client != null)
                     {
-                        llmClient = context.Mapper.Map<LLMClientPersistModel, ILLMClient>(client);
+                        llmClient = context.Mapper.Map<LLMClientPersistModel, ILLMChatClient>(client);
                     }
 
                     return new ResponseViewItem(llmClient);
@@ -292,7 +292,7 @@ public static class Extension
 
     #endregion
 
-    public static ILLMClient? CreateClient(this ILLMModel llmModel)
+    public static ILLMChatClient? CreateClient(this ILLMModel llmModel)
     {
         var endpoint = llmModel.Endpoint;
         return !endpoint.IsEnabled ? null : endpoint?.NewClient(llmModel);

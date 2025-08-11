@@ -55,7 +55,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         get { return _loadedModelInfos.Values; }
     }
 
-    public override ILLMClient? NewClient(string modelName)
+    public override ILLMChatClient? NewClient(string modelName)
     {
         if (_predefinedModels.TryGetValue(modelName, out var action) &&
             _loadedModelInfos.TryGetValue(modelName, out var availableModelInfo))
@@ -67,7 +67,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         return null;
     }
 
-    public override ILLMClient? NewClient(ILLMModel model)
+    public override ILLMChatClient? NewClient(ILLMModel model)
     {
         if (model is AzureModelInfo azureModelInfo)
         {

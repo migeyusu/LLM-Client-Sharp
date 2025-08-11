@@ -1,11 +1,10 @@
 ﻿using System.Collections.ObjectModel;
-using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.MCP;
 
 namespace LLMClient.Abstraction;
 
-public interface ILLMClient
+public interface ILLMChatClient
 {
     /// <summary>
     /// 唯一名称
@@ -26,23 +25,4 @@ public interface ILLMClient
 
     Task<CompletedResult> SendRequest(DialogContext context,
         CancellationToken cancellationToken = default);
-}
-
-public class DialogContext
-{
-    public DialogContext(IList<IDialogItem> dialogItems, string? systemPrompt = null)
-    {
-        DialogItems = dialogItems;
-        SystemPrompt = systemPrompt;
-        if (DialogItems.Last() is RequestViewItem request)
-        {
-            Request = request;
-        }
-    }
-
-    public string? SystemPrompt { get; }
-
-    public IList<IDialogItem> DialogItems { get; }
-
-    public RequestViewItem? Request { get; }
 }

@@ -196,7 +196,7 @@ public class MainWindowViewModel : BaseViewModel
         }
     }));
 
-    public DialogFileViewModel AddNewDialog(ILLMClient client, string dialogName = "新建会话")
+    public DialogFileViewModel AddNewDialog(ILLMChatClient client, string dialogName = "新建会话")
     {
         var dialogSession = new DialogFileViewModel(dialogName, client);
         AddSession(dialogSession);

@@ -70,7 +70,7 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
         }
     }
 
-    public bool CheckCompatible(ILLMClient client)
+    public bool CheckCompatible(ILLMChatClient client)
     {
         return client.Model.SupportFunctionCall;
     }

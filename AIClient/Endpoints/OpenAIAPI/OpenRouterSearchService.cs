@@ -46,7 +46,7 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
 
     [JsonIgnore] public string Name => "OpenRouter Search";
 
-    public bool CheckCompatible(ILLMClient client)
+    public bool CheckCompatible(ILLMChatClient client)
     {
         return client.Endpoint is APIEndPoint { ModelsSource: ModelSource.OpenRouter };
     }

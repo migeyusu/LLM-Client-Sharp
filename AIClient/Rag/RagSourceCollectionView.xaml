@@ -14,64 +14,39 @@
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ListBox ItemsSource="{Binding  FileSources,Mode=OneWay}">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="{x:Type ListBoxItem}"
-                       BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                    <Setter Property="BorderThickness"
-                            Value="0,0,0,1" />
-                    <Setter Property="Padding"
-                            Value="4" />
-                    <Setter Property="BorderBrush"
-                            Value="DimGray" />
-                    <Setter Property="VerticalContentAlignment"
-                            Value="Stretch" />
-                    <Setter Property="HorizontalContentAlignment"
-                            Value="Stretch" />
+        <ItemsControl ItemsSource="{Binding  FileSources,Mode=OneWay}">
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="{x:Type ContentPresenter}">
+                    <Setter Property="Height"
+                            Value="70" />
                 </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
+            </ItemsControl.ItemContainerStyle>
+            <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type local:RagFileBase}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition />
                         </Grid.RowDefinitions>
-                        <Image Grid.RowSpan="2"
+                        <Separator Grid.Row="1"
+                                   Grid.ColumnSpan="3"
+                                   Height="1"
+                                   Style="{StaticResource MaterialDesignDarkSeparator}"
+                                   Margin="0"
+                                   VerticalAlignment="Bottom" />
+                        <Image Grid.Row="0"
+                               Grid.Column="0"
+                               Grid.RowSpan="2"
                                VerticalAlignment="Center"
                                Width="30"
                                Height="30"
                                Margin="16,0"
                                Source="{Binding FileType,Mode=OneWay,Converter={x:Static converters:SnapConverters.DocumentTypeToImageConverter}}" />
-                        <materialDesign:Card Grid.Row="0" Grid.Column="0"
-                                             Grid.RowSpan="2"
-                                             Grid.ColumnSpan="2"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center">
-                            <materialDesign:Card.Style>
-                                <Style TargetType="{x:Type materialDesign:Card}">
-                                    <Setter Property="Visibility"
-                                            Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Status,Mode=OneWay}"
-                                                     Value="{x:Static local:ConstructStatus.Constructing}">
-                                            <Setter Property="Visibility"
-                                                    Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </materialDesign:Card.Style>
-                            <ProgressBar IsIndeterminate="True"
-                                         Width="35"
-                                         Height="35"
-                                         Margin="10"
-                                         Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                         Value="50" />
-                        </materialDesign:Card>
                         <TextBox Grid.Row="0" Grid.Column="1"
                                  Text="{Binding Name,Mode=OneWay}"
                                  TextWrapping="NoWrap"
@@ -167,42 +142,66 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
                                     Grid.Row="0"
-                                    Grid.Column="1"
+                                    Grid.Column="2"
                                     Grid.RowSpan="2"
                                     Margin="0,0,10,0"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center">
-                            <Button Command="{Binding }"
-                                    Content="{materialDesign:PackIcon Kind=Play}">
+                            <Button Command="{Binding  SwitchConstructCommand}">
                                 <Button.Style>
                                     <Style TargetType="{x:Type Button}"
                                            BasedOn="{StaticResource MaterialDesignIconButton}">
-                                        <Setter Property="Visibility"
-                                                Value="Visible" />
+                                        <Setter Property="Content"
+                                                Value="{materialDesign:PackIcon Kind=Play}" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Status,Mode=OneWay}"
                                                          Value="{x:Static local:ConstructStatus.Constructing}">
-                                                <Setter Property="Visibility"
-                                                        Value="Collapsed" />
+                                                <Setter Property="Content"
+                                                        Value="{materialDesign:PackIcon Kind=Stop}" />
+                                                <Setter Property="Foreground"
+                                                        Value="Red" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
                             </Button>
                             <Button Margin="16,0,0,0"
-                                    Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.RemoveFileCommand}"
-                                    CommandParameter="{Binding StartConstructCommand}"
-                                    Style="{StaticResource DeleteItemButtonStyle}">
-                                <materialDesign:PackIcon Kind="DeleteOutline"
-                                                         Width="22"
-                                                         Height="22"
-                                                         Foreground="IndianRed" />
-                            </Button>
+                                    Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ItemsControl},Path=DataContext.RemoveFileCommand}"
+                                    CommandParameter="{Binding }"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    Content="{materialDesign:PackIcon Kind=Delete}"
+                                    Foreground="IndianRed" />
                         </StackPanel>
+                        <materialDesign:Card Grid.Row="0" Grid.Column="0"
+                                             Grid.RowSpan="2"
+                                             Grid.ColumnSpan="2"
+                                             Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center">
+                            <materialDesign:Card.Style>
+                                <Style TargetType="{x:Type materialDesign:Card}">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Status,Mode=OneWay}"
+                                                     Value="{x:Static local:ConstructStatus.Constructing}">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </materialDesign:Card.Style>
+                            <ProgressBar IsIndeterminate="True"
+                                         Width="35"
+                                         Height="35"
+                                         Margin="10"
+                                         Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                         Value="50" />
+                        </materialDesign:Card>
                     </Grid>
                 </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
         <StackPanel Grid.Row="1"
                     HorizontalAlignment="Right"
                     Orientation="Horizontal"

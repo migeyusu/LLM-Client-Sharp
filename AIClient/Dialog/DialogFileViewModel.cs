@@ -164,7 +164,7 @@ public class DialogFileViewModel : FileBasedSessionBase
 
     private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
 
-    public DialogFileViewModel(string topic, ILLMClient modelClient,
+    public DialogFileViewModel(string topic, ILLMChatClient modelClient,
         IList<IDialogItem>? items = null) :
         this(new DialogViewModel(topic, modelClient, items))
     {

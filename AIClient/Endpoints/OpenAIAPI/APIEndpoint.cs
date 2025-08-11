@@ -193,7 +193,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         OnPropertyChanged(nameof(AvailableModels));
     }));
 
-    public ILLMClient? NewClient(string modelName)
+    public ILLMChatClient? NewClient(string modelName)
     {
         var apiModelInfo = Models.FirstOrDefault(x => x.Name == modelName);
         if (apiModelInfo == null)
@@ -201,7 +201,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         return new APIClient(this, apiModelInfo, ConfigOption);
     }
 
-    public ILLMClient? NewClient(ILLMModel model)
+    public ILLMChatClient? NewClient(ILLMModel model)
     {
         if (model is APIModelInfo apiModelInfo)
         {

@@ -19,8 +19,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     ITypeConverter<ProjectViewModel, ProjectPersistModel>,
     ITypeConverter<ProjectTaskPersistModel, ProjectTaskViewModel>,
     ITypeConverter<ProjectTaskViewModel, ProjectTaskPersistModel>,
-    ITypeConverter<ILLMClient, LLMClientPersistModel>,
-    ITypeConverter<LLMClientPersistModel, ILLMClient>,
+    ITypeConverter<ILLMChatClient, LLMClientPersistModel>,
+    ITypeConverter<LLMClientPersistModel, ILLMChatClient>,
     ITypeConverter<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>,
     ITypeConverter<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>
 {
@@ -135,7 +135,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.PromptString = requester.PromptString;
         destination.AllowedFunctions = source.SelectedFunctionGroups
             ?.Select((tree => mapper.Map<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>(tree))).ToArray();
-        destination.Client = mapper.Map<ILLMClient, LLMClientPersistModel>(requester.DefaultClient);
+        destination.Client = mapper.Map<ILLMChatClient, LLMClientPersistModel>(requester.DefaultClient);
         return destination;
     }
 
@@ -149,7 +149,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         var mapper = context.Mapper;
         var llmClient = source.Client == null
             ? NullLlmModelClient.Instance
-            : mapper.Map<LLMClientPersistModel, ILLMClient>(source.Client);
+            : mapper.Map<LLMClientPersistModel, ILLMChatClient>(source.Client);
         if (destination != null)
         {
             destination.Topic = source.Topic;
@@ -205,7 +205,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         var mapper = context.Mapper;
         var defaultClient = source.Client == null
             ? NullLlmModelClient.Instance
-            : context.Mapper.Map<LLMClientPersistModel, ILLMClient>(source.Client);
+            : context.Mapper.Map<LLMClientPersistModel, ILLMChatClient>(source.Client);
         if (destination != null)
         {
             destination.Requester.DefaultClient = defaultClient;
@@ -264,7 +264,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.AllowedFolderPaths = source.AllowedFolderPaths?.ToArray();
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
-        destination.Client = context.Mapper.Map<ILLMClient, LLMClientPersistModel>(source.Requester.DefaultClient);
+        destination.Client = context.Mapper.Map<ILLMChatClient, LLMClientPersistModel>(source.Requester.DefaultClient);
         destination.Tasks = projectTaskPersistModels;
         return destination;
     }
@@ -369,7 +369,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    public LLMClientPersistModel Convert(ILLMClient source, LLMClientPersistModel? destination,
+    public LLMClientPersistModel Convert(ILLMChatClient source, LLMClientPersistModel? destination,
         ResolutionContext context)
     {
         var key = new ContextCacheKey(source, typeof(LLMClientPersistModel));
@@ -387,16 +387,16 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    public ILLMClient Convert(LLMClientPersistModel source, ILLMClient? destination, ResolutionContext context)
+    public ILLMChatClient Convert(LLMClientPersistModel source, ILLMChatClient? destination, ResolutionContext context)
     {
         if (destination != null)
         {
             throw new NotSupportedException("only create new ILLMClient");
         }
 
-        var contextCacheKey = new ContextCacheKey(source, typeof(ILLMClient));
+        var contextCacheKey = new ContextCacheKey(source, typeof(ILLMChatClient));
         if (context.InstanceCache.TryGetValue(contextCacheKey, out var cachedValue) &&
-            cachedValue is ILLMClient cachedClient)
+            cachedValue is ILLMChatClient cachedClient)
         {
             return cachedClient;
         }

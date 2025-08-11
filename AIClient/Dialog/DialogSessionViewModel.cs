@@ -427,7 +427,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         }
     }
 
-    public async Task AppendResponseOn(MultiResponseViewItem responseViewItem, ILLMClient client)
+    public async Task AppendResponseOn(MultiResponseViewItem responseViewItem, ILLMChatClient client)
     {
         //获得之前的所有请求
         var indexOf = DialogItems.IndexOf(responseViewItem);
@@ -577,7 +577,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
 
     private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
 
-    public async Task<CompletedResult> SendRequestCore(ILLMClient client,
+    public async Task<CompletedResult> SendRequestCore(ILLMChatClient client,
         IList<IDialogItem> history,
         MultiResponseViewItem multiResponseViewItem, string? systemPrompt = null)
     {
@@ -617,7 +617,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         return completedResult;
     }
 
-    public async Task<CompletedResult> NewRequest(ILLMClient client, IRequestItem requestViewItem,
+    public async Task<CompletedResult> NewRequest(ILLMChatClient client, IRequestItem requestViewItem,
         int? insertIndex = null)
     {
         var multiResponseViewItem = new MultiResponseViewItem(this)

@@ -19,7 +19,7 @@ public class TextFile : RagFileBase
         get { return DocumentFileType.Text; }
     }
 
-    public override Task LoadAsync()
+    public override Task InitializeAsync()
     {
         throw new NotImplementedException();
     }

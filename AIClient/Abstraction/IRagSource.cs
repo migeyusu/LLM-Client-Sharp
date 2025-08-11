@@ -11,11 +11,11 @@ public interface IRagSource
     ConstructStatus Status { get; }
 
     /// <summary>
-    /// 从向量数据库或其他存储中加载节点。
+    /// 初始化，包含从向量数据库或其他存储中加载节点的过程。
     /// </summary>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    Task LoadAsync();
+    Task InitializeAsync();
 
     /// <summary>
     /// 构建节点的向量表示或其他必要的处理。

@@ -39,7 +39,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         get { return Client?.Model; }
     }
 
-    public ILLMClient? Client { get; }
+    public ILLMChatClient? Client { get; }
 
     /// <summary>
     /// 是否中断
@@ -203,7 +203,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         get { return (IsManualValid || !IsInterrupt) && IsAvailableInContextSwitch; }
     }
 
-    public ResponseViewItem(ILLMClient client)
+    public ResponseViewItem(ILLMChatClient client)
     {
         Client = client;
     }

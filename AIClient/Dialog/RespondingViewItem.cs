@@ -18,13 +18,13 @@ public class RespondingViewItem : BaseViewModel, IResponseViewItem
 
     public bool IsAvailableInContext { get; } = false;
 
-    public ILLMClient Client { get; }
+    public ILLMChatClient Client { get; }
 
     public ICommand CancelCommand => new ActionCommand(o => { RequestTokenSource.Cancel(); });
 
     public CancellationTokenSource RequestTokenSource { get; } = new CancellationTokenSource();
 
-    public RespondingViewItem(ILLMClient client)
+    public RespondingViewItem(ILLMChatClient client)
     {
         this.Client = client;
     }

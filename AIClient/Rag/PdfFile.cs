@@ -25,7 +25,7 @@ public class PdfFile : RagFileBase
         get { return DocumentFileType.Pdf; }
     }
 
-    public override Task LoadAsync()
+    public override Task InitializeAsync()
     {
         throw new NotImplementedException();
     }
@@ -35,32 +35,7 @@ public class PdfFile : RagFileBase
         //删除存储库
         throw new NotImplementedException();
     }
-
-    Func<string, Task<string>> CreateLLMCall(ILLMClient client, int summarySize = 100)
-    {
-        return async (content) =>
-        {
-            var stringBuilder = new StringBuilder("请为以下内容生成一个简短的摘要，要求：\r\n" +
-                                                  "1. 摘要使用的语言和原文一致。\r\n" +
-                                                  "2. 摘要长度不超过" + summarySize + "个字。\r\n" +
-                                                  "3. 摘要内容应包含原文的主要信息。\r\n" +
-                                                  "4. 摘要应尽量简洁明了。\r\n");
-            stringBuilder.Append(content);
-            var dialogContext = new DialogContext(new[]
-            {
-                new RequestViewItem() { TextMessage = stringBuilder.ToString(), }
-            });
-            var response = await client.SendRequest(dialogContext);
-            var textResponse = response.TextResponse;
-            if (string.IsNullOrEmpty(textResponse))
-            {
-                throw new InvalidOperationException("LLM response is empty.");
-            }
-
-            return textResponse;
-        };
-    }
-
+    
     /// <summary>
     /// 
     /// </summary>
@@ -96,8 +71,9 @@ public class PdfFile : RagFileBase
 
             var contentNodes = pdfExtractor.Analyze();
             var docChunks =
-                await contentNodes.ToSKDocChunks(this.Id.ToString(), CreateLLMCall(digestClient), cancellationToken);
+                await contentNodes.ToSKDocChunks(this.DocumentId, CreateLLMCall(digestClient), cancellationToken);
             var semanticKernelStore = new SemanticKernelStore(dbConnection);
+            semanticKernelStore.InitializeKernel(embeddingClient, ragOption.EmbeddingModelId);
             await semanticKernelStore.AddFile(this.DocumentId, docChunks, cancellationToken);
         }
     }

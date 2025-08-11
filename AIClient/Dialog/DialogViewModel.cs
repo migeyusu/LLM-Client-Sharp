@@ -235,7 +235,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
     }));
 
 
-    public DialogViewModel(string topic, ILLMClient modelClient, IList<IDialogItem>? items = null)
+    public DialogViewModel(string topic, ILLMChatClient modelClient, IList<IDialogItem>? items = null)
         : base(items)
     {
         _topic = topic;

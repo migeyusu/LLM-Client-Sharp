@@ -27,7 +27,7 @@ public abstract class ModelSelectionViewModel : BaseViewModel, IModelSelection
         EndpointService = endpointService;
     }
 
-    public ILLMClient? GetClient()
+    public ILLMChatClient? GetClient()
     {
         return this.SelectedModel?.CreateClient();
     }

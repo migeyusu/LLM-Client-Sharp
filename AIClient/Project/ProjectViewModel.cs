@@ -189,7 +189,7 @@ public class ProjectViewModel : FileBasedSessionBase
         IsDataChanged = true;
     }
 
-    private void TrackClientChanged(ILLMClient client)
+    private void TrackClientChanged(ILLMChatClient client)
     {
         if (client is INotifyPropertyChanged newValue)
         {
@@ -447,7 +447,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
 
-    public ProjectViewModel(ILLMClient modelClient, IEnumerable<ProjectTaskViewModel>? tasks = null) : base()
+    public ProjectViewModel(ILLMChatClient modelClient, IEnumerable<ProjectTaskViewModel>? tasks = null) : base()
     {
         Requester = new RequesterViewModel(modelClient, GetResponse)
         {
@@ -497,7 +497,7 @@ public class ProjectViewModel : FileBasedSessionBase
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
-    private Task<CompletedResult> GetResponse(ILLMClient arg1, IRequestItem arg2, int? index = null)
+    private Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2, int? index = null)
     {
         if (SelectedTask == null)
         {

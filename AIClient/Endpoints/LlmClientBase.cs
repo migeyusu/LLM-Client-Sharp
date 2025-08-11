@@ -19,7 +19,7 @@ using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Endpoints;
 
-public abstract class LlmClientBase : BaseViewModel, ILLMClient
+public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 {
     public abstract string Name { get; }
 

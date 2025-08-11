@@ -34,7 +34,8 @@
                     Click="OK_OnClick" />
         </StackPanel>
         <!-- 右侧Canvas用于渲染 -->
-        <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                      Margin="10">
             <Canvas x:Name="canvasPage" Background="White" />
         </ScrollViewer>
     </Grid>

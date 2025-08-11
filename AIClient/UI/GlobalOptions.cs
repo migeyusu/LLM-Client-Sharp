@@ -68,7 +68,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     }
 
     [JsonIgnore]
-    public ILLMClient? SummarizeClient
+    public ILLMChatClient? SummarizeClient
     {
         get
         {
@@ -78,7 +78,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             }
 
             return ServiceLocator.GetService<IMapper>()?
-                .Map<LLMClientPersistModel, ILLMClient>(SummarizeModelPersistModel);
+                .Map<LLMClientPersistModel, ILLMChatClient>(SummarizeModelPersistModel);
         }
         set
         {
@@ -89,7 +89,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             }
 
             SummarizeModelPersistModel = ServiceLocator.GetService<IMapper>()?
-                .Map<ILLMClient, LLMClientPersistModel>(value, (options => { }));
+                .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
         }
     }
 

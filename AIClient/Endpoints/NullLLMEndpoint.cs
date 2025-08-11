@@ -16,12 +16,12 @@ namespace LLMClient.Endpoints
         
         public IReadOnlyCollection<ILLMModel> AvailableModels => [];
 
-        public ILLMClient? NewClient(string modelName)
+        public ILLMChatClient? NewClient(string modelName)
         {
             throw new NotSupportedException();
         }
 
-        public ILLMClient? NewClient(ILLMModel model)
+        public ILLMChatClient? NewClient(ILLMModel model)
         {
             throw new NotSupportedException();
         }

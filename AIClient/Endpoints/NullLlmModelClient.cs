@@ -5,7 +5,7 @@ using LLMClient.MCP;
 
 namespace LLMClient.Endpoints;
 
-public class NullLlmModelClient : ILLMClient
+public class NullLlmModelClient : ILLMChatClient
 {
     public static NullLlmModelClient Instance => new NullLlmModelClient();
 

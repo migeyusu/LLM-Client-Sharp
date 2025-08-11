@@ -16,7 +16,7 @@ public interface ISearchService : ICloneable
 
     [JsonIgnore] ThemedIcon Icon { get; }
 
-    bool CheckCompatible(ILLMClient client);
+    bool CheckCompatible(ILLMChatClient client);
 
     Task ApplySearch(DialogContext context);
 }

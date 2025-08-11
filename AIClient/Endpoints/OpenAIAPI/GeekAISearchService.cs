@@ -45,7 +45,7 @@ public class GeekAISearchService : BaseViewModel, ISearchService
     public ThemedIcon Icon =>
         AsyncThemedIcon.FromUri(new Uri("pack://application:,,,/LLMClient;component/Resources/Images/geekai.png"));
 
-    public bool CheckCompatible(ILLMClient client)
+    public bool CheckCompatible(ILLMChatClient client)
     {
         return client.Endpoint is APIEndPoint { ModelsSource: ModelSource.GeekAI };
     }

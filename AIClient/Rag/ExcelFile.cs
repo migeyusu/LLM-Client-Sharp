@@ -19,14 +19,14 @@ public class ExcelFile : RagFileBase
         get { return DocumentFileType.Excel; }
     }
 
-    public override Task LoadAsync()
+    public override Task InitializeAsync()
     {
         throw new NotImplementedException();
     }
 
     public override Task DeleteAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.CompletedTask;
     }
 
     public override Task<ISearchResult> QueryAsync(string query, dynamic options, CancellationToken cancellationToken = default)

@@ -17,11 +17,11 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 {
     public ObservableCollection<IRagFileSource> FileSources { get; set; } = new ObservableCollection<IRagFileSource>()
     {
-        new ExcelFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.NotConstructed },
-        new PdfFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.NotConstructed },
-        new TextFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.NotConstructed },
-        new WordFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.NotConstructed },
-        new PdfFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.Constructing },
+        new ExcelFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")),
+        new PdfFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")),
+        new TextFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")),
+        new WordFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")),
+        new PdfFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")),
         new TextFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.Constructed },
         new WordFile(new FileInfo(@"D:\cygwin64\Cygwin.ico"))
             { Status = ConstructStatus.Error, ErrorMessage = "Word文件解析失败，请检查文件格式或内容。" },
@@ -91,6 +91,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
             {
                 await fileSource.StopConstruct();
             }
+
             FileSources.Remove(fileSource);
         }
     });
