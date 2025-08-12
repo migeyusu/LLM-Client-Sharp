@@ -6,7 +6,7 @@ using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
-public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
+public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
 {
     public string Id
     {

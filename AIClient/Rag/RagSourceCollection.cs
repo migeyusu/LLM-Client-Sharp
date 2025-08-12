@@ -15,17 +15,12 @@ namespace LLMClient.Rag;
 
 public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 {
-    public ObservableCollection<IRagFileSource> FileSources { get; set; } = new ObservableCollection<IRagFileSource>()
+    public ObservableCollection<IRagFileSource> FileSources { get; set; } = [];
+
+    public bool IsRunning
     {
-        new ExcelFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")),
-        new PdfFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")),
-        new TextFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")),
-        new WordFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")),
-        new PdfFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")),
-        new TextFile(new FileInfo(@"D:\cygwin64\Cygwin.ico")) { Status = ConstructStatus.Constructed },
-        new WordFile(new FileInfo(@"D:\cygwin64\Cygwin.ico"))
-            { Status = ConstructStatus.Error, ErrorMessage = "Word文件解析失败，请检查文件格式或内容。" },
-    };
+        get { return this.FileSources.Any(source => source.Status == ConstructStatus.Constructing); }
+    }
 
     public ICommand AddFileCommand => new ActionCommand((async o =>
     {
@@ -74,8 +69,8 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
             }
 
             FileSources.Add(source);
-            MessageEventBus.Publish($"已添加文件: {fileName}，即将执行构建操作。");
-            await source.ConstructAsync();
+            await SaveAsync();
+            MessageEventBus.Publish($"已添加文件: {fileName}");
         }
         catch (Exception e)
         {
@@ -85,14 +80,30 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 
     public ICommand RemoveFileCommand => new ActionCommand(async o =>
     {
-        if (o is RagFileBase fileSource)
+        try
         {
-            if (fileSource.Status == ConstructStatus.Constructing)
+            if (MessageBox.Show("请确认是否删除文件？", "提示",
+                    MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No,
+                    MessageBoxOptions.DefaultDesktopOnly) != MessageBoxResult.Yes)
             {
-                await fileSource.StopConstruct();
+                return;
             }
 
-            FileSources.Remove(fileSource);
+            if (o is RagFileBase fileSource)
+            {
+                if (fileSource.Status == ConstructStatus.Constructing)
+                {
+                    await fileSource.StopConstruct();
+                }
+
+                await fileSource.DeleteAsync();
+                FileSources.Remove(fileSource);
+                MessageEventBus.Publish($"文件{fileSource.FilePath}已删除");
+            }
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show("删除文件失败: " + e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     });
 
@@ -127,7 +138,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 
     public ICommand SaveCommand => new ActionCommand(async o => { await SaveAsync(); });
 
-    public const string ConfigFileName = "rag_collection.json";
+    public const string ConfigFileName = "rag_file_collection.json";
 
     public async Task SaveAsync()
     {
@@ -167,6 +178,11 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
                 {
                     this.FileSources = new ObservableCollection<IRagFileSource>(deserialize);
                 }
+            }
+
+            foreach (var ragFileSource in this.FileSources)
+            {
+                await ragFileSource.InitializeAsync();
             }
 
             this.IsLoaded = true;

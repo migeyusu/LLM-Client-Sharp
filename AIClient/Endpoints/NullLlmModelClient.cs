@@ -16,7 +16,7 @@ public class NullLlmModelClient : ILLMChatClient
         get { return new APIEndPoint(); }
     }
 
-    public ILLMModel Model
+    public ILLMChatModel Model
     {
         get { return new APIModelInfo(); }
     }

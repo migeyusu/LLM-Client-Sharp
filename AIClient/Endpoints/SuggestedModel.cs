@@ -4,7 +4,7 @@ namespace LLMClient.Endpoints;
 
 public class SuggestedModel
 {
-    public SuggestedModel(ILLMModel llmModel)
+    public SuggestedModel(ILLMChatModel llmModel)
     {
         Endpoint = llmModel.Endpoint!;
         LlmModel = llmModel;
@@ -12,5 +12,5 @@ public class SuggestedModel
 
     public ILLMEndpoint Endpoint { get; set; }
 
-    public ILLMModel LlmModel { get; set; }
+    public ILLMChatModel LlmModel { get; set; }
 }

@@ -5,7 +5,7 @@ namespace LLMClient.Rag;
 
 public class SKDocChunk
 {
-    [VectorStoreKey] public Guid Key { get; set; } = Guid.Empty;
+    [VectorStoreKey] public string Key { get; set; } = string.Empty;
 
     /// <summary>
     /// raw data
@@ -31,7 +31,7 @@ public class SKDocChunk
 
     [VectorStoreData] public int Level { get; set; }
 
-    [VectorStoreData] public Guid ParentKey { get; set; } = Guid.Empty;
+    [VectorStoreData] public string ParentKey { get; set; } = string.Empty;
 
     [VectorStoreData] public bool HasChild { get; set; }
 

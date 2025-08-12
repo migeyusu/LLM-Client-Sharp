@@ -14,19 +14,19 @@ namespace LLMClient.Endpoints
         public string Name { get; } = "NullEndpoint";
         public ImageSource Icon => ImageExtensions.EndpointIcon;
         
-        public IReadOnlyCollection<ILLMModel> AvailableModels => [];
+        public IReadOnlyCollection<ILLMChatModel> AvailableModels => [];
 
-        public ILLMChatClient? NewClient(string modelName)
+        public ILLMChatClient? NewChatClient(string modelName)
         {
             throw new NotSupportedException();
         }
 
-        public ILLMChatClient? NewClient(ILLMModel model)
+        public ILLMChatClient? NewChatClient(ILLMChatModel model)
         {
             throw new NotSupportedException();
         }
 
-        public ILLMModel? GetModel(string modelName)
+        public ILLMChatModel? GetModel(string modelName)
         {
             throw new NotSupportedException();
         }

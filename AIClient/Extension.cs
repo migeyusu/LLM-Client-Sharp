@@ -92,7 +92,7 @@ public static class Extension
             expression.CreateMap<IResponse, ResponseViewItem>();
             expression.CreateMap<IModelParams, IModelParams>();
             expression.CreateMap<IModelParams, DefaultModelParam>();
-            expression.CreateMap<IModelParams, ILLMModel>();
+            expression.CreateMap<IModelParams, ILLMChatModel>();
             expression.CreateMap<IModelParams, APIModelInfo>();
             expression.CreateMap<APIEndPoint, APIEndPoint>();
             expression.CreateMap<APIDefaultOption, APIDefaultOption>();
@@ -292,10 +292,10 @@ public static class Extension
 
     #endregion
 
-    public static ILLMChatClient? CreateClient(this ILLMModel llmModel)
+    public static ILLMChatClient? CreateChatClient(this ILLMChatModel llmModel)
     {
         var endpoint = llmModel.Endpoint;
-        return !endpoint.IsEnabled ? null : endpoint?.NewClient(llmModel);
+        return !endpoint.IsEnabled ? null : endpoint?.NewChatClient(llmModel);
     }
 
     public static void AddLine(this IList<string> list, string? msg = null)

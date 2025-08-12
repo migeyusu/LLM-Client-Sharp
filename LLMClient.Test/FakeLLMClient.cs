@@ -18,7 +18,7 @@ public class FakeLLMClient : ILLMChatClient
         get { return new NullLLMEndpoint(); }
     }
 
-    public ILLMModel Model
+    public ILLMChatModel Model
     {
         get { return new APIModelInfo(); }
     }

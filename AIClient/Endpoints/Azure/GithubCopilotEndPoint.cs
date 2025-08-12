@@ -41,7 +41,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         get { return Source.Value; }
     }
 
-    public override IReadOnlyCollection<ILLMModel> AvailableModels
+    public override IReadOnlyCollection<ILLMChatModel> AvailableModels
     {
         get
         {
@@ -55,7 +55,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         get { return _loadedModelInfos.Values; }
     }
 
-    public override ILLMChatClient? NewClient(string modelName)
+    public override ILLMChatClient? NewChatClient(string modelName)
     {
         if (_predefinedModels.TryGetValue(modelName, out var action) &&
             _loadedModelInfos.TryGetValue(modelName, out var availableModelInfo))
@@ -67,7 +67,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         return null;
     }
 
-    public override ILLMChatClient? NewClient(ILLMModel model)
+    public override ILLMChatClient? NewChatClient(ILLMChatModel model)
     {
         if (model is AzureModelInfo azureModelInfo)
         {
@@ -77,7 +77,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         return null;
     }
 
-    public override ILLMModel? GetModel(string modelName)
+    public override ILLMChatModel? GetModel(string modelName)
     {
         return _loadedModelInfos.GetValueOrDefault(modelName);
     }

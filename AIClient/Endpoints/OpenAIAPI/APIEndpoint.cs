@@ -154,7 +154,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     }
     
     [JsonIgnore]
-    public IReadOnlyCollection<ILLMModel> AvailableModels
+    public IReadOnlyCollection<ILLMChatModel> AvailableModels
     {
         get { return this._models; }
     }
@@ -193,7 +193,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         OnPropertyChanged(nameof(AvailableModels));
     }));
 
-    public ILLMChatClient? NewClient(string modelName)
+    public ILLMChatClient? NewChatClient(string modelName)
     {
         var apiModelInfo = Models.FirstOrDefault(x => x.Name == modelName);
         if (apiModelInfo == null)
@@ -201,7 +201,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         return new APIClient(this, apiModelInfo, ConfigOption);
     }
 
-    public ILLMChatClient? NewClient(ILLMModel model)
+    public ILLMChatClient? NewChatClient(ILLMChatModel model)
     {
         if (model is APIModelInfo apiModelInfo)
         {
@@ -211,7 +211,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         return null;
     }
 
-    public ILLMModel? GetModel(string modelName)
+    public ILLMChatModel? GetModel(string modelName)
     {
         return Models.FirstOrDefault(x => x.Name == modelName);
     }

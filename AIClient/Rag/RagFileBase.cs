@@ -8,6 +8,7 @@ using Google.Apis.Util;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Rag;
@@ -77,8 +78,50 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         get { return $"{FileType}_{Id}"; }
     }
 
+    public bool IsInitialized
+    {
+        get => _isInitialized;
+        protected set
+        {
+            if (value == _isInitialized) return;
+            _isInitialized = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ICommand ClearCommand => new ActionCommand((async o =>
+    {
+        if (Status == ConstructStatus.Constructing)
+        {
+            return;
+        }
+
+        if (MessageBox.Show("是否要清空数据？", "提示",
+                MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No,
+                MessageBoxOptions.DefaultDesktopOnly) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            await DeleteAsync();
+            MessageEventBus.Publish("数据已清空");
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show($"删除数据失败: {e.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+    }));
+
     public virtual Task InitializeAsync()
     {
+        if (IsInitialized)
+        {
+            return Task.CompletedTask;
+        }
+
         if (this.Status == ConstructStatus.Constructing)
         {
             //说明上次构建还未完成，需要删除之前的脏数据重新构建。
@@ -86,11 +129,13 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             return this.DeleteAsync();
         }
 
+        IsInitialized = true;
         return Task.CompletedTask;
     }
 
     private CancellationTokenSource? _constructionCancellationTokenSource;
     private Task? _constructionTask;
+    private bool _isInitialized;
 
     public ICommand SwitchConstructCommand => new ActionCommand(async o =>
     {
@@ -110,7 +155,6 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
                 }
             }
 
-            await this.DeleteAsync();
             _constructionCancellationTokenSource = new CancellationTokenSource();
             _constructionTask = ConstructAsync(_constructionCancellationTokenSource.Token);
             try
@@ -133,11 +177,13 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             return;
         }
 
-        Status = ConstructStatus.Constructing;
         try
         {
             ErrorMessage = null;
+            //must ensure the file is deleted before constructing again.
+            await this.DeleteAsync(cancellationToken);
             // await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
+            Status = ConstructStatus.Constructing;
             await ConstructCore(cancellationToken);
             Status = ConstructStatus.Constructed;
         }
@@ -174,9 +220,9 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     private const int SummaryTrigger = 1000; // 摘要触发长度
 
-    protected Func<string, Task<string>> CreateLLMCall(ILLMChatClient client, int summarySize = 100)
+    protected Func<string, CancellationToken, Task<string>> CreateLLMCall(ILLMChatClient client, int summarySize = 100)
     {
-        return async (content) =>
+        return async (content, token) =>
         {
             if (string.IsNullOrEmpty(content))
             {
@@ -198,7 +244,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             {
                 new RequestViewItem() { TextMessage = stringBuilder.ToString(), }
             });
-            var response = await client.SendRequest(dialogContext);
+            var response = await client.SendRequest(dialogContext, token);
             var textResponse = response.TextResponse;
             if (string.IsNullOrEmpty(textResponse))
             {

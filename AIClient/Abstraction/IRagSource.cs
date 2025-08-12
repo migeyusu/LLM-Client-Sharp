@@ -39,4 +39,6 @@ public interface IRagSource
 public interface IRagSourceCollection : IReadOnlyCollection<IRagSource>
 {
     Task LoadAsync();
+    
+    bool IsRunning { get; }
 }

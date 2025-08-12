@@ -9,6 +9,7 @@ using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
+using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
@@ -122,6 +123,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         {
             await JsonSerializer.SerializeAsync(fileStream, this);
         }
+        MessageEventBus.Publish("Global configuration saved successfully.");
     });
 
     public static async Task<GlobalOptions> LoadOrCreate()

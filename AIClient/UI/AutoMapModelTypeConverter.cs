@@ -404,7 +404,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         var llmEndpoint = string.IsNullOrEmpty(source.EndPointName)
             ? null
             : _endpointService.GetEndpoint(source.EndPointName);
-        var llmModelClient = llmEndpoint?.NewClient(source.ModelName) ?? NullLlmModelClient.Instance;
+        var llmModelClient = llmEndpoint?.NewChatClient(source.ModelName) ?? NullLlmModelClient.Instance;
         var sourceJsonModel = source.Params;
         if (sourceJsonModel != null)
         {

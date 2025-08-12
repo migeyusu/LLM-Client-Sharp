@@ -146,6 +146,10 @@ public class PDFExtractor : IDisposable
         return rootNodes;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns>根节点列表</returns>
     public IList<ContentNode> Analyze()
     {
         // 1. 递归构建基础树结构，只包含标题、层级和起始页码
@@ -377,28 +381,40 @@ public class PDFExtractor : IDisposable
 
 public static class PDFExtractorExtensions
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="nodes">
+    /// 顶层节点
+    /// <para><b>警告：</b> 请勿传入已扁平化的节点列表，否则结果不正确。</para>
+    /// </param>
+    /// <param name="docId"></param>
+    /// <param name="llmCall"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
     public static async Task<List<SKDocChunk>> ToSKDocChunks(this IEnumerable<PDFExtractor.ContentNode> nodes,
-        string docId, Func<string, Task<string>> llmCall, CancellationToken token)
+        string docId, Func<string, CancellationToken, Task<string>> llmCall, CancellationToken token = default)
     {
         var docChunks = new List<SKDocChunk>();
         foreach (var contentNode in nodes)
         {
-            await ApplyRaptor(docId, contentNode, docChunks, llmCall);
+            await ApplyRaptor(docId, contentNode, docChunks, llmCall, token: token);
         }
 
         return docChunks;
     }
-    
+
     private static async Task<SKDocChunk> ApplyRaptor(string docId, PDFExtractor.ContentNode node,
-        List<SKDocChunk> chunks,
-        Func<string, Task<string>> llmCall, Guid? parentId = null)
+        List<SKDocChunk> chunks, Func<string, CancellationToken, Task<string>> llmCall, string? parentId = null,
+        CancellationToken token = default)
     {
+        token.ThrowIfCancellationRequested();
         var nodeLevel = node.Level;
         var nodeChunk = new SKDocChunk()
         {
-            Key = Guid.NewGuid(),
+            Key = Guid.NewGuid().ToString(),
             DocumentId = docId,
-            ParentKey = parentId ?? Guid.Empty,
+            ParentKey = parentId ?? String.Empty,
             Level = nodeLevel,
             Title = node.Title,
         };
@@ -409,12 +425,12 @@ public static class PDFExtractorExtensions
             var summaryBuilder = new StringBuilder(node.Title + "\nSubsections:");
             foreach (var child in node.Children)
             {
-                var chunk = await ApplyRaptor(docId, child, chunks, llmCall, nodeChunk.Key);
+                var chunk = await ApplyRaptor(docId, child, chunks, llmCall, nodeChunk.Key, token);
                 summaryBuilder.AppendLine($"- {child.Title}");
                 summaryBuilder.AppendLine(chunk.Summary);
             }
 
-            var chunkText = await llmCall(summaryBuilder.ToString());
+            var chunkText = await llmCall(summaryBuilder.ToString(), token);
             nodeChunk.Summary = chunkText;
         }
         else
@@ -444,10 +460,10 @@ public static class PDFExtractorExtensions
                     nodeContentBuilder.AppendLine(paragraphContent);
                     chunks.Add(new SKDocChunk()
                     {
-                        Key = Guid.NewGuid(),
+                        Key = Guid.NewGuid().ToString(),
                         DocumentId = docId,
                         Text = paragraphContent,
-                        Summary = await llmCall(paragraphContent),
+                        Summary = await llmCall(paragraphContent, token),
                         Level = nodeLevel + 1,
                         ParentKey = nodeChunk.Key,
                         HasChild = false
@@ -468,7 +484,7 @@ public static class PDFExtractorExtensions
             {
                 //存在段落
                 nodeChunk.HasChild = false;
-                nodeChunk.Summary = await llmCall(nodeContent);
+                nodeChunk.Summary = await llmCall(nodeContent, token);
                 //存在子节点时，Text为空，表示需要进一步查找
             }
         }

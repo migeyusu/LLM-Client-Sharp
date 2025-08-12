@@ -78,14 +78,14 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
     private int _acceptedIndex = -1;
     private bool _isMultiResponse = false;
     private ObservableCollection<IResponseViewItem> _items;
-    private ILLMModel? _selectedModel;
+    private ILLMChatModel? _selectedModel;
 
     public IEndpointService EndpointService
     {
         get { return ServiceLocator.GetService<IEndpointService>()!; }
     }
 
-    public ILLMModel? SelectedModel
+    public ILLMChatModel? SelectedModel
     {
         get => _selectedModel;
         set
@@ -101,7 +101,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
     /// </summary>
     public ICommand SubmitCommand => new ActionCommand(async o =>
     {
-        var llmClient = SelectedModel?.CreateClient();
+        var llmClient = SelectedModel?.CreateChatClient();
         if (llmClient == null)
         {
             return;

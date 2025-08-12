@@ -45,12 +45,12 @@ public abstract class AzureEndPointBase : BaseViewModel, ILLMEndpoint
         get { return Source.Value; }
     }
 
-    public abstract IReadOnlyCollection<ILLMModel> AvailableModels { get; }
+    public abstract IReadOnlyCollection<ILLMChatModel> AvailableModels { get; }
 
-    public abstract ILLMChatClient? NewClient(string modelName);
-    public abstract ILLMChatClient? NewClient(ILLMModel model);
+    public abstract ILLMChatClient? NewChatClient(string modelName);
+    public abstract ILLMChatClient? NewChatClient(ILLMChatModel model);
 
-    public abstract ILLMModel? GetModel(string modelName);
+    public abstract ILLMChatModel? GetModel(string modelName);
 
     public abstract Task InitializeAsync();
 }

@@ -19,7 +19,7 @@ public partial class ModelSelectionView : UserControl
     private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
         var newValue = e.NewValue;
-        if (newValue is ILLMModel modelInfo)
+        if (newValue is ILLMChatModel modelInfo)
         {
             ViewModel.SelectedModel = modelInfo;
         }

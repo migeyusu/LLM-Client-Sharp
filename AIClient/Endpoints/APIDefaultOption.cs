@@ -1,4 +1,9 @@
-﻿using LLMClient.UI;
+﻿using System.ClientModel;
+using System.ClientModel.Primitives;
+using System.Net.Http;
+using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.UI;
+using OpenAI;
 
 namespace LLMClient.Endpoints;
 
@@ -27,6 +32,24 @@ public class APIDefaultOption : BaseViewModel
             if (value == _url) return;
             _url = value;
             OnPropertyChanged();
+        }
+    }
+
+    public OpenAIClientEx? OpenAIClient
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(APIToken) || string.IsNullOrEmpty(URL))
+            {
+                return null;
+            }
+
+            var httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
+            return new OpenAIClientEx(new ApiKeyCredential(APIToken), new OpenAIClientOptions
+            {
+                Endpoint = new Uri(URL),
+                Transport = new HttpClientPipelineTransport(httpClient)
+            });
         }
     }
 }

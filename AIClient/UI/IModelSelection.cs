@@ -7,7 +7,7 @@ public interface IModelSelection
 {
     IEndpointService EndpointService { get; }
 
-    ILLMModel? SelectedModel { get; set; }
+    ILLMChatModel? SelectedModel { get; set; }
 
     ICommand? SubmitCommand { get; }
 }

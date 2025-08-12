@@ -16,7 +16,7 @@ public interface IThinkingConfig
 
     public bool ShowThinking { get; }
 
-    public static IThinkingConfig? Get(ILLMModel model)
+    public static IThinkingConfig? Get(ILLMChatModel model)
     {
         if (model.Endpoint is APIEndPoint apiEndPoint)
         {

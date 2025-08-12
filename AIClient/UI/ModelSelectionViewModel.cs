@@ -7,7 +7,7 @@ public abstract class ModelSelectionViewModel : BaseViewModel, IModelSelection
 {
     public IEndpointService EndpointService { get; set; }
 
-    public ILLMModel? SelectedModel
+    public ILLMChatModel? SelectedModel
     {
         get => _selectedModel;
         set
@@ -20,7 +20,7 @@ public abstract class ModelSelectionViewModel : BaseViewModel, IModelSelection
 
     public abstract ICommand? SubmitCommand { get; }
 
-    private ILLMModel? _selectedModel;
+    private ILLMChatModel? _selectedModel;
 
     protected ModelSelectionViewModel(IEndpointService endpointService)
     {
@@ -29,6 +29,6 @@ public abstract class ModelSelectionViewModel : BaseViewModel, IModelSelection
 
     public ILLMChatClient? GetClient()
     {
-        return this.SelectedModel?.CreateClient();
+        return this.SelectedModel?.CreateChatClient();
     }
 }

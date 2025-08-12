@@ -7,7 +7,7 @@ public interface ILLMEndpoint
     string DisplayName { get; }
 
     bool IsDefault { get; }
-    
+
     bool IsEnabled { get; }
 
     /// <summary>
@@ -16,14 +16,19 @@ public interface ILLMEndpoint
     string Name { get; }
 
     ImageSource Icon { get; }
-    
-    IReadOnlyCollection<ILLMModel> AvailableModels { get; }
 
-    ILLMChatClient? NewClient(string modelName);
+    IReadOnlyCollection<ILLMChatModel> AvailableModels { get; }
 
-    ILLMChatClient? NewClient(ILLMModel model);
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="modelName">chat model name</param>
+    /// <returns></returns>
+    ILLMChatClient? NewChatClient(string modelName);
 
-    ILLMModel? GetModel(string modelName);
+    ILLMChatClient? NewChatClient(ILLMChatModel model);
+
+    ILLMChatModel? GetModel(string modelName);
 
     Task InitializeAsync();
 }

@@ -1,12 +1,17 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Text.Json.Serialization;
+using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
+using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Rag;
 
@@ -33,9 +38,9 @@ public class RagOption : BaseViewModel
         set => EmbeddingEndpointName = value?.Name;
     }
 
-    public ILLMChatClient? EmbeddingClient => string.IsNullOrEmpty(EmbeddingEndpointName)
+    /*public ILLMChatClient? EmbeddingClient => string.IsNullOrEmpty(EmbeddingEndpointName)
         ? null
-        : EmbeddingEndpoint?.NewClient(EmbeddingEndpointName);
+        : EmbeddingEndpoint?.NewClient(EmbeddingEndpointName);*/
 
     public string? EmbeddingEndpointName { get; set; }
 
@@ -99,7 +104,7 @@ public class RagOption : BaseViewModel
             { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
 
 
-    private string? _dbConnection;
+    private string? _dbConnection = "Data Source=file_embedding.db";
 
     public string? DBConnection
     {
@@ -112,7 +117,31 @@ public class RagOption : BaseViewModel
         }
     }
 
-    public SemanticKernelStore.SearchAlgorithm SearchAlgorithm { get; set; }
+    public ICommand SelectDatabaseCommand => new ActionCommand(async o =>
+    {
+        var openFileDialog = new OpenFileDialog()
+        {
+            Filter = "SQLite Database Files (*.db;*.sqlite)|*.db;*.sqlite",
+            CheckFileExists = true,
+            CheckPathExists = true,
+        };
+        if (openFileDialog.ShowDialog() == true)
+        {
+            var fileName = openFileDialog.FileName;
+            if (!string.IsNullOrEmpty(this.DBConnection))
+            {
+                var dbPath = Path.GetFullPath(this.DBConnection
+                    .Replace("Data Source=", string.Empty).Trim());
+                if (fileName.Equals(dbPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageEventBus.Publish("已选择相同的数据库文件，无需更改。");
+                    return; // No change needed if the same file is selected
+                }
+            }
+
+            this.DBConnection = "Data Source=" + fileName;
+        }
+    });
 
     [MemberNotNull(nameof(DBConnection))]
     [MemberNotNull(nameof(EmbeddingEndpoint))]

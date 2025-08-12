@@ -13,7 +13,7 @@ public interface ILLMChatClient
 
     ILLMEndpoint Endpoint { get; }
 
-    ILLMModel Model { get; }
+    ILLMChatModel Model { get; }
 
     bool IsResponding { get; set; }
 

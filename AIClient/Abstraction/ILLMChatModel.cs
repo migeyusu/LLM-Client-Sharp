@@ -2,7 +2,7 @@
 
 namespace LLMClient.Abstraction;
 
-public interface ILLMModel : IModelParams
+public interface ILLMChatModel : IModelParams
 {
     string Id { get; }
 

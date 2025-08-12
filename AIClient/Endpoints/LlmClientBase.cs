@@ -25,7 +25,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     public abstract ILLMEndpoint Endpoint { get; }
 
-    [JsonIgnore] public abstract ILLMModel Model { get; }
+    [JsonIgnore] public abstract ILLMChatModel Model { get; }
 
     public bool IsQuitWhenFunctionCallFailed { get; set; } = true;
 
@@ -175,7 +175,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            if (toolsPromptBuilder.Length > 0)
+            if (tools?.Length > 0)
             {
                 systemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
                     ? toolsPromptBuilder.ToString()

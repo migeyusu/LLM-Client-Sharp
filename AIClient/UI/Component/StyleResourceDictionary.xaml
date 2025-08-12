@@ -19,7 +19,27 @@
         <Setter Property="VerticalScrollBarVisibility"
                 Value="Auto" />
     </Style>
-    <Style x:Key="DeleteItemButtonStyle"
+    <!--<Style x:Key="DeleteItemButtonStyle"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource MaterialDesignIconButton}">
+        <Setter Property="Background"
+                Value="{DynamicResource MaterialDesignTextFieldBoxBackground}" />
+        <Setter Property="Command" Value="Delete" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Width" Value="30" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="10,0" />
+        <Setter Property="Visibility" Value="Collapsed" />
+        <Style.Triggers>
+            <DataTrigger
+                Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                Value="True">
+                <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>-->
+    <Style x:Key="HoverDeleteItemButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignIconButton}">
         <Setter Property="Background"

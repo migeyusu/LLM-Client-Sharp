@@ -50,13 +50,23 @@
                         <TextBox Grid.Row="0" Grid.Column="1"
                                  Text="{Binding Name,Mode=OneWay}"
                                  TextWrapping="NoWrap"
-                                 MaxWidth="300"
+                                 Margin="0,0,10,0"
                                  FontWeight="Black"
                                  Padding="0,6"
                                  BorderThickness="0"
                                  FontSize="16"
                                  HorizontalAlignment="Left"
                                  materialDesign:TextFieldAssist.DecorationVisibility="Collapsed" />
+                        <Button Grid.Row="0" Grid.Column="2"
+                                Width="20"
+                                Height="20"
+                                ToolTip="删除文件"
+                                Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ItemsControl},Path=DataContext.RemoveFileCommand}"
+                                CommandParameter="{Binding}"
+                                Template="{StaticResource ItemDeleteButtonTemplate}"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Margin="5" />
                         <StackPanel Grid.Row="1" Grid.Column="1"
                                     Orientation="Horizontal">
                             <ContentControl Margin="0,0,20,0"
@@ -130,21 +140,24 @@
                                 </ContentControl.Style>
                             </ContentControl>
                             <TextBlock Foreground="DimGray"
-                                       VerticalAlignment="Center">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="{}{0} - {1} - {2}">
-                                        <Binding Path="FilePath" />
-                                        <Binding Path="EditTime" />
-                                        <Binding Path="FileSize" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
+                                       VerticalAlignment="Center"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis">
+                                <Run />
+                                <Hyperlink NavigateUri="{Binding FilePath}"
+                                           RequestNavigate="Hyperlink_OnRequestNavigate"
+                                           TextDecorations="Underline" />
+                                <Run Text=" - " />
+                                <Run Text="{Binding EditTime}" />
+                                <Run Text=" - " />
+                                <Run Text="{Binding FileSize}" />
                             </TextBlock>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
                                     Grid.Row="0"
                                     Grid.Column="2"
                                     Grid.RowSpan="2"
-                                    Margin="0,0,10,0"
+                                    Margin="0,0,20,0"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center">
                             <Button Command="{Binding  SwitchConstructCommand}">
@@ -165,11 +178,11 @@
                                     </Style>
                                 </Button.Style>
                             </Button>
-                            <Button Margin="16,0,0,0"
-                                    Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ItemsControl},Path=DataContext.RemoveFileCommand}"
-                                    CommandParameter="{Binding }"
+                            <Button Margin="6,0,0,0"
+                                    ToolTip="清除构建结果（Embedding）"
+                                    Command="{Binding ClearCommand}"
                                     Style="{StaticResource MaterialDesignIconButton}"
-                                    Content="{materialDesign:PackIcon Kind=Delete}"
+                                    Content="{materialDesign:PackIcon Kind=DataMatrixRemove}"
                                     Foreground="IndianRed" />
                         </StackPanel>
                         <materialDesign:Card Grid.Row="0" Grid.Column="0"

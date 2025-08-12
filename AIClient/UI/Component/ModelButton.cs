@@ -41,11 +41,11 @@ public class ModelButton : Button
     }
     
     public static readonly DependencyProperty ModelProperty = DependencyProperty.Register(
-        nameof(Model), typeof(ILLMModel), typeof(ModelButton), new PropertyMetadata(default(ILLMModel)));
+        nameof(Model), typeof(ILLMChatModel), typeof(ModelButton), new PropertyMetadata(default(ILLMChatModel)));
 
-    public ILLMModel Model
+    public ILLMChatModel Model
     {
-        get { return (ILLMModel)GetValue(ModelProperty); }
+        get { return (ILLMChatModel)GetValue(ModelProperty); }
         set { SetValue(ModelProperty, value); }
     }
 }

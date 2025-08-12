@@ -44,35 +44,6 @@ public class MainWindowViewModel : BaseViewModel
 
     public bool IsBusy => SessionViewModels.Any(session => session.IsBusy);
 
-    public ICommand LoadCommand => new ActionCommand((o =>
-    {
-        try
-        {
-            Initialize();
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }));
-
-    public ICommand SaveCommand => new ActionCommand((async o =>
-    {
-        try
-        {
-            IsProcessing = true;
-            await SaveSessionsToLocal();
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            IsProcessing = false;
-        }
-    }));
-
     private bool _isDarkTheme;
 
     public bool IsDarkTheme
@@ -108,17 +79,16 @@ public class MainWindowViewModel : BaseViewModel
             UpdateResource(value);
         }
     }
-
-    public static void UpdateResource(ThemeName themeName)
+    
+    public string LoadingMessage
     {
-        var application = Application.Current;
-        if (application == null)
+        get => _loadingMessage;
+        set
         {
-            return;
+            if (value == _loadingMessage) return;
+            _loadingMessage = value;
+            OnPropertyChanged();
         }
-
-        var sourceDictionary = application.Resources;
-        sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
     }
 
     public IMcpServiceCollection McpServiceCollection { get; }
@@ -138,7 +108,6 @@ public class MainWindowViewModel : BaseViewModel
     }));
 
     #endregion
-
 
     #region dialog
 
@@ -238,13 +207,35 @@ public class MainWindowViewModel : BaseViewModel
     }
 
     #endregion
-
-    public void AddSession(ILLMSession projectViewModel)
+    
+    public ICommand LoadCommand => new ActionCommand((o =>
     {
-        ((INotifyPropertyChanged)projectViewModel).PropertyChanged += SessionOnEditTimeChanged;
-        this.SessionViewModels.Insert(0, projectViewModel);
-        PreSession = projectViewModel;
-    }
+        try
+        {
+            Initialize();
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }));
+
+    public ICommand SaveCommand => new ActionCommand((async o =>
+    {
+        try
+        {
+            IsProcessing = true;
+            await SaveSessionsToLocal();
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }));
 
     private bool _isProcessing;
     private string _loadingMessage = "Loading...";
@@ -275,6 +266,15 @@ public class MainWindowViewModel : BaseViewModel
         {
             themeManager.ThemeChanged += (_, e) => { IsDarkTheme = e.NewTheme?.GetBaseTheme() == BaseTheme.Dark; };
         }
+    }
+
+    #region item management
+    
+    public void AddSession(ILLMSession projectViewModel)
+    {
+        ((INotifyPropertyChanged)projectViewModel).PropertyChanged += SessionOnEditTimeChanged;
+        this.SessionViewModels.Insert(0, projectViewModel);
+        PreSession = projectViewModel;
     }
 
     private async Task InitialSessionsFromLocal()
@@ -358,12 +358,22 @@ public class MainWindowViewModel : BaseViewModel
         this.PreSession = this.SessionViewModels.FirstOrDefault();
         session.Delete();
     }
+    
+    public async Task SaveSessions()
+    {
+        this.LoadingMessage = "Saving sessions...";
+        this.IsProcessing = true;
+        await this.SaveSessionsToLocal();
+        await HttpContentCache.Instance.PersistIndexAsync();
+    }
+    
+    #endregion
 
     public async void Initialize()
     {
         IsProcessing = true;
         await McpServiceCollection.LoadAsync();
-        await this.RagSourceCollection.LoadAsync();
+        await RagSourceCollection.LoadAsync();
         await EndpointsViewModel.Initialize();
         await InitialSessionsFromLocal();
         if (SessionViewModels.Any())
@@ -377,30 +387,24 @@ public class MainWindowViewModel : BaseViewModel
         IsInitialized = true;
     }
 
-    public string LoadingMessage
+    
+    public static void UpdateResource(ThemeName themeName)
     {
-        get => _loadingMessage;
-        set
+        var application = Application.Current;
+        if (application == null)
         {
-            if (value == _loadingMessage) return;
-            _loadingMessage = value;
-            OnPropertyChanged();
+            return;
         }
-    }
 
+        var sourceDictionary = application.Resources;
+        sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
+    }
+    
     private static void ModifyTheme(Action<Theme> modificationAction)
     {
         var paletteHelper = new PaletteHelper();
         Theme theme = paletteHelper.GetTheme();
         modificationAction?.Invoke(theme);
         paletteHelper.SetTheme(theme);
-    }
-
-    public async Task SaveSessions()
-    {
-        this.LoadingMessage = "Saving sessions...";
-        this.IsProcessing = true;
-        await this.SaveSessionsToLocal();
-        await HttpContentCache.Instance.PersistIndexAsync();
     }
 }

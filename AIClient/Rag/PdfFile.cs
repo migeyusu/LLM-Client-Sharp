@@ -5,6 +5,7 @@ using LLMClient.Abstraction;
 using LLMClient.Dialog;
 using LLMClient.Rag.Document;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using Newtonsoft.Json;
 
 namespace LLMClient.Rag;
@@ -25,17 +26,40 @@ public class PdfFile : RagFileBase
         get { return DocumentFileType.Pdf; }
     }
 
-    public override Task InitializeAsync()
+    public override async Task InitializeAsync()
     {
-        throw new NotImplementedException();
+        if (IsInitialized)
+        {
+            return;
+        }
+
+        /*if (this.Status == ConstructStatus.Constructed)
+        {
+            var kernelStore = await GetStore();
+            if (!await kernelStore.CheckConnection())
+            {
+                return;
+            }
+        }*/
+
+        if (this.Status == ConstructStatus.Constructing)
+        {
+            //说明上次构建还未完成，需要删除之前的脏数据重新构建。
+            this.Status = ConstructStatus.Error;
+            this.ErrorMessage = "上次构建未完成，请重新构建。";
+            // await this.DeleteAsync();
+        }
+
+        IsInitialized = true;
     }
 
-    public override Task DeleteAsync(CancellationToken cancellationToken = default)
+    public override async Task DeleteAsync(CancellationToken cancellationToken = default)
     {
-        //删除存储库
-        throw new NotImplementedException();
+        var semanticKernelStore = await GetStore();
+        await semanticKernelStore.RemoveFile(this.DocumentId, cancellationToken);
+        this.Status = ConstructStatus.NotConstructed;
     }
-    
+
     /// <summary>
     /// 
     /// </summary>
@@ -54,37 +78,55 @@ public class PdfFile : RagFileBase
 
             await Task.Yield();
             pdfExtractor.Initialize(margin);
+            await Task.Delay(30000, cancellationToken);
             var ragOption = (await GlobalOptions.LoadOrCreate()).RagOption;
-            ragOption.ThrowIfNotValid();
-            var dbConnection = ragOption.DBConnection;
-            var digestClient = ragOption.DigestClient;
-            if (digestClient == null)
+                                                var digestClient = ragOption.DigestClient;
+                                                if (digestClient == null)
             {
                 throw new InvalidOperationException("Digest client is not set.");
             }
 
-            var embeddingClient = ragOption.EmbeddingClient;
-            if (embeddingClient == null)
-            {
-                throw new InvalidOperationException("Embedding client is not set.");
-            }
 
             var contentNodes = pdfExtractor.Analyze();
             var docChunks =
                 await contentNodes.ToSKDocChunks(this.DocumentId, CreateLLMCall(digestClient), cancellationToken);
-            var semanticKernelStore = new SemanticKernelStore(dbConnection);
-            semanticKernelStore.InitializeKernel(embeddingClient, ragOption.EmbeddingModelId);
+            var semanticKernelStore = await GetStore(ragOption);
             await semanticKernelStore.AddFile(this.DocumentId, docChunks, cancellationToken);
         }
+    }
+
+    private static async Task<SemanticKernelStore> GetStore(RagOption? ragOption = null)
+    {
+        ragOption ??= (await GlobalOptions.LoadOrCreate()).RagOption;
+        ragOption.ThrowIfNotValid();
+        var dbConnection = ragOption.DBConnection;
+        var embeddingEndpoint = ragOption.EmbeddingEndpoint;
+        if (embeddingEndpoint == null)
+        {
+            throw new InvalidOperationException("Embedding endpoint is not set.");
+        }
+#pragma warning disable SKEXP0001
+        return new SemanticKernelStore().InitializeKernel(embeddingEndpoint,
+            ragOption.EmbeddingModelId ?? "text-embedding-v3", dbConnection);
+#pragma warning restore SKEXP0001
     }
 
     public override async Task<ISearchResult> QueryAsync(string query, dynamic options,
         CancellationToken cancellationToken = default)
     {
-        var ragOption = (await GlobalOptions.LoadOrCreate()).RagOption;
-        ragOption.ThrowIfNotValid();
-        var dbConnection = ragOption.DBConnection;
-        var semanticKernelStore = new SemanticKernelStore(dbConnection);
+        if (!IsInitialized)
+        {
+            throw new InvalidOperationException(
+                "The PDF file has not been initialized. Please call InitializeAsync first.");
+        }
+
+        if (Status != ConstructStatus.Constructed)
+        {
+            throw new InvalidOperationException(
+                "The PDF file has not been constructed. Please call ConstructAsync first.");
+        }
+
+        var semanticKernelStore = await GetStore();
         IEnumerable<string> matchResult = await semanticKernelStore.SearchAsync(query, this.DocumentId,
             options.SearchAlgorithm ?? SemanticKernelStore.SearchAlgorithm.Default,
             options.TopK ?? 5, cancellationToken);

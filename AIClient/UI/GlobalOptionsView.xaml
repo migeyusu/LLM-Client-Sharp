@@ -61,8 +61,8 @@
                                 </Border>
                             </materialDesign:PopupBox.ToggleContent>
                         </materialDesign:PopupBox>
-                        <TextBlock Text="{Binding SummarizeModelPersistModel,Mode=OneWay}" 
-                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding SummarizeModelPersistModel,Mode=OneWay}"
+                                   VerticalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>
             </TabItem>
@@ -128,7 +128,7 @@
                         <TextBox Text="{Binding EmbeddingModelId, Mode=TwoWay}"
                                  Margin="12,0,0,0"
                                  Style="{StaticResource MaterialDesignFilledTextBox}"
-                                 Width="120" />
+                                 Width="180" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal"
                                 Margin="0,10,0,0">
@@ -166,6 +166,20 @@
                             </TextBlock.Text>
                         </TextBlock>
                     </StackPanel>
+                    <TextBlock Text="DbConnection："
+                               Margin="0,10,0,0" />
+                    <Grid Margin="0,10,0,0">
+                        <TextBox Text="{Binding DBConnection,Mode=TwoWay}"
+                                 Style="{StaticResource MaterialDesignFilledTextBox}" />
+                        <Button Content="{materialDesign:PackIcon Kind=DatabasePlus}"
+                                Margin="0,0,10,0"
+                                Width="28"
+                                Height="28"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Right"
+                                Command="{Binding SelectDatabaseCommand}"
+                                Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"/>
+                    </Grid>
                 </StackPanel>
             </TabItem>
         </TabControl>

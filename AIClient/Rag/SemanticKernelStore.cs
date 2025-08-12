@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using LLMClient.Abstraction;
+using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
@@ -17,24 +19,43 @@ public class SemanticKernelStore
         Graph, // Graph search algorithm is not implemented yet
         Indirect,
     }
-    
-    private readonly string _dbConnectionString;
+
+    private string? _dbConnectionString;
 
     private Kernel? _kernel;
 
-    public SemanticKernelStore(string dbConnectionString = "Data Source=mydatabase.db")
+    public SemanticKernelStore()
     {
-        _dbConnectionString = dbConnectionString;
     }
 
     [Experimental("SKEXP0001")]
-    public void InitializeKernel(OpenAIClient client, string modelId = "text-embedding-v3")
+    public SemanticKernelStore InitializeKernel(ILLMEndpoint endpoint, string modelId = "text-embedding-3-small",
+        string dbConnectionString = "Data Source=mydatabase.db")
     {
+        OpenAIClient? openAiClient = null;
+        if (endpoint is APIEndPoint apiEndPoint)
+        {
+            openAiClient = apiEndPoint.ConfigOption.OpenAIClient;
+        }
+        else
+        {
+            throw new NotSupportedException(
+                "Only APIEndPoint is supported for SemanticKernelStore. Please use OpenAI API endpoint.");
+        }
+
+        if (openAiClient == null)
+        {
+            throw new ArgumentException("OpenAIClient cannot be null. Ensure the endpoint is properly configured.",
+                nameof(endpoint));
+        }
+
+        _dbConnectionString = dbConnectionString;
         var kernelBuilder = Kernel.CreateBuilder();
-        kernelBuilder.Services.AddOpenAIEmbeddingGenerator("text-embedding-v3", client)
+        kernelBuilder.Services.AddOpenAIEmbeddingGenerator(modelId, openAiClient)
             // 添加 SQLite 向量存储（连接字符串指向本地文件）
             .AddSqliteVectorStore(connectionStringProvider: sp => _dbConnectionString); // 自动创建 db 文件
         _kernel = kernelBuilder.Build();
+        return this;
     }
 
     /// <summary>
@@ -77,8 +98,11 @@ public class SemanticKernelStore
         }
 
         var vectorStore = _kernel.GetRequiredService<VectorStore>();
-        var docCollection = vectorStore.GetCollection<string, SKDocChunk>(docId);
-        await docCollection.EnsureCollectionDeletedAsync(token);
+        if (await vectorStore.CollectionExistsAsync(docId, token))
+        {
+            var docCollection = vectorStore.GetCollection<string, SKDocChunk>(docId);
+            await docCollection.EnsureCollectionDeletedAsync(token);
+        }
     }
 
     public async Task<IEnumerable<string>> SearchAsync(string query, string docId,

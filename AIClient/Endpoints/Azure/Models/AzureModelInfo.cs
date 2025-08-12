@@ -11,7 +11,7 @@ namespace LLMClient.Endpoints.Azure.Models;
 
 //https://github.com/models/available
 
-public class AzureModelInfo : ILLMModel
+public class AzureModelInfo : ILLMChatModel
 {
     [JsonIgnore] public bool IsEnabled { get; set; }
 

@@ -34,7 +34,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         get { return Model?.Name ?? string.Empty; }
     }
 
-    public ILLMModel? Model
+    public ILLMChatModel? Model
     {
         get { return Client?.Model; }
     }

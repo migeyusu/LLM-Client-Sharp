@@ -35,7 +35,7 @@ public partial class MainWindow : ExtendedWindow
         {
             if (session.IsBusy)
             {
-                _mainWindowViewModel.MessageQueue.Enqueue("请等待当前响应完成后再删除会话");
+                _mainWindowViewModel.MessageQueue.Enqueue("请停止当前响应后再删除会话");
                 return;
             }
 
@@ -61,6 +61,12 @@ public partial class MainWindow : ExtendedWindow
         if (_mainWindowViewModel.IsBusy)
         {
             _mainWindowViewModel.MessageQueue.Enqueue("请等待当前响应完成后再关闭窗口");
+            return;
+        }
+
+        if (_mainWindowViewModel.RagSourceCollection.IsRunning)
+        {
+            _mainWindowViewModel.MessageQueue.Enqueue("请等待Rag完成后再关闭窗口");
             return;
         }
 
@@ -97,7 +103,7 @@ public partial class MainWindow : ExtendedWindow
     {
         if (e.Parameter is SuggestedModel suggested)
         {
-            var llmModelClient = suggested.LlmModel.CreateClient();
+            var llmModelClient = suggested.LlmModel.CreateChatClient();
             if (llmModelClient != null)
             {
                 _mainWindowViewModel.AddNewDialog(llmModelClient);
