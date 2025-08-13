@@ -30,7 +30,7 @@ public class SemanticKernelStore
 
     [Experimental("SKEXP0001")]
     public SemanticKernelStore InitializeKernel(ILLMEndpoint endpoint, string modelId = "text-embedding-3-small",
-        string dbConnectionString = "Data Source=mydatabase.db")
+        string dbConnectionString = "Data Source=file_embedding.db")
     {
         OpenAIClient? openAiClient = null;
         if (endpoint is APIEndPoint apiEndPoint)

@@ -230,7 +230,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                 }
             }
 
-            destination.EditTime = source.EditTime;
             destination.Name = source.Name;
             destination.Description = source.Description;
             destination.LanguageNames = source.LanguageNames;
@@ -240,6 +239,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                 : new ObservableCollection<string>(source.AllowedFolderPaths);
             destination.TokensConsumption = source.TokensConsumption;
             destination.TotalPrice = source.TotalPrice;
+            destination.EditTime = source.EditTime;
         }
         finally
         {
@@ -373,8 +373,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         ResolutionContext context)
     {
         var key = new ContextCacheKey(source, typeof(LLMClientPersistModel));
-        if (context.InstanceCache.TryGetValue(key,
-                out var cachedValue) && cachedValue is LLMClientPersistModel cachedModel)
+        if (context.InstanceCache?.TryGetValue(key,
+                out var cachedValue) == true && cachedValue is LLMClientPersistModel cachedModel)
         {
             return cachedModel;
         }
@@ -383,7 +383,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.EndPointName = source.Endpoint.Name;
         destination.ModelName = source.Model.Name;
         destination.Params = source.Parameters;
-        context.InstanceCache.TryAdd(key, destination);
+        context.InstanceCache?.TryAdd(key, destination);
         return destination;
     }
 
@@ -395,7 +395,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
 
         var contextCacheKey = new ContextCacheKey(source, typeof(ILLMChatClient));
-        if (context.InstanceCache.TryGetValue(contextCacheKey, out var cachedValue) &&
+        if (context.InstanceCache?.TryGetValue(contextCacheKey, out var cachedValue) == true &&
             cachedValue is ILLMChatClient cachedClient)
         {
             return cachedClient;
@@ -411,7 +411,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             context.Mapper.Map(sourceJsonModel, llmModelClient.Parameters);
         }
 
-        context.InstanceCache.TryAdd(contextCacheKey, llmModelClient);
+        context.InstanceCache?.TryAdd(contextCacheKey, llmModelClient);
         return llmModelClient;
     }
 

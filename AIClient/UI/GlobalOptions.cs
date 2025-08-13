@@ -79,7 +79,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             }
 
             return ServiceLocator.GetService<IMapper>()?
-                .Map<LLMClientPersistModel, ILLMChatClient>(SummarizeModelPersistModel);
+                .Map<LLMClientPersistModel, ILLMChatClient>(SummarizeModelPersistModel,(options => { }));
         }
         set
         {
@@ -90,7 +90,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             }
 
             SummarizeModelPersistModel = ServiceLocator.GetService<IMapper>()?
-                .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
+                .Map<ILLMChatClient, LLMClientPersistModel>(value,(options => { }));
         }
     }
 
@@ -123,6 +123,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         {
             await JsonSerializer.SerializeAsync(fileStream, this);
         }
+
         MessageEventBus.Publish("Global configuration saved successfully.");
     });
 

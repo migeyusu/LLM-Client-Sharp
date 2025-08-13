@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using Markdig.Extensions.JiraLinks;
@@ -15,68 +16,6 @@ namespace LLMClient.Rag.Document;
 
 public class PDFExtractor : IDisposable
 {
-    /// <summary>
-    /// 表示PDF文档中的一个内容节点，可以对应一个目录章节。
-    /// </summary>
-    public class ContentNode
-    {
-        /// <summary>
-        /// 章节标题 (来自书签)
-        /// </summary>
-        public string Title { get; set; }
-
-        /// <summary>
-        /// 在目录树中的层级
-        /// </summary>
-        public int Level { get; set; }
-
-        /// <summary>
-        /// 该章节在PDF中的起始页码
-        /// </summary>
-        public int StartPage { get; set; }
-
-        public Point StartPoint { get; set; }
-
-        public ExplicitDestination? Destination { get; set; }
-
-        /// <summary>
-        /// 该章节的子节点 (子目录)
-        /// </summary>
-        public List<ContentNode> Children { get; set; } = new List<ContentNode>();
-
-        public bool HasChildren => Children.Count > 0;
-
-        /// <summary>
-        /// 该节点直接包含的段落列表。只有叶子节点或需要存储自身内容的节点才填充。
-        /// </summary>
-        public List<PageBlocks> Paragraphs { get; set; } = new List<PageBlocks>();
-
-        public ContentNode(string title, int level)
-        {
-            Title = title;
-            Level = level;
-        }
-
-        public override string ToString()
-        {
-            // 主要用于调试时方便查看
-            return $"{new string(' ', Level * 2)}- {Title} (Page: {StartPage}, Paragraphs: {Paragraphs.Count})";
-        }
-    }
-
-    public class PageBlocks
-    {
-        public PageBlocks(IReadOnlyList<TextBlock> blocks, int pageNumber)
-        {
-            Blocks = blocks;
-            PageNumber = pageNumber;
-        }
-
-        public int PageNumber { get; }
-
-        public IReadOnlyList<TextBlock> Blocks { get; }
-    }
-
     private readonly ConcurrentDictionary<int, PageCacheItem> _cache;
 
     public PdfDocument Document { get; }
@@ -128,19 +67,21 @@ public class PDFExtractor : IDisposable
     /// 解析出内容树。
     /// </summary>
     /// <returns>内容树的根节点列表。</returns>
-    private List<ContentNode> ExtractContentTree()
+    private List<PDFContentNode> ExtractContentTree()
     {
-        if (!Document.TryGetBookmarks(out var bookmarks))
+        if (!Document.TryGetBookmarks(out var bookmarks, true))
         {
             // 如果没有书签，可以返回一个代表整个文档的单一节点
             // 或者直接返回空列表，表示无法按目录结构解析
-            return new List<ContentNode>();
+            return new List<PDFContentNode>();
         }
 
-        var rootNodes = new List<ContentNode>();
+        var rootNodes = new List<PDFContentNode>();
         foreach (var bookmark in bookmarks.Roots)
         {
-            rootNodes.Add(BuildNodeTree(bookmark));
+            var node = BuildNodeTree(bookmark);
+            if (node != null)
+                rootNodes.Add(node);
         }
 
         return rootNodes;
@@ -150,7 +91,7 @@ public class PDFExtractor : IDisposable
     /// 
     /// </summary>
     /// <returns>根节点列表</returns>
-    public IList<ContentNode> Analyze()
+    public IList<PDFContentNode> Analyze()
     {
         // 1. 递归构建基础树结构，只包含标题、层级和起始页码
         var rootNodes = this.ExtractContentTree();
@@ -192,7 +133,7 @@ public class PDFExtractor : IDisposable
         return rootNodes;
     }
 
-    private Point GetTopLeft(ContentNode node)
+    private Point GetTopLeft(PDFContentNode node)
     {
         var destination = node.Destination;
         if (destination == null)
@@ -261,29 +202,52 @@ public class PDFExtractor : IDisposable
     /// <summary>
     /// 递归地从PdfPig的BookmarkNode构建我们的ContentNode树。
     /// </summary>
-    private ContentNode BuildNodeTree(BookmarkNode bookmark)
+    private PDFContentNode? BuildNodeTree(BookmarkNode bookmark)
     {
         // 尝试获取书签指向的页码
         // DestinationProvider可以更稳定地获取页码
-        var node = new ContentNode(bookmark.Title, bookmark.Level);
+        var node = new PDFContentNode(bookmark.Title, bookmark.Level);
+        var bookmarkNodes = bookmark.Children;
+        var contentNodes = node.Children;
+        foreach (var bookmarkNode in bookmarkNodes)
+        {
+            var contentNode = BuildNodeTree(bookmarkNode);
+            if (contentNode != null)
+            {
+                contentNodes.Add(contentNode);
+            }
+        }
+
         if (bookmark is DocumentBookmarkNode docNode)
         {
             node.Destination = docNode.Destination;
             node.StartPage = docNode.PageNumber;
-            node.StartPoint = GetTopLeft(node);
-            foreach (var child in bookmark.Children)
-            {
-                node.Children.Add(BuildNodeTree(child));
-            }
         }
+        else if (bookmark is ContainerBookmarkNode)
+        {
+            //对于虚拟节点，起始页取第一个子节点的起始页
+            var contentNode = contentNodes.FirstOrDefault();
+            if (contentNode == null)
+            {
+                return null;
+            }
 
+            node.Destination = contentNode.Destination;
+            node.StartPage = contentNode.StartPage;
+        }
+        else
+        {
+            Trace.TraceWarning("未知的书签节点类型。");
+            return null;
+        }
+        node.StartPoint = GetTopLeft(node);
         return node;
     }
 
     /// <summary>
     /// 将树形结构扁平化为一个列表，方便后续处理。
     /// </summary>
-    private static IEnumerable<ContentNode> Flatten(IEnumerable<ContentNode> nodes)
+    private static IEnumerable<PDFContentNode> Flatten(IEnumerable<PDFContentNode> nodes)
     {
         return nodes.SelectMany(n => new[] { n }.Concat(Flatten(n.Children)));
     }
@@ -307,10 +271,10 @@ public class PDFExtractor : IDisposable
         public Page Page { get; }
     }
 
-    /// <summary>
+    /// summary>
     /// 从指定的页码范围提取段落。
     /// </summary>
-    private void ExtractParagraphs(ContentNode preNode,
+    private void ExtractParagraphs(PDFContentNode preNode,
         int processIndex, int endPage, Point? endTopLeft = null)
     {
         var startPage = preNode.StartPage;
@@ -340,7 +304,7 @@ public class PDFExtractor : IDisposable
             if (i < endPage || endTopLeft == null)
             {
                 // 如果不是最后一页，或者没有指定终止点，则使用当前页面的所有文本块
-                preNode.Paragraphs.Add(new PageBlocks(page.RemainingTextBlocks.ToArray(), i));
+                preNode.Paragraphs.Add(new PDFPageBlocks(page.RemainingTextBlocks.ToArray(), i));
                 page.RemainingTextBlocks.Clear();
             }
             else
@@ -368,7 +332,7 @@ public class PDFExtractor : IDisposable
                     remainingTextBlocks.Clear();
                 }
 
-                preNode.Paragraphs.Add(new PageBlocks(blocks, i));
+                preNode.Paragraphs.Add(new PDFPageBlocks(blocks, i));
             }
         }
     }
@@ -392,7 +356,7 @@ public static class PDFExtractorExtensions
     /// <param name="llmCall"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    public static async Task<List<SKDocChunk>> ToSKDocChunks(this IEnumerable<PDFExtractor.ContentNode> nodes,
+    public static async Task<List<SKDocChunk>> ToSKDocChunks(this IEnumerable<PDFContentNode> nodes,
         string docId, Func<string, CancellationToken, Task<string>> llmCall, CancellationToken token = default)
     {
         var docChunks = new List<SKDocChunk>();
@@ -404,7 +368,7 @@ public static class PDFExtractorExtensions
         return docChunks;
     }
 
-    private static async Task<SKDocChunk> ApplyRaptor(string docId, PDFExtractor.ContentNode node,
+    private static async Task<SKDocChunk> ApplyRaptor(string docId, PDFContentNode node,
         List<SKDocChunk> chunks, Func<string, CancellationToken, Task<string>> llmCall, string? parentId = null,
         CancellationToken token = default)
     {
@@ -440,18 +404,7 @@ public static class PDFExtractorExtensions
             {
                 foreach (var paragraph in node.Paragraphs)
                 {
-                    var paragraphContentBuilder = new StringBuilder();
-                    if (!paragraph.Blocks.Any())
-                    {
-                        continue;
-                    }
-
-                    foreach (var block in paragraph.Blocks)
-                    {
-                        paragraphContentBuilder.AppendLine(block.Text);
-                    }
-
-                    var paragraphContent = paragraphContentBuilder.ToString();
+                    var paragraphContent = paragraph.Content;
                     if (string.IsNullOrEmpty(paragraphContent.Trim()))
                     {
                         continue; // 跳过空段落

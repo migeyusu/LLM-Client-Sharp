@@ -70,26 +70,21 @@ public class PdfFile : RagFileBase
         using (var pdfExtractor = new PDFExtractor(FilePath))
         {
             var pdfExtractorWindow = new PDFExtractorWindow(pdfExtractor);
-            Thickness margin;
-            if (pdfExtractorWindow.ShowDialog() == true)
+            if (pdfExtractorWindow.ShowDialog() != true)
             {
-                margin = pdfExtractorWindow.FileMargin;
+                throw new InvalidOperationException("PDF extraction was cancelled by the user.");
             }
 
             await Task.Yield();
-            pdfExtractor.Initialize(margin);
-            await Task.Delay(30000, cancellationToken);
             var ragOption = (await GlobalOptions.LoadOrCreate()).RagOption;
-                                                var digestClient = ragOption.DigestClient;
-                                                if (digestClient == null)
+            var digestClient = ragOption.DigestClient;
+            if (digestClient == null)
             {
                 throw new InvalidOperationException("Digest client is not set.");
             }
 
-
-            var contentNodes = pdfExtractor.Analyze();
-            var docChunks =
-                await contentNodes.ToSKDocChunks(this.DocumentId, CreateLLMCall(digestClient), cancellationToken);
+            var docChunks = await pdfExtractorWindow.ContentNodes
+                .ToSKDocChunks(this.DocumentId, CreateLLMCall(digestClient), cancellationToken);
             var semanticKernelStore = await GetStore(ragOption);
             await semanticKernelStore.AddFile(this.DocumentId, docChunks, cancellationToken);
         }

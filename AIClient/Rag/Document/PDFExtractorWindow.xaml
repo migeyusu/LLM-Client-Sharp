@@ -4,40 +4,105 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:LLMClient.Rag.Document"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Loaded="PDFExtractorWindow_OnLoaded"
         d:DataContext="{d:DesignInstance local:PDFExtractorWindow}"
-        Title="PDFExtractorWindow" Height="450" Width="800">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <!-- 左侧控制面板 -->
-        <StackPanel Grid.Column="0" Margin="10">
-            <TextBlock Text="选择页面:" Margin="0,20,0,0" />
-            <ComboBox x:Name="cmbPages" SelectionChanged="Page_SelectionChanged" />
+        Title="PDF Extractor" Height="450" Width="800">
+    <materialDesign:Transitioner SelectedIndex="{Binding CurrentStep,Mode=TwoWay}">
+        <materialDesign:TransitionerSlide>
+            <materialDesign:TransitionerSlide.ForwardWipe>
+                <materialDesign:SlideWipe Direction="Right" />
+            </materialDesign:TransitionerSlide.ForwardWipe>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <!-- 左侧控制面板 -->
+                <StackPanel Grid.Column="0" Margin="10">
+                    <TextBlock Text="选择页面:" Margin="0,20,0,0" />
+                    <ComboBox x:Name="CmbPages" SelectionChanged="Page_SelectionChanged" />
+                    <TextBlock Text="Top Margin (点):" Margin="0,20,0,0" />
+                    <TextBox Text="{Binding TopMargin,Mode=TwoWay}" />
+                    <TextBlock Text="Bottom Margin (点):" />
+                    <TextBox Text="{Binding BottomMargin,Mode=TwoWay}" />
+                    <TextBlock Text="Left Margin (点):" />
+                    <TextBox Text="{Binding LeftMargin,Mode=TwoWay}" />
+                    <TextBlock Text="Right Margin (点):" />
+                    <TextBox Text="{Binding RightMargin,Mode=TwoWay}" />
+                    <Button Content="下一步"
+                            Margin="0,20,0,0"
+                            Command="{x:Static materialDesign:Transitioner.MoveNextCommand}" />
+                </StackPanel>
+                <!-- 右侧Canvas用于渲染 -->
+                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                              Margin="10">
+                    <Canvas x:Name="CanvasPage" Background="White" />
+                </ScrollViewer>
+            </Grid>
+        </materialDesign:TransitionerSlide>
+        <materialDesign:TransitionerSlide>
+            <materialDesign:TransitionerSlide.BackwardWipe>
+                <materialDesign:CircleWipe />
+            </materialDesign:TransitionerSlide.BackwardWipe>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TreeView ItemsSource="{Binding ContentNodes,Mode=OneWay}">
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="{x:Type TreeViewItem}"
+                               BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                            <Setter Property="HorizontalContentAlignment"
+                                    Value="Stretch" />
+                        </Style>
+                    </TreeView.ItemContainerStyle>
+                    <TreeView.Resources>
+                        <HierarchicalDataTemplate DataType="{x:Type local:PDFContentNode}"
+                                                  ItemsSource="{Binding Children}">
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <TextBlock Margin="10,0"
+                                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                           HorizontalAlignment="Left">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0} - L{1} (StartPage {2})">
+                                            <Binding Path="Title" Mode="OneTime" />
+                                            <Binding Path="Level" />
+                                            <Binding Path="StartPage" Mode="OneTime" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                                <ScrollViewer MaxHeight="200"
+                                              Margin="10,0,0,0"
+                                              VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding Paragraphs,Mode=OneTime}"
+                                                  DisplayMemberPath="Content" />
+                                </ScrollViewer>
+                                <Separator Background="Black"
+                                           VerticalAlignment="Top"
+                                           Margin="10,0" />
+                            </StackPanel>
+                        </HierarchicalDataTemplate>
+                    </TreeView.Resources>
+                </TreeView>
+                <StackPanel Grid.Row="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Margin="10">
+                    <Button Content="返回"
+                            Width="120"
+                            Command="{x:Static materialDesign:Transitioner.MovePreviousCommand}"
+                            Style="{StaticResource MaterialDesignFlatButton}" />
+                    <Button Content="接受"
+                            Margin="10,0,0,0"
+                            Click="OK_OnClick"
+                            Width="120" />
+                </StackPanel>
+            </Grid>
+        </materialDesign:TransitionerSlide>
 
-            <TextBlock Text="Top Margin (点):" Margin="0,20,0,0" />
-            <TextBox Text="{Binding TopMargin,Mode=TwoWay}" />
-
-            <TextBlock Text="Bottom Margin (点):" />
-            <TextBox Text="{Binding BottomMargin,Mode=TwoWay}" />
-
-            <TextBlock Text="Left Margin (点):" />
-            <TextBox Text="{Binding LeftMargin,Mode=TwoWay}" />
-
-            <TextBlock Text="Right Margin (点):" />
-            <TextBox Text="{Binding RightMargin,Mode=TwoWay}" />
-            <Button Content="确定"
-                    Margin="0,20,0,0"
-                    Click="OK_OnClick" />
-        </StackPanel>
-        <!-- 右侧Canvas用于渲染 -->
-        <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
-                      Margin="10">
-            <Canvas x:Name="canvasPage" Background="White" />
-        </ScrollViewer>
-    </Grid>
+    </materialDesign:Transitioner>
 
 </Window>

@@ -11,6 +11,21 @@ namespace LLMClient.Rag.Document;
 
 public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
 {
+    public int CurrentStep
+    {
+        get => _currentStep;
+        set
+        {
+            if (value == _currentStep) return;
+            _currentStep = value;
+            OnPropertyChanged();
+            if (value == 1)
+            {
+                Analyze();
+            }
+        }
+    }
+
     private int _currentPageNumber = 1;
     private double _topMargin = 50d;
     private double _bottomMargin = 50d;
@@ -71,6 +86,8 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
     }
 
     private PDFExtractor _extractor;
+    private int _currentStep = 0;
+    private IList<PDFContentNode> _contentNodes;
 
     public PDFExtractorWindow(PDFExtractor extractor)
     {
@@ -81,10 +98,10 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         {
             for (int i = 1; i <= extractor.Document.NumberOfPages; i++)
             {
-                cmbPages.Items.Add($"Page {i}");
+                CmbPages.Items.Add($"Page {i}");
             }
 
-            cmbPages.SelectedIndex = 0;
+            CmbPages.SelectedIndex = 0;
         }
         catch (Exception ex)
         {
@@ -96,9 +113,9 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
     // 页面选择变化事件
     private void Page_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (cmbPages.SelectedIndex >= 0)
+        if (CmbPages.SelectedIndex >= 0)
         {
-            _currentPageNumber = cmbPages.SelectedIndex + 1;
+            _currentPageNumber = CmbPages.SelectedIndex + 1;
             RenderPage();
         }
     }
@@ -111,14 +128,14 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        canvasPage.Children.Clear();
+        CanvasPage.Children.Clear();
         var page = _extractor.Document.GetPage(_currentPageNumber);
         var pageWidth = page.Width; // PDF点单位
         var pageHeight = page.Height;
 
         // 设置Canvas大小（缩放1:1，但可通过ScrollViewer滚动）
-        canvasPage.Width = pageWidth;
-        canvasPage.Height = pageHeight;
+        CanvasPage.Width = pageWidth;
+        CanvasPage.Height = pageHeight;
 
         // 绘制页面背景（白色矩形）
         var background = new Rectangle
@@ -131,7 +148,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         };
         Canvas.SetLeft(background, 0);
         Canvas.SetTop(background, 0);
-        canvasPage.Children.Add(background);
+        CanvasPage.Children.Add(background);
 
         // 提取Words和TextBlocks（基于工具查询的代码）
         var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
@@ -158,7 +175,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
             };
             Canvas.SetLeft(rect, x);
             Canvas.SetTop(rect, y);
-            canvasPage.Children.Add(rect);
+            CanvasPage.Children.Add(rect);
             foreach (var textLine in block.TextLines)
             {
                 var textLineBoundingBox = textLine.BoundingBox;
@@ -173,7 +190,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
                 };
                 Canvas.SetLeft(txt, x0);
                 Canvas.SetTop(txt, y0);
-                canvasPage.Children.Add(txt);
+                CanvasPage.Children.Add(txt);
             }
         }
 
@@ -204,7 +221,32 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
             StrokeThickness = 2,
             StrokeDashArray = [4, 2] // 虚线
         };
-        canvasPage.Children.Add(line);
+        CanvasPage.Children.Add(line);
+    }
+
+    public IList<PDFContentNode> ContentNodes
+    {
+        get => _contentNodes;
+        set
+        {
+            if (Equals(value, _contentNodes)) return;
+            _contentNodes = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private void Analyze()
+    {
+        try
+        {
+            Thickness margin = this.FileMargin;
+            _extractor.Initialize(margin);
+            this.ContentNodes = _extractor.Analyze();
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message);
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

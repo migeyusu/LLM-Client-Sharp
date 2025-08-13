@@ -24,6 +24,7 @@
         <PackageReference Include="Azure.AI.TextAnalytics" Version="5.3.0"/>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0"/>
         <PackageReference Include="DiffPlex" Version="1.8.0"/>
+        <PackageReference Include="Karl.PdfPig" Version="0.1.12-alpha001" />
         <PackageReference Include="LambdaConverters" Version="4.0.0"/>
         <PackageReference Include="Magick.NET-Q8-x64" Version="14.7.0" />
         <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.7" />
@@ -54,8 +55,6 @@
         <PackageReference Include="System.Text.Json" Version="9.0.7" />
         <PackageReference Include="TextMateSharp" Version="1.0.70" />
         <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.2" />
-        <PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
-        <PackageReference Include="UglyToad.PdfPig.DocumentLayoutAnalysis" Version="1.7.0-custom-5" />
     </ItemGroup>
 
     <ItemGroup>
