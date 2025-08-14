@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Specialized;
+using System.IO;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Windows;
@@ -7,8 +8,11 @@ using System.Windows.Media.TextFormatting;
 using Google.Apis.Util;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
+using LLMClient.Endpoints;
 using LLMClient.UI;
 using LLMClient.UI.Component;
+using LLMClient.UI.Log;
+using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Rag;
@@ -54,7 +58,17 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         set
         {
             if (value == _status) return;
+            if (_status == ConstructStatus.Constructing)
+            {
+                ConstructionLogs.Stop();
+            }
+
             _status = value;
+            if (value == ConstructStatus.Constructing)
+            {
+                ConstructionLogs.Start();
+            }
+
             OnPropertyChanged();
         }
     }
@@ -69,6 +83,8 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             OnPropertyChanged();
         }
     }
+
+    [JsonIgnore] public LogsViewModel ConstructionLogs { get; set; } = new LogsViewModel();
 
     [JsonIgnore] public abstract DocumentFileType FileType { get; }
 
@@ -89,7 +105,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
-    public ICommand ClearCommand => new ActionCommand((async o =>
+    /*public ICommand ClearEmbeddingCommand => new ActionCommand(async o =>
     {
         if (Status == ConstructStatus.Constructing)
         {
@@ -111,27 +127,8 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         catch (Exception e)
         {
             MessageBox.Show($"删除数据失败: {e.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            return;
         }
-    }));
-
-    public virtual Task InitializeAsync()
-    {
-        if (IsInitialized)
-        {
-            return Task.CompletedTask;
-        }
-
-        if (this.Status == ConstructStatus.Constructing)
-        {
-            //说明上次构建还未完成，需要删除之前的脏数据重新构建。
-            this.Status = ConstructStatus.NotConstructed;
-            return this.DeleteAsync();
-        }
-
-        IsInitialized = true;
-        return Task.CompletedTask;
-    }
+    });*/
 
     private CancellationTokenSource? _constructionCancellationTokenSource;
     private Task? _constructionTask;
@@ -168,6 +165,26 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             }
         }
     });
+
+    public long SummaryTokensConsumption { get; set; } = 0;
+
+    public virtual Task InitializeAsync()
+    {
+        if (IsInitialized)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (this.Status == ConstructStatus.Constructing)
+        {
+            //说明上次构建还未完成，需要删除之前的脏数据重新构建。
+            this.Status = ConstructStatus.NotConstructed;
+            return this.DeleteAsync();
+        }
+
+        IsInitialized = true;
+        return Task.CompletedTask;
+    }
 
     public virtual async Task ConstructAsync(CancellationToken cancellationToken = default)
     {
@@ -218,19 +235,22 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         CancellationToken cancellationToken = default);
 
 
-    private const int SummaryTrigger = 1000; // 摘要触发长度
+    private const int SummaryTrigger = 2000; // 摘要触发长度（中文字符数）
 
-    protected Func<string, CancellationToken, Task<string>> CreateLLMCall(ILLMChatClient client, int summarySize = 100)
+    protected Func<string, CancellationToken, Task<string>> CreateLLMCall(ILLMChatClient client, int summarySize = 500,
+        int retryCount = 3, ILogger? logger = null)
     {
         return async (content, token) =>
         {
             if (string.IsNullOrEmpty(content))
             {
+                logger?.LogInformation("内容为空，不进行摘要。");
                 return string.Empty;
             }
 
             if (content.Length < SummaryTrigger)
             {
+                logger?.LogInformation("内容长度未超过{SummaryTrigger}，不进行摘要。", SummaryTrigger);
                 return content;
             }
 
@@ -244,14 +264,22 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             {
                 new RequestViewItem() { TextMessage = stringBuilder.ToString(), }
             });
-            var response = await client.SendRequest(dialogContext, token);
-            var textResponse = response.TextResponse;
-            if (string.IsNullOrEmpty(textResponse))
+            int tryCount = 0;
+            var response = new CompletedResult();
+            while (tryCount < retryCount)
             {
-                throw new InvalidOperationException("LLM response is empty.");
+                response = await client.SendRequest(dialogContext, token);
+                tryCount++;
+                SummaryTokensConsumption += response.Usage?.TotalTokenCount ?? 0;
+                var textResponse = response.TextResponse;
+                if (!string.IsNullOrEmpty(textResponse) && !response.IsInterrupt)
+                {
+                    return textResponse;
+                }
             }
 
-            return textResponse;
+            throw new InvalidOperationException("LLM response failed after " + retryCount + " attempts. error: " +
+                                                response.ErrorMessage);
         };
     }
 }

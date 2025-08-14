@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:LLMClient.Rag.Document"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
         mc:Ignorable="d"
         Loaded="PDFExtractorWindow_OnLoaded"
         d:DataContext="{d:DesignInstance local:PDFExtractorWindow}"
@@ -68,14 +69,14 @@
                                            HorizontalAlignment="Left">
                                     <TextBlock.Text>
                                         <MultiBinding StringFormat="{}{0} - L{1} (StartPage {2})">
-                                            <Binding Path="Title" Mode="OneTime" />
+                                            <Binding Path="Title" Mode="OneTime"/>
                                             <Binding Path="Level" />
                                             <Binding Path="StartPage" Mode="OneTime" />
                                         </MultiBinding>
                                     </TextBlock.Text>
                                 </TextBlock>
                                 <ScrollViewer MaxHeight="200"
-                                              Margin="10,0,0,0"
+                                              Margin="30,0,0,0"
                                               VerticalScrollBarVisibility="Auto">
                                     <ItemsControl ItemsSource="{Binding Paragraphs,Mode=OneTime}"
                                                   DisplayMemberPath="Content" />
@@ -100,9 +101,25 @@
                             Click="OK_OnClick"
                             Width="120" />
                 </StackPanel>
+                <materialDesign:Card Grid.Row="0"
+                                     Grid.Column="0"
+                                     Visibility="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Center">
+                    <StackPanel Margin="30">
+                        <ProgressBar IsIndeterminate="False"
+                                     Maximum="1"
+                                     Minimum="0"
+                                     Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                     Value="50" />
+                        <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,15,0,0"
+                                   Text="正在处理" />
+                    </StackPanel>
+                </materialDesign:Card>
             </Grid>
         </materialDesign:TransitionerSlide>
-
     </materialDesign:Transitioner>
 
 </Window>

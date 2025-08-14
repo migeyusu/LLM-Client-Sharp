@@ -6,6 +6,7 @@ using LLMClient.Dialog;
 using LLMClient.Rag.Document;
 using LLMClient.UI;
 using LLMClient.UI.Component;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace LLMClient.Rag;
@@ -83,8 +84,15 @@ public class PdfFile : RagFileBase
                 throw new InvalidOperationException("Digest client is not set.");
             }
 
+            var progress = new Progress<PDFContentNode>(node =>
+            {
+                // 会自动在UI线程调用
+                ConstructionLogs.LogInformation("Processing node {0}, start page: {1}, level: {2}",
+                    node.Title, node.StartPage, node.Level);
+            });
             var docChunks = await pdfExtractorWindow.ContentNodes
-                .ToSKDocChunks(this.DocumentId, CreateLLMCall(digestClient), cancellationToken);
+                .ToSKDocChunks(this.DocumentId, CreateLLMCall(digestClient, 512, 3, this.ConstructionLogs),
+                    this.ConstructionLogs, token: cancellationToken, nodeProgress: progress);
             var semanticKernelStore = await GetStore(ragOption);
             await semanticKernelStore.AddFile(this.DocumentId, docChunks, cancellationToken);
         }

@@ -93,4 +93,12 @@ internal static class SnapConverters
                     throw new ArgumentOutOfRangeException();
             }
         });
+
+
+    public static readonly IValueConverter TruncateTextConverter = ValueConverter.Create<string, string, int>((args =>
+    {
+        var text = args.Value;
+        var maxLength = args.Parameter;
+        return text.Length > maxLength ? text.Substring(0, maxLength) + "..." : text;
+    }));
 }

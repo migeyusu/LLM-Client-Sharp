@@ -6,6 +6,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Text;
 using OpenAI;
 
 namespace LLMClient.Rag;
@@ -48,7 +49,6 @@ public class SemanticKernelStore
             throw new ArgumentException("OpenAIClient cannot be null. Ensure the endpoint is properly configured.",
                 nameof(endpoint));
         }
-
         _dbConnectionString = dbConnectionString;
         var kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder.Services.AddOpenAIEmbeddingGenerator(modelId, openAiClient)

@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:LLMClient.Rag"
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:log="clr-namespace:LLMClient.UI.Log"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RagSourceCollection}"
              d:DesignHeight="400" d:DesignWidth="600">
@@ -139,9 +140,30 @@
                                     </Style>
                                 </ContentControl.Style>
                             </ContentControl>
+                            <materialDesign:PopupBox ToggleContent="{materialDesign:PackIcon Kind=InformationOutline}"
+                                                     ToggleCheckedContent="{materialDesign:PackIcon Kind=InformationVariant}"
+                                                     ToolTip="查看构建日志"
+                                                     Margin="6,0,0,0"
+                                                     PopupContent="{Binding  ConstructionLogs,Mode=OneTime}">
+                                <materialDesign:PopupBox.PopupContentTemplate>
+                                    <DataTemplate DataType="{x:Type log:LogsViewModel}">
+                                        <HeaderedContentControl>
+                                            <HeaderedContentControl.Header>
+                                                <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                           Margin="16,8">
+                                                    构建日志
+                                                </TextBlock>
+                                            </HeaderedContentControl.Header>
+                                            <log:LogView Width="450"
+                                                         Height="300" />
+                                        </HeaderedContentControl>
+                                    </DataTemplate>
+                                </materialDesign:PopupBox.PopupContentTemplate>
+                            </materialDesign:PopupBox>
                             <TextBlock Foreground="DimGray"
                                        VerticalAlignment="Center"
                                        TextWrapping="NoWrap"
+                                       Margin="10,0,0,0"
                                        TextTrimming="CharacterEllipsis">
                                 <Run />
                                 <Hyperlink NavigateUri="{Binding FilePath}"
@@ -160,12 +182,15 @@
                                     Margin="0,0,20,0"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center">
-                            <Button Command="{Binding  SwitchConstructCommand}">
+                            <Button Command="{Binding  SwitchConstructCommand}"
+                                    ToolTipService.InitialShowDelay="0">
                                 <Button.Style>
                                     <Style TargetType="{x:Type Button}"
                                            BasedOn="{StaticResource MaterialDesignIconButton}">
                                         <Setter Property="Content"
                                                 Value="{materialDesign:PackIcon Kind=Play}" />
+                                        <Setter Property="ToolTip"
+                                                Value="开始构建/重新构建" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Status,Mode=OneWay}"
                                                          Value="{x:Static local:ConstructStatus.Constructing}">
@@ -173,17 +198,19 @@
                                                         Value="{materialDesign:PackIcon Kind=Stop}" />
                                                 <Setter Property="Foreground"
                                                         Value="Red" />
+                                                <Setter Property="ToolTip"
+                                                        Value="停止构建" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
                             </Button>
-                            <Button Margin="6,0,0,0"
+                            <!--<Button Margin="6,0,0,0"
                                     ToolTip="清除构建结果（Embedding）"
                                     Command="{Binding ClearCommand}"
                                     Style="{StaticResource MaterialDesignIconButton}"
                                     Content="{materialDesign:PackIcon Kind=DataMatrixRemove}"
-                                    Foreground="IndianRed" />
+                                    Foreground="IndianRed" />-->
                         </StackPanel>
                         <materialDesign:Card Grid.Row="0" Grid.Column="0"
                                              Grid.RowSpan="2"

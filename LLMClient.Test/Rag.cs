@@ -50,10 +50,10 @@ public class Rag
     public async Task PDFEmbedding()
     {
         var pdfExtractor = new PDFExtractor(pdfPath);
-        pdfExtractor.Initialize(new Thickness(10, 55, 10, 62));
+        pdfExtractor.Initialize(padding: new Thickness(10, 55, 10, 62));
         var contentNodes = pdfExtractor.Analyze();
         var docChunks =
-            await contentNodes.ToSKDocChunks("doc1",((s, token) => Task.FromResult(s)), CancellationToken.None);
+            await contentNodes.ToSKDocChunks("doc1", ((s, token) => Task.FromResult(s)));
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public class Rag
         var requiredService = kernel.GetRequiredService<VectorStore>();
         var docCollection = requiredService.GetCollection<string, SKDocChunk>("test");
         await docCollection.EnsureCollectionExistsAsync(CancellationToken.None);
-        await foreach (var result in docCollection.SearchAsync("1", 10,new VectorSearchOptions<SKDocChunk>()
+        await foreach (var result in docCollection.SearchAsync("1", 10, new VectorSearchOptions<SKDocChunk>()
                        {
                            VectorProperty = chunk => chunk.TextEmbedding
                        }))
@@ -162,6 +162,7 @@ public class Rag
 sealed class FakeEmbeddingGenerator(int? replaceLast = null) : IEmbeddingGenerator<string, Embedding<float>>
 {
     float[] embeddings = Enumerable.Repeat(1f, 1536).ToArray();
+
     public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
         IEnumerable<string> values,
         EmbeddingGenerationOptions? options = null,
@@ -173,6 +174,7 @@ sealed class FakeEmbeddingGenerator(int? replaceLast = null) : IEmbeddingGenerat
         {
             results.Add(new Embedding<float>(embeddings));
         }
+
         /*foreach (var value in values)
         {
             var vector = value.TrimStart('[').TrimEnd(']').Split(',').Select(s => float.Parse(s.Trim())).ToArray();

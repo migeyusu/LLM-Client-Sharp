@@ -7,6 +7,7 @@ using LLMClient.MCP;
 using LLMClient.MCP.Servers;
 using LLMClient.Rag;
 using LLMClient.UI;
+using LLMClient.UI.Log;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;

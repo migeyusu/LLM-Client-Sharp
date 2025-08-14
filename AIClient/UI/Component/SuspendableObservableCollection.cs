@@ -23,6 +23,9 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
         _isSuspended = true;
     }
 
+    /// <summary>
+    /// same as endreset
+    /// </summary>
     public void EndInit()
     {
         if (--_suspendCount == 0)
@@ -34,7 +37,18 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
         }
     }
 
-    public void AddRange(IEnumerable<T> items)
+    public void EndAdd(IList<T> addItems)
+    {
+        if (--_suspendCount == 0)
+        {
+            _isSuspended = false;
+            OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
+            OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, addItems));
+        }
+    }
+
+    public void AddRange(IList<T> items)
     {
         BeginInit();
         foreach (var item in items)
@@ -42,7 +56,7 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
             Items.Add(item);
         }
 
-        EndInit();
+        EndAdd(items);
     }
 
     public void ResetWith(IEnumerable<T> items)

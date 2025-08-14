@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using DocumentFormat.OpenXml.Wordprocessing;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 
@@ -88,6 +89,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
     private PDFExtractor _extractor;
     private int _currentStep = 0;
     private IList<PDFContentNode> _contentNodes;
+    private bool _isProcessing;
 
     public PDFExtractorWindow(PDFExtractor extractor)
     {
@@ -235,13 +237,30 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void Analyze()
+    public bool IsProcessing
+    {
+        get => _isProcessing;
+        set
+        {
+            if (value == _isProcessing) return;
+            _isProcessing = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public double Value { get; set; }
+
+    private async void Analyze()
     {
         try
         {
             Thickness margin = this.FileMargin;
-            _extractor.Initialize(margin);
+            var pages = _extractor.Document.NumberOfPages;
+            var progress = new Progress<int>(i => this.Value = i / (double)pages);
+            IsProcessing = true;
+            await Task.Run(() => { _extractor.Initialize(progress, margin); });
             this.ContentNodes = _extractor.Analyze();
+            IsProcessing = false;
         }
         catch (Exception e)
         {

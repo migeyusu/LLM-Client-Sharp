@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Windows;
-using Markdig.Extensions.JiraLinks;
+using Microsoft.Extensions.Logging;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis;
@@ -26,7 +26,7 @@ public class PDFExtractor : IDisposable
         _cache = new ConcurrentDictionary<int, PageCacheItem>();
     }
 
-    public void Initialize(Thickness? padding = null)
+    public void Initialize(IProgress<int>? progress = null, Thickness? padding = null)
     {
         foreach (var page in Document.GetPages())
         {
@@ -51,12 +51,15 @@ public class PDFExtractor : IDisposable
             }
 
             var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
-            _cache.TryAdd(page.Number, new PageCacheItem(page, page.Number, blocks));
+            var pageNumber = page.Number;
+            progress?.Report(pageNumber);
+            _cache.TryAdd(pageNumber, new PageCacheItem(page, pageNumber, blocks));
         }
 
         var orderDetector = new UnsupervisedReadingOrderDetector(10);
         foreach (var pageCacheItem in _cache.Values)
         {
+            progress?.Report(pageCacheItem.PageNumber);
             var orderedBlocks = orderDetector.Get(pageCacheItem.TotalTextBlocks).ToArray();
             pageCacheItem.RemainingTextBlocks = orderedBlocks.ToList();
             pageCacheItem.TotalTextBlocks = orderedBlocks;
@@ -240,6 +243,7 @@ public class PDFExtractor : IDisposable
             Trace.TraceWarning("未知的书签节点类型。");
             return null;
         }
+
         node.StartPoint = GetTopLeft(node);
         return node;
     }
@@ -271,7 +275,7 @@ public class PDFExtractor : IDisposable
         public Page Page { get; }
     }
 
-    /// summary>
+    /// <summary>
     /// 从指定的页码范围提取段落。
     /// </summary>
     private void ExtractParagraphs(PDFContentNode preNode,
@@ -349,28 +353,32 @@ public static class PDFExtractorExtensions
     /// 
     /// </summary>
     /// <param name="nodes">
-    /// 顶层节点
-    /// <para><b>警告：</b> 请勿传入已扁平化的节点列表，否则结果不正确。</para>
+    ///     顶层节点
+    ///     <para><b>警告：</b> 请勿传入已扁平化的节点列表，否则结果不正确。</para>
     /// </param>
     /// <param name="docId"></param>
     /// <param name="llmCall"></param>
+    /// <param name="logger"></param>
+    /// <param name="nodeProgress"></param>
     /// <param name="token"></param>
     /// <returns></returns>
     public static async Task<List<SKDocChunk>> ToSKDocChunks(this IEnumerable<PDFContentNode> nodes,
-        string docId, Func<string, CancellationToken, Task<string>> llmCall, CancellationToken token = default)
+        string docId, Func<string, CancellationToken, Task<string>> llmCall, ILogger? logger = null,
+        IProgress<PDFContentNode>? nodeProgress = null,
+        CancellationToken token = default)
     {
         var docChunks = new List<SKDocChunk>();
         foreach (var contentNode in nodes)
         {
-            await ApplyRaptor(docId, contentNode, docChunks, llmCall, token: token);
+            await ApplyRaptor(docId, contentNode, docChunks, llmCall, logger, nodeProgress, token: token);
         }
 
         return docChunks;
     }
 
     private static async Task<SKDocChunk> ApplyRaptor(string docId, PDFContentNode node,
-        List<SKDocChunk> chunks, Func<string, CancellationToken, Task<string>> llmCall, string? parentId = null,
-        CancellationToken token = default)
+        List<SKDocChunk> chunks, Func<string, CancellationToken, Task<string>> llmCall, ILogger? logger = null,
+        IProgress<PDFContentNode>? nodeProgress = null, string? parentId = null, CancellationToken token = default)
     {
         token.ThrowIfCancellationRequested();
         var nodeLevel = node.Level;
@@ -389,7 +397,8 @@ public static class PDFExtractorExtensions
             var summaryBuilder = new StringBuilder(node.Title + "\nSubsections:");
             foreach (var child in node.Children)
             {
-                var chunk = await ApplyRaptor(docId, child, chunks, llmCall, nodeChunk.Key, token);
+                var chunk = await ApplyRaptor(docId, child, chunks, llmCall, logger, nodeProgress, nodeChunk.Key,
+                    token);
                 summaryBuilder.AppendLine($"- {child.Title}");
                 summaryBuilder.AppendLine(chunk.Summary);
             }
@@ -407,10 +416,12 @@ public static class PDFExtractorExtensions
                     var paragraphContent = paragraph.Content;
                     if (string.IsNullOrEmpty(paragraphContent.Trim()))
                     {
+                        logger?.LogWarning("跳过空段落，所在页码：{PageNumber}", paragraph.PageNumber);
                         continue; // 跳过空段落
                     }
 
                     nodeContentBuilder.AppendLine(paragraphContent);
+                    //todo：检查段落是否超过 Embedding限制（一般不会）
                     chunks.Add(new SKDocChunk()
                     {
                         Key = Guid.NewGuid().ToString(),
@@ -421,6 +432,7 @@ public static class PDFExtractorExtensions
                         ParentKey = nodeChunk.Key,
                         HasChild = false
                     });
+                    nodeProgress?.Report(node);
                 }
 
                 nodeChunk.HasChild = true;
@@ -429,6 +441,7 @@ public static class PDFExtractorExtensions
             var nodeContent = nodeContentBuilder.ToString();
             if (string.IsNullOrEmpty(nodeContent.Trim()))
             {
+                logger?.LogWarning("节点没有内容，所在页码：{StartPage}, 标题：{Title}", node.StartPage, node.Title);
                 nodeChunk.HasChild = false;
                 nodeChunk.Text = node.Title;
                 nodeChunk.Summary = node.Title;
@@ -443,6 +456,7 @@ public static class PDFExtractorExtensions
         }
 
         chunks.Add(nodeChunk);
+        nodeProgress?.Report(node);
         return nodeChunk;
     }
 }
