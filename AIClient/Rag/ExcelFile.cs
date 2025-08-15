@@ -7,7 +7,7 @@ namespace LLMClient.Rag;
 public class ExcelFile : RagFileBase
 {
     [JsonConstructor]
-    public ExcelFile()
+    public ExcelFile() : base()
     {
     }
 
@@ -30,7 +30,8 @@ public class ExcelFile : RagFileBase
         return Task.CompletedTask;
     }
 
-    public override Task<ISearchResult> QueryAsync(string query, dynamic options, CancellationToken cancellationToken = default)
+    public override Task<ISearchResult> QueryAsync(string query, dynamic options,
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
@@ -40,7 +41,8 @@ public class ExcelFile : RagFileBase
         throw new NotImplementedException();
     }
 
-    public override Task<ISearchResult> GetSectionAsync(string sectionName, CancellationToken cancellationToken = default)
+    public override Task<ISearchResult> GetSectionAsync(string sectionName,
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

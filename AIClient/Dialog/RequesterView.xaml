@@ -66,280 +66,285 @@
                     </Style>
                 </TextBox.Style>
             </TextBox>
-            <Border Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
-                    Height="45">
-                <Grid Margin="8,0"
-                      VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0"
-                                Orientation="Horizontal">
-                        <materialDesign:Card Padding="8,0"
-                                             UniformCornerRadius="12"
-                                             Height="32"
-                                             Visibility="{Binding IsModelSupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                             materialDesign:ElevationAssist.Elevation="Dp3">
-                            <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                                      IsChecked="{Binding FunctionTreeSelector.FunctionEnabled,Mode=TwoWay}">
+            <Border Background="{DynamicResource MaterialDesignTextFieldBoxBackground}">
+                <StackPanel Margin="8,0">
+                    <ScrollViewer VerticalScrollBarVisibility="Disabled"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  DockPanel.Dock="Right"
+                                  Margin="0,5,0,0"
+                                  Visibility="{Binding  Attachments,Converter={x:Static converters:SnapConverters.EnumerableToVisibilityConverter}}">
+                        <ItemsControl Padding="0"
+                                      ItemsSource="{Binding Attachments,Mode=OneWay}"
+                                      VerticalAlignment="Bottom">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"
+                                                IsItemsHost="True" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type local:Attachment}">
+                                    <materialDesign:Chip IsDeletable="True"
+                                                         MaxWidth="140"
+                                                         Margin="0"
+                                                         IconBackground="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                         IconForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
+                                                         ToolTipService.InitialShowDelay="0"
+                                                         ToolTip="{Binding OriUri,Mode=OneTime}"
+                                                         Command="{Binding OpenFileCommand}"
+                                                         CommandParameter="{Binding}"
+                                                         Content="{Binding Name,Mode=OneTime}"
+                                                         DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"
+                                                         DeleteCommandParameter="{Binding  }">
+                                        <materialDesign:Chip.Icon>
+                                            <materialDesign:PackIcon
+                                                Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
+                                        </materialDesign:Chip.Icon>
+                                    </materialDesign:Chip>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                    <Grid Margin="0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"
+                                    Orientation="Horizontal">
+                            <materialDesign:Card Padding="8,0"
+                                                 UniformCornerRadius="12"
+                                                 Height="32"
+                                                 Visibility="{Binding IsModelSupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp3">
+                                <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
+                                          IsChecked="{Binding FunctionTreeSelector.FunctionEnabled,Mode=TwoWay}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Tools" />
+                                        <materialDesign:PopupBox Margin="6,0"
+                                                                 StaysOpen="True"
+                                                                 PlacementMode="TopAndAlignLeftEdges"
+                                                                 Opened="McpPopupBox_OnOpened"
+                                                                 ToggleContent="{materialDesign:PackIcon Kind=Tools,Size=16}"
+                                                                 VerticalAlignment="Center"
+                                                                 ToolTip="Function Call工具"
+                                                                 PopupContent="{Binding FunctionTreeSelector,Mode=OneWay}"
+                                                                 PopupContentTemplate="{StaticResource FunctionTreeDataTemplate}"
+                                                                 Style="{StaticResource MaterialDesignToolPopupBox}" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </materialDesign:Card>
+                            <materialDesign:Card Padding="8,0"
+                                                 Margin="6,0,0,0"
+                                                 UniformCornerRadius="12"
+                                                 Height="32"
+                                                 Visibility="{Binding SearchConfig.IsSearchAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp3">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Tools" />
-                                    <materialDesign:PopupBox Margin="6,0"
-                                                             StaysOpen="True"
+                                    <materialDesign:PopupBox StaysOpen="True"
                                                              PlacementMode="TopAndAlignLeftEdges"
-                                                             Opened="McpPopupBox_OnOpened"
-                                                             ToggleContent="{materialDesign:PackIcon Kind=Tools,Size=16}"
+                                                             ToggleContent="{materialDesign:PackIcon Kind=Web,Size=16}"
                                                              VerticalAlignment="Center"
-                                                             ToolTip="Function Call工具"
-                                                             PopupContent="{Binding FunctionTreeSelector,Mode=OneWay}"
-                                                             PopupContentTemplate="{StaticResource FunctionTreeDataTemplate}"
-                                                             Style="{StaticResource MaterialDesignToolPopupBox}" />
-                                </StackPanel>
-                            </CheckBox>
-                        </materialDesign:Card>
-                        <materialDesign:Card Padding="8,0"
-                                             Margin="6,0,0,0"
-                                             UniformCornerRadius="12"
-                                             Height="32"
-                                             Visibility="{Binding SearchConfig.IsSearchAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                             materialDesign:ElevationAssist.Elevation="Dp3">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PopupBox StaysOpen="True"
-                                                         PlacementMode="TopAndAlignLeftEdges"
-                                                         ToggleContent="{materialDesign:PackIcon Kind=Web,Size=16}"
-                                                         VerticalAlignment="Center"
-                                                         ToolTip="Web Search工具"
-                                                         PopupContent="{Binding SearchConfig,Mode=OneWay}"
-                                                         Style="{StaticResource MaterialDesignToolPopupBox}">
-                                    <materialDesign:PopupBox.PopupContentTemplate>
-                                        <DataTemplate DataType="{x:Type mcp:SearchConfigViewModel}">
-                                            <ListBox ItemsSource="{Binding SelectableSearchServices,Mode=OneWay}"
-                                                     SelectedItem="{Binding SelectedSearchService,Mode=TwoWay}"
-                                                     SelectionMode="Single">
-                                                <ListBox.ItemTemplate>
-                                                    <DataTemplate DataType="{x:Type abstraction:ISearchService}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
-                                                                   Width="21"
-                                                                   Height="21" />
-                                                            <TextBlock Text="{Binding Name,Mode=OneTime}"
-                                                                       VerticalAlignment="Center"
-                                                                       Margin="6,0,0,0" />
-                                                        </StackPanel>
-                                                    </DataTemplate>
-                                                </ListBox.ItemTemplate>
-                                            </ListBox>
-                                        </DataTemplate>
-                                    </materialDesign:PopupBox.PopupContentTemplate>
-                                </materialDesign:PopupBox>
-                                <TextBlock Text="Search"
-                                           Margin="6,0"
-                                           VerticalAlignment="Center" />
-                                <ToggleButton IsChecked="{Binding SearchConfig.SearchEnable,Mode=TwoWay}" />
-                            </StackPanel>
-                        </materialDesign:Card>
-                        <materialDesign:Card Padding="8,0"
-                                             Margin="6,0,0,0"
-                                             UniformCornerRadius="12"
-                                             Height="32"
-                                             Visibility="{Binding ThinkingAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                             materialDesign:ElevationAssist.Elevation="Dp3">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PopupBox StaysOpen="True"
-                                                         PopupUniformCornerRadius="6"
-                                                         PopupElevation="Dp3"
-                                                         Padding="10"
-                                                         PlacementMode="TopAndAlignLeftEdges"
-                                                         ToggleContent="{materialDesign:PackIcon Kind=HeadThinkingOutline,Size=16}"
-                                                         ToolTip="Thinking配置"
-                                                         PopupContent="{Binding ThinkingConfig,Mode=OneTime}"
-                                                         Style="{StaticResource MaterialDesignToolPopupBox}">
-                                    <materialDesign:PopupBox.PopupContentTemplate>
-                                        <DataTemplate DataType="{x:Type local:ThinkingConfigViewModel}">
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition />
-                                                </Grid.RowDefinitions>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition />
-                                                </Grid.ColumnDefinitions>
-                                                <ListBox Grid.Column="1"
-                                                         ItemsSource="{Binding EffortLevels,Mode=OneTime}"
-                                                         SelectedIndex="0"
-                                                         SelectedItem="{Binding EffortLevel,Mode=TwoWay}"
+                                                             ToolTip="Web Search工具"
+                                                             PopupContent="{Binding SearchConfig,Mode=OneWay}"
+                                                             Style="{StaticResource MaterialDesignToolPopupBox}">
+                                        <materialDesign:PopupBox.PopupContentTemplate>
+                                            <DataTemplate DataType="{x:Type mcp:SearchConfigViewModel}">
+                                                <ListBox ItemsSource="{Binding SelectableSearchServices,Mode=OneWay}"
+                                                         SelectedItem="{Binding SelectedSearchService,Mode=TwoWay}"
                                                          SelectionMode="Single">
-                                                    <ListBox.Style>
-                                                        <Style TargetType="ListBox"
-                                                               BasedOn="{StaticResource MaterialDesignToolToggleFlatListBox}">
-                                                            <Setter Property="ItemContainerStyle">
-                                                                <Setter.Value>
-                                                                    <Style TargetType="ListBoxItem"
-                                                                           BasedOn="{StaticResource MaterialDesignToolToggleListBoxItem}">
-                                                                        <Setter Property="HorizontalContentAlignment"
-                                                                            Value="Center" />
-                                                                        <Setter Property="VerticalContentAlignment"
-                                                                            Value="Center" />
-                                                                        <Setter Property="MinWidth" Value="54" />
-                                                                        <Setter Property="Height"
-                                                                            Value="30" />
-                                                                        <Setter Property="Padding" Value="6,3" />
-                                                                        <Setter Property="TextBlock.FontSize"
-                                                                            Value="16" />
-                                                                        <Setter Property="TextBlock.FontWeight"
-                                                                            Value="Black" />
-                                                                    </Style>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                        </Style>
-                                                    </ListBox.Style>
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type abstraction:ISearchService}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Image
+                                                                    Source="{Binding Icon.CurrentSource,Mode=OneWay}"
+                                                                    Width="21"
+                                                                    Height="21" />
+                                                                <TextBlock Text="{Binding Name,Mode=OneTime}"
+                                                                           VerticalAlignment="Center"
+                                                                           Margin="6,0,0,0" />
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
                                                 </ListBox>
-                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Effort Level:"
-                                                           Margin="0,0,8,0"
-                                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                                           VerticalAlignment="Center" />
-                                                <CheckBox Grid.Row="1" Grid.Column="0"
-                                                          Grid.ColumnSpan="2"
-                                                          HorizontalAlignment="Left"
-                                                          materialDesign:CheckBoxAssist.CheckBoxSize="26"
-                                                          Margin="0,6,0,0"
-                                                          IsChecked="{Binding EnableBudgetTokens,Mode=TwoWay}">
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="Budget Tokens:"
-                                                                   VerticalAlignment="Center"
-                                                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
-                                                        <TextBox
-                                                            Margin="6,0,0,0"
-                                                            Padding="8,6"
-                                                            Width="80"
-                                                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                                            VerticalAlignment="Center">
-                                                            <TextBox.Text>
-                                                                <Binding Path="BudgetTokens" Mode="TwoWay">
-                                                                    <Binding.ValidationRules>
-                                                                        <component:TypeValidateRule
-                                                                            TargetType="{x:Type sys:Int32}" />
-                                                                    </Binding.ValidationRules>
-                                                                </Binding>
-                                                            </TextBox.Text>
-                                                        </TextBox>
-                                                    </StackPanel>
-                                                </CheckBox>
-                                                <CheckBox Grid.Row="2" Grid.Column="0"
-                                                          Grid.ColumnSpan="2"
-                                                          HorizontalAlignment="Left"
-                                                          Margin="0,6,0,0"
-                                                          FontSize="14"
-                                                          Content="Show thinking details."
-                                                          materialDesign:CheckBoxAssist.CheckBoxSize="26"
-                                                          IsChecked="{Binding ShowThinking,Mode=TwoWay}" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </materialDesign:PopupBox.PopupContentTemplate>
-                                </materialDesign:PopupBox>
-                                <TextBlock Text="Thinking"
-                                           Margin="6,0"
-                                           VerticalAlignment="Center" />
-                                <ToggleButton IsChecked="{Binding ThinkingConfig.Enable,Mode=TwoWay}" />
-                            </StackPanel>
-                        </materialDesign:Card>
-                    </StackPanel>
-                    <DockPanel Grid.Column="1">
-                        <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                Command="{Binding AddImageCommand}"
-                                Height="32"
-                                Width="32"
-                                Margin="10,0,0,0"
-                                Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <materialDesign:PackIcon Kind="FileImagePlusOutline"
-                                                     Width="15"
-                                                     Height="15" />
-                        </Button>
-                        <ScrollViewer VerticalScrollBarVisibility="Disabled"
-                                      HorizontalScrollBarVisibility="Auto"
-                                      DockPanel.Dock="Right"
-                                      Margin="6,0">
-                            <ItemsControl Padding="0"
-                                          ItemsSource="{Binding Attachments,Mode=OneWay}"
-                                          VerticalAlignment="Bottom">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal"
-                                                    IsItemsHost="True" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type local:Attachment}">
-                                        <materialDesign:Chip IsDeletable="True"
-                                                             MaxWidth="140"
-                                                             Margin="0"
-                                                             IconBackground="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
-                                                             IconForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
-                                                             ToolTipService.InitialShowDelay="0"
-                                                             ToolTip="{Binding OriUri,Mode=OneTime}"
-                                                             Command="{Binding OpenFileCommand}"
-                                                             CommandParameter="{Binding}"
-                                                             Content="{Binding Name,Mode=OneTime}"
-                                                             DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"
-                                                             DeleteCommandParameter="{Binding  }">
-                                            <materialDesign:Chip.Icon>
-                                                <materialDesign:PackIcon
-                                                    Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
-                                            </materialDesign:Chip.Icon>
-                                        </materialDesign:Chip>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                    </DockPanel>
-                    <StackPanel Grid.Column="2"
-                                Orientation="Horizontal"
-                                Margin="0,4,0,0"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Bottom">
-                        <CheckBox Content="回车发送"
-                                  Margin="16,0,0,0"
-                                  Checked="EnterKeyInputBinding_OnChecked"
-                                  Unchecked="EnterKeyInputBinding_OnUnchecked"
-                                  materialDesign:CheckBoxAssist.CheckBoxSize="30" />
-                        <Button Command="{Binding NewRequestCommand}"
-                                Width="80"
-                                Height="30"
-                                Margin="16,0,0,0"
-                                Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Send"
-                                                         Width="16"
-                                                         Height="16"
-                                                         VerticalAlignment="Center" />
-                                <TextBlock Text="发送"
-                                           Margin="6,0,0,0"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding SummarizeCommand}"
-                                Margin="16,0,0,0"
-                                Style="{StaticResource MaterialDesignPaperLightButton}">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="LightbulbOnOutline"
-                                                         Width="16"
-                                                         Height="16"
-                                                         VerticalAlignment="Center" />
-                                <TextBlock Text="总结"
-                                           Margin="6,0,0,0"
-                                           VerticalAlignment="Center" />
-                                
-                            </StackPanel>
-                        </Button>
-                        <!--<Button Command="{Binding TestCommand}"
+                                            </DataTemplate>
+                                        </materialDesign:PopupBox.PopupContentTemplate>
+                                    </materialDesign:PopupBox>
+                                    <TextBlock Text="Search"
+                                               Margin="6,0"
+                                               VerticalAlignment="Center" />
+                                    <ToggleButton IsChecked="{Binding SearchConfig.SearchEnable,Mode=TwoWay}" />
+                                </StackPanel>
+                            </materialDesign:Card>
+                            <materialDesign:Card Padding="8,0"
+                                                 Margin="6,0,0,0"
+                                                 UniformCornerRadius="12"
+                                                 Height="32"
+                                                 Visibility="{Binding ThinkingAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp3">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PopupBox StaysOpen="True"
+                                                             PopupUniformCornerRadius="6"
+                                                             PopupElevation="Dp3"
+                                                             Padding="10"
+                                                             PlacementMode="TopAndAlignLeftEdges"
+                                                             ToggleContent="{materialDesign:PackIcon Kind=HeadThinkingOutline,Size=16}"
+                                                             ToolTip="Thinking配置"
+                                                             PopupContent="{Binding ThinkingConfig,Mode=OneTime}"
+                                                             Style="{StaticResource MaterialDesignToolPopupBox}">
+                                        <materialDesign:PopupBox.PopupContentTemplate>
+                                            <DataTemplate DataType="{x:Type local:ThinkingConfigViewModel}">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition />
+                                                    </Grid.RowDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition />
+                                                    </Grid.ColumnDefinitions>
+                                                    <ListBox Grid.Column="1"
+                                                             ItemsSource="{Binding EffortLevels,Mode=OneTime}"
+                                                             SelectedIndex="0"
+                                                             SelectedItem="{Binding EffortLevel,Mode=TwoWay}"
+                                                             SelectionMode="Single">
+                                                        <ListBox.Style>
+                                                            <Style TargetType="ListBox"
+                                                                   BasedOn="{StaticResource MaterialDesignToolToggleFlatListBox}">
+                                                                <Setter Property="ItemContainerStyle">
+                                                                    <Setter.Value>
+                                                                        <Style TargetType="ListBoxItem"
+                                                                               BasedOn="{StaticResource MaterialDesignToolToggleListBoxItem}">
+                                                                            <Setter
+                                                                                Property="HorizontalContentAlignment"
+                                                                                Value="Center" />
+                                                                            <Setter Property="VerticalContentAlignment"
+                                                                                Value="Center" />
+                                                                            <Setter Property="MinWidth" Value="54" />
+                                                                            <Setter Property="Height"
+                                                                                Value="30" />
+                                                                            <Setter Property="Padding" Value="6,3" />
+                                                                            <Setter Property="TextBlock.FontSize"
+                                                                                Value="16" />
+                                                                            <Setter Property="TextBlock.FontWeight"
+                                                                                Value="Black" />
+                                                                        </Style>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </Style>
+                                                        </ListBox.Style>
+                                                    </ListBox>
+                                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Effort Level:"
+                                                               Margin="0,0,8,0"
+                                                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                               VerticalAlignment="Center" />
+                                                    <CheckBox Grid.Row="1" Grid.Column="0"
+                                                              Grid.ColumnSpan="2"
+                                                              HorizontalAlignment="Left"
+                                                              materialDesign:CheckBoxAssist.CheckBoxSize="26"
+                                                              Margin="0,6,0,0"
+                                                              IsChecked="{Binding EnableBudgetTokens,Mode=TwoWay}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="Budget Tokens:"
+                                                                       VerticalAlignment="Center"
+                                                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                                            <TextBox
+                                                                Margin="6,0,0,0"
+                                                                Padding="8,6"
+                                                                Width="80"
+                                                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                                VerticalAlignment="Center">
+                                                                <TextBox.Text>
+                                                                    <Binding Path="BudgetTokens" Mode="TwoWay">
+                                                                        <Binding.ValidationRules>
+                                                                            <component:TypeValidateRule
+                                                                                TargetType="{x:Type sys:Int32}" />
+                                                                        </Binding.ValidationRules>
+                                                                    </Binding>
+                                                                </TextBox.Text>
+                                                            </TextBox>
+                                                        </StackPanel>
+                                                    </CheckBox>
+                                                    <CheckBox Grid.Row="2" Grid.Column="0"
+                                                              Grid.ColumnSpan="2"
+                                                              HorizontalAlignment="Left"
+                                                              Margin="0,6,0,0"
+                                                              FontSize="14"
+                                                              Content="Show thinking details."
+                                                              materialDesign:CheckBoxAssist.CheckBoxSize="26"
+                                                              IsChecked="{Binding ShowThinking,Mode=TwoWay}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </materialDesign:PopupBox.PopupContentTemplate>
+                                    </materialDesign:PopupBox>
+                                    <TextBlock Text="Thinking"
+                                               Margin="6,0"
+                                               VerticalAlignment="Center" />
+                                    <ToggleButton IsChecked="{Binding ThinkingConfig.Enable,Mode=TwoWay}" />
+                                </StackPanel>
+                            </materialDesign:Card>
+                            <materialDesign:Badged Badge="{materialDesign:PackIcon Plus}"
+                                                   BadgeColorZoneMode="Light"
+                                                   BadgePlacementMode="BottomRight">
+                                <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                        Command="{Binding AddImageCommand}"
+                                        Height="32"
+                                        Width="32"
+                                        Margin="10,0,0,0"
+                                        Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <materialDesign:PackIcon Kind="FileImageOutline"
+                                                             Width="22"
+                                                             Height="22" />
+                                </Button>
+                            </materialDesign:Badged>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2"
+                                    Orientation="Horizontal"
+                                    Margin="0,4,0,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom">
+                            <CheckBox Content="回车发送"
+                                      Margin="16,0,0,0"
+                                      Checked="EnterKeyInputBinding_OnChecked"
+                                      Unchecked="EnterKeyInputBinding_OnUnchecked"
+                                      materialDesign:CheckBoxAssist.CheckBoxSize="30" />
+                            <Button Command="{Binding NewRequestCommand}"
+                                    Width="80"
+                                    Height="30"
+                                    Margin="16,0,0,0"
+                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Send"
+                                                             Width="16"
+                                                             Height="16"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="发送"
+                                               Margin="6,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SummarizeCommand}"
+                                    Margin="16,0,0,0"
+                                    Style="{StaticResource MaterialDesignPaperLightButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="LightbulbOnOutline"
+                                                             Width="16"
+                                                             Height="16"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="总结"
+                                               Margin="6,0,0,0"
+                                               VerticalAlignment="Center" />
+
+                                </StackPanel>
+                            </Button>
+                            <!--<Button Command="{Binding TestCommand}"
                         Content="测试" />-->
-                    </StackPanel>
-                </Grid>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
             </Border>
         </StackPanel>
     </Border>

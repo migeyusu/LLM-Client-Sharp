@@ -61,7 +61,66 @@ public class O3FanModelMapping : ModelMapping
                 MessageEventBus.Publish($"Error fetching models from O3.Fan: {e.Message}");
             }
 
+            try
+            {
+                await GetPrice(httpClient, _modelInfos);
+            }
+            catch (Exception e)
+            {
+                MessageEventBus.Publish($"Error fetching prices from O3.Fan: {e.Message}");
+            }
+
             return false;
+        }
+    }
+
+    private async Task GetPrice(HttpClient client, IEnumerable<ModelInfoSimple> modelInfos)
+    {
+        using (var responseMessage =
+               await client.GetAsync(new Uri("https://api.o3.fan/api/pricing")))
+        {
+            responseMessage.EnsureSuccessStatusCode();
+            await using (var stream = await responseMessage.Content.ReadAsStreamAsync())
+            {
+                var priceResponse = await JsonSerializer.DeserializeAsync<PriceResponse>(stream);
+                var priceData = priceResponse?.Data;
+                if (priceResponse?.Success != true || priceData == null)
+                {
+                    return;
+                }
+
+                var completionRatio = priceData.CompletionRatio;
+                if (completionRatio == null)
+                {
+                    return;
+                }
+
+                var modelRatio = priceData.ModelRatio;
+                if (modelRatio == null)
+                {
+                    return;
+                }
+
+                /*var modelFixedPrice = priceData.ModelFixedPrice;
+                if (modelFixedPrice == null)
+                {
+                    return;
+                }*/
+
+                const double basePrice = 2;
+                const double groupRatio = 1.0;
+                foreach (var modelInfo in modelInfos)
+                {
+                    if (modelRatio.TryGetValue(modelInfo.Id, out var value))
+                    {
+                        modelInfo.InputPrice = basePrice * groupRatio * value;
+                        if (completionRatio.TryGetValue(modelInfo.Id, out var completionRatioValue))
+                        {
+                            modelInfo.OutputPrice = modelInfo.InputPrice * completionRatioValue;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -103,6 +162,12 @@ public class O3FanModelMapping : ModelMapping
         modelInfo.MaxContextSize = (modelInfoSimple.ContextLength ?? 0) * 1000;
         modelInfo.MaxTokensEnable = modelInfoSimple.MaxOutput != null;
         modelInfo.MaxTokenLimit = (modelInfoSimple.MaxOutput ?? 0) * 1000;
+        if (modelInfo.PriceCalculator is TokenBasedPriceCalculator tokenBasedPriceCalculator)
+        {
+            tokenBasedPriceCalculator.InputPrice = modelInfoSimple.InputPrice;
+            tokenBasedPriceCalculator.OutputPrice = modelInfoSimple.OutputPrice;
+        }
+
         var modelAbility = modelInfoSimple.ModelAbility;
         if (modelAbility != null)
         {
@@ -126,7 +191,7 @@ public class O3FanModelMapping : ModelMapping
         return true;
     }
 
-    string[] StatusAvailable = ["published", "draft"];
+    private string[] StatusAvailable = ["published", "draft"];
 
     const string ModelAbilityChat = "对话";
 
@@ -156,8 +221,40 @@ public class O3FanModelMapping : ModelMapping
 
         [JsonPropertyName("tag")] public List<string>? Tag { get; set; }
 
+        /// <summary>
+        /// $/M tokens
+        /// </summary>
+        public double InputPrice { get; set; }
+
+        /// <summary>
+        /// $/M tokens
+        /// </summary>
+        public double OutputPrice { get; set; }
+
         [JsonPropertyName("model_ablity")] public List<string>? ModelAbility { get; set; }
 
         [JsonPropertyName("data_type")] public string? DataType { get; set; }
+    }
+
+    public class PriceResponse
+    {
+        [JsonPropertyName("data")] public PriceData? Data { get; set; }
+
+        [JsonPropertyName("message")] public string? Message { get; set; }
+
+        [JsonPropertyName("success")] public bool Success { get; set; }
+    }
+
+    public class PriceData
+    {
+        [JsonPropertyName("CompletionRatio")] public Dictionary<string, double>? CompletionRatio { get; set; }
+
+        [JsonPropertyName(("GroupRatio"))] public Dictionary<string, double>? GroupRatio { get; set; }
+
+        [JsonPropertyName("ModelFixedPrice")] public Dictionary<string, double>? ModelFixedPrice { get; set; }
+
+        [JsonPropertyName("ModelRatio")] public Dictionary<string, double>? ModelRatio { get; set; }
+
+        [JsonPropertyName("Models")] public string[]? Models { get; set; }
     }
 }

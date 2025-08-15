@@ -13,6 +13,8 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.Xaml.Behaviors.Core;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace LLMClient.Rag;
 
@@ -33,17 +35,36 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
-    //todo:是否有必要用特殊符号包围名称从而让LLM更好地识别？
-    private string PluginName => string.Format("File {0} Plugin", this.Name);
+    /// <summary>
+    /// 在上下文中该文件的索引，由于KernelPlugin的命名限制，函数不能直接使用文件名命名。
+    /// </summary>
+    [JsonPropertyName("FileIndex")]
+    public int FileIndexInContext
+    {
+        get => _fileIndexInContext;
+        set
+        {
+            if (value == _fileIndexInContext) return;
+            _fileIndexInContext = value;
+            OnPropertyChanged();
+            OnPropertyChanged(PluginName);
+        }
+    }
 
+    [System.Text.Json.Serialization.JsonIgnore]
+    private string PluginName => string.Format("File{0}_{1}_Plugin", FileIndexInContext, FileType);
+
+    [System.Text.Json.Serialization.JsonIgnore]
     private string PluginDescription => string.Format("A plugin for File {0} operations",
         this.Name);
 
+    [System.Text.Json.Serialization.JsonIgnore]
     public string? AdditionPrompt
     {
         get { return $"{PluginName} is {PluginDescription}"; }
     }
 
+    [System.Text.Json.Serialization.JsonIgnore]
     public IReadOnlyList<AIFunction>? AvailableTools
     {
         get => _availableTools;
@@ -55,6 +76,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
+    [System.Text.Json.Serialization.JsonIgnore]
     public bool IsAvailable => this.IsInitialized && this.Status == ConstructStatus.Constructed;
 
     public string GetUniqueId()
@@ -64,25 +86,30 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public Task EnsureAsync(CancellationToken token)
     {
+        //由于plugin的名称可能动态变化，因此每次都需要重新创建。
+        var kernelPlugin = KernelPluginFactory.CreateFromFunctions(PluginName, PluginDescription, _functions);
+#pragma warning disable SKEXP0001
+        this.AvailableTools = kernelPlugin.AsAIFunctions().ToArray();
+#pragma warning restore SKEXP0001
         return Task.CompletedTask;
     }
 
     public Guid Id { get; set; } = Guid.NewGuid();
 
+    private KernelFunction[] _functions;
+
     protected RagFileBase()
     {
-        var kernelPlugin = KernelPluginFactory.CreateFromFunctions(PluginName, PluginDescription, [
+        _functions =
+        [
             CreateQueryFunction(),
             CreateGetStructureFunction(),
             CreateGetDocumentFunction(),
             CreateGetSectionFunction()
-        ]);
-#pragma warning disable SKEXP0001
-        this.AvailableTools = kernelPlugin.AsAIFunctions().ToArray();
-#pragma warning restore SKEXP0001
+        ];
     }
 
-    protected RagFileBase(FileInfo fileInfo)
+    protected RagFileBase(FileInfo fileInfo) : this()
     {
         this.FilePath = fileInfo.FullName;
         this.FileSize = fileInfo.Length;
@@ -127,16 +154,19 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
-    [JsonIgnore] public LogsViewModel ConstructionLogs { get; set; } = new LogsViewModel();
+    [System.Text.Json.Serialization.JsonIgnore]
+    public LogsViewModel ConstructionLogs { get; set; } = new LogsViewModel();
 
-    [JsonIgnore] public abstract DocumentFileType FileType { get; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public abstract DocumentFileType FileType { get; }
 
-    [JsonIgnore]
+    [System.Text.Json.Serialization.JsonIgnore]
     public virtual string DocumentId
     {
         get { return $"{FileType}_{Id}"; }
     }
 
+    [System.Text.Json.Serialization.JsonIgnore]
     public bool IsInitialized
     {
         get => _isInitialized;
@@ -178,6 +208,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     private Task? _constructionTask;
     private bool _isInitialized;
     private IReadOnlyList<AIFunction>? _availableTools;
+    private int _fileIndexInContext;
 
     public ICommand SwitchConstructCommand => new ActionCommand(async o =>
     {
@@ -466,7 +497,8 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public object Clone()
     {
-        throw new NotImplementedException();
+        var serialize = JsonSerializer.Serialize(this, Extension.DefaultJsonSerializerOptions);
+        return JsonSerializer.Deserialize(serialize, this.GetType(), Extension.DefaultJsonSerializerOptions)!;
     }
 }
 

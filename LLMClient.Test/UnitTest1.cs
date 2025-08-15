@@ -400,6 +400,27 @@ public class UnitTest1
             }
         };
         var openAiPromptExecutionSettings = OpenAIPromptExecutionSettings.FromExecutionSettings(promptExecutionSettings);
-        
+    }
+
+    [Fact]
+    public async Task TestPrice()
+    {
+        using (var httpClient = new HttpClient())
+        {
+            try
+            {
+                using (var responseMessage =
+                       await httpClient.GetAsync(new Uri("https://api.o3.fan/api/pricing")))
+                {
+                    responseMessage.EnsureSuccessStatusCode();
+                    var readAsStringAsync = await responseMessage.Content.ReadAsStringAsync();
+                    output.WriteLine(readAsStringAsync);
+                }
+            }
+            finally
+            {
+                
+            }
+        }
     }
 }
