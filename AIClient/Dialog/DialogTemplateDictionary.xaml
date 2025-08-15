@@ -252,7 +252,7 @@
                                  TextWrapping="Wrap"
                                  Foreground="Red"
                                  Padding="10"
-                                 Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"/>
+                                 Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                     </StackPanel>
                 </DataTemplate>
             </component:DataTemplateTypePair.Template>
@@ -314,12 +314,15 @@
         <StackPanel>
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Bottom">
-                    <ListBox Height="60"
+                <Grid HorizontalAlignment="Left">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ListBox Height="45"
                              HorizontalAlignment="Right"
                              VerticalAlignment="Bottom"
                              VerticalContentAlignment="Bottom"
@@ -328,58 +331,67 @@
                              Style="{StaticResource MaterialDesignChoiceChipPrimaryListBox}"
                              ItemsSource="{Binding Items,Mode=OneWay}"
                              ItemTemplateSelector="{StaticResource MultiResponseHeaderTemplateSelector}"
-                             ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}" />
-                    <Menu VerticalAlignment="Center"
-                          Margin="10,0,0,0">
-                        <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert,Size=18}"
-                                  Width="20"
-                                  Height="50"
-                                  Padding="0">
-                            <MenuItem Header="由此创建新会话"
-                                      Command="{x:Static ui:CommonCommands.Branch}"
-                                      CommandParameter="{Binding}"
-                                      Icon="{materialDesign:PackIcon SourceBranchPlus}"
-                                      Style="{StaticResource AutoHideMenuItemStyle}" />
-                            <MenuItem Header="移除之后消息"
-                                      Command="{Binding RebaseCommand}"
-                                      ToolTip="保留当前消息并删除所有之后的消息"
-                                      Icon="{materialDesign:PackIcon Kind=WaveArrowDown}" />
-                            <MenuItem Header="标记为有效回复"
-                                      IsCheckable="True"
-                                      IsChecked="{Binding AcceptedResponse.IsManualValid,Mode=TwoWay}"
-                                      Visibility="{Binding AcceptedResponse.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-                        </MenuItem>
-                    </Menu>
-                    <materialDesign:PopupBox Padding="4,0"
-                                             StaysOpen="True"
-                                             VerticalAlignment="Center"
-                                             ToolTip="对比其他模型"
-                                             Margin="4,0"
-                                             Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
-                                             ToggleContent="{materialDesign:PackIcon Kind=AddBold,Size=20}"
-                                             Style="{StaticResource MaterialDesignToolPopupBox}"
-                                             PopupContent="{Binding }"
-                                             PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}" />
-                    <Button Style="{StaticResource RefreshButtonStyle}"
-                            VerticalAlignment="Center"
-                            Margin="6,0,0,0"
-                            ToolTip="重试"
-                            Command="{Binding  RefreshSelectedCommand}"
-                            Content="{materialDesign:PackIcon Kind=Autorenew,Size=20}" />
-                    <Button Style="{StaticResource RefreshButtonStyle}"
-                            Command="{Binding EditCommand}"
-                            VerticalAlignment="Center"
-                            Margin="6,0,0,0"
-                            ToolTip="编辑当前回复"
-                            Content="{materialDesign:PackIcon Kind=PencilOutline,Size=20}" />
-                    <Button Style="{StaticResource RefreshButtonStyle}"
-                            Command="{x:Static ui:CommonCommands.CopyCommand}"
-                            CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
-                            VerticalAlignment="Center"
-                            Margin="6,0,0,0"
-                            ToolTip="复制当前回复文本"
-                            Content="{materialDesign:PackIcon Kind=ContentPaste,Size=20}" />
-                </StackPanel>
+                             ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
+                        <ListBox.Resources>
+                            <Style TargetType="{x:Type ScrollViewer}"
+                                   BasedOn="{StaticResource HorizontalArrowScrollViewer}" />
+                        </ListBox.Resources>
+                    </ListBox>
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Bottom">
+                        <Menu VerticalAlignment="Center"
+                              Margin="10,0,0,0">
+                            <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert,Size=18}"
+                                      Width="18"
+                                      Height="45"
+                                      Padding="0">
+                                <MenuItem Header="由此创建新会话"
+                                          Command="{x:Static ui:CommonCommands.Branch}"
+                                          CommandParameter="{Binding}"
+                                          Icon="{materialDesign:PackIcon SourceBranchPlus}"
+                                          Style="{StaticResource AutoHideMenuItemStyle}" />
+                                <MenuItem Header="移除之后消息"
+                                          Command="{Binding RebaseCommand}"
+                                          ToolTip="保留当前消息并删除所有之后的消息"
+                                          Icon="{materialDesign:PackIcon Kind=WaveArrowDown}" />
+                                <MenuItem Header="标记为有效回复"
+                                          IsCheckable="True"
+                                          IsChecked="{Binding AcceptedResponse.IsManualValid,Mode=TwoWay}"
+                                          Visibility="{Binding AcceptedResponse.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                            </MenuItem>
+                        </Menu>
+                        <materialDesign:PopupBox Padding="4,0"
+                                                 StaysOpen="True"
+                                                 VerticalAlignment="Center"
+                                                 ToolTip="对比其他模型"
+                                                 Margin="10,0,0,0"
+                                                 Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                                 ToggleContent="{materialDesign:PackIcon Kind=AddBold,Size=20}"
+                                                 Style="{StaticResource MaterialDesignToolPopupBox}"
+                                                 PopupContent="{Binding }"
+                                                 PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}" />
+                        <Button Style="{StaticResource RefreshButtonStyle}"
+                                VerticalAlignment="Center"
+                                Margin="6,0,0,0"
+                                ToolTip="重试"
+                                Command="{Binding  RefreshSelectedCommand}"
+                                Content="{materialDesign:PackIcon Kind=Autorenew,Size=20}" />
+                        <Button Style="{StaticResource RefreshButtonStyle}"
+                                Command="{Binding EditCommand}"
+                                VerticalAlignment="Center"
+                                Margin="6,0,0,0"
+                                ToolTip="编辑当前回复"
+                                Content="{materialDesign:PackIcon Kind=PencilOutline,Size=20}" />
+                        <Button Style="{StaticResource RefreshButtonStyle}"
+                                Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
+                                VerticalAlignment="Center"
+                                Margin="6,0,0,0"
+                                ToolTip="复制当前回复文本"
+                                Content="{materialDesign:PackIcon Kind=ContentPaste,Size=20}" />
+                    </StackPanel>
+                </Grid>
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"

@@ -6,7 +6,6 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Text;
 using OpenAI;
 
 namespace LLMClient.Rag;
@@ -15,22 +14,30 @@ public class SemanticKernelStore
 {
     public enum SearchAlgorithm
     {
+        /// <summary>
+        /// search flat list, only search graph nodes
+        /// </summary>
         Default,
+
+        /// <summary>
+        /// top-down hierarchical search, first search top-level nodes, then search child nodes
+        /// </summary>
         TopDown,
         Graph, // Graph search algorithm is not implemented yet
-        Indirect,
+        Recursive,
+
+        /// <summary>
+        /// interact with llm to do the search
+        /// </summary>
+        Interactive
     }
 
-    private string? _dbConnectionString;
+    private readonly string _dbConnectionString;
 
-    private Kernel? _kernel;
+    private readonly Kernel _kernel;
 
-    public SemanticKernelStore()
-    {
-    }
-
-    [Experimental("SKEXP0001")]
-    public SemanticKernelStore InitializeKernel(ILLMEndpoint endpoint, string modelId = "text-embedding-3-small",
+    [Experimental("SKEXP0010")]
+    public SemanticKernelStore(ILLMEndpoint endpoint, string modelId = "text-embedding-3-small",
         string dbConnectionString = "Data Source=file_embedding.db")
     {
         OpenAIClient? openAiClient = null;
@@ -49,13 +56,13 @@ public class SemanticKernelStore
             throw new ArgumentException("OpenAIClient cannot be null. Ensure the endpoint is properly configured.",
                 nameof(endpoint));
         }
+
         _dbConnectionString = dbConnectionString;
         var kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder.Services.AddOpenAIEmbeddingGenerator(modelId, openAiClient)
             // 添加 SQLite 向量存储（连接字符串指向本地文件）
             .AddSqliteVectorStore(connectionStringProvider: sp => _dbConnectionString); // 自动创建 db 文件
         _kernel = kernelBuilder.Build();
-        return this;
     }
 
     /// <summary>
@@ -66,20 +73,14 @@ public class SemanticKernelStore
     /// <param name="token"></param>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
-    public async Task AddFile(string docId, IEnumerable<SKDocChunk> chunks, CancellationToken token)
+    public async Task AddFile(string docId, IEnumerable<DocChunk> chunks, CancellationToken token)
     {
         if (string.IsNullOrEmpty(docId))
         {
             throw new ArgumentException("docId cannot be null or empty", nameof(docId));
         }
 
-        if (_kernel == null)
-        {
-            throw new InvalidOperationException("Kernel is not initialized. Call InitializeKernel first.");
-        }
-
-        var vectorStore = _kernel.GetRequiredService<VectorStore>();
-        var docCollection = vectorStore.GetCollection<string, SKDocChunk>(docId);
+        var docCollection = GetDocCollection(docId);
         await docCollection.EnsureCollectionExistsAsync(token);
         await docCollection.UpsertAsync(chunks, token);
     }
@@ -92,75 +93,258 @@ public class SemanticKernelStore
     /// <exception cref="InvalidOperationException"></exception>
     public async Task RemoveFile(string docId, CancellationToken token)
     {
-        if (_kernel == null)
-        {
-            throw new InvalidOperationException("Kernel is not initialized. Call InitializeKernel first.");
-        }
-
-        var vectorStore = _kernel.GetRequiredService<VectorStore>();
+        var vectorStore = GetVectorStore();
         if (await vectorStore.CollectionExistsAsync(docId, token))
         {
-            var docCollection = vectorStore.GetCollection<string, SKDocChunk>(docId);
+            var docCollection = vectorStore.GetCollection<string, DocChunk>(docId);
             await docCollection.EnsureCollectionDeletedAsync(token);
         }
     }
 
-    public async Task<IEnumerable<string>> SearchAsync(string query, string docId,
-        SearchAlgorithm algorithm, int topK = 5, CancellationToken token = default)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="docId"></param>
+    /// <param name="token"></param>
+    /// <returns>roots of bookmarks</returns>
+    public async Task<IList<ChunkNode>> GetStructureAsync(string docId, CancellationToken token)
     {
-        switch (algorithm)
+        VectorStoreCollection<string, DocChunk> vectorStoreCollection = GetDocCollection(docId);
+        if (!await vectorStoreCollection.CollectionExistsAsync(token))
         {
-            case SearchAlgorithm.Default:
-                return await GeneralSearchAsync(query, docId, token, topK);
-            case SearchAlgorithm.TopDown:
-                return await TopDownSearchAsync(query, docId, token, topK);
-            case SearchAlgorithm.Indirect:
-                return await IndirectSearchAsync(query, docId, token, 2, topK);
-                break;
-            case SearchAlgorithm.Graph:
-            default:
-                throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null);
+            return Array.Empty<ChunkNode>();
+        }
+
+        var roots = await vectorStoreCollection
+            .GetAsync(chunk => chunk.Level == 0, int.MaxValue / 2, cancellationToken: token)
+            .Select(chunk => new ChunkNode(chunk))
+            .ToArrayAsync(cancellationToken: token);
+        foreach (var docChunk in roots)
+        {
+            await PopulateChildNodeAsync(vectorStoreCollection, docChunk, token);
+        }
+
+        return roots;
+    }
+
+    /// <summary>
+    /// 获取子节点（不包括Paragraph）
+    /// </summary>
+    /// <returns></returns>
+    private async Task PopulateChildNodeAsync(VectorStoreCollection<string, DocChunk> collection, ChunkNode parentNode,
+        CancellationToken token = default)
+    {
+        if (!parentNode.Chunk.HasChildNode)
+        {
+            //如果没有子节点，则不需要继续查找
+            return;
+        }
+
+        var parentKey = parentNode.Chunk.Key;
+        await foreach (var docChunk in collection.GetAsync(chunk => chunk.ParentKey == parentKey, int.MaxValue / 2,
+                           cancellationToken: token))
+        {
+            if (docChunk.Type != (int)ChunkType.Paragraph)
+            {
+                //只添加非段落类型的节点
+                var childNode = new ChunkNode(docChunk);
+                parentNode.AddChild(childNode);
+                await PopulateChildNodeAsync(collection, childNode, token);
+            }
+        }
+    }
+
+    public async Task<IList<ChunkNode>> GetDocTreeAsync(string docId, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(docId))
+        {
+            throw new ArgumentException("docId cannot be null or empty", nameof(docId));
+        }
+
+        var collection = GetDocCollection(docId);
+        if (!await collection.CollectionExistsAsync(token))
+        {
+            throw new InvalidOperationException($"Collection {docId} does not exist.");
+        }
+
+        var roots = await GetStructureAsync(docId, token);
+        if (roots.Count == 0)
+        {
+            throw new InvalidOperationException($"No roots found in collection {docId}.");
+        }
+
+        foreach (var root in roots)
+        {
+            await PopulateChildParagraphAsync(collection, root, token);
+        }
+
+        return roots;
+    }
+
+    public async Task<ChunkNode?> GetSectionAsync(string docId, string title, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(docId))
+        {
+            throw new ArgumentException("docId cannot be null or empty", nameof(docId));
+        }
+
+        var collection = GetDocCollection(docId);
+        if (!await collection.CollectionExistsAsync(token))
+        {
+            throw new InvalidOperationException($"Collection {docId} does not exist.");
+        }
+
+        var sectionChunk = await collection.GetAsync(
+                chunk => chunk.Type != (int)ChunkType.Paragraph && chunk.Title == title,
+                int.MaxValue / 2, cancellationToken: token)
+            .FirstOrDefaultAsync(cancellationToken: token);
+        if (sectionChunk == null)
+        {
+            return null;
+        }
+
+        //找到章节节点，继续填充子节点和段落
+        var sectionNode = new ChunkNode(sectionChunk);
+        await PopulateChildNodeAsync(collection, sectionNode, token);
+        await PopulateChildParagraphAsync(collection, sectionNode, token);
+        return sectionNode;
+    }
+
+    /// <summary>
+    /// 填充所有子节点的段落
+    /// </summary>
+    /// <param name="collection"></param>
+    /// <param name="parentNode">必须是已经填充好结构的node</param>
+    /// <param name="token"></param>
+    private async Task PopulateChildParagraphAsync(VectorStoreCollection<string, DocChunk> collection,
+        ChunkNode parentNode,
+        CancellationToken token = default)
+    {
+        //递归到所有子节点
+        if (!parentNode.Chunk.HasChildNode)
+        {
+            //表示当前为叶子节点
+            var parentKey = parentNode.Chunk.Key;
+            await foreach (var paragraphChunk in collection.GetAsync(
+                               chunk => chunk.ParentKey == parentKey && chunk.Type == (int)ChunkType.Paragraph,
+                               int.MaxValue / 2, cancellationToken: token))
+            {
+                parentNode.AddChild(new ChunkNode(paragraphChunk));
+            }
+
+            return;
+        }
+
+        foreach (var nodeChild in parentNode.Children)
+        {
+            await PopulateChildParagraphAsync(collection, nodeChild, token);
         }
     }
 
 
-    public async Task<IEnumerable<string>> TopDownSearchAsync(string query, string docId,
-        CancellationToken token, int topK = 5)
+    /// <summary>
+    /// search with specific algorithm
+    /// </summary>
+    /// <param name="query"></param>
+    /// <param name="docId"></param>
+    /// <param name="algorithm"></param>
+    /// <param name="topK"></param>
+    /// <param name="token"></param>
+    /// <returns>tree of result</returns>
+    /// <exception cref="NotImplementedException"></exception>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public async Task<IList<ChunkNode>> SearchAsync(string query, string docId,
+        SearchAlgorithm algorithm, int topK = 6, CancellationToken token = default)
     {
-        var topLevelResults = await InternalSearchAsync(query, new VectorSearchOptions<SKDocChunk>()
+        IEnumerable<DocChunk>? chunks = null;
+        switch (algorithm)
+        {
+            case SearchAlgorithm.Default:
+                chunks = await GeneralSearchAsync(query, docId, token, topK);
+                break;
+            case SearchAlgorithm.TopDown:
+                chunks = await TopDownSearchAsync(query, docId, token, topK);
+                break;
+            case SearchAlgorithm.Recursive:
+                chunks = await RecursiveSearchAsync(query, docId, token, 2, topK);
+                break;
+            case SearchAlgorithm.Interactive:
+                throw new NotImplementedException("Interactive search is not implemented yet.");
+            case SearchAlgorithm.Graph:
+            default:
+                throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null);
+        }
+
+        var collection = GetDocCollection(docId);
+        var baseNodes = chunks.Select((chunk => new ChunkNode(chunk))).ToArray();
+        foreach (var chunkNode in baseNodes)
+        {
+            await PopulateParagraphs(collection, chunkNode);
+        }
+
+        IList<ChunkNode> rootNodes = new List<ChunkNode>();
+        IDictionary<string, ChunkNode> cache = new Dictionary<string, ChunkNode>();
+        //然后获取父节点
+        foreach (var chunkNode in baseNodes)
+        {
+            await AddToRootNodes(rootNodes, cache, collection, chunkNode);
+        }
+
+        return rootNodes;
+    }
+
+    /// <summary>
+    /// Top-down search algorithm. Get the top-level nodes first, then recursively search child nodes.
+    /// </summary>
+    /// <param name="query"></param>
+    /// <param name="docId"></param>
+    /// <param name="token"></param>
+    /// <param name="topK"></param>
+    /// <returns></returns>
+    private async Task<IEnumerable<DocChunk>> TopDownSearchAsync(string query, string docId,
+        CancellationToken token, int topK = 6)
+    {
+        var collection = _kernel.GetRequiredService<VectorStore>().GetCollection<string, DocChunk>(docId);
+        var embeddingGenerator = _kernel!.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+        var topLevelResults = await InternalSearchAsync(query, new VectorSearchOptions<DocChunk>()
         {
             Filter = chunk => chunk.Level == 0,
             VectorProperty = chunk => chunk.SummaryEmbedding
-        }, docId, token);
+        }, docId, token, topK, embeddingGenerator, collection);
         if (topLevelResults.Count == 0)
         {
             return [];
         }
 
-        var results = await HierarchicalSearchAsync(topLevelResults, docId, query, token)
-            .ToArrayAsync(cancellationToken: token);
-        return results.OrderByDescending(result => result.Score).Take(topK).Select(result => result.Record.Text);
+        //获取基础Bookmarks
+        return (await HierarchicalSearchAsync(topLevelResults, docId, query, 10, token)
+                .ToArrayAsync(cancellationToken: token))
+            .OrderByDescending(result => result.Score).Take(topK)
+            .Select(result => result.Record).Take(topK);
     }
 
-    private async IAsyncEnumerable<VectorSearchResult<SKDocChunk>> HierarchicalSearchAsync(
-        IEnumerable<VectorSearchResult<SKDocChunk>> chunks, string docId,
-        string query, [EnumeratorCancellation] CancellationToken token)
+    private async IAsyncEnumerable<VectorSearchResult<DocChunk>> HierarchicalSearchAsync(
+        IEnumerable<VectorSearchResult<DocChunk>> chunks, string docId,
+        string query, int topK, [EnumeratorCancellation] CancellationToken token,
+        IEmbeddingGenerator<string, Embedding<float>>? embeddingGenerator = null,
+        VectorStoreCollection<string, DocChunk>? collection = null)
     {
         foreach (var chunk in chunks)
         {
             var record = chunk.Record;
-            if (record.HasChild)
+            if (record.HasChildNode)
             {
                 var key = record.Key;
-                var childResults = await InternalSearchAsync(query, new VectorSearchOptions<SKDocChunk>()
+                var childResults = await InternalSearchAsync(query, new VectorSearchOptions<DocChunk>()
                 {
                     Filter = docChunk => docChunk.ParentKey == key,
                     VectorProperty = docChunk => docChunk.SummaryEmbedding
-                }, docId, token, 10);
+                }, docId, token, topK, embeddingGenerator, collection);
                 if (childResults.Count > 0)
                 {
                     //如果有子节点，继续查找子节点
-                    await foreach (var childChunk in HierarchicalSearchAsync(childResults, docId, query, token))
+                    await foreach (var childChunk in HierarchicalSearchAsync(childResults, docId, query, topK, token,
+                                       embeddingGenerator, collection))
                     {
                         yield return childChunk;
                     }
@@ -173,18 +357,22 @@ public class SemanticKernelStore
         }
     }
 
-    public async Task<IEnumerable<string>> IndirectSearchAsync(string query, string docId, CancellationToken token,
-        int level = 2, int topK = 5)
+    private async Task<IEnumerable<DocChunk>> RecursiveSearchAsync(string query, string docId,
+        CancellationToken token,
+        int level = 2, int topK = 6)
     {
-        var vectorSearchOptions = new VectorSearchOptions<SKDocChunk>()
+        var collection = _kernel.GetRequiredService<VectorStore>().GetCollection<string, DocChunk>(docId);
+        var embeddingGenerator = _kernel!.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+        var vectorSearchOptions = new VectorSearchOptions<DocChunk>()
         {
             //只搜索没有子节点的文档
-            Filter = chunk => !chunk.HasChild,
+            Filter = chunk => chunk.Type == (int)ChunkType.Paragraph,
             VectorProperty = chunk => chunk.TextEmbedding
         };
-        var results = new List<string>();
+        var results = new List<DocChunk>();
         const int topKChild = 5;
-        var preResults = (await InternalSearchAsync(query, vectorSearchOptions, docId, token, topKChild)).ToList();
+        var preResults = (await InternalSearchAsync(query, vectorSearchOptions, docId, token, topKChild,
+            embeddingGenerator, collection)).ToList();
         while (level-- > 0 && preResults.Count > 0)
         {
             var searchResults = preResults.ToArray();
@@ -192,46 +380,98 @@ public class SemanticKernelStore
             foreach (var chunk in searchResults)
             {
                 var record = chunk.Record;
-                var recordText = record.Text;
-                results.Add(recordText);
-                preResults.AddRange(await InternalSearchAsync(record.Summary, vectorSearchOptions, docId, token, topK));
+                results.Add(record);
+                preResults.AddRange(await InternalSearchAsync(record.Summary, vectorSearchOptions, docId, token, topK,
+                    embeddingGenerator, collection));
             }
         }
 
         return results.Take(topK);
     }
 
-    public async Task<IEnumerable<string>> GeneralSearchAsync(string query, string docId, CancellationToken token,
+    private async Task<IEnumerable<DocChunk>> GeneralSearchAsync(string query, string docId, CancellationToken token,
         int topK = 5)
     {
-        var vectorSearchOptions = new VectorSearchOptions<SKDocChunk>()
+        var vectorSearchOptions = new VectorSearchOptions<DocChunk>()
         {
-            //只搜索没有子节点的文档
-            Filter = chunk => !chunk.HasChild,
+            //只搜索没有graph节点的文档
+            Filter = chunk => chunk.Type == (int)ChunkType.Paragraph,
             VectorProperty = chunk => chunk.TextEmbedding
         };
         return (await InternalSearchAsync(query, vectorSearchOptions, docId, token, topK))
-            .Select(chunk => chunk.Record.Text);
+            .Select(chunk => chunk.Record);
     }
 
-    private async Task<IList<VectorSearchResult<T>>> InternalSearchAsync<T>(string query,
-        VectorSearchOptions<T> searchOptions, string collectionId,
-        CancellationToken token, int topK = 5) where T : class
+    private async Task<IList<VectorSearchResult<T>>> InternalSearchAsync<T>(
+        string query, VectorSearchOptions<T> searchOptions, string collectionId,
+        CancellationToken token, int topK = 6, IEmbeddingGenerator<string, Embedding<float>>? embeddingGenerator = null,
+        VectorStoreCollection<string, T>? docCollection = null) where T : class
     {
-        if (_kernel == null)
-        {
-            throw new InvalidOperationException("Kernel is not initialized. Call InitializeKernel first.");
-        }
-
-        var vectorStore = _kernel.GetRequiredService<VectorStore>();
-        var docCollection = vectorStore.GetCollection<string, T>(collectionId);
+        docCollection ??= _kernel.GetRequiredService<VectorStore>().GetCollection<string, T>(collectionId);
         await docCollection.EnsureCollectionExistsAsync(token);
-        var embeddingGenerator = _kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+        embeddingGenerator ??= _kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
         var embedding = await embeddingGenerator.GenerateAsync(query, cancellationToken: token);
         return await docCollection.SearchAsync(
             embedding.Vector,
             options: searchOptions,
             top: topK,
             cancellationToken: token).ToArrayAsync(cancellationToken: token);
+    }
+
+    private async Task PopulateParagraphs(VectorStoreCollection<string, DocChunk> collection, ChunkNode chunkNode)
+    {
+        var chunkKey = chunkNode.Chunk.Key;
+        if (chunkNode.Chunk.Type == (int)ChunkType.Paragraph)
+        {
+            return;
+        }
+
+        await foreach (var docChunk in collection.GetAsync(chunk => chunk.ParentKey == chunkKey, int.MaxValue / 2))
+        {
+            chunkNode.AddChild(new ChunkNode(docChunk));
+        }
+    }
+
+    private async Task AddToRootNodes(IList<ChunkNode> rootNodes,
+        IDictionary<string, ChunkNode> cache,
+        VectorStoreCollection<string, DocChunk> store, ChunkNode chunkNode)
+    {
+        var currentNode = chunkNode;
+        var parentKey = chunkNode.Chunk.ParentKey;
+        while (!string.IsNullOrEmpty(parentKey))
+        {
+            if (cache.TryGetValue(parentKey, out var parentNode))
+            {
+                parentNode.AddChild(currentNode);
+                return;
+            }
+
+            var parentChunk = await store.GetAsync(parentKey);
+            if (parentChunk != null)
+            {
+                cache[parentKey] = parentNode = new ChunkNode(parentChunk);
+                parentNode.AddChild(currentNode);
+                parentKey = parentChunk.ParentKey;
+                currentNode = parentNode;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        rootNodes.Add(currentNode);
+    }
+
+    private VectorStore GetVectorStore()
+    {
+        return _kernel.GetRequiredService<VectorStore>();
+    }
+
+    private VectorStoreCollection<string, DocChunk> GetDocCollection(string collectionId)
+    {
+        //都是singleton，可以不关注生命周期
+        var vectorStore = GetVectorStore();
+        return vectorStore.GetCollection<string, DocChunk>(collectionId);
     }
 }

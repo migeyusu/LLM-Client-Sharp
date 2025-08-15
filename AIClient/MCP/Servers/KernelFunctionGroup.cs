@@ -36,7 +36,6 @@ public abstract class KernelFunctionGroup : BaseViewModel, IBuiltInFunctionGroup
         }
 
         Name = pluginName;
-
         var kernelPlugin = KernelPluginFactory.CreateFromObject(this, pluginName);
 #pragma warning disable SKEXP0001
         this.AvailableTools = kernelPlugin.AsAIFunctions().ToArray();

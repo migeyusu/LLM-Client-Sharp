@@ -73,9 +73,9 @@ public class Rag
                 })); // 自动创建 db 文件
         var kernel = kernelBuilder.Build();
         var requiredService = kernel.GetRequiredService<VectorStore>();
-        var docCollection = requiredService.GetCollection<string, SKDocChunk>("test");
+        var docCollection = requiredService.GetCollection<string, DocChunk>("test");
         await docCollection.EnsureCollectionExistsAsync(CancellationToken.None);
-        await docCollection.UpsertAsync(new SKDocChunk
+        await docCollection.UpsertAsync(new DocChunk
         {
             Key = "chunk0",
             Text = "[1, 1, 0]",
@@ -84,7 +84,7 @@ public class Rag
             Title = "Title 0",
             Level = 0,
             ParentKey = String.Empty,
-            HasChild = false
+            HasChildNode = false
         });
     }
 
@@ -126,7 +126,7 @@ public class Rag
                 })); // 自动创建 db 文件
         var kernel = kernelBuilder.Build();
         var requiredService = kernel.GetRequiredService<VectorStore>();
-        var docCollection = requiredService.GetCollection<string, SKDocChunk>("test");
+        var docCollection = requiredService.GetCollection<string, DocChunk>("test");
         await docCollection.EnsureCollectionDeletedAsync();
         // await requiredService.EnsureCollectionDeletedAsync("test", CancellationToken.None);
         var existsAsync = await requiredService.CollectionExistsAsync("test", CancellationToken.None);
@@ -147,9 +147,9 @@ public class Rag
                 })); // 自动创建 db 文件
         var kernel = kernelBuilder.Build();
         var requiredService = kernel.GetRequiredService<VectorStore>();
-        var docCollection = requiredService.GetCollection<string, SKDocChunk>("test");
+        var docCollection = requiredService.GetCollection<string, DocChunk>("test");
         await docCollection.EnsureCollectionExistsAsync(CancellationToken.None);
-        await foreach (var result in docCollection.SearchAsync("1", 10, new VectorSearchOptions<SKDocChunk>()
+        await foreach (var result in docCollection.SearchAsync("1", 10, new VectorSearchOptions<DocChunk>()
                        {
                            VectorProperty = chunk => chunk.TextEmbedding
                        }))
@@ -157,11 +157,128 @@ public class Rag
             output.WriteLine(result.Record.Text);
         }
     }
+
+    [Fact]
+    public void ResultPrint()
+    {
+        List<ChunkNode> nodes = new List<ChunkNode>()
+        {
+            new ChunkNode(new DocChunk()
+            {
+                Title = "Title 0",
+                Summary = "Summary 0",
+                Type = (int)ChunkType.Bookmark,
+            })
+            {
+                Children =
+                [
+                    new ChunkNode(new DocChunk()
+                    {
+                        Type = (int)ChunkType.Paragraph,
+                        Text = "This is a paragraph.",
+                        Summary = "This is a paragraph summary.",
+                    }),
+                    new ChunkNode(new DocChunk()
+                    {
+                        Type = (int)ChunkType.Paragraph,
+                        Text = "This is another paragraph.",
+                        Summary = "This is another paragraph summary.",
+                    })
+                ]
+            }
+        };
+        var chunkNode = new ChunkNode(new DocChunk()
+        {
+            Title = "Title 1",
+            Summary = "Summary 1",
+            Type = (int)ChunkType.Bookmark,
+            HasChildNode = true,
+        })
+        {
+            Children =
+            [
+                new ChunkNode(new DocChunk()
+                {
+                    Title = "Title 1.1",
+                    Summary = "Summary 1.1",
+                    Type = (int)ChunkType.Bookmark
+                })
+                {
+                    Children =
+                    [
+                        new ChunkNode(new DocChunk()
+                        {
+                            Type = (int)ChunkType.Paragraph,
+                            Text = "This is a paragraph under Title 1.1.",
+                            Summary = "This is a paragraph summary under Title 1.1."
+                        }),
+                        new ChunkNode(new DocChunk()
+                        {
+                            Type = (int)ChunkType.Paragraph,
+                            Text = "This is another paragraph under Title 1.1.",
+                            Summary = "This is another paragraph summary under Title 1.1."
+                        })
+                    ]
+                },
+                new ChunkNode(new DocChunk()
+                {
+                    Title = "Title 1.2",
+                    Summary = "Summary 1.2",
+                    Type = (int)ChunkType.Bookmark
+                })
+                {
+                    Children =
+                    [
+                        new ChunkNode(new DocChunk()
+                        {
+                            Type = (int)ChunkType.Paragraph,
+                            Text = "This is a paragraph under Title 1.2.",
+                            Summary = "This is a paragraph summary under Title 1.2."
+                        }),
+                        new ChunkNode(new DocChunk()
+                        {
+                            Type = (int)ChunkType.Paragraph,
+                            Text = "This is another paragraph under Title 1.2.",
+                            Summary = "This is another paragraph summary under Title 1.2."
+                        })
+                    ]
+                }
+            ]
+        };
+        nodes.Add(chunkNode);
+        nodes.Add(new ChunkNode(new DocChunk()
+        {
+            Title = "Title 2",
+            Summary = "Summary 2",
+            Type = (int)ChunkType.Bookmark
+        })
+        {
+            Children =
+            [
+                new ChunkNode(new DocChunk()
+                {
+                    Type = (int)ChunkType.Paragraph,
+                    Text = "This is a paragraph under Title 2.",
+                    Summary = "This is a paragraph summary under Title 2."
+                }),
+                new ChunkNode(new DocChunk()
+                {
+                    Type = (int)ChunkType.Paragraph,
+                    Text = "This is another paragraph under Title 2.",
+                    Summary = "This is another paragraph summary under Title 2."
+                })
+            ]
+        });
+        var structure = nodes.GetStructure();
+        output.WriteLine(structure);
+        var view = nodes.GetView();
+        output.WriteLine(view);
+    }
 }
 
 sealed class FakeEmbeddingGenerator(int? replaceLast = null) : IEmbeddingGenerator<string, Embedding<float>>
 {
-    float[] embeddings = Enumerable.Repeat(1f, 1536).ToArray();
+    private readonly float[] _embeddings = Enumerable.Repeat(1f, 1536).ToArray();
 
     public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
         IEnumerable<string> values,
@@ -172,7 +289,7 @@ sealed class FakeEmbeddingGenerator(int? replaceLast = null) : IEmbeddingGenerat
         var count = values.Count();
         for (int i = 0; i < count; i++)
         {
-            results.Add(new Embedding<float>(embeddings));
+            results.Add(new Embedding<float>(_embeddings));
         }
 
         /*foreach (var value in values)

@@ -1,18 +1,17 @@
-﻿using System.Collections.Specialized;
+﻿using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media.TextFormatting;
-using Google.Apis.Util;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.UI;
-using LLMClient.UI.Component;
 using LLMClient.UI.Log;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Rag;
@@ -34,10 +33,53 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
+    //todo:是否有必要用特殊符号包围名称从而让LLM更好地识别？
+    private string PluginName => string.Format("File {0} Plugin", this.Name);
+
+    private string PluginDescription => string.Format("A plugin for File {0} operations",
+        this.Name);
+
+    public string? AdditionPrompt
+    {
+        get { return $"{PluginName} is {PluginDescription}"; }
+    }
+
+    public IReadOnlyList<AIFunction>? AvailableTools
+    {
+        get => _availableTools;
+        private set
+        {
+            if (Equals(value, _availableTools)) return;
+            _availableTools = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IsAvailable => this.IsInitialized && this.Status == ConstructStatus.Constructed;
+
+    public string GetUniqueId()
+    {
+        return DocumentId;
+    }
+
+    public Task EnsureAsync(CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
+
     public Guid Id { get; set; } = Guid.NewGuid();
 
     protected RagFileBase()
     {
+        var kernelPlugin = KernelPluginFactory.CreateFromFunctions(PluginName, PluginDescription, [
+            CreateQueryFunction(),
+            CreateGetStructureFunction(),
+            CreateGetDocumentFunction(),
+            CreateGetSectionFunction()
+        ]);
+#pragma warning disable SKEXP0001
+        this.AvailableTools = kernelPlugin.AsAIFunctions().ToArray();
+#pragma warning restore SKEXP0001
     }
 
     protected RagFileBase(FileInfo fileInfo)
@@ -70,6 +112,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             }
 
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAvailable));
         }
     }
 
@@ -102,6 +145,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             if (value == _isInitialized) return;
             _isInitialized = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAvailable));
         }
     }
 
@@ -133,6 +177,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     private CancellationTokenSource? _constructionCancellationTokenSource;
     private Task? _constructionTask;
     private bool _isInitialized;
+    private IReadOnlyList<AIFunction>? _availableTools;
 
     public ICommand SwitchConstructCommand => new ActionCommand(async o =>
     {
@@ -234,6 +279,12 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     public abstract Task<ISearchResult> QueryAsync(string query, dynamic options,
         CancellationToken cancellationToken = default);
 
+    public abstract Task<ISearchResult> GetStructureAsync(CancellationToken cancellationToken = default);
+
+    public abstract Task<ISearchResult> GetSectionAsync(string sectionName,
+        CancellationToken cancellationToken = default);
+
+    public abstract Task<ISearchResult> GetFullDocumentAsync(CancellationToken cancellationToken = default);
 
     private const int SummaryTrigger = 2000; // 摘要触发长度（中文字符数）
 
@@ -282,17 +333,159 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
                                                 response.ErrorMessage);
         };
     }
+
+
+    protected abstract KernelFunctionFromMethodOptions QueryOptions { get; }
+
+    public KernelFunction CreateQueryFunction()
+    {
+        var methodOptions = QueryOptions;
+
+        async Task<string> WrapQueryAsync(Kernel kernel, KernelFunction function, KernelArguments arguments,
+            CancellationToken token)
+        {
+            arguments.TryGetValue("query", out var query);
+            var queryString = query?.ToString();
+            if (string.IsNullOrEmpty(queryString))
+            {
+                return string.Empty;
+            }
+
+            dynamic dynamicOptions = new System.Dynamic.ExpandoObject();
+            if (methodOptions.Parameters != null)
+            {
+                foreach (var parameter in methodOptions.Parameters)
+                {
+                    if (arguments.TryGetValue(parameter.Name, out var value) && value != null)
+                    {
+                        // 将参数值添加到动态选项中
+                        ((IDictionary<string, object>)dynamicOptions)[parameter.Name] = value;
+                    }
+                    else if (parameter.IsRequired)
+                    {
+                        throw new ArgumentException($"Missing required parameter: {parameter.Name}");
+                    }
+                }
+            }
+
+            var result = (StringQueryResult)(await this.QueryAsync(queryString, dynamicOptions, token));
+            return result.FormattedResult;
+        }
+
+        return KernelFunctionFactory.CreateFromMethod(WrapQueryAsync, methodOptions);
+    }
+
+    public KernelFunction CreateGetStructureFunction()
+    {
+        var methodOptions = new KernelFunctionFromMethodOptions
+        {
+            FunctionName = "GetDocumentStructure",
+            Description = "Get the document structure in a formatted string.",
+            Parameters = [],
+            ReturnParameter = new KernelReturnParameterMetadata()
+            {
+                Description =
+                    "Doc structure:\n- Title 0\n  Summary: Summary 0\n- Title 1\n  Summary: Summary 1\n  - Title 1.1\n    Summary: Summary 1.1\n  - Title 1.2\n    Summary: Summary 1.2\n- Title 2\n  Summary: Summary 2",
+                ParameterType = typeof(string)
+            }
+        };
+
+        async Task<string> WrapGetStructureAsync(Kernel kernel, KernelFunction function, KernelArguments arguments,
+            CancellationToken token)
+        {
+            var result = (StringQueryResult)(await this.GetStructureAsync(token));
+            return result.FormattedResult;
+        }
+
+        return KernelFunctionFactory.CreateFromMethod(WrapGetStructureAsync, methodOptions);
+    }
+
+    public KernelFunction CreateGetDocumentFunction()
+    {
+        var methodOptions = new KernelFunctionFromMethodOptions
+        {
+            FunctionName = "GetDocument",
+            Description = "Get the document content in a formatted string.",
+            Parameters = [],
+            ReturnParameter = new KernelReturnParameterMetadata()
+            {
+                Description =
+                    "The full content of the document.\n- Title 0\n  This is a paragraph.\n  This is another paragraph.\n- Title 1\n  - Title 1.1\n    This is a paragraph under Title 1.1.\n    This is another paragraph under Title 1.1.\n  - Title 1.2\n    This is a paragraph under Title 1.2.\n    This is another paragraph under Title 1.2.\n- Title 2\n  This is a paragraph under Title 2.\n  This is another paragraph under Title 2.",
+                ParameterType = typeof(string)
+            }
+        };
+
+        async Task<string> WrapGetDocumentAsync(Kernel kernel, KernelFunction function, KernelArguments arguments,
+            CancellationToken token)
+        {
+            var result = (StringQueryResult)(await this.GetFullDocumentAsync(token));
+            return result.FormattedResult;
+        }
+
+        return KernelFunctionFactory.CreateFromMethod(WrapGetDocumentAsync, methodOptions);
+    }
+
+    public KernelFunction CreateGetSectionFunction()
+    {
+        var methodOptions = new KernelFunctionFromMethodOptions
+        {
+            FunctionName = "GetSection",
+            Description = "Get the content of a specific section in the document.",
+            Parameters =
+            [
+                new KernelParameterMetadata("sectionName")
+                {
+                    Description = "The name of the section to retrieve.",
+                    ParameterType = typeof(string),
+                    IsRequired = true
+                }
+            ],
+            ReturnParameter = new KernelReturnParameterMetadata()
+            {
+                Description =
+                    "The content of the specified section. Example: \n- Title 0\n  This is a paragraph.\n  This is another paragraph.",
+                ParameterType = typeof(string)
+            }
+        };
+
+        async Task<string> WrapGetSectionAsync(Kernel kernel, KernelFunction function, KernelArguments arguments,
+            CancellationToken token)
+        {
+            if (!arguments.TryGetValue("sectionName", out var sectionName) ||
+                string.IsNullOrEmpty(sectionName?.ToString()))
+            {
+                throw new ArgumentException("Missing required parameter: sectionName");
+            }
+
+            var result = (StringQueryResult)(await this.GetSectionAsync(sectionName.ToString()!, token));
+            return result.FormattedResult;
+        }
+
+        return KernelFunctionFactory.CreateFromMethod(WrapGetSectionAsync, methodOptions);
+    }
+
+    public object Clone()
+    {
+        throw new NotImplementedException();
+    }
 }
 
-public class SimpleQueryResult : ISearchResult
+/// <summary>
+/// 可表示带锁缩进的结构化查询结果。
+/// <para> 形式： Title
+///                —— SubTitle1
+///                —— SubTitle2
+///                     Paragraphs
+/// </para>
+/// </summary>
+public class StringQueryResult : ISearchResult
 {
+    public StringQueryResult(string formattedResult)
+    {
+        FormattedResult = formattedResult;
+    }
+
     public string? DocumentId { get; set; }
 
-    public IList<string>? TextBlocks { get; set; }
-
-    public SimpleQueryResult(string documentId, IList<string>? textBlocks)
-    {
-        DocumentId = documentId;
-        TextBlocks = textBlocks;
-    }
+    public string FormattedResult { get; set; }
 }

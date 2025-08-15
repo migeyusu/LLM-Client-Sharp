@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Microsoft.SemanticKernel;
 using Newtonsoft.Json;
 
 namespace LLMClient.Rag;
@@ -33,6 +34,23 @@ public class TextFile : RagFileBase
     {
         throw new NotImplementedException();
     }
+
+    public override Task<ISearchResult> GetStructureAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task<ISearchResult> GetSectionAsync(string sectionName, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task<ISearchResult> GetFullDocumentAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    protected override KernelFunctionFromMethodOptions QueryOptions { get; }
 
     protected override Task ConstructCore(CancellationToken cancellationToken = default)
     {

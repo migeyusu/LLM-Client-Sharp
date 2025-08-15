@@ -2,10 +2,8 @@
 
 namespace LLMClient.Abstraction;
 
-public interface IRagSource
+public interface IRagSource : IAIFunctionGroup
 {
-    string Name { get; set; }
-
     Guid Id { get; }
 
     ConstructStatus Status { get; }
@@ -34,11 +32,13 @@ public interface IRagSource
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task<ISearchResult> QueryAsync(string query, dynamic options, CancellationToken cancellationToken = default);
+
+    Task<ISearchResult> GetStructureAsync(CancellationToken cancellationToken = default);
 }
 
 public interface IRagSourceCollection : IReadOnlyCollection<IRagSource>
 {
     Task LoadAsync();
-    
+
     bool IsRunning { get; }
 }

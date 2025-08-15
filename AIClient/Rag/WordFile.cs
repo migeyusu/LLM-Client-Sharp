@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text.Json.Serialization;
+using Microsoft.SemanticKernel;
 
 namespace LLMClient.Rag;
 
@@ -33,6 +34,23 @@ public class WordFile : RagFileBase
     {
         throw new NotImplementedException();
     }
+
+    public override Task<ISearchResult> GetStructureAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task<ISearchResult> GetSectionAsync(string sectionName, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task<ISearchResult> GetFullDocumentAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    protected override KernelFunctionFromMethodOptions QueryOptions { get; }
 
     protected override Task ConstructCore(CancellationToken cancellationToken = default)
     {

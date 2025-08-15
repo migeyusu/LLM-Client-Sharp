@@ -43,7 +43,7 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
         }
     }
 
-    public bool IsAvailable => true;
+    public bool IsAvailable => AvailableTools?.Count > 0;
 
     public string GetUniqueId()
     {

@@ -65,7 +65,6 @@ public class FileSystemPlugin : KernelFunctionGroup
             AllowedPaths.Remove(normalizedPath);
         }
     }
-
     
     private readonly string _userHomeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     

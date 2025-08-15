@@ -15,6 +15,7 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.MCP;
 using LLMClient.Project;
+using LLMClient.Rag;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -180,9 +181,10 @@ public static class Extension
             : (resultContent.Result?.ToString() ?? "(null)") ?? "");
     }
 
-    public static string GetEnumDescription(this Enum value)
+
+    public static string GetEnumDescription(this Enum value, Type? type = null)
     {
-        var type = value.GetType();
+        type ??= value.GetType();
         var name = Enum.GetName(type, value);
         if (name == null)
             return string.Empty;
@@ -200,6 +202,42 @@ public static class Extension
         return name; // 如果没有描述，返回枚举名称
     }
 
+    /// <summary>
+    /// 生成包含Enum所有成员及其描述的格式化字符串
+    /// </summary>
+    /// <param name="enumType">Enum类型</param>
+    /// <param name="format">格式模板，{0}=成员名称，{1}=成员描述</param>
+    /// <param name="separator">成员之间的分隔符</param>
+    /// <param name="prefix">生成的描述前缀</param>
+    /// <returns>格式化的描述字符串</returns>
+    public static string GenerateEnumDescription(
+        Type enumType,
+        string format = "{0} ({1})",
+        string separator = ", ",
+        string prefix = "可能值: ")
+    {
+        if (!enumType.IsEnum)
+            return string.Empty;
+        var generator = new StringBuilder(prefix);
+        var names = Enum.GetNames(enumType);
+        for (int i = 0; i < names.Length; i++)
+        {
+            var name = names[i];
+            var memberInfo = enumType.GetMember(name).FirstOrDefault();
+            var description = memberInfo?
+                .GetCustomAttribute<DescriptionAttribute>()?
+                .Description ?? name;
+
+            // 格式化当前成员
+            generator.AppendFormat(format, name, description);
+
+            // 添加分隔符（除最后一个外）
+            if (i < names.Length - 1)
+                generator.Append(separator);
+        }
+
+        return generator.ToString();
+    }
 
     #region json
 
@@ -365,5 +403,27 @@ public static class Extension
     {
         var json = JsonSerializer.Serialize(source);
         return JsonSerializer.Deserialize<T>(json) ?? throw new InvalidOperationException("Deserialization failed.");
+    }
+
+    public static string GetStructure(this IEnumerable<ChunkNode> nodes)
+    {
+        var stringBuilder = new StringBuilder();
+        foreach (var node in nodes)
+        {
+            stringBuilder.Append(node.GetStructure());
+        }
+
+        return stringBuilder.ToString();
+    }
+
+    public static string GetView(this IEnumerable<ChunkNode> nodes)
+    {
+        var stringBuilder = new StringBuilder();
+        foreach (var node in nodes)
+        {
+            stringBuilder.Append(node.GetView());
+        }
+
+        return stringBuilder.ToString();
     }
 }

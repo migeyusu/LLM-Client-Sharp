@@ -160,19 +160,16 @@
                                     </DataTemplate>
                                 </materialDesign:PopupBox.PopupContentTemplate>
                             </materialDesign:PopupBox>
+                            <TextBlock Margin="10,0,0,0"
+                                       Text="{Binding SummaryTokensConsumption,Mode=OneWay,StringFormat=tokens:{0}}" />
                             <TextBlock Foreground="DimGray"
                                        VerticalAlignment="Center"
                                        TextWrapping="NoWrap"
                                        Margin="10,0,0,0"
                                        TextTrimming="CharacterEllipsis">
-                                <Run />
                                 <Hyperlink NavigateUri="{Binding FilePath}"
                                            RequestNavigate="Hyperlink_OnRequestNavigate"
                                            TextDecorations="Underline" />
-                                <Run Text=" - " />
-                                <Run Text="{Binding EditTime}" />
-                                <Run Text=" - " />
-                                <Run Text="{Binding FileSize}" />
                             </TextBlock>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"

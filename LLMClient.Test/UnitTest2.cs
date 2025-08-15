@@ -1,6 +1,7 @@
 ﻿using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -14,9 +15,12 @@ using LLMClient.Endpoints.Messages;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.MCP;
 using LLMClient.MCP.Servers;
+using LLMClient.Rag;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.SemanticKernel.Connectors.SqliteVec;
+using Microsoft.SemanticKernel.Data;
 using OpenAI;
 using OpenAI.Chat;
 using Xunit.Abstractions;
@@ -372,6 +376,24 @@ public class UnitTest2
                     }
                 }
             }
+        }
+    }
+
+    [Fact]
+    [Experimental("SKEXP0001")]
+    public void SearchPlugin()
+    {
+        var sqliteVectorStore = new SqliteVectorStore("",new SqliteVectorStoreOptions()
+        {
+            EmbeddingGenerator = new FakeEmbeddingGenerator()
+        });
+        var sqliteCollection = sqliteVectorStore.GetCollection<string,DocChunk>("test");
+        var vectorStoreTextSearch = new VectorStoreTextSearch<DocChunk>(sqliteCollection);
+        var kernelPlugin = vectorStoreTextSearch.CreateWithSearch("test",description:"des");
+        foreach (var kernelFunction in kernelPlugin)
+        {
+            output.WriteLine(kernelFunction.Name);
+            output.WriteLine(kernelFunction.Description);
         }
     }
 }
