@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -40,7 +41,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 
         var extension = Path.GetExtension(fileName);
         var fileInfo = new FileInfo(openFileDialog.FileName);
-        IRagFileSource source;
+        RagFileBase source;
         try
         {
             switch (extension)
@@ -68,6 +69,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
                     return;
             }
 
+            source.PropertyChanged += RagFileOnPropertyChanged;
             FileSources.Add(source);
             await SaveAsync();
             MessageEventBus.Publish($"已添加文件: {fileName}");
@@ -77,6 +79,23 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
             MessageBox.Show($"添加文件失败: {e.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }));
+
+    public async void RagFileOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (sender is RagFileBase ragFile)
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(RagFileBase.Status):
+                    if (ragFile.Status == ConstructStatus.Constructed)
+                    {
+                        await this.SaveAsync();
+                    }
+
+                    break;
+            }
+        }
+    }
 
     public ICommand RemoveFileCommand => new ActionCommand(async o =>
     {
@@ -93,10 +112,13 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
             {
                 if (fileSource.Status == ConstructStatus.Constructing)
                 {
-                    await fileSource.StopConstruct();
+                    MessageBox.Show("文件正在构建中，请停止后删除。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                    // await fileSource.StopConstruct();
                 }
 
                 await fileSource.DeleteAsync();
+                fileSource.PropertyChanged -= RagFileOnPropertyChanged;
                 FileSources.Remove(fileSource);
                 MessageEventBus.Publish($"文件{fileSource.FilePath}已删除");
             }
@@ -140,6 +162,8 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 
     public const string ConfigFileName = "rag_file_collection.json";
 
+    private static readonly SemaphoreSlim SaveSemaphore = new SemaphoreSlim(1, 1);
+
     public async Task SaveAsync()
     {
         if (FileSources.DistinctBy(item => item.FilePath).Count() != FileSources.Count)
@@ -150,7 +174,16 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 
         var fullPath = Path.GetFullPath(ConfigFileName);
         var json = JsonSerializer.Serialize(this.FileSources, Extension.DefaultJsonSerializerOptions);
-        await File.WriteAllTextAsync(fullPath, json);
+        await SaveSemaphore.WaitAsync();
+        try
+        {
+            await File.WriteAllTextAsync(fullPath, json);
+        }
+        finally
+        {
+            SaveSemaphore.Release();
+        }
+
         MessageEventBus.Publish("已保存Rag配置");
     }
 
@@ -183,6 +216,10 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
             foreach (var ragFileSource in this.FileSources)
             {
                 await ragFileSource.InitializeAsync();
+                if (ragFileSource is RagFileBase ragFile)
+                {
+                    ragFile.PropertyChanged += RagFileOnPropertyChanged;
+                }
             }
 
             this.IsLoaded = true;

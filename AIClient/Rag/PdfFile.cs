@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using LLMClient.Data;
 using LLMClient.Rag.Document;
 using LLMClient.UI;
 using Microsoft.Extensions.Logging;
@@ -54,7 +55,7 @@ public class PdfFile : RagFileBase
     public override async Task DeleteAsync(CancellationToken cancellationToken = default)
     {
         var semanticKernelStore = await GetStoreAsync();
-        await semanticKernelStore.RemoveFile(this.DocumentId, cancellationToken);
+        await semanticKernelStore.RemoveFileAsync(this.DocumentId, cancellationToken);
         this.Status = ConstructStatus.NotConstructed;
     }
 
@@ -87,11 +88,35 @@ public class PdfFile : RagFileBase
                 ConstructionLogs.LogInformation("Processing node {0}, start page: {1}, level: {2}",
                     node.Title, node.StartPage, node.Level);
             });
-            var docChunks = await pdfExtractorWindow.ContentNodes
-                .ToSKDocChunks(this.DocumentId, CreateLLMCall(digestClient, 512, 3, this.ConstructionLogs),
-                    this.ConstructionLogs, token: cancellationToken, nodeProgress: progress);
-            var semanticKernelStore = await GetStoreAsync(ragOption);
-            await semanticKernelStore.AddFile(this.DocumentId, docChunks, cancellationToken);
+            using (var semaphoreSlim = new SemaphoreSlim(5, 5))
+            {
+                var promptsCache = new PromptsCache(this.Id.ToString(), PromptsCache.CacheFolderPath,
+                    digestClient.Endpoint.Name, digestClient.Model.Id);
+                await promptsCache.InitializeAsync();
+                SemanticKernelStore? store = null;
+                try
+                {
+                    var docChunks = await pdfExtractorWindow.ContentNodes
+                        .ToDocChunks(this.DocumentId,
+                            CreateLLMCall(digestClient, semaphoreSlim, promptsCache, 1024, 3, this.ConstructionLogs),
+                            logger: this.ConstructionLogs, nodeProgress: progress, token: cancellationToken);
+                    this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",
+                        docChunks.Count);
+                    store = await GetStoreAsync(ragOption);
+                    this.ConstructionLogs.LogInformation("Saving to vector store.");
+                    await store.AddFile(this.DocumentId, docChunks, cancellationToken);
+                }
+                catch (Exception)
+                {
+                    if (store != null)
+                    {
+                        await store.RemoveFileAsync(this.DocumentId, cancellationToken);
+                    }
+
+                    await promptsCache.SaveAsync();
+                    throw;
+                }
+            }
         }
     }
 
@@ -99,16 +124,7 @@ public class PdfFile : RagFileBase
     {
         ragOption ??= (await GlobalOptions.LoadOrCreate()).RagOption;
         ragOption.ThrowIfNotValid();
-        var dbConnection = ragOption.DBConnection;
-        var embeddingEndpoint = ragOption.EmbeddingEndpoint;
-        if (embeddingEndpoint == null)
-        {
-            throw new InvalidOperationException("Embedding endpoint is not set.");
-        }
-#pragma warning disable SKEXP0010
-        return new SemanticKernelStore(embeddingEndpoint,
-            ragOption.EmbeddingModelId ?? "text-embedding-v3", dbConnection);
-#pragma warning restore SKEXP0010
+        return ragOption.GetStore();
     }
 
     public override async Task<ISearchResult> QueryAsync(string query, dynamic options,
@@ -148,9 +164,9 @@ public class PdfFile : RagFileBase
         }
 
         var semanticKernelStore = await GetStoreAsync();
-        var structure = await semanticKernelStore.GetStructureAsync(this.DocumentId, cancellationToken);
-        var s = structure.GetStructure();
-        return new StringQueryResult(s) { DocumentId = this.DocumentId };
+        var structureNodes = await semanticKernelStore.GetStructureAsync(this.DocumentId, cancellationToken);
+        var structure = structureNodes.GetStructure();
+        return new StringQueryResult(structure) { DocumentId = this.DocumentId };
     }
 
     public override async Task<ISearchResult> GetSectionAsync(string titleName,
@@ -170,7 +186,7 @@ public class PdfFile : RagFileBase
         return new StringQueryResult(view) { DocumentId = this.DocumentId };
     }
 
-    KernelFunctionFromMethodOptions? _queryOptions;
+    private KernelFunctionFromMethodOptions? _queryOptions;
 
     protected override KernelFunctionFromMethodOptions QueryOptions =>
         _queryOptions ??= new()

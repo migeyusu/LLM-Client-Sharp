@@ -10,6 +10,7 @@ using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Project;
+using LLMClient.Rag;
 using LLMClient.UI.Component;
 using LLMClient.UI.Render;
 using MaterialDesignThemes.Wpf;
@@ -385,6 +386,7 @@ public class MainWindowViewModel : BaseViewModel
         await this.PromptsResource.Initialize();
         IsProcessing = false;
         IsInitialized = true;
+        // SemanticKernelStore.Test();
     }
 
     

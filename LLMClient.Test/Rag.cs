@@ -2,6 +2,7 @@
 using System.Windows;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
+using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
@@ -53,7 +54,9 @@ public class Rag
         pdfExtractor.Initialize(padding: new Thickness(10, 55, 10, 62));
         var contentNodes = pdfExtractor.Analyze();
         var docChunks =
-            await contentNodes.ToSKDocChunks("doc1", ((s, token) => Task.FromResult(s)));
+            await contentNodes.ToDocChunks("doc1", ((s, token) => Task.FromResult(s)));
+        var docChunksCount = docChunks.Count;
+        output.WriteLine(docChunksCount.ToString());
     }
 
     [Fact]
@@ -274,6 +277,8 @@ public class Rag
         var view = nodes.GetView();
         output.WriteLine(view);
     }
+
+    
 }
 
 sealed class FakeEmbeddingGenerator(int? replaceLast = null) : IEmbeddingGenerator<string, Embedding<float>>

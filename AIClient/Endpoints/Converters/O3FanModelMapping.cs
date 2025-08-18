@@ -51,7 +51,6 @@ public class O3FanModelMapping : ModelMapping
                                     !string.IsNullOrEmpty(info.Id) && StatusAvailable.Contains(info.Status) &&
                                     info.ModelAbility?.Contains(ModelAbilityChat) == true))
                                 .ToArray();
-                            return true;
                         }
                     }
                 }
@@ -59,6 +58,7 @@ public class O3FanModelMapping : ModelMapping
             catch (Exception e)
             {
                 MessageEventBus.Publish($"Error fetching models from O3.Fan: {e.Message}");
+                return false;
             }
 
             try
@@ -68,9 +68,10 @@ public class O3FanModelMapping : ModelMapping
             catch (Exception e)
             {
                 MessageEventBus.Publish($"Error fetching prices from O3.Fan: {e.Message}");
+                return false;
             }
 
-            return false;
+            return true;
         }
     }
 

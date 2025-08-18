@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.UI;
@@ -13,7 +14,6 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.Xaml.Behaviors.Core;
-using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace LLMClient.Rag;
@@ -51,20 +51,19 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
-    [System.Text.Json.Serialization.JsonIgnore]
-    private string PluginName => string.Format("File{0}_{1}_Plugin", FileIndexInContext, FileType);
+    [JsonIgnore] private string PluginName => string.Format("File{0}_{1}_Plugin", FileIndexInContext, FileType);
 
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     private string PluginDescription => string.Format("A plugin for File {0} operations",
-        this.Name);
+        Name);
 
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     public string? AdditionPrompt
     {
         get { return $"{PluginName} is {PluginDescription}"; }
     }
 
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     public IReadOnlyList<AIFunction>? AvailableTools
     {
         get => _availableTools;
@@ -76,8 +75,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
-    [System.Text.Json.Serialization.JsonIgnore]
-    public bool IsAvailable => this.IsInitialized && this.Status == ConstructStatus.Constructed;
+    [JsonIgnore] public bool IsAvailable => IsInitialized && Status == ConstructStatus.Constructed;
 
     public string GetUniqueId()
     {
@@ -89,7 +87,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         //由于plugin的名称可能动态变化，因此每次都需要重新创建。
         var kernelPlugin = KernelPluginFactory.CreateFromFunctions(PluginName, PluginDescription, _functions);
 #pragma warning disable SKEXP0001
-        this.AvailableTools = kernelPlugin.AsAIFunctions().ToArray();
+        AvailableTools = kernelPlugin.AsAIFunctions().ToArray();
 #pragma warning restore SKEXP0001
         return Task.CompletedTask;
     }
@@ -111,10 +109,10 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     protected RagFileBase(FileInfo fileInfo) : this()
     {
-        this.FilePath = fileInfo.FullName;
-        this.FileSize = fileInfo.Length;
-        this.EditTime = fileInfo.LastWriteTime;
-        this.Name = fileInfo.Name;
+        FilePath = fileInfo.FullName;
+        FileSize = fileInfo.Length;
+        EditTime = fileInfo.LastWriteTime;
+        Name = fileInfo.Name;
     }
 
     public string FilePath { get; set; } = string.Empty;
@@ -154,19 +152,17 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
-    [System.Text.Json.Serialization.JsonIgnore]
-    public LogsViewModel ConstructionLogs { get; set; } = new LogsViewModel();
+    [JsonIgnore] public LogsViewModel ConstructionLogs { get; set; } = new LogsViewModel();
 
-    [System.Text.Json.Serialization.JsonIgnore]
-    public abstract DocumentFileType FileType { get; }
+    [JsonIgnore] public abstract DocumentFileType FileType { get; }
 
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     public virtual string DocumentId
     {
         get { return $"{FileType}_{Id}"; }
     }
 
-    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonIgnore]
     public bool IsInitialized
     {
         get => _isInitialized;
@@ -251,13 +247,6 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             return Task.CompletedTask;
         }
 
-        if (this.Status == ConstructStatus.Constructing)
-        {
-            //说明上次构建还未完成，需要删除之前的脏数据重新构建。
-            this.Status = ConstructStatus.NotConstructed;
-            return this.DeleteAsync();
-        }
-
         IsInitialized = true;
         return Task.CompletedTask;
     }
@@ -274,7 +263,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         {
             ErrorMessage = null;
             //must ensure the file is deleted before constructing again.
-            await this.DeleteAsync(cancellationToken);
+            await DeleteAsync(cancellationToken);
             // await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
             Status = ConstructStatus.Constructing;
             await ConstructCore(cancellationToken);
@@ -282,8 +271,14 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
         catch (Exception e)
         {
+            ConstructionLogs.LogError("构建过程中发生错误: {ErrorMessage}", e.Message);
             ErrorMessage = e.Message;
             Status = ConstructStatus.Error;
+            await DeleteAsync(cancellationToken);
+        }
+        finally
+        {
+            
         }
     }
 
@@ -317,11 +312,13 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public abstract Task<ISearchResult> GetFullDocumentAsync(CancellationToken cancellationToken = default);
 
-    private const int SummaryTrigger = 2000; // 摘要触发长度（中文字符数）
+    private const int SummaryTrigger = 3072; // 摘要触发长度
 
-    protected Func<string, CancellationToken, Task<string>> CreateLLMCall(ILLMChatClient client, int summarySize = 500,
+    protected Func<string, CancellationToken, Task<string>> CreateLLMCall(ILLMChatClient client,
+        SemaphoreSlim clientSemaphore, PromptsCache cache, int summarySize = 1024,
         int retryCount = 3, ILogger? logger = null)
     {
+        client.Parameters.Streaming = false;
         return async (content, token) =>
         {
             if (string.IsNullOrEmpty(content))
@@ -336,28 +333,57 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
                 return content;
             }
 
-            var stringBuilder = new StringBuilder("请为以下内容生成一个简短的摘要，要求：\r\n" +
-                                                  "1. 摘要使用的语言和原文一致。\r\n" +
-                                                  "2. 摘要长度不超过" + summarySize + "个字。\r\n" +
-                                                  "3. 摘要内容应包含原文的主要信息。\r\n" +
-                                                  "4. 摘要应尽量简洁明了。\r\n");
-            stringBuilder.Append(content);
-            var dialogContext = new DialogContext(new[]
+            if (cache?.TryGetValue(content, out var result) == true)
             {
-                new RequestViewItem() { TextMessage = stringBuilder.ToString(), }
-            });
-            int tryCount = 0;
+                return result;
+            }
+
             var response = new CompletedResult();
-            while (tryCount < retryCount)
+            await clientSemaphore.WaitAsync(token);
+            try
             {
-                response = await client.SendRequest(dialogContext, token);
-                tryCount++;
-                SummaryTokensConsumption += response.Usage?.TotalTokenCount ?? 0;
-                var textResponse = response.TextResponse;
-                if (!string.IsNullOrEmpty(textResponse) && !response.IsInterrupt)
+                var stringBuilder = new StringBuilder(
+                    $"Provide a concise and complete summarization of the following text blocks that does not exceed {summarySize} words. " +
+                    "\nThis summary must always:" +
+                    "\n- Use the same language of the text blocks" +
+                    "\n- Focus on the most significant aspects of the text blocks\n" +
+                    "\n- Include details from any existing summary" +
+                    "\nThis summary must never:" +
+                    "\n- Critique, correct, interpret, presume, or assume" +
+                    "\n- Identify faults, mistakes, misunderstanding, or correctness" +
+                    "\n- Analyze what has not occurred" +
+                    "\n- Exclude details from any existing summary" +
+                    "\n\nPlease summarize the following text blocks until end:\n\n");
+                /*var stringBuilder = new StringBuilder("请为以下内容生成一个摘要，要求：\r\n" +
+                                                      "1. 首先判断原文使用的语言，摘要使用的语言必须和原文一致。\r\n" +
+                                                      "2. 摘要长度不应超过" + summarySize + "个字。\r\n" +
+                                                      "3. 摘要内容应包含原文的主要信息。\r\n" +
+                                                      "4. 摘要应尽量简洁明了。\r\n" +
+                                                      "5. 如果原文是多段落的内容，摘要应包含每个段落的主要信息。\r\n" +
+                                                      "6. 摘要内容均来自于原文，禁止联想或掺入个人喜好。\r\n");*/
+                stringBuilder.Append(content);
+                var dialogContext = new DialogContext(new[]
                 {
-                    return textResponse;
+                    new RequestViewItem() { TextMessage = stringBuilder.ToString(), }
+                });
+                int tryCount = 0;
+
+                while (tryCount < retryCount)
+                {
+                    response = await client.SendRequest(dialogContext, token);
+                    tryCount++;
+                    SummaryTokensConsumption += response.Usage?.TotalTokenCount ?? 0;
+                    var textResponse = response.TextResponse;
+                    if (!string.IsNullOrEmpty(textResponse) && !response.IsInterrupt)
+                    {
+                        cache?.TryAdd(content, textResponse);
+                        return textResponse;
+                    }
                 }
+            }
+            finally
+            {
+                clientSemaphore.Release();
             }
 
             throw new InvalidOperationException("LLM response failed after " + retryCount + " attempts. error: " +
@@ -365,7 +391,9 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         };
     }
 
-
+    /// <summary>
+    /// allow custom query options by semantic kernel
+    /// </summary>
     protected abstract KernelFunctionFromMethodOptions QueryOptions { get; }
 
     public KernelFunction CreateQueryFunction()
@@ -424,7 +452,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         async Task<string> WrapGetStructureAsync(Kernel kernel, KernelFunction function, KernelArguments arguments,
             CancellationToken token)
         {
-            var result = (StringQueryResult)(await this.GetStructureAsync(token));
+            var result = (StringQueryResult)(await GetStructureAsync(token));
             return result.FormattedResult;
         }
 
@@ -449,7 +477,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         async Task<string> WrapGetDocumentAsync(Kernel kernel, KernelFunction function, KernelArguments arguments,
             CancellationToken token)
         {
-            var result = (StringQueryResult)(await this.GetFullDocumentAsync(token));
+            var result = (StringQueryResult)(await GetFullDocumentAsync(token));
             return result.FormattedResult;
         }
 
@@ -488,7 +516,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
                 throw new ArgumentException("Missing required parameter: sectionName");
             }
 
-            var result = (StringQueryResult)(await this.GetSectionAsync(sectionName.ToString()!, token));
+            var result = (StringQueryResult)(await GetSectionAsync(sectionName.ToString()!, token));
             return result.FormattedResult;
         }
 
@@ -498,7 +526,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     public object Clone()
     {
         var serialize = JsonSerializer.Serialize(this, Extension.DefaultJsonSerializerOptions);
-        return JsonSerializer.Deserialize(serialize, this.GetType(), Extension.DefaultJsonSerializerOptions)!;
+        return JsonSerializer.Deserialize(serialize, GetType(), Extension.DefaultJsonSerializerOptions)!;
     }
 }
 

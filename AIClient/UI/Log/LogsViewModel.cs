@@ -37,9 +37,9 @@ public class LogsViewModel : ILogger
         };
         _timer.Tick += ProcessLogQueue;
     }
-    
+
     public void Start() => _timer.Start();
-    
+
     public void Stop() => _timer.Stop();
 
     /// <summary>
@@ -87,6 +87,13 @@ public class LogsViewModel : ILogger
         }
 
         if (logsToProcess.Count == 0) return;
-        LogEntries.AddRange(logsToProcess);
+        if (logsToProcess.Count > 1000)
+        {
+            LogEntries.AddRange(logsToProcess);
+        }
+        else
+        {
+            logsToProcess.ForEach(logEntry => LogEntries.Add(logEntry));
+        }
     }
 }

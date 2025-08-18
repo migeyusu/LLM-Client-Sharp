@@ -362,7 +362,7 @@ public static class PDFExtractorExtensions
     /// <param name="nodeProgress"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    public static async Task<List<DocChunk>> ToSKDocChunks(this IEnumerable<PDFContentNode> nodes,
+    public static async Task<List<DocChunk>> ToDocChunks(this IEnumerable<PDFContentNode> nodes,
         string docId, Func<string, CancellationToken, Task<string>> llmCall, ILogger? logger = null,
         IProgress<PDFContentNode>? nodeProgress = null,
         CancellationToken token = default)
@@ -377,7 +377,8 @@ public static class PDFExtractorExtensions
     }
 
     private static async Task<DocChunk> ApplyRaptor(string docId, PDFContentNode node,
-        List<DocChunk> chunks, Func<string, CancellationToken, Task<string>> llmCall, ILogger? logger = null,
+        List<DocChunk> chunks, Func<string, CancellationToken, Task<string>> llmCall,
+        ILogger? logger = null,
         IProgress<PDFContentNode>? nodeProgress = null, string? parentId = null, CancellationToken token = default)
     {
         token.ThrowIfCancellationRequested();
@@ -394,13 +395,28 @@ public static class PDFExtractorExtensions
         if (node.HasChildren)
         {
             nodeChunk.HasChildNode = true;
+            var children = node.Children;
+            var tasks = new Task[children.Count];
+            var docChunks = new DocChunk[children.Count];
+            for (var index = 0; index < children.Count; index++)
+            {
+                var child = children[index];
+                var index1 = index;
+                tasks[index] = Task.Run(async () =>
+                {
+                    var docChunk = await ApplyRaptor(docId, child, chunks, llmCall, logger,
+                        nodeProgress,
+                        nodeChunk.Key, token);
+                    docChunks[index1] = docChunk;
+                }, token);
+            }
+
+            await Task.WhenAll(tasks);
             // 生成摘要：子节点标题 + 摘要
             var summaryBuilder = new StringBuilder(node.Title + "\nSubsections:");
-            foreach (var child in node.Children)
+            foreach (var chunk in docChunks)
             {
-                var chunk = await ApplyRaptor(docId, child, chunks, llmCall, logger, nodeProgress,
-                    nodeChunk.Key, token);
-                summaryBuilder.AppendLine($"- {child.Title}");
+                summaryBuilder.AppendLine($"- {chunk.Title}");
                 summaryBuilder.AppendLine(chunk.Summary);
             }
 
@@ -416,26 +432,32 @@ public static class PDFExtractorExtensions
             {
                 foreach (var paragraph in paragraphs)
                 {
-                    var paragraphContent = paragraph.Content;
-                    if (string.IsNullOrEmpty(paragraphContent.Trim()))
+                    try
                     {
-                        logger?.LogWarning("跳过空段落，所在页码：{PageNumber}", paragraph.PageNumber);
-                        continue; // 跳过空段落
-                    }
+                        //paragraph不执行summary
+                        var paragraphContent = paragraph.Content;
+                        if (string.IsNullOrEmpty(paragraphContent.Trim()))
+                        {
+                            logger?.LogWarning("跳过空段落，所在页码：{PageNumber}", paragraph.PageNumber);
+                            continue; // 跳过空段落
+                        }
 
-                    nodeContentBuilder.AppendLine(paragraphContent);
-                    //todo：检查段落是否超过 Embedding限制（一般不会）
-                    chunks.Add(new DocChunk()
+                        nodeContentBuilder.AppendLine(paragraphContent);
+                        chunks.Add(new DocChunk()
+                        {
+                            Key = Guid.NewGuid().ToString(),
+                            DocumentId = docId,
+                            Text = paragraphContent,
+                            Level = nodeLevel + 1,
+                            ParentKey = nodeChunk.Key,
+                            Type = (int)ChunkType.Paragraph, // 表示段落类型
+                        });
+                        nodeProgress?.Report(node);
+                    }
+                    catch (Exception e)
                     {
-                        Key = Guid.NewGuid().ToString(),
-                        DocumentId = docId,
-                        Text = paragraphContent,
-                        Summary = await llmCall(paragraphContent, token),
-                        Level = nodeLevel + 1,
-                        ParentKey = nodeChunk.Key,
-                        Type = (int)ChunkType.Paragraph, // 表示段落类型
-                    });
-                    nodeProgress?.Report(node);
+                        logger?.LogError(e, "处理段落时出错，所在页码：{PageNumber}", paragraph.PageNumber);
+                    }
                 }
             }
 

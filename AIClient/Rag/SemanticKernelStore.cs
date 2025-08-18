@@ -2,16 +2,20 @@
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.SqliteVec;
 using OpenAI;
 
 namespace LLMClient.Rag;
 
 public class SemanticKernelStore
 {
+    public const int ChunkDimension = 1536;
+
     public enum SearchAlgorithm
     {
         /// <summary>
@@ -61,8 +65,71 @@ public class SemanticKernelStore
         var kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder.Services.AddOpenAIEmbeddingGenerator(modelId, openAiClient)
             // 添加 SQLite 向量存储（连接字符串指向本地文件）
-            .AddSqliteVectorStore(connectionStringProvider: sp => _dbConnectionString); // 自动创建 db 文件
+            .AddSqliteVectorStore(connectionStringProvider: sp => _dbConnectionString, provider =>
+                new SqliteVectorStoreOptions()
+                {
+                    EmbeddingGenerator =
+                        new ProxyGenerator(provider.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>())
+                }); // 自动创建 db 文件
         _kernel = kernelBuilder.Build();
+    }
+
+    class ProxyGenerator : IEmbeddingGenerator<string, Embedding<float>>
+    {
+        private readonly IEmbeddingGenerator<string, Embedding<float>> _generator;
+
+        private readonly Embedding<float> _emptyEmbedding = new Embedding<float>(new float[ChunkDimension]);
+
+        public ProxyGenerator(IEmbeddingGenerator<string, Embedding<float>> generator)
+        {
+            this._generator = generator;
+        }
+
+
+        public async Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(IEnumerable<string> values,
+            EmbeddingGenerationOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
+            //auto filter empty values
+            var valueList = values.ToList();
+            var embeddings = new Embedding<float>[valueList.Count];
+            var nonEmptyValues = new List<(int Index, string Value)>();
+
+            for (var i = 0; i < valueList.Count; i++)
+            {
+                if (string.IsNullOrEmpty(valueList[i]))
+                {
+                    embeddings[i] = _emptyEmbedding;
+                }
+                else
+                {
+                    nonEmptyValues.Add((i, valueList[i]));
+                }
+            }
+
+            if (nonEmptyValues.Count > 0)
+            {
+                var generatedEmbeddings =
+                    await _generator.GenerateAsync(nonEmptyValues.Select(v => v.Value), options, cancellationToken);
+                var generatedList = generatedEmbeddings.ToList();
+                for (int i = 0; i < nonEmptyValues.Count; i++)
+                {
+                    embeddings[nonEmptyValues[i].Index] = generatedList[i];
+                }
+            }
+
+            return new GeneratedEmbeddings<Embedding<float>>(embeddings);
+        }
+
+        public void Dispose()
+        {
+            _generator.Dispose();
+        }
+
+        public object? GetService(Type serviceType, object? serviceKey = null)
+        {
+            return _generator.GetService(serviceType, serviceKey);
+        }
     }
 
     /// <summary>
@@ -82,7 +149,17 @@ public class SemanticKernelStore
 
         var docCollection = GetDocCollection(docId);
         await docCollection.EnsureCollectionExistsAsync(token);
-        await docCollection.UpsertAsync(chunks, token);
+        foreach (var docChunk in chunks)
+        {
+            try
+            {
+                await docCollection.UpsertAsync(docChunk, token);
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Failed to upsert document {docId}, chunk key: {docChunk.Key}", e);
+            }
+        }
     }
 
     /// <summary>
@@ -91,7 +168,7 @@ public class SemanticKernelStore
     /// <param name="docId"></param>
     /// <param name="token"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    public async Task RemoveFile(string docId, CancellationToken token)
+    public async Task RemoveFileAsync(string docId, CancellationToken token)
     {
         var vectorStore = GetVectorStore();
         if (await vectorStore.CollectionExistsAsync(docId, token))
@@ -321,6 +398,28 @@ public class SemanticKernelStore
                 .ToArrayAsync(cancellationToken: token))
             .OrderByDescending(result => result.Score).Take(topK)
             .Select(result => result.Record).Take(topK);
+    }
+
+    public static async void Test()
+    {
+        var ragOption =
+            (await GlobalOptions.LoadOrCreate())
+            .RagOption;
+        ragOption.ThrowIfNotValid();
+        var semanticKernelStore = ragOption.GetStore();
+        await semanticKernelStore.AddFile("test", new[]
+        {
+            new DocChunk()
+            {
+                DocumentId = "test",
+                Text = "This is a test document.",
+                Level = 0,
+                Summary = "This is a test document summary.",
+                Title = "Test Document",
+                Type = (int)ChunkType.Bookmark,
+                HasChildNode = false,
+            }
+        }, CancellationToken.None);
     }
 
     private async IAsyncEnumerable<VectorSearchResult<DocChunk>> HierarchicalSearchAsync(

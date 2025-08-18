@@ -122,9 +122,9 @@ public class DocChunk
     [VectorStoreData]
     public int Type { get; set; }
 
-    [VectorStoreVector(1536)] public string TextEmbedding => Text;
+    [VectorStoreVector(SemanticKernelStore.ChunkDimension)] public string TextEmbedding => string.IsNullOrEmpty(Text) ? " " : Text;
 
-    [VectorStoreVector(1536)] public string SummaryEmbedding => Summary;
+    [VectorStoreVector(SemanticKernelStore.ChunkDimension)] public string SummaryEmbedding => string.IsNullOrEmpty(Summary) ? " " : Summary;
 }
 
 public enum ChunkType : int

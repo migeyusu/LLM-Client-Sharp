@@ -10,7 +10,7 @@ namespace LLMClient.Data;
 
 public class HttpContentCache
 {
-    const string CacheFolderName = "Cache";
+    private static readonly string CacheFolderName = "Cache" + Path.DirectorySeparatorChar + "HttpContentCache";
 
     const string CacheConfigFileName = "cache_index.json";
     private static string CacheFolderPath => Path.GetFullPath(CacheFolderName);
@@ -32,15 +32,15 @@ public class HttpContentCache
         // 默认索引文件名为 index.json，存放在缓存目录下
         _indexPath = Path.Combine(_cacheDirectory, CacheConfigFileName);
         _cache = new ConcurrentDictionary<string, AsyncLazyFile>();
-        LoadIndex();
+        LoadIndex(_indexPath);
     }
 
     /// <summary>
     /// 从 JSON 索引文件加载已有的缓存记录。
     /// </summary>
-    private void LoadIndex()
+    private void LoadIndex(string indexPath)
     {
-        if (!File.Exists(_indexPath))
+        if (!File.Exists(indexPath))
         {
             Trace.WriteLine("[Cache] Index file not found. Starting with an empty cache.");
             return;
@@ -48,7 +48,7 @@ public class HttpContentCache
 
         try
         {
-            var json = File.ReadAllText(_indexPath);
+            var json = File.ReadAllText(indexPath);
             var persistedCache = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
             if (persistedCache != null)
             {
@@ -81,7 +81,7 @@ public class HttpContentCache
             if (loader.Value.IsCompletedSuccessfully)
             {
                 var fileName = await loader.Value;
-                var path = Path.GetFullPath(fileName,_cacheDirectory);
+                var path = Path.GetFullPath(fileName, _cacheDirectory);
                 if (File.Exists(path))
                 {
                     dictionaryToPersist[kvp.Key] = fileName;

@@ -34,7 +34,16 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
                 { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
     }
 
-    private const string DEFAULT_GLOBAL_CONFIG_FILE = "globalconfig.json";
+    public static string DefaultConfigFile
+    {
+        get
+        {
+            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            return Path.GetFullPath(DEFAULT_GLOBAL_CONFIG_FILE, baseDirectory);
+        }
+    }
+
+    public const string DEFAULT_GLOBAL_CONFIG_FILE = "globalconfig.json";
 
     private const string DefaultSummarizePrompt =
         "Provide a concise and complete summarization of the entire dialog that does not exceed {0} words. \n\nThis summary must always:\n- Consider both user and assistant interactions\n- Maintain continuity for the purpose of further dialog\n- Include details from any existing summary\n- Focus on the most significant aspects of the dialog\n\nThis summary must never:\n- Critique, correct, interpret, presume, or assume\n- Identify faults, mistakes, misunderstanding, or correctness\n- Analyze what has not occurred\n- Exclude details from any existing summary";
@@ -79,7 +88,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             }
 
             return ServiceLocator.GetService<IMapper>()?
-                .Map<LLMClientPersistModel, ILLMChatClient>(SummarizeModelPersistModel,(options => { }));
+                .Map<LLMClientPersistModel, ILLMChatClient>(SummarizeModelPersistModel, (options => { }));
         }
         set
         {
@@ -90,7 +99,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             }
 
             SummarizeModelPersistModel = ServiceLocator.GetService<IMapper>()?
-                .Map<ILLMChatClient, LLMClientPersistModel>(value,(options => { }));
+                .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
         }
     }
 
@@ -117,7 +126,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     [JsonIgnore]
     public ICommand SaveCommand => new ActionCommand(async (param) =>
     {
-        var fileInfo = new FileInfo(DEFAULT_GLOBAL_CONFIG_FILE);
+        var fileInfo = new FileInfo(DefaultConfigFile);
         fileInfo.Directory?.Create();
         using (var fileStream = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.Write))
         {
@@ -127,9 +136,10 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         MessageEventBus.Publish("Global configuration saved successfully.");
     });
 
-    public static async Task<GlobalOptions> LoadOrCreate()
+    public static async Task<GlobalOptions> LoadOrCreate(string? configFilePath = DEFAULT_GLOBAL_CONFIG_FILE)
     {
-        var fileInfo = new FileInfo(DEFAULT_GLOBAL_CONFIG_FILE);
+        configFilePath ??= DefaultConfigFile;
+        var fileInfo = new FileInfo(configFilePath);
         if (fileInfo.Exists)
         {
             try

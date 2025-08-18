@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 
@@ -44,7 +45,7 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
             _isSuspended = false;
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, addItems));
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, (IList)addItems));
         }
     }
 
@@ -56,7 +57,7 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
             Items.Add(item);
         }
 
-        EndAdd(items);
+        EndInit();
     }
 
     public void ResetWith(IEnumerable<T> items)

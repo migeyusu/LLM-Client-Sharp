@@ -15,6 +15,7 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.MCP;
 using LLMClient.MCP.Servers;
+using LLMClient.Rag;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Azure;
@@ -49,6 +50,7 @@ public class UnitTest1
             .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
             .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()
             .AddMap().BuildServiceProvider();
+        BaseViewModel.ServiceLocator = serviceProvider;
     }
 
     [Fact]
@@ -59,9 +61,9 @@ public class UnitTest1
             var resultAbsolutePath = uri.IsAbsoluteUri;
             var uriScheme = uri.Scheme;
             var uriIsFile = uri.IsFile;
-            output.WriteLine(uriIsFile.ToString());    
+            output.WriteLine(uriIsFile.ToString());
         }
-        
+
         // await Version3Converter.Convert("D:\\Dev\\LLM-Client-Sharp\\AIClient\\bin\\Debug\\net8.0-windows\\Dialogs");
     }
 
@@ -73,7 +75,7 @@ public class UnitTest1
         var chatMessagePo = mapper!.Map<ChatMessage, ChatMessagePO>(chatMessage);
         Assert.NotNull(chatMessagePo);
     }
-    
+
     [Fact]
     public void ResponseDe()
     {
@@ -347,7 +349,6 @@ public class UnitTest1
     [Fact]
     public void TestNode()
     {
-                
         var foo = new[]
         {
             new
@@ -399,7 +400,8 @@ public class UnitTest1
                 }
             }
         };
-        var openAiPromptExecutionSettings = OpenAIPromptExecutionSettings.FromExecutionSettings(promptExecutionSettings);
+        var openAiPromptExecutionSettings =
+            OpenAIPromptExecutionSettings.FromExecutionSettings(promptExecutionSettings);
     }
 
     [Fact]
@@ -419,7 +421,6 @@ public class UnitTest1
             }
             finally
             {
-                
             }
         }
     }

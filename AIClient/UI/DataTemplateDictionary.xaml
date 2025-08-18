@@ -196,14 +196,14 @@
                        VerticalAlignment="Center" />
             <TextBox materialDesign:TextFieldAssist.SuffixText="/M tokens"
                      Margin="6,0,0,0"
-                     Width="90"
+                     Width="120"
                      Text="{Binding InputPrice,Mode=TwoWay}" />
             <TextBlock Text="Output Price:"
                        VerticalAlignment="Center"
                        Margin="16,0,0,0" />
             <TextBox materialDesign:TextFieldAssist.SuffixText="/M tokens"
                      Margin="6,0,0,0"
-                     Width="90"
+                     Width="120"
                      Text="{Binding OutputPrice,Mode=TwoWay}" />
             <TextBlock Text="Ratio:"
                        VerticalAlignment="Center"

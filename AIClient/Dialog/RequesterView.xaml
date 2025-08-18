@@ -288,7 +288,7 @@
                             </materialDesign:Card>
                             <materialDesign:Badged Badge="{materialDesign:PackIcon Plus}"
                                                    BadgeColorZoneMode="Light"
-                                                   BadgePlacementMode="BottomRight">
+                                                   BadgePlacementMode="TopRight">
                                 <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                         Command="{Binding AddImageCommand}"
                                         Height="32"

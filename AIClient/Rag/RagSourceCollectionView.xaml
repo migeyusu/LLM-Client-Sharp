@@ -103,11 +103,11 @@
                                             <DataTemplate x:Key="ErrorTemplate">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock VerticalAlignment="Center"
-                                                               Text="{Binding ErrorMessage,Mode=OneWay,StringFormat=构建失败: {0}}"
+                                                               Text="构建失败"
                                                                Foreground="Red"
                                                                Margin="0,0,10,0"
                                                                FontWeight="Bold" />
-                                                    <materialDesign:PackIcon Kind="AlertCircle"
+                                                    <materialDesign:PackIcon Kind="Warning"
                                                                              Width="22"
                                                                              Height="22"
                                                                              Foreground="Red" />
@@ -140,11 +140,12 @@
                                     </Style>
                                 </ContentControl.Style>
                             </ContentControl>
-                            <materialDesign:PopupBox ToggleContent="{materialDesign:PackIcon Kind=InformationOutline}"
-                                                     ToggleCheckedContent="{materialDesign:PackIcon Kind=InformationVariant}"
-                                                     ToolTip="查看构建日志"
-                                                     Margin="6,0,0,0"
-                                                     PopupContent="{Binding  ConstructionLogs,Mode=OneTime}">
+                            <materialDesign:PopupBox
+                                ToggleContent="{materialDesign:PackIcon Kind=InformationOutline,Size=21}"
+                                ToggleCheckedContent="{materialDesign:PackIcon Kind=InformationVariant,Size=21}"
+                                ToolTip="查看构建日志"
+                                Margin="6,0,0,0"
+                                PopupContent="{Binding  ConstructionLogs,Mode=OneTime}">
                                 <materialDesign:PopupBox.PopupContentTemplate>
                                     <DataTemplate DataType="{x:Type log:LogsViewModel}">
                                         <HeaderedContentControl>
@@ -154,13 +155,14 @@
                                                     构建日志
                                                 </TextBlock>
                                             </HeaderedContentControl.Header>
-                                            <log:LogView Width="450"
+                                            <log:LogView Width="550"
                                                          Height="300" />
                                         </HeaderedContentControl>
                                     </DataTemplate>
                                 </materialDesign:PopupBox.PopupContentTemplate>
                             </materialDesign:PopupBox>
                             <TextBlock Margin="10,0,0,0"
+                                       VerticalAlignment="Center"
                                        Text="{Binding SummaryTokensConsumption,Mode=OneWay,StringFormat=tokens:{0}}" />
                             <TextBlock Foreground="DimGray"
                                        VerticalAlignment="Center"

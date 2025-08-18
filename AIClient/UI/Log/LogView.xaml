@@ -20,8 +20,8 @@
                 <DataTemplate>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150" />
-                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{Binding Timestamp, StringFormat='HH:mm:ss.fff'}" Margin="5,0" />

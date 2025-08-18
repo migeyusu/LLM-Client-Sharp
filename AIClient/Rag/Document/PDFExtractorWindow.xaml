@@ -91,7 +91,8 @@
                 <StackPanel Grid.Row="1"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
-                            Margin="10">
+                            Margin="10"
+                            IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
                     <Button Content="返回"
                             Width="120"
                             Command="{x:Static materialDesign:Transitioner.MovePreviousCommand}"

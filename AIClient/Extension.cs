@@ -426,4 +426,18 @@ public static class Extension
 
         return stringBuilder.ToString();
     }
+
+    public static SemanticKernelStore GetStore(this RagOption ragOption)
+    {
+        var dbConnection = ragOption.DBConnection;
+        var embeddingEndpoint = ragOption.EmbeddingEndpoint;
+        if (embeddingEndpoint == null)
+        {
+            throw new InvalidOperationException("Embedding endpoint is not set.");
+        }
+#pragma warning disable SKEXP0010
+        return new SemanticKernelStore(embeddingEndpoint,
+            ragOption.EmbeddingModelId ?? "text-embedding-v3", dbConnection);
+#pragma warning restore SKEXP0010
+    }
 }
