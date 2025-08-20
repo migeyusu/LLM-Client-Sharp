@@ -5,6 +5,7 @@ using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Data;
 using Microsoft.SemanticKernel.Plugins.Web.Google;
 
@@ -55,16 +56,16 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
     public async Task EnsureAsync(CancellationToken token)
     {
         var config = (await GlobalOptions.LoadOrCreate()).GoogleSearchOption;
-        if (config.IsValid && !config.Equals(_config))
+        if (config.IsValid() && !config.Equals(_config))
         {
+            
 #pragma warning disable SKEXP0050
             var textSearch = new GoogleTextSearch(
                 initializer: new BaseClientService.Initializer
-                    { ApiKey = config.ApiKey! }, config.SearchEngineId!);
+                    { ApiKey = config.ApiKey }, config.SearchEngineId);
 #pragma warning restore SKEXP0050
-            var kernelPlugin = textSearch.CreateWithGetTextSearchResults(KernelPluginName);
 #pragma warning disable SKEXP0001
-            this.AvailableTools = kernelPlugin.AsAIFunctions().ToArray();
+                this.AvailableTools = [textSearch.CreateGetTextSearchResults()];
 #pragma warning restore SKEXP0001
             _config = config;
         }

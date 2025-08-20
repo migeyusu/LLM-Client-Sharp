@@ -1,4 +1,6 @@
-﻿namespace LLMClient.UI;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace LLMClient.UI;
 
 public class GoogleSearchOption : BaseViewModel
 {
@@ -13,7 +15,6 @@ public class GoogleSearchOption : BaseViewModel
             if (value == _apiKey) return;
             _apiKey = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(IsValid));
         }
     }
 
@@ -25,11 +26,14 @@ public class GoogleSearchOption : BaseViewModel
             if (value == _searchEngineId) return;
             _searchEngineId = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(IsValid));
         }
     }
 
-    public bool IsValid => !string.IsNullOrEmpty(ApiKey) && !string.IsNullOrEmpty(SearchEngineId);
+    [MemberNotNullWhen(true, nameof(ApiKey), nameof(SearchEngineId))]
+    public bool IsValid()
+    {
+        return !string.IsNullOrEmpty(ApiKey) && !string.IsNullOrEmpty(SearchEngineId);
+    }
 
     protected bool Equals(GoogleSearchOption other)
     {

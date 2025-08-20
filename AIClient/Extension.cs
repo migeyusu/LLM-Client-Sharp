@@ -214,7 +214,7 @@ public static class Extension
         Type enumType,
         string format = "{0} ({1})",
         string separator = ", ",
-        string prefix = "可能值: ")
+        string prefix = "Possible values: ")
     {
         if (!enumType.IsEnum)
             return string.Empty;
@@ -427,6 +427,17 @@ public static class Extension
         return stringBuilder.ToString();
     }
 
+    public static IEnumerable<ChunkNode> OrderNode(this IList<ChunkNode> nodes)
+    {
+        foreach (var chunkNode in nodes)
+        {
+            var children = chunkNode.Children;
+            chunkNode.Children = OrderNode(children).ToList();
+        }
+
+        return nodes.OrderBy(node => node.Chunk.Index);
+    }
+
     public static SemanticKernelStore GetStore(this RagOption ragOption)
     {
         var dbConnection = ragOption.DBConnection;
@@ -439,5 +450,13 @@ public static class Extension
         return new SemanticKernelStore(embeddingEndpoint,
             ragOption.EmbeddingModelId ?? "text-embedding-v3", dbConnection);
 #pragma warning restore SKEXP0010
+    }
+
+    public static IEnumerable<SelectableViewModel<T>> ToSelectable<T>(this IEnumerable<T> collection)
+    {
+        foreach (var item in collection)
+        {
+            yield return new SelectableViewModel<T>(item);
+        }
     }
 }

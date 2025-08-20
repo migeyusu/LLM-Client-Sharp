@@ -268,7 +268,8 @@
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline" />
+                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline" 
+                                                 VerticalAlignment="Center"/>
                         <TextBlock Text="已完成思考"
                                    VerticalAlignment="Center"
                                    Margin="6,0,0,0"
@@ -349,7 +350,7 @@
                 <DataTemplate DataType="{x:Type ai:TextReasoningContent}">
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="Function"
+                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"
                                                  Width="20"
                                                  VerticalAlignment="Center"
                                                  Height="20" />

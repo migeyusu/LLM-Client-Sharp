@@ -111,6 +111,12 @@ public class DocChunk
     [VectorStoreData] public string ParentKey { get; set; } = string.Empty;
 
     /// <summary>
+    /// index in the level
+    /// </summary>
+    [VectorStoreData]
+    public int Index { get; set; } = 0;
+
+    /// <summary>
     /// indicate whether has child nodes. only used for chunk type 1 (node).
     /// </summary>
     [VectorStoreData]
@@ -122,9 +128,11 @@ public class DocChunk
     [VectorStoreData]
     public int Type { get; set; }
 
-    [VectorStoreVector(SemanticKernelStore.ChunkDimension)] public string TextEmbedding => string.IsNullOrEmpty(Text) ? " " : Text;
+    [VectorStoreVector(SemanticKernelStore.ChunkDimension)]
+    public string TextEmbedding => Text;
 
-    [VectorStoreVector(SemanticKernelStore.ChunkDimension)] public string SummaryEmbedding => string.IsNullOrEmpty(Summary) ? " " : Summary;
+    [VectorStoreVector(SemanticKernelStore.ChunkDimension)]
+    public string SummaryEmbedding => Summary;
 }
 
 public enum ChunkType : int

@@ -1,7 +1,12 @@
-﻿using LLMClient.Rag;
+﻿using System.Text.Json.Serialization;
+using LLMClient.Rag;
 
 namespace LLMClient.Abstraction;
 
+[JsonDerivedType(typeof(PdfFile), "PdfFile")]
+[JsonDerivedType(typeof(TextFile), "TextFile")]
+[JsonDerivedType(typeof(WordFile), "WordFile")]
+[JsonDerivedType(typeof(ExcelFile), "ExcelFile")]
 public interface IRagSource : IAIFunctionGroup
 {
     Guid Id { get; }
@@ -34,11 +39,4 @@ public interface IRagSource : IAIFunctionGroup
     Task<ISearchResult> QueryAsync(string query, dynamic options, CancellationToken cancellationToken = default);
 
     Task<ISearchResult> GetStructureAsync(CancellationToken cancellationToken = default);
-}
-
-public interface IRagSourceCollection : IReadOnlyCollection<IRagSource>
-{
-    Task LoadAsync();
-
-    bool IsRunning { get; }
 }

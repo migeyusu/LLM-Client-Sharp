@@ -20,6 +20,8 @@ public class PromptsCache
 
     public string EndpointId { get; }
 
+    public int? OutputSize { get; set; }
+
     /// <summary>
     /// 
     /// </summary>
@@ -76,7 +78,25 @@ public class PromptsCache
                 return;
             }
 
-            var dictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(textAsync);
+            if (OutputSize != null)
+            {
+                var outputSize = jsonNode[nameof(OutputSize)];
+                if (outputSize == null || outputSize.GetValue<int>() != OutputSize.Value)
+                {
+                    Trace.TraceInformation("SummarySize mismatch: expected {0}, found {1}", OutputSize.Value,
+                        outputSize);
+                    return;
+                }
+            }
+
+            var node = jsonNode["Prompts"];
+            if (node == null)
+            {
+                Trace.TraceInformation("No prompts found in cache file: {0}", _filePath);
+                return;
+            }
+
+            var dictionary = node.Deserialize<Dictionary<string, string>>();
             if (dictionary != null)
             {
                 this._cache = new ConcurrentDictionary<string, string>(dictionary);
@@ -107,6 +127,11 @@ public class PromptsCache
                 [nameof(EndpointId)] = EndpointId,
                 ["Prompts"] = JsonSerializer.SerializeToNode(_cache, options)
             };
+            if (OutputSize != null)
+            {
+                jsonObject[nameof(OutputSize)] = OutputSize.Value;
+            }
+
             var jsonString = jsonObject.ToJsonString(options);
             await File.WriteAllTextAsync(_filePath, jsonString);
             Trace.TraceInformation("Saved prompt cache to: {0}", _filePath);

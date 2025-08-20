@@ -8,7 +8,7 @@ namespace LLMClient.Abstraction;
 /*注意：functiongroup和AIFunction本身不具有可enable特性，而是由包装器实现，这样可以即使共享单例也可以选择不同函数*/
 
 /// <summary>
-/// 一组函数的接口定义
+/// llm可调用函数组，具有自我描述特征；所以除了Function Lists之外还包括<see cref="AdditionPrompt"/>
 /// </summary>
 [JsonDerivedType(typeof(StdIOServerItem), "stdio")]
 [JsonDerivedType(typeof(SseServerItem), "sse")]
@@ -26,7 +26,7 @@ public interface IAIFunctionGroup : ICloneable
     /// </summary>
     /// <returns></returns>
     IReadOnlyList<AIFunction>? AvailableTools { get; }
-    
+
     bool IsAvailable { get; }
 
     string GetUniqueId();

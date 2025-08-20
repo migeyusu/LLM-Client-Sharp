@@ -1,0 +1,141 @@
+﻿<UserControl x:Class="LLMClient.Rag.FileRagDataView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLMClient.Rag"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:component="clr-namespace:LLMClient.UI.Component"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:FileRagDataViewModel}"
+             d:DesignHeight="400" d:DesignWidth="700">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <!--<StackPanel Orientation="Horizontal" Margin="10">
+            <TextBox Width="300" Margin="0,0,10,0"
+                     Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                     PlaceholderText="Enter search query..." />
+            <Button Content="Search" Command="{Binding SearchCommand}" />
+        </StackPanel>-->
+        <TreeView Grid.Column="1"
+                  ItemsSource="{Binding SearchResults,Mode=OneWay}">
+            <TreeView.Resources>
+                <HierarchicalDataTemplate DataType="{x:Type local:ChunkNode}"
+                                          ItemsSource="{Binding Children,Mode=OneTime}">
+                    <Grid DataContext="{Binding Chunk,Mode=OneTime}"
+                          MaxHeight="200">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="500" />
+                            <ColumnDefinition Width="500" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Title,Mode=OneTime}"
+                                   Grid.RowSpan="2"
+                                   TextWrapping="Wrap"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Top"
+                                   Margin="0,0,0,0" />
+                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                   Text="Summary："
+                                   HorizontalAlignment="Left"
+                                   FontWeight="Black" />
+                        <TextBlock Grid.Row="0" Grid.Column="2"
+                                   Text="Text："
+                                   HorizontalAlignment="Left"
+                                   FontWeight="Black" />
+                        <TextBox Grid.Row="1" Grid.Column="1"
+                                 Text="{Binding Summary,Mode=OneTime}"
+                                 TextWrapping="Wrap"
+                                 IsReadOnly="True"
+                                 TextAlignment="Left"
+                                 materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                 BorderThickness="0" />
+                        <TextBox Grid.Row="1" Grid.Column="2"
+                                 Text="{Binding Text,Mode=OneTime}"
+                                 TextWrapping="Wrap"
+                                 IsReadOnly="True"
+                                 TextAlignment="Left"
+                                 materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                 BorderThickness="0" />
+                        <Separator Grid.Row="1"
+                                   Grid.Column="0"
+                                   Grid.ColumnSpan="3"
+                                   Margin="0"
+                                   Height="1"
+                                   VerticalAlignment="Bottom"
+                                   Style="{StaticResource MaterialDesignDarkSeparator}" />
+                    </Grid>
+                </HierarchicalDataTemplate>
+            </TreeView.Resources>
+        </TreeView>
+        <StackPanel Grid.Column="0"
+                    VerticalAlignment="Top">
+            <ComboBox ItemsSource="{Binding Source={component:EnumBindingSource {x:Type local:SearchAlgorithm}}}"
+                      SelectedItem="{Binding Algorithm,Mode=TwoWay}"
+                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                      materialDesign:HintAssist.Hint="Search Algorithm"
+                      Padding="12,6" />
+            <TextBox Style="{StaticResource MaterialDesignFilledTextBox}"
+                     TextWrapping="NoWrap"
+                     Margin="0,10,0,0"
+                     Text="{Binding SearchText,Mode=TwoWay}"
+                     materialDesign:HintAssist.Hint="Query String" />
+            <TextBox Style="{StaticResource MaterialDesignFilledTextBox}"
+                     TextWrapping="NoWrap"
+                     Margin="0,10,0,0"
+                     materialDesign:HintAssist.Hint="Top K"
+                     Text="{Binding TopK,Mode=TwoWay}" />
+            <Button Margin="0,10,0,0"
+                    Command="{Binding SearchCommand}">
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="SearchExpand"
+                                             VerticalAlignment="Center" />
+                    <TextBlock Text="查询"
+                               Margin="6,0,0,0" />
+                </StackPanel>
+            </Button>
+            <TextBox Style="{StaticResource MaterialDesignFilledTextBox}"
+                     TextWrapping="NoWrap"
+                     materialDesign:HintAssist.Hint="Section Name"
+                     Margin="0,10,0,0"
+                     x:Name="SectionTextBox" />
+            <Button Margin="0,10,0,0"
+                    Command="{Binding GetSectionCommand}"
+                    CommandParameter="{Binding ElementName=SectionTextBox, Path=Text,Mode=OneWay}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Selection"
+                                             VerticalAlignment="Center" />
+                    <TextBlock Text="搜索章节"
+                               Margin="6,0,0,0" />
+                </StackPanel>
+            </Button>
+            <Button Margin="0,10,0,0"
+                    Command="{Binding GetDocumentCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="FileDocument"
+                                             VerticalAlignment="Center" />
+                    <TextBlock Text="显示全文"
+                               Margin="6,0,0,0" />
+                </StackPanel>
+            </Button>
+            <Button Margin="0,10,0,0"
+                    Command="{Binding ListStructureCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="FormatListBulleted"
+                                             VerticalAlignment="Center" />
+                    <TextBlock Text="列举结构"
+                               Margin="6,0,0,0" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

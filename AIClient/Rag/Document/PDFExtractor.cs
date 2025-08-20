@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel.Plugins.Document;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis;
@@ -362,21 +363,22 @@ public static class PDFExtractorExtensions
     /// <param name="nodeProgress"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    public static async Task<List<DocChunk>> ToDocChunks(this IEnumerable<PDFContentNode> nodes,
+    public static async Task<List<DocChunk>> ToDocChunks(this IList<PDFContentNode> nodes,
         string docId, Func<string, CancellationToken, Task<string>> llmCall, ILogger? logger = null,
         IProgress<PDFContentNode>? nodeProgress = null,
         CancellationToken token = default)
     {
         var docChunks = new List<DocChunk>();
-        foreach (var contentNode in nodes)
+        for (var index = 0; index < nodes.Count; index++)
         {
-            await ApplyRaptor(docId, contentNode, docChunks, llmCall, logger, nodeProgress, token: token);
+            var contentNode = nodes[index];
+            await ApplyRaptor(docId, contentNode, index, docChunks, llmCall, logger, nodeProgress, token: token);
         }
 
         return docChunks;
     }
 
-    private static async Task<DocChunk> ApplyRaptor(string docId, PDFContentNode node,
+    private static async Task<DocChunk> ApplyRaptor(string docId, PDFContentNode node, int nodeIndex,
         List<DocChunk> chunks, Func<string, CancellationToken, Task<string>> llmCall,
         ILogger? logger = null,
         IProgress<PDFContentNode>? nodeProgress = null, string? parentId = null, CancellationToken token = default)
@@ -390,6 +392,7 @@ public static class PDFExtractorExtensions
             ParentKey = parentId ?? String.Empty,
             Level = nodeLevel,
             Title = node.Title,
+            Index = nodeIndex,
             Type = (int)ChunkType.Bookmark, // 表示书签类型
         };
         if (node.HasChildren)
@@ -404,7 +407,7 @@ public static class PDFExtractorExtensions
                 var index1 = index;
                 tasks[index] = Task.Run(async () =>
                 {
-                    var docChunk = await ApplyRaptor(docId, child, chunks, llmCall, logger,
+                    var docChunk = await ApplyRaptor(docId, child, index1, chunks, llmCall, logger,
                         nodeProgress,
                         nodeChunk.Key, token);
                     docChunks[index1] = docChunk;
@@ -430,8 +433,9 @@ public static class PDFExtractorExtensions
             var paragraphs = node.Paragraphs;
             if (paragraphs.Count > 0)
             {
-                foreach (var paragraph in paragraphs)
+                for (var index = 0; index < paragraphs.Count; index++)
                 {
+                    var paragraph = paragraphs[index];
                     try
                     {
                         //paragraph不执行summary
@@ -449,6 +453,7 @@ public static class PDFExtractorExtensions
                             DocumentId = docId,
                             Text = paragraphContent,
                             Level = nodeLevel + 1,
+                            Index = index,
                             ParentKey = nodeChunk.Key,
                             Type = (int)ChunkType.Paragraph, // 表示段落类型
                         });
@@ -478,4 +483,5 @@ public static class PDFExtractorExtensions
         nodeProgress?.Report(node);
         return nodeChunk;
     }
+    
 }

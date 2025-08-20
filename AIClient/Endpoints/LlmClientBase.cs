@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.MCP;
+using LLMClient.Rag;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
@@ -117,6 +118,35 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         return chatOptions;
     }
 
+    [Experimental("SKEXP0001")]
+    private async Task AddTools(IEnumerable<IAIFunctionGroup> functionGroups, StringBuilder toolsPromptBuilder,
+        KernelPluginCollection kernelPluginCollection, CancellationToken cancellationToken)
+    {
+        var startCount = kernelPluginCollection.Count;
+        foreach (var functionGroup in functionGroups)
+        {
+            await functionGroup.EnsureAsync(cancellationToken);
+            if (!functionGroup.IsAvailable)
+            {
+                continue;
+            }
+
+            var availableTools = functionGroup.AvailableTools;
+            if (availableTools == null || availableTools.Count == 0)
+            {
+                continue;
+            }
+
+            toolsPromptBuilder.AppendLine(functionGroup.AdditionPrompt);
+            kernelPluginCollection.AddFromFunctions(functionGroup.Name,
+                availableTools.Select(function => function.AsKernelFunction()));
+        }
+
+        if (kernelPluginCollection.Count == startCount)
+        {
+            Trace.TraceWarning("No available tools found in function groups.");
+        }
+    }
 
     private readonly Stopwatch _stopwatch = new Stopwatch();
 
@@ -144,44 +174,41 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             AITool[]? tools = null;
             var kernelPluginCollection = new KernelPluginCollection();
             var toolsPromptBuilder = new StringBuilder();
-            toolsPromptBuilder.AppendLine(
-                "For the following functions, you can call them by name with the required parameters:");
             var functionGroups = requestViewItem?.FunctionGroups;
             if (functionGroups != null)
             {
-                foreach (var functionGroup in functionGroups)
-                {
-                    await functionGroup.EnsureAsync(cancellationToken);
-                    if (!functionGroup.IsAvailable)
-                    {
-                        continue;
-                    }
-
-                    var availableTools = functionGroup.AvailableTools;
-                    if (availableTools == null || availableTools.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    toolsPromptBuilder.AppendLine(functionGroup.AdditionPrompt);
-                    kernelPluginCollection.AddFromFunctions(functionGroup.Name,
-                        availableTools.Select((function => function.AsKernelFunction())));
-                }
-
-                tools = kernelPluginCollection.SelectMany((plugin => plugin)).ToArray<AITool>();
-                if (!tools.Any())
-                {
-                    Trace.TraceWarning("No available tools found in function groups.");
-                }
+                toolsPromptBuilder.AppendLine(
+                    "For the following functions, you can call them by name with the required parameters:");
+                await AddTools(functionGroups, toolsPromptBuilder, kernelPluginCollection, cancellationToken);
             }
 
-            if (tools?.Length > 0)
+            var ragSources = requestViewItem?.RagSources;
+            if (ragSources != null)
+            {
+                var resourceIndex = 0;
+                foreach (var ragSource in ragSources)
+                {
+                    if (ragSource is RagFileBase ragFile)
+                    {
+                        ragFile.FileIndexInContext = resourceIndex;
+                        resourceIndex++;
+                    }
+                }
+
+                toolsPromptBuilder.AppendLine(
+                    "For the following RAG sources, you can get information by call them with the required parameters:");
+                await AddTools(ragSources, toolsPromptBuilder, kernelPluginCollection, cancellationToken);
+            }
+
+            tools = kernelPluginCollection.SelectMany((plugin => plugin)).ToArray<AITool>();
+            if (tools.Length > 0)
             {
                 systemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
                     ? toolsPromptBuilder.ToString()
                     : $"{systemPrompt}\n{toolsPromptBuilder}";
             }
 
+            //todo: when model doest not support system prompt
             var requestOptions = this.CreateChatOptions(chatHistory, tools, systemPrompt);
             foreach (var dialogItem in dialogItems)
             {

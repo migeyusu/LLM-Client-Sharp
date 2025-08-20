@@ -51,10 +51,15 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
-    [JsonIgnore] private string PluginName => string.Format("File{0}_{1}_Plugin", FileIndexInContext, FileType);
+    string IAIFunctionGroup.Name
+    {
+        get { return PluginName; }
+    }
+
+    [JsonIgnore] private string PluginName => string.Format("{1}{0}_Plugin", FileIndexInContext, FileType);
 
     [JsonIgnore]
-    private string PluginDescription => string.Format("A plugin for File {0} operations",
+    private string PluginDescription => string.Format("A plugin for File {0} information operations",
         Name);
 
     [JsonIgnore]
@@ -63,17 +68,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         get { return $"{PluginName} is {PluginDescription}"; }
     }
 
-    [JsonIgnore]
-    public IReadOnlyList<AIFunction>? AvailableTools
-    {
-        get => _availableTools;
-        private set
-        {
-            if (Equals(value, _availableTools)) return;
-            _availableTools = value;
-            OnPropertyChanged();
-        }
-    }
+    [JsonIgnore] public IReadOnlyList<AIFunction>? AvailableTools { get; }
 
     [JsonIgnore] public bool IsAvailable => IsInitialized && Status == ConstructStatus.Constructed;
 
@@ -84,25 +79,19 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public Task EnsureAsync(CancellationToken token)
     {
-        //由于plugin的名称可能动态变化，因此每次都需要重新创建。
-        var kernelPlugin = KernelPluginFactory.CreateFromFunctions(PluginName, PluginDescription, _functions);
-#pragma warning disable SKEXP0001
-        AvailableTools = kernelPlugin.AsAIFunctions().ToArray();
-#pragma warning restore SKEXP0001
         return Task.CompletedTask;
     }
 
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    private KernelFunction[] _functions;
 
     protected RagFileBase()
     {
-        _functions =
+        AvailableTools =
         [
             CreateQueryFunction(),
             CreateGetStructureFunction(),
-            CreateGetDocumentFunction(),
+            CreateGetFullDocumentFunction(),
             CreateGetSectionFunction()
         ];
     }
@@ -203,8 +192,8 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     private CancellationTokenSource? _constructionCancellationTokenSource;
     private Task? _constructionTask;
     private bool _isInitialized;
-    private IReadOnlyList<AIFunction>? _availableTools;
     private int _fileIndexInContext;
+    private long _summaryTokensConsumption = 0;
 
     public ICommand SwitchConstructCommand => new ActionCommand(async o =>
     {
@@ -238,7 +227,16 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     });
 
-    public long SummaryTokensConsumption { get; set; } = 0;
+    public long SummaryTokensConsumption
+    {
+        get => _summaryTokensConsumption;
+        set
+        {
+            if (value == _summaryTokensConsumption) return;
+            _summaryTokensConsumption = value;
+            OnPropertyChanged();
+        }
+    }
 
     public virtual Task InitializeAsync()
     {
@@ -271,14 +269,13 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
         catch (Exception e)
         {
+            await DeleteAsync(cancellationToken);
             ConstructionLogs.LogError("构建过程中发生错误: {ErrorMessage}", e.Message);
             ErrorMessage = e.Message;
             Status = ConstructStatus.Error;
-            await DeleteAsync(cancellationToken);
         }
         finally
         {
-            
         }
     }
 
@@ -314,8 +311,10 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     private const int SummaryTrigger = 3072; // 摘要触发长度
 
+    protected const int SummarySize = 1024; // 摘要长度
+
     protected Func<string, CancellationToken, Task<string>> CreateLLMCall(ILLMChatClient client,
-        SemaphoreSlim clientSemaphore, PromptsCache cache, int summarySize = 1024,
+        SemaphoreSlim clientSemaphore, PromptsCache cache, int summarySize = SummarySize,
         int retryCount = 3, ILogger? logger = null)
     {
         client.Parameters.Streaming = false;
@@ -396,6 +395,18 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     /// </summary>
     protected abstract KernelFunctionFromMethodOptions QueryOptions { get; }
 
+    public ICommand ViewCommand => new ActionCommand(o =>
+    {
+        var window = new Window()
+        {
+            Content = new FileRagDataView()
+            {
+                DataContext = new FileRagDataViewModel(this)
+            }
+        };
+        window.ShowDialog();
+    });
+
     public KernelFunction CreateQueryFunction()
     {
         var methodOptions = QueryOptions;
@@ -427,8 +438,9 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
                 }
             }
 
-            var result = (StringQueryResult)(await this.QueryAsync(queryString, dynamicOptions, token));
-            return result.FormattedResult;
+            StructResult result = await this.QueryAsync(queryString, dynamicOptions, token);
+            var matchResult = result.Nodes;
+            return matchResult.GetView();
         }
 
         return KernelFunctionFactory.CreateFromMethod(WrapQueryAsync, methodOptions);
@@ -439,7 +451,8 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         var methodOptions = new KernelFunctionFromMethodOptions
         {
             FunctionName = "GetDocumentStructure",
-            Description = "Get the document structure in a formatted string.",
+            Description = "Get the document structure with summaries in a formatted string. \n" +
+                          "Suggested to use this function before any other call.",
             Parameters = [],
             ReturnParameter = new KernelReturnParameterMetadata()
             {
@@ -452,19 +465,21 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         async Task<string> WrapGetStructureAsync(Kernel kernel, KernelFunction function, KernelArguments arguments,
             CancellationToken token)
         {
-            var result = (StringQueryResult)(await GetStructureAsync(token));
-            return result.FormattedResult;
+            var result = (StructResult)(await GetStructureAsync(token));
+            return result.Nodes.GetStructure();
         }
 
         return KernelFunctionFactory.CreateFromMethod(WrapGetStructureAsync, methodOptions);
     }
 
-    public KernelFunction CreateGetDocumentFunction()
+    public KernelFunction CreateGetFullDocumentFunction()
     {
         var methodOptions = new KernelFunctionFromMethodOptions
         {
-            FunctionName = "GetDocument",
-            Description = "Get the document content in a formatted string.",
+            FunctionName = "GetFullDocument",
+            Description =
+                "Get the entire document including the hierarchy, node summary and actual text in a formatted string as a tree.\n" +
+                "Don't use this Do not use this function unless necessary.",
             Parameters = [],
             ReturnParameter = new KernelReturnParameterMetadata()
             {
@@ -474,14 +489,14 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             }
         };
 
-        async Task<string> WrapGetDocumentAsync(Kernel kernel, KernelFunction function, KernelArguments arguments,
+        async Task<string> WrapGetFullDocumentAsync(Kernel kernel, KernelFunction function, KernelArguments arguments,
             CancellationToken token)
         {
-            var result = (StringQueryResult)(await GetFullDocumentAsync(token));
-            return result.FormattedResult;
+            var result = (StructResult)(await GetFullDocumentAsync(token));
+            return result.Nodes.GetView();
         }
 
-        return KernelFunctionFactory.CreateFromMethod(WrapGetDocumentAsync, methodOptions);
+        return KernelFunctionFactory.CreateFromMethod(WrapGetFullDocumentAsync, methodOptions);
     }
 
     public KernelFunction CreateGetSectionFunction()
@@ -489,7 +504,8 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         var methodOptions = new KernelFunctionFromMethodOptions
         {
             FunctionName = "GetSection",
-            Description = "Get the content of a specific section in the document.",
+            Description = "Get the content of a specific section in the document.\n" +
+                          "Warning: You should get the structure of the document first before using this function",
             Parameters =
             [
                 new KernelParameterMetadata("sectionName")
@@ -516,8 +532,13 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
                 throw new ArgumentException("Missing required parameter: sectionName");
             }
 
-            var result = (StringQueryResult)(await GetSectionAsync(sectionName.ToString()!, token));
-            return result.FormattedResult;
+            var result = (StructResult)(await GetSectionAsync(sectionName.ToString()!, token));
+            if (result.Nodes.Any())
+            {
+                return result.Nodes.GetView();
+            }
+
+            return string.Empty;
         }
 
         return KernelFunctionFactory.CreateFromMethod(WrapGetSectionAsync, methodOptions);
@@ -537,6 +558,21 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 ///                —— SubTitle2
 ///                     Paragraphs
 /// </para>
+/// </summary>
+public class StructResult : ISearchResult
+{
+    public StructResult(IList<ChunkNode> nodes)
+    {
+        Nodes = nodes;
+    }
+
+    public string? DocumentId { get; set; }
+
+    public IList<ChunkNode> Nodes { get; set; }
+}
+
+/// <summary>
+/// 字符串查询结果
 /// </summary>
 public class StringQueryResult : ISearchResult
 {

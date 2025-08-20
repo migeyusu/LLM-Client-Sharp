@@ -93,6 +93,46 @@ public class RequesterViewModel : BaseViewModel
         }
     }
 
+    #region rag
+
+    public IRagSourceCollection RagSourceCollection => ServiceLocator.GetService<IRagSourceCollection>()!;
+
+    //rag有两种利用模式：search和plugin模式，search模式由手动调用，可产生结果并入上下文；plugin由llm驱动调用
+
+    private IList<SelectableViewModel<IRagSource>> _ragSources = Array.Empty<SelectableViewModel<IRagSource>>();
+
+    //不需要持久化
+    public IList<SelectableViewModel<IRagSource>> RagSources
+    {
+        get => _ragSources;
+        set
+        {
+            if (Equals(value, _ragSources)) return;
+            _ragSources = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public void RefreshRagSources()
+    {
+        var selected = RagSources.Where((model => model.IsSelected)).ToList();
+        var selectableViewModels = RagSourceCollection.Sources.ToSelectable().ToArray();
+        foreach (var selectableViewModel in selectableViewModels)
+        {
+            var dataId = selectableViewModel.Data.Id;
+            if (selected.Find((model => model.Data.Id == dataId)) != null)
+            {
+                selectableViewModel.IsSelected = true;
+            }
+        }
+
+        RagSources = selectableViewModels;
+    }
+
+    public FileQueryViewModel QueryViewModel { get; }
+
+    #endregion
+
     #region attachment
 
     public ObservableCollection<Attachment> Attachments { get; set; } =
@@ -183,6 +223,7 @@ public class RequesterViewModel : BaseViewModel
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
         ThinkingConfig = new ThinkingConfigViewModel();
+        QueryViewModel = new FileQueryViewModel(this);
         this._defaultClient = modelClient;
         this._getResponse = getResponse;
         this.BindClient(modelClient);
@@ -267,6 +308,9 @@ public class RequesterViewModel : BaseViewModel
                 thinkingConfig);
         }
 
+        var ragSources = RagSources.Where(model => model.IsSelected)
+            .Select(model => model.Data)
+            .ToArray();
         //每次搜索的条件可能不同，所以传递的是副本
         return new RequestViewItem()
         {
@@ -276,6 +320,7 @@ public class RequesterViewModel : BaseViewModel
             FunctionGroups = tools == null ? [] : [..tools],
             SearchService = SearchConfig.GetUserSearchService(),
             ThinkingConfig = thinkingConfig,
+            RagSources = ragSources.Length > 0 ? ragSources : null,
         };
     }
 

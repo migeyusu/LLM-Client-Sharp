@@ -10,9 +10,11 @@
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:mcp="clr-namespace:LLMClient.MCP"
              xmlns:local="clr-namespace:LLMClient.Dialog"
+             xmlns:rag="clr-namespace:LLMClient.Rag"
+             xmlns:ui="clr-namespace:LLMClient.UI"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
-             d:DesignHeight="300" d:DesignWidth="800">
+             d:DesignHeight="300" d:DesignWidth="1000">
     <UserControl.Resources>
         <KeyBinding x:Key="PromptKeyBinding"
                     Key="Enter"
@@ -72,21 +74,15 @@
                                   HorizontalScrollBarVisibility="Auto"
                                   DockPanel.Dock="Right"
                                   Margin="0,5,0,0"
-                                  Visibility="{Binding  Attachments,Converter={x:Static converters:SnapConverters.EnumerableToVisibilityConverter}}">
+                                  Visibility="{Binding  Attachments.Count,Converter={x:Static converters:SnapConverters.CountToVisibilityConverter}}">
                         <ItemsControl Padding="0"
                                       ItemsSource="{Binding Attachments,Mode=OneWay}"
-                                      VerticalAlignment="Bottom">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal"
-                                                IsItemsHost="True" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
+                                      ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type local:Attachment}">
                                     <materialDesign:Chip IsDeletable="True"
-                                                         MaxWidth="140"
-                                                         Margin="0"
+                                                         MaxWidth="160"
+                                                         Margin="0,0,5,0"
                                                          IconBackground="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
                                                          IconForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
                                                          ToolTipService.InitialShowDelay="0"
@@ -97,8 +93,9 @@
                                                          DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"
                                                          DeleteCommandParameter="{Binding  }">
                                         <materialDesign:Chip.Icon>
-                                            <materialDesign:PackIcon
-                                                Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
+                                            <materialDesign:PackIcon Width="16"
+                                                                     Height="16"
+                                                                     Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
                                         </materialDesign:Chip.Icon>
                                     </materialDesign:Chip>
                                 </DataTemplate>
@@ -286,20 +283,82 @@
                                     <ToggleButton IsChecked="{Binding ThinkingConfig.Enable,Mode=TwoWay}" />
                                 </StackPanel>
                             </materialDesign:Card>
-                            <materialDesign:Badged Badge="{materialDesign:PackIcon Plus}"
-                                                   BadgeColorZoneMode="Light"
-                                                   BadgePlacementMode="TopRight">
-                                <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                        Command="{Binding AddImageCommand}"
-                                        Height="32"
-                                        Width="32"
-                                        Margin="10,0,0,0"
-                                        Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
-                                    <materialDesign:PackIcon Kind="FileImageOutline"
-                                                             Width="22"
-                                                             Height="22" />
-                                </Button>
-                            </materialDesign:Badged>
+                            <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                    Command="{Binding AddImageCommand}"
+                                    VerticalAlignment="Center" Margin="10,0,0,0"
+                                    Height="32"
+                                    Width="32"
+                                    Content="{materialDesign:PackIcon Kind=ImagePlus,Size=22}"
+                                    Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                    Height="32"
+                                    Width="32"
+                                    Content="{materialDesign:PackIcon Kind=FileSearch,Size=22}"
+                                    VerticalAlignment="Center" Margin="10,0,0,0"
+                                    Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                    CommandParameter="{Binding QueryViewModel,Mode=OneTime}" />
+                            <materialDesign:Card Padding="8,0"
+                                                 Margin="6,0,0,0"
+                                                 UniformCornerRadius="12"
+                                                 Height="32"
+                                                 Visibility="{Binding SearchConfig.IsSearchAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp3">
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="10,0,0,0">
+                                    <TextBlock Text="RAG"
+                                               VerticalAlignment="Center" />
+                                    <materialDesign:PopupBox Margin="6,0"
+                                                             StaysOpen="True"
+                                                             PopupMode="Click"
+                                                             Opened="RagPopupBox_OnOpened"
+                                                             PlacementMode="TopAndAlignLeftEdges"
+                                                             ToggleContent="{materialDesign:PackIcon Kind=Matrix,Size=16}"
+                                                             ToggleCheckedContent="{materialDesign:PackIcon Kind=Add,Size=16}"
+                                                             VerticalAlignment="Center"
+                                                             ToolTip="RAG Resource As Tools"
+                                                             PopupContent="{Binding }"
+                                                             Style="{StaticResource MaterialDesignToolPopupBox}">
+                                        <materialDesign:PopupBox.PopupContentTemplate>
+                                            <DataTemplate DataType="{x:Type local:RequesterViewModel}">
+                                                <ItemsControl ItemsSource="{Binding RagSources,Mode=OneWay}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type  ui:SelectableViewModel`1[]}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <CheckBox IsChecked="{Binding IsSelected,Mode=TwoWay}"
+                                                                          materialDesign:CheckBoxAssist.CheckBoxSize="20"
+                                                                          Content="{Binding Data,Mode=OneTime}">
+                                                                    <CheckBox.ContentTemplateSelector>
+                                                                        <component:TypeBasedDataTemplateSelector>
+                                                                            <component:DataTemplateTypePair>
+                                                                                <DataTemplate
+                                                                                    DataType="{x:Type rag:RagFileBase}">
+                                                                                    <StackPanel
+                                                                                        Orientation="Horizontal">
+                                                                                        <Image Width="30"
+                                                                                            Height="30"
+                                                                                            VerticalAlignment="Center"
+                                                                                            Source="{Binding FileType,Mode=OneTime,Converter={x:Static converters:SnapConverters.DocumentTypeToImageConverter}}" />
+                                                                                        <TextBlock MaxWidth="200"
+                                                                                            TextTrimming="CharacterEllipsis"
+                                                                                            Text="{Binding Name,Mode=OneTime}"
+                                                                                            TextWrapping="Wrap"
+                                                                                            Margin="6,0"
+                                                                                            VerticalAlignment="Center" />
+                                                                                    </StackPanel>
+                                                                                </DataTemplate>
+                                                                            </component:DataTemplateTypePair>
+                                                                        </component:TypeBasedDataTemplateSelector>
+                                                                    </CheckBox.ContentTemplateSelector>
+                                                                </CheckBox>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </DataTemplate>
+                                        </materialDesign:PopupBox.PopupContentTemplate>
+                                    </materialDesign:PopupBox>
+                                </StackPanel>
+                            </materialDesign:Card>
                         </StackPanel>
                         <StackPanel Grid.Column="2"
                                     Orientation="Horizontal"

@@ -42,4 +42,9 @@ public partial class RequesterView : UserControl
     private void SearchPopupBox_OnOpened(object sender, RoutedEventArgs e)
     {
     }
+
+    private void RagPopupBox_OnOpened(object sender, RoutedEventArgs e)
+    {
+        ViewModel.RefreshRagSources();
+    }
 }

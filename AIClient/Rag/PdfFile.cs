@@ -91,14 +91,15 @@ public class PdfFile : RagFileBase
             using (var semaphoreSlim = new SemaphoreSlim(5, 5))
             {
                 var promptsCache = new PromptsCache(this.Id.ToString(), PromptsCache.CacheFolderPath,
-                    digestClient.Endpoint.Name, digestClient.Model.Id);
+                    digestClient.Endpoint.Name, digestClient.Model.Id) { OutputSize = SummarySize };
                 await promptsCache.InitializeAsync();
                 SemanticKernelStore? store = null;
                 try
                 {
                     var docChunks = await pdfExtractorWindow.ContentNodes
                         .ToDocChunks(this.DocumentId,
-                            CreateLLMCall(digestClient, semaphoreSlim, promptsCache, 1024, 3, this.ConstructionLogs),
+                            CreateLLMCall(digestClient, semaphoreSlim, promptsCache, SummarySize, 3,
+                                this.ConstructionLogs),
                             logger: this.ConstructionLogs, nodeProgress: progress, token: cancellationToken);
                     this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",
                         docChunks.Count);
@@ -113,8 +114,11 @@ public class PdfFile : RagFileBase
                         await store.RemoveFileAsync(this.DocumentId, cancellationToken);
                     }
 
-                    await promptsCache.SaveAsync();
                     throw;
+                }
+                finally
+                {
+                    await promptsCache.SaveAsync();
                 }
             }
         }
@@ -144,9 +148,9 @@ public class PdfFile : RagFileBase
 
         var semanticKernelStore = await GetStoreAsync();
         IList<ChunkNode> matchResult = await semanticKernelStore.SearchAsync(query, this.DocumentId,
-            options.SearchAlgorithm ?? SemanticKernelStore.SearchAlgorithm.Default,
+            options.SearchAlgorithm ?? SearchAlgorithm.Default,
             options.TopK ?? 5, cancellationToken);
-        return new StringQueryResult(matchResult.GetView()) { DocumentId = this.DocumentId };
+        return new StructResult(matchResult);
     }
 
     public override async Task<ISearchResult> GetStructureAsync(CancellationToken cancellationToken = default)
@@ -165,8 +169,7 @@ public class PdfFile : RagFileBase
 
         var semanticKernelStore = await GetStoreAsync();
         var structureNodes = await semanticKernelStore.GetStructureAsync(this.DocumentId, cancellationToken);
-        var structure = structureNodes.GetStructure();
-        return new StringQueryResult(structure) { DocumentId = this.DocumentId };
+        return new StructResult(structureNodes) { DocumentId = this.DocumentId };
     }
 
     public override async Task<ISearchResult> GetSectionAsync(string titleName,
@@ -174,7 +177,7 @@ public class PdfFile : RagFileBase
     {
         var store = await GetStoreAsync();
         var chunkNode = await store.GetSectionAsync(this.DocumentId, titleName, cancellationToken);
-        return new StringQueryResult(chunkNode == null ? string.Empty : chunkNode.GetView())
+        return new StructResult(chunkNode == null ? Array.Empty<ChunkNode>() : new[] { chunkNode })
             { DocumentId = this.DocumentId };
     }
 
@@ -182,8 +185,7 @@ public class PdfFile : RagFileBase
     {
         var kernelStore = await GetStoreAsync();
         var nodes = await kernelStore.GetDocTreeAsync(this.DocumentId, cancellationToken);
-        var view = nodes.GetView();
-        return new StringQueryResult(view) { DocumentId = this.DocumentId };
+        return new StructResult(nodes) { DocumentId = this.DocumentId };
     }
 
     private KernelFunctionFromMethodOptions? _queryOptions;
@@ -193,22 +195,54 @@ public class PdfFile : RagFileBase
         {
             FunctionName = "Search",
             Description =
-                "Perform a search for content related to the specified query and return string results",
+                "Performs a RAG (Retrieval-Augmented Generation) search on the PDF document. This function first converts the user query into a vector embedding, " +
+                "then searches the document content in a vector database by calculating cosine similarity to find the most relevant parts. " +
+                "Returns the document sections or paragraphs that match the query, which can be used to answer user questions or generate summaries of related content." +
+                "\n" +
+                "Note: The query is not a full-text search but a vector search based on the embedding of the query. " +
+                "So first you should generate a appropriate query that is related to the content you want to search." +
+                "\n" +
+                "Sample: If you want to find how many steps in the process" +
+                "you should not ask directly like 'How many steps in the process?'" +
+                " but generate a query like 'steps in the process' or 'process steps' \n" +
+                "Warning: it's better to get the structure of the document first before using this function",
             Parameters =
             [
                 new KernelParameterMetadata("query")
-                    { Description = "What to search for", ParameterType = typeof(string), IsRequired = true },
-                new KernelParameterMetadata("count")
                 {
-                    Description = "Number of results", ParameterType = typeof(int), IsRequired = false,
+                    Description = "What to search for, be aware that the query is not a full text search" +
+                                  "but a vector search based on the embedding of the query." +
+                                  "So you should not ask directly but generate a query that is related to the content you want to search.",
+                    ParameterType = typeof(string),
+                    IsRequired = true
+                },
+
+                new KernelParameterMetadata("TopK")
+                {
+                    Description = "Number of results most relevant to the query to return. " +
+                                  "This is the number of chunks that will be returned, " +
+                                  "not the number of paragraphs or sections.",
+                    ParameterType = typeof(int),
+                    IsRequired = false,
                     DefaultValue = 2
                 },
-                new KernelParameterMetadata("skip")
+
+                new KernelParameterMetadata("SearchAlgorithm")
                 {
-                    Description = "Number of results to skip", ParameterType = typeof(int), IsRequired = false,
+                    Description = "Select search algorithm to use." +
+                                  Extension.GenerateEnumDescription(typeof(SearchAlgorithm)),
+                    ParameterType = typeof(SearchAlgorithm),
+                    IsRequired = false,
                     DefaultValue = 0
                 },
             ],
-            ReturnParameter = new() { ParameterType = typeof(KernelSearchResults<string>) },
+
+            ReturnParameter = new()
+            {
+                ParameterType = typeof(KernelSearchResults<string>),
+                Description =
+                    "The search results, which will be formatted as a tree view:(so the view will only contains incomplete structure.)\n" +
+                    "- Title 0\n  This is a paragraph.\n  This is another paragraph.\n- Title 1\n  - Title 1.2\n    This is a paragraph under Title 1.2.\n    This is another paragraph under Title 1.2."
+            },
         };
 }

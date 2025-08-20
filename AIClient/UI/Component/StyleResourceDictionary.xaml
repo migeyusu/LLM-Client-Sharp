@@ -134,8 +134,8 @@
                                       Command="ScrollBar.PageLeftCommand"
                                       CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}">
                             <materialDesign:PackIcon Kind="MenuLeft"
-                                                     Width="30"
-                                                     Height="30"
+                                                     Width="36"
+                                                     Height="36"
                                                      Foreground="{TemplateBinding Foreground}" />
                             <RepeatButton.Visibility>
                                 <MultiBinding
@@ -161,8 +161,8 @@
                                       Command="ScrollBar.PageRightCommand"
                                       CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}">
                             <materialDesign:PackIcon Kind="MenuRight"
-                                                     Width="30"
-                                                     Height="30"
+                                                     Width="36"
+                                                     Height="36"
                                                      Foreground="{TemplateBinding Foreground}" />
                             <RepeatButton.Visibility>
                                 <MultiBinding

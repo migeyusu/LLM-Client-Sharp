@@ -10,6 +10,7 @@ public abstract class KernelFunctionGroup : BaseViewModel, IBuiltInFunctionGroup
     public abstract string? AdditionPrompt { get; }
 
     private IReadOnlyList<AIFunction>? _availableTools;
+
     [JsonIgnore]
     public IReadOnlyList<AIFunction>? AvailableTools
     {
@@ -25,7 +26,7 @@ public abstract class KernelFunctionGroup : BaseViewModel, IBuiltInFunctionGroup
     public virtual bool IsAvailable { get; } = true;
 
     public bool IsToolAvailable { get; } = true;
-    
+
     [JsonIgnore] public string Name { get; }
 
     public KernelFunctionGroup(string pluginName)

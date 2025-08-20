@@ -151,7 +151,7 @@
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type endpoints:EndpointConfigureViewModel}">
                     <endpoints:EndpointConfigureView Width="800"
-                                              Height="600" />
+                                                     Height="600" />
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type endpoints:LlmClientBase}">
                     <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"
@@ -171,7 +171,7 @@
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="软件配置">
                         <ui:GlobalOptionsView Width="800"
-                                             Height="500" />
+                                              Height="500" />
                     </HeaderedContentControl>
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type ui:PromptsResourceViewModel}">
@@ -219,6 +219,13 @@
                                             Header="Rag Sources">
                         <rag:RagSourceCollectionView Width="900"
                                                      Height="600" />
+                    </HeaderedContentControl>
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type dialog:FileQueryViewModel}">
+                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                            Header="File Query">
+                        <dialog:FileQueryView Width="900"
+                                              Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
             </materialDesign:DialogHost.Resources>
@@ -577,9 +584,7 @@
                                             <Button Command="Select"
                                                     CommandParameter="{Binding}"
                                                     Background="{DynamicResource MaterialDesign.Brush.Primary.Dark}">
-                                                <Button.Content>
-                                                    <Image Source="{Binding LlmModel.Icon.CurrentSource,Mode=OneWay}" />
-                                                </Button.Content>
+                                                <Image Source="{Binding LlmModel.Icon.CurrentSource,Mode=OneWay}" />
                                             </Button>
                                             <Border VerticalAlignment="Center"
                                                     Margin="10,0,0,0"

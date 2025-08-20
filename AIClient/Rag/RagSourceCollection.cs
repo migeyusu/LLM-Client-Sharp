@@ -16,11 +16,12 @@ namespace LLMClient.Rag;
 
 public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 {
-    public ObservableCollection<IRagFileSource> FileSources { get; set; } = [];
+    public ObservableCollection<IRagSource> Sources { get; set; }
+        = new ObservableCollection<IRagSource>();
 
     public bool IsRunning
     {
-        get { return this.FileSources.Any(source => source.Status == ConstructStatus.Constructing); }
+        get { return this.Sources.Any(source => source.Status == ConstructStatus.Constructing); }
     }
 
     public ICommand AddFileCommand => new ActionCommand((async o =>
@@ -33,7 +34,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
         };
         if (openFileDialog.ShowDialog() != true) return;
         var fileName = openFileDialog.FileName;
-        if (FileSources.Any(item => item.FilePath == fileName))
+        if (Sources.OfType<IRagFileSource>().Any(item => item.FilePath == fileName))
         {
             MessageEventBus.Publish("文件已存在，请检查！");
             return;
@@ -70,7 +71,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
             }
 
             source.PropertyChanged += RagFileOnPropertyChanged;
-            FileSources.Add(source);
+            Sources.Add(source);
             await SaveAsync();
             MessageEventBus.Publish($"已添加文件: {fileName}");
         }
@@ -119,7 +120,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 
                 await fileSource.DeleteAsync();
                 fileSource.PropertyChanged -= RagFileOnPropertyChanged;
-                FileSources.Remove(fileSource);
+                Sources.Remove(fileSource);
                 MessageEventBus.Publish($"文件{fileSource.FilePath}已删除");
             }
         }
@@ -129,20 +130,9 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
         }
     });
 
-    public IEnumerator<IRagSource> GetEnumerator()
-    {
-        return FileSources.GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
-
-
     public int Count
     {
-        get { return FileSources.Count; }
+        get { return Sources.Count; }
     }
 
     private bool _isLoaded;
@@ -166,14 +156,8 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 
     public async Task SaveAsync()
     {
-        if (FileSources.DistinctBy(item => item.FilePath).Count() != FileSources.Count)
-        {
-            MessageEventBus.Publish("文件不能重复，请检查！");
-            return;
-        }
-
         var fullPath = Path.GetFullPath(ConfigFileName);
-        var json = JsonSerializer.Serialize(this.FileSources, Extension.DefaultJsonSerializerOptions);
+        var json = JsonSerializer.Serialize(this.Sources, Extension.DefaultJsonSerializerOptions);
         await SaveSemaphore.WaitAsync();
         try
         {
@@ -205,15 +189,15 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
             await using (var fileStream = fileInfo.OpenRead())
             {
                 var deserialize =
-                    JsonSerializer.Deserialize<IList<IRagFileSource>>(fileStream,
+                    JsonSerializer.Deserialize<IList<IRagSource>>(fileStream,
                         Extension.DefaultJsonSerializerOptions);
                 if (deserialize != null)
                 {
-                    this.FileSources = new ObservableCollection<IRagFileSource>(deserialize);
+                    this.Sources = new ObservableCollection<IRagSource>(deserialize);
                 }
             }
 
-            foreach (var ragFileSource in this.FileSources)
+            foreach (var ragFileSource in this.Sources)
             {
                 await ragFileSource.InitializeAsync();
                 if (ragFileSource is RagFileBase ragFile)

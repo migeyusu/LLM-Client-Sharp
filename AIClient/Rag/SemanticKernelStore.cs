@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
@@ -12,29 +13,36 @@ using OpenAI;
 
 namespace LLMClient.Rag;
 
+public enum SearchAlgorithm
+{
+    /// <summary>
+    /// search flat list, only search graph nodes
+    /// </summary>
+    [Description("Default search algorithm as base approach in RAG, it searches all content chunks of document.")]
+    Default,
+
+    /// <summary>
+    /// top-down hierarchical search, first search top-level nodes, then search child nodes
+    /// </summary>
+    [Description(
+        "Top-down search algorithm, first search summary of top-level nodes(such as bookmarks), then search child nodes recursively.")]
+    TopDown,
+
+    // [Description("Not implemented yet, will search graph nodes in a graph structure.")]
+    //Graph, // Graph search algorithm is not implemented yet
+
+    [Description("Based on default search, use search result as query to search child nodes recursively.")]
+    Recursive,
+
+    /// <summary>
+    /// interact with llm to do the search
+    /// </summary>
+    //Interactive
+}
+
 public class SemanticKernelStore
 {
     public const int ChunkDimension = 1536;
-
-    public enum SearchAlgorithm
-    {
-        /// <summary>
-        /// search flat list, only search graph nodes
-        /// </summary>
-        Default,
-
-        /// <summary>
-        /// top-down hierarchical search, first search top-level nodes, then search child nodes
-        /// </summary>
-        TopDown,
-        Graph, // Graph search algorithm is not implemented yet
-        Recursive,
-
-        /// <summary>
-        /// interact with llm to do the search
-        /// </summary>
-        Interactive
-    }
 
     private readonly string _dbConnectionString;
 
@@ -201,7 +209,7 @@ public class SemanticKernelStore
             await PopulateChildNodeAsync(vectorStoreCollection, docChunk, token);
         }
 
-        return roots;
+        return roots.OrderNode().ToArray();
     }
 
     /// <summary>
@@ -255,7 +263,7 @@ public class SemanticKernelStore
             await PopulateChildParagraphAsync(collection, root, token);
         }
 
-        return roots;
+        return roots.OrderNode().ToArray();
     }
 
     public async Task<ChunkNode?> GetSectionAsync(string docId, string title, CancellationToken token)
@@ -272,9 +280,10 @@ public class SemanticKernelStore
         }
 
         var sectionChunk = await collection.GetAsync(
-                chunk => chunk.Type != (int)ChunkType.Paragraph && chunk.Title == title,
+                chunk => chunk.Type != (int)ChunkType.Paragraph,
                 int.MaxValue / 2, cancellationToken: token)
-            .FirstOrDefaultAsync(cancellationToken: token);
+            .FirstOrDefaultAsync(chunk => chunk.Title.Contains(title),
+                cancellationToken: token);
         if (sectionChunk == null)
         {
             return null;
@@ -345,9 +354,6 @@ public class SemanticKernelStore
             case SearchAlgorithm.Recursive:
                 chunks = await RecursiveSearchAsync(query, docId, token, 2, topK);
                 break;
-            case SearchAlgorithm.Interactive:
-                throw new NotImplementedException("Interactive search is not implemented yet.");
-            case SearchAlgorithm.Graph:
             default:
                 throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null);
         }
@@ -367,7 +373,7 @@ public class SemanticKernelStore
             await AddToRootNodes(rootNodes, cache, collection, chunkNode);
         }
 
-        return rootNodes;
+        return rootNodes.OrderNode().ToArray();
     }
 
     /// <summary>

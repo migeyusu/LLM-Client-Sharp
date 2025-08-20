@@ -5,7 +5,8 @@
                     xmlns:ui="clr-namespace:LLMClient.UI"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
-                    xmlns:dialog="clr-namespace:LLMClient.Dialog">
+                    xmlns:dialog="clr-namespace:LLMClient.Dialog"
+                    xmlns:local="clr-namespace:LLMClient.Rag">
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
                   DataType="{x:Type dialog:RequestViewItem}">
         <Grid HorizontalAlignment="Right"

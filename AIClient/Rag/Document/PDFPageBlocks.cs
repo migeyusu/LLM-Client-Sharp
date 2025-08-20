@@ -12,7 +12,7 @@ public class PDFPageBlocks
         var paragraphContentBuilder = new StringBuilder();
         foreach (var block in this.Blocks)
         {
-            paragraphContentBuilder.Append(block.Text);
+            paragraphContentBuilder.AppendLine(block.Text);
         }
 
         Content = paragraphContentBuilder.ToString();

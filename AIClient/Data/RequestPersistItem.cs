@@ -14,6 +14,8 @@ public class RequestPersistItem : IDialogPersistItem
 
     public List<AIFunctionGroupPersistObject>? FunctionGroups { get; set; }
 
+    public IList<IRagSource>? RagSources { get; set; }
+
     public ISearchService? SearchService { get; set; }
 
     /// <summary>

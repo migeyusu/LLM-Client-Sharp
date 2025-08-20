@@ -1,0 +1,152 @@
+﻿<UserControl x:Class="LLMClient.Dialog.FileQueryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLMClient.Dialog"
+             xmlns:rag="clr-namespace:LLMClient.Rag"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:component="clr-namespace:LLMClient.UI.Component"
+             xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+             xmlns:ui="clr-namespace:LLMClient.UI"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:FileQueryViewModel}"
+             d:DesignHeight="500" d:DesignWidth="600">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ComboBox materialDesign:HintAssist.Hint="Select Source"
+                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                  Margin="0,0,10,10"
+                  Width="300"
+                  HorizontalAlignment="Left"
+                  ItemsSource="{Binding RagSources.Sources,Mode=OneWay}"
+                  SelectedItem="{Binding SelectedSource,Mode=TwoWay}"
+                  IsEditable="False"
+                  Padding="12,6">
+            <ComboBox.Resources>
+                <DataTemplate DataType="{x:Type rag:RagFileBase}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Width="30"
+                               Height="30"
+                               VerticalAlignment="Center"
+                               Source="{Binding FileType,Mode=OneTime,Converter={x:Static converters:SnapConverters.DocumentTypeToImageConverter}}" />
+                        <TextBlock Text="{Binding Name,Mode=OneTime}"
+                                   TextWrapping="Wrap"
+                                   Margin="6,0"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.Resources>
+        </ComboBox>
+        <TreeView Grid.Row="1" ItemsSource="{Binding SearchResults,Mode=OneWay}"
+                  Margin="0,10">
+            <TreeView.ItemTemplateSelector>
+                <component:TypeBasedDataTemplateSelector>
+                    <component:TypeBasedDataTemplateSelector.EmptyTemplate>
+                        <HierarchicalDataTemplate ItemsSource="{Binding Data.Children,Mode=OneTime}"
+                                                  DataType="{x:Type ui:SelectableViewModel`1[]}">
+                            <StackPanel Orientation="Horizontal">
+                                <CheckBox Margin="0,0,5,0" />
+                                <TextBlock Text="{Binding  Data.Chunk.Title,Mode=OneTime}" />
+                            </StackPanel>
+                        </HierarchicalDataTemplate>
+                    </component:TypeBasedDataTemplateSelector.EmptyTemplate>
+                    <component:DataTemplateTypePair>
+                        <HierarchicalDataTemplate DataType="{x:Type rag:ChunkNode}"
+                                                  ItemsSource="{Binding Children,Mode=OneTime}">
+                            <Grid DataContext="{Binding Chunk,Mode=OneTime}"
+                                  MaxHeight="200">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="500" />
+                                    <ColumnDefinition Width="500" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Title,Mode=OneTime}"
+                                           Grid.RowSpan="2"
+                                           TextWrapping="Wrap"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Top"
+                                           Margin="0,0,0,0" />
+                                <TextBlock Grid.Row="0" Grid.Column="1"
+                                           Text="Summary："
+                                           HorizontalAlignment="Left"
+                                           FontWeight="Black" />
+                                <TextBlock Grid.Row="0" Grid.Column="2"
+                                           Text="Text："
+                                           HorizontalAlignment="Left"
+                                           FontWeight="Black" />
+                                <TextBox Grid.Row="1" Grid.Column="1"
+                                         Text="{Binding Summary,Mode=OneTime}"
+                                         TextWrapping="Wrap"
+                                         IsReadOnly="True"
+                                         TextAlignment="Left"
+                                         materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                         BorderThickness="0" />
+                                <TextBox Grid.Row="1" Grid.Column="2"
+                                         Text="{Binding Text,Mode=OneTime}"
+                                         TextWrapping="Wrap"
+                                         IsReadOnly="True"
+                                         TextAlignment="Left"
+                                         materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                         BorderThickness="0" />
+                                <Separator Grid.Row="1"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="3"
+                                           Margin="0"
+                                           Height="1"
+                                           VerticalAlignment="Bottom"
+                                           Style="{StaticResource MaterialDesignDarkSeparator}" />
+                            </Grid>
+                        </HierarchicalDataTemplate>
+                    </component:DataTemplateTypePair>
+                </component:TypeBasedDataTemplateSelector>
+            </TreeView.ItemTemplateSelector>
+        </TreeView>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Style="{StaticResource MaterialDesignFilledTextBox}"
+                     TextWrapping="NoWrap"
+                     Margin="0,0,10,0"
+                     Text="{Binding SearchText,Mode=TwoWay}"
+                     materialDesign:HintAssist.Hint="Query String" />
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <ComboBox ItemsSource="{Binding Source={component:EnumBindingSource {x:Type rag:SearchAlgorithm}}}"
+                          SelectedItem="{Binding Algorithm,Mode=TwoWay}"
+                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                          materialDesign:HintAssist.Hint="Search Algorithm"
+                          Margin="0,0,10,0"
+                          Width="160"
+                          Padding="12,6" />
+                <TextBox Style="{StaticResource MaterialDesignFilledTextBox}"
+                         TextWrapping="NoWrap"
+                         Margin="0,0,10,0"
+                         materialDesign:HintAssist.Hint="Top K"
+                         Width="70"
+                         Text="{Binding TopK,Mode=TwoWay}" />
+                <Button Command="{Binding SearchCommand}">
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="SearchExpand"
+                                                 VerticalAlignment="Center" />
+                        <TextBlock Text="查询"
+                                   Margin="6,0,0,0" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

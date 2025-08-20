@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
@@ -30,13 +31,15 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     public AdditionalPropertiesDictionary AdditionalProperties { get; set; } = new AdditionalPropertiesDictionary();
 
     private ChatMessage? _message = null;
-    
+
     public bool IsAvailableInContext { get; } = true;
 
     public List<Attachment>? Attachments { get; set; }
 
+    public IList<IRagSource>? RagSources { get; set; }
+
     public IThinkingConfig? ThinkingConfig { get; set; }
-    
+
     public long Tokens
     {
         //估计tokens
@@ -47,7 +50,8 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     {
     }
 
-    public async IAsyncEnumerable<ChatMessage> GetMessagesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (_message == null)
         {

@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using LambdaConverters;
+using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Project;
 using LLMClient.Rag;
@@ -61,6 +62,9 @@ internal static class SnapConverters
             ? JsonSerializer.Serialize(e.Value, Extension.DefaultJsonSerializerOptions)
             : string.Empty);
 
+    public static readonly IValueConverter CountToVisibilityConverter =
+        ValueConverter.Create<int, Visibility>(e => e.Value > 0 ? Visibility.Visible : Visibility.Collapsed);
+
     public static readonly IValueConverter EnumerableToVisibilityConverter =
         ValueConverter.Create<IEnumerable<object>?, Visibility>(e =>
         {
@@ -112,4 +116,26 @@ internal static class SnapConverters
         var maxLength = args.Parameter;
         return text.Length > maxLength ? text.Substring(0, maxLength) + "..." : text;
     }));
+    
+    /*public static readonly IValueConverter RAGIconConveter= ValueConverter.Create<IRagSource,PackIconKind>((args =>
+    {
+        IRagSource argsValue = args.Value;  
+        if (argsValue is RagFileBase ragFileBase)
+        {
+            switch (ragFileBase.FileType)
+            {
+                case DocumentFileType.Text:
+                    return 
+                    break;
+                case DocumentFileType.Word:
+                    break;
+                case DocumentFileType.Pdf:
+                    break;
+                case DocumentFileType.Excel:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+    }))*/
 }
