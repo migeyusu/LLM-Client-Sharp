@@ -48,13 +48,12 @@ public class Rag
     }
 
     [Fact]
-    public async Task PDFEmbedding()
+    public void PDFEmbedding()
     {
         var pdfExtractor = new PDFExtractor(pdfPath);
         pdfExtractor.Initialize(padding: new Thickness(10, 55, 10, 62));
         var contentNodes = pdfExtractor.Analyze();
-        var docChunks =
-            await contentNodes.ToDocChunks("doc1", ((s, token) => Task.FromResult(s)));
+        var docChunks = contentNodes.ToDocChunks("doc1");
         var docChunksCount = docChunks.Count;
         output.WriteLine(docChunksCount.ToString());
     }
@@ -177,13 +176,13 @@ public class Rag
                 [
                     new ChunkNode(new DocChunk()
                     {
-                        Type = (int)ChunkType.Paragraph,
+                        Type = (int)ChunkType.Page,
                         Text = "This is a paragraph.",
                         Summary = "This is a paragraph summary.",
                     }),
                     new ChunkNode(new DocChunk()
                     {
-                        Type = (int)ChunkType.Paragraph,
+                        Type = (int)ChunkType.Page,
                         Text = "This is another paragraph.",
                         Summary = "This is another paragraph summary.",
                     })
@@ -211,13 +210,13 @@ public class Rag
                     [
                         new ChunkNode(new DocChunk()
                         {
-                            Type = (int)ChunkType.Paragraph,
+                            Type = (int)ChunkType.Page,
                             Text = "This is a paragraph under Title 1.1.",
                             Summary = "This is a paragraph summary under Title 1.1."
                         }),
                         new ChunkNode(new DocChunk()
                         {
-                            Type = (int)ChunkType.Paragraph,
+                            Type = (int)ChunkType.Page,
                             Text = "This is another paragraph under Title 1.1.",
                             Summary = "This is another paragraph summary under Title 1.1."
                         })
@@ -234,13 +233,13 @@ public class Rag
                     [
                         new ChunkNode(new DocChunk()
                         {
-                            Type = (int)ChunkType.Paragraph,
+                            Type = (int)ChunkType.Page,
                             Text = "This is a paragraph under Title 1.2.",
                             Summary = "This is a paragraph summary under Title 1.2."
                         }),
                         new ChunkNode(new DocChunk()
                         {
-                            Type = (int)ChunkType.Paragraph,
+                            Type = (int)ChunkType.Page,
                             Text = "This is another paragraph under Title 1.2.",
                             Summary = "This is another paragraph summary under Title 1.2."
                         })
@@ -260,13 +259,13 @@ public class Rag
             [
                 new ChunkNode(new DocChunk()
                 {
-                    Type = (int)ChunkType.Paragraph,
+                    Type = (int)ChunkType.Page,
                     Text = "This is a paragraph under Title 2.",
                     Summary = "This is a paragraph summary under Title 2."
                 }),
                 new ChunkNode(new DocChunk()
                 {
-                    Type = (int)ChunkType.Paragraph,
+                    Type = (int)ChunkType.Page,
                     Text = "This is another paragraph under Title 2.",
                     Summary = "This is another paragraph summary under Title 2."
                 })

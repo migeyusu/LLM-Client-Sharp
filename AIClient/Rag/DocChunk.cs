@@ -1,84 +1,10 @@
-﻿using Microsoft.Extensions.VectorData;
+﻿using System.Diagnostics;
+using System.Windows.Media;
+using LLMClient.Data;
+using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Data;
 
 namespace LLMClient.Rag;
-
-public class ChunkNode
-{
-    public ChunkNode(DocChunk chunk)
-    {
-        Chunk = chunk;
-    }
-
-    public DocChunk Chunk { get; }
-
-    public ChunkNode? Parent { get; set; }
-
-    public List<ChunkNode> Children { get; set; } = new List<ChunkNode>();
-
-    public ChunkNode Root
-    {
-        get
-        {
-            var node = this;
-            while (node.Parent != null)
-            {
-                node = node.Parent;
-            }
-
-            return node;
-        }
-    }
-
-    public void AddChild(ChunkNode childNode)
-    {
-        childNode.Parent = this;
-        this.Children.Add(childNode);
-    }
-
-    public string GetStructure(int level = 0)
-    {
-        if (this.Chunk.Type == (int)ChunkType.Paragraph)
-        {
-            return string.Empty;
-        }
-
-        var indent = new string(' ', level * 2);
-        var result = $"{indent}- {Chunk.Title}\r\n";
-        if (Chunk.Summary.Length > 0)
-            result += $"{indent}  Summary: {Chunk.Summary}\r\n";
-        foreach (var child in Children)
-        {
-            result += child.GetStructure(level + 1);
-        }
-
-        return result;
-    }
-
-    public string GetView(int level = 0)
-    {
-        var indent = new string(' ', level * 2);
-        var result = string.Empty;
-        if (Chunk.Type == (int)ChunkType.Bookmark)
-        {
-            result += $"{indent}- {Chunk.Title}\r\n";
-            foreach (var child in Children)
-            {
-                result += child.GetView(level + 1);
-            }
-        }
-        else if (Chunk.Type == (int)ChunkType.Paragraph)
-        {
-            var chunkText = Chunk.Text;
-            if (!string.IsNullOrEmpty(chunkText))
-            {
-                result += $"{indent}{chunkText}\r\n";
-            }
-        }
-
-        return result;
-    }
-}
 
 public class DocChunk
 {
@@ -123,7 +49,7 @@ public class DocChunk
     public bool HasChildNode { get; set; }
 
     /// <summary>
-    /// 1: Bookmark 2: Paragraph
+    /// see definition of <see cref="ChunkType"/>
     /// </summary>
     [VectorStoreData]
     public int Type { get; set; }
@@ -133,10 +59,65 @@ public class DocChunk
 
     [VectorStoreVector(SemanticKernelStore.ChunkDimension)]
     public string SummaryEmbedding => Summary;
+
+    /// <summary>
+    /// base64 encoded attachment data, such as pdf, image, etc.
+    /// spilt by \n, each line is a base64 encoded data.
+    /// <para>support image now</para>
+    /// </summary>
+    [VectorStoreData(IsFullTextIndexed = true)]
+    public string Attachment { get; set; } = string.Empty;
+
+    public void SetImages(IList<string> base64Images)
+    {
+        if (base64Images.Count == 0)
+        {
+            Attachment = string.Empty;
+            return;
+        }
+
+        // Attachment = base64Images[0].Substring(0, 100);
+        Attachment = string.Join('\n', base64Images);
+    }
+
+    private IList<ImageSource>? _attachmentImages;
+
+    public IList<ImageSource> AttachmentImages
+    {
+        get
+        {
+            if (_attachmentImages == null)
+            {
+                if (!string.IsNullOrEmpty(Attachment))
+                {
+                    try
+                    {
+                        _attachmentImages = Attachment.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(ImageExtensions.GetImageSourceFromBase64).ToArray();
+                    }
+                    catch (Exception extension)
+                    {
+                        Trace.TraceError("Failed to decode attachment images: " + extension.Message);
+                    }
+                }
+
+                _attachmentImages ??= Array.Empty<ImageSource>();
+            }
+
+            return _attachmentImages;
+        }
+    }
 }
 
 public enum ChunkType : int
 {
+    /// <summary>
+    /// pdf bookmark
+    /// </summary>
     Bookmark = 1,
-    Paragraph = 2,
+
+    /// <summary>
+    /// pdf page
+    /// </summary>
+    Page = 2,
 }

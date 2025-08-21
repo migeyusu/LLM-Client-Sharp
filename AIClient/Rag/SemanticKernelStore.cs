@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
@@ -211,7 +212,7 @@ public class SemanticKernelStore
 
         return roots.OrderNode().ToArray();
     }
-
+    
     /// <summary>
     /// 获取子节点（不包括Paragraph）
     /// </summary>
@@ -229,7 +230,7 @@ public class SemanticKernelStore
         await foreach (var docChunk in collection.GetAsync(chunk => chunk.ParentKey == parentKey, int.MaxValue / 2,
                            cancellationToken: token))
         {
-            if (docChunk.Type != (int)ChunkType.Paragraph)
+            if (docChunk.Type != (int)ChunkType.Page)
             {
                 //只添加非段落类型的节点
                 var childNode = new ChunkNode(docChunk);
@@ -280,7 +281,7 @@ public class SemanticKernelStore
         }
 
         var sectionChunk = await collection.GetAsync(
-                chunk => chunk.Type != (int)ChunkType.Paragraph,
+                chunk => chunk.Type != (int)ChunkType.Page,
                 int.MaxValue / 2, cancellationToken: token)
             .FirstOrDefaultAsync(chunk => chunk.Title.Contains(title),
                 cancellationToken: token);
@@ -312,7 +313,7 @@ public class SemanticKernelStore
             //表示当前为叶子节点
             var parentKey = parentNode.Chunk.Key;
             await foreach (var paragraphChunk in collection.GetAsync(
-                               chunk => chunk.ParentKey == parentKey && chunk.Type == (int)ChunkType.Paragraph,
+                               chunk => chunk.ParentKey == parentKey && chunk.Type == (int)ChunkType.Page,
                                int.MaxValue / 2, cancellationToken: token))
             {
                 parentNode.AddChild(new ChunkNode(paragraphChunk));
@@ -413,19 +414,15 @@ public class SemanticKernelStore
             .RagOption;
         ragOption.ThrowIfNotValid();
         var semanticKernelStore = ragOption.GetStore();
-        await semanticKernelStore.AddFile("test", new[]
+        VectorStore vectorStore = semanticKernelStore.GetVectorStore();
+        var storeCollection = vectorStore.GetCollection<string,DocChunk>("Pdf_9f9da2da-3be2-4946-8037-e818d8b7f40c");
+        await storeCollection.EnsureCollectionExistsAsync();
+        var docChunk = await storeCollection.GetAsync("a4b784c6-b7cf-42da-939f-aeae6d035705");
+        if (docChunk == null)
         {
-            new DocChunk()
-            {
-                DocumentId = "test",
-                Text = "This is a test document.",
-                Level = 0,
-                Summary = "This is a test document summary.",
-                Title = "Test Document",
-                Type = (int)ChunkType.Bookmark,
-                HasChildNode = false,
-            }
-        }, CancellationToken.None);
+            return;
+        }
+        Debug.WriteLine(docChunk.Attachment);
     }
 
     private async IAsyncEnumerable<VectorSearchResult<DocChunk>> HierarchicalSearchAsync(
@@ -471,7 +468,7 @@ public class SemanticKernelStore
         var vectorSearchOptions = new VectorSearchOptions<DocChunk>()
         {
             //只搜索没有子节点的文档
-            Filter = chunk => chunk.Type == (int)ChunkType.Paragraph,
+            Filter = chunk => chunk.Type == (int)ChunkType.Page,
             VectorProperty = chunk => chunk.TextEmbedding
         };
         var results = new List<DocChunk>();
@@ -500,7 +497,7 @@ public class SemanticKernelStore
         var vectorSearchOptions = new VectorSearchOptions<DocChunk>()
         {
             //只搜索没有graph节点的文档
-            Filter = chunk => chunk.Type == (int)ChunkType.Paragraph,
+            Filter = chunk => chunk.Type == (int)ChunkType.Page,
             VectorProperty = chunk => chunk.TextEmbedding
         };
         return (await InternalSearchAsync(query, vectorSearchOptions, docId, token, topK))
@@ -526,7 +523,7 @@ public class SemanticKernelStore
     private async Task PopulateParagraphs(VectorStoreCollection<string, DocChunk> collection, ChunkNode chunkNode)
     {
         var chunkKey = chunkNode.Chunk.Key;
-        if (chunkNode.Chunk.Type == (int)ChunkType.Paragraph)
+        if (chunkNode.Chunk.Type == (int)ChunkType.Page)
         {
             return;
         }

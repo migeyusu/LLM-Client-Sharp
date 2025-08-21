@@ -1,9 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
-using Microsoft.Extensions.Logging;
-using Microsoft.SemanticKernel.Plugins.Document;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis;
@@ -29,41 +27,59 @@ public class PDFExtractor : IDisposable
 
     public void Initialize(IProgress<int>? progress = null, Thickness? padding = null)
     {
+        _cache.Clear();
+        var orderDetector = new UnsupervisedReadingOrderDetector(10);
         foreach (var page in Document.GetPages())
         {
-            var words = page.GetWords(NearestNeighbourWordExtractor.Instance).ToArray();
-            if (words.Any() && padding != null)
+            var box = page.CropBox.Bounds;
+            Thickness? thickness;
+            if (padding == null)
             {
-                var box = page.CropBox.Bounds;
-                var thickness = padding.Value;
+                thickness = null;
+            }
+            else
+            {
+                var paddingValue = padding.Value;
                 thickness = new Thickness(
-                    box.Left + thickness.Left,
-                    box.Top - thickness.Top,
-                    box.Right - thickness.Right,
-                    box.Bottom + thickness.Bottom);
+                    box.Left + paddingValue.Left,
+                    box.Top - paddingValue.Top,
+                    box.Right - paddingValue.Right,
+                    box.Bottom + paddingValue.Bottom);
+            }
+
+            var words = page.GetWords(NearestNeighbourWordExtractor.Instance).ToArray();
+            if (words.Any() && thickness.HasValue)
+            {
+                var thicknessValue = thickness.Value;
                 words = words.Where(word =>
                 {
                     var boundingBox = word.BoundingBox;
-                    return boundingBox.Bottom < thickness.Top && // 单词的下边缘要低于页眉线
-                           boundingBox.Top > thickness.Bottom && // 单词的上边缘要高于页脚线
-                           boundingBox.Left > thickness.Left && // 单词的左边缘要在页边距右侧; 
-                           boundingBox.Right < thickness.Right; // 单词的右边缘要在页边距左侧
+                    return boundingBox.Bottom < thicknessValue.Top && // 单词的下边缘要低于页眉线
+                           boundingBox.Top > thicknessValue.Bottom && // 单词的上边缘要高于页脚线
+                           boundingBox.Left > thicknessValue.Left && // 单词的左边缘要在页边距右侧; 
+                           boundingBox.Right < thicknessValue.Right; // 单词的右边缘要在页边距左侧
                 }).ToArray();
             }
 
             var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
             var pageNumber = page.Number;
             progress?.Report(pageNumber);
-            _cache.TryAdd(pageNumber, new PageCacheItem(page, pageNumber, blocks));
-        }
+            var pdfImages = page.GetImages().ToArray();
+            if (pdfImages.Any() && thickness.HasValue)
+            {
+                var thicknessValue = thickness.Value;
+                pdfImages = pdfImages.Where(img =>
+                {
+                    var boundingBox = img.Bounds;
+                    return boundingBox.Bottom < thicknessValue.Top && // 图片的下边缘要低于页眉线
+                           boundingBox.Top > thicknessValue.Bottom && // 图片的上边缘要高于页脚线
+                           boundingBox.Left > thicknessValue.Left && // 图片的左边缘要在页边距右侧; 
+                           boundingBox.Right < thicknessValue.Right; // 图片的右边缘要在页边距左侧
+                }).ToArray();
+            }
 
-        var orderDetector = new UnsupervisedReadingOrderDetector(10);
-        foreach (var pageCacheItem in _cache.Values)
-        {
-            progress?.Report(pageCacheItem.PageNumber);
-            var orderedBlocks = orderDetector.Get(pageCacheItem.TotalTextBlocks).ToArray();
-            pageCacheItem.RemainingTextBlocks = orderedBlocks.ToList();
-            pageCacheItem.TotalTextBlocks = orderedBlocks;
+            var orderedBlocks = orderDetector.Get(blocks).ToArray();
+            _cache.TryAdd(pageNumber, new PageCacheItem(page, pageNumber, orderedBlocks, pdfImages));
         }
     }
 
@@ -71,16 +87,16 @@ public class PDFExtractor : IDisposable
     /// 解析出内容树。
     /// </summary>
     /// <returns>内容树的根节点列表。</returns>
-    private List<PDFContentNode> ExtractContentTree()
+    private List<PDFNode> ExtractContentTree()
     {
         if (!Document.TryGetBookmarks(out var bookmarks, true))
         {
             // 如果没有书签，可以返回一个代表整个文档的单一节点
             // 或者直接返回空列表，表示无法按目录结构解析
-            return new List<PDFContentNode>();
+            return new List<PDFNode>();
         }
 
-        var rootNodes = new List<PDFContentNode>();
+        var rootNodes = new List<PDFNode>();
         foreach (var bookmark in bookmarks.Roots)
         {
             var node = BuildNodeTree(bookmark);
@@ -95,7 +111,7 @@ public class PDFExtractor : IDisposable
     /// 
     /// </summary>
     /// <returns>根节点列表</returns>
-    public IList<PDFContentNode> Analyze()
+    public IList<PDFNode> Analyze()
     {
         // 1. 递归构建基础树结构，只包含标题、层级和起始页码
         var rootNodes = this.ExtractContentTree();
@@ -137,7 +153,7 @@ public class PDFExtractor : IDisposable
         return rootNodes;
     }
 
-    private Point GetTopLeft(PDFContentNode node)
+    private Point GetTopLeft(PDFNode node)
     {
         var destination = node.Destination;
         if (destination == null)
@@ -206,11 +222,12 @@ public class PDFExtractor : IDisposable
     /// <summary>
     /// 递归地从PdfPig的BookmarkNode构建我们的ContentNode树。
     /// </summary>
-    private PDFContentNode? BuildNodeTree(BookmarkNode bookmark)
+    private PDFNode? BuildNodeTree(BookmarkNode bookmark)
     {
         // 尝试获取书签指向的页码
         // DestinationProvider可以更稳定地获取页码
-        var node = new PDFContentNode(bookmark.Title, bookmark.Level);
+        var bookmarkTitle = bookmark.Title;
+        var node = new PDFNode(bookmarkTitle, bookmark.Level);
         var bookmarkNodes = bookmark.Children;
         var contentNodes = node.Children;
         foreach (var bookmarkNode in bookmarkNodes)
@@ -224,8 +241,34 @@ public class PDFExtractor : IDisposable
 
         if (bookmark is DocumentBookmarkNode docNode)
         {
-            node.Destination = docNode.Destination;
+            var nodeDestination = docNode.Destination;
+            node.Destination = nodeDestination;
             node.StartPage = docNode.PageNumber;
+            //判断是否需要创建隐式子节点（有些节点不但承担书签作用，还承担内容节点作用）
+            if (contentNodes.Count > 0)
+            {
+                var nodeStartPoint = GetTopLeft(node);
+                var firstChildNode = contentNodes[0];
+                var childDestination = GetTopLeft(firstChildNode);
+                if (!nodeStartPoint.Equals(childDestination))
+                {
+                    //起始点不同，说明当前节点既是书签节点，也是内容节点
+                    //通过正则智能地创建子节点title，如果title是"1. Introduction"且子节点是"1.1 Background"，则创建子节点title为"1.0 Introduction"
+                    var implicitTitle = bookmarkTitle;
+                    if (HeadingParser.TryParse(implicitTitle, out string numbering, out string title, out var levels))
+                    {
+                        implicitTitle = $"{numbering}.0 {title}";
+                    }
+
+                    var implicitNode = new PDFNode(implicitTitle, bookmark.Level + 1)
+                    {
+                        Destination = nodeDestination,
+                        StartPage = node.StartPage,
+                        StartPoint = nodeStartPoint
+                    };
+                    contentNodes.Insert(0, implicitNode);
+                }
+            }
         }
         else if (bookmark is ContainerBookmarkNode)
         {
@@ -250,20 +293,35 @@ public class PDFExtractor : IDisposable
     }
 
     /// <summary>
+    /// 比较两个 Destination 是否相等（基于 PageNumber 和可选坐标）。
+    /// </summary>
+    private bool DestinationsEqual(ExplicitDestination dest1, ExplicitDestination dest2)
+    {
+        if (dest1.PageNumber != dest2.PageNumber)
+            return false;
+        var dest1Coordinates = dest1.Coordinates;
+        var dest2Coordinates = dest2.Coordinates;
+
+
+        return true;
+    }
+
+    /// <summary>
     /// 将树形结构扁平化为一个列表，方便后续处理。
     /// </summary>
-    private static IEnumerable<PDFContentNode> Flatten(IEnumerable<PDFContentNode> nodes)
+    private static IEnumerable<PDFNode> Flatten(IEnumerable<PDFNode> nodes)
     {
         return nodes.SelectMany(n => new[] { n }.Concat(Flatten(n.Children)));
     }
 
     private class PageCacheItem
     {
-        public PageCacheItem(Page page, int pageNumber, IReadOnlyList<TextBlock> totalTextBlocks)
+        public PageCacheItem(Page page, int pageNumber, IList<TextBlock> totalTextBlocks,
+            IList<IPdfImage> pdfImages)
         {
             Page = page;
             PageNumber = pageNumber;
-            TotalTextBlocks = totalTextBlocks;
+            RemainingPdfImages = pdfImages.ToList();
             RemainingTextBlocks = totalTextBlocks.ToList();
         }
 
@@ -271,7 +329,7 @@ public class PDFExtractor : IDisposable
 
         public List<TextBlock> RemainingTextBlocks { get; set; }
 
-        public IReadOnlyList<TextBlock> TotalTextBlocks { get; set; }
+        public List<IPdfImage> RemainingPdfImages { get; }
 
         public Page Page { get; }
     }
@@ -279,15 +337,16 @@ public class PDFExtractor : IDisposable
     /// <summary>
     /// 从指定的页码范围提取段落。
     /// </summary>
-    private void ExtractParagraphs(PDFContentNode preNode,
-        int processIndex, int endPage, Point? endTopLeft = null)
+    private void ExtractParagraphs(PDFNode preNode, int processIndex,
+        int endPage, Point? endTopLeft = null)
     {
         var startPage = preNode.StartPage;
         //对于实际的第一个扁平点，需要trim起始点之前的内容
         if (processIndex == 0)
         {
             var startPoint = preNode.StartPoint; // 获取起始点
-            var remainingTextBlocks = _cache[startPage].RemainingTextBlocks;
+            var pageCacheItem = _cache[startPage];
+            var remainingTextBlocks = pageCacheItem.RemainingTextBlocks;
             var startBlock = remainingTextBlocks.FirstOrDefault(block =>
             {
                 var boundingBox = block.BoundingBox;
@@ -301,20 +360,38 @@ public class PDFExtractor : IDisposable
                     remainingTextBlocks.RemoveRange(0, indexOf);
                 }
             }
+
+            var remainingPdfImages = pageCacheItem.RemainingPdfImages;
+            var startImage = remainingPdfImages.FirstOrDefault(image =>
+            {
+                var boundingBox = image.Bounds;
+                return boundingBox.Bottom < startPoint.Y && boundingBox.Right > startPoint.X;
+            });
+            if (startImage != null)
+            {
+                var indexOf = remainingPdfImages.IndexOf(startImage);
+                if (indexOf > 0)
+                {
+                    remainingPdfImages.RemoveRange(0, indexOf);
+                }
+            }
         }
 
         for (int i = startPage; i <= endPage; i++)
         {
             var page = _cache[i];
+            var remainingTextBlocks = page.RemainingTextBlocks;
+            var remainingPdfImages = page.RemainingPdfImages;
             if (i < endPage || endTopLeft == null)
             {
                 // 如果不是最后一页，或者没有指定终止点，则使用当前页面的所有文本块
-                preNode.Paragraphs.Add(new PDFPageBlocks(page.RemainingTextBlocks.ToArray(), i));
-                page.RemainingTextBlocks.Clear();
+                preNode.Pages.Add(new PDFPage(remainingTextBlocks.ToArray(),
+                    i, remainingPdfImages.ToArray()));
+                remainingTextBlocks.Clear();
+                remainingPdfImages.Clear();
             }
             else
             {
-                var remainingTextBlocks = page.RemainingTextBlocks;
                 var firstMatch = remainingTextBlocks.FirstOrDefault((block =>
                 {
                     var boundingBox = block.BoundingBox;
@@ -337,7 +414,27 @@ public class PDFExtractor : IDisposable
                     remainingTextBlocks.Clear();
                 }
 
-                preNode.Paragraphs.Add(new PDFPageBlocks(blocks, i));
+                IPdfImage[] images;
+                var firstOrDefault = remainingPdfImages.FirstOrDefault(image =>
+                {
+                    var boundingBox = image.Bounds;
+                    var boundingBoxTop = boundingBox.Top;
+                    var boundingBoxLeft = boundingBox.Left;
+                    return boundingBoxTop < endTopLeft.Value.Y && boundingBoxLeft > endTopLeft.Value.X;
+                });
+                if (firstOrDefault != null)
+                {
+                    var indexOf = remainingPdfImages.IndexOf(firstOrDefault);
+                    images = remainingPdfImages.Take(indexOf).ToArray();
+                    remainingPdfImages.RemoveRange(0, indexOf);
+                }
+                else
+                {
+                    images = remainingPdfImages.ToArray();
+                    remainingPdfImages.Clear();
+                }
+
+                preNode.Pages.Add(new PDFPage(blocks, i, images));
             }
         }
     }
@@ -346,142 +443,4 @@ public class PDFExtractor : IDisposable
     {
         Document.Dispose();
     }
-}
-
-public static class PDFExtractorExtensions
-{
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="nodes">
-    ///     顶层节点
-    ///     <para><b>警告：</b> 请勿传入已扁平化的节点列表，否则结果不正确。</para>
-    /// </param>
-    /// <param name="docId"></param>
-    /// <param name="llmCall"></param>
-    /// <param name="logger"></param>
-    /// <param name="nodeProgress"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    public static async Task<List<DocChunk>> ToDocChunks(this IList<PDFContentNode> nodes,
-        string docId, Func<string, CancellationToken, Task<string>> llmCall, ILogger? logger = null,
-        IProgress<PDFContentNode>? nodeProgress = null,
-        CancellationToken token = default)
-    {
-        var docChunks = new List<DocChunk>();
-        for (var index = 0; index < nodes.Count; index++)
-        {
-            var contentNode = nodes[index];
-            await ApplyRaptor(docId, contentNode, index, docChunks, llmCall, logger, nodeProgress, token: token);
-        }
-
-        return docChunks;
-    }
-
-    private static async Task<DocChunk> ApplyRaptor(string docId, PDFContentNode node, int nodeIndex,
-        List<DocChunk> chunks, Func<string, CancellationToken, Task<string>> llmCall,
-        ILogger? logger = null,
-        IProgress<PDFContentNode>? nodeProgress = null, string? parentId = null, CancellationToken token = default)
-    {
-        token.ThrowIfCancellationRequested();
-        var nodeLevel = node.Level;
-        var nodeChunk = new DocChunk()
-        {
-            Key = Guid.NewGuid().ToString(),
-            DocumentId = docId,
-            ParentKey = parentId ?? String.Empty,
-            Level = nodeLevel,
-            Title = node.Title,
-            Index = nodeIndex,
-            Type = (int)ChunkType.Bookmark, // 表示书签类型
-        };
-        if (node.HasChildren)
-        {
-            nodeChunk.HasChildNode = true;
-            var children = node.Children;
-            var tasks = new Task[children.Count];
-            var docChunks = new DocChunk[children.Count];
-            for (var index = 0; index < children.Count; index++)
-            {
-                var child = children[index];
-                var index1 = index;
-                tasks[index] = Task.Run(async () =>
-                {
-                    var docChunk = await ApplyRaptor(docId, child, index1, chunks, llmCall, logger,
-                        nodeProgress,
-                        nodeChunk.Key, token);
-                    docChunks[index1] = docChunk;
-                }, token);
-            }
-
-            await Task.WhenAll(tasks);
-            // 生成摘要：子节点标题 + 摘要
-            var summaryBuilder = new StringBuilder(node.Title + "\nSubsections:");
-            foreach (var chunk in docChunks)
-            {
-                summaryBuilder.AppendLine($"- {chunk.Title}");
-                summaryBuilder.AppendLine(chunk.Summary);
-            }
-
-            var chunkText = await llmCall(summaryBuilder.ToString(), token);
-            nodeChunk.Summary = chunkText;
-            //text 为空
-        }
-        else
-        {
-            var nodeContentBuilder = new StringBuilder();
-            var paragraphs = node.Paragraphs;
-            if (paragraphs.Count > 0)
-            {
-                for (var index = 0; index < paragraphs.Count; index++)
-                {
-                    var paragraph = paragraphs[index];
-                    try
-                    {
-                        //paragraph不执行summary
-                        var paragraphContent = paragraph.Content;
-                        if (string.IsNullOrEmpty(paragraphContent.Trim()))
-                        {
-                            logger?.LogWarning("跳过空段落，所在页码：{PageNumber}", paragraph.PageNumber);
-                            continue; // 跳过空段落
-                        }
-
-                        nodeContentBuilder.AppendLine(paragraphContent);
-                        chunks.Add(new DocChunk()
-                        {
-                            Key = Guid.NewGuid().ToString(),
-                            DocumentId = docId,
-                            Text = paragraphContent,
-                            Level = nodeLevel + 1,
-                            Index = index,
-                            ParentKey = nodeChunk.Key,
-                            Type = (int)ChunkType.Paragraph, // 表示段落类型
-                        });
-                        nodeProgress?.Report(node);
-                    }
-                    catch (Exception e)
-                    {
-                        logger?.LogError(e, "处理段落时出错，所在页码：{PageNumber}", paragraph.PageNumber);
-                    }
-                }
-            }
-
-            var nodeContent = nodeContentBuilder.ToString();
-            if (!string.IsNullOrEmpty(nodeContent.Trim()))
-            {
-                //存在子节点时，Text为空，表示需要进一步查找
-                nodeChunk.Summary = await llmCall(nodeContent, token);
-            }
-            else
-            {
-                logger?.LogWarning("节点没有内容，不会添加。所在页码：{StartPage}, 标题：{Title}", node.StartPage, node.Title);
-                return nodeChunk;
-            }
-        }
-
-        chunks.Add(nodeChunk);
-        nodeProgress?.Report(node);
-        return nodeChunk;
-    }
-    
 }

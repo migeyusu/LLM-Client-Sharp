@@ -6,121 +6,272 @@
         xmlns:local="clr-namespace:LLMClient.Rag.Document"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+        xmlns:content="clr-namespace:UglyToad.PdfPig.Content;assembly=UglyToad.PdfPig"
+        xmlns:log="clr-namespace:LLMClient.UI.Log"
         mc:Ignorable="d"
         Loaded="PDFExtractorWindow_OnLoaded"
         d:DataContext="{d:DesignInstance local:PDFExtractorWindow}"
         Title="PDF Extractor" Height="450" Width="800">
-    <materialDesign:Transitioner SelectedIndex="{Binding CurrentStep,Mode=TwoWay}">
-        <materialDesign:TransitionerSlide>
-            <materialDesign:TransitionerSlide.ForwardWipe>
-                <materialDesign:SlideWipe Direction="Right" />
-            </materialDesign:TransitionerSlide.ForwardWipe>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="200" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <!-- 左侧控制面板 -->
-                <StackPanel Grid.Column="0" Margin="10">
-                    <TextBlock Text="选择页面:" Margin="0,20,0,0" />
-                    <ComboBox x:Name="CmbPages" SelectionChanged="Page_SelectionChanged" />
-                    <TextBlock Text="Top Margin (点):" Margin="0,20,0,0" />
-                    <TextBox Text="{Binding TopMargin,Mode=TwoWay}" />
-                    <TextBlock Text="Bottom Margin (点):" />
-                    <TextBox Text="{Binding BottomMargin,Mode=TwoWay}" />
-                    <TextBlock Text="Left Margin (点):" />
-                    <TextBox Text="{Binding LeftMargin,Mode=TwoWay}" />
-                    <TextBlock Text="Right Margin (点):" />
-                    <TextBox Text="{Binding RightMargin,Mode=TwoWay}" />
-                    <Button Content="下一步"
-                            Margin="0,20,0,0"
-                            Command="{x:Static materialDesign:Transitioner.MoveNextCommand}" />
-                </StackPanel>
-                <!-- 右侧Canvas用于渲染 -->
-                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
-                              Margin="10">
-                    <Canvas x:Name="CanvasPage" Background="White" />
-                </ScrollViewer>
-            </Grid>
-        </materialDesign:TransitionerSlide>
-        <materialDesign:TransitionerSlide>
-            <materialDesign:TransitionerSlide.BackwardWipe>
-                <materialDesign:CircleWipe />
-            </materialDesign:TransitionerSlide.BackwardWipe>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <TreeView ItemsSource="{Binding ContentNodes,Mode=OneWay}">
-                    <TreeView.ItemContainerStyle>
-                        <Style TargetType="{x:Type TreeViewItem}"
-                               BasedOn="{StaticResource {x:Type TreeViewItem}}">
-                            <Setter Property="HorizontalContentAlignment"
-                                    Value="Stretch" />
-                        </Style>
-                    </TreeView.ItemContainerStyle>
-                    <TreeView.Resources>
-                        <HierarchicalDataTemplate DataType="{x:Type local:PDFContentNode}"
-                                                  ItemsSource="{Binding Children}">
-                            <StackPanel HorizontalAlignment="Stretch">
-                                <TextBlock Margin="10,0"
-                                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                                           HorizontalAlignment="Left">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="{}{0} - L{1} (StartPage {2})">
-                                            <Binding Path="Title" Mode="OneTime"/>
-                                            <Binding Path="Level" />
-                                            <Binding Path="StartPage" Mode="OneTime" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                                <ScrollViewer MaxHeight="200"
-                                              Margin="30,0,0,0"
-                                              VerticalScrollBarVisibility="Auto">
-                                    <ItemsControl ItemsSource="{Binding Paragraphs,Mode=OneTime}"
-                                                  DisplayMemberPath="Content" />
-                                </ScrollViewer>
-                                <Separator Background="Black"
-                                           VerticalAlignment="Top"
-                                           Margin="10,0" />
-                            </StackPanel>
-                        </HierarchicalDataTemplate>
-                    </TreeView.Resources>
-                </TreeView>
-                <StackPanel Grid.Row="1"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right"
-                            Margin="10"
-                            IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
-                    <Button Content="返回"
-                            Width="120"
-                            Command="{x:Static materialDesign:Transitioner.MovePreviousCommand}"
-                            Style="{StaticResource MaterialDesignFlatButton}" />
-                    <Button Content="接受"
-                            Margin="10,0,0,0"
-                            Click="OK_OnClick"
-                            Width="120" />
-                </StackPanel>
-                <materialDesign:Card Grid.Row="0"
-                                     Grid.Column="0"
-                                     Visibility="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                     VerticalAlignment="Center"
-                                     HorizontalAlignment="Center">
-                    <StackPanel Margin="30">
-                        <ProgressBar IsIndeterminate="False"
-                                     Maximum="1"
-                                     Minimum="0"
-                                     Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                     Value="50" />
-                        <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,15,0,0"
-                                   Text="正在处理" />
+    <Grid>
+        <materialDesign:Transitioner SelectedIndex="{Binding CurrentStep,Mode=TwoWay}">
+            <materialDesign:TransitionerSlide>
+                <materialDesign:TransitionerSlide.ForwardWipe>
+                    <materialDesign:SlideWipe Direction="Right" />
+                </materialDesign:TransitionerSlide.ForwardWipe>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <!-- 左侧控制面板 -->
+                    <StackPanel Grid.Column="0" Margin="10">
+                        <TextBlock Text="选择页面:" Margin="0,20,0,0" />
+                        <ComboBox x:Name="CmbPages" SelectionChanged="Page_SelectionChanged" />
+                        <TextBlock Text="Top Margin (点):" Margin="0,20,0,0" />
+                        <TextBox Text="{Binding TopMargin,Mode=TwoWay}" />
+                        <TextBlock Text="Bottom Margin (点):" />
+                        <TextBox Text="{Binding BottomMargin,Mode=TwoWay}" />
+                        <TextBlock Text="Left Margin (点):" />
+                        <TextBox Text="{Binding LeftMargin,Mode=TwoWay}" />
+                        <TextBlock Text="Right Margin (点):" />
+                        <TextBox Text="{Binding RightMargin,Mode=TwoWay}" />
+                        <Button Content="下一步"
+                                Margin="0,20,0,0"
+                                Command="{x:Static materialDesign:Transitioner.MoveNextCommand}" />
                     </StackPanel>
-                </materialDesign:Card>
-            </Grid>
-        </materialDesign:TransitionerSlide>
-    </materialDesign:Transitioner>
-
+                    <!-- 右侧Canvas用于渲染 -->
+                    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Margin="10">
+                        <Canvas x:Name="CanvasPage" Background="White" />
+                    </ScrollViewer>
+                </Grid>
+            </materialDesign:TransitionerSlide>
+            <materialDesign:TransitionerSlide>
+                <materialDesign:TransitionerSlide.BackwardWipe>
+                    <materialDesign:CircleWipe />
+                </materialDesign:TransitionerSlide.BackwardWipe>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TreeView ItemsSource="{Binding ContentNodes,Mode=OneWay}">
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="{x:Type TreeViewItem}"
+                                   BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                                <Setter Property="HorizontalContentAlignment"
+                                        Value="Stretch" />
+                            </Style>
+                        </TreeView.ItemContainerStyle>
+                        <TreeView.Resources>
+                            <HierarchicalDataTemplate DataType="{x:Type local:PDFNode}"
+                                                      ItemsSource="{Binding Children}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Orientation="Horizontal"
+                                                HorizontalAlignment="Left">
+                                        <TextBlock Margin="10,0"
+                                                   MaxWidth="500"
+                                                   Text="{Binding Title,Mode=OneTime}"
+                                                   TextWrapping="NoWrap"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
+                                        <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="- L{0} (StartPage {1})">
+                                                    <Binding Path="Level" />
+                                                    <Binding Path="StartPage" Mode="OneTime" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <ScrollViewer Grid.Row="1"
+                                                  MaxHeight="300"
+                                                  Margin="30,0,0,0"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding Pages,Mode=OneTime}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type local:PDFPage}">
+                                                    <StackPanel Orientation="Vertical"
+                                                                Margin="0,5,0,5">
+                                                        <TextBlock Text="{Binding  Content,Mode=OneTime}" />
+                                                        <ItemsControl ItemsSource="{Binding Images,Mode=OneTime}"
+                                                                      ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate DataType="{x:Type content:IPdfImage}">
+                                                                    <Image
+                                                                        Source="{Binding Converter={x:Static converters:SnapConverters.PdfImageConverter}}" />
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                    <Separator Grid.Row="1"
+                                               Background="Black"
+                                               VerticalAlignment="Top"
+                                               Margin="10,0" />
+                                </Grid>
+                            </HierarchicalDataTemplate>
+                        </TreeView.Resources>
+                    </TreeView>
+                    <StackPanel Grid.Row="1"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="10"
+                                IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+                        <Button Content="返回"
+                                Width="120"
+                                VerticalAlignment="Center"
+                                Command="{x:Static materialDesign:Transitioner.MovePreviousCommand}"
+                                Style="{StaticResource MaterialDesignFlatButton}" />
+                        <Button Content="下一步"
+                                Margin="10,0,0,0"
+                                Command="{x:Static materialDesign:Transitioner.MoveNextCommand}" />
+                    </StackPanel>
+                </Grid>
+            </materialDesign:TransitionerSlide>
+            <materialDesign:TransitionerSlide>
+                <materialDesign:TransitionerSlide.BackwardWipe>
+                    <materialDesign:CircleWipe />
+                </materialDesign:TransitionerSlide.BackwardWipe>
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TreeView ItemsSource="{Binding ContentNodes,Mode=OneWay}">
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="{x:Type TreeViewItem}"
+                                   BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                                <Setter Property="HorizontalContentAlignment"
+                                        Value="Stretch" />
+                            </Style>
+                        </TreeView.ItemContainerStyle>
+                        <TreeView.Resources>
+                            <HierarchicalDataTemplate DataType="{x:Type local:PDFNode}"
+                                                      ItemsSource="{Binding Children}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Orientation="Horizontal"
+                                                HorizontalAlignment="Left">
+                                        <TextBlock Margin="10,0"
+                                                   MaxWidth="500"
+                                                   Text="{Binding Title,Mode=OneTime}"
+                                                   TextWrapping="NoWrap"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
+                                        <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="- L{0} (StartPage {1})">
+                                                    <Binding Path="Level" />
+                                                    <Binding Path="StartPage" Mode="OneTime" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="1"
+                                               FontWeight="Black"
+                                               Text="{Binding Summary,Mode=OneTime}"
+                                               Visibility="{Binding Summary,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringToVisibilityConverter}}" />
+                                    <ScrollViewer Grid.Row="2"
+                                                  MaxHeight="300"
+                                                  Margin="30,0,0,0"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding Pages,Mode=OneTime}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type local:PDFPage}">
+                                                    <StackPanel Orientation="Vertical"
+                                                                Margin="0,5,0,5">
+                                                        <TextBlock Text="{Binding  Content,Mode=OneTime}" />
+                                                        <ItemsControl ItemsSource="{Binding Images,Mode=OneTime}"
+                                                                      ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate DataType="{x:Type content:IPdfImage}">
+                                                                    <Image
+                                                                        Source="{Binding Converter={x:Static converters:SnapConverters.PdfImageConverter}}" />
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                    <Separator Grid.Row="1"
+                                               Background="Black"
+                                               VerticalAlignment="Top"
+                                               Margin="10,0" />
+                                </Grid>
+                            </HierarchicalDataTemplate>
+                        </TreeView.Resources>
+                    </TreeView>
+                    <StackPanel Grid.Row="1"
+                                Margin="0,10,0,0"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+                        <materialDesign:PopupBox ToolTip="查看构建日志"
+                                                 ToggleContent="{materialDesign:PackIcon Kind=InformationOutline,Size=21}"
+                                                 ToggleCheckedContent="{materialDesign:PackIcon Kind=InformationVariant,Size=21}"
+                                                 Margin="0,0,0,0"
+                                                 VerticalAlignment="Center"
+                                                 PopupContent="{Binding  Logs,Mode=OneTime}">
+                            <materialDesign:PopupBox.PopupContentTemplate>
+                                <DataTemplate DataType="{x:Type log:LogsViewModel}">
+                                    <HeaderedContentControl>
+                                        <HeaderedContentControl.Header>
+                                            <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                       Margin="16,8">
+                                                构建日志
+                                            </TextBlock>
+                                        </HeaderedContentControl.Header>
+                                        <log:LogView Width="550"
+                                                     Height="300" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                            </materialDesign:PopupBox.PopupContentTemplate>
+                        </materialDesign:PopupBox>
+                        <Button Content="返回"
+                                Width="120"
+                                VerticalAlignment="Center"
+                                Command="{x:Static materialDesign:Transitioner.MovePreviousCommand}"
+                                Style="{StaticResource MaterialDesignFlatButton}" />
+                        <Button Content="接受"
+                                Margin="10,0,0,0"
+                                Click="OK_OnClick"
+                                Width="120" />
+                    </StackPanel>
+                </Grid>
+            </materialDesign:TransitionerSlide>
+        </materialDesign:Transitioner>
+        <materialDesign:Card
+            Visibility="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center">
+            <StackPanel Margin="30">
+                <ProgressBar IsIndeterminate="True"
+                             Maximum="1"
+                             Minimum="0"
+                             Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             Value="{Binding ProgressValue,Mode=OneWay}" />
+                <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                           TextWrapping="Wrap"
+                           Margin="0,15,0,0"
+                           Text="正在处理" />
+            </StackPanel>
+        </materialDesign:Card>
+    </Grid>
 </Window>

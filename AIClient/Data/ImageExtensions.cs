@@ -33,7 +33,6 @@ public static class ImageExtensions
         return new LocalThemedIcon(PackIconToSource(PackIconKind.Api));
     });
 
-
     private static ConcurrentDictionary<PackIconKind, ImageSource> _packIconCache
         = new ConcurrentDictionary<PackIconKind, ImageSource>();
 
@@ -195,8 +194,7 @@ public static class ImageExtensions
         IconCache.TryRemove(uri, out _);
         return null;
     }
-
-
+    
     public static async Task<(bool Supported, string? Extension)> CheckImageSupportAsync(string url)
     {
         try
@@ -269,5 +267,52 @@ public static class ImageExtensions
         }
 
         throw new NotSupportedException("Unsupported image extension: " + extension);
+    }
+
+    public const string Base64ImagePrefix = "data:image/";
+
+    public static ImageSource GetImageSourceFromBase64(string base64Image)
+    {
+        //parse data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        if (!base64Image.StartsWith(Base64ImagePrefix) || !base64Image.Contains("base64,"))
+        {
+            throw new ArgumentException("Invalid base64 image format", nameof(base64Image));
+        }
+
+        var length = Base64ImagePrefix.Length;
+        var extension = base64Image.Substring(length, base64Image.IndexOf(';') - length);
+        var base64Data = base64Image.Substring(base64Image.IndexOf("base64,", StringComparison.Ordinal) + 7);
+        var bytes = Convert.FromBase64String(base64Data);
+        if (bytes.Length == 0)
+        {
+            throw new ArgumentException("Empty base64 image data", nameof(base64Image));
+        }
+
+        using var stream = new MemoryStream(bytes);
+        return stream.ToImageSource("." + extension);
+    }
+
+    public static ImageSource LoadSvgFromBase64(string src)
+    {
+        byte[] binaryData = Convert.FromBase64String(src);
+        using (var mem = new MemoryStream(binaryData))
+        {
+            return mem.ToImageSource(".svg");
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <param name="extension">like .png</param>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
+    public static string ToBase64String(this MemoryStream stream, string extension)
+    {
+        extension = extension.TrimStart('.'); // remove leading dot if present
+        //to data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        var base64 = Convert.ToBase64String(stream.ToArray());
+        return $"{Base64ImagePrefix}{extension.ToLower()};base64,{base64}";
     }
 }

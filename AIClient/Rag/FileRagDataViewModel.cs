@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System.Windows;
+using System.Windows.Input;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
@@ -101,7 +102,7 @@ public class FileRagDataViewModel : BaseViewModel
         }
         catch (Exception e)
         {
-            MessageEventBus.Publish($"Failed to retrieve document: {e.Message}");
+            MessageBox.Show($"Failed to retrieve document: {e.Message}");
         }
     });
 
@@ -121,7 +122,7 @@ public class FileRagDataViewModel : BaseViewModel
         }
         catch (Exception e)
         {
-            MessageEventBus.Publish($"Failed to retrieve section: {e.Message}");
+            MessageBox.Show($"Failed to retrieve section: {e.Message}");
         }
     });
 

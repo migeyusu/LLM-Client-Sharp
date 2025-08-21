@@ -16,9 +16,11 @@ using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.MCP;
 using LLMClient.Project;
 using LLMClient.Rag;
+using LLMClient.Rag.Document;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace LLMClient;
 
@@ -355,17 +357,6 @@ public static class Extension
         }
     }
 
-
-    public static ImageSource LoadSvgFromBase64(string src)
-    {
-        //data:image/svg;base64,
-        byte[] binaryData = Convert.FromBase64String(src);
-        using (var mem = new MemoryStream(binaryData))
-        {
-            return mem.ToImageSource(".svg");
-        }
-    }
-
     // 递归查找子控件
     public static T? FindVisualChild<T>(this DependencyObject parent) where T : DependencyObject
     {
@@ -458,5 +449,106 @@ public static class Extension
         {
             yield return new SelectableViewModel<T>(item);
         }
+    }
+
+    public const int SummarySize = 1024; // 摘要长度
+
+    private const int SummaryTrigger = 3072; // 摘要触发长度
+
+    public static Func<string, CancellationToken, Task<string>> CreateSummaryDelegate(this ILLMChatClient client,
+        SemaphoreSlim clientSemaphore, PromptsCache cache, ILogger? logger = null, int summarySize = SummarySize,
+        int retryCount = 3)
+    {
+        var modelParams = client.Parameters;
+        modelParams.Streaming = false;
+        if (client.Model.MaxTokensEnable)
+        {
+            modelParams.MaxTokens =
+                int.Min(summarySize * 6, client.Model.MaxTokenLimit); // 设置最大令牌数至少为摘要长度的6倍（以包括reasoning）
+        }
+
+        return async (content, token) =>
+        {
+            if (string.IsNullOrEmpty(content))
+            {
+                logger?.LogInformation("内容为空，不进行摘要。");
+                return string.Empty;
+            }
+
+            if (content.Length < SummaryTrigger)
+            {
+                logger?.LogInformation("内容长度未超过{SummaryTrigger}，不进行摘要。", SummaryTrigger);
+                return content;
+            }
+
+            if (cache?.TryGetValue(content, out var result) == true)
+            {
+                return result;
+            }
+
+            var response = new CompletedResult();
+            await clientSemaphore.WaitAsync(token);
+            try
+            {
+                var stringBuilder = new StringBuilder(
+                    $"Provide a concise and complete summarization of the following text blocks that does not exceed {summarySize} words. " +
+                    "\nThis summary must always:" +
+                    "\n- Use the same language of the text blocks" +
+                    "\n- Focus on the most significant aspects of the text blocks\n" +
+                    "\n- Include details from any existing summary" +
+                    "\nThis summary must never:" +
+                    "\n- Critique, correct, interpret, presume, or assume" +
+                    "\n- Identify faults, mistakes, misunderstanding, or correctness" +
+                    "\n- Analyze what has not occurred" +
+                    "\n- Exclude details from any existing summary" +
+                    "\n\nPlease summarize the following text blocks until end:\n\n");
+                /*var stringBuilder = new StringBuilder("请为以下内容生成一个摘要，要求：\r\n" +
+                                                      "1. 首先判断原文使用的语言，摘要使用的语言必须和原文一致。\r\n" +
+                                                      "2. 摘要长度不应超过" + summarySize + "个字。\r\n" +
+                                                      "3. 摘要内容应包含原文的主要信息。\r\n" +
+                                                      "4. 摘要应尽量简洁明了。\r\n" +
+                                                      "5. 如果原文是多段落的内容，摘要应包含每个段落的主要信息。\r\n" +
+                                                      "6. 摘要内容均来自于原文，禁止联想或掺入个人喜好。\r\n");*/
+                stringBuilder.Append(content);
+                var dialogContext = new DialogContext(new[]
+                {
+                    new RequestViewItem() { TextMessage = stringBuilder.ToString(), }
+                });
+                int tryCount = 0;
+                while (tryCount < retryCount)
+                {
+                    response = await client.SendRequest(dialogContext, token);
+                    tryCount++;
+                    var textResponse = response.TextResponse;
+                    if (!string.IsNullOrEmpty(textResponse) && !response.IsInterrupt)
+                    {
+                        cache?.TryAdd(content, textResponse);
+                        return textResponse;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError("Summary error: {ErrorMessage}", ex.Message);
+            }
+            finally
+            {
+                clientSemaphore.Release();
+            }
+
+            throw new InvalidOperationException("LLM response failed after " + retryCount + " attempts. error: " +
+                                                response.ErrorMessage);
+        };
+    }
+
+    public static int CountRecursive(this PDFNode node)
+    {
+        int count = 1; // 计数当前节点
+        foreach (var child in node.Children)
+        {
+            count += child.CountRecursive(); // 递归计数子节点
+        }
+
+        return count;
     }
 }

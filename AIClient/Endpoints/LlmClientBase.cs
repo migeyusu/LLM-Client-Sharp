@@ -196,7 +196,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
 
                 toolsPromptBuilder.AppendLine(
-                    "For the following RAG sources, you can get information by call them with the required parameters:");
+                    "For the following RAG(Retrieval-Augmented Generation) sources such as files, web contents, " +
+                    "you can get information by call them with the required parameters:");
                 await AddTools(ragSources, toolsPromptBuilder, kernelPluginCollection, cancellationToken);
             }
 

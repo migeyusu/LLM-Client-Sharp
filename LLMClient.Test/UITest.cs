@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Rag.Document;
 
@@ -40,4 +42,14 @@ public class UITest
         thread.Start();
         thread.Join();
     }
+
+    [Fact]
+    public void TestImage()
+    {
+        if (HeadingParser.TryParse("1.5.2.1 Considerations for Using Three Level Topology on a System with More",out var numbering,out string title,out var levels ))
+        {
+            Debugger.Break();
+        }
+    }
 }
+

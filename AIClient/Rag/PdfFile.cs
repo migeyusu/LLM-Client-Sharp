@@ -74,52 +74,28 @@ public class PdfFile : RagFileBase
                 throw new InvalidOperationException("PDF extraction was cancelled by the user.");
             }
 
-            await Task.Yield();
+            // await Task.Yield();
             var ragOption = (await GlobalOptions.LoadOrCreate()).RagOption;
-            var digestClient = ragOption.DigestClient;
-            if (digestClient == null)
+            SemanticKernelStore? store = null;
+            try
             {
-                throw new InvalidOperationException("Digest client is not set.");
+                var docChunks = pdfExtractorWindow.ContentNodes
+                    .ToDocChunks(this.DocumentId, logger: this.ConstructionLogs);
+                this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",
+                    docChunks.Count);
+                store = await GetStoreAsync(ragOption);
+                this.ConstructionLogs.LogInformation("Saving to vector store.");
+                await store.AddFile(this.DocumentId, docChunks, cancellationToken);
             }
-
-            var progress = new Progress<PDFContentNode>(node =>
+            catch (Exception exception)
             {
-                // 会自动在UI线程调用
-                ConstructionLogs.LogInformation("Processing node {0}, start page: {1}, level: {2}",
-                    node.Title, node.StartPage, node.Level);
-            });
-            using (var semaphoreSlim = new SemaphoreSlim(5, 5))
-            {
-                var promptsCache = new PromptsCache(this.Id.ToString(), PromptsCache.CacheFolderPath,
-                    digestClient.Endpoint.Name, digestClient.Model.Id) { OutputSize = SummarySize };
-                await promptsCache.InitializeAsync();
-                SemanticKernelStore? store = null;
-                try
+                if (store != null)
                 {
-                    var docChunks = await pdfExtractorWindow.ContentNodes
-                        .ToDocChunks(this.DocumentId,
-                            CreateLLMCall(digestClient, semaphoreSlim, promptsCache, SummarySize, 3,
-                                this.ConstructionLogs),
-                            logger: this.ConstructionLogs, nodeProgress: progress, token: cancellationToken);
-                    this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",
-                        docChunks.Count);
-                    store = await GetStoreAsync(ragOption);
-                    this.ConstructionLogs.LogInformation("Saving to vector store.");
-                    await store.AddFile(this.DocumentId, docChunks, cancellationToken);
+                    await store.RemoveFileAsync(this.DocumentId, CancellationToken.None);
                 }
-                catch (Exception)
-                {
-                    if (store != null)
-                    {
-                        await store.RemoveFileAsync(this.DocumentId, cancellationToken);
-                    }
 
-                    throw;
-                }
-                finally
-                {
-                    await promptsCache.SaveAsync();
-                }
+                this.ConstructionLogs.LogError(new EventId(0), exception, "Error during PDF construction.");
+                throw;
             }
         }
     }

@@ -40,7 +40,12 @@ public class LogsViewModel : ILogger
 
     public void Start() => _timer.Start();
 
-    public void Stop() => _timer.Stop();
+    public void Stop()
+    {
+        //立刻处理剩余的日志
+        ProcessLogQueue(null, null);
+        _timer.Stop();
+    }
 
     /// <summary>
     /// 这是 ILogger 接口的核心实现。

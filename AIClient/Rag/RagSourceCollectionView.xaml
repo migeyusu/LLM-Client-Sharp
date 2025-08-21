@@ -161,14 +161,12 @@
                                     </DataTemplate>
                                 </materialDesign:PopupBox.PopupContentTemplate>
                             </materialDesign:PopupBox>
-                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                            <Button Margin="10,0,0,0"
+                                    Style="{StaticResource MaterialDesignIconButton}"
                                     Command="{Binding ViewCommand}"
                                     Content="{materialDesign:PackIcon Kind=DatabaseEyeOutline,Size=18}"
                                     Width="26"
                                     Height="26" />
-                            <TextBlock Margin="10,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Text="{Binding SummaryTokensConsumption,Mode=OneWay,StringFormat=tokens:{0}K,Converter={StaticResource KUnitConverter}}" />
                             <TextBlock Foreground="DimGray"
                                        VerticalAlignment="Center"
                                        TextWrapping="NoWrap"

@@ -54,7 +54,7 @@ public class AzureModelInfo : ILLMChatModel
                         ImageSource? lightModeIconBrush = null;
                         if (!string.IsNullOrEmpty(LightModeIconString))
                         {
-                            lightModeIconBrush = Extension.LoadSvgFromBase64(LightModeIconString);
+                            lightModeIconBrush = ImageExtensions.LoadSvgFromBase64(LightModeIconString);
                         }
                         else if (LogoUrl != null)
                         {
@@ -67,7 +67,7 @@ public class AzureModelInfo : ILLMChatModel
                 }),
                 string.IsNullOrEmpty(DarkModeIconString)
                     ? null
-                    : (() => { return Task.Run((() => Extension.LoadSvgFromBase64(DarkModeIconString))); }));
+                    : (() => { return Task.Run((() => ImageExtensions.LoadSvgFromBase64(DarkModeIconString))); }));
             return _themedIcon;
         }
     }

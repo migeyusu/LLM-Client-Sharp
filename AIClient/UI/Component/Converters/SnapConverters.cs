@@ -1,14 +1,17 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using LambdaConverters;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Project;
 using LLMClient.Rag;
 using MaterialDesignThemes.Wpf;
+using UglyToad.PdfPig.Content;
 
 namespace LLMClient.UI.Component.Converters;
 
@@ -109,23 +112,78 @@ internal static class SnapConverters
             }
         });
 
-
     public static readonly IValueConverter TruncateTextConverter = ValueConverter.Create<string, string, int>((args =>
     {
         var text = args.Value;
         var maxLength = args.Parameter;
         return text.Length > maxLength ? text.Substring(0, maxLength) + "..." : text;
     }));
-    
+
+    public static readonly IValueConverter PdfImageConverter = ValueConverter.Create<IPdfImage, ImageSource>(args =>
+    {
+        var argsValue = args.Value;
+        if (argsValue.TryGetPng(out var bytes))
+        {
+            using (var memoryStream = new MemoryStream(bytes))
+            {
+                return memoryStream.ToImageSource(".png");
+            }
+        }
+
+        if (argsValue.TryGetBytesAsMemory(out var memory))
+        {
+            using (var memoryStream = new MemoryStream(memory.ToArray()))
+            {
+                return memoryStream.ToImageSource(".jpg");
+            }
+        }
+
+        return ThemedIcon.EmptyIcon.CurrentSource;
+    });
+
+    public static readonly IValueConverter Base64ToImageConverter =
+        ValueConverter.Create<string, IList<ImageSource>>(args =>
+        {
+            var attachment = args.Value;
+            var attachmentImages = new List<ImageSource>();
+            if (string.IsNullOrEmpty(attachment))
+            {
+                return attachmentImages;
+            }
+
+            try
+            {
+                attachmentImages.AddRange(attachment.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(ImageExtensions.GetImageSourceFromBase64));
+                return attachmentImages;
+            }
+            catch
+            {
+                return attachmentImages;
+            }
+        });
+
+    //string empty or null will return collapsed visibility
+    public static readonly IValueConverter StringToVisibilityConverter =
+        ValueConverter.Create<string?, Visibility>(e =>
+        {
+            if (string.IsNullOrEmpty(e.Value))
+            {
+                return Visibility.Collapsed;
+            }
+
+            return Visibility.Visible;
+        });
+
     /*public static readonly IValueConverter RAGIconConveter= ValueConverter.Create<IRagSource,PackIconKind>((args =>
     {
-        IRagSource argsValue = args.Value;  
+        IRagSource argsValue = args.Value;
         if (argsValue is RagFileBase ragFileBase)
         {
             switch (ragFileBase.FileType)
             {
                 case DocumentFileType.Text:
-                    return 
+                    return
                     break;
                 case DocumentFileType.Word:
                     break;

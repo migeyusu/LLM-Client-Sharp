@@ -1,14 +1,16 @@
 ﻿using System.Text;
+using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis;
 
 namespace LLMClient.Rag.Document;
 
-public class PDFPageBlocks
+public class PDFPage
 {
-    public PDFPageBlocks(IReadOnlyList<TextBlock> blocks, int pageNumber)
+    public PDFPage(IReadOnlyList<TextBlock> blocks, int pageNumber, IReadOnlyList<IPdfImage> images)
     {
         Blocks = blocks;
         PageNumber = pageNumber;
+        Images = images;
         var paragraphContentBuilder = new StringBuilder();
         foreach (var block in this.Blocks)
         {
@@ -23,4 +25,6 @@ public class PDFPageBlocks
     public IReadOnlyList<TextBlock> Blocks { get; }
 
     public string Content { get; }
+
+    public IReadOnlyList<IPdfImage> Images { get; }
 }

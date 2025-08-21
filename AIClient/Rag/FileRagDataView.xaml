@@ -21,60 +21,8 @@
             <Button Content="Search" Command="{Binding SearchCommand}" />
         </StackPanel>-->
         <TreeView Grid.Column="1"
-                  ItemsSource="{Binding SearchResults,Mode=OneWay}">
-            <TreeView.Resources>
-                <HierarchicalDataTemplate DataType="{x:Type local:ChunkNode}"
-                                          ItemsSource="{Binding Children,Mode=OneTime}">
-                    <Grid DataContext="{Binding Chunk,Mode=OneTime}"
-                          MaxHeight="200">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="160" />
-                            <ColumnDefinition Width="500" />
-                            <ColumnDefinition Width="500" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Title,Mode=OneTime}"
-                                   Grid.RowSpan="2"
-                                   TextWrapping="Wrap"
-                                   FontWeight="Bold"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Top"
-                                   Margin="0,0,0,0" />
-                        <TextBlock Grid.Row="0" Grid.Column="1"
-                                   Text="Summary："
-                                   HorizontalAlignment="Left"
-                                   FontWeight="Black" />
-                        <TextBlock Grid.Row="0" Grid.Column="2"
-                                   Text="Text："
-                                   HorizontalAlignment="Left"
-                                   FontWeight="Black" />
-                        <TextBox Grid.Row="1" Grid.Column="1"
-                                 Text="{Binding Summary,Mode=OneTime}"
-                                 TextWrapping="Wrap"
-                                 IsReadOnly="True"
-                                 TextAlignment="Left"
-                                 materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                 BorderThickness="0" />
-                        <TextBox Grid.Row="1" Grid.Column="2"
-                                 Text="{Binding Text,Mode=OneTime}"
-                                 TextWrapping="Wrap"
-                                 IsReadOnly="True"
-                                 TextAlignment="Left"
-                                 materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                 BorderThickness="0" />
-                        <Separator Grid.Row="1"
-                                   Grid.Column="0"
-                                   Grid.ColumnSpan="3"
-                                   Margin="0"
-                                   Height="1"
-                                   VerticalAlignment="Bottom"
-                                   Style="{StaticResource MaterialDesignDarkSeparator}" />
-                    </Grid>
-                </HierarchicalDataTemplate>
-            </TreeView.Resources>
+                  ItemsSource="{Binding SearchResults,Mode=OneWay}"
+                  ItemTemplate="{StaticResource ChunkNodeDataTemplate}">
         </TreeView>
         <StackPanel Grid.Column="0"
                     VerticalAlignment="Top">

@@ -448,10 +448,4 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.Functions.ResetWith(virtualFunctionViewModels ?? []);
         return destination;
     }
-
-    public IAIFunctionGroup Convert(AIFunctionGroupPersistObject source, IAIFunctionGroup destination,
-        ResolutionContext context)
-    {
-        throw new NotImplementedException();
-    }
 }

@@ -5,6 +5,11 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using DocumentFormat.OpenXml.Wordprocessing;
+using LLMClient.Data;
+using LLMClient.UI;
+using LLMClient.UI.Component;
+using LLMClient.UI.Log;
+using Microsoft.Extensions.Logging;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 
@@ -20,9 +25,20 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
             if (value == _currentStep) return;
             _currentStep = value;
             OnPropertyChanged();
-            if (value == 1)
+            switch (value)
             {
-                Analyze();
+                case 0:
+                    this.Title = "PDF Extractor - Step 1: Select Margin";
+                    break;
+                // 根据步骤执行不同的操作
+                case 1:
+                    this.Title = "PDF Extractor - Step 2: Analyze Content";
+                    AnalyzeNode();
+                    break;
+                case 2:
+                    this.Title = "PDF Extractor - Step 3: Generate Summary";
+                    GenerateSummary();
+                    break;
             }
         }
     }
@@ -88,7 +104,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
 
     private PDFExtractor _extractor;
     private int _currentStep = 0;
-    private IList<PDFContentNode> _contentNodes;
+    private IList<PDFNode> _contentNodes;
     private bool _isProcessing;
 
     public PDFExtractorWindow(PDFExtractor extractor)
@@ -226,7 +242,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         CanvasPage.Children.Add(line);
     }
 
-    public IList<PDFContentNode> ContentNodes
+    public IList<PDFNode> ContentNodes
     {
         get => _contentNodes;
         set
@@ -248,15 +264,24 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         }
     }
 
-    public double Value { get; set; }
+    public double ProgressValue
+    {
+        get => _progressValue;
+        set
+        {
+            if (value.Equals(_progressValue)) return;
+            _progressValue = value;
+            OnPropertyChanged();
+        }
+    }
 
-    private async void Analyze()
+    private async void AnalyzeNode()
     {
         try
         {
             Thickness margin = this.FileMargin;
             var pages = _extractor.Document.NumberOfPages;
-            var progress = new Progress<int>(i => this.Value = i / (double)pages);
+            var progress = new Progress<int>(i => this.ProgressValue = i / (double)pages);
             IsProcessing = true;
             await Task.Run(() => { _extractor.Initialize(progress, margin); });
             this.ContentNodes = _extractor.Analyze();
@@ -265,6 +290,74 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         catch (Exception e)
         {
             MessageBox.Show(e.Message);
+        }
+    }
+
+    public LogsViewModel Logs { get; set; } = new LogsViewModel();
+
+    private PromptsCache? promptsCache;
+    private double _progressValue;
+
+    private async void GenerateSummary()
+    {
+        var ragOption = (await GlobalOptions.LoadOrCreate()).RagOption;
+        var digestClient = ragOption.DigestClient;
+        if (digestClient == null)
+        {
+            throw new InvalidOperationException("Digest client is not set.");
+        }
+
+        int nodeCount = 0;
+        foreach (var contentNode in this.ContentNodes)
+        {
+            nodeCount += contentNode.CountRecursive();
+        }
+
+        int progressCount = 0;
+        var progress = new Progress<PDFNode>(node =>
+        {
+            progressCount++;
+            this.ProgressValue = ((double)progressCount) / nodeCount;
+            // 会自动在UI线程调用
+            Logs.LogInformation("Processing node {0}, start page: {1}, level: {2}",
+                node.Title, node.StartPage, node.Level);
+        });
+        using (var semaphoreSlim = new SemaphoreSlim(5, 5))
+        {
+            var summarySize = Extension.SummarySize;
+            promptsCache ??= new PromptsCache(Guid.NewGuid().ToString(), PromptsCache.CacheFolderPath,
+                digestClient.Endpoint.Name, digestClient.Model.Id) { OutputSize = summarySize };
+
+            try
+            {
+                Logs.Start();
+                IsProcessing = true;
+                // await promptsCache.InitializeAsync();
+                /*async (s, cancellationToken) =>
+                        {
+                            await Task.Delay(1000, cancellationToken);
+                            var length = s.Length;
+                            return s.Substring(0, int.Min(length, 1000));
+                        }*/
+                var summaryDelegate =
+                    digestClient.CreateSummaryDelegate(semaphoreSlim, promptsCache, this.Logs, summarySize, 3);
+                await Parallel.ForEachAsync(this.ContentNodes, new ParallelOptions(),
+                    async (node, token) =>
+                    {
+                        await node.GenerateSummarize(summaryDelegate, this.Logs, progress, token: token);
+                    });
+                MessageBox.Show("Summary generated successfully!");
+            }
+            catch (Exception e)
+            {
+                // await promptsCache.SaveAsync();
+                MessageBox.Show($"Failed to generate summary: {e.Message}");
+            }
+            finally
+            {
+                IsProcessing = false;
+                Logs.Stop();
+            }
         }
     }
 
