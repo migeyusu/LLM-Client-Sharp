@@ -1,6 +1,8 @@
-﻿using System.Windows;
+﻿using System.IO;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using LLMClient.Data;
 using LLMClient.MCP;
 using MaterialDesignThemes.Wpf;
 
@@ -39,12 +41,46 @@ public partial class RequesterView : UserControl
         }
     }
 
-    private void SearchPopupBox_OnOpened(object sender, RoutedEventArgs e)
-    {
-    }
-
     private void RagPopupBox_OnOpened(object sender, RoutedEventArgs e)
     {
         ViewModel.RefreshRagSources();
+    }
+
+    private void PasteCommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (Clipboard.ContainsFileDropList())
+        {
+            var fileDropList = Clipboard.GetFileDropList();
+            foreach (var file in fileDropList)
+            {
+                if (string.IsNullOrEmpty(file))
+                {
+                    continue;
+                }
+
+                var extension = Path.GetExtension(file);
+                if (!ImageExtensions.IsSupportedImageExtension(extension))
+                {
+                    continue;
+                }
+
+                var attachment = Attachment.CreateFromLocal(file, AttachmentType.Image);
+                this.ViewModel.Attachments.Add(attachment);
+            }
+        }
+
+        if (Clipboard.ContainsImage())
+        {
+            var attachment = Attachment.CreateFromClipBoards();
+            if (attachment != null)
+            {
+                this.ViewModel.Attachments.Add(attachment);
+            }
+        }
+        else if (Clipboard.ContainsText())
+        {
+            // 默认文本粘贴
+            PromptTextBox.Paste();
+        }
     }
 }

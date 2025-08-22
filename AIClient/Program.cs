@@ -112,7 +112,7 @@ public class Program
                 Mutex.ReleaseMutex();
             }
 
-            tempPath.Delete(true);
+            // tempPath.Delete(true);//默认不删除
         }
     }
 }

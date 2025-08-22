@@ -135,6 +135,9 @@ public class RequesterViewModel : BaseViewModel
 
     #region attachment
 
+    /// <summary>
+    /// 这里的Attachment不会持久化，只有发出之后的请求中附带的attchment会被持久化（缓存）。
+    /// </summary>
     public ObservableCollection<Attachment> Attachments { get; set; } =
         new ObservableCollection<Attachment>();
 

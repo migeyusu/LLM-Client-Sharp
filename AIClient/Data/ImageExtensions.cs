@@ -102,7 +102,7 @@ public static class ImageExtensions
 
     private static readonly ConcurrentDictionary<Uri, Lazy<Task<ImageSource?>>> IconCache =
         new ConcurrentDictionary<Uri, Lazy<Task<ImageSource?>>>();
-
+    
     public static bool IsSupportedImageExtension(string extension)
     {
         return LocalSupportedImageExtensionsLazy.Value.Contains(extension, StringComparer.OrdinalIgnoreCase)

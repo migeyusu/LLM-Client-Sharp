@@ -54,6 +54,10 @@
                      Text="{Binding  PromptString,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto">
+                <TextBox.CommandBindings>
+                    <CommandBinding Command="ApplicationCommands.Paste"
+                                    Executed="PasteCommandBinding_OnExecuted" />
+                </TextBox.CommandBindings>
                 <TextBox.Style>
                     <Style TargetType="TextBox"
                            BasedOn="{StaticResource MaterialDesignTextBoxBase}">
@@ -70,10 +74,8 @@
             </TextBox>
             <Border Background="{DynamicResource MaterialDesignTextFieldBoxBackground}">
                 <StackPanel Margin="8,0">
-                    <ScrollViewer VerticalScrollBarVisibility="Disabled"
-                                  HorizontalScrollBarVisibility="Auto"
-                                  DockPanel.Dock="Right"
-                                  Margin="0,5,0,0"
+                    <ScrollViewer Margin="0,5,0,0"
+                                  Style="{StaticResource HorizontalArrowScrollViewer}"
                                   Visibility="{Binding  Attachments.Count,Converter={x:Static converters:SnapConverters.CountToVisibilityConverter}}">
                         <ItemsControl Padding="0"
                                       ItemsSource="{Binding Attachments,Mode=OneWay}"
@@ -93,8 +95,9 @@
                                                          DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"
                                                          DeleteCommandParameter="{Binding  }">
                                         <materialDesign:Chip.Icon>
-                                            <materialDesign:PackIcon Width="16"
-                                                                     Height="16"
+                                            <materialDesign:PackIcon Width="18"
+                                                                     Height="18"
+                                                                     Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
                                                                      Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
                                         </materialDesign:Chip.Icon>
                                     </materialDesign:Chip>
@@ -351,12 +354,12 @@
                                     VerticalAlignment="Center" Margin="10,0,0,0"
                                     Height="32"
                                     Width="32"
-                                    Content="{materialDesign:PackIcon Kind=ImagePlus,Size=22}"
+                                    Content="{materialDesign:PackIcon Kind=ImagePlus,Size=20}"
                                     Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                     Height="32"
                                     Width="32"
-                                    Content="{materialDesign:PackIcon Kind=FileSearch,Size=22}"
+                                    Content="{materialDesign:PackIcon Kind=FileSearch,Size=20}"
                                     VerticalAlignment="Center" Margin="10,0,0,0"
                                     Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                     CommandParameter="{Binding QueryViewModel,Mode=OneTime}" />
