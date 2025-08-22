@@ -115,7 +115,7 @@ public class RequesterViewModel : BaseViewModel
 
     public void RefreshRagSources()
     {
-        var selected = RagSources.Where((model => model.IsSelected)).ToList();
+        var selected = RagSources.Where(model => model.IsSelected).ToList();
         var selectableViewModels = RagSourceCollection.Sources.ToSelectable().ToArray();
         foreach (var selectableViewModel in selectableViewModels)
         {
@@ -152,11 +152,7 @@ public class RequesterViewModel : BaseViewModel
 
         foreach (var fileName in openFileDialog.FileNames)
         {
-            this.Attachments.Add(new Attachment()
-            {
-                Type = AttachmentType.Image,
-                OriUri = new Uri(fileName)
-            });
+            this.Attachments.Add(Attachment.CreateFromLocal(fileName, AttachmentType.Image));
         }
     });
 
@@ -308,7 +304,7 @@ public class RequesterViewModel : BaseViewModel
                 thinkingConfig);
         }
 
-        var ragSources = RagSources.Where(model => model.IsSelected)
+        var ragSources = RagSources.Where(model => model is { IsSelected: true, Data.IsAvailable: true })
             .Select(model => model.Data)
             .ToArray();
         //每次搜索的条件可能不同，所以传递的是副本

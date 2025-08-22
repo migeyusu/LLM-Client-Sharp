@@ -34,7 +34,7 @@
                                Height="30"
                                VerticalAlignment="Center"
                                Source="{Binding FileType,Mode=OneTime,Converter={x:Static converters:SnapConverters.DocumentTypeToImageConverter}}" />
-                        <TextBlock Text="{Binding Name,Mode=OneTime}"
+                        <TextBlock Text="{Binding ResourceName,Mode=OneTime}"
                                    TextWrapping="Wrap"
                                    Margin="6,0"
                                    VerticalAlignment="Center" />
@@ -50,7 +50,8 @@
                         <HierarchicalDataTemplate ItemsSource="{Binding Data.Children,Mode=OneTime}"
                                                   DataType="{x:Type ui:SelectableViewModel`1[]}">
                             <StackPanel Orientation="Horizontal">
-                                <CheckBox Margin="0,0,5,0" />
+                                <CheckBox Margin="0,0,5,0"
+                                          IsChecked="{Binding IsSelected,Mode=TwoWay}" />
                                 <TextBlock Text="{Binding  Data.Chunk.Title,Mode=OneTime}" />
                             </StackPanel>
                         </HierarchicalDataTemplate>
@@ -71,7 +72,8 @@
                      materialDesign:HintAssist.Hint="Query String" />
             <StackPanel Grid.Column="1"
                         Orientation="Horizontal"
-                        HorizontalAlignment="Right">
+                        HorizontalAlignment="Right"
+                        IsEnabled="{Binding SelectedSource.Status,Mode=OneWay,Converter={x:Static converters:SnapConverters.RagFileStatusToBoolConverter}}">
                 <ComboBox ItemsSource="{Binding Source={component:EnumBindingSource {x:Type rag:SearchAlgorithm}}}"
                           SelectedItem="{Binding Algorithm,Mode=TwoWay}"
                           Style="{StaticResource MaterialDesignOutlinedComboBox}"
@@ -94,6 +96,9 @@
                                    Margin="6,0,0,0" />
                     </StackPanel>
                 </Button>
+                <Button Command="{Binding AppendToUserPromptCommand}"
+                        Margin="10,0,0,0"
+                        Content="添加到Prompt" />
             </StackPanel>
         </Grid>
     </Grid>

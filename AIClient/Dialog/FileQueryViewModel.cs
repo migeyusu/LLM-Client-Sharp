@@ -1,5 +1,7 @@
-﻿using System.Windows.Input;
+﻿using System.Text;
+using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.Rag;
 using LLMClient.UI;
 using LLMClient.UI.Component;
@@ -104,6 +106,61 @@ public class FileQueryViewModel : BaseViewModel
             MessageEventBus.Publish($"Search failed: {e.Message}");
         }
     });
+
+    public ICommand AppendToUserPromptCommand => new ActionCommand(_ =>
+    {
+        if (SearchResults == null) return;
+        var selectedNodes = SearchResults.Where(n => n.IsSelected)
+            .Select(model => model.Data).ToArray();
+        if (!selectedNodes.Any())
+        {
+            return;
+        }
+
+        if (this.SelectedSource == null)
+        {
+            return;
+        }
+
+        var builder =
+            new StringBuilder(
+                $"The following sections are retrieved from the source of '{this.SelectedSource.ResourceName}', you can take use of them to answer the user query.\n\n");
+        var view = selectedNodes.GetView();
+        builder.Append(view);
+        Requester.PromptString =
+            Requester.PromptString == null ? builder.ToString() : Requester.PromptString + "\n" + builder;
+        foreach (var selectedNode in selectedNodes)
+        {
+            RecursiveAddAttachment(selectedNode, Requester.Attachments, builder);
+        }
+    });
+
+    void RecursiveAddAttachment(ChunkNode node, IList<Attachment> attachments, StringBuilder promptBuilder)
+    {
+        var chunk = node.Chunk;
+        if (chunk.Type == (int)ChunkType.Page)
+        {
+            var imagesInBase64 = chunk.AttachmentImagesInBase64.ToArray();
+            foreach (var base64String in imagesInBase64)
+            {
+                if (ImageExtensions.TryGetBinaryFromBase64(base64String, out var binary, out var extension))
+                {
+                    var attachment = Attachment.CreateFromBinaryImage(binary, $".{extension}");
+                    attachments.Add(attachment);
+                }
+            }
+
+            promptBuilder.AppendLine(
+                $"Section {chunk.Title} has {imagesInBase64.Length} additional images, see attachment.");
+        }
+        else
+        {
+            foreach (var child in node.Children)
+            {
+                RecursiveAddAttachment(child, attachments, promptBuilder);
+            }
+        }
+    }
 
     public FileQueryViewModel(RequesterViewModel requester)
     {

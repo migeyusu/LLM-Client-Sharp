@@ -25,7 +25,7 @@ public interface IRagFileSource : IRagSource
     string DocumentId { get; }
 }
 
-public enum ConstructStatus
+public enum RagFileStatus
 {
     NotConstructed,
     Constructing,

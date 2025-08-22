@@ -25,6 +25,12 @@ public class PDFExtractor : IDisposable
         _cache = new ConcurrentDictionary<int, PageCacheItem>();
     }
 
+    /*page segmenter 有一个非常严重的问题，就是文本块内行分隔符使用换行符还是空格？ 有些时候如目录、代码需使用换行符，有些如自然语言段必然是空格。
+     PdfPig默认使用空格，综合考虑接受默认设置 */
+
+    private static readonly IPageSegmenter PageSegmenter =
+        new DocstrumBoundingBoxes(new DocstrumBoundingBoxes.DocstrumBoundingBoxesOptions());
+
     public void Initialize(IProgress<int>? progress = null, Thickness? padding = null)
     {
         _cache.Clear();
@@ -61,7 +67,7 @@ public class PDFExtractor : IDisposable
                 }).ToArray();
             }
 
-            var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+            var blocks = PageSegmenter.GetBlocks(words);
             var pageNumber = page.Number;
             progress?.Report(pageNumber);
             var pdfImages = page.GetImages().ToArray();

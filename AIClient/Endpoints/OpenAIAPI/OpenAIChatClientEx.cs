@@ -17,7 +17,7 @@ public class OpenAIChatClientEx : ChatClient
 
     public override async Task<ClientResult> CompleteChatAsync(BinaryContent content, RequestOptions? options = null)
     {
-        var clientContext = AsyncContext<ClientContext>.Current;
+        var clientContext = AsyncContext<ChatContext>.Current;
         if (clientContext != null)
         {
             if (clientContext.AdditionalObjects.Count != 0)

@@ -41,10 +41,10 @@ public class PdfFile : RagFileBase
             }
         }*/
 
-        if (this.Status == ConstructStatus.Constructing)
+        if (this.Status == RagFileStatus.Constructing)
         {
             //说明上次构建还未完成，需要删除之前的脏数据重新构建。
-            this.Status = ConstructStatus.Error;
+            this.Status = RagFileStatus.Error;
             this.ErrorMessage = "上次构建未完成，请重新构建。";
             // await this.DeleteAsync();
         }
@@ -56,7 +56,7 @@ public class PdfFile : RagFileBase
     {
         var semanticKernelStore = await GetStoreAsync();
         await semanticKernelStore.RemoveFileAsync(this.DocumentId, cancellationToken);
-        this.Status = ConstructStatus.NotConstructed;
+        this.Status = RagFileStatus.NotConstructed;
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ public class PdfFile : RagFileBase
                 "The PDF file has not been initialized. Please call InitializeAsync first.");
         }
 
-        if (Status != ConstructStatus.Constructed)
+        if (Status != RagFileStatus.Constructed)
         {
             throw new InvalidOperationException(
                 "The PDF file has not been constructed. Please call ConstructAsync first.");
@@ -137,7 +137,7 @@ public class PdfFile : RagFileBase
                 "The PDF file has not been initialized. Please call InitializeAsync first.");
         }
 
-        if (Status != ConstructStatus.Constructed)
+        if (Status != RagFileStatus.Constructed)
         {
             throw new InvalidOperationException(
                 "The PDF file has not been constructed. Please call ConstructAsync first.");

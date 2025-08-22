@@ -407,7 +407,7 @@ public static class Extension
         return stringBuilder.ToString();
     }
 
-    public static string GetView(this IEnumerable<ChunkNode> nodes)
+    public static string GetView(this IList<ChunkNode> nodes)
     {
         var stringBuilder = new StringBuilder();
         foreach (var node in nodes)
@@ -416,6 +416,49 @@ public static class Extension
         }
 
         return stringBuilder.ToString();
+    }
+
+    public static void TryAddAdditionalFunctionCallResult(this IEnumerable<ChunkNode> nodes)
+    {
+        var chatContext = AsyncContext<ChatContext>.Current;
+        if (chatContext == null)
+        {
+            return;
+        }
+
+        var functionCallResult = chatContext.AdditionalFunctionCallResult;
+        var promptBuilder = new StringBuilder("Additional images in function results:\n");
+        foreach (var chunkNode in nodes)
+        {
+            RecursiveAdditionalFunctionCallResult(chunkNode, functionCallResult, promptBuilder);
+        }
+
+        if (functionCallResult.Count > 0)
+        {
+            chatContext.AdditionalUserMessage.Append(promptBuilder);
+        }
+    }
+
+    public static void RecursiveAdditionalFunctionCallResult(this ChunkNode node, List<AIContent> contents,
+        StringBuilder stringBuilder)
+    {
+        var chunk = node.Chunk;
+        if (chunk.Type == (int)ChunkType.Page)
+        {
+            if (chunk.AttachmentContents.Any())
+            {
+                var title = node.Parent?.Chunk.Title;
+                stringBuilder.AppendLine($"Section {title} has {chunk.AttachmentContents.Count} additional images, see attachment.");
+                contents.AddRange(chunk.AttachmentContents);
+            }
+        }
+        else
+        {
+            foreach (var child in node.Children)
+            {
+                RecursiveAdditionalFunctionCallResult(child, contents, stringBuilder);
+            }
+        }
     }
 
     public static IEnumerable<ChunkNode> OrderNode(this IList<ChunkNode> nodes)
@@ -455,8 +498,21 @@ public static class Extension
 
     private const int SummaryTrigger = 3072; // 摘要触发长度
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="client"></param>
+    /// <param name="clientSemaphore"></param>
+    /// <param name="language">0: English, 1: Chinese</param>
+    /// <param name="cache"></param>
+    /// <param name="logger"></param>
+    /// <param name="summarySize"></param>
+    /// <param name="retryCount"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public static Func<string, CancellationToken, Task<string>> CreateSummaryDelegate(this ILLMChatClient client,
-        SemaphoreSlim clientSemaphore, PromptsCache cache, ILogger? logger = null, int summarySize = SummarySize,
+        SemaphoreSlim clientSemaphore, int language, PromptsCache cache, ILogger? logger = null,
+        int summarySize = SummarySize,
         int retryCount = 3)
     {
         var modelParams = client.Parameters;
@@ -490,25 +546,39 @@ public static class Extension
             await clientSemaphore.WaitAsync(token);
             try
             {
-                var stringBuilder = new StringBuilder(
-                    $"Provide a concise and complete summarization of the following text blocks that does not exceed {summarySize} words. " +
-                    "\nThis summary must always:" +
-                    "\n- Use the same language of the text blocks" +
-                    "\n- Focus on the most significant aspects of the text blocks\n" +
-                    "\n- Include details from any existing summary" +
-                    "\nThis summary must never:" +
-                    "\n- Critique, correct, interpret, presume, or assume" +
-                    "\n- Identify faults, mistakes, misunderstanding, or correctness" +
-                    "\n- Analyze what has not occurred" +
-                    "\n- Exclude details from any existing summary" +
-                    "\n\nPlease summarize the following text blocks until end:\n\n");
-                /*var stringBuilder = new StringBuilder("请为以下内容生成一个摘要，要求：\r\n" +
-                                                      "1. 首先判断原文使用的语言，摘要使用的语言必须和原文一致。\r\n" +
-                                                      "2. 摘要长度不应超过" + summarySize + "个字。\r\n" +
-                                                      "3. 摘要内容应包含原文的主要信息。\r\n" +
-                                                      "4. 摘要应尽量简洁明了。\r\n" +
-                                                      "5. 如果原文是多段落的内容，摘要应包含每个段落的主要信息。\r\n" +
-                                                      "6. 摘要内容均来自于原文，禁止联想或掺入个人喜好。\r\n");*/
+                //经过测试，使用 ‘Use the same language of the text blocks’ 时，gpt5 nano依然会错乱，对英语文档生成日语总结，所以手动限制语言
+                var stringBuilder = new StringBuilder();
+                if (language == 0) // 英语
+                {
+                    stringBuilder.Append(
+                        $"Provide a concise and complete summarization of the following text blocks that does not exceed {summarySize} words. " +
+                        "\nThis summary must always:" +
+                        "\n- Use English" +
+                        "\n- Focus on the most significant aspects of the text blocks" +
+                        "\n- Include details from any existing summary" +
+                        "\nThis summary must never:" +
+                        "\n- Critique, correct, interpret, presume, or assume" +
+                        "\n- Identify faults, mistakes, misunderstanding, or correctness" +
+                        "\n- Analyze what has not occurred" +
+                        "\n- Exclude details from any existing summary" +
+                        "\n\nPlease summarize the following text blocks until end:\n\n");
+                }
+                else // 中文
+                {
+                    stringBuilder.Append(
+                        $"请对以下文本块进行简洁而完整的总结，不超过 {summarySize} 字。" +
+                        "\n该摘要必须始终：" +
+                        "\n- 使用中文" +
+                        "\n- 关注文本块最重要的方面" +
+                        "\n- 包含任何现有摘要中的详细信息" +
+                        "\n该摘要绝不能：" +
+                        "\n- 批评、纠正、解释、推测或假设" +
+                        "\n- 指出错误、失误、误解或正确性" +
+                        "\n- 分析未发生的事情" +
+                        "\n- 排除任何现有摘要中的详细信息" +
+                        "\n\n请总结以下文本块直到结束：\n\n");
+                }
+
                 stringBuilder.Append(content);
                 var dialogContext = new DialogContext(new[]
                 {
@@ -550,5 +620,15 @@ public static class Extension
         }
 
         return count;
+    }
+
+    /// <summary>
+    /// use temp path in current directory. so it can be deleted when exit.
+    /// </summary>
+    public static string TempPath => Path.GetFullPath("Temp");
+
+    public static string GetTempFilePath(string prefix = "")
+    {
+        return Path.GetFullPath(prefix + Guid.NewGuid().ToString().Replace('-', '_'), TempPath);
     }
 }

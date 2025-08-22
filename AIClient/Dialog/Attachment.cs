@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Text.Json.Serialization;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using LLMClient.UI.Component;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -121,5 +123,43 @@ public class Attachment
         }
 
         return true;
+    }
+
+    public static Attachment CreateFromLocal(string path, AttachmentType type)
+    {
+        return new Attachment() { Type = type, OriUri = new Uri(path) };
+    }
+
+    public static Attachment? CreateFromClipBoards()
+    {
+        if (!Clipboard.ContainsImage())
+        {
+            return null;
+        }
+
+        var bitmapSource = Clipboard.GetImage();
+        if (bitmapSource == null)
+        {
+            return null;
+        }
+
+        // 保存到缓存
+        var tempFilePath = Extension.GetTempFilePath() + ".png";
+        using (var fileStream = new FileStream(tempFilePath, FileMode.Create))
+        {
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+            encoder.Save(fileStream);
+        }
+
+        return new Attachment() { Type = AttachmentType.Image, OriUri = new Uri(tempFilePath) };
+    }
+
+    public static Attachment CreateFromBinaryImage(byte[] imageData, string extension)
+    {
+        //save to temp path first
+        var tempFilePath = Extension.GetTempFilePath() + extension;
+        File.WriteAllBytes(tempFilePath, imageData);
+        return new Attachment() { Type = AttachmentType.Image, OriUri = new Uri(tempFilePath) };
     }
 }

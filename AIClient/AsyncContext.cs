@@ -1,7 +1,7 @@
 ﻿
 
 // TInstance 可以是您希望在上下文中传递的任何类型
-namespace LLMClient.Endpoints;
+namespace LLMClient;
 
 public static class AsyncContext<TInstance> where TInstance : class
 {

@@ -196,4 +196,6 @@ internal static class SnapConverters
             }
         }
     }))*/
+    public static readonly IValueConverter RagFileStatusToBoolConverter =
+        ValueConverter.Create<RagFileStatus, bool>(e => e.Value == RagFileStatus.Constructed);
 }

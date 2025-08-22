@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Windows.Media;
 using LLMClient.Data;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Data;
+using MimeTypes;
 
 namespace LLMClient.Rag;
 
@@ -105,6 +107,50 @@ public class DocChunk
             }
 
             return _attachmentImages;
+        }
+    }
+
+    public IEnumerable<string> AttachmentImagesInBase64 =>
+        Attachment.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+    private List<AIContent>? _attachmentContents;
+
+    public List<AIContent> AttachmentContents
+    {
+        get
+        {
+            if (_attachmentContents == null)
+            {
+                if (!string.IsNullOrEmpty(Attachment))
+                {
+                    try
+                    {
+                        var lines = Attachment.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                        _attachmentContents = new List<AIContent>(lines.Length);
+                        foreach (var line in lines)
+                        {
+                            if (ImageExtensions.TryGetBinaryFromBase64(line, out var data, out var contentType))
+                            {
+                                if (!MimeTypeMap.TryGetMimeType(contentType, out var mimeType))
+                                {
+                                    Trace.TraceWarning("Unsupported image file extension: " + contentType);
+                                    continue;
+                                }
+
+                                _attachmentContents.Add(new DataContent(data.AsMemory(), mimeType));
+                            }
+                        }
+                    }
+                    catch (Exception extension)
+                    {
+                        Trace.TraceError("Failed to decode attachment images: " + extension.Message);
+                    }
+                }
+
+                _attachmentContents = new List<AIContent>();
+            }
+
+            return _attachmentContents;
         }
     }
 }

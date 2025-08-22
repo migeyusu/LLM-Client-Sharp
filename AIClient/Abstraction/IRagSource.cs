@@ -9,9 +9,11 @@ namespace LLMClient.Abstraction;
 [JsonDerivedType(typeof(ExcelFile), "ExcelFile")]
 public interface IRagSource : IAIFunctionGroup
 {
+    string ResourceName { get; }
+    
     Guid Id { get; }
 
-    ConstructStatus Status { get; }
+    RagFileStatus Status { get; }
 
     /// <summary>
     /// 初始化，包含从向量数据库或其他存储中加载节点的过程。

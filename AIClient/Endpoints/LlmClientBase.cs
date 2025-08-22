@@ -245,9 +245,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             };
             ChatFinishReason? finishReason = null;
             var streaming = this.Model.SupportStreaming && this.Parameters.Streaming;
-            var clientContext = new ClientContext(requestViewItem?.AdditionalProperties)
+            var chatContext = new ChatContext(requestViewItem?.AdditionalProperties)
                 { Streaming = streaming };
-            using (AsyncContext<ClientContext>.Create(clientContext))
+            using (AsyncContext<ChatContext>.Create(chatContext))
             {
                 while (true)
                 {
@@ -270,7 +270,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                             preResponse = preUpdates.ToChatResponse();
                             preUpdates.Clear();
-                            await clientContext.CompleteStreamResponse(result);
+                            await chatContext.CompleteStreamResponse(result);
                         }
                         else
                         {
@@ -278,7 +278,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
                             //只收集文本内容
                             RespondingText.Add(preResponse.Text);
-                            await clientContext.CompleteResponse(preResponse, result);
+                            await chatContext.CompleteResponse(preResponse, result);
                         }
 
                         var preResponseMessages = preResponse.Messages;
@@ -376,6 +376,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             break;
                         }
 
+                        #region function call
+
                         RespondingText.NewLine("Processing function calls...");
                         var chatMessage = new ChatMessage() { Role = ChatRole.Tool, };
                         chatHistory.Add(chatMessage);
@@ -390,21 +392,37 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 break;
                             }
 
+                            var additionalFunctionCallResults = chatContext.AdditionalFunctionCallResult;
+                            var additionalUserMessageBuilder = chatContext.AdditionalUserMessage;
+                            var chatMessageContents = chatMessage.Contents;
                             try
                             {
                                 var arguments = new AIFunctionArguments(functionCallContent.Arguments);
+                                additionalFunctionCallResults.Clear();
+                                additionalUserMessageBuilder.Clear();
                                 //调用拦截器
                                 var invokeResult = await this.FunctionInterceptor.InvokeAsync(
                                     kernelFunction, arguments, functionCallContent, cancellationToken);
                                 RespondingText.NewLine(
                                     $"Function '{functionCallContent.Name}' invoked successfully, result: {invokeResult}");
-                                chatMessage.Contents.Add(
+                                chatMessageContents.Add(
                                     new FunctionResultContent(functionCallContent.CallId, invokeResult));
+                                var additionalUserMessage = additionalUserMessageBuilder.ToString();
+                                if (!string.IsNullOrEmpty(additionalUserMessage))
+                                {
+                                    chatMessageContents.Add(new TextContent(
+                                        $"For function {functionCallContent.Name} call (call id:{functionCallContent.CallId}) result: {additionalUserMessage}"));
+                                }
+
+                                foreach (var additionalFunctionCallResult in additionalFunctionCallResults)
+                                {
+                                    chatMessageContents.Add(additionalFunctionCallResult);
+                                }
                             }
                             catch (Exception e)
                             {
                                 RespondingText.NewLine("Function call failed: " + e.Message);
-                                chatMessage.Contents.Add(new FunctionResultContent(functionCallContent.CallId, null)
+                                chatMessageContents.Add(new FunctionResultContent(functionCallContent.CallId, null)
                                     { Exception = e });
                                 if (IsQuitWhenFunctionCallFailed)
                                 {
@@ -440,6 +458,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     }
 
                     preFunctionCalls.Clear();
+
+                    #endregion
+
                     RespondingText.NewLine();
                 }
             }

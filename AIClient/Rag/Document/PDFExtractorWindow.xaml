@@ -127,8 +127,17 @@
                                 HorizontalAlignment="Right"
                                 Margin="10"
                                 IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+                        <ComboBox materialDesign:HintAssist.Hint="选择语言"
+                                  SelectedIndex="{Binding  SummaryLanguageIndex,Mode=TwoWay}"
+                                  Style="{StaticResource MaterialDesignOutlinedComboBox}">
+                            <ComboBox.Items>
+                                <ComboBoxItem Content="英文" />
+                                <ComboBoxItem Content="中文" />
+                            </ComboBox.Items>
+                        </ComboBox>
                         <Button Content="返回"
                                 Width="120"
+                                Margin="10,0,0,0"
                                 VerticalAlignment="Center"
                                 Command="{x:Static materialDesign:Transitioner.MovePreviousCommand}"
                                 Style="{StaticResource MaterialDesignFlatButton}" />
@@ -182,9 +191,11 @@
                                         </TextBlock>
                                     </StackPanel>
                                     <TextBlock Grid.Row="1"
-                                               FontWeight="Black"
-                                               Text="{Binding Summary,Mode=OneTime}"
-                                               Visibility="{Binding Summary,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringToVisibilityConverter}}" />
+                                               Visibility="{Binding Summary,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringToVisibilityConverter}}">
+                                        <Run Text="Summary:"
+                                             FontWeight="Black" />
+                                        <Run Text="{Binding Summary,Mode=OneTime}" />
+                                    </TextBlock>
                                     <ScrollViewer Grid.Row="2"
                                                   MaxHeight="300"
                                                   Margin="30,0,0,0"

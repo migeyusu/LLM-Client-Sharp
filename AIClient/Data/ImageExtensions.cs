@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Net.Http;
@@ -194,7 +195,7 @@ public static class ImageExtensions
         IconCache.TryRemove(uri, out _);
         return null;
     }
-    
+
     public static async Task<(bool Supported, string? Extension)> CheckImageSupportAsync(string url)
     {
         try
@@ -271,21 +272,29 @@ public static class ImageExtensions
 
     public const string Base64ImagePrefix = "data:image/";
 
-    public static ImageSource GetImageSourceFromBase64(string base64Image)
+    public static bool TryGetBinaryFromBase64(string base64Image, [NotNullWhen(true)] out byte[]? binary,
+        [NotNullWhen(true)] out string? extension)
     {
         //parse data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
         if (!base64Image.StartsWith(Base64ImagePrefix) || !base64Image.Contains("base64,"))
         {
-            throw new ArgumentException("Invalid base64 image format", nameof(base64Image));
+            binary = null;
+            extension = null;
+            return false;
         }
 
         var length = Base64ImagePrefix.Length;
-        var extension = base64Image.Substring(length, base64Image.IndexOf(';') - length);
+        extension = base64Image.Substring(length, base64Image.IndexOf(';') - length);
         var base64Data = base64Image.Substring(base64Image.IndexOf("base64,", StringComparison.Ordinal) + 7);
-        var bytes = Convert.FromBase64String(base64Data);
-        if (bytes.Length == 0)
+        binary = Convert.FromBase64String(base64Data);
+        return true;
+    }
+
+    public static ImageSource GetImageSourceFromBase64(string base64Image)
+    {
+        if (!TryGetBinaryFromBase64(base64Image, out var bytes, out var extension))
         {
-            throw new ArgumentException("Empty base64 image data", nameof(base64Image));
+            throw new ArgumentException("Invalid base64 image format", nameof(base64Image));
         }
 
         using var stream = new MemoryStream(bytes);

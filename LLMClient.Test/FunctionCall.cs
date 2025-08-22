@@ -1,4 +1,5 @@
-﻿using Microsoft.SemanticKernel;
+﻿using System.ComponentModel;
+using Microsoft.SemanticKernel;
 using Xunit.Abstractions;
 
 namespace LLMClient.Test;
@@ -45,4 +46,35 @@ public class FunctionCall
         _output.WriteLine("Plugin Name: " + fromFunctions.Name);
         _output.WriteLine("Plugin Description: " + fromFunctions.Description);
     }
+
+    [Fact]
+    public void ComplexResult()
+    {
+        var testPlugin = new TestPlugin();
+        var kernelFunction = KernelFunctionFactory.CreateFromMethod(testPlugin.TestFunction);
+        var s = kernelFunction.JsonSchema.ToString();
+        var returnParameterSchema = kernelFunction.Metadata.ReturnParameter.Schema;
+        var schemaJsonString = returnParameterSchema?.ToString();
+        // Assert & Output
+        _output.WriteLine("Kernel Function Return Value JSON Schema:");
+        _output.WriteLine(schemaJsonString);
+    }
+}
+
+public class TestPlugin
+{
+    [KernelFunction, Description("test function description")]
+    public Task<ComplexResultClass> TestFunction()
+    {
+        return Task.FromResult(new ComplexResultClass() { Name = "sdadf", Age = 12 });
+    }
+}
+
+public class ComplexResultClass
+{
+    [Description("name description")]
+    public string Name { get; set; } = string.Empty;
+    
+    [Description("age description")]
+    public int Age { get; set; }
 }

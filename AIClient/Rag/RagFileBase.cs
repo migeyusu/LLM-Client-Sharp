@@ -1,37 +1,32 @@
-﻿using System.ComponentModel;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
-using LLMClient.Data;
-using LLMClient.Dialog;
-using LLMClient.Endpoints;
 using LLMClient.UI;
 using LLMClient.UI.Log;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.Xaml.Behaviors.Core;
-using OpenAI.Embeddings;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace LLMClient.Rag;
 
 public abstract class RagFileBase : BaseViewModel, IRagFileSource
 {
-    private string _name = string.Empty;
+    private string _resourceName = string.Empty;
     private string? _errorMessage;
-    private ConstructStatus _status = ConstructStatus.NotConstructed;
+    private RagFileStatus _status = RagFileStatus.NotConstructed;
 
-    public string Name
+    [JsonPropertyName("Name")]
+    public string ResourceName
     {
-        get => _name;
+        get => _resourceName;
         set
         {
-            if (value == _name) return;
-            _name = value;
+            if (value == _resourceName) return;
+            _resourceName = value;
             OnPropertyChanged();
         }
     }
@@ -52,6 +47,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
+    [JsonIgnore]
     string IAIFunctionGroup.Name
     {
         get { return PluginName; }
@@ -61,7 +57,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     [JsonIgnore]
     private string PluginDescription => string.Format("A plugin for File {0} information operations",
-        Name);
+        this.ResourceName);
 
     [JsonIgnore]
     public string? AdditionPrompt
@@ -71,7 +67,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     [JsonIgnore] public IReadOnlyList<AIFunction>? AvailableTools { get; }
 
-    [JsonIgnore] public bool IsAvailable => IsInitialized && Status == ConstructStatus.Constructed;
+    [JsonIgnore] public bool IsAvailable => IsInitialized && Status == RagFileStatus.Constructed;
 
     public string GetUniqueId()
     {
@@ -102,26 +98,26 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         FilePath = fileInfo.FullName;
         FileSize = fileInfo.Length;
         EditTime = fileInfo.LastWriteTime;
-        Name = fileInfo.Name;
+        ResourceName = fileInfo.Name;
     }
 
     public string FilePath { get; set; } = string.Empty;
     public DateTime EditTime { get; set; }
     public long FileSize { get; set; } = 0;
 
-    public ConstructStatus Status
+    public RagFileStatus Status
     {
         get => _status;
         set
         {
             if (value == _status) return;
-            if (_status == ConstructStatus.Constructing)
+            if (_status == RagFileStatus.Constructing)
             {
                 ConstructionLogs.Stop();
             }
 
             _status = value;
-            if (value == ConstructStatus.Constructing)
+            if (value == RagFileStatus.Constructing)
             {
                 ConstructionLogs.Start();
             }
@@ -198,13 +194,13 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public ICommand SwitchConstructCommand => new ActionCommand(async o =>
     {
-        if (Status == ConstructStatus.Constructing)
+        if (Status == RagFileStatus.Constructing)
         {
             await StopConstruct();
         }
         else
         {
-            if (Status == ConstructStatus.Constructed)
+            if (Status == RagFileStatus.Constructed)
             {
                 if (MessageBox.Show("是否要重新构建？", "提示",
                         MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No,
@@ -252,7 +248,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public virtual async Task ConstructAsync(CancellationToken cancellationToken = default)
     {
-        if (Status == ConstructStatus.Constructing)
+        if (Status == RagFileStatus.Constructing)
         {
             // Already constructing, no need to construct again.
             return;
@@ -264,16 +260,16 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             //must ensure the file is deleted before constructing again.
             await DeleteAsync(cancellationToken);
             // await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
-            Status = ConstructStatus.Constructing;
+            Status = RagFileStatus.Constructing;
             await ConstructCore(cancellationToken);
-            Status = ConstructStatus.Constructed;
+            Status = RagFileStatus.Constructed;
         }
         catch (Exception e)
         {
             await DeleteAsync(cancellationToken);
             ConstructionLogs.LogError("构建过程中发生错误: {ErrorMessage}", e.Message);
             ErrorMessage = e.Message;
-            Status = ConstructStatus.Error;
+            Status = RagFileStatus.Error;
         }
         finally
         {
@@ -360,6 +356,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
             StructResult result = await this.QueryAsync(queryString, dynamicOptions, token);
             var matchResult = result.Nodes;
+            matchResult.TryAddAdditionalFunctionCallResult();
             return matchResult.GetView();
         }
 
@@ -413,7 +410,9 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             CancellationToken token)
         {
             var result = (StructResult)(await GetFullDocumentAsync(token));
-            return result.Nodes.GetView();
+            var resultNodes = result.Nodes;
+            resultNodes.TryAddAdditionalFunctionCallResult();
+            return resultNodes.GetView();
         }
 
         return KernelFunctionFactory.CreateFromMethod(WrapGetFullDocumentAsync, methodOptions);
@@ -453,9 +452,11 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             }
 
             var result = (StructResult)(await GetSectionAsync(sectionName.ToString()!, token));
-            if (result.Nodes.Any())
+            var resultNodes = result.Nodes;
+            if (resultNodes.Any())
             {
-                return result.Nodes.GetView();
+                resultNodes.TryAddAdditionalFunctionCallResult();
+                return resultNodes.GetView();
             }
 
             return string.Empty;

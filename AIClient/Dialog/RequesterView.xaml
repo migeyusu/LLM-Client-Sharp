@@ -283,20 +283,6 @@
                                     <ToggleButton IsChecked="{Binding ThinkingConfig.Enable,Mode=TwoWay}" />
                                 </StackPanel>
                             </materialDesign:Card>
-                            <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                    Command="{Binding AddImageCommand}"
-                                    VerticalAlignment="Center" Margin="10,0,0,0"
-                                    Height="32"
-                                    Width="32"
-                                    Content="{materialDesign:PackIcon Kind=ImagePlus,Size=22}"
-                                    Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
-                            <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                    Height="32"
-                                    Width="32"
-                                    Content="{materialDesign:PackIcon Kind=FileSearch,Size=22}"
-                                    VerticalAlignment="Center" Margin="10,0,0,0"
-                                    Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                    CommandParameter="{Binding QueryViewModel,Mode=OneTime}" />
                             <materialDesign:Card Padding="8,0"
                                                  Margin="6,0,0,0"
                                                  UniformCornerRadius="12"
@@ -326,6 +312,7 @@
                                                             <StackPanel Orientation="Horizontal">
                                                                 <CheckBox IsChecked="{Binding IsSelected,Mode=TwoWay}"
                                                                           materialDesign:CheckBoxAssist.CheckBoxSize="20"
+                                                                          IsEnabled="{Binding   Data.Status,Mode=OneWay,Converter={x:Static converters:SnapConverters.RagFileStatusToBoolConverter}}"
                                                                           Content="{Binding Data,Mode=OneTime}">
                                                                     <CheckBox.ContentTemplateSelector>
                                                                         <component:TypeBasedDataTemplateSelector>
@@ -340,7 +327,7 @@
                                                                                             Source="{Binding FileType,Mode=OneTime,Converter={x:Static converters:SnapConverters.DocumentTypeToImageConverter}}" />
                                                                                         <TextBlock MaxWidth="200"
                                                                                             TextTrimming="CharacterEllipsis"
-                                                                                            Text="{Binding Name,Mode=OneTime}"
+                                                                                            Text="{Binding ResourceName,Mode=OneTime}"
                                                                                             TextWrapping="Wrap"
                                                                                             Margin="6,0"
                                                                                             VerticalAlignment="Center" />
@@ -359,6 +346,20 @@
                                     </materialDesign:PopupBox>
                                 </StackPanel>
                             </materialDesign:Card>
+                            <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                    Command="{Binding AddImageCommand}"
+                                    VerticalAlignment="Center" Margin="10,0,0,0"
+                                    Height="32"
+                                    Width="32"
+                                    Content="{materialDesign:PackIcon Kind=ImagePlus,Size=22}"
+                                    Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                    Height="32"
+                                    Width="32"
+                                    Content="{materialDesign:PackIcon Kind=FileSearch,Size=22}"
+                                    VerticalAlignment="Center" Margin="10,0,0,0"
+                                    Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                    CommandParameter="{Binding QueryViewModel,Mode=OneTime}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2"
                                     Orientation="Horizontal"

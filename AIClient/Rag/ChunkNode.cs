@@ -72,7 +72,7 @@ public class ChunkNode
             var chunkText = Chunk.Text;
             if (!string.IsNullOrEmpty(chunkText))
             {
-                result += $"{indent}{chunkText}\r\n";
+                result += $"{indent}{chunkText.Replace("\n", "\n" + indent)}\r\n";
             }
         }
 

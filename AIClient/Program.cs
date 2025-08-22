@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using LLMClient.Abstraction;
 using LLMClient.Data;
@@ -34,6 +35,7 @@ public class Program
         }
 
         IServiceProvider? serviceProvider = null;
+        var tempPath = new DirectoryInfo(Extension.TempPath);
         try
         {
             var serviceCollection = new ServiceCollection();
@@ -84,6 +86,11 @@ public class Program
 #endif
             serviceProvider = collection.BuildServiceProvider();
             BaseViewModel.ServiceLocator = serviceProvider;
+            if (!tempPath.Exists)
+            {
+                tempPath.Create();
+            }
+
             App app = new App();
             app.InitializeComponent();
             /*var version3Converter = new Version3Converter(serviceProvider);
@@ -104,6 +111,8 @@ public class Program
             {
                 Mutex.ReleaseMutex();
             }
+
+            tempPath.Delete(true);
         }
     }
 }

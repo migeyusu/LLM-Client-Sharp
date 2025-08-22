@@ -4,10 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using DocumentFormat.OpenXml.Wordprocessing;
 using LLMClient.Data;
 using LLMClient.UI;
-using LLMClient.UI.Component;
 using LLMClient.UI.Log;
 using Microsoft.Extensions.Logging;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
@@ -102,9 +100,20 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         get => new Thickness(LeftMargin, TopMargin, RightMargin, BottomMargin);
     }
 
-    private PDFExtractor _extractor;
+    public int SummaryLanguageIndex
+    {
+        get => _summaryLanguageIndex;
+        set
+        {
+            if (value == _summaryLanguageIndex) return;
+            _summaryLanguageIndex = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private readonly PDFExtractor _extractor;
     private int _currentStep = 0;
-    private IList<PDFNode> _contentNodes;
+    private IList<PDFNode> _contentNodes = Array.Empty<PDFNode>();
     private bool _isProcessing;
 
     public PDFExtractorWindow(PDFExtractor extractor)
@@ -297,6 +306,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
 
     private PromptsCache? promptsCache;
     private double _progressValue;
+    private int _summaryLanguageIndex;
 
     private async void GenerateSummary()
     {
@@ -340,7 +350,9 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
                             return s.Substring(0, int.Min(length, 1000));
                         }*/
                 var summaryDelegate =
-                    digestClient.CreateSummaryDelegate(semaphoreSlim, promptsCache, this.Logs, summarySize, 3);
+                    digestClient.CreateSummaryDelegate(semaphoreSlim, SummaryLanguageIndex, promptsCache,
+                        logger: this.Logs,
+                        summarySize: summarySize, retryCount: 3);
                 await Parallel.ForEachAsync(this.ContentNodes, new ParallelOptions(),
                     async (node, token) =>
                     {

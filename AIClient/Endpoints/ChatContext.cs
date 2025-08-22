@@ -1,14 +1,15 @@
 ﻿using System.ClientModel;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.Endpoints.OpenAIAPI;
+namespace LLMClient.Endpoints;
 
-public class ClientContext
+public class ChatContext
 {
-    public ClientContext(AdditionalPropertiesDictionary? additionalObjects = null)
+    public ChatContext(AdditionalPropertiesDictionary? additionalObjects = null)
     {
         AdditionalObjects = additionalObjects ?? new AdditionalPropertiesDictionary();
     }
@@ -17,13 +18,16 @@ public class ClientContext
 
     public AdditionalPropertiesDictionary AdditionalObjects { get; }
 
+    public List<AIContent> AdditionalFunctionCallResult { get; } = new List<AIContent>();
+
+    public StringBuilder AdditionalUserMessage { get; } = new StringBuilder();
+
     public ClientResult? Result { get; set; }
 
     public async Task CompleteStreamResponse(CompletedResult result)
     {
-        
     }
-    
+
     public async Task CompleteResponse(ChatResponse response, CompletedResult result)
     {
         if (this.Result == null)
