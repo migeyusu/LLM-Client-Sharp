@@ -46,11 +46,11 @@ public partial class MainWindow : ExtendedWindow
         }
     }
 
-    private bool _closing = false;
+    private bool _closing;
 
-    private bool _closeRequest = false;
+    private bool _closeRequest;
 
-    private async void MainWindow_OnClosing(object? sender, CancelEventArgs e)
+    private void MainWindow_OnClosing(object? sender, CancelEventArgs e)
     {
         e.Cancel = !_closeRequest;
         if (_closeRequest)

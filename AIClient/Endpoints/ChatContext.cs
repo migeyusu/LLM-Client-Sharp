@@ -24,8 +24,9 @@ public class ChatContext
 
     public ClientResult? Result { get; set; }
 
-    public async Task CompleteStreamResponse(CompletedResult result)
+    public Task CompleteStreamResponse(CompletedResult result)
     {
+        return Task.CompletedTask;
     }
 
     public async Task CompleteResponse(ChatResponse response, CompletedResult result)

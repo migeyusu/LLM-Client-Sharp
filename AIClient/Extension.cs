@@ -36,7 +36,7 @@ public static class Extension
         WriteIndented = true,
     };
 
-    public static void UpgradeAPIVersion(this ChatCompletionsClient client, string apiVersion = "2024-12-01-preview")
+    public static void UpgradeApiVersion(this ChatCompletionsClient client, string apiVersion = "2024-12-01-preview")
     {
         var propertyInfo = client.GetType().GetField("_apiVersion", BindingFlags.Instance | BindingFlags.NonPublic);
         propertyInfo?.SetValue(client, apiVersion);
@@ -63,7 +63,7 @@ public static class Extension
             expression.CreateMap<DataContent, DataContentPO>()
                 .ForMember(po => po.Data, opt => opt.MapFrom(content => content.Data));
             expression.CreateMap<DataContentPO, DataContent>()
-                .ConstructUsing(((po, context) =>
+                .ConstructUsing(((po, _) =>
                 {
                     if (po.Data != null)
                     {
@@ -81,7 +81,7 @@ public static class Extension
             expression.CreateMap<ErrorContentPO, ErrorContent>();
             expression.CreateMap<FunctionResultContent, FunctionResultContentPO>();
             expression.CreateMap<FunctionResultContentPO, FunctionResultContent>()
-                .ConstructUsing((po, context) => new FunctionResultContent(po.CallId, po.Result)
+                .ConstructUsing((po, _) => new FunctionResultContent(po.CallId, po.Result)
                     { Exception = po.Exception });
             expression.CreateMap<TextReasoningContent, TextReasoningContentPO>();
             expression.CreateMap<TextReasoningContentPO, TextReasoningContent>();
@@ -180,7 +180,7 @@ public static class Extension
         var exception = resultContent.Exception;
         return str + (exception != null
             ? $"{exception.GetType().Name}(\"{exception.Message}\")"
-            : (resultContent.Result?.ToString() ?? "(null)") ?? "");
+            : (resultContent.Result?.ToString() ?? "(null)"));
     }
 
 
@@ -335,7 +335,7 @@ public static class Extension
     public static ILLMChatClient? CreateChatClient(this ILLMChatModel llmModel)
     {
         var endpoint = llmModel.Endpoint;
-        return !endpoint.IsEnabled ? null : endpoint?.NewChatClient(llmModel);
+        return !endpoint.IsEnabled ? null : endpoint.NewChatClient(llmModel);
     }
 
     public static void AddLine(this IList<string> list, string? msg = null)
@@ -383,11 +383,9 @@ public static class Extension
         if (parentObject == null) return null;
 
         //check if the parent matches the type we're looking for
-        T? parent = parentObject as T;
-        if (parent != null)
+        if (parentObject is T parent)
             return parent;
-        else
-            return FindVisualParent<T>(parentObject);
+        return FindVisualParent<T>(parentObject);
     }
 
     public static T Clone<T>(T source) where T : class
@@ -439,7 +437,7 @@ public static class Extension
         }
     }
 
-    public static void RecursiveAdditionalFunctionCallResult(this ChunkNode node, List<AIContent> contents,
+    private static void RecursiveAdditionalFunctionCallResult(this ChunkNode node, List<AIContent> contents,
         StringBuilder stringBuilder)
     {
         var chunk = node.Chunk;
@@ -474,6 +472,7 @@ public static class Extension
 
     public static SemanticKernelStore GetStore(this RagOption ragOption)
     {
+        ragOption.ThrowIfNotValid();
         var dbConnection = ragOption.DBConnection;
         var embeddingEndpoint = ragOption.EmbeddingEndpoint;
         if (embeddingEndpoint == null)
@@ -537,7 +536,7 @@ public static class Extension
                 return content;
             }
 
-            if (cache?.TryGetValue(content, out var result) == true)
+            if (cache.TryGetValue(content, out var result))
             {
                 return result;
             }
@@ -580,10 +579,9 @@ public static class Extension
                 }
 
                 stringBuilder.Append(content);
-                var dialogContext = new DialogContext(new[]
-                {
+                var dialogContext = new DialogContext([
                     new RequestViewItem() { TextMessage = stringBuilder.ToString(), }
-                });
+                ]);
                 int tryCount = 0;
                 while (tryCount < retryCount)
                 {
@@ -592,7 +590,7 @@ public static class Extension
                     var textResponse = response.TextResponse;
                     if (!string.IsNullOrEmpty(textResponse) && !response.IsInterrupt)
                     {
-                        cache?.TryAdd(content, textResponse);
+                        cache.TryAdd(content, textResponse);
                         return textResponse;
                     }
                 }
@@ -623,7 +621,7 @@ public static class Extension
     }
 
     /// <summary>
-    /// use temp path in current directory. so it can be deleted when exit.
+    /// use temp path in current directory. so it can be deleted when exited.
     /// </summary>
     public static string TempPath => Path.GetFullPath("Temp");
 

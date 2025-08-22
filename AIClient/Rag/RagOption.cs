@@ -81,9 +81,9 @@ public class RagOption : BaseViewModel
             }
 
             return ServiceLocator.GetService<IMapper>()?
-                .Map<LLMClientPersistModel, ILLMChatClient>(this.DigestClientPersist, (o) => { });
+                .Map<LLMClientPersistModel, ILLMChatClient>(this.DigestClientPersist, (_) => { });
         }
-        set
+        private set
         {
             if (value == null)
             {
@@ -92,7 +92,7 @@ public class RagOption : BaseViewModel
             }
 
             this.DigestClientPersist = ServiceLocator.GetService<IMapper>()?
-                .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
+                .Map<ILLMChatClient, LLMClientPersistModel>(value, (_ => { }));
         }
     }
 
@@ -117,7 +117,7 @@ public class RagOption : BaseViewModel
         }
     }
 
-    public ICommand SelectDatabaseCommand => new ActionCommand(async o =>
+    public ICommand SelectDatabaseCommand => new ActionCommand(_ =>
     {
         var openFileDialog = new OpenFileDialog()
         {

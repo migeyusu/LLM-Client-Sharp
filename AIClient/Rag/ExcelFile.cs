@@ -52,7 +52,13 @@ public class ExcelFile : RagFileBase
         throw new NotImplementedException();
     }
 
-    protected override KernelFunctionFromMethodOptions QueryOptions { get; }
+    protected override KernelFunctionFromMethodOptions QueryOptions
+    {
+        get
+        {
+            return new KernelFunctionFromMethodOptions();
+        }
+    }
 
     protected override Task ConstructCore(CancellationToken cancellationToken = default)
     {

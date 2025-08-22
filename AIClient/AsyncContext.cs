@@ -53,12 +53,10 @@ public static class AsyncContext<TInstance> where TInstance : class
         {
             if (!_disposed)
             {
-                if (_holderToRestore != null)
-                {
-                }
-
                 // 将AsyncLocal的值恢复为进入using之前的状态
+#pragma warning disable CS8601 // 引用类型赋值可能为 null。
                 AsyncLocalContext.Value = _holderToRestore;
+#pragma warning restore CS8601 // 引用类型赋值可能为 null。
                 _disposed = true;
             }
         }

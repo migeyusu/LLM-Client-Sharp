@@ -35,9 +35,6 @@ public enum SearchAlgorithm
     [Description("Based on default search, use search result as query to search child nodes recursively.")]
     Recursive,
 
-    /// <summary>
-    /// interact with llm to do the search
-    /// </summary>
     //Interactive
 }
 
@@ -45,15 +42,13 @@ public class SemanticKernelStore
 {
     public const int ChunkDimension = 1536;
 
-    private readonly string _dbConnectionString;
-
     private readonly Kernel _kernel;
 
     [Experimental("SKEXP0010")]
     public SemanticKernelStore(ILLMEndpoint endpoint, string modelId = "text-embedding-3-small",
         string dbConnectionString = "Data Source=file_embedding.db")
     {
-        OpenAIClient? openAiClient = null;
+        OpenAIClient? openAiClient;
         if (endpoint is APIEndPoint apiEndPoint)
         {
             openAiClient = apiEndPoint.ConfigOption.OpenAIClient;
@@ -70,11 +65,11 @@ public class SemanticKernelStore
                 nameof(endpoint));
         }
 
-        _dbConnectionString = dbConnectionString;
+        var s = dbConnectionString;
         var kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder.Services.AddOpenAIEmbeddingGenerator(modelId, openAiClient)
             // 添加 SQLite 向量存储（连接字符串指向本地文件）
-            .AddSqliteVectorStore(connectionStringProvider: sp => _dbConnectionString, provider =>
+            .AddSqliteVectorStore(connectionStringProvider: _ => s, provider =>
                 new SqliteVectorStoreOptions()
                 {
                     EmbeddingGenerator =
@@ -343,7 +338,7 @@ public class SemanticKernelStore
     public async Task<IList<ChunkNode>> SearchAsync(string query, string docId,
         SearchAlgorithm algorithm, int topK = 6, CancellationToken token = default)
     {
-        IEnumerable<DocChunk>? chunks = null;
+        IEnumerable<DocChunk>? chunks;
         switch (algorithm)
         {
             case SearchAlgorithm.Default:
@@ -389,7 +384,7 @@ public class SemanticKernelStore
         CancellationToken token, int topK = 6)
     {
         var collection = _kernel.GetRequiredService<VectorStore>().GetCollection<string, DocChunk>(docId);
-        var embeddingGenerator = _kernel!.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+        var embeddingGenerator = _kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
         var topLevelResults = await InternalSearchAsync(query, new VectorSearchOptions<DocChunk>()
         {
             Filter = chunk => chunk.Level == 0,
@@ -464,7 +459,7 @@ public class SemanticKernelStore
         int level = 2, int topK = 6)
     {
         var collection = _kernel.GetRequiredService<VectorStore>().GetCollection<string, DocChunk>(docId);
-        var embeddingGenerator = _kernel!.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+        var embeddingGenerator = _kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
         var vectorSearchOptions = new VectorSearchOptions<DocChunk>()
         {
             //只搜索没有子节点的文档

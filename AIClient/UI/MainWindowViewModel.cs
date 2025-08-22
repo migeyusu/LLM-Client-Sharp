@@ -1,16 +1,13 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
-using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Project;
-using LLMClient.Rag;
 using LLMClient.UI.Component;
 using LLMClient.UI.Render;
 using MaterialDesignThemes.Wpf;
@@ -22,9 +19,7 @@ namespace LLMClient.UI;
 
 public class MainWindowViewModel : BaseViewModel
 {
-    private readonly IMapper _mapper;
-
-    public SnackbarMessageQueue MessageQueue { get; set; } = new SnackbarMessageQueue();
+    public SnackbarMessageQueue MessageQueue { get; set; } = new();
 
     public IEndpointService EndpointsViewModel { get; }
 
@@ -80,7 +75,7 @@ public class MainWindowViewModel : BaseViewModel
             UpdateResource(value);
         }
     }
-    
+
     public string LoadingMessage
     {
         get => _loadingMessage;
@@ -98,13 +93,20 @@ public class MainWindowViewModel : BaseViewModel
 
     #region project
 
-    public ICommand NewProjectCommand => new ActionCommand((async o =>
+    public ICommand NewProjectCommand => new ActionCommand((async void (_) =>
     {
-        var selectionViewModel =
-            new ProjectConfigViewModel(this.EndpointsViewModel, new ProjectViewModel(NullLlmModelClient.Instance));
-        if (await DialogHost.Show(selectionViewModel) is true)
+        try
         {
-            AddSession(selectionViewModel.Project);
+            var selectionViewModel =
+                new ProjectConfigViewModel(this.EndpointsViewModel, new ProjectViewModel(NullLlmModelClient.Instance));
+            if (await DialogHost.Show(selectionViewModel) is true)
+            {
+                AddSession(selectionViewModel.Project);
+            }
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message);
         }
     }));
 
@@ -114,55 +116,69 @@ public class MainWindowViewModel : BaseViewModel
 
     public ICommand ImportCommand => new ActionCommand((async o =>
     {
-        var type = o.ToString();
-        var openFileDialog = new OpenFileDialog()
+        try
         {
-            AddExtension = true,
-            Filter = "json files (*.json)|*.json",
-            CheckFileExists = true,
-            Multiselect = true
-        };
-        if (openFileDialog.ShowDialog() != true)
-        {
-            return;
-        }
-
-        var fileInfos = openFileDialog.FileNames.Select((s => new FileInfo(s)));
-        IAsyncEnumerable<ILLMSession> sessions;
-        switch (type)
-        {
-            case "dialog":
-                sessions = DialogFileViewModel.ImportFiles(fileInfos);
-                break;
-            case "project":
-                sessions = ProjectViewModel.ImportFiles(fileInfos);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-
-        var sessionList = new List<ILLMSession>();
-        await foreach (var llmSession in sessions)
-        {
-            sessionList.Add(llmSession);
-        }
-
-        InsertSessions(sessionList);
-    }));
-
-    public ICommand NewDialogCommand => new ActionCommand((async o =>
-    {
-        var selectionViewModel = new ModelSelectionPopupViewModel(EndpointsViewModel);
-        if (await DialogHost.Show(selectionViewModel) is true)
-        {
-            var model = selectionViewModel.GetClient();
-            if (model == null)
+            var type = o.ToString();
+            var openFileDialog = new OpenFileDialog()
             {
-                MessageBox.Show("No model created!");
+                AddExtension = true,
+                Filter = "json files (*.json)|*.json",
+                CheckFileExists = true,
+                Multiselect = true
+            };
+            if (openFileDialog.ShowDialog() != true)
+            {
                 return;
             }
 
-            AddNewDialog(model);
+            var fileInfos = openFileDialog.FileNames.Select((s => new FileInfo(s)));
+            IAsyncEnumerable<ILLMSession> sessions;
+            switch (type)
+            {
+                case "dialog":
+                    sessions = DialogFileViewModel.ImportFiles(fileInfos);
+                    break;
+                case "project":
+                    sessions = ProjectViewModel.ImportFiles(fileInfos);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            var sessionList = new List<ILLMSession>();
+            await foreach (var llmSession in sessions)
+            {
+                sessionList.Add(llmSession);
+            }
+
+            InsertSessions(sessionList);
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message);
+        }
+    }));
+
+    public ICommand NewDialogCommand => new ActionCommand((async _ =>
+    {
+        try
+        {
+            var selectionViewModel = new ModelSelectionPopupViewModel(EndpointsViewModel);
+            if (await DialogHost.Show(selectionViewModel) is true)
+            {
+                var model = selectionViewModel.GetClient();
+                if (model == null)
+                {
+                    MessageBox.Show("No model created!");
+                    return;
+                }
+
+                AddNewDialog(model);
+            }
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message);
         }
     }));
 
@@ -208,8 +224,8 @@ public class MainWindowViewModel : BaseViewModel
     }
 
     #endregion
-    
-    public ICommand LoadCommand => new ActionCommand((o =>
+
+    public ICommand LoadCommand => new ActionCommand((_ =>
     {
         try
         {
@@ -221,7 +237,7 @@ public class MainWindowViewModel : BaseViewModel
         }
     }));
 
-    public ICommand SaveCommand => new ActionCommand((async o =>
+    public ICommand SaveCommand => new ActionCommand((async _ =>
     {
         try
         {
@@ -241,11 +257,10 @@ public class MainWindowViewModel : BaseViewModel
     private bool _isProcessing;
     private string _loadingMessage = "Loading...";
 
-    public MainWindowViewModel(IEndpointService configureViewModel, IMapper mapper, IPromptsResource promptsResource,
+    public MainWindowViewModel(IEndpointService configureViewModel, IPromptsResource promptsResource,
         IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection)
     {
         MessageEventBus.MessageReceived += s => this.MessageQueue.Enqueue(s);
-        _mapper = mapper;
         PromptsResource = promptsResource;
         McpServiceCollection = mcpServiceCollection;
         RagSourceCollection = ragSourceCollection;
@@ -265,12 +280,12 @@ public class MainWindowViewModel : BaseViewModel
 
         if (paletteHelper.GetThemeManager() is { } themeManager)
         {
-            themeManager.ThemeChanged += (_, e) => { IsDarkTheme = e.NewTheme?.GetBaseTheme() == BaseTheme.Dark; };
+            themeManager.ThemeChanged += (_, e) => { IsDarkTheme = e.NewTheme.GetBaseTheme() == BaseTheme.Dark; };
         }
     }
 
     #region item management
-    
+
     public void AddSession(ILLMSession projectViewModel)
     {
         ((INotifyPropertyChanged)projectViewModel).PropertyChanged += SessionOnEditTimeChanged;
@@ -359,7 +374,7 @@ public class MainWindowViewModel : BaseViewModel
         this.PreSession = this.SessionViewModels.FirstOrDefault();
         session.Delete();
     }
-    
+
     public async Task SaveSessions()
     {
         this.LoadingMessage = "Saving sessions...";
@@ -367,7 +382,7 @@ public class MainWindowViewModel : BaseViewModel
         await this.SaveSessionsToLocal();
         await HttpContentCache.Instance.PersistIndexAsync();
     }
-    
+
     #endregion
 
     public async void Initialize()
@@ -389,7 +404,7 @@ public class MainWindowViewModel : BaseViewModel
         // SemanticKernelStore.Test();
     }
 
-    
+
     public static void UpdateResource(ThemeName themeName)
     {
         var application = Application.Current;
@@ -401,12 +416,12 @@ public class MainWindowViewModel : BaseViewModel
         var sourceDictionary = application.Resources;
         sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
     }
-    
+
     private static void ModifyTheme(Action<Theme> modificationAction)
     {
         var paletteHelper = new PaletteHelper();
         Theme theme = paletteHelper.GetTheme();
-        modificationAction?.Invoke(theme);
+        modificationAction.Invoke(theme);
         paletteHelper.SetTheme(theme);
     }
 }

@@ -43,7 +43,7 @@ public class LogsViewModel : ILogger
     public void Stop()
     {
         //立刻处理剩余的日志
-        ProcessLogQueue(null, null);
+        ProcessLogQueue(null, EventArgs.Empty);
         _timer.Stop();
     }
 

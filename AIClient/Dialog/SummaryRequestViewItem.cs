@@ -19,6 +19,7 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
     public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        await Task.Yield();
         if (string.IsNullOrEmpty(SummaryPrompt))
         {
             throw new InvalidOperationException("SummaryPrompt cannot be null or empty.");
