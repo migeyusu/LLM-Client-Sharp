@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using AutoMapper;
 using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
@@ -12,10 +13,8 @@ namespace LLMClient.Endpoints.Azure.Models;
 #pragma warning disable SKEXP0001
 public class AzureClientBase : LlmClientBase, ILLMChatClient
 {
-    private static readonly Mapper Mapper = new Mapper((new MapperConfiguration((expression =>
-    {
-        expression.CreateMap<AzureModelInfo, IModelParams>();
-    }))));
+    private static readonly Mapper Mapper = new(new MapperConfiguration(
+        expression => { expression.CreateMap<AzureModelInfo, IModelParams>(); }, new NullLoggerFactory()));
 
     [JsonIgnore] public AzureModelInfo ModelInfo { get; }
 

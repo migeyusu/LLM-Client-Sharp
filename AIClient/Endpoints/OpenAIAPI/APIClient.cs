@@ -8,6 +8,7 @@ using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using OpenAI;
@@ -19,10 +20,9 @@ namespace LLMClient.Endpoints.OpenAIAPI;
 #pragma warning disable SKEXP0001
 public class APIClient : LlmClientBase
 {
-    private static readonly Mapper Mapper = new Mapper((new MapperConfiguration((expression =>
-    {
-        expression.CreateMap<APIModelInfo, IModelParams>();
-    }))));
+    private static readonly Mapper Mapper =
+        new(new MapperConfiguration(expression => { expression.CreateMap<APIModelInfo, IModelParams>(); },
+            new NullLoggerFactory()));
 
     public APIModelInfo ModelInfo { get; }
 
@@ -60,7 +60,7 @@ public class APIClient : LlmClientBase
     {
         EnsureKernel();
     }
-    
+
     private Kernel? _kernel;
 
     private IChatClient? _chatClient;
