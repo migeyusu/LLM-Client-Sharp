@@ -48,7 +48,7 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
 
     public bool CheckCompatible(ILLMChatClient client)
     {
-        return client.Endpoint is APIEndPoint { ModelsSource: ModelSource.OpenRouter };
+        return client.Endpoint is APIEndPoint { Option.ModelsSource: ModelSource.OpenRouter };
     }
 
     public Task ApplySearch(DialogContext context)

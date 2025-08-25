@@ -17,11 +17,6 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
 
     private const string KernelPluginName = "GoogleTextSearch";
 
-    public GoogleSearchPlugin(GlobalOptions globalOptions)
-    {
-        _globalOptions = globalOptions;
-    }
-
     public object Clone()
     {
         return Activator.CreateInstance(this.GetType())!;
@@ -54,12 +49,10 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
 
     private GoogleSearchOption? _config;
 
-    private readonly GlobalOptions _globalOptions;
-
     public async Task EnsureAsync(CancellationToken token)
     {
-        var config = _globalOptions.GoogleSearchOption;
-        if (config.IsValid() && !config.Equals(_config))
+        var config = ServiceLocator.GetService<GlobalOptions>()?.GoogleSearchOption;
+        if (config?.IsValid() == true && !config.Equals(_config))
         {
 #pragma warning disable SKEXP0050
             var textSearch = new GoogleTextSearch(
@@ -87,7 +80,8 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
         }
 
         requestViewItem.FunctionGroups ??= [];
-        if (requestViewItem.FunctionGroups.Any((tree => AIFunctionGroupComparer.Instance.Equals(tree.Data, this))))
+        if (requestViewItem.FunctionGroups.Any(tree => 
+                AIFunctionGroupComparer.Instance.Equals(tree.Data, this)))
         {
             return;
         }

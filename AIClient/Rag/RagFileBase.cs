@@ -82,7 +82,6 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public Guid Id { get; set; } = Guid.NewGuid();
 
-
     protected RagFileBase()
     {
         AvailableTools =
@@ -293,7 +292,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public virtual async Task DeleteAsync(CancellationToken cancellationToken = default)
     {
-        var semanticKernelStore = await GetStoreAsync();
+        var semanticKernelStore = GetStore();
         await semanticKernelStore.RemoveFileAsync(this.DocumentId, cancellationToken);
         this.Status = RagFileStatus.NotConstructed;
     }
@@ -315,7 +314,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
                 "The PDF file has not been constructed. Please call ConstructAsync first.");
         }
 
-        var semanticKernelStore = await GetStoreAsync();
+        var semanticKernelStore = GetStore();
         IList<ChunkNode> matchResult = await semanticKernelStore.SearchAsync(query, this.DocumentId,
             options.SearchAlgorithm ?? SearchAlgorithm.Default,
             options.TopK ?? 5, cancellationToken);
@@ -336,7 +335,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
                 "The PDF file has not been constructed. Please call ConstructAsync first.");
         }
 
-        var semanticKernelStore = await GetStoreAsync();
+        var semanticKernelStore = GetStore();
         var structureNodes = await semanticKernelStore.GetStructureAsync(this.DocumentId, cancellationToken);
         return new StructResult(structureNodes) { DocumentId = this.DocumentId };
     }
@@ -344,7 +343,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     public virtual async Task<ISearchResult> GetSectionAsync(string sectionName,
         CancellationToken cancellationToken = default)
     {
-        var store = await GetStoreAsync();
+        var store = GetStore();
         var chunkNode = await store.GetSectionAsync(this.DocumentId, sectionName, cancellationToken);
         return new StructResult(chunkNode == null ? Array.Empty<ChunkNode>() : new[] { chunkNode })
             { DocumentId = this.DocumentId };
@@ -352,7 +351,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public virtual async Task<ISearchResult> GetFullDocumentAsync(CancellationToken cancellationToken = default)
     {
-        var kernelStore = await GetStoreAsync();
+        var kernelStore = GetStore();
         var nodes = await kernelStore.GetDocTreeAsync(this.DocumentId, cancellationToken);
         return new StructResult(nodes) { DocumentId = this.DocumentId };
     }
@@ -362,11 +361,15 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     /// </summary>
     protected abstract KernelFunctionFromMethodOptions QueryOptions { get; }
 
-    protected static async Task<SemanticKernelStore> GetStoreAsync(RagOption? ragOption = null)
+    protected RagOption RagOption
     {
-        ragOption ??= ServiceLocator.GetService<GlobalOptions>()!.RagOption;
-        ragOption.ThrowIfNotValid();
-        return ragOption.GetStore();
+        get => ServiceLocator.GetService<GlobalOptions>()!.RagOption;
+    }
+
+    protected SemanticKernelStore GetStore()
+    {
+        RagOption.ThrowIfNotValid();
+        return RagOption.GetStore();
     }
 
     public ICommand ViewCommand => new ActionCommand(o =>

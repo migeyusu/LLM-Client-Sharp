@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Dialog;
@@ -98,7 +99,8 @@ public class MainWindowViewModel : BaseViewModel
         try
         {
             var selectionViewModel =
-                new ProjectConfigViewModel(this.EndpointsViewModel, new ProjectViewModel(NullLlmModelClient.Instance));
+                new ProjectConfigViewModel(new ProjectViewModel(NullLlmModelClient.Instance, _mapper,
+                    _globalOptions, RagSourceCollection));
             if (await DialogHost.Show(selectionViewModel) is true)
             {
                 AddSession(selectionViewModel.Project);
@@ -136,10 +138,10 @@ public class MainWindowViewModel : BaseViewModel
             switch (type)
             {
                 case "dialog":
-                    sessions = DialogFileViewModel.ImportFiles(fileInfos);
+                    sessions = DialogFileViewModel.ImportFiles(fileInfos, _mapper);
                     break;
                 case "project":
-                    sessions = ProjectViewModel.ImportFiles(fileInfos);
+                    sessions = ProjectViewModel.ImportFiles(fileInfos, _mapper);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -163,7 +165,7 @@ public class MainWindowViewModel : BaseViewModel
     {
         try
         {
-            var selectionViewModel = new ModelSelectionPopupViewModel(EndpointsViewModel);
+            var selectionViewModel = new ModelSelectionPopupViewModel();
             if (await DialogHost.Show(selectionViewModel) is true)
             {
                 var model = selectionViewModel.GetClient();
@@ -182,9 +184,13 @@ public class MainWindowViewModel : BaseViewModel
         }
     }));
 
+    private readonly IMapper _mapper;
+
+    private readonly GlobalOptions _globalOptions;
+
     public DialogFileViewModel AddNewDialog(ILLMChatClient client, string dialogName = "新建会话")
     {
-        var dialogSession = new DialogFileViewModel(dialogName, client);
+        var dialogSession = new DialogFileViewModel(dialogName, client, _mapper, _globalOptions, RagSourceCollection);
         AddSession(dialogSession);
         return dialogSession;
     }
@@ -258,12 +264,15 @@ public class MainWindowViewModel : BaseViewModel
     private string _loadingMessage = "Loading...";
 
     public MainWindowViewModel(IEndpointService configureViewModel, IPromptsResource promptsResource,
-        IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection)
+        IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection, IMapper mapper,
+        GlobalOptions globalOptions)
     {
         MessageEventBus.MessageReceived += s => this.MessageQueue.Enqueue(s);
         PromptsResource = promptsResource;
         McpServiceCollection = mcpServiceCollection;
         RagSourceCollection = ragSourceCollection;
+        this._mapper = mapper;
+        this._globalOptions = globalOptions;
         EndpointsViewModel = configureViewModel;
         var paletteHelper = new PaletteHelper();
         var theme = paletteHelper.GetTheme();
@@ -296,12 +305,12 @@ public class MainWindowViewModel : BaseViewModel
     private async Task InitialSessionsFromLocal()
     {
         var sessions = new List<ILLMSession>();
-        await foreach (var llmSession in DialogFileViewModel.LoadFromLocal())
+        await foreach (var llmSession in DialogFileViewModel.LoadFromLocal(_mapper))
         {
             sessions.Add(llmSession);
         }
 
-        await foreach (var projectViewModel in ProjectViewModel.LoadFromLocal())
+        await foreach (var projectViewModel in ProjectViewModel.LoadFromLocal(_mapper))
         {
             sessions.Add(projectViewModel);
         }

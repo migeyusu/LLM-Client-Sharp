@@ -76,12 +76,12 @@ public class SearchConfigViewModel : BaseViewModel
         return searchService;
     }
 
-    public SearchConfigViewModel(GlobalOptions globalOptions)
+    public SearchConfigViewModel()
     {
         _builtInSearchServices =
         [
             new GeekAISearchService(),
-            new GoogleSearchPlugin(globalOptions),
+            new GoogleSearchPlugin(),
             new OpenRouterSearchService()
         ];
     }

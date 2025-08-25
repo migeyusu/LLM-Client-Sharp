@@ -47,7 +47,7 @@ public class GeekAISearchService : BaseViewModel, ISearchService
 
     public bool CheckCompatible(ILLMChatClient client)
     {
-        return client.Endpoint is APIEndPoint { ModelsSource: ModelSource.GeekAI };
+        return client.Endpoint is APIEndPoint { Option.ModelsSource: ModelSource.GeekAI };
     }
 
     public Task ApplySearch(DialogContext context)
@@ -57,11 +57,11 @@ public class GeekAISearchService : BaseViewModel, ISearchService
         {
             return Task.CompletedTask;
         }
-        
+
         requestViewItem.AdditionalProperties["enable_search"] = true;
         if (SearchEngine != null)
         {
-            requestViewItem.AdditionalProperties["search_config"] = new SearchConfig()
+            requestViewItem.AdditionalProperties["search_config"] = new GeekAISearchConfig()
             {
                 Engine = SearchEngine.GetEnumDescription(),
                 ReturnResult = ReturnResult
@@ -81,7 +81,7 @@ public class GeekAISearchService : BaseViewModel, ISearchService
         };
     }
 
-    public class SearchConfig
+    public class GeekAISearchConfig
     {
         [JsonPropertyName("engine")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

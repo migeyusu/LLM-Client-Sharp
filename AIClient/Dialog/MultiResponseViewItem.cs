@@ -7,7 +7,6 @@ using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
@@ -79,11 +78,6 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
     private bool _isMultiResponse = false;
     private ObservableCollection<IResponseViewItem> _items;
     private ILLMChatModel? _selectedModel;
-
-    public IEndpointService EndpointService
-    {
-        get { return ServiceLocator.GetService<IEndpointService>()!; }
-    }
 
     public ILLMChatModel? SelectedModel
     {

@@ -43,7 +43,7 @@
                 <component:PromptEditor Grid.Column="1"
                                         VerticalAlignment="Stretch"
                                         Margin="0,0,10,0"
-                                        Source="{Binding PromptsResource.SystemPrompts,Mode=OneWay}"
+                                        Source="{Binding Source={StaticResource PromptsResource}, Path=SystemPrompts,Mode=OneWay}"
                                         PromptString="{Binding Description,Mode=TwoWay,UpdateSourceTrigger=LostFocus}" />
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
@@ -86,7 +86,7 @@
                             Command="{x:Static ui:CommonCommands.Backup}" />
                     <materialDesign:PopupBox StaysOpen="True">
                         <StackPanel MaxWidth="200"
-                                   MaxHeight="200">
+                                    MaxHeight="200">
                             <Button Content="打开项目文件夹"
                                     CommandParameter="{Binding FolderPath,Mode=OneWay}"
                                     Command="{x:Static ui:CommonCommands.OpenFolderCommand}" />
@@ -100,33 +100,39 @@
         <Expander Grid.Row="1"
                   materialDesign:ExpanderAssist.HorizontalHeaderPadding="12,4">
             <Expander.Header>
-                <StackPanel Grid.Row="0"
-                            Margin="4"
-                            Height="50"
-                            Orientation="Horizontal">
-                    <StackPanel.Resources>
-                        <Style TargetType="{x:Type Button}"
-                               BasedOn="{StaticResource MaterialDesignFloatingActionMiniSecondaryDarkButton}">
-                            <Setter Property="VerticalAlignment"
-                                    Value="Center" />
-                            <Setter Property="Height"
-                                    Value="30" />
-                            <Setter Property="Width"
-                                    Value="30" />
-                            <Setter Property="Margin"
-                                    Value="10,0,0,0" />
-                        </Style>
-                    </StackPanel.Resources>
-                    <TextBlock Text="Tasks"
-                               VerticalAlignment="Center"
-                               Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
-                    <Button Content="{materialDesign:PackIcon Kind=Add,Size=16}"
-                            Command="{Binding NewTaskCommand}"
-                            Margin="16,0,0,0"
-                            ToolTip="Add Tasks" />
-                    <TextBox Text="{Binding SelectedTask.SystemPrompt,Mode=OneWay,StringFormat=上下文：{0}}"
+                <Grid Height="50">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="4"
+                                Orientation="Horizontal">
+                        <StackPanel.Resources>
+                            <Style TargetType="{x:Type Button}"
+                                   BasedOn="{StaticResource MaterialDesignFloatingActionMiniSecondaryDarkButton}">
+                                <Setter Property="VerticalAlignment"
+                                        Value="Center" />
+                                <Setter Property="Height"
+                                        Value="30" />
+                                <Setter Property="Width"
+                                        Value="30" />
+                                <Setter Property="Margin"
+                                        Value="10,0,0,0" />
+                            </Style>
+                        </StackPanel.Resources>
+                        <TextBlock Text="Tasks"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
+                        <Button Content="{materialDesign:PackIcon Kind=Add,Size=16}"
+                                Command="{Binding NewTaskCommand}"
+                                Margin="16,0,0,0"
+                                ToolTip="Add Tasks" />
+                    </StackPanel>
+                    <TextBox Grid.Column="1"
+                             Text="{Binding SelectedTask.SystemPrompt,Mode=OneWay,StringFormat=上下文：{0}}"
                              materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                              BorderThickness="0"
+                             HorizontalAlignment="Stretch"
                              Padding="0"
                              Margin="16,0"
                              TextWrapping="Wrap"
@@ -135,7 +141,7 @@
                              IsReadOnly="True"
                              MaxHeight="45"
                              VerticalScrollBarVisibility="Auto" />
-                </StackPanel>
+                </Grid>
             </Expander.Header>
             <!--tasks listbox-->
             <ListBox MaxHeight="220"

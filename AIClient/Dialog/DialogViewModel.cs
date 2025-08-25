@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.MCP;
@@ -238,12 +239,13 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
     }));
 
 
-    public DialogViewModel(string topic, ILLMChatClient modelClient,
-        IList<IDialogItem>? items = null) : base(items)
+    public DialogViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
+        GlobalOptions options, IRagSourceCollection ragSourceCollection,
+        IList<IDialogItem>? items = null) : base(mapper, items)
     {
         // ActivatorUtilities.CreateInstance<>()
         _topic = topic;
-        Requester = new RequesterViewModel(modelClient, NewRequest, ServiceLocator.GetService<GlobalOptions>()!)
+        Requester = new RequesterViewModel(modelClient, NewRequest, options, ragSourceCollection, mapper)
         {
             Source = this
         };

@@ -1,12 +1,9 @@
 ﻿using System.Collections.ObjectModel;
-using System.Text.Json.Serialization;
 using System.Windows.Input;
 using System.Windows.Media;
 using LLMClient.Abstraction;
-using LLMClient.Data;
-using LLMClient.Endpoints.Converters;
 using LLMClient.UI;
-using LLMClient.UI.Component;
+using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
@@ -15,132 +12,19 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
 {
     public const string KeyName = "OpenAIAPICompatible";
 
-    public ObservableCollection<APIModelInfo> Models
-    {
-        get => _models;
-        set
-        {
-            if (Equals(value, _models)) return;
-            _models = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(AddNewCommand));
-            OnPropertyChanged(nameof(RemoveCommand));
-        }
-    }
+    public APIEndPointOption Option { get; }
 
-    public string DisplayName
-    {
-        get => _displayName;
-        set
-        {
-            if (value == _displayName) return;
-            ClearError();
-            if (value.Length > 26)
-            {
-                AddError("The display name must be less than 26 characters.");
-                return;
-            }
+    public string DisplayName => Option.DisplayName;
+    public virtual bool IsInbuilt => false;
 
-            _displayName = value;
-            OnPropertyChanged();
-        }
-    }
+    public bool IsEnabled => true;
 
-    public virtual bool IsDefault { get; } = false;
+    public string Name => Option.Name;
 
-    public bool IsEnabled { get; } = true;
+    public ImageSource Icon => Option.Icon;
 
-    public string Name { get; set; } = Guid.NewGuid().ToString();
-
-    [JsonIgnore]
-    public virtual ImageSource Icon
-    {
-        get { return _icon ?? ImageExtensions.EndpointIcon; }
-        private set
-        {
-            if (Equals(value, _icon)) return;
-            _icon = value;
-            OnPropertyChangedAsync();
-        }
-    }
-
-    public string? IconUrl
-    {
-        get => _iconUrl;
-        set
-        {
-            if (value == _iconUrl) return;
-            ClearError();
-            _iconUrl = value;
-            OnPropertyChanged();
-            UpdateIcon();
-        }
-    }
-
-    public ModelSource ModelsSource
-    {
-        get => _modelsSource;
-        set
-        {
-            if (value == _modelsSource) return;
-            _modelsSource = value;
-            OnPropertyChanged();
-            ModelMapping = ModelMapping.Create(value);
-        }
-    }
-
-    [JsonIgnore] public ModelMapping? ModelMapping { get; set; }
-
-    public ICommand RefreshModelSource => new ActionCommand((async o =>
-    {
-        if (ModelMapping == null)
-        {
-            return;
-        }
-
-        if (await ModelMapping.Refresh())
-        {
-            foreach (var apiModelInfo in this.Models)
-            {
-                apiModelInfo.IsNotAvailable = !ModelMapping.MapInfo(apiModelInfo);
-            }
-        }
-
-        MessageEventBus.Publish("已刷新模型列表");
-    }));
-
-    public string? ApiLogUrl
-    {
-        get => _apiLogUrl;
-        set
-        {
-            if (value == _apiLogUrl) return;
-            _apiLogUrl = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public APIDefaultOption ConfigOption
-    {
-        get => _configOption;
-        set
-        {
-            if (Equals(value, _configOption)) return;
-            _configOption = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private string _displayName = string.Empty;
-    private APIDefaultOption _configOption = new APIDefaultOption();
-    private ObservableCollection<APIModelInfo> _models = new ObservableCollection<APIModelInfo>();
-    private string? _iconUrl;
-    private ImageSource? _icon = null;
     private int _selectedModelIndex = -1;
-    private string? _apiLogUrl;
-    private ModelSource _modelsSource = ModelSource.None;
-
-    [JsonIgnore]
+    
     public int SelectedModelIndex
     {
         get => _selectedModelIndex;
@@ -149,24 +33,18 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
             if (value == _selectedModelIndex) return;
             _selectedModelIndex = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(AddNewCommand));
         }
     }
-    
-    [JsonIgnore]
-    public IReadOnlyCollection<ILLMChatModel> AvailableModels
-    {
-        get { return this._models; }
-    }
+
+    private ObservableCollection<APIModelInfo> Models => Option.Models;
 
     private const string NewModelName = "测试名称";
 
-    [JsonIgnore]
     public ICommand AddNewCommand => new ActionCommand((o =>
     {
         int v = 0;
         var newModelName = NewModelName + v;
-        while (_models.Any((info => info.Name == newModelName)))
+        while (Models.Any(info => info.Name == newModelName))
         {
             v++;
             newModelName = NewModelName + v;
@@ -186,91 +64,11 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         OnPropertyChanged(nameof(AvailableModels));
     }));
 
-    [JsonIgnore]
-    public ICommand RemoveCommand => new ActionCommand((o =>
+    public ICommand RemoveCommand => new ActionCommand(o =>
     {
         Models.Remove((APIModelInfo)o);
         OnPropertyChanged(nameof(AvailableModels));
-    }));
-
-    public ILLMChatClient? NewChatClient(string modelName)
-    {
-        var apiModelInfo = Models.FirstOrDefault(x => x.Name == modelName);
-        if (apiModelInfo == null)
-            return null;
-        return new APIClient(this, apiModelInfo, ConfigOption);
-    }
-
-    public ILLMChatClient? NewChatClient(ILLMChatModel model)
-    {
-        if (model is APIModelInfo apiModelInfo)
-        {
-            return new APIClient(this, apiModelInfo, ConfigOption);
-        }
-
-        return null;
-    }
-
-    public ILLMChatModel? GetModel(string modelName)
-    {
-        return Models.FirstOrDefault(x => x.Name == modelName);
-    }
-
-    public Task InitializeAsync()
-    {
-        foreach (var model in _models)
-        {
-            model.Endpoint = this;
-        }
-
-        UpdateIcon();
-        return Task.CompletedTask;
-        /*var path = Path.GetFullPath(Path.Combine("EndPoints", "Compatible", "Models", "models.json"));
-
-        new FileInfo(path);*/
-    }
-
-    /// <summary>
-    /// 验证
-    /// </summary>
-    public bool Validate(out string errorMessage)
-    {
-        if (string.IsNullOrEmpty(DisplayName))
-        {
-            errorMessage = "Display name cannot be empty.";
-            return false;
-        }
-
-        if (string.IsNullOrEmpty(IconUrl))
-        {
-            errorMessage = "Icon URL cannot be empty.";
-            return false;
-        }
-
-        var distinctBy = _models.DistinctBy((info => info.Name));
-        var apiModelInfos = _models.Except(distinctBy);
-        if (apiModelInfos.Any())
-        {
-            errorMessage = "Model name must be unique.";
-            return false;
-        }
-
-        errorMessage = string.Empty;
-        return true;
-    }
-
-    private async void UpdateIcon()
-    {
-        if (!string.IsNullOrEmpty(IconUrl))
-        {
-            this._icon = await new Uri(this.IconUrl).GetIcon();
-            OnPropertyChangedAsync(nameof(Icon));
-        }
-        else
-        {
-            this._icon = null;
-        }
-    }
+    });
 
     public void MoveUp(APIModelInfo modelInfo)
     {
@@ -280,5 +78,56 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
             Models.Move(index, index - 1);
             SelectedModelIndex = index - 1;
         }
+    }
+
+    private readonly ILoggerFactory _loggerFactory;
+
+    public APIEndPoint(APIEndPointOption option, ILoggerFactory loggerFactory)
+    {
+        Option = option;
+        this._loggerFactory = loggerFactory;
+    }
+
+
+    public IReadOnlyCollection<ILLMChatModel> AvailableModels
+    {
+        get { return this.Option.Models; }
+    }
+
+    public ILLMChatClient? NewChatClient(string modelName)
+    {
+        var apiModelInfo = Option.Models.FirstOrDefault(x => x.Name == modelName);
+        if (apiModelInfo == null)
+            return null;
+        return new APIClient(this, apiModelInfo, Option.ConfigOption, _loggerFactory);
+    }
+
+    public ILLMChatClient? NewChatClient(ILLMChatModel model)
+    {
+        if (model is APIModelInfo apiModelInfo)
+        {
+            return new APIClient(this, apiModelInfo, Option.ConfigOption, _loggerFactory);
+        }
+
+        return null;
+    }
+
+    public ILLMChatModel? GetModel(string modelName)
+    {
+        return Option.Models.FirstOrDefault(x => x.Name == modelName);
+    }
+
+    public Task InitializeAsync()
+    {
+        foreach (var model in Option.Models)
+        {
+            model.Endpoint = this;
+        }
+
+        Option.UpdateIcon();
+        return Task.CompletedTask;
+        /*var path = Path.GetFullPath(Path.Combine("EndPoints", "Compatible", "Models", "models.json"));
+
+        new FileInfo(path);*/
     }
 }

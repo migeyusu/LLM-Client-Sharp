@@ -84,7 +84,7 @@
                                     Margin="6,0,0,0"
                                     VerticalAlignment="Center"
                                     ToolTip="删除当前"
-                                    Visibility="{Binding  IsDefault,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
+                                    Visibility="{Binding  IsInbuilt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
                                     Template="{StaticResource ItemDeleteButtonTemplate}" />
                         </StackPanel>
                     </DataTemplate>

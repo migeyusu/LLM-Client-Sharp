@@ -20,7 +20,7 @@ public interface IThinkingConfig
     {
         if (model.Endpoint is APIEndPoint apiEndPoint)
         {
-            switch (apiEndPoint.ModelsSource)
+            switch (apiEndPoint.Option.ModelsSource)
             {
                 case ModelSource.OpenRouter:
                     return new OpenRouterReasoningConfig();

@@ -43,7 +43,7 @@ public class Rag
     }
 
     [Fact]
-    public async Task PDFExtractor()
+    public void PDFExtractor()
     {
         var pdfExtractor = new PDFExtractor(pdfPath);
         pdfExtractor.Initialize();

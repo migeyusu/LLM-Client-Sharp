@@ -1,9 +1,6 @@
 using System.IO;
 using System.Text.Json.Serialization;
 using LLMClient.Rag.Document;
-using LLMClient.UI;
-using LLMClient.UI.Render;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 
@@ -37,11 +34,10 @@ public class MarkdownFile : RagFileBase
         var markdownParser = new MarkdownParser();
         var markdownNodes = await markdownParser.Parse(FilePath);
         var docChunks = await markdownNodes.ToDocChunks<MarkdownNode,MarkdownContent>(this.DocumentId);
-        var ragOption = ServiceLocator.GetService<GlobalOptions>()!.RagOption;
         SemanticKernelStore? store = null;
         this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",
             docChunks.Count);
-        store = await GetStoreAsync(ragOption);
+        store = GetStore();
         try
         {
             this.ConstructionLogs.LogInformation("Saving to vector store.");

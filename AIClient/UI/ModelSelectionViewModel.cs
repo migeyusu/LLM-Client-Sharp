@@ -5,8 +5,6 @@ namespace LLMClient.UI;
 
 public abstract class ModelSelectionViewModel : BaseViewModel, IModelSelection
 {
-    public IEndpointService EndpointService { get; set; }
-
     public ILLMChatModel? SelectedModel
     {
         get => _selectedModel;
@@ -21,11 +19,6 @@ public abstract class ModelSelectionViewModel : BaseViewModel, IModelSelection
     public abstract ICommand? SubmitCommand { get; }
 
     private ILLMChatModel? _selectedModel;
-
-    protected ModelSelectionViewModel(IEndpointService endpointService)
-    {
-        EndpointService = endpointService;
-    }
 
     public ILLMChatClient? GetClient()
     {

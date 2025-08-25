@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Text;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
 using LLMClient.MCP;
@@ -41,9 +42,9 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
-    public ProjectTaskViewModel(ProjectViewModel parentProject,
+    public ProjectTaskViewModel(ProjectViewModel parentProject, IMapper mapper,
         IList<CheckableFunctionGroupTree>? functionGroupTrees = null,
-        IList<IDialogItem>? items = null) : base(items)
+        IList<IDialogItem>? items = null) : base(mapper, items)
     {
         ParentProject = parentProject;
         SelectedFunctionGroups = functionGroupTrees;

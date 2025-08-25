@@ -575,7 +575,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         }
     });
 
-    private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
+    private readonly IMapper _mapper;
 
     public async Task<CompletedResult> SendRequestCore(ILLMChatClient client,
         IList<IDialogItem> history,
@@ -596,7 +596,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
             completedResult = await client.SendRequest(new DialogContext(history, systemPrompt),
                 cancellationToken: respondingViewItem.RequestTokenSource.Token);
             var responseViewItem = new ResponseViewItem(client);
-            Mapper.Map<IResponse, ResponseViewItem>(completedResult, responseViewItem);
+            _mapper.Map<IResponse, ResponseViewItem>(completedResult, responseViewItem);
             multiResponseViewItem.Append(responseViewItem);
         }
         catch (Exception exception)
@@ -652,8 +652,9 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
 
     #endregion
 
-    public DialogSessionViewModel(IList<IDialogItem>? dialogItems = null)
+    public DialogSessionViewModel(IMapper mapper, IList<IDialogItem>? dialogItems = null)
     {
+        _mapper = mapper;
         DialogItems = dialogItems == null
             ? []
             : new ObservableCollection<IDialogItem>(dialogItems);

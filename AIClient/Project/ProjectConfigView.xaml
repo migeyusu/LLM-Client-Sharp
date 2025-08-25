@@ -128,7 +128,7 @@
                      MaxHeight="300"
                      x:Name="AvailableEndpointsListBox"
                      SelectedItem="{Binding SelectedModel.Endpoint,Mode=TwoWay}"
-                     ItemsSource="{Binding EndpointService.AvailableEndpoints,Mode=OneWay}">
+                     ItemsSource="{Binding Source={StaticResource EndpointService},Path=AvailableEndpoints,Mode=OneWay}">
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type abstraction:ILLMEndpoint}">
                         <StackPanel Orientation="Horizontal">

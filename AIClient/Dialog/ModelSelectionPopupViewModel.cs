@@ -14,15 +14,10 @@ public class ModelSelectionPopupViewModel : ModelSelectionViewModel
 
     public Action<ModelSelectionViewModel>? SuccessAction { get; }
 
-    public ModelSelectionPopupViewModel(IEndpointService service, Action<ModelSelectionViewModel>? successAction = null)
-        : base(service)
+    public ModelSelectionPopupViewModel(Action<ModelSelectionViewModel>? successAction = null)
+        : base()
     {
         SuccessAction = successAction;
-    }
-
-    public ModelSelectionPopupViewModel(Action<ModelSelectionViewModel>? successAction = null)
-        : this(ServiceLocator.GetRequiredService<IEndpointService>(), successAction)
-    {
     }
 
     public override ICommand SubmitCommand => new ActionCommand((o =>

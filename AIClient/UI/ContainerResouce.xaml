@@ -5,4 +5,5 @@
                     xmlns:abstraction="clr-namespace:LLMClient.Abstraction">
     <component:Service x:Key="PromptsResource" ServiceType="{x:Type data:IPromptsResource}" />
     <component:Service x:Key="RagSourceCollection" ServiceType="{x:Type abstraction:IRagSourceCollection}" />
+    <component:Service x:Key="EndpointService" ServiceType="{x:Type abstraction:IEndpointService}" />
 </ResourceDictionary>

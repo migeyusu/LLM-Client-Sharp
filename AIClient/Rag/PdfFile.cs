@@ -57,10 +57,9 @@ public class PdfFile : RagFileBase
     /// <exception cref="InvalidOperationException"></exception>
     protected override async Task ConstructCore(CancellationToken cancellationToken = default)
     {
-        var ragOption = ServiceLocator.GetService<GlobalOptions>()!.RagOption;
         using (var pdfExtractor = new PDFExtractor(FilePath))
         {
-            var pdfExtractorWindow = new PDFExtractorWindow(pdfExtractor, ragOption);
+            var pdfExtractorWindow = new PDFExtractorWindow(pdfExtractor, RagOption);
             if (pdfExtractorWindow.ShowDialog() != true)
             {
                 throw new InvalidOperationException("PDF extraction was cancelled by the user.");
@@ -71,7 +70,7 @@ public class PdfFile : RagFileBase
                 .ToDocChunks<PDFNode, PDFPage>(this.DocumentId, logger: this.ConstructionLogs);
             this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",
                 docChunks.Count);
-            var store = await GetStoreAsync(ragOption);
+            var store = GetStore();
             try
             {
                 this.ConstructionLogs.LogInformation("Saving to vector store.");

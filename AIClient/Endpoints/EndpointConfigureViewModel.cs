@@ -12,6 +12,7 @@ using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints;
@@ -21,6 +22,8 @@ namespace LLMClient.Endpoints;
 /// </summary>
 public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 {
+    private ILoggerFactory _loggerFactory;
+
     public ILLMEndpoint? SelectedEndpoint
     {
         get => _selectedEndpoint;
@@ -32,7 +35,10 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
     }
 
-    public ICommand AddNewEndpointCommand => new ActionCommand((o => { Endpoints.Add(new APIEndPoint()); }));
+    public ICommand AddNewEndpointCommand => new ActionCommand((o =>
+    {
+        Endpoints.Add(new APIEndPoint(new APIEndPointOption(), _loggerFactory));
+    }));
 
     public ICommand RemoveEndPointCommand => new RelayCommand<ILLMEndpoint?>((o =>
     {
@@ -53,7 +59,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
     {
         try
         {
-            var distinctEndpoints = Endpoints.DistinctBy((endpoint => endpoint.Name));
+            var distinctEndpoints = Endpoints.DistinctBy(endpoint => endpoint.Name);
             var difference = distinctEndpoints.Except(Endpoints).ToList();
             if (difference.Count != 0)
             {
@@ -67,7 +73,8 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             // 1. 拿到所有的 APIEndPoint
             var apiEndpoints = Endpoints
                 .OfType<APIEndPoint>()
-                .ToList();
+                .Select(endPoint => endPoint.Option)
+                .ToArray();
             foreach (var ep in apiEndpoints)
             {
                 if (!ep.Validate(out var msg))
@@ -127,9 +134,10 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     private ILLMEndpoint? _selectedEndpoint;
 
-    public EndpointConfigureViewModel()
+    public EndpointConfigureViewModel(ILoggerFactory loggerFactory)
     {
-        PopupSelectViewModel = new ModelSelectionPopupViewModel(this, OnModelSelected)
+        this._loggerFactory = loggerFactory;
+        PopupSelectViewModel = new ModelSelectionPopupViewModel(OnModelSelected)
             { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
         Endpoints.CollectionChanged += EndpointsOnCollectionChanged;
     }
@@ -169,10 +177,10 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             {
                 if (jsonNode is JsonObject jsonObject)
                 {
-                    var endPoint = jsonObject.Deserialize<APIEndPoint>();
+                    var endPoint = jsonObject.Deserialize<APIEndPointOption>();
                     if (endPoint != null)
                     {
-                        Endpoints.Add(endPoint);
+                        Endpoints.Add(new APIEndPoint(endPoint, _loggerFactory));
                     }
                 }
             }

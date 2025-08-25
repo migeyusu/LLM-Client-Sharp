@@ -36,20 +36,20 @@ public class DialogFileViewModel : FileBasedSessionBase
 
     protected override async Task SaveToStream(Stream stream)
     {
-        var dialogSession = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
+        var dialogSession = _mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
         await JsonSerializer.SerializeAsync(stream, dialogSession, SerializerOption);
     }
 
     public override object Clone()
     {
-        var dialogSessionClone = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
+        var dialogSessionClone = _mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
         var cloneSession =
-            Mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => { }));
+            _mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => { }));
         cloneSession.IsDataChanged = true;
         return cloneSession;
     }
 
-    public static async IAsyncEnumerable<DialogFileViewModel> LoadFromLocal()
+    public static async IAsyncEnumerable<DialogFileViewModel> LoadFromLocal(IMapper mapper)
     {
         string fullPath = SaveFolderPathLazy.Value;
         var directoryInfo = new DirectoryInfo(fullPath);
@@ -60,7 +60,7 @@ public class DialogFileViewModel : FileBasedSessionBase
 
         foreach (var fileInfo in directoryInfo.GetFiles("*.json"))
         {
-            var dialogSession = await LoadFromFile(fileInfo);
+            var dialogSession = await LoadFromFile(fileInfo, mapper);
             if (dialogSession == null)
             {
                 continue;
@@ -70,7 +70,7 @@ public class DialogFileViewModel : FileBasedSessionBase
         }
     }
 
-    public static async Task<DialogFileViewModel?> LoadFromFile(FileInfo fileInfo,
+    public static async Task<DialogFileViewModel?> LoadFromFile(FileInfo fileInfo, IMapper mapper,
         int version = DialogFilePersistModel.DialogPersistVersion)
     {
         if (!fileInfo.Exists)
@@ -97,7 +97,7 @@ public class DialogFileViewModel : FileBasedSessionBase
                 }
 
                 var viewModel =
-                    Mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSession, (options => { }));
+                    mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSession, (options => { }));
                 viewModel.FileFullPath = fileInfo.FullName;
                 viewModel.IsDataChanged = false;
                 return viewModel;
@@ -113,15 +113,16 @@ public class DialogFileViewModel : FileBasedSessionBase
     public DialogFileViewModel Fork(IDialogItem viewModel)
     {
         var of = this.Dialog.DialogItems.IndexOf(viewModel);
-        var dialogSessionClone = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
+        var dialogSessionClone = _mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
         dialogSessionClone.DialogItems = dialogSessionClone.DialogItems?.Take(of + 1).ToArray();
         var cloneSession =
-            Mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => { }));
+            _mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => { }));
         cloneSession.IsDataChanged = true;
         return cloneSession;
     }
 
-    public static async IAsyncEnumerable<DialogFileViewModel> ImportFiles(IEnumerable<FileInfo> fileInfos)
+    public static async IAsyncEnumerable<DialogFileViewModel> ImportFiles(IEnumerable<FileInfo> fileInfos,
+        IMapper mapper)
     {
         var targetFolderPath = SaveFolderPathLazy.Value;
         var targetDirectoryInfo = new DirectoryInfo(targetFolderPath);
@@ -147,7 +148,7 @@ public class DialogFileViewModel : FileBasedSessionBase
                     {
                         File.Copy(fileInfo.FullName, newFilePath, true);
                         var info = new FileInfo(newFilePath);
-                        dialogSession = await LoadFromFile(info);
+                        dialogSession = await LoadFromFile(info, mapper);
                     }
                 }
                 catch (Exception e)
@@ -162,17 +163,18 @@ public class DialogFileViewModel : FileBasedSessionBase
         }
     }
 
-    private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
+    private IMapper _mapper;
 
-    public DialogFileViewModel(string topic, ILLMChatClient modelClient,
-        IList<IDialogItem>? items = null) :
-        this(new DialogViewModel(topic, modelClient, items))
+    public DialogFileViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
+        GlobalOptions options, IRagSourceCollection ragSourceCollection, IList<IDialogItem>? items = null) :
+        this(new DialogViewModel(topic, modelClient, mapper, options, ragSourceCollection, items), mapper)
     {
     }
 
-    public DialogFileViewModel(DialogViewModel dialogModel)
+    public DialogFileViewModel(DialogViewModel dialogModel, IMapper mapper)
     {
         this.Dialog = dialogModel;
+        _mapper = mapper;
         this.Dialog.DialogItems.CollectionChanged += DialogItemsOnCollectionChanged;
     }
 

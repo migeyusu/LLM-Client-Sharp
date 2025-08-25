@@ -256,9 +256,12 @@ public class UnitTest1
     public void Mapping()
     {
         var mapper = serviceProvider.GetService<IMapper>();
-        var dialogSession = new DialogFileViewModel(new DialogViewModel("sadg", new NullLlmModelClient()));
+        var dialogSession =
+            new DialogFileViewModel(
+                new DialogViewModel("sadg", new NullLlmModelClient(), mapper, new GlobalOptions(),
+                    new RagSourceCollection()), mapper);
         var dialogSessionPersistModel =
-            mapper?.Map<DialogFileViewModel, DialogFilePersistModel>(dialogSession, new DialogFilePersistModel());
+            mapper?.Map(dialogSession, new DialogFilePersistModel());
         Assert.NotNull(dialogSessionPersistModel);
     }
 
@@ -267,12 +270,13 @@ public class UnitTest1
     {
         var mapper = serviceProvider.GetService<IMapper>();
         var client = new FakeLLMClient();
-        var dialogViewModel = new DialogViewModel("test", client);
+        var dialogViewModel =
+            new DialogViewModel("test", client, mapper, new GlobalOptions(), new RagSourceCollection());
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
         multiResponseViewItem.Append(new ResponseViewItem(client));
         multiResponseViewItem.Append(new ResponseViewItem(client));
         dialogViewModel.DialogItems.Add(multiResponseViewItem);
-        var dialogFileViewModel = new DialogFileViewModel(dialogViewModel);
+        var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper);
         var dialogFilePersistModel =
             mapper?.Map<DialogFileViewModel, DialogFilePersistModel>(dialogFileViewModel, (options => { }));
         Assert.NotNull(dialogFilePersistModel);
@@ -288,12 +292,13 @@ public class UnitTest1
     {
         var mapper = serviceProvider.GetService<IMapper>()!;
         var client = new FakeLLMClient();
-        var dialogViewModel = new DialogViewModel("test", client);
+        var dialogViewModel =
+            new DialogViewModel("test", client, mapper, new GlobalOptions(), new RagSourceCollection());
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
         multiResponseViewItem.Append(new ResponseViewItem(client));
         multiResponseViewItem.Append(new ResponseViewItem(client));
         dialogViewModel.DialogItems.Add(multiResponseViewItem);
-        var dialogFileViewModel = new DialogFileViewModel(dialogViewModel);
+        var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper);
         var dialogFilePersistModel =
             mapper.Map<DialogFileViewModel, DialogFilePersistModel>(dialogFileViewModel, (options => { }));
         var serializerOptions = new JsonSerializerOptions()

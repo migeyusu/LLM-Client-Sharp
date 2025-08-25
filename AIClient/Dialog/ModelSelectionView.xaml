@@ -6,6 +6,7 @@
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
+             xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:ModelSelectionPopupViewModel}"
              d:DesignHeight="400" d:DesignWidth="600">
@@ -28,7 +29,7 @@
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Width="300"
-                      ItemsSource="{Binding  EndpointService.AvailableEndpoints,Mode=OneWay}"
+                      ItemsSource="{Binding Source={StaticResource EndpointService},Path=AvailableEndpoints,Mode=OneWay}"
                       ItemTemplateSelector="{StaticResource ModelsDataTemplateSelector}" />
             <Separator Grid.Column="0"
                        VerticalAlignment="Stretch"

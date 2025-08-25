@@ -17,7 +17,6 @@ using LLMClient.MCP.Servers;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Project;
@@ -26,7 +25,7 @@ public class ProjectViewModel : FileBasedSessionBase
 {
     public const string SaveDir = "Projects";
 
-    private static IMapper Mapper => ServiceLocator.GetService<IMapper>()!;
+    private IMapper _mapper;
 
     private bool _isDataChanged = true;
 
@@ -63,7 +62,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     #region file
 
-    public static async Task<ProjectViewModel?> LoadFromFile(FileInfo fileInfo,
+    public static async Task<ProjectViewModel?> LoadFromFile(FileInfo fileInfo, IMapper mapper,
         int version = ProjectPersistModel.CurrentVersion)
     {
         if (!fileInfo.Exists)
@@ -89,7 +88,7 @@ public class ProjectViewModel : FileBasedSessionBase
                     return null;
                 }
 
-                var viewModel = Mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, (options => { }));
+                var viewModel = mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, (options => { }));
                 viewModel.FileFullPath = fileInfo.FullName;
                 viewModel.IsDataChanged = false;
                 return viewModel;
@@ -102,7 +101,7 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     }
 
-    public static async IAsyncEnumerable<ProjectViewModel> LoadFromLocal()
+    public static async IAsyncEnumerable<ProjectViewModel> LoadFromLocal(IMapper mapper)
     {
         string fullPath = SaveFolderPathLazy.Value;
         var directoryInfo = new DirectoryInfo(fullPath);
@@ -113,7 +112,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
         foreach (var fileInfo in directoryInfo.GetFiles("*.json"))
         {
-            var dialogViewModel = await LoadFromFile(fileInfo);
+            var dialogViewModel = await LoadFromFile(fileInfo, mapper);
             if (dialogViewModel == null)
             {
                 continue;
@@ -123,7 +122,7 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     }
 
-    public static async IAsyncEnumerable<ProjectViewModel> ImportFiles(IEnumerable<FileInfo> fileInfos)
+    public static async IAsyncEnumerable<ProjectViewModel> ImportFiles(IEnumerable<FileInfo> fileInfos, IMapper mapper)
     {
         var targetFolderPath = SaveFolderPathLazy.Value;
         var targetDirectoryInfo = new DirectoryInfo(targetFolderPath);
@@ -149,7 +148,7 @@ public class ProjectViewModel : FileBasedSessionBase
                     {
                         File.Copy(fileInfo.FullName, newFilePath, true);
                         var info = new FileInfo(newFilePath);
-                        projectViewModel = await LoadFromFile(info);
+                        projectViewModel = await LoadFromFile(info,mapper);
                     }
                 }
                 catch (Exception e)
@@ -171,14 +170,14 @@ public class ProjectViewModel : FileBasedSessionBase
 
     protected override async Task SaveToStream(Stream stream)
     {
-        var dialogModel = Mapper.Map<ProjectViewModel, ProjectPersistModel>(this, (options => { }));
+        var dialogModel = _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, (options => { }));
         await JsonSerializer.SerializeAsync(stream, dialogModel, SerializerOption);
     }
 
     public override object Clone()
     {
-        var projectPersistModel = Mapper.Map<ProjectViewModel, ProjectPersistModel>(this, (options => { }));
-        var cloneProject = Mapper.Map<ProjectPersistModel, ProjectViewModel>(projectPersistModel, (options => { }));
+        var projectPersistModel = _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, (options => { }));
+        var cloneProject = _mapper.Map<ProjectPersistModel, ProjectViewModel>(projectPersistModel, (options => { }));
         cloneProject.IsDataChanged = true;
         return cloneProject;
     }
@@ -391,16 +390,11 @@ public class ProjectViewModel : FileBasedSessionBase
 
     private IAIFunctionGroup[] _allowedFunctions = [new FileSystemPlugin(), new WinCLIPlugin()];
 
-    public IPromptsResource PromptsResource
-    {
-        get { return ServiceLocator.GetService<IPromptsResource>()!; }
-    }
-
     #endregion
 
     #region tasks
 
-    public ICommand NewTaskCommand => new ActionCommand(o => { AddTask(new ProjectTaskViewModel(this)); });
+    public ICommand NewTaskCommand => new ActionCommand(o => { AddTask(new ProjectTaskViewModel(this, _mapper)); });
 
     public void AddTask(ProjectTaskViewModel task)
     {
@@ -445,11 +439,11 @@ public class ProjectViewModel : FileBasedSessionBase
         nameof(SelectedTask)
     ];
 
-    private IEndpointService EndpointService => ServiceLocator.GetService<IEndpointService>()!;
-
-    public ProjectViewModel(ILLMChatClient modelClient, IEnumerable<ProjectTaskViewModel>? tasks = null) : base()
+    public ProjectViewModel(ILLMChatClient modelClient, IMapper mapper, GlobalOptions options,
+        IRagSourceCollection ragSourceCollection, IEnumerable<ProjectTaskViewModel>? tasks = null) : base()
     {
-        Requester = new RequesterViewModel(modelClient, GetResponse, ServiceLocator.GetService<GlobalOptions>()!)
+        _mapper = mapper;
+        Requester = new RequesterViewModel(modelClient, GetResponse, options, ragSourceCollection, mapper)
         {
             FunctionTreeSelector =
             {
@@ -460,7 +454,7 @@ public class ProjectViewModel : FileBasedSessionBase
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedTask?.SelectedFunctionGroups));
         functionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
-        this.ConfigViewModel = new ProjectConfigViewModel(this.EndpointService, this);
+        this.ConfigViewModel = new ProjectConfigViewModel(this);
         this.Tasks = [];
         if (tasks != null)
         {

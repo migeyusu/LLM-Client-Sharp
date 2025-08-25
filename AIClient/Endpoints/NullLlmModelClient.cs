@@ -2,6 +2,7 @@
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.MCP;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LLMClient.Endpoints;
 
@@ -13,7 +14,10 @@ public class NullLlmModelClient : ILLMChatClient
 
     public ILLMEndpoint Endpoint
     {
-        get { return new APIEndPoint(); }
+        get
+        {
+            return new APIEndPoint(new APIEndPointOption() { Name = "NullLlmModelClient" }, NullLoggerFactory.Instance);
+        }
     }
 
     public ILLMChatModel Model

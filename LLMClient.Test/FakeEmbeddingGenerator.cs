@@ -2,7 +2,7 @@
 
 namespace LLMClient.Test;
 
-sealed class FakeEmbeddingGenerator(int? replaceLast = null) : IEmbeddingGenerator<string, Embedding<float>>
+sealed class FakeEmbeddingGenerator() : IEmbeddingGenerator<string, Embedding<float>>
 {
     private readonly float[] _embeddings = Enumerable.Repeat(1f, 1536).ToArray();
 

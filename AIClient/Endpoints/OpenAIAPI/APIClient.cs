@@ -40,9 +40,11 @@ public class APIClient : LlmClientBase
 
     private readonly APIDefaultOption _option;
 
-    public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option)
+    public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option,
+        ILoggerFactory? loggerFactory)
     {
         _option = option;
+        this._loggerFactory = loggerFactory;
         option.PropertyChanged += OptionOnPropertyChanged;
         this.Endpoint = endPoint;
         ModelInfo = modelInfo;
@@ -65,6 +67,8 @@ public class APIClient : LlmClientBase
 
     private IChatClient? _chatClient;
 
+    private readonly ILoggerFactory? _loggerFactory;
+
     private void EnsureKernel()
     {
         var apiToken = _option.APIToken;
@@ -77,9 +81,11 @@ public class APIClient : LlmClientBase
         });
         var builder = Kernel.CreateBuilder();
 #if DEBUG
-        var loggerFactory = ServiceLocator.GetService<ILoggerFactory>() ??
-                            throw new ArgumentNullException("ServiceLocator.GetService<ILoggerFactory>()");
-        builder.Services.AddSingleton(loggerFactory);
+        if (_loggerFactory != null)
+        {
+            builder.Services.AddSingleton(_loggerFactory);
+        }
+
 #endif
 
         _kernel = builder.AddOpenAIChatCompletion(this.Model.Id, openAiClient)

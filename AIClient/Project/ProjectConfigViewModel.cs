@@ -41,8 +41,7 @@ public class ProjectConfigViewModel : ModelSelectionViewModel
         DialogHost.CloseDialogCommand.Execute(true, frameworkElement);
     });
 
-    public ProjectConfigViewModel(IEndpointService endpointService,
-        ProjectViewModel project) : base(endpointService)
+    public ProjectConfigViewModel(ProjectViewModel project) : base()
     {
         Project = project;
     }

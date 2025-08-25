@@ -6,7 +6,7 @@ public interface ILLMEndpoint
 {
     string DisplayName { get; }
 
-    bool IsDefault { get; }
+    bool IsInbuilt { get; }
 
     bool IsEnabled { get; }
 

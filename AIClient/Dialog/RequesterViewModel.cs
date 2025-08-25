@@ -51,8 +51,7 @@ public class RequesterViewModel : BaseViewModel
 
     public ICommand ChangeModelCommand => new ActionCommand(async o =>
     {
-        var service = ServiceLocator.GetService<IEndpointService>()!;
-        var selectionViewModel = new ModelSelectionPopupViewModel(service);
+        var selectionViewModel = new ModelSelectionPopupViewModel();
         if (await DialogHost.Show(selectionViewModel) is true)
         {
             var model = selectionViewModel.GetClient();
@@ -95,7 +94,7 @@ public class RequesterViewModel : BaseViewModel
 
     #region rag
 
-    public IRagSourceCollection RagSourceCollection => ServiceLocator.GetService<IRagSourceCollection>()!;
+    private readonly IRagSourceCollection _ragSourceCollection;
 
     //rag有两种利用模式：search和plugin模式，search模式由手动调用，可产生结果并入上下文；plugin由llm驱动调用
 
@@ -116,7 +115,7 @@ public class RequesterViewModel : BaseViewModel
     public void RefreshRagSources()
     {
         var selected = RagSources.Where(model => model.IsSelected).ToList();
-        var selectableViewModels = RagSourceCollection.Sources.ToSelectable().ToArray();
+        var selectableViewModels = _ragSourceCollection.Sources.ToSelectable().ToArray();
         foreach (var selectableViewModel in selectableViewModels)
         {
             var dataId = selectableViewModel.Data.Id;
@@ -215,16 +214,21 @@ public class RequesterViewModel : BaseViewModel
     #endregion
 
     private readonly Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> _getResponse;
+    private readonly GlobalOptions _options;
 
     public RequesterViewModel(ILLMChatClient modelClient,
-        Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> getResponse, GlobalOptions options)
+        Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> getResponse, GlobalOptions options,
+        IRagSourceCollection ragSourceCollection, IMapper mapper)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
-        SearchConfig = new SearchConfigViewModel(options);
+        SearchConfig = new SearchConfigViewModel();
         ThinkingConfig = new ThinkingConfigViewModel();
         QueryViewModel = new FileQueryViewModel(this);
         this._defaultClient = modelClient;
         this._getResponse = getResponse;
+        _options = options;
+        _ragSourceCollection = ragSourceCollection;
+        _mapper = mapper;
         this.BindClient(modelClient);
         this.PropertyChanged += (sender, args) => { this.IsDataChanged = true; };
     }
@@ -233,6 +237,8 @@ public class RequesterViewModel : BaseViewModel
     {
         Filters = { new CommandAuthorization() }
     };
+
+    private readonly IMapper _mapper;
 
     private void BindClient(ILLMChatClient client)
     {
@@ -263,14 +269,13 @@ public class RequesterViewModel : BaseViewModel
     {
         try
         {
-            var options = ServiceLocator.GetService<GlobalOptions>()!;
             var summaryRequest = new SummaryRequestViewItem()
             {
-                SummaryPrompt = options.TokenSummarizePrompt,
-                OutputLength = options.SummarizeWordsCount,
+                SummaryPrompt = _options.TokenSummarizePrompt,
+                OutputLength = _options.SummarizeWordsCount,
                 InteractionId = Guid.NewGuid(),
             };
-            var summarizeModel = options.SummarizeClient ?? this.DefaultClient;
+            var summarizeModel = _options.SummarizeClient ?? this.DefaultClient;
             await _getResponse.Invoke(summarizeModel, summaryRequest, index);
         }
         catch (Exception e)
@@ -302,8 +307,7 @@ public class RequesterViewModel : BaseViewModel
         var thinkingConfig = this.ThinkingConfig.Enable ? this.ThinkingConfig.Config : null;
         if (thinkingConfig != null)
         {
-            var mapper = ServiceLocator.GetService<IMapper>();
-            mapper!.Map<IThinkingConfig, IThinkingConfig>(this.ThinkingConfig,
+            _mapper.Map<IThinkingConfig, IThinkingConfig>(this.ThinkingConfig,
                 thinkingConfig);
         }
 

@@ -25,7 +25,7 @@ public abstract class AzureEndPointBase : BaseViewModel, ILLMEndpoint
         get { return Name; }
     }
 
-    public abstract bool IsDefault { get; }
+    public abstract bool IsInbuilt { get; }
     
     public bool IsEnabled { get; } = true;
 

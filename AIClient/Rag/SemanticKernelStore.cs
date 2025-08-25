@@ -49,7 +49,7 @@ public class SemanticKernelStore
         OpenAIClient? openAiClient;
         if (endpoint is APIEndPoint apiEndPoint)
         {
-            openAiClient = apiEndPoint.ConfigOption.OpenAIClient;
+            openAiClient = apiEndPoint.Option.ConfigOption.OpenAIClient;
         }
         else
         {
@@ -205,7 +205,7 @@ public class SemanticKernelStore
 
         return roots.OrderNode().ToArray();
     }
-    
+
     /// <summary>
     /// 获取子节点（不包括Paragraph）
     /// </summary>

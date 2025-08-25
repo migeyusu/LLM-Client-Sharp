@@ -127,7 +127,7 @@ public partial class MainWindow : ExtendedWindow
     {
         if (e.Parameter is DialogViewModel oldDialog)
         {
-            var selectionViewModel = new ModelSelectionPopupViewModel(_mainWindowViewModel.EndpointsViewModel);
+            var selectionViewModel = new ModelSelectionPopupViewModel();
             if (await DialogHost.Show(selectionViewModel) is true)
             {
                 var model = selectionViewModel.GetClient();

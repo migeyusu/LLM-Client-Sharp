@@ -97,7 +97,6 @@ public static class Extension
             expression.CreateMap<IModelParams, DefaultModelParam>();
             expression.CreateMap<IModelParams, ILLMChatModel>();
             expression.CreateMap<IModelParams, APIModelInfo>();
-            expression.CreateMap<APIEndPoint, APIEndPoint>();
             expression.CreateMap<APIDefaultOption, APIDefaultOption>();
             expression.CreateMap<ILLMChatClient, LLMClientPersistModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();

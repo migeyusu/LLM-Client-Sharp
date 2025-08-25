@@ -10,7 +10,10 @@ using LLMClient.Rag;
 using LLMClient.UI;
 using LLMClient.UI.Log;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Debug;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -50,6 +53,9 @@ public class Program
                 .AddSingleton<IRagSourceCollection, RagSourceCollection>()
 #if DEBUG
                 .AddLogging(builder => builder.AddDebug())
+#else
+                .AddLogging(builder =>
+                    builder.Services.AddSingleton<ILoggerFactory, NullLoggerFactory>())
 #endif
                 .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
                 .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()

@@ -28,7 +28,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
     private readonly IMcpServiceCollection _mcpServiceCollection;
 
-    IViewModelFactory _viewModelFactory;
+    public readonly IViewModelFactory _viewModelFactory;
 
     public AutoMapModelTypeConverter(IEndpointService service, IMcpServiceCollection mcpServiceCollection,
         IViewModelFactory factory)
@@ -58,10 +58,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             throw new NotSupportedException("Cannot set dialogViewModel to exist DialogSession");
         }
 
-        return new DialogFileViewModel(dialogViewModel)
-        {
-            EditTime = source.EditTime,
-        };
+        var viewModel = _viewModelFactory.CreateViewModel<DialogFileViewModel>(dialogViewModel);
+        viewModel.EditTime = source.EditTime;
+        return viewModel;
     }
 
     public MultiResponseViewItem Convert(MultiResponsePersistItem source, MultiResponseViewItem? destination,
@@ -162,7 +161,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
         else
         {
-            destination =  _viewModelFactory.CreateViewModel<DialogViewModel>(source.Topic, llmClient);
+            destination = _viewModelFactory.CreateViewModel<DialogViewModel>(source.Topic, llmClient);
         }
 
         context.Items.Add(ParentSessionViewModelKey, destination);
@@ -216,7 +215,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
         else
         {
-            destination = new ProjectViewModel(defaultClient);
+            destination = _viewModelFactory.CreateViewModel<ProjectViewModel>(defaultClient);
         }
 
         context.Items.Add(ParentProjectViewModelKey, destination);
@@ -282,7 +281,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             throw new InvalidOperationException("Parent ProjectViewModel is not set in context.");
         }
 
-        destination ??= new ProjectTaskViewModel(projectViewModel);
+        destination ??= _viewModelFactory.CreateViewModel<ProjectTaskViewModel>(projectViewModel);
         context.Items.Add(ParentSessionViewModelKey, destination);
         var mapper = context.Mapper;
         try

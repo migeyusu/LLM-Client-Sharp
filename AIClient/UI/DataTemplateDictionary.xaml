@@ -8,7 +8,8 @@
                     xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
                     xmlns:azure="clr-namespace:LLMClient.Endpoints.Azure"
                     xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
-                    xmlns:mcp="clr-namespace:LLMClient.MCP">
+                    xmlns:mcp="clr-namespace:LLMClient.MCP"
+                    xmlns:abstraction="clr-namespace:LLMClient.Abstraction">
     <ItemsPanelTemplate x:Key="HorizontalItemsPanelTemplate">
         <StackPanel Orientation="Horizontal"
                     IsItemsHost="True" />
@@ -150,7 +151,7 @@
                 <ListBox DisplayMemberPath="DisplayName"
                          Width="150"
                          x:Name="AvailableEndpointsListBox"
-                         ItemsSource="{Binding    EndpointService.AvailableEndpoints,Mode=OneWay}" />
+                         ItemsSource="{Binding Source={component:Service {x:Type abstraction:IEndpointService}},Path=AvailableEndpoints,Mode=OneWay}" />
                 <ListBox DockPanel.Dock="Right"
                          HorizontalAlignment="Stretch"
                          DisplayMemberPath="Name"

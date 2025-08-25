@@ -24,7 +24,7 @@ namespace LLMClient.Data;
 [JsonSerializable(typeof(GeekAISearchService))]
 [JsonSerializable(typeof(OpenRouterSearchService))]
 [JsonSerializable(typeof(GoogleSearchPlugin))]
-[JsonSerializable(typeof(GeekAISearchService.SearchConfig))]
+[JsonSerializable(typeof(GeekAISearchService.GeekAISearchConfig))]
 [JsonSerializable(typeof(OpenRouterSearchService.PluginConfig[]))]
 [JsonSerializable(typeof(GeekAIThinkingConfig))]
 [JsonSerializable(typeof(OpenRouterReasoningConfig))]

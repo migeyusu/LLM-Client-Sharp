@@ -24,7 +24,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
     /// </summary>
     private readonly Dictionary<string, AzureModelInfo> _loadedModelInfos = new Dictionary<string, AzureModelInfo>();
 
-    public override bool IsDefault { get; } = true;
+    public override bool IsInbuilt => true;
     public override string Name { get; } = GithubCopilotName;
 
     private static readonly Lazy<ImageSource> Source = new Lazy<ImageSource>((() =>

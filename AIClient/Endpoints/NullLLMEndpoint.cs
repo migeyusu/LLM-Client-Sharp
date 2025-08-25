@@ -7,11 +7,11 @@ namespace LLMClient.Endpoints
     public class NullLLMEndpoint : ILLMEndpoint
     {
         public static NullLLMEndpoint Instance { get; } = new NullLLMEndpoint();
-        public string DisplayName { get; } = "Null Endpoint";
-        public bool IsDefault { get; } = false;
+        public string DisplayName => "Null Endpoint";
+        public bool IsInbuilt => false;
 
-        public bool IsEnabled { get; } = false;
-        public string Name { get; } = "NullEndpoint";
+        public bool IsEnabled => false;
+        public string Name => "NullEndpoint";
         public ImageSource Icon => ImageExtensions.EndpointIcon;
         
         public IReadOnlyCollection<ILLMChatModel> AvailableModels => [];
