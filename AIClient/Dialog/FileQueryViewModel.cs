@@ -138,7 +138,7 @@ public class FileQueryViewModel : BaseViewModel
     void RecursiveAddAttachment(ChunkNode node, IList<Attachment> attachments, StringBuilder promptBuilder)
     {
         var chunk = node.Chunk;
-        if (chunk.Type == (int)ChunkType.Page)
+        if (chunk.Type == (int)ChunkType.ContentUnit)
         {
             var imagesInBase64 = chunk.AttachmentImagesInBase64.ToArray();
             foreach (var base64String in imagesInBase64)

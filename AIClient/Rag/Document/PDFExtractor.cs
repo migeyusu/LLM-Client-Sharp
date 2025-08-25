@@ -391,7 +391,7 @@ public class PDFExtractor : IDisposable
             if (i < endPage || endTopLeft == null)
             {
                 // 如果不是最后一页，或者没有指定终止点，则使用当前页面的所有文本块
-                preNode.Pages.Add(new PDFPage(remainingTextBlocks.ToArray(),
+                preNode.ContentUnits.Add(new PDFPage(remainingTextBlocks.ToArray(),
                     i, remainingPdfImages.ToArray()));
                 remainingTextBlocks.Clear();
                 remainingPdfImages.Clear();
@@ -440,7 +440,7 @@ public class PDFExtractor : IDisposable
                     remainingPdfImages.Clear();
                 }
 
-                preNode.Pages.Add(new PDFPage(blocks, i, images));
+                preNode.ContentUnits.Add(new PDFPage(blocks, i, images));
             }
         }
     }

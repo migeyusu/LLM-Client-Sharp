@@ -207,4 +207,9 @@ public partial class MainWindow : ExtendedWindow
             Process.Start("explorer.exe", $"/select,\"{fileBasedSession.FileFullPath}\"");
         }
     }
+
+    /*private void LeftPanelCollapse_OnClick(object sender, RoutedEventArgs e)
+    {
+        LeftPanelColumnDefinition.MinWidth
+    }*/
 }

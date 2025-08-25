@@ -270,9 +270,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             ConstructionLogs.LogError("构建过程中发生错误: {ErrorMessage}", e.Message);
             ErrorMessage = e.Message;
             Status = RagFileStatus.Error;
-        }
-        finally
-        {
+            MessageBox.Show(e.Message);
         }
     }
 
@@ -292,24 +290,83 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         }
     }
 
-    public abstract Task DeleteAsync(CancellationToken cancellationToken = default);
+    public virtual async Task DeleteAsync(CancellationToken cancellationToken = default)
+    {
+        var semanticKernelStore = await GetStoreAsync();
+        await semanticKernelStore.RemoveFileAsync(this.DocumentId, cancellationToken);
+        this.Status = RagFileStatus.NotConstructed;
+    }
 
     protected abstract Task ConstructCore(CancellationToken cancellationToken = default);
 
-    public abstract Task<ISearchResult> QueryAsync(string query, dynamic options,
-        CancellationToken cancellationToken = default);
+    public virtual async Task<ISearchResult> QueryAsync(string query, dynamic options,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsInitialized)
+        {
+            throw new InvalidOperationException(
+                "The PDF file has not been initialized. Please call InitializeAsync first.");
+        }
 
-    public abstract Task<ISearchResult> GetStructureAsync(CancellationToken cancellationToken = default);
+        if (Status != RagFileStatus.Constructed)
+        {
+            throw new InvalidOperationException(
+                "The PDF file has not been constructed. Please call ConstructAsync first.");
+        }
 
-    public abstract Task<ISearchResult> GetSectionAsync(string sectionName,
-        CancellationToken cancellationToken = default);
+        var semanticKernelStore = await GetStoreAsync();
+        IList<ChunkNode> matchResult = await semanticKernelStore.SearchAsync(query, this.DocumentId,
+            options.SearchAlgorithm ?? SearchAlgorithm.Default,
+            options.TopK ?? 5, cancellationToken);
+        return new StructResult(matchResult);
+    }
 
-    public abstract Task<ISearchResult> GetFullDocumentAsync(CancellationToken cancellationToken = default);
+    public virtual async Task<ISearchResult> GetStructureAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsInitialized)
+        {
+            throw new InvalidOperationException(
+                "The PDF file has not been initialized. Please call InitializeAsync first.");
+        }
+
+        if (Status != RagFileStatus.Constructed)
+        {
+            throw new InvalidOperationException(
+                "The PDF file has not been constructed. Please call ConstructAsync first.");
+        }
+
+        var semanticKernelStore = await GetStoreAsync();
+        var structureNodes = await semanticKernelStore.GetStructureAsync(this.DocumentId, cancellationToken);
+        return new StructResult(structureNodes) { DocumentId = this.DocumentId };
+    }
+
+    public virtual async Task<ISearchResult> GetSectionAsync(string sectionName,
+        CancellationToken cancellationToken = default)
+    {
+        var store = await GetStoreAsync();
+        var chunkNode = await store.GetSectionAsync(this.DocumentId, sectionName, cancellationToken);
+        return new StructResult(chunkNode == null ? Array.Empty<ChunkNode>() : new[] { chunkNode })
+            { DocumentId = this.DocumentId };
+    }
+
+    public virtual async Task<ISearchResult> GetFullDocumentAsync(CancellationToken cancellationToken = default)
+    {
+        var kernelStore = await GetStoreAsync();
+        var nodes = await kernelStore.GetDocTreeAsync(this.DocumentId, cancellationToken);
+        return new StructResult(nodes) { DocumentId = this.DocumentId };
+    }
 
     /// <summary>
     /// allow custom query options by semantic kernel
     /// </summary>
     protected abstract KernelFunctionFromMethodOptions QueryOptions { get; }
+
+    protected static async Task<SemanticKernelStore> GetStoreAsync(RagOption? ragOption = null)
+    {
+        ragOption ??= (await GlobalOptions.LoadOrCreate()).RagOption;
+        ragOption.ThrowIfNotValid();
+        return ragOption.GetStore();
+    }
 
     public ICommand ViewCommand => new ActionCommand(o =>
     {

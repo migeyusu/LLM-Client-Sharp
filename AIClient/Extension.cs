@@ -441,7 +441,7 @@ public static class Extension
         StringBuilder stringBuilder)
     {
         var chunk = node.Chunk;
-        if (chunk.Type == (int)ChunkType.Page)
+        if (chunk.Type == (int)ChunkType.ContentUnit)
         {
             if (chunk.AttachmentContents.Any())
             {

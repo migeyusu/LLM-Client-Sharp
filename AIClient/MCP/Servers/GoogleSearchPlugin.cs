@@ -58,14 +58,13 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
         var config = (await GlobalOptions.LoadOrCreate()).GoogleSearchOption;
         if (config.IsValid() && !config.Equals(_config))
         {
-            
 #pragma warning disable SKEXP0050
             var textSearch = new GoogleTextSearch(
                 initializer: new BaseClientService.Initializer
                     { ApiKey = config.ApiKey }, config.SearchEngineId);
 #pragma warning restore SKEXP0050
 #pragma warning disable SKEXP0001
-                this.AvailableTools = [textSearch.CreateGetTextSearchResults()];
+            this.AvailableTools = [textSearch.CreateGetTextSearchResults()];
 #pragma warning restore SKEXP0001
             _config = config;
         }
@@ -85,6 +84,11 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
         }
 
         requestViewItem.FunctionGroups ??= [];
+        if (requestViewItem.FunctionGroups.Any((tree => AIFunctionGroupComparer.Instance.Equals(tree.Data, this))))
+        {
+            return;
+        }
+
         var functionGroupTree = new CheckableFunctionGroupTree(this);
         await functionGroupTree.EnsureAsync(CancellationToken.None);
         functionGroupTree.IsSelected = true;

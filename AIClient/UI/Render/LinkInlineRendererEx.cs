@@ -13,7 +13,7 @@ namespace LLMClient.UI.Render;
 
 public class LinkInlineRendererEx : LinkInlineRenderer
 {
-    protected override async void Write(WpfRenderer renderer, LinkInline link)
+    protected override void Write(WpfRenderer renderer, LinkInline link)
     {
         if (renderer == null) throw new ArgumentNullException(nameof(renderer));
         if (link == null) throw new ArgumentNullException(nameof(link));
@@ -29,15 +29,16 @@ public class LinkInlineRendererEx : LinkInlineRenderer
         {
             var template = new ControlTemplate();
             var image = new FrameworkElementFactory(typeof(Image));
-            if (url.StartsWith("data:image"))
+            if (url.StartsWith(ImageExtensions.Base64ImagePrefix))
             {
-                if (Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))
+                try
                 {
-                    var imageSource = await uri.GetIcon();
-                    if (imageSource != null)
-                    {
-                        image.SetValue(Image.SourceProperty, imageSource);
-                    }
+                    var imageSource = ImageExtensions.GetImageSourceFromBase64(url);
+                    image.SetValue(Image.SourceProperty, imageSource);
+                }
+                catch (Exception e)
+                {
+                    Trace.TraceWarning("Invalid base64 image data: {0}", e.Message);
                 }
             }
             else if (Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))

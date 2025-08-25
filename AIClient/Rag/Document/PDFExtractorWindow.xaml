@@ -100,7 +100,7 @@
                                                     <StackPanel Orientation="Vertical"
                                                                 Margin="0,5,0,5">
                                                         <TextBlock Text="{Binding  Content,Mode=OneTime}" />
-                                                        <ItemsControl ItemsSource="{Binding Images,Mode=OneTime}"
+                                                        <ItemsControl ItemsSource="{Binding PdfImages,Mode=OneTime}"
                                                                       ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate DataType="{x:Type content:IPdfImage}">
@@ -207,7 +207,7 @@
                                                     <StackPanel Orientation="Vertical"
                                                                 Margin="0,5,0,5">
                                                         <TextBlock Text="{Binding  Content,Mode=OneTime}" />
-                                                        <ItemsControl ItemsSource="{Binding Images,Mode=OneTime}"
+                                                        <ItemsControl ItemsSource="{Binding PdfImages,Mode=OneTime}"
                                                                       ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate DataType="{x:Type content:IPdfImage}">

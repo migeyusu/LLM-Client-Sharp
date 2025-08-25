@@ -38,7 +38,7 @@ public class ChunkNode
 
     public string GetStructure(int level = 0)
     {
-        if (this.Chunk.Type == (int)ChunkType.Page)
+        if (this.Chunk.Type == (int)ChunkType.ContentUnit)
         {
             return string.Empty;
         }
@@ -59,7 +59,7 @@ public class ChunkNode
     {
         var indent = new string(' ', level * 2);
         var result = string.Empty;
-        if (Chunk.Type == (int)ChunkType.Bookmark)
+        if (Chunk.Type == (int)ChunkType.Node)
         {
             result += $"{indent}- {Chunk.Title}\r\n";
             foreach (var child in Children)
@@ -67,7 +67,7 @@ public class ChunkNode
                 result += child.GetView(level + 1);
             }
         }
-        else if (Chunk.Type == (int)ChunkType.Page)
+        else if (Chunk.Type == (int)ChunkType.ContentUnit)
         {
             var chunkText = Chunk.Text;
             if (!string.IsNullOrEmpty(chunkText))

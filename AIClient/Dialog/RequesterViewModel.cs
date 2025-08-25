@@ -263,7 +263,7 @@ public class RequesterViewModel : BaseViewModel
     {
         try
         {
-            var options = await GlobalOptions.LoadOrCreate();
+            var options = ServiceLocator.GetService<GlobalOptions>()!;
             var summaryRequest = new SummaryRequestViewItem()
             {
                 SummaryPrompt = options.TokenSummarizePrompt,

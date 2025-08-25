@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
@@ -19,6 +20,8 @@ public class Rag
 
     const string pdfPath =
         @"C:\Users\jie.zhu\Documents\WXWork\1688854281599012\Cache\File\2025-07\AMT_M1A0_Datasheet_v0p5_250428.pdf";
+
+    const string markDownPath = @"E:\Doc\rag_doc\intel-64-architecture-processor-topology-enumeration\image.md";
 
     public Rag(ITestOutputHelper output)
     {
@@ -48,12 +51,12 @@ public class Rag
     }
 
     [Fact]
-    public void PDFEmbedding()
+    public async Task PDFEmbedding()
     {
         var pdfExtractor = new PDFExtractor(pdfPath);
         pdfExtractor.Initialize(padding: new Thickness(10, 55, 10, 62));
         var contentNodes = pdfExtractor.Analyze();
-        var docChunks = contentNodes.ToDocChunks("doc1");
+        var docChunks = await contentNodes.ToDocChunks<PDFNode, PDFPage>("doc1");
         var docChunksCount = docChunks.Count;
         output.WriteLine(docChunksCount.ToString());
     }
@@ -169,20 +172,20 @@ public class Rag
             {
                 Title = "Title 0",
                 Summary = "Summary 0",
-                Type = (int)ChunkType.Bookmark,
+                Type = (int)ChunkType.Node,
             })
             {
                 Children =
                 [
                     new ChunkNode(new DocChunk()
                     {
-                        Type = (int)ChunkType.Page,
+                        Type = (int)ChunkType.ContentUnit,
                         Text = "This is a paragraph.",
                         Summary = "This is a paragraph summary.",
                     }),
                     new ChunkNode(new DocChunk()
                     {
-                        Type = (int)ChunkType.Page,
+                        Type = (int)ChunkType.ContentUnit,
                         Text = "This is another paragraph.",
                         Summary = "This is another paragraph summary.",
                     })
@@ -193,7 +196,7 @@ public class Rag
         {
             Title = "Title 1",
             Summary = "Summary 1",
-            Type = (int)ChunkType.Bookmark,
+            Type = (int)ChunkType.Node,
             HasChildNode = true,
         })
         {
@@ -203,20 +206,20 @@ public class Rag
                 {
                     Title = "Title 1.1",
                     Summary = "Summary 1.1",
-                    Type = (int)ChunkType.Bookmark
+                    Type = (int)ChunkType.Node
                 })
                 {
                     Children =
                     [
                         new ChunkNode(new DocChunk()
                         {
-                            Type = (int)ChunkType.Page,
+                            Type = (int)ChunkType.ContentUnit,
                             Text = "This is a paragraph under Title 1.1.",
                             Summary = "This is a paragraph summary under Title 1.1."
                         }),
                         new ChunkNode(new DocChunk()
                         {
-                            Type = (int)ChunkType.Page,
+                            Type = (int)ChunkType.ContentUnit,
                             Text = "This is another paragraph under Title 1.1.",
                             Summary = "This is another paragraph summary under Title 1.1."
                         })
@@ -226,20 +229,20 @@ public class Rag
                 {
                     Title = "Title 1.2",
                     Summary = "Summary 1.2",
-                    Type = (int)ChunkType.Bookmark
+                    Type = (int)ChunkType.Node
                 })
                 {
                     Children =
                     [
                         new ChunkNode(new DocChunk()
                         {
-                            Type = (int)ChunkType.Page,
+                            Type = (int)ChunkType.ContentUnit,
                             Text = "This is a paragraph under Title 1.2.",
                             Summary = "This is a paragraph summary under Title 1.2."
                         }),
                         new ChunkNode(new DocChunk()
                         {
-                            Type = (int)ChunkType.Page,
+                            Type = (int)ChunkType.ContentUnit,
                             Text = "This is another paragraph under Title 1.2.",
                             Summary = "This is another paragraph summary under Title 1.2."
                         })
@@ -252,20 +255,20 @@ public class Rag
         {
             Title = "Title 2",
             Summary = "Summary 2",
-            Type = (int)ChunkType.Bookmark
+            Type = (int)ChunkType.Node
         })
         {
             Children =
             [
                 new ChunkNode(new DocChunk()
                 {
-                    Type = (int)ChunkType.Page,
+                    Type = (int)ChunkType.ContentUnit,
                     Text = "This is a paragraph under Title 2.",
                     Summary = "This is a paragraph summary under Title 2."
                 }),
                 new ChunkNode(new DocChunk()
                 {
-                    Type = (int)ChunkType.Page,
+                    Type = (int)ChunkType.ContentUnit,
                     Text = "This is another paragraph under Title 2.",
                     Summary = "This is another paragraph summary under Title 2."
                 })
@@ -277,41 +280,14 @@ public class Rag
         output.WriteLine(view);
     }
 
+    [Fact]
+    public async Task MarkdownToNodes()
+    {
+        var markdownNodes = await new MarkdownParser().Parse(markDownPath);
+        // var markdownNodes = MarkdownParser.ParseFromFile(markDownPath);
+        var docChunks = await markdownNodes.ToDocChunks<MarkdownNode, MarkdownContent>("doc1");
+        Debugger.Break();
+    }
     
-}
-
-sealed class FakeEmbeddingGenerator(int? replaceLast = null) : IEmbeddingGenerator<string, Embedding<float>>
-{
-    private readonly float[] _embeddings = Enumerable.Repeat(1f, 1536).ToArray();
-
-    public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
-        IEnumerable<string> values,
-        EmbeddingGenerationOptions? options = null,
-        CancellationToken cancellationToken = default)
-    {
-        var results = new GeneratedEmbeddings<Embedding<float>>();
-        var count = values.Count();
-        for (int i = 0; i < count; i++)
-        {
-            results.Add(new Embedding<float>(_embeddings));
-        }
-
-        /*foreach (var value in values)
-        {
-            var vector = value.TrimStart('[').TrimEnd(']').Split(',').Select(s => float.Parse(s.Trim())).ToArray();
-            if (replaceLast is not null)
-            {
-                vector[^1] = replaceLast.Value;
-            }
-            results.Add(new Embedding<float>(vector));
-        }*/
-        return Task.FromResult(results);
-    }
-
-    public object? GetService(Type serviceType, object? serviceKey = null)
-        => null;
-
-    public void Dispose()
-    {
-    }
+    
 }

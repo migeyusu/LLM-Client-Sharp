@@ -2,6 +2,7 @@
 using LLMClient.Data;
 using LLMClient.Rag.Document;
 using LLMClient.UI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Data;
@@ -20,10 +21,7 @@ public class PdfFile : RagFileBase
     {
     }
 
-    public override DocumentFileType FileType
-    {
-        get { return DocumentFileType.Pdf; }
-    }
+    public override DocumentFileType FileType => DocumentFileType.Pdf;
 
     public override async Task InitializeAsync()
     {
@@ -51,14 +49,7 @@ public class PdfFile : RagFileBase
 
         IsInitialized = true;
     }
-
-    public override async Task DeleteAsync(CancellationToken cancellationToken = default)
-    {
-        var semanticKernelStore = await GetStoreAsync();
-        await semanticKernelStore.RemoveFileAsync(this.DocumentId, cancellationToken);
-        this.Status = RagFileStatus.NotConstructed;
-    }
-
+    
     /// <summary>
     /// 
     /// </summary>
@@ -75,93 +66,23 @@ public class PdfFile : RagFileBase
             }
 
             // await Task.Yield();
-            var ragOption = (await GlobalOptions.LoadOrCreate()).RagOption;
-            SemanticKernelStore? store = null;
+            var ragOption = ServiceLocator.GetService<GlobalOptions>()!.RagOption;
+            var docChunks = await pdfExtractorWindow.ContentNodes
+                .ToDocChunks<PDFNode, PDFPage>(this.DocumentId, logger: this.ConstructionLogs);
+            this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",
+                docChunks.Count);
+            var store = await GetStoreAsync(ragOption);
             try
             {
-                var docChunks = pdfExtractorWindow.ContentNodes
-                    .ToDocChunks(this.DocumentId, logger: this.ConstructionLogs);
-                this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",
-                    docChunks.Count);
-                store = await GetStoreAsync(ragOption);
                 this.ConstructionLogs.LogInformation("Saving to vector store.");
                 await store.AddFile(this.DocumentId, docChunks, cancellationToken);
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                if (store != null)
-                {
-                    await store.RemoveFileAsync(this.DocumentId, CancellationToken.None);
-                }
-
-                this.ConstructionLogs.LogError(new EventId(0), exception, "Error during PDF construction.");
+                await store.RemoveFileAsync(this.DocumentId, CancellationToken.None);
                 throw;
             }
         }
-    }
-
-    private static async Task<SemanticKernelStore> GetStoreAsync(RagOption? ragOption = null)
-    {
-        ragOption ??= (await GlobalOptions.LoadOrCreate()).RagOption;
-        ragOption.ThrowIfNotValid();
-        return ragOption.GetStore();
-    }
-
-    public override async Task<ISearchResult> QueryAsync(string query, dynamic options,
-        CancellationToken cancellationToken = default)
-    {
-        if (!IsInitialized)
-        {
-            throw new InvalidOperationException(
-                "The PDF file has not been initialized. Please call InitializeAsync first.");
-        }
-
-        if (Status != RagFileStatus.Constructed)
-        {
-            throw new InvalidOperationException(
-                "The PDF file has not been constructed. Please call ConstructAsync first.");
-        }
-
-        var semanticKernelStore = await GetStoreAsync();
-        IList<ChunkNode> matchResult = await semanticKernelStore.SearchAsync(query, this.DocumentId,
-            options.SearchAlgorithm ?? SearchAlgorithm.Default,
-            options.TopK ?? 5, cancellationToken);
-        return new StructResult(matchResult);
-    }
-
-    public override async Task<ISearchResult> GetStructureAsync(CancellationToken cancellationToken = default)
-    {
-        if (!IsInitialized)
-        {
-            throw new InvalidOperationException(
-                "The PDF file has not been initialized. Please call InitializeAsync first.");
-        }
-
-        if (Status != RagFileStatus.Constructed)
-        {
-            throw new InvalidOperationException(
-                "The PDF file has not been constructed. Please call ConstructAsync first.");
-        }
-
-        var semanticKernelStore = await GetStoreAsync();
-        var structureNodes = await semanticKernelStore.GetStructureAsync(this.DocumentId, cancellationToken);
-        return new StructResult(structureNodes) { DocumentId = this.DocumentId };
-    }
-
-    public override async Task<ISearchResult> GetSectionAsync(string titleName,
-        CancellationToken cancellationToken = default)
-    {
-        var store = await GetStoreAsync();
-        var chunkNode = await store.GetSectionAsync(this.DocumentId, titleName, cancellationToken);
-        return new StructResult(chunkNode == null ? Array.Empty<ChunkNode>() : new[] { chunkNode })
-            { DocumentId = this.DocumentId };
-    }
-
-    public override async Task<ISearchResult> GetFullDocumentAsync(CancellationToken cancellationToken = default)
-    {
-        var kernelStore = await GetStoreAsync();
-        var nodes = await kernelStore.GetDocTreeAsync(this.DocumentId, cancellationToken);
-        return new StructResult(nodes) { DocumentId = this.DocumentId };
     }
 
     private KernelFunctionFromMethodOptions? _queryOptions;

@@ -158,12 +158,12 @@ public class DocChunk
 public enum ChunkType : int
 {
     /// <summary>
-    /// pdf bookmark
+    /// pdf: bookmark
     /// </summary>
-    Bookmark = 1,
+    Node = 1,
 
     /// <summary>
-    /// pdf page
+    /// pdf: page
     /// </summary>
-    Page = 2,
+    ContentUnit = 2,
 }

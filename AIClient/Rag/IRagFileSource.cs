@@ -10,6 +10,7 @@ public enum DocumentFileType
     Word,
     Pdf,
     Excel,
+    Markdown,
 }
 
 public interface IRagFileSource : IRagSource

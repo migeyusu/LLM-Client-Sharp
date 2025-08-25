@@ -5,6 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using ImageMagick;
 using LLMClient.Abstraction;
 using LLMClient.Data;
@@ -65,7 +67,7 @@ public class UnitTest2
             }
         }
     }
-    
+
     [Fact]
     public async Task Convert()
     {
@@ -325,7 +327,7 @@ public class UnitTest2
                 }
             }
         };
-        var serialize = JsonSerializer.Serialize(requestViewItem,FileBasedSessionBase.SerializerOption);
+        var serialize = JsonSerializer.Serialize(requestViewItem, FileBasedSessionBase.SerializerOption);
         output.WriteLine(serialize);
     }
 
@@ -347,7 +349,7 @@ public class UnitTest2
             output.WriteLine(format);
         }
     }
-    
+
     [Fact]
     public async Task AnnotationResult()
     {
@@ -383,17 +385,40 @@ public class UnitTest2
     [Experimental("SKEXP0001")]
     public void SearchPlugin()
     {
-        var sqliteVectorStore = new SqliteVectorStore("",new SqliteVectorStoreOptions()
+        var sqliteVectorStore = new SqliteVectorStore("", new SqliteVectorStoreOptions()
         {
             EmbeddingGenerator = new FakeEmbeddingGenerator()
         });
-        var sqliteCollection = sqliteVectorStore.GetCollection<string,DocChunk>("test");
+        var sqliteCollection = sqliteVectorStore.GetCollection<string, DocChunk>("test");
         var vectorStoreTextSearch = new VectorStoreTextSearch<DocChunk>(sqliteCollection);
-        var kernelPlugin = vectorStoreTextSearch.CreateWithSearch("test",description:"des");
+        var kernelPlugin = vectorStoreTextSearch.CreateWithSearch("test", description: "des");
         foreach (var kernelFunction in kernelPlugin)
         {
             output.WriteLine(kernelFunction.Name);
             output.WriteLine(kernelFunction.Description);
+        }
+    }
+
+    [Fact]
+    public async Task TestImageSave()
+    {
+        // 创建并配置 BitmapImage
+        var bitmapImage = new BitmapImage(new Uri("https://custom.typingmind.com/assets/models/openrouterai.png"));
+        // 下载完成后保存图片
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmapImage));
+        using (var fileStream = new FileStream("D:\\openrouterai.png", FileMode.Create))
+        {
+            encoder.Save(fileStream);
+        }
+    }
+
+    [Fact]
+    public void Random()
+    {
+        if (Uri.TryCreate("file:c:\\test.img", UriKind.RelativeOrAbsolute, out Uri uri))
+        {
+            Debugger.Break();
         }
     }
 }

@@ -225,7 +225,7 @@ public class SemanticKernelStore
         await foreach (var docChunk in collection.GetAsync(chunk => chunk.ParentKey == parentKey, int.MaxValue / 2,
                            cancellationToken: token))
         {
-            if (docChunk.Type != (int)ChunkType.Page)
+            if (docChunk.Type != (int)ChunkType.ContentUnit)
             {
                 //只添加非段落类型的节点
                 var childNode = new ChunkNode(docChunk);
@@ -276,7 +276,7 @@ public class SemanticKernelStore
         }
 
         var sectionChunk = await collection.GetAsync(
-                chunk => chunk.Type != (int)ChunkType.Page,
+                chunk => chunk.Type != (int)ChunkType.ContentUnit,
                 int.MaxValue / 2, cancellationToken: token)
             .FirstOrDefaultAsync(chunk => chunk.Title.Contains(title),
                 cancellationToken: token);
@@ -308,7 +308,7 @@ public class SemanticKernelStore
             //表示当前为叶子节点
             var parentKey = parentNode.Chunk.Key;
             await foreach (var paragraphChunk in collection.GetAsync(
-                               chunk => chunk.ParentKey == parentKey && chunk.Type == (int)ChunkType.Page,
+                               chunk => chunk.ParentKey == parentKey && chunk.Type == (int)ChunkType.ContentUnit,
                                int.MaxValue / 2, cancellationToken: token))
             {
                 parentNode.AddChild(new ChunkNode(paragraphChunk));
@@ -463,7 +463,7 @@ public class SemanticKernelStore
         var vectorSearchOptions = new VectorSearchOptions<DocChunk>()
         {
             //只搜索没有子节点的文档
-            Filter = chunk => chunk.Type == (int)ChunkType.Page,
+            Filter = chunk => chunk.Type == (int)ChunkType.ContentUnit,
             VectorProperty = chunk => chunk.TextEmbedding
         };
         var results = new List<DocChunk>();
@@ -492,7 +492,7 @@ public class SemanticKernelStore
         var vectorSearchOptions = new VectorSearchOptions<DocChunk>()
         {
             //只搜索没有graph节点的文档
-            Filter = chunk => chunk.Type == (int)ChunkType.Page,
+            Filter = chunk => chunk.Type == (int)ChunkType.ContentUnit,
             VectorProperty = chunk => chunk.TextEmbedding
         };
         return (await InternalSearchAsync(query, vectorSearchOptions, docId, token, topK))
@@ -518,7 +518,7 @@ public class SemanticKernelStore
     private async Task PopulateParagraphs(VectorStoreCollection<string, DocChunk> collection, ChunkNode chunkNode)
     {
         var chunkKey = chunkNode.Chunk.Key;
-        if (chunkNode.Chunk.Type == (int)ChunkType.Page)
+        if (chunkNode.Chunk.Type == (int)ChunkType.ContentUnit)
         {
             return;
         }

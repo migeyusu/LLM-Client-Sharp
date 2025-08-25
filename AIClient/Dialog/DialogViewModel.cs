@@ -245,6 +245,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
     public DialogViewModel(string topic, ILLMChatClient modelClient, IList<IDialogItem>? items = null)
         : base(items)
     {
+        // ActivatorUtilities.CreateInstance<>()
         _topic = topic;
         Requester = new RequesterViewModel(modelClient, NewRequest)
         {

@@ -1,12 +1,9 @@
-﻿using System.IO;
-using System.Text;
-using LLMClient.Data;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
-using UglyToad.PdfPig.Content;
 
 namespace LLMClient.Rag.Document;
 
-public static class PDFExtractorExtensions
+public static class ExtractorExtensions
 {
     /// <summary>
     /// 对PDF节点进行摘要处理，使用LLM生成每个节点的摘要。
@@ -16,9 +13,11 @@ public static class PDFExtractorExtensions
     /// <param name="logger"></param>
     /// <param name="nodeProgress"></param>
     /// <param name="token"></param>
-    public static async Task GenerateSummarize(this PDFNode node,
+    public static async Task GenerateSummarize<T, TK>(this T node,
         Func<string, CancellationToken, Task<string>> llmCall, ILogger? logger = null,
-        IProgress<PDFNode>? nodeProgress = null, CancellationToken token = default)
+        IProgress<T>? nodeProgress = null, CancellationToken token = default)
+        where T : RawNode<T, TK>
+        where TK : IContentUnit
     {
         token.ThrowIfCancellationRequested();
         if (node.HasChildren)
@@ -26,7 +25,7 @@ public static class PDFExtractorExtensions
             await Parallel.ForEachAsync(node.Children, new ParallelOptions(),
                 (async (pdfNode, cancellationToken) =>
                 {
-                    await pdfNode.GenerateSummarize(llmCall, logger, nodeProgress, cancellationToken);
+                    await pdfNode.GenerateSummarize<T, TK>(llmCall, logger, nodeProgress, cancellationToken);
                 }));
             // 生成摘要：子节点标题 + 摘要
             var summaryBuilder = new StringBuilder(node.Title + "\nSubsections:");
@@ -42,19 +41,19 @@ public static class PDFExtractorExtensions
         else
         {
             var nodeContentBuilder = new StringBuilder();
-            var pages = node.Pages;
-            if (pages.Count > 0)
+            var units = node.ContentUnits;
+            if (units.Count > 0)
             {
-                for (var index = 0; index < pages.Count; index++)
+                for (var index = 0; index < units.Count; index++)
                 {
-                    var page = pages[index];
+                    var page = units[index];
                     try
                     {
                         //note: paragraph不执行summary
                         var pageContent = page.Content;
                         if (string.IsNullOrEmpty(pageContent.Trim()))
                         {
-                            logger?.LogWarning("跳过空页，所在页码：{PageNumber}", page.PageNumber);
+                            logger?.LogWarning("跳过空页，所在节点：{0}，节点索引：{1}", node.Title, index);
                             continue; // 跳过空段落
                         }
 
@@ -62,7 +61,7 @@ public static class PDFExtractorExtensions
                     }
                     catch (Exception e)
                     {
-                        logger?.LogError(e, "处理段落时出错，所在页码：{PageNumber}", page.PageNumber);
+                        logger?.LogError(e, "处理段落时出错，所在节点：{0}，节点索引：{1}", node.Title, index);
                     }
                 }
             }
@@ -74,7 +73,7 @@ public static class PDFExtractorExtensions
             }
             else
             {
-                logger?.LogWarning("节点没有内容，不会添加。所在页码：{StartPage}, 标题：{Title}", node.StartPage, node.Title);
+                logger?.LogWarning("节点没有内容，不会添加。标题：{Title}", node.Title);
             }
         }
 
@@ -91,21 +90,25 @@ public static class PDFExtractorExtensions
     /// <param name="docId"></param>
     /// <param name="logger"></param>
     /// <returns></returns>
-    public static List<DocChunk> ToDocChunks(this IList<PDFNode> nodes,
+    public static async Task<List<DocChunk>> ToDocChunks<T, TK>(this IList<T> nodes,
         string docId, ILogger? logger = null)
+        where T : RawNode<T, TK>
+        where TK : IContentUnit
     {
         var docChunks = new List<DocChunk>();
         for (var index = 0; index < nodes.Count; index++)
         {
             var contentNode = nodes[index];
-            ApplyRaptor(docId, contentNode, index, docChunks, logger);
+            await ApplyRaptor<T, TK>(docId, contentNode, index, docChunks, logger);
         }
 
         return docChunks;
     }
 
-    private static void ApplyRaptor(string docId, PDFNode node, int nodeIndex,
+    private static async Task ApplyRaptor<T, TK>(string docId, T node, int nodeIndex,
         List<DocChunk> chunks, ILogger? logger = null, string? parentId = null)
+        where T : RawNode<T, TK>
+        where TK : IContentUnit
     {
         var nodeLevel = node.Level;
         var nodeChunk = new DocChunk()
@@ -116,7 +119,7 @@ public static class PDFExtractorExtensions
             Level = nodeLevel,
             Title = node.Title,
             Index = nodeIndex,
-            Type = (int)ChunkType.Bookmark, // 表示书签类型
+            Type = (int)ChunkType.Node, // 表示书签类型
         };
         if (node.HasChildren)
         {
@@ -124,25 +127,25 @@ public static class PDFExtractorExtensions
             var children = node.Children;
             foreach (var child in children)
             {
-                ApplyRaptor(docId, child, chunks.Count, chunks, logger,
+                await ApplyRaptor<T, TK>(docId, child, chunks.Count, chunks, logger,
                     nodeChunk.Key);
             }
         }
         else
         {
-            var pages = node.Pages;
-            if (pages.Count > 0)
+            var units = node.ContentUnits;
+            if (units.Count > 0)
             {
-                for (var index = 0; index < pages.Count; index++)
+                for (var index = 0; index < units.Count; index++)
                 {
-                    var page = pages[index];
+                    var page = units[index];
                     try
                     {
                         var pageContent = page.Content;
-                        var images = page.Images;
+                        var images = await page.GetImages(logger);
                         if (string.IsNullOrEmpty(pageContent.Trim()) && images.Count == 0)
                         {
-                            logger?.LogWarning("跳过空页，所在页码：{PageNumber}", page.PageNumber);
+                            logger?.LogWarning("跳过空内容，所在节点：{0}，节点索引：{1}", node.Title, index);
                             continue; // 跳过空段落
                         }
 
@@ -154,36 +157,14 @@ public static class PDFExtractorExtensions
                             Level = nodeLevel + 1,
                             Index = index,
                             ParentKey = nodeChunk.Key,
-                            Type = (int)ChunkType.Page, // 表示段落类型
+                            Type = (int)ChunkType.ContentUnit, // 表示段落类型
                         };
-                        var base64Images = images.Select(image =>
-                        {
-                            // 首先尝试转换为PNG字节（推荐，用于大多数图像）
-                            if (image.TryGetPng(out var imageBytes))
-                            {
-                                using (var memoryStream = new MemoryStream(imageBytes))
-                                {
-                                    return memoryStream.ToBase64String(".png");
-                                }
-                            }
-
-                            if (image.TryGetBytesAsMemory(out var rawBytes))
-                            {
-                                using (var memoryStream = new MemoryStream(rawBytes.ToArray()))
-                                {
-                                    return memoryStream.ToBase64String(".jpg");
-                                }
-                            }
-
-                            logger?.LogWarning("无法处理图像，所在页码：{PageNumber}", page.PageNumber);
-                            return string.Empty; // 如果无法处理图像，返回空字符串
-                        }).ToArray();
-                        pageChunk.SetImages(base64Images);
+                        pageChunk.SetImages(images);
                         chunks.Add(pageChunk);
                     }
                     catch (Exception e)
                     {
-                        logger?.LogError(e, "处理段落时出错，所在页码：{PageNumber}", page.PageNumber);
+                        logger?.LogError(e, "处理段落时出错，所在节点：{0}，节点索引：{1}", node.Title, index);
                     }
                 }
             }

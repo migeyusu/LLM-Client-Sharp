@@ -234,7 +234,8 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="260"
                                       MaxWidth="600"
-                                      MinWidth="230" />
+                                      MinWidth="230"
+                                      x:Name="LeftPanelColumnDefinition" />
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
                 <Grid>
@@ -601,6 +602,13 @@
                             </ItemsControl>
                         </materialDesign:PopupBox>
                     </StackPanel>
+                    <!--<Button Grid.Row="1"
+                            VerticalAlignment="Bottom"
+                            HorizontalAlignment="Left"
+                            Margin="10"
+                            Click="LeftPanelCollapse_OnClick"
+                            Content="{materialDesign:PackIcon Kind=ArrowCollapseLeft}"
+                            Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}" />-->
                 </Grid>
                 <ContentControl Grid.Column="1"
                                 Content="{Binding  PreSession,Mode=OneWay}">

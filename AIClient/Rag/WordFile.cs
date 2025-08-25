@@ -30,7 +30,8 @@ public class WordFile : RagFileBase
         throw new NotImplementedException();
     }
 
-    public override Task<ISearchResult> QueryAsync(string query, dynamic options, CancellationToken cancellationToken = default)
+    public override Task<ISearchResult> QueryAsync(string query, dynamic options,
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
@@ -40,7 +41,8 @@ public class WordFile : RagFileBase
         throw new NotImplementedException();
     }
 
-    public override Task<ISearchResult> GetSectionAsync(string sectionName, CancellationToken cancellationToken = default)
+    public override Task<ISearchResult> GetSectionAsync(string sectionName,
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
@@ -52,10 +54,7 @@ public class WordFile : RagFileBase
 
     protected override KernelFunctionFromMethodOptions QueryOptions
     {
-        get
-        {
-            return new KernelFunctionFromMethodOptions();
-        }
+        get { return new KernelFunctionFromMethodOptions(); }
     }
 
     protected override Task ConstructCore(CancellationToken cancellationToken = default)

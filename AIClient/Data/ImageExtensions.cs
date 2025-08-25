@@ -156,18 +156,12 @@ public static class ImageExtensions
             }
             else if (uriScheme == "data")
             {
-                var url = uri.ToString();
-                var indexOf = url.IndexOf("base64,", StringComparison.Ordinal);
-                if (indexOf < 0)
+                if (!TryGetBinaryFromBase64(uri.ToString(), out var bytes, out var ext))
                 {
-                    throw new NotSupportedException("Unsupported data: " + url);
+                    throw new ArgumentException("Invalid base64 image format", nameof(uri));
                 }
 
-                var s = url.Substring(indexOf + 7);
-                var bytes = Convert.FromBase64String(s);
-                fullPath = url.Substring(url.IndexOf("image/", StringComparison.Ordinal) + 6,
-                    url.IndexOf(';') - (url.IndexOf("image/", StringComparison.Ordinal) + 6));
-                fullPath = "." + fullPath; // 添加点前缀以匹配扩展名
+                fullPath = "." + ext; // 添加点前缀以匹配扩展名
                 stream = new MemoryStream(bytes);
             }
             else
@@ -317,11 +311,19 @@ public static class ImageExtensions
     /// <param name="extension">like .png</param>
     /// <returns></returns>
     /// <exception cref="NotSupportedException"></exception>
-    public static string ToBase64String(this MemoryStream stream, string extension)
+    public static async Task<string> ToBase64StringAsync(this Stream stream, string extension)
     {
         extension = extension.TrimStart('.'); // remove leading dot if present
         //to data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
-        var base64 = Convert.ToBase64String(stream.ToArray());
+        var streamLength = stream.Length;
+        byte[] buffer = new byte[streamLength];
+        stream.Position = 0;
+        int readBytes = await stream.ReadAsync(buffer, 0, (int)streamLength);
+        if (readBytes != streamLength)
+        {
+            throw new IOException("Failed to read the entire stream.");
+        }
+        var base64 = Convert.ToBase64String(buffer);
         return $"{Base64ImagePrefix}{extension.ToLower()};base64,{base64}";
     }
 }

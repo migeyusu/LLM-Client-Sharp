@@ -356,7 +356,8 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
                 await Parallel.ForEachAsync(this.ContentNodes, new ParallelOptions(),
                     async (node, token) =>
                     {
-                        await node.GenerateSummarize(summaryDelegate, this.Logs, progress, token: token);
+                        await node.GenerateSummarize<PDFNode, PDFPage>(summaryDelegate, this.Logs, progress,
+                            token: token);
                     });
                 MessageBox.Show("Summary generated successfully!");
             }
