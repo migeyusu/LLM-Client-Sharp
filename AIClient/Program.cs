@@ -39,9 +39,12 @@ public class Program
         try
         {
             var serviceCollection = new ServiceCollection();
-            var collection = serviceCollection.AddSingleton<MainWindowViewModel>()
+            var collection = serviceCollection
+                .AddSingleton<IViewModelFactory, ViewModelFactory>()
+                .AddSingleton<MainWindowViewModel>()
                 .AddSingleton<MainWindow>()
                 .AddTransient<AutoMapModelTypeConverter>()
+                .AddSingleton<GlobalOptions>((_) => GlobalOptions.LoadOrCreate().Result)
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
                 .AddSingleton<IRagSourceCollection, RagSourceCollection>()

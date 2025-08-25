@@ -53,12 +53,7 @@ public class SearchConfigViewModel : BaseViewModel
         }
     }
 
-    private readonly ISearchService[] _builtInSearchServices =
-    [
-        new GeekAISearchService(),
-        new GoogleSearchPlugin(),
-        new OpenRouterSearchService()
-    ];
+    private readonly ISearchService[] _builtInSearchServices;
 
     private ISearchService[]? _selectableSearchServices;
     private ISearchService? _selectedSearchService;
@@ -79,5 +74,15 @@ public class SearchConfigViewModel : BaseViewModel
         }
 
         return searchService;
+    }
+
+    public SearchConfigViewModel(GlobalOptions globalOptions)
+    {
+        _builtInSearchServices =
+        [
+            new GeekAISearchService(),
+            new GoogleSearchPlugin(globalOptions),
+            new OpenRouterSearchService()
+        ];
     }
 }

@@ -22,7 +22,7 @@
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
                           WindowStartupLocation="CenterScreen"
-                          Height="850"
+                          Height="950"
                           Width="1600"
                           Closing="MainWindow_OnClosing"
                           d:DataContext="{d:DesignInstance ui:MainWindowViewModel}">

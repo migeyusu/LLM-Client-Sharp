@@ -1,10 +1,8 @@
 ﻿using System.ComponentModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
@@ -400,24 +398,6 @@ public class SemanticKernelStore
                 .ToArrayAsync(cancellationToken: token))
             .OrderByDescending(result => result.Score).Take(topK)
             .Select(result => result.Record).Take(topK);
-    }
-
-    public static async void Test()
-    {
-        var ragOption =
-            (await GlobalOptions.LoadOrCreate())
-            .RagOption;
-        ragOption.ThrowIfNotValid();
-        var semanticKernelStore = ragOption.GetStore();
-        VectorStore vectorStore = semanticKernelStore.GetVectorStore();
-        var storeCollection = vectorStore.GetCollection<string,DocChunk>("Pdf_9f9da2da-3be2-4946-8037-e818d8b7f40c");
-        await storeCollection.EnsureCollectionExistsAsync();
-        var docChunk = await storeCollection.GetAsync("a4b784c6-b7cf-42da-939f-aeae6d035705");
-        if (docChunk == null)
-        {
-            return;
-        }
-        Debug.WriteLine(docChunk.Attachment);
     }
 
     private async IAsyncEnumerable<VectorSearchResult<DocChunk>> HierarchicalSearchAsync(

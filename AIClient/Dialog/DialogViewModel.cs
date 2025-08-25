@@ -8,6 +8,7 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.MCP;
 using LLMClient.MCP.Servers;
+using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
@@ -159,11 +160,6 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
 
     #endregion
 
-    public IPromptsResource PromptsResource
-    {
-        get { return ServiceLocator.GetService<IPromptsResource>()!; }
-    }
-
     private bool _isChaining;
     private int _chainStepCount;
     private int _chainingStep;
@@ -242,12 +238,12 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
     }));
 
 
-    public DialogViewModel(string topic, ILLMChatClient modelClient, IList<IDialogItem>? items = null)
-        : base(items)
+    public DialogViewModel(string topic, ILLMChatClient modelClient,
+        IList<IDialogItem>? items = null) : base(items)
     {
         // ActivatorUtilities.CreateInstance<>()
         _topic = topic;
-        Requester = new RequesterViewModel(modelClient, NewRequest)
+        Requester = new RequesterViewModel(modelClient, NewRequest, ServiceLocator.GetService<GlobalOptions>()!)
         {
             Source = this
         };

@@ -49,7 +49,7 @@ public class PdfFile : RagFileBase
 
         IsInitialized = true;
     }
-    
+
     /// <summary>
     /// 
     /// </summary>
@@ -57,16 +57,16 @@ public class PdfFile : RagFileBase
     /// <exception cref="InvalidOperationException"></exception>
     protected override async Task ConstructCore(CancellationToken cancellationToken = default)
     {
+        var ragOption = ServiceLocator.GetService<GlobalOptions>()!.RagOption;
         using (var pdfExtractor = new PDFExtractor(FilePath))
         {
-            var pdfExtractorWindow = new PDFExtractorWindow(pdfExtractor);
+            var pdfExtractorWindow = new PDFExtractorWindow(pdfExtractor, ragOption);
             if (pdfExtractorWindow.ShowDialog() != true)
             {
                 throw new InvalidOperationException("PDF extraction was cancelled by the user.");
             }
 
             // await Task.Yield();
-            var ragOption = ServiceLocator.GetService<GlobalOptions>()!.RagOption;
             var docChunks = await pdfExtractorWindow.ContentNodes
                 .ToDocChunks<PDFNode, PDFPage>(this.DocumentId, logger: this.ConstructionLogs);
             this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",

@@ -5,7 +5,7 @@ using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
-using Microsoft.SemanticKernel;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel.Data;
 using Microsoft.SemanticKernel.Plugins.Web.Google;
 
@@ -17,8 +17,9 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
 
     private const string KernelPluginName = "GoogleTextSearch";
 
-    public GoogleSearchPlugin()
+    public GoogleSearchPlugin(GlobalOptions globalOptions)
     {
+        _globalOptions = globalOptions;
     }
 
     public object Clone()
@@ -53,9 +54,11 @@ public class GoogleSearchPlugin : BaseViewModel, IAIFunctionGroup, ISearchServic
 
     private GoogleSearchOption? _config;
 
+    private readonly GlobalOptions _globalOptions;
+
     public async Task EnsureAsync(CancellationToken token)
     {
-        var config = (await GlobalOptions.LoadOrCreate()).GoogleSearchOption;
+        var config = _globalOptions.GoogleSearchOption;
         if (config.IsValid() && !config.Equals(_config))
         {
 #pragma warning disable SKEXP0050

@@ -24,7 +24,7 @@ public class DialogFileViewModel : FileBasedSessionBase
     }
 
     public override bool IsBusy => Dialog.IsBusy;
-    
+
     private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveFolder)));
 
     public static string SaveFolderPath => SaveFolderPathLazy.Value;
@@ -39,7 +39,7 @@ public class DialogFileViewModel : FileBasedSessionBase
         var dialogSession = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
         await JsonSerializer.SerializeAsync(stream, dialogSession, SerializerOption);
     }
-    
+
     public override object Clone()
     {
         var dialogSessionClone = Mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));

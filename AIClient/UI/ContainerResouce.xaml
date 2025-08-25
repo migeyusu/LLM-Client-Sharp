@@ -1,0 +1,8 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:component="clr-namespace:LLMClient.UI.Component"
+                    xmlns:data="clr-namespace:LLMClient.Data"
+                    xmlns:abstraction="clr-namespace:LLMClient.Abstraction">
+    <component:Service x:Key="PromptsResource" ServiceType="{x:Type data:IPromptsResource}" />
+    <component:Service x:Key="RagSourceCollection" ServiceType="{x:Type abstraction:IRagSourceCollection}" />
+</ResourceDictionary>

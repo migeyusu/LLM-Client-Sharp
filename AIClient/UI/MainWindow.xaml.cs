@@ -20,11 +20,12 @@ public partial class MainWindow : ExtendedWindow
 {
     private readonly MainWindowViewModel _mainWindowViewModel;
 
-    private GlobalOptions? _globalConfig;
+    private readonly GlobalOptions _globalConfig;
 
-    public MainWindow(MainWindowViewModel mainWindowViewModel)
+    public MainWindow(MainWindowViewModel mainWindowViewModel, GlobalOptions globalConfig)
     {
         this._mainWindowViewModel = mainWindowViewModel;
+        _globalConfig = globalConfig;
         this.DataContext = mainWindowViewModel;
         InitializeComponent();
     }
@@ -93,7 +94,6 @@ public partial class MainWindow : ExtendedWindow
 
     private async void OpenConfig_OnClick(object sender, RoutedEventArgs e)
     {
-        _globalConfig ??= await GlobalOptions.LoadOrCreate();
         await this.ShowDialog(_globalConfig);
     }
 

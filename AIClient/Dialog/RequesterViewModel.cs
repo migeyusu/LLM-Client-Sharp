@@ -217,10 +217,10 @@ public class RequesterViewModel : BaseViewModel
     private readonly Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> _getResponse;
 
     public RequesterViewModel(ILLMChatClient modelClient,
-        Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> getResponse)
+        Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> getResponse, GlobalOptions options)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
-        SearchConfig = new SearchConfigViewModel();
+        SearchConfig = new SearchConfigViewModel(options);
         ThinkingConfig = new ThinkingConfigViewModel();
         QueryViewModel = new FileQueryViewModel(this);
         this._defaultClient = modelClient;

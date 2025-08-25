@@ -5,7 +5,6 @@ using LLMClient.Data;
 using LLMClient.Rag;
 using LLMClient.UI;
 using LLMClient.UI.Component;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
@@ -14,7 +13,6 @@ public class FileQueryViewModel : BaseViewModel
 {
     private IRagSource? _selectedSource;
     public RequesterViewModel Requester { get; }
-    public IRagSourceCollection RagSources => BaseViewModel.ServiceLocator.GetService<IRagSourceCollection>()!;
 
     public IRagSource? SelectedSource
     {

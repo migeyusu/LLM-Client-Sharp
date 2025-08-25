@@ -35,7 +35,7 @@ public class Rag
         {
             var app = new App();
             app.InitializeComponent();
-            app.Run(new PDFExtractorWindow(new PDFExtractor(pdfPath)));
+            app.Run(new PDFExtractorWindow(new PDFExtractor(pdfPath), new RagOption()));
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
@@ -288,6 +288,4 @@ public class Rag
         var docChunks = await markdownNodes.ToDocChunks<MarkdownNode, MarkdownContent>("doc1");
         Debugger.Break();
     }
-    
-    
 }

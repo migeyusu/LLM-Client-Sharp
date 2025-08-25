@@ -8,7 +8,6 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Rag;
-using LLMClient.Rag.Document;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;

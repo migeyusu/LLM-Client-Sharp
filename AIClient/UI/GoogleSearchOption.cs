@@ -2,7 +2,7 @@
 
 namespace LLMClient.UI;
 
-public class GoogleSearchOption : BaseViewModel
+public class GoogleSearchOption : BaseViewModel, ICloneable
 {
     private string? _apiKey;
     private string? _searchEngineId;
@@ -51,5 +51,14 @@ public class GoogleSearchOption : BaseViewModel
     public override int GetHashCode()
     {
         return HashCode.Combine(_apiKey, _searchEngineId);
+    }
+
+    public object Clone()
+    {
+        return new GoogleSearchOption()
+        {
+            _apiKey = this._apiKey,
+            _searchEngineId = this._searchEngineId
+        };
     }
 }

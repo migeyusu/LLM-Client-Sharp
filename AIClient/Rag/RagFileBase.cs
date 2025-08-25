@@ -6,6 +6,7 @@ using LLMClient.Abstraction;
 using LLMClient.UI;
 using LLMClient.UI.Log;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.Xaml.Behaviors.Core;
@@ -363,7 +364,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     protected static async Task<SemanticKernelStore> GetStoreAsync(RagOption? ragOption = null)
     {
-        ragOption ??= (await GlobalOptions.LoadOrCreate()).RagOption;
+        ragOption ??= ServiceLocator.GetService<GlobalOptions>()!.RagOption;
         ragOption.ThrowIfNotValid();
         return ragOption.GetStore();
     }

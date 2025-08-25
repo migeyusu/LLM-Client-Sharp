@@ -8,6 +8,7 @@ using LLMClient.Data;
 using LLMClient.UI;
 using LLMClient.UI.Log;
 using Microsoft.Extensions.Logging;
+using Microsoft.KernelMemory;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 
@@ -116,9 +117,10 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
     private IList<PDFNode> _contentNodes = Array.Empty<PDFNode>();
     private bool _isProcessing;
 
-    public PDFExtractorWindow(PDFExtractor extractor)
+    public PDFExtractorWindow(PDFExtractor extractor, RagOption ragOption)
     {
         _extractor = extractor;
+        this._ragOption = ragOption;
         this.DataContext = this;
         InitializeComponent();
         try
@@ -304,14 +306,15 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
 
     public LogsViewModel Logs { get; set; } = new LogsViewModel();
 
-    private PromptsCache? promptsCache;
+    private PromptsCache? _promptsCache;
     private double _progressValue;
     private int _summaryLanguageIndex;
 
+    private readonly RagOption _ragOption;
+
     private async void GenerateSummary()
     {
-        var ragOption = (await GlobalOptions.LoadOrCreate()).RagOption;
-        var digestClient = ragOption.DigestClient;
+        var digestClient = _ragOption.DigestClient;
         if (digestClient == null)
         {
             throw new InvalidOperationException("Digest client is not set.");
@@ -335,7 +338,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         using (var semaphoreSlim = new SemaphoreSlim(5, 5))
         {
             var summarySize = Extension.SummarySize;
-            promptsCache ??= new PromptsCache(Guid.NewGuid().ToString(), PromptsCache.CacheFolderPath,
+            _promptsCache ??= new PromptsCache(Guid.NewGuid().ToString(), PromptsCache.CacheFolderPath,
                 digestClient.Endpoint.Name, digestClient.Model.Id) { OutputSize = summarySize };
 
             try
@@ -350,7 +353,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
                             return s.Substring(0, int.Min(length, 1000));
                         }*/
                 var summaryDelegate =
-                    digestClient.CreateSummaryDelegate(semaphoreSlim, SummaryLanguageIndex, promptsCache,
+                    digestClient.CreateSummaryDelegate(semaphoreSlim, SummaryLanguageIndex, _promptsCache,
                         logger: this.Logs,
                         summarySize: summarySize, retryCount: 3);
                 await Parallel.ForEachAsync(this.ContentNodes, new ParallelOptions(),

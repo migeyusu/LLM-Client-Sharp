@@ -28,10 +28,14 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
     private readonly IMcpServiceCollection _mcpServiceCollection;
 
-    public AutoMapModelTypeConverter(IEndpointService service, IMcpServiceCollection mcpServiceCollection)
+    IViewModelFactory _viewModelFactory;
+
+    public AutoMapModelTypeConverter(IEndpointService service, IMcpServiceCollection mcpServiceCollection,
+        IViewModelFactory factory)
     {
         this._endpointService = service;
         this._mcpServiceCollection = mcpServiceCollection;
+        this._viewModelFactory = factory;
     }
 
     public DialogFilePersistModel Convert(DialogFileViewModel from, DialogFilePersistModel? destination,
@@ -158,7 +162,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
         else
         {
-            destination = new DialogViewModel(source.Topic, llmClient);
+            destination =  _viewModelFactory.CreateViewModel<DialogViewModel>(source.Topic, llmClient);
         }
 
         context.Items.Add(ParentSessionViewModelKey, destination);

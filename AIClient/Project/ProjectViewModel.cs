@@ -449,7 +449,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public ProjectViewModel(ILLMChatClient modelClient, IEnumerable<ProjectTaskViewModel>? tasks = null) : base()
     {
-        Requester = new RequesterViewModel(modelClient, GetResponse)
+        Requester = new RequesterViewModel(modelClient, GetResponse, ServiceLocator.GetService<GlobalOptions>()!)
         {
             FunctionTreeSelector =
             {
