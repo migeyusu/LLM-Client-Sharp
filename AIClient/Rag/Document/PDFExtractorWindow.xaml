@@ -49,7 +49,6 @@
                     <Run Text="{Binding Summary,Mode=OneWay}" />
                 </TextBlock>
                 <ScrollViewer Grid.Row="2"
-                              MaxHeight="300"
                               Margin="30,0,0,0"
                               HorizontalAlignment="Stretch"
                               VerticalScrollBarVisibility="Auto">
@@ -68,8 +67,8 @@
                                                   ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate DataType="{x:Type content:IPdfImage}">
-                                                <Image
-                                                    Source="{Binding Converter={x:Static converters:SnapConverters.PdfImageConverter}}" />
+                                                <Image Stretch="UniformToFill"
+                                                       Source="{Binding Converter={x:Static converters:SnapConverters.PdfImageConverter}}" />
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>

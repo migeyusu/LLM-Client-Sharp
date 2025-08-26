@@ -1,9 +1,16 @@
-﻿using System.IO;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.IO.Compression;
 using System.Text;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using LLMClient.Data;
 using Microsoft.Extensions.Logging;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis;
+using UglyToad.PdfPig.Graphics.Colors;
+using UglyToad.PdfPig.Tokens;
 
 namespace LLMClient.Rag.Document;
 
@@ -64,4 +71,90 @@ public class PDFPage : IContentUnit
     }
 
     public IReadOnlyList<IPdfImage> PdfImages { get; }
+}
+
+[Experimental("ManualPdfImageDecoder")]
+public static class ManualPdfImageDecoder
+{
+    public static BitmapSource? DecodeToImageSource(IPdfImage pdfImage)
+    {
+        var rawMemory = pdfImage.RawMemory;
+        if (rawMemory.IsEmpty) return null;
+
+        byte[] decodedBytes = rawMemory.ToArray(); // 默认 raw
+
+        if (!pdfImage.ImageDictionary.TryGet(NameToken.Filter, out var token))
+        {
+            return null;
+        }
+
+        if (pdfImage.ColorSpaceDetails == null)
+        {
+            return null;
+        }
+
+        decodedBytes = ApplyFilter((NameToken)token, decodedBytes); // 自定义应用
+        // 根据 ColorSpaceDetails 转换（简化版，参考 PdfPig 的 ColorSpaceDetailsByteConverter）
+        byte[] pixelBytes = ConvertToPixels(
+            decodedBytes,
+            pdfImage.ColorSpaceDetails,
+            pdfImage.BitsPerComponent,
+            pdfImage.WidthInSamples,
+            pdfImage.HeightInSamples
+        );
+
+        // 创建 WPF BitmapSource
+        PixelFormat format = GetPixelFormat(pdfImage.ColorSpaceDetails, pdfImage.BitsPerComponent);
+        var bitmap = new WriteableBitmap(pdfImage.WidthInSamples, pdfImage.HeightInSamples, 96, 96, format, null);
+        bitmap.WritePixels(new Int32Rect(0, 0, pdfImage.WidthInSamples, pdfImage.HeightInSamples), pixelBytes,
+            bitmap.BackBufferStride, 0);
+        return bitmap;
+    }
+
+    private static byte[] ApplyFilter(NameToken filter, byte[] input)
+    {
+        // 示例：处理常见过滤器
+        switch (filter.Data)
+        {
+            case "DCTDecode": // JPEG，直接返回（.NET 可加载）
+                return input;
+            case "FlateDecode":
+            {
+                using var inputStream = new MemoryStream(input);
+                using var deflateStream = new DeflateStream(inputStream, CompressionMode.Decompress);
+                using var outputStream = new MemoryStream();
+                deflateStream.CopyTo(outputStream);
+                return outputStream.ToArray();
+            }
+            // 添加更多：如 JBIG2 需要第三方库
+            default:
+                throw new NotSupportedException($"Unsupported filter: {filter.Data}");
+        }
+    }
+
+    private static byte[] ConvertToPixels(byte[] decoded, ColorSpaceDetails colorSpace, int bitsPerComponent,
+        int width, int height)
+    {
+        // 简化转换：假设 RGB (实际需根据 colorSpace.Type 调整)
+        // 参考 PdfPig: 解包 bits, 应用 Decode, 转换颜色
+        if (colorSpace is DeviceRgbColorSpaceDetails)
+        {
+            // RGB: 每个像素 3 组件
+            int bytesPerPixel = 3 * (bitsPerComponent / 8);
+            // 这里省略详细转换逻辑（可从 PdfPig 源复制）；返回 RGBA 字节以兼容 WPF
+            return decoded; // 占位，实际实现转换
+        }
+
+        // 其他空间类似
+        throw new NotSupportedException("Unsupported color space");
+    }
+
+    private static PixelFormat GetPixelFormat(ColorSpaceDetails colorSpace, int bitsPerComponent)
+    {
+        // 示例映射
+        if (colorSpace is DeviceRgbColorSpaceDetails) return PixelFormats.Bgr24;
+        if (colorSpace is DeviceGrayColorSpaceDetails)
+            return bitsPerComponent == 8 ? PixelFormats.Gray8 : PixelFormats.Gray16;
+        return PixelFormats.Default;
+    }
 }

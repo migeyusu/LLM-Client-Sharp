@@ -4,12 +4,15 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using LambdaConverters;
 using LLMClient.Data;
 using LLMClient.Project;
 using LLMClient.Rag;
 using MaterialDesignThemes.Wpf;
 using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Images;
+using UglyToad.PdfPig.Tokens;
 
 namespace LLMClient.UI.Component.Converters;
 
@@ -121,8 +124,8 @@ internal static class SnapConverters
 
     public static readonly IValueConverter PdfImageConverter = ValueConverter.Create<IPdfImage, ImageSource>(args =>
     {
-        var argsValue = args.Value;
-        if (argsValue.TryGetPng(out var bytes))
+        var pdfImage = args.Value;
+        if (pdfImage.TryGetPng(out var bytes))
         {
             using (var memoryStream = new MemoryStream(bytes))
             {
@@ -130,9 +133,17 @@ internal static class SnapConverters
             }
         }
 
-        if (argsValue.TryGetBytesAsMemory(out var memory))
+        if (pdfImage.TryGetBytesAsMemory(out var memory))
         {
             using (var memoryStream = new MemoryStream(memory.ToArray()))
+            {
+                return memoryStream.ToImageSource(".jpg");
+            }
+        }
+
+        if (pdfImage.ImageDictionary.TryGet(NameToken.Filter, out var token) && token.Equals(NameToken.DctDecode))
+        {
+            using (var memoryStream = new MemoryStream(pdfImage.RawBytes.ToArray()))
             {
                 return memoryStream.ToImageSource(".jpg");
             }
