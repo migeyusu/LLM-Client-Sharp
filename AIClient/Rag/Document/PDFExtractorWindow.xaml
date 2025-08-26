@@ -42,11 +42,11 @@
                            TextWrapping="Wrap"
                            Margin="0,5,0,0"
                            Background="{DynamicResource MaterialDesign.Brush.TextBox.FilledBackground}"
-                           Visibility="{Binding Summary,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringToVisibilityConverter}}">
+                           Visibility="{Binding Summary,Mode=OneWay,Converter={x:Static converters:SnapConverters.StringToVisibilityConverter}}">
                     <Run Text="Summary:"
                          FontWeight="Black" />
                     <LineBreak />
-                    <Run Text="{Binding Summary,Mode=OneTime}" />
+                    <Run Text="{Binding Summary,Mode=OneWay}" />
                 </TextBlock>
                 <ScrollViewer Grid.Row="2"
                               MaxHeight="300"

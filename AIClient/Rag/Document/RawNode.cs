@@ -1,3 +1,4 @@
+using LLMClient.UI;
 using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Rag.Document;
@@ -7,9 +8,11 @@ namespace LLMClient.Rag.Document;
 /// </summary>
 /// <typeparam name="T"></typeparam>
 /// <typeparam name="TK"></typeparam>
-public abstract class RawNode<T, TK> where T : RawNode<T, TK>
+public abstract class RawNode<T, TK> : BaseViewModel where T : RawNode<T, TK>
     where TK : IContentUnit
 {
+    private string _summary = string.Empty;
+
     protected RawNode(string title)
     {
         Title = title;
@@ -25,7 +28,16 @@ public abstract class RawNode<T, TK> where T : RawNode<T, TK>
     /// </summary>
     public int Level { get; set; }
 
-    public string Summary { get; set; } = string.Empty;
+    public string Summary
+    {
+        get => _summary;
+        set
+        {
+            if (value == _summary) return;
+            _summary = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <summary>
     /// 该章节的子节点 (子目录)
