@@ -67,7 +67,7 @@ public class CustomRenderer : WpfRenderer
 
     public static ComponentResourceKey AnnotationStyleKey => new(typeof(CustomRenderer), nameof(AnnotationStyleKey));
 
-    public static bool TryParse(string raw, [NotNullWhen(true)] out MarkdownDocument? document)
+    public static bool TryParseMarkdown(string raw, [NotNullWhen(true)] out MarkdownDocument? document)
     {
         try
         {

@@ -7,10 +7,11 @@ namespace LLMClient.Abstraction;
 [JsonDerivedType(typeof(TextFile), "TextFile")]
 [JsonDerivedType(typeof(WordFile), "WordFile")]
 [JsonDerivedType(typeof(ExcelFile), "ExcelFile")]
+[JsonDerivedType(typeof(MarkdownFile), "MarkdownFile")]
 public interface IRagSource : IAIFunctionGroup
 {
     string ResourceName { get; }
-    
+
     Guid Id { get; }
 
     RagFileStatus Status { get; }

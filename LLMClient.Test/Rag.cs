@@ -21,7 +21,7 @@ public class Rag
     const string pdfPath =
         @"C:\Users\jie.zhu\Documents\WXWork\1688854281599012\Cache\File\2025-07\AMT_M1A0_Datasheet_v0p5_250428.pdf";
 
-    const string markDownPath = @"E:\Doc\rag_doc\intel-64-architecture-processor-topology-enumeration\image.md";
+    const string markDownPath = @"E:\Doc\rag_doc\intel-64-architecture-processor-topology-enumeration\full.md";
 
     public Rag(ITestOutputHelper output)
     {
@@ -285,7 +285,7 @@ public class Rag
     {
         var markdownNodes = await new MarkdownParser().Parse(markDownPath);
         // var markdownNodes = MarkdownParser.ParseFromFile(markDownPath);
-        var docChunks = await markdownNodes.ToDocChunks<MarkdownNode, MarkdownContent>("doc1");
+        var docChunks = await markdownNodes.ToDocChunks<MarkdownNode, MarkdownText>("doc1");
         Debugger.Break();
     }
 }

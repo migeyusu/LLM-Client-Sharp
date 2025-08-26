@@ -445,7 +445,8 @@ public static class Extension
             if (chunk.AttachmentContents.Any())
             {
                 var title = node.Parent?.Chunk.Title;
-                stringBuilder.AppendLine($"Section {title} has {chunk.AttachmentContents.Count} additional images, see attachment.");
+                stringBuilder.AppendLine(
+                    $"Section {title} has {chunk.AttachmentContents.Count} additional images, see attachment.");
                 contents.AddRange(chunk.AttachmentContents);
             }
         }
@@ -608,7 +609,7 @@ public static class Extension
         };
     }
 
-    public static int CountRecursive(this PDFNode node)
+    public static int CountRecursive<T, TK>(this RawNode<T, TK> node) where T : RawNode<T, TK> where TK : IContentUnit
     {
         int count = 1; // 计数当前节点
         foreach (var child in node.Children)

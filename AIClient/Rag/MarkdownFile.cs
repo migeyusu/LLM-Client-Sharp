@@ -31,9 +31,14 @@ public class MarkdownFile : RagFileBase
             throw new FileNotFoundException("Markdown file not found.", FilePath);
         }
 
-        var markdownParser = new MarkdownParser();
-        var markdownNodes = await markdownParser.Parse(FilePath);
-        var docChunks = await markdownNodes.ToDocChunks<MarkdownNode,MarkdownContent>(this.DocumentId);
+        var markdownExtractorWindow = new MarkdownExtractorWindow(FilePath, RagOption);
+        if (markdownExtractorWindow.ShowDialog() != true)
+        {
+            throw new InvalidOperationException("Markdown extraction was cancelled by the user.");
+        }
+
+        var docChunks = await markdownExtractorWindow.ContentNodes
+            .ToDocChunks<MarkdownNode, MarkdownText>(this.DocumentId);
         SemanticKernelStore? store = null;
         this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",
             docChunks.Count);

@@ -166,7 +166,7 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
     {
         if (!string.IsNullOrEmpty(IconUrl))
         {
-            this._icon = await new Uri(this.IconUrl).GetIcon();
+            this._icon = await new Uri(this.IconUrl).GetImageAsync();
             OnPropertyChangedAsync(nameof(Icon));
         }
         else

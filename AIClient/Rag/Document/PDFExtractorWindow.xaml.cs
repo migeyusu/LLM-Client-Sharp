@@ -16,6 +16,8 @@ namespace LLMClient.Rag.Document;
 
 public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
 {
+    private int _currentStep = 0;
+
     public int CurrentStep
     {
         get => _currentStep;
@@ -101,6 +103,8 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         get => new Thickness(LeftMargin, TopMargin, RightMargin, BottomMargin);
     }
 
+    private int _summaryLanguageIndex;
+
     public int SummaryLanguageIndex
     {
         get => _summaryLanguageIndex;
@@ -112,10 +116,48 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private readonly PDFExtractor _extractor;
-    private int _currentStep = 0;
     private IList<PDFNode> _contentNodes = Array.Empty<PDFNode>();
+
+    public IList<PDFNode> ContentNodes
+    {
+        get => _contentNodes;
+        set
+        {
+            if (Equals(value, _contentNodes)) return;
+            _contentNodes = value;
+            OnPropertyChanged();
+        }
+    }
+
     private bool _isProcessing;
+
+    public bool IsProcessing
+    {
+        get => _isProcessing;
+        set
+        {
+            if (value == _isProcessing) return;
+            _isProcessing = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private double _progressValue;
+
+    public double ProgressValue
+    {
+        get => _progressValue;
+        set
+        {
+            if (value.Equals(_progressValue)) return;
+            _progressValue = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public LogsViewModel Logs { get; set; } = new LogsViewModel();
+
+    private readonly PDFExtractor _extractor;
 
     public PDFExtractorWindow(PDFExtractor extractor, RagOption ragOption)
     {
@@ -253,39 +295,6 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         CanvasPage.Children.Add(line);
     }
 
-    public IList<PDFNode> ContentNodes
-    {
-        get => _contentNodes;
-        set
-        {
-            if (Equals(value, _contentNodes)) return;
-            _contentNodes = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsProcessing
-    {
-        get => _isProcessing;
-        set
-        {
-            if (value == _isProcessing) return;
-            _isProcessing = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public double ProgressValue
-    {
-        get => _progressValue;
-        set
-        {
-            if (value.Equals(_progressValue)) return;
-            _progressValue = value;
-            OnPropertyChanged();
-        }
-    }
-
     private async void AnalyzeNode()
     {
         try
@@ -304,11 +313,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         }
     }
 
-    public LogsViewModel Logs { get; set; } = new LogsViewModel();
-
     private PromptsCache? _promptsCache;
-    private double _progressValue;
-    private int _summaryLanguageIndex;
 
     private readonly RagOption _ragOption;
 

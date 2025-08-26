@@ -98,13 +98,15 @@ internal static class SnapConverters
             switch (e.Value)
             {
                 case DocumentFileType.Text:
-                    return PackIconKind.Text.PackIconToSource(dodgerBlue);
+                    return PackIconKind.Text.ToImageSource(dodgerBlue);
                 case DocumentFileType.Word:
-                    return PackIconKind.MicrosoftWord.PackIconToSource(dodgerBlue);
+                    return PackIconKind.MicrosoftWord.ToImageSource(dodgerBlue);
                 case DocumentFileType.Pdf:
-                    return PackIconKind.FilePdfBox.PackIconToSource(dodgerBlue);
+                    return PackIconKind.FilePdfBox.ToImageSource(dodgerBlue);
                 case DocumentFileType.Excel:
-                    return PackIconKind.MicrosoftExcel.PackIconToSource(dodgerBlue);
+                    return PackIconKind.MicrosoftExcel.ToImageSource(dodgerBlue);
+                case DocumentFileType.Markdown:
+                    return PackIconKind.LanguageMarkdownOutline.ToImageSource(dodgerBlue);
                 default:
                     throw new ArgumentOutOfRangeException();
             }

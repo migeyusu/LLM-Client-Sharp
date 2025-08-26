@@ -73,7 +73,7 @@ public class LocalThemedIcon : ThemedIcon
 
     public static LocalThemedIcon FromPackIcon(PackIconKind kind)
     {
-        var imageSource = kind.PackIconToSource();
+        var imageSource = kind.ToImageSource();
         return new LocalThemedIcon(imageSource);
     }
 }
@@ -106,7 +106,7 @@ public class AsyncThemedIcon : ThemedIcon
     {
         emptyIcon ??= EmptyIcon.CurrentSource;
         return new AsyncThemedIcon(
-            async () => await lightModeUri.GetIcon() ?? emptyIcon,
-            darkModeUri != null ? async () => await darkModeUri.GetIcon() ?? emptyIcon : null);
+            async () => await lightModeUri.GetImageAsync() ?? emptyIcon,
+            darkModeUri != null ? async () => await darkModeUri.GetImageAsync() ?? emptyIcon : null);
     }
 }

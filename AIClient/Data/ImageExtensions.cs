@@ -24,20 +24,20 @@ public static class ImageExtensions
 
     private static readonly Lazy<ImageSource> EndpointIconImageLazy = new Lazy<ImageSource>(() =>
     {
-        return PackIconToSource(PackIconKind.Web);
+        return ToImageSource(PackIconKind.Web);
     });
 
     public static ThemedIcon APIIcon => APIIconImageLazy.Value;
 
     private static readonly Lazy<ThemedIcon> APIIconImageLazy = new Lazy<ThemedIcon>(() =>
     {
-        return new LocalThemedIcon(PackIconToSource(PackIconKind.Api));
+        return new LocalThemedIcon(ToImageSource(PackIconKind.Api));
     });
 
     private static ConcurrentDictionary<PackIconKind, ImageSource> _packIconCache
         = new ConcurrentDictionary<PackIconKind, ImageSource>();
 
-    public static ImageSource PackIconToSource(this PackIconKind kind, Brush? foreground = null)
+    public static ImageSource ToImageSource(this PackIconKind kind, Brush? foreground = null)
     {
         return _packIconCache.GetOrAdd(kind, k =>
         {
@@ -77,8 +77,8 @@ public static class ImageExtensions
                 , UriKind.Absolute);
         }
 
-        return new AsyncThemedIcon(async () => await GetIcon(lightUri) ?? APIIcon.CurrentSource,
-            darkUri != null ? (async () => (await GetIcon(darkUri)) ?? APIIcon.CurrentSource) : null);
+        return new AsyncThemedIcon(async () => await GetImageAsync(lightUri) ?? APIIcon.CurrentSource,
+            darkUri != null ? (async () => (await GetImageAsync(darkUri)) ?? APIIcon.CurrentSource) : null);
     }
 
     private static readonly Lazy<string[]> LocalSupportedImageExtensionsLazy = new Lazy<string[]>(() =>
@@ -100,9 +100,9 @@ public static class ImageExtensions
             .ToArray();
     });
 
-    private static readonly ConcurrentDictionary<Uri, Lazy<Task<ImageSource?>>> IconCache =
+    private static readonly ConcurrentDictionary<Uri, Lazy<Task<ImageSource?>>> ImageCache =
         new ConcurrentDictionary<Uri, Lazy<Task<ImageSource?>>>();
-    
+
     public static bool IsSupportedImageExtension(string extension)
     {
         return LocalSupportedImageExtensionsLazy.Value.Contains(extension, StringComparer.OrdinalIgnoreCase)
@@ -110,68 +110,90 @@ public static class ImageExtensions
                    .Contains(extension, StringComparer.OrdinalIgnoreCase);
     }
 
-    public static Task<ImageSource?> GetIcon(this Uri uri)
+    public static Task<ImageSource?> GetImageAsync(this Uri uri)
     {
-        return IconCache.GetOrAdd(uri, u => new Lazy<Task<ImageSource?>>(() => CreateImageSourceAsync(u))).Value;
+        return ImageCache.GetOrAdd(uri, u => new Lazy<Task<ImageSource?>>(() => CreateImageSourceAsync(u))).Value;
     }
 
-    private static async Task<ImageSource?> CreateImageSourceAsync(Uri uri)
+
+    /// <summary>
+    /// get image stream from uri, support pack, http(s), file and base64.
+    /// <para>stream must correspond to a image format, otherwise throw NotSupportedException</para>
+    /// </summary>
+    /// <param name="uri"></param>
+    /// <returns>stream and extension(like .png). stream must be disposed by caller.</returns>
+    /// <exception cref="FileNotFoundException"></exception>
+    /// <exception cref="Exception"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="NotSupportedException"></exception>
+    public static async Task<KeyValuePair<Stream, string>> GetImageStreamAsync(this Uri uri)
     {
-        try
+        var uriScheme = uri.Scheme;
+        Stream? stream = null;
+        string extension = string.Empty;
+        if (uri.IsAbsoluteUri)
         {
-            var uriScheme = uri.Scheme;
-            Stream stream;
-            string fullPath;
-            if (uriScheme == "pack" && uri.IsAbsoluteUri)
+            if (uriScheme == "pack")
             {
-                fullPath = uri.AbsolutePath;
                 var resourceStream = Application.GetResourceStream(uri);
                 if (resourceStream == null)
                 {
                     throw new FileNotFoundException("Resource not found", uri.ToString());
                 }
 
+                extension = Path.GetExtension(uri.AbsolutePath);
                 stream = resourceStream.Stream;
             }
             else if (uriScheme == Uri.UriSchemeHttp || uriScheme == Uri.UriSchemeHttps)
             {
-                fullPath = await HttpContentCache.Instance.GetOrCreateAsync(uri.AbsoluteUri);
+                var fullPath = await HttpContentCache.Instance.GetOrCreateAsync(uri.AbsoluteUri);
                 if (string.IsNullOrEmpty(fullPath))
                 {
                     throw new Exception("Failed to download image from " + uri);
                 }
 
                 stream = File.OpenRead(fullPath);
+                extension = Path.GetExtension(fullPath);
             }
             else if (uri.IsFile)
             {
-                fullPath = uri.LocalPath;
-                var fileInfo = new FileInfo(fullPath);
+                var localPath = uri.LocalPath;
+                var fileInfo = new FileInfo(localPath);
                 if (!fileInfo.Exists)
                 {
-                    throw new FileNotFoundException("File not found", fullPath);
+                    throw new FileNotFoundException("File not found", localPath);
                 }
 
                 stream = fileInfo.OpenRead();
+                extension = Path.GetExtension(localPath);
             }
-            else if (uriScheme == "data")
+        }
+        else if (uri.OriginalString.StartsWith(Base64ImagePrefix))
+        {
+            if (!TryGetBinaryFromBase64(uri.ToString(), out var bytes, out var ext))
             {
-                if (!TryGetBinaryFromBase64(uri.ToString(), out var bytes, out var ext))
-                {
-                    throw new ArgumentException("Invalid base64 image format", nameof(uri));
-                }
-
-                fullPath = "." + ext; // 添加点前缀以匹配扩展名
-                stream = new MemoryStream(bytes);
-            }
-            else
-            {
-                throw new NotSupportedException("Unsupported URI scheme: " + uriScheme);
+                throw new ArgumentException("Invalid base64 image format", nameof(uri));
             }
 
+            extension = "." + ext; // 添加点前缀以匹配扩展名
+            stream = new MemoryStream(bytes);
+        }
+
+        if (stream == null)
+        {
+            throw new NotSupportedException("Unsupported URI scheme: " + uriScheme);
+        }
+
+        return new KeyValuePair<Stream, string>(stream, extension);
+    }
+
+    private static async Task<ImageSource?> CreateImageSourceAsync(Uri uri)
+    {
+        try
+        {
+            var (stream, extension) = await GetImageStreamAsync(uri);
             await using (stream)
             {
-                var extension = Path.GetExtension(fullPath);
                 return stream.ToImageSource(extension);
             }
         }
@@ -186,7 +208,7 @@ public static class ImageExtensions
 
         Trace.WriteLine($"read {uri} failed,not match any scheme.");
         // 如果发生异常，从缓存中移除失败的任务
-        IconCache.TryRemove(uri, out _);
+        ImageCache.TryRemove(uri, out _);
         return null;
     }
 
@@ -323,6 +345,7 @@ public static class ImageExtensions
         {
             throw new IOException("Failed to read the entire stream.");
         }
+
         var base64 = Convert.ToBase64String(buffer);
         return $"{Base64ImagePrefix}{extension.ToLower()};base64,{base64}";
     }

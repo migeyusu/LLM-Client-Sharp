@@ -48,7 +48,6 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
             switch (extension)
             {
                 case ".txt":
-                case ".md":
                 case ".json":
                 case ".csv":
                     source = new TextFile(fileInfo);
@@ -63,6 +62,9 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
                 case ".doc":
                 case ".docx":
                     source = new WordFile(fileInfo);
+                    break;
+                case ".md":
+                    source = new MarkdownFile(fileInfo);
                     break;
                 default:
                     MessageBox.Show("不支持的文件类型，请选择文本、Markdown、JSON、CSV、PDF或Word文档。", "错误", MessageBoxButton.OK,
@@ -122,6 +124,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
                 fileSource.PropertyChanged -= RagFileOnPropertyChanged;
                 Sources.Remove(fileSource);
                 MessageEventBus.Publish($"文件{fileSource.FilePath}已删除");
+                await SaveAsync();
             }
         }
         catch (Exception e)

@@ -21,7 +21,7 @@ public abstract class RawNode<T, TK> where T : RawNode<T, TK>
     public string Title { get; set; }
 
     /// <summary>
-    /// 在目录树中的层级
+    /// 在目录树中的层级，从0开始
     /// </summary>
     public int Level { get; set; }
 
