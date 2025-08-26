@@ -39,9 +39,13 @@
                     </TextBlock>
                 </StackPanel>
                 <TextBlock Grid.Row="1"
+                           TextWrapping="Wrap"
+                           Margin="0,5,0,0"
+                           Background="{DynamicResource MaterialDesign.Brush.TextBox.FilledBackground}"
                            Visibility="{Binding Summary,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringToVisibilityConverter}}">
                     <Run Text="Summary:"
                          FontWeight="Black" />
+                    <LineBreak />
                     <Run Text="{Binding Summary,Mode=OneTime}" />
                 </TextBlock>
                 <ScrollViewer Grid.Row="2"
@@ -49,12 +53,17 @@
                               Margin="30,0,0,0"
                               HorizontalAlignment="Stretch"
                               VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding Pages,Mode=OneTime}">
+                    <ItemsControl ItemsSource="{Binding ContentUnits,Mode=OneTime}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type local:PDFPage}">
                                 <StackPanel Orientation="Vertical"
                                             Margin="0,5,0,5">
-                                    <TextBlock Text="{Binding  Content,Mode=OneTime}" />
+                                    <TextBox Text="{Binding  Content,Mode=OneTime}"
+                                             MaxHeight="300"
+                                             VerticalScrollBarVisibility="Auto"
+                                             TextAlignment="Left"
+                                             materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                             BorderThickness="0" />
                                     <ItemsControl ItemsSource="{Binding PdfImages,Mode=OneTime}"
                                                   ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
                                         <ItemsControl.ItemTemplate>

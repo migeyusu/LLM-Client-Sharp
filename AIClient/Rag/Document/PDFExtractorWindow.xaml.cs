@@ -6,6 +6,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using LLMClient.Data;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using LLMClient.UI.Log;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory;
@@ -367,7 +368,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
                         await node.GenerateSummarize<PDFNode, PDFPage>(summaryDelegate, this.Logs, progress,
                             token: token);
                     });
-                MessageBox.Show("Summary generated successfully!");
+                MessageEventBus.Publish("Summary generated successfully!");
             }
             catch (Exception e)
             {

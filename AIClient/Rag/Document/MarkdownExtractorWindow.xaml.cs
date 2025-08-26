@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
 using LLMClient.Data;
+using LLMClient.UI.Component;
 using LLMClient.UI.Log;
 using Microsoft.Extensions.Logging;
 
@@ -73,12 +74,12 @@ public partial class MarkdownExtractorWindow : Window, INotifyPropertyChanged
                 Logs.Start();
                 IsProcessing = true;
                 // await promptsCache.InitializeAsync();
-                /*Func<string, CancellationToken, Task<string>> promptFake = async (s, cancellationToken) =>
+                Func<string, CancellationToken, Task<string>> promptFake = async (s, cancellationToken) =>
                 {
                     await Task.Delay(1000, cancellationToken);
                     var length = s.Length;
                     return s.Substring(0, int.Min(length, 1000));
-                };*/
+                };
                 var summaryDelegate =
                     digestClient.CreateSummaryDelegate(semaphoreSlim, SummaryLanguageIndex, _promptsCache,
                         logger: this.Logs,
@@ -86,10 +87,10 @@ public partial class MarkdownExtractorWindow : Window, INotifyPropertyChanged
                 await Parallel.ForEachAsync(this.ContentNodes, new ParallelOptions(),
                     async (node, token) =>
                     {
-                        await node.GenerateSummarize<MarkdownNode, MarkdownText>(summaryDelegate, this.Logs,
+                        await node.GenerateSummarize<MarkdownNode, MarkdownText>(promptFake, this.Logs,
                             progress, token: token);
                     });
-                MessageBox.Show("Summary generated successfully!");
+                MessageEventBus.Publish("Summary generated successfully!");
             }
             catch (Exception e)
             {
