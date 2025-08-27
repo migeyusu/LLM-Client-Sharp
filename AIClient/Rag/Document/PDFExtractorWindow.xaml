@@ -107,6 +107,12 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition />
                     </Grid.RowDefinitions>
+                    <GridSplitter Grid.RowSpan="2"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Stretch"
+                                  Background="DarkGray"
+                                  Margin="0,30"
+                                  Width="3" />
                     <!-- 左侧控制面板 -->
                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="10">
                         <TextBlock Text="选择页面:" Margin="0,20,0,0" />

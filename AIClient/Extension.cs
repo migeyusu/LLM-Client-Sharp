@@ -603,6 +603,7 @@ public static class Extension
             catch (Exception ex)
             {
                 logger?.LogError("Summary error: {ErrorMessage}", ex.Message);
+                throw;
             }
             finally
             {

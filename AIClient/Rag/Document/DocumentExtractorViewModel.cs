@@ -158,27 +158,28 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
             Logs.LogInformation("Processing node {0}, level: {1}",
                 node.Title, node.Level);
         });
-        using (var semaphoreSlim = new SemaphoreSlim(5, 5))
+        using (_processTokenSource = new CancellationTokenSource())
         {
-            var summarySize = Extension.SummarySize;
-            try
+            using (var semaphoreSlim = new SemaphoreSlim(5, 5))
             {
-                Logs.Start();
-                IsSummaryFailed = false;
-                IsProcessing = true;
-                await PromptsCache.LoadAsync(digestClient.Endpoint.Name, digestClient.Model.Id, summarySize);
-                /*Func<string, CancellationToken, Task<string>> summaryDelegate = async (s, cancellationToken) =>
+                var summarySize = Extension.SummarySize;
+                try
                 {
-                    await Task.Delay(1000, cancellationToken);
-                    var length = s.Length;
-                    return s.Substring(0, int.Min(length, 1000));
-                };*/
-                var summaryDelegate =
-                    digestClient.CreateSummaryDelegate(semaphoreSlim, SummaryLanguageIndex,
-                        ContextGenerator(SummaryLanguageIndex), PromptsCache,
-                        logger: this.Logs, summarySize: summarySize, retryCount: 3);
-                using (_processTokenSource = new CancellationTokenSource())
-                {
+                    Logs.Start();
+                    IsSummaryFailed = false;
+                    IsProcessing = true;
+                    await PromptsCache.LoadAsync(digestClient.Endpoint.Name, digestClient.Model.Id, summarySize);
+                    /*Func<string, CancellationToken, Task<string>> summaryDelegate = async (s, cancellationToken) =>
+                    {
+                        await Task.Delay(1000, cancellationToken);
+                        var length = s.Length;
+                        return s.Substring(0, int.Min(length, 1000));
+                    };*/
+                    var summaryDelegate =
+                        digestClient.CreateSummaryDelegate(semaphoreSlim, SummaryLanguageIndex,
+                            ContextGenerator(SummaryLanguageIndex), PromptsCache,
+                            logger: this.Logs, summarySize: summarySize, retryCount: 3);
+
                     CanCancel = true;
                     await Parallel.ForEachAsync(this.ContentNodes,
                         new ParallelOptions() { CancellationToken = _processTokenSource.Token },
@@ -189,28 +190,35 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
                                 await node.GenerateSummarize<T, TK>(summaryDelegate, this.Logs,
                                     progress, token: token);
                             }
+                            catch (OperationCanceledException)
+                            {
+                                //不作处理
+                            }
                             catch (Exception)
                             {
-                                this.Logs.LogWarning("由于一个摘要任务失败，所有任务已被取消");
-                                await _processTokenSource.CancelAsync();
+                                if (!_processTokenSource.IsCancellationRequested)
+                                {
+                                    this.Logs.LogWarning("由于一个摘要任务失败，所有任务已被取消");
+                                    await _processTokenSource.CancelAsync();
+                                }
                                 throw;
                             }
                         });
-                }
 
-                MessageBox.Show("Summary generated successfully!");
-            }
-            catch (Exception e)
-            {
-                IsSummaryFailed = true;
-                // await promptsCache.SaveAsync();
-                MessageBox.Show($"Failed to generate summary: {e.Message}");
-            }
-            finally
-            {
-                CanCancel = false;
-                IsProcessing = false;
-                Logs.Stop();
+                    MessageBox.Show("Summary generated successfully!");
+                }
+                catch (Exception e)
+                {
+                    IsSummaryFailed = true;
+                    // await promptsCache.SaveAsync();
+                    MessageBox.Show($"Failed to generate summary: {e.Message}");
+                }
+                finally
+                {
+                    CanCancel = false;
+                    IsProcessing = false;
+                    Logs.Stop();
+                }
             }
         }
     }

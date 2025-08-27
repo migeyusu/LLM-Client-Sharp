@@ -239,8 +239,8 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
         foreach (var block in textBlocks)
         {
             var boundingBox = block.BoundingBox;
-            var x = boundingBox.BottomLeft.X; // PDF左下原点
-            var y = pageHeight - boundingBox.TopRight.Y; // 转换为WPF左上原点
+            var x = boundingBox.TopLeft.X; // PDF左下原点
+            var y = pageHeight - boundingBox.TopLeft.Y; // 转换为WPF左上原点
             var width = boundingBox.Width;
             var height = boundingBox.Height;
 
@@ -315,13 +315,17 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
         //绘制Letters（可选：精确文本渲染；注释掉以简化，但可启用）
         foreach (var letter in page.Letters)
         {
-            var lx = letter.GlyphRectangle.BottomLeft.X;
-            var ly = pageHeight - letter.GlyphRectangle.TopRight.Y;
-            var ltxt = new TextBlock
-                { Text = letter.Value, FontSize = letter.PointSize, Foreground = Brushes.Black };
-            Canvas.SetLeft(ltxt, lx);
-            Canvas.SetTop(ltxt, ly);
-            pageChildren.Add(ltxt);
+            var lx = letter.StartBaseLine.X;  // 使用基线位置而不是字形边界  
+            var ly = pageHeight - letter.StartBaseLine.Y;  // 基线Y坐标  
+            var ltxt = new TextBlock  
+            {  
+                Text = letter.Value,  
+                FontSize = letter.PointSize,  
+                Foreground = Brushes.Black  
+            };  
+            Canvas.SetLeft(ltxt, lx);  
+            Canvas.SetTop(ltxt, ly);  
+            pageChildren.Add(ltxt);  
         }
     }
 
