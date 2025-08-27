@@ -28,6 +28,11 @@ public abstract class RawNode<T, TK> : BaseViewModel where T : RawNode<T, TK>
     /// </summary>
     public int Level { get; set; }
 
+    /// <summary>
+    /// used for summary generation, may contain markdown or plain text.
+    /// </summary>
+    public string SummaryRaw { get; set; } = string.Empty;
+
     public string Summary
     {
         get => _summary;

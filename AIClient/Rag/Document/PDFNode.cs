@@ -8,12 +8,49 @@ namespace LLMClient.Rag.Document;
 /// </summary>
 public class PDFNode : RawNode<PDFNode, PDFPage>
 {
+    private Point _startPoint;
+    private double _startPointX;
+    private double _startPointY;
+
     /// <summary>
     /// 该章节在PDF中的起始页码
     /// </summary>
     public int StartPage { get; set; }
 
-    public Point StartPoint { get; set; }
+    public Point StartPoint
+    {
+        get => _startPoint;
+        set
+        {
+            if (value.Equals(_startPoint)) return;
+            _startPoint = value;
+            OnPropertyChanged();
+            this.StartPointX = value.X;
+            this.StartPointY = value.Y;
+        }
+    }
+
+    public double StartPointX
+    {
+        get => _startPointX;
+        set
+        {
+            if (value.Equals(_startPointX)) return;
+            _startPointX = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public double StartPointY
+    {
+        get => _startPointY;
+        set
+        {
+            if (value.Equals(_startPointY)) return;
+            _startPointY = value;
+            OnPropertyChanged();
+        }
+    }
 
     public ExplicitDestination? Destination { get; set; }
     // public List<PDFNode> Children { get; set; } = new List<PDFNode>();

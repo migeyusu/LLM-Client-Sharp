@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Input;
 using LLMClient.Data;
 using LLMClient.UI.Component;
 using LLMClient.UI.Log;
@@ -74,7 +75,7 @@ public partial class MarkdownExtractorWindow : Window, INotifyPropertyChanged
                 Logs.Start();
                 IsProcessing = true;
                 // await promptsCache.InitializeAsync();
-                /*Func<string, CancellationToken, Task<string>> promptFake = async (s, cancellationToken) =>
+                /*Func<string, CancellationToken, Task<string>> summaryDelegate = async (s, cancellationToken) =>
                 {
                     await Task.Delay(1000, cancellationToken);
                     var length = s.Length;
@@ -190,5 +191,51 @@ public partial class MarkdownExtractorWindow : Window, INotifyPropertyChanged
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private async void RefreshCommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is MarkdownNode node)
+        {
+            try
+            {
+                IsProcessing = true;
+                var digestClient = _ragOption.DigestClient;
+                if (digestClient == null)
+                {
+                    throw new InvalidOperationException("Digest client is not set.");
+                }
+
+                using (var semaphoreSlim = new SemaphoreSlim(1, 1))
+                {
+                    var summarySize = Extension.SummarySize;
+                    var summaryDelegate =
+                        digestClient.CreateSummaryDelegate(semaphoreSlim, SummaryLanguageIndex, PromptsCache.NoCache,
+                            logger: this.Logs,
+                            summarySize: summarySize, retryCount: 3);
+                    using (var source = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
+                    {
+                        node.Summary = await summaryDelegate(node.SummaryRaw, source.Token);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(exception.Message);
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
+        }
+    }
+
+    private void ClearCache_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (MessageBox.Show("是否清除缓存？", "确认", MessageBoxButton.OKCancel, MessageBoxImage.Question)
+            == MessageBoxResult.OK)
+        {
+            this._promptsCache?.Clear();
+        }
     }
 }

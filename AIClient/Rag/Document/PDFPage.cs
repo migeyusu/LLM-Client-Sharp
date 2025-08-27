@@ -60,6 +60,14 @@ public class PDFPage : IContentUnit
                 }
             }
 
+            if (image.ImageDictionary.TryGet(NameToken.Filter, out var token) && token.Equals(NameToken.DctDecode))
+            {
+                using (var memoryStream = new MemoryStream(image.RawBytes.ToArray()))
+                {
+                    return await memoryStream.ToBase64StringAsync(".jpg");
+                }
+            }
+
             logger?.LogWarning("无法处理图像，所在页码：{PageNumber}", PageNumber);
             return string.Empty; // 如果无法处理图像，返回空字符串
         }).ToArray();

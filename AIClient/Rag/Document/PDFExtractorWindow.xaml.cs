@@ -1,15 +1,16 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using LLMClient.Data;
-using LLMClient.UI;
 using LLMClient.UI.Component;
 using LLMClient.UI.Log;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.Logging;
-using Microsoft.KernelMemory;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 
@@ -158,17 +159,32 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
 
     public LogsViewModel Logs { get; set; } = new LogsViewModel();
 
+    public List<PDFNode> StructNodes { get; }
+
     private readonly PDFExtractor _extractor;
+
+    private ConcurrentDictionary<int, IList<PDFNode>> _pageNodeMap = new();
 
     public PDFExtractorWindow(PDFExtractor extractor, RagOption ragOption)
     {
         _extractor = extractor;
         this._ragOption = ragOption;
+        this.StructNodes = extractor.ExtractTree();
+        foreach (var structNode in StructNodes.Flatten())
+        {
+            _pageNodeMap.AddOrUpdate(structNode.StartPage, new List<PDFNode> { structNode },
+                (key, list) =>
+                {
+                    list.Add(structNode);
+                    return list;
+                });
+        }
+
         this.DataContext = this;
         InitializeComponent();
         try
         {
-            for (int i = 1; i <= extractor.Document.NumberOfPages; i++)
+            for (int i = 1; i <= extractor.PageCount; i++)
             {
                 CmbPages.Items.Add($"Page {i}");
             }
@@ -192,6 +208,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         }
     }
 
+
     // 核心渲染方法
     private void RenderPage()
     {
@@ -200,15 +217,14 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        CanvasPage.Children.Clear();
-        var page = _extractor.Document.GetPage(_currentPageNumber);
+        var pageChildren = CanvasPage.Children;
+        pageChildren.Clear();
+        var pageCacheItem = _extractor.Deserialize(_extractor.GetPage(_currentPageNumber), FileMargin);
+        var page = pageCacheItem.Page;
         var pageWidth = page.Width; // PDF点单位
         var pageHeight = page.Height;
-
-        // 设置Canvas大小（缩放1:1，但可通过ScrollViewer滚动）
         CanvasPage.Width = pageWidth;
         CanvasPage.Height = pageHeight;
-
         // 绘制页面背景（白色矩形）
         var background = new Rectangle
         {
@@ -220,13 +236,8 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         };
         Canvas.SetLeft(background, 0);
         Canvas.SetTop(background, 0);
-        CanvasPage.Children.Add(background);
-
-        // 提取Words和TextBlocks（基于工具查询的代码）
-        var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
-        var pageSegmenter = DocstrumBoundingBoxes.Instance;
-        var textBlocks = pageSegmenter.GetBlocks(words);
-
+        pageChildren.Add(background);
+        var textBlocks = pageCacheItem.RemainingTextBlocks;
         // 绘制每个TextBlock的文本和边界框
         foreach (var block in textBlocks)
         {
@@ -247,7 +258,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
             };
             Canvas.SetLeft(rect, x);
             Canvas.SetTop(rect, y);
-            CanvasPage.Children.Add(rect);
+            pageChildren.Add(rect);
             foreach (var textLine in block.TextLines)
             {
                 var textLineBoundingBox = textLine.BoundingBox;
@@ -262,7 +273,7 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
                 };
                 Canvas.SetLeft(txt, x0);
                 Canvas.SetTop(txt, y0);
-                CanvasPage.Children.Add(txt);
+                pageChildren.Add(txt);
             }
         }
 
@@ -271,16 +282,48 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         DrawMarginLine(0, pageHeight - BottomMargin, pageWidth, pageHeight - BottomMargin, true); // Bottom (WPF坐标翻转)
         DrawMarginLine(LeftMargin, 0, LeftMargin, pageHeight, false); // Left
         DrawMarginLine(pageWidth - RightMargin, 0, pageWidth - RightMargin, pageHeight, false); // Right
-        // 绘制Letters（可选：精确文本渲染；注释掉以简化，但可启用）
-        // foreach (var letter in page.Letters)
-        // {
-        //     double lx = letter.GlyphRectangle.BottomLeft.X;
-        //     double ly = pageHeight - letter.GlyphRectangle.TopRight.Y;
-        //     TextBlock ltxt = new TextBlock { Text = letter.Value, FontSize = letter.FontSize, Foreground = Brushes.Black };
-        //     Canvas.SetLeft(ltxt, lx);
-        //     Canvas.SetTop(ltxt, ly);
-        //     canvasPage.Children.Add(ltxt);
-        // }
+        // 绘制Bookmarks
+        if (_pageNodeMap.TryGetValue(_currentPageNumber, out var nodes))
+        {
+            foreach (var node in nodes)
+            {
+                var point = node.StartPoint;
+                var txt = new TextBlock
+                {
+                    Text = node.Title,
+                    FontSize = 12,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Green
+                };
+                Canvas.SetLeft(txt, point.X); // 靠左显示
+                Canvas.SetTop(txt, pageHeight - point.Y);
+                pageChildren.Add(txt);
+                //add a crosshair
+                var line1 = new Line
+                {
+                    X1 = point.X - 5, Y1 = pageHeight - point.Y, X2 = point.X + 5, Y2 = pageHeight - point.Y,
+                    Stroke = Brushes.Red, StrokeThickness = 1
+                };
+                var line2 = new Line
+                {
+                    X1 = point.X, Y1 = pageHeight - point.Y - 5, X2 = point.X, Y2 = pageHeight - point.Y + 5,
+                    Stroke = Brushes.Red, StrokeThickness = 1
+                };
+                pageChildren.Add(line1);
+                pageChildren.Add(line2);
+            }
+        }
+
+        //绘制Letters（可选：精确文本渲染；注释掉以简化，但可启用）
+        /*foreach (var letter in page.Letters)
+        {
+            double lx = letter.GlyphRectangle.BottomLeft.X;
+            double ly = pageHeight - letter.GlyphRectangle.TopRight.Y;
+            TextBlock ltxt = new TextBlock { Text = letter.Value, FontSize = letter.FontSize, Foreground = Brushes.Black };
+            Canvas.SetLeft(ltxt, lx);
+            Canvas.SetTop(ltxt, ly);
+            CanvasPage.Children.Add(ltxt);
+        }*/
     }
 
     // 辅助方法：绘制margin线
@@ -301,11 +344,11 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
         try
         {
             Thickness margin = this.FileMargin;
-            var pages = _extractor.Document.NumberOfPages;
+            var pages = _extractor.PageCount;
             var progress = new Progress<int>(i => this.ProgressValue = i / (double)pages);
             IsProcessing = true;
             await Task.Run(() => { _extractor.Initialize(progress, margin); });
-            this.ContentNodes = _extractor.Analyze();
+            this.ContentNodes = _extractor.Analyze(this.StructNodes);
             IsProcessing = false;
         }
         catch (Exception e)
@@ -346,7 +389,6 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
             var summarySize = Extension.SummarySize;
             _promptsCache ??= new PromptsCache(Guid.NewGuid().ToString(), PromptsCache.CacheFolderPath,
                 digestClient.Endpoint.Name, digestClient.Model.Id) { OutputSize = summarySize };
-
             try
             {
                 Logs.Start();
@@ -399,5 +441,116 @@ public partial class PDFExtractorWindow : Window, INotifyPropertyChanged
     private void PDFExtractorWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
         this.RenderPage();
+    }
+
+    private async void RefreshCommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is MarkdownNode node)
+        {
+            try
+            {
+                IsProcessing = true;
+                var digestClient = _ragOption.DigestClient;
+                if (digestClient == null)
+                {
+                    throw new InvalidOperationException("Digest client is not set.");
+                }
+
+                using (var semaphoreSlim = new SemaphoreSlim(1, 1))
+                {
+                    var summarySize = Extension.SummarySize;
+                    var summaryDelegate =
+                        digestClient.CreateSummaryDelegate(semaphoreSlim, SummaryLanguageIndex,
+                            PromptsCache.NoCache, logger: this.Logs,
+                            summarySize: summarySize, retryCount: 3);
+                    using (var source = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
+                    {
+                        var summaryRaw = node.SummaryRaw;
+                        node.Summary = await summaryDelegate(summaryRaw, source.Token);
+                        _promptsCache?.AddOrUpdate(summaryRaw, node.Summary);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(exception.Message);
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
+        }
+    }
+
+    private void ClearCache_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (MessageBox.Show("是否清除缓存？", "确认", MessageBoxButton.OKCancel, MessageBoxImage.Question)
+            == MessageBoxResult.OK)
+        {
+            this._promptsCache?.Clear();
+        }
+    }
+
+    private void DialogHost_OnDialogClosed(object sender, DialogClosedEventArgs eventArgs)
+    {
+        if (bool.TryParse(eventArgs.Parameter?.ToString(), out var result) && result)
+        {
+            if (eventArgs.Session.Content is PDFNode pdfNode)
+            {
+                pdfNode.StartPoint = new Point(pdfNode.StartPointX, pdfNode.StartPointY);
+                RenderPage();
+            }
+        }
+    }
+
+    private void CanvasPage_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+        {
+            // 获取鼠标相对于ScrollViewer的位置
+            Point mousePosition = e.GetPosition(ScrollViewerPage);
+
+            // 获取或创建ScaleTransform
+            var scaleTransform = CanvasPage.LayoutTransform as ScaleTransform;
+            if (scaleTransform == null)
+            {
+                scaleTransform = new ScaleTransform(1.0, 1.0);
+                CanvasPage.LayoutTransform = scaleTransform;
+            }
+
+            // 计算当前缩放比例
+            double currentScale = scaleTransform.ScaleX;
+
+            // 计算缩放因子
+            double zoomFactor = e.Delta > 0 ? 1.1 : 0.9;
+            double newScale = currentScale * zoomFactor;
+
+            // 计算内容在缩放前后的位置差异，并调整滚动位置
+            double horizontalOffset = ScrollViewerPage.HorizontalOffset;
+            double verticalOffset = ScrollViewerPage.VerticalOffset;
+
+            // 应用新的缩放
+            scaleTransform.ScaleX = newScale;
+            scaleTransform.ScaleY = newScale;
+
+            // 调整滚动位置，使鼠标位置下的内容保持不变
+            ScrollViewerPage.ScrollToHorizontalOffset(
+                horizontalOffset * zoomFactor + mousePosition.X * (zoomFactor - 1));
+            ScrollViewerPage.ScrollToVerticalOffset(verticalOffset * zoomFactor + mousePosition.Y * (zoomFactor - 1));
+
+            e.Handled = true; // 防止事件继续传播
+        }
+    }
+
+    private void NodeTreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        var newValue = e.NewValue;
+        if (newValue is PDFNode node)
+        {
+            if (node.StartPage != _currentPageNumber)
+            {
+                CmbPages.SelectedIndex = node.StartPage - 1;
+            }
+        }
     }
 }

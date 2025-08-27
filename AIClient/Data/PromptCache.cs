@@ -9,6 +9,9 @@ namespace LLMClient.Data;
 
 public class PromptsCache
 {
+    public static PromptsCache NoCache { get; } =
+        new PromptsCache("NoCache", Path.GetTempPath(), "NoEndpoint", "NoModel");
+
     private static readonly string CacheFolderName = "Cache" + Path.DirectorySeparatorChar + "Prompts";
     public static string CacheFolderPath => Path.GetFullPath(CacheFolderName);
 
@@ -150,5 +153,15 @@ public class PromptsCache
     public bool TryAdd(string key, string value)
     {
         return _cache.TryAdd(key, value);
+    }
+
+    public void AddOrUpdate(string key, string value)
+    {
+        _cache.AddOrUpdate(key, value, (k, v) => value);
+    }
+    
+    public void Clear()
+    {
+        _cache.Clear();
     }
 }

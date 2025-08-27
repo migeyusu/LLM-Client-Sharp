@@ -35,7 +35,9 @@ public static class ExtractorExtensions
                 summaryBuilder.AppendLine(childNode.Summary);
             }
 
-            node.Summary = await llmCall(summaryBuilder.ToString(), token);
+            var raw = summaryBuilder.ToString();
+            node.SummaryRaw = raw;
+            node.Summary = await llmCall(raw, token);
             //text 为空
         }
         else
@@ -69,6 +71,7 @@ public static class ExtractorExtensions
             var nodeContent = nodeContentBuilder.ToString();
             if (!string.IsNullOrEmpty(nodeContent.Trim()))
             {
+                node.SummaryRaw = nodeContent;
                 node.Summary = await llmCall(nodeContent, token);
             }
             else
@@ -179,5 +182,13 @@ public static class ExtractorExtensions
         }*/
         nodeChunk.Summary = nodeSummary;
         chunks.Add(nodeChunk);
+    }
+    
+    /// <summary>
+    /// 将树形结构扁平化为一个列表，方便后续处理。
+    /// </summary>
+    public static IEnumerable<PDFNode> Flatten(this IEnumerable<PDFNode> nodes)
+    {
+        return nodes.SelectMany(n => new[] { n }.Concat(Flatten(n.Children)));
     }
 }

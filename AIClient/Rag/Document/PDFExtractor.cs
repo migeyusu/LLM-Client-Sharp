@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using System.Windows;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
@@ -17,7 +16,11 @@ public class PDFExtractor : IDisposable
 {
     private readonly ConcurrentDictionary<int, PageCacheItem> _cache;
 
-    public PdfDocument Document { get; }
+    public long PageCount => Document.NumberOfPages;
+
+    public Page GetPage(int pageNumber) => Document.GetPage(pageNumber);
+
+    private PdfDocument Document { get; }
 
     public PDFExtractor(string filePath)
     {
@@ -31,69 +34,77 @@ public class PDFExtractor : IDisposable
     private static readonly IPageSegmenter PageSegmenter =
         new DocstrumBoundingBoxes(new DocstrumBoundingBoxes.DocstrumBoundingBoxesOptions());
 
+    public PageCacheItem Deserialize(Page page, Thickness? padding = null)
+    {
+        var box = page.CropBox.Bounds;
+        Thickness? thickness;
+        if (padding == null)
+        {
+            thickness = null;
+        }
+        else
+        {
+            var paddingValue = padding.Value;
+            thickness = new Thickness(
+                box.Left + paddingValue.Left,
+                box.Top - paddingValue.Top,
+                box.Right - paddingValue.Right,
+                box.Bottom + paddingValue.Bottom);
+        }
+
+        var words = page.GetWords(NearestNeighbourWordExtractor.Instance).ToArray();
+        if (words.Any() && thickness.HasValue)
+        {
+            var thicknessValue = thickness.Value;
+            words = words.Where(word =>
+            {
+                var boundingBox = word.BoundingBox;
+                return boundingBox.Bottom < thicknessValue.Top && // 单词的下边缘要低于页眉线
+                       boundingBox.Top > thicknessValue.Bottom && // 单词的上边缘要高于页脚线
+                       boundingBox.Left > thicknessValue.Left && // 单词的左边缘要在页边距右侧; 
+                       boundingBox.Right < thicknessValue.Right; // 单词的右边缘要在页边距左侧
+            }).ToArray();
+        }
+
+        var textBlocks = PageSegmenter.GetBlocks(words);
+        var orderedBlocks = _orderDetector.Get(textBlocks).ToArray();
+        var pdfImages = page.GetImages().ToArray();
+        if (pdfImages.Any() && thickness.HasValue)
+        {
+            var thicknessValue = thickness.Value;
+            pdfImages = pdfImages.Where(img =>
+            {
+                var boundingBox = img.Bounds;
+                return boundingBox.Bottom < thicknessValue.Top && // 图片的下边缘要低于页眉线
+                       boundingBox.Top > thicknessValue.Bottom && // 图片的上边缘要高于页脚线
+                       boundingBox.Left > thicknessValue.Left && // 图片的左边缘要在页边距右侧; 
+                       boundingBox.Right < thicknessValue.Right; // 图片的右边缘要在页边距左侧
+            }).ToArray();
+        }
+
+        return new PageCacheItem(page, page.Number, orderedBlocks, pdfImages);
+    }
+
+    private readonly UnsupervisedReadingOrderDetector _orderDetector = new(10);
+
     public void Initialize(IProgress<int>? progress = null, Thickness? padding = null)
     {
         _cache.Clear();
-        var orderDetector = new UnsupervisedReadingOrderDetector(10);
         foreach (var page in Document.GetPages())
         {
-            var box = page.CropBox.Bounds;
-            Thickness? thickness;
-            if (padding == null)
-            {
-                thickness = null;
-            }
-            else
-            {
-                var paddingValue = padding.Value;
-                thickness = new Thickness(
-                    box.Left + paddingValue.Left,
-                    box.Top - paddingValue.Top,
-                    box.Right - paddingValue.Right,
-                    box.Bottom + paddingValue.Bottom);
-            }
-
-            var words = page.GetWords(NearestNeighbourWordExtractor.Instance).ToArray();
-            if (words.Any() && thickness.HasValue)
-            {
-                var thicknessValue = thickness.Value;
-                words = words.Where(word =>
-                {
-                    var boundingBox = word.BoundingBox;
-                    return boundingBox.Bottom < thicknessValue.Top && // 单词的下边缘要低于页眉线
-                           boundingBox.Top > thicknessValue.Bottom && // 单词的上边缘要高于页脚线
-                           boundingBox.Left > thicknessValue.Left && // 单词的左边缘要在页边距右侧; 
-                           boundingBox.Right < thicknessValue.Right; // 单词的右边缘要在页边距左侧
-                }).ToArray();
-            }
-
-            var blocks = PageSegmenter.GetBlocks(words);
+            var pageCacheItem = Deserialize(page, padding);
             var pageNumber = page.Number;
             progress?.Report(pageNumber);
-            var pdfImages = page.GetImages().ToArray();
-            if (pdfImages.Any() && thickness.HasValue)
-            {
-                var thicknessValue = thickness.Value;
-                pdfImages = pdfImages.Where(img =>
-                {
-                    var boundingBox = img.Bounds;
-                    return boundingBox.Bottom < thicknessValue.Top && // 图片的下边缘要低于页眉线
-                           boundingBox.Top > thicknessValue.Bottom && // 图片的上边缘要高于页脚线
-                           boundingBox.Left > thicknessValue.Left && // 图片的左边缘要在页边距右侧; 
-                           boundingBox.Right < thicknessValue.Right; // 图片的右边缘要在页边距左侧
-                }).ToArray();
-            }
-
-            var orderedBlocks = orderDetector.Get(blocks).ToArray();
-            _cache.TryAdd(pageNumber, new PageCacheItem(page, pageNumber, orderedBlocks, pdfImages));
+            _cache.TryAdd(pageNumber, pageCacheItem);
         }
     }
 
     /// <summary>
-    /// 解析出内容树。
+    /// 解析出bookmark树。
+    /// <para>递归构建基础树结构，只包含标题、层级和起始页码</para>
     /// </summary>
     /// <returns>内容树的根节点列表。</returns>
-    private List<PDFNode> ExtractContentTree()
+    public List<PDFNode> ExtractTree()
     {
         if (!Document.TryGetBookmarks(out var bookmarks, true))
         {
@@ -117,12 +128,12 @@ public class PDFExtractor : IDisposable
     /// 
     /// </summary>
     /// <returns>根节点列表</returns>
-    public IList<PDFNode> Analyze()
+    public IList<PDFNode> Analyze(IList<PDFNode>? rootNodes = null)
     {
         // 1. 递归构建基础树结构，只包含标题、层级和起始页码
-        var rootNodes = this.ExtractContentTree();
+        rootNodes ??= ExtractTree();
         // 2. 将扁平化的节点列表，用于确定每个章节的页码范围
-        var flatNodeList = Flatten(rootNodes)
+        var flatNodeList = rootNodes.Flatten()
             .OrderBy(n => n.StartPage)
             .ToList();
         int index = 0;
@@ -174,10 +185,18 @@ public class PDFExtractor : IDisposable
         {
             case ExplicitDestinationType.XyzCoordinates:
                 // 如果有坐标，使用坐标的左上角作为终止位置
-                if (coords.Top != null && coords.Left != null)
+                if (coords is { Top: not null, Left: not null })
                 {
                     topLeft = new Point((double)coords.Left,
                         (double)coords.Top);
+                }
+                else if (coords.Top != null)
+                {
+                    topLeft = new Point(0, (double)coords.Top);
+                }
+                else
+                {
+                    Trace.TraceWarning($"{node.Title} XyzCoordinates缺少Top坐标，可能发生错误！。");
                 }
 
                 break;
@@ -312,15 +331,7 @@ public class PDFExtractor : IDisposable
         return true;
     }
 
-    /// <summary>
-    /// 将树形结构扁平化为一个列表，方便后续处理。
-    /// </summary>
-    private static IEnumerable<PDFNode> Flatten(IEnumerable<PDFNode> nodes)
-    {
-        return nodes.SelectMany(n => new[] { n }.Concat(Flatten(n.Children)));
-    }
-
-    private class PageCacheItem
+    public class PageCacheItem
     {
         public PageCacheItem(Page page, int pageNumber, IList<TextBlock> totalTextBlocks,
             IList<IPdfImage> pdfImages)
@@ -352,6 +363,7 @@ public class PDFExtractor : IDisposable
         {
             var startPoint = preNode.StartPoint; // 获取起始点
             var pageCacheItem = _cache[startPage];
+            //按照Block级别分割存在Block聚类错误的问题，暂时接受
             var remainingTextBlocks = pageCacheItem.RemainingTextBlocks;
             var startBlock = remainingTextBlocks.FirstOrDefault(block =>
             {
@@ -398,6 +410,7 @@ public class PDFExtractor : IDisposable
             }
             else
             {
+                //兼容：假设出现双列布局，则终止点是右侧列的起始点
                 var firstMatch = remainingTextBlocks.FirstOrDefault((block =>
                 {
                     var boundingBox = block.BoundingBox;

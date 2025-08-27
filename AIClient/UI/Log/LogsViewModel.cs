@@ -40,8 +40,9 @@ public class LogsViewModel : ILogger
 
     public void Start() => _timer.Start();
 
-    public void Stop()
+    public async void Stop()
     {
+        await Task.Delay(100);
         //立刻处理剩余的日志
         ProcessLogQueue(null, EventArgs.Empty);
         _timer.Stop();
