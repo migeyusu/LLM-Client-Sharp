@@ -161,7 +161,7 @@ public class PDFExtractor : IDisposable
                 // 如果是最后一个章节，则直到文档末尾
                 endPage = Document.NumberOfPages;
             }
-
+            currentNode.ContentUnits.Clear();
             // 提取并填充段落
             ExtractParagraphs(currentNode, index, endPage, nextTopLeft);
             index++;

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
+using LLMClient.Data;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
 using LLMClient.UI;
@@ -21,7 +22,7 @@ public class Rag
     const string pdfPath =
         @"C:\Users\jie.zhu\Documents\WXWork\1688854281599012\Cache\File\2025-07\AMT_M1A0_Datasheet_v0p5_250428.pdf";
 
-    const string markDownPath = @"E:\Doc\rag_doc\intel-64-architecture-processor-topology-enumeration\full.md";
+    private const string MarkDownPath = @"E:\Doc\rag_doc\intel-64-architecture-processor-topology-enumeration\full.md";
 
     public Rag(ITestOutputHelper output)
     {
@@ -35,7 +36,10 @@ public class Rag
         {
             var app = new App();
             app.InitializeComponent();
-            app.Run(new PDFExtractorWindow(new PDFExtractor(pdfPath), new RagOption()));
+            var pdfExtractorViewModel = new PDFExtractorViewModel(
+                new PDFExtractor(pdfPath), new RagOption(),
+                PromptsCache.NoCache);
+            app.Run(new PDFExtractorWindow(pdfExtractorViewModel));
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
@@ -283,7 +287,7 @@ public class Rag
     [Fact]
     public async Task MarkdownToNodes()
     {
-        var markdownNodes = await new MarkdownParser().Parse(markDownPath);
+        var markdownNodes = await new MarkdownParser().Parse(MarkDownPath);
         // var markdownNodes = MarkdownParser.ParseFromFile(markDownPath);
         var docChunks = await markdownNodes.ToDocChunks<MarkdownNode, MarkdownText>("doc1");
         Debugger.Break();

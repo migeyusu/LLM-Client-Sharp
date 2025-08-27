@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json.Serialization;
+using LLMClient.Data;
 using LLMClient.Rag.Document;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
@@ -31,13 +32,16 @@ public class MarkdownFile : RagFileBase
             throw new FileNotFoundException("Markdown file not found.", FilePath);
         }
 
-        var markdownExtractorWindow = new MarkdownExtractorWindow(FilePath, RagOption);
+        var promptsCache = new PromptsCache(this.DocumentId, PromptsCache.CacheFolderPath);
+        var markdownExtractorViewModel = new MarkdownExtractorViewModel(FilePath, RagOption, promptsCache);
+        var markdownExtractorWindow = new MarkdownExtractorWindow() { DataContext = markdownExtractorViewModel };
         if (markdownExtractorWindow.ShowDialog() != true)
         {
             throw new InvalidOperationException("Markdown extraction was cancelled by the user.");
         }
 
-        var docChunks = await markdownExtractorWindow.ContentNodes
+        await promptsCache.SaveAsync();
+        var docChunks = await markdownExtractorViewModel.ContentNodes
             .ToDocChunks<MarkdownNode, MarkdownText>(this.DocumentId);
         SemanticKernelStore? store = null;
         this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",

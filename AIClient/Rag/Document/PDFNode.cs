@@ -1,4 +1,6 @@
 ﻿using System.Windows;
+using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.DocumentLayoutAnalysis;
 using UglyToad.PdfPig.Outline.Destinations;
 
 namespace LLMClient.Rag.Document;

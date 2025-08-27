@@ -66,7 +66,7 @@ public class FileRagDataViewModel : BaseViewModel
         {
             var searchResult = (StructResult)await _ragFile.QueryAsync(_searchText, new
             {
-                Algorithm = _algorithm,
+                SearchAlgorithm = _algorithm,
                 TopK = _topK
             });
             this.SearchResults = searchResult.Nodes;
@@ -74,7 +74,7 @@ public class FileRagDataViewModel : BaseViewModel
         }
         catch (Exception e)
         {
-            MessageEventBus.Publish($"Search failed: {e.Message}");
+            MessageBox.Show($"Search failed: {e.Message}");
         }
     });
 

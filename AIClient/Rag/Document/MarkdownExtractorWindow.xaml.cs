@@ -1,184 +1,16 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
-using LLMClient.Data;
-using LLMClient.UI.Component;
-using LLMClient.UI.Log;
-using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Rag.Document;
 
-public partial class MarkdownExtractorWindow : Window, INotifyPropertyChanged
+public partial class MarkdownExtractorWindow : Window
 {
-    private int _currentStep = 0;
-
-    public int CurrentStep
+    public MarkdownExtractorWindow()
     {
-        get => _currentStep;
-        set
-        {
-            if (value == _currentStep) return;
-            _currentStep = value;
-            OnPropertyChanged();
-            switch (value)
-            {
-                // 根据步骤执行不同的操作
-                case 0:
-                    this.Title = "Markdown Extractor - Step 1: Analyze Content";
-                    break;
-                case 1:
-                    this.Title = "Markdown Extractor - Step 2: Generate Summary";
-                    GenerateSummary();
-                    break;
-            }
-        }
-    }
-
-    public LogsViewModel Logs { get; set; } = new LogsViewModel();
-
-    private PromptsCache? _promptsCache;
-
-    private readonly RagOption _ragOption;
-
-    private async void GenerateSummary()
-    {
-        var digestClient = _ragOption.DigestClient;
-        if (digestClient == null)
-        {
-            throw new InvalidOperationException("Digest client is not set.");
-        }
-
-        var nodeCount = 0;
-        foreach (var contentNode in this.ContentNodes)
-        {
-            nodeCount += contentNode.CountRecursive();
-        }
-
-        var progressCount = 0;
-        var progress = new Progress<MarkdownNode>(node =>
-        {
-            progressCount++;
-            this.ProgressValue = (double)progressCount / nodeCount;
-            // 会自动在UI线程调用
-            Logs.LogInformation("Processing node {0}, level: {1}",
-                node.Title, node.Level);
-        });
-        using (var semaphoreSlim = new SemaphoreSlim(5, 5))
-        {
-            var summarySize = Extension.SummarySize;
-            _promptsCache ??= new PromptsCache(Guid.NewGuid().ToString(), PromptsCache.CacheFolderPath,
-                digestClient.Endpoint.Name, digestClient.Model.Id) { OutputSize = summarySize };
-
-            try
-            {
-                Logs.Start();
-                IsProcessing = true;
-                // await promptsCache.InitializeAsync();
-                /*Func<string, CancellationToken, Task<string>> summaryDelegate = async (s, cancellationToken) =>
-                {
-                    await Task.Delay(1000, cancellationToken);
-                    var length = s.Length;
-                    return s.Substring(0, int.Min(length, 1000));
-                };*/
-                var summaryDelegate =
-                    digestClient.CreateSummaryDelegate(semaphoreSlim, SummaryLanguageIndex, _promptsCache,
-                        logger: this.Logs,
-                        summarySize: summarySize, retryCount: 3);
-                await Parallel.ForEachAsync(this.ContentNodes, new ParallelOptions(),
-                    async (node, token) =>
-                    {
-                        await node.GenerateSummarize<MarkdownNode, MarkdownText>(summaryDelegate, this.Logs,
-                            progress, token: token);
-                    });
-                MessageEventBus.Publish("Summary generated successfully!");
-            }
-            catch (Exception e)
-            {
-                // await promptsCache.SaveAsync();
-                MessageBox.Show($"Failed to generate summary: {e.Message}");
-            }
-            finally
-            {
-                IsProcessing = false;
-                Logs.Stop();
-            }
-        }
-    }
-
-    private int _summaryLanguageIndex;
-
-    public int SummaryLanguageIndex
-    {
-        get => _summaryLanguageIndex;
-        set
-        {
-            if (value == _summaryLanguageIndex) return;
-            _summaryLanguageIndex = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private IList<MarkdownNode> _contentNodes = Array.Empty<MarkdownNode>();
-
-    public IList<MarkdownNode> ContentNodes
-    {
-        get => _contentNodes;
-        set
-        {
-            if (Equals(value, _contentNodes)) return;
-            _contentNodes = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private bool _isProcessing;
-
-    public bool IsProcessing
-    {
-        get => _isProcessing;
-        set
-        {
-            if (value == _isProcessing) return;
-            _isProcessing = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private double _progressValue;
-
-    public double ProgressValue
-    {
-        get => _progressValue;
-        set
-        {
-            if (value.Equals(_progressValue)) return;
-            _progressValue = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private readonly MarkdownParser _parser = new MarkdownParser();
-
-    public MarkdownExtractorWindow(string markdownPath, RagOption ragOption)
-    {
-        this.DataContext = this;
-        _ragOption = ragOption;
-        AnalyzeNode(markdownPath);
         InitializeComponent();
     }
 
-    private async void AnalyzeNode(string markdownPath)
-    {
-        try
-        {
-            ContentNodes = await _parser.Parse(markdownPath);
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show(e.Message);
-        }
-    }
+    MarkdownExtractorViewModel viewModel => (DataContext as MarkdownExtractorViewModel)!;
 
     private void OK_OnClick(object sender, RoutedEventArgs e)
     {
@@ -186,56 +18,11 @@ public partial class MarkdownExtractorWindow : Window, INotifyPropertyChanged
         this.Close();
     }
 
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    private async void RefreshCommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    private void RefreshCommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is MarkdownNode node)
         {
-            try
-            {
-                IsProcessing = true;
-                var digestClient = _ragOption.DigestClient;
-                if (digestClient == null)
-                {
-                    throw new InvalidOperationException("Digest client is not set.");
-                }
-
-                using (var semaphoreSlim = new SemaphoreSlim(1, 1))
-                {
-                    var summarySize = Extension.SummarySize;
-                    var summaryDelegate =
-                        digestClient.CreateSummaryDelegate(semaphoreSlim, SummaryLanguageIndex, PromptsCache.NoCache,
-                            logger: this.Logs,
-                            summarySize: summarySize, retryCount: 3);
-                    using (var source = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
-                    {
-                        node.Summary = await summaryDelegate(node.SummaryRaw, source.Token);
-                    }
-                }
-            }
-            catch (Exception exception)
-            {
-                MessageBox.Show(exception.Message);
-            }
-            finally
-            {
-                IsProcessing = false;
-            }
-        }
-    }
-
-    private void ClearCache_OnClick(object sender, RoutedEventArgs e)
-    {
-        if (MessageBox.Show("是否清除缓存？", "确认", MessageBoxButton.OKCancel, MessageBoxImage.Question)
-            == MessageBoxResult.OK)
-        {
-            this._promptsCache?.Clear();
+            viewModel.GenerateSummary(node);
         }
     }
 }

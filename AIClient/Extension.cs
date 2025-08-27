@@ -503,16 +503,17 @@ public static class Extension
     /// <param name="client"></param>
     /// <param name="clientSemaphore"></param>
     /// <param name="language">0: English, 1: Chinese</param>
+    /// <param name="contextGenerator"></param>
     /// <param name="cache"></param>
     /// <param name="logger"></param>
     /// <param name="summarySize"></param>
     /// <param name="retryCount"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static Func<string, CancellationToken, Task<string>> CreateSummaryDelegate(this ILLMChatClient client,
-        SemaphoreSlim clientSemaphore, int language, PromptsCache cache, ILogger? logger = null,
-        int summarySize = SummarySize,
-        int retryCount = 3)
+    public static Func<T, CancellationToken, Task<string>> CreateSummaryDelegate<T>(this ILLMChatClient client,
+        SemaphoreSlim clientSemaphore, int language, Func<T, string> contextGenerator,
+        PromptsCache cache, ILogger? logger = null, int summarySize = SummarySize, int retryCount = 3)
+        where T : IRawNode
     {
         var modelParams = client.Parameters;
         modelParams.Streaming = false;
@@ -522,21 +523,23 @@ public static class Extension
                 int.Min(summarySize * 6, client.Model.MaxTokenLimit); // 设置最大令牌数至少为摘要长度的6倍（以包括reasoning）
         }
 
-        return async (content, token) =>
+        return async (node, token) =>
         {
-            if (string.IsNullOrEmpty(content))
+            var context = contextGenerator(node);
+            var raw = node.GetSummaryRaw();
+            if (string.IsNullOrEmpty(raw))
             {
                 logger?.LogInformation("内容为空，不进行摘要。");
                 return string.Empty;
             }
 
-            if (content.Length < SummaryTrigger)
+            if (raw.Length < SummaryTrigger)
             {
                 logger?.LogInformation("内容长度未超过{SummaryTrigger}，不进行摘要。", SummaryTrigger);
-                return content;
+                return raw;
             }
 
-            if (cache.TryGetValue(content, out var result))
+            if (cache.TryGetValue(raw, out var result))
             {
                 return result;
             }
@@ -551,6 +554,7 @@ public static class Extension
                 {
                     stringBuilder.Append(
                         $"Provide a concise and complete summarization of the following text blocks that does not exceed {summarySize} words. " +
+                        $"\n{contextGenerator(node)}" +
                         "\nThis summary must always:" +
                         "\n- Use English" +
                         "\n- Focus on the most significant aspects of the text blocks" +
@@ -566,6 +570,7 @@ public static class Extension
                 {
                     stringBuilder.Append(
                         $"请对以下文本块进行简洁而完整的总结，不超过 {summarySize} 字。" +
+                        $"\n{context}" +
                         "\n该摘要必须始终：" +
                         "\n- 使用中文" +
                         "\n- 关注文本块最重要的方面" +
@@ -578,7 +583,7 @@ public static class Extension
                         "\n\n请总结以下文本块直到结束：\n\n");
                 }
 
-                stringBuilder.Append(content);
+                stringBuilder.Append(raw);
                 var dialogContext = new DialogContext([
                     new RequestViewItem() { TextMessage = stringBuilder.ToString(), }
                 ]);
@@ -590,7 +595,7 @@ public static class Extension
                     var textResponse = response.TextResponse;
                     if (!string.IsNullOrEmpty(textResponse) && !response.IsInterrupt)
                     {
-                        cache.TryAdd(content, textResponse);
+                        cache.TryAdd(raw, textResponse);
                         return textResponse;
                     }
                 }

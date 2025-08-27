@@ -10,7 +10,7 @@ namespace LLMClient.Data;
 public class PromptsCache
 {
     public static PromptsCache NoCache { get; } =
-        new PromptsCache("NoCache", Path.GetTempPath(), "NoEndpoint", "NoModel");
+        new PromptsCache("NoCache", Path.GetTempPath());
 
     private static readonly string CacheFolderName = "Cache" + Path.DirectorySeparatorChar + "Prompts";
     public static string CacheFolderPath => Path.GetFullPath(CacheFolderName);
@@ -19,9 +19,9 @@ public class PromptsCache
 
     private readonly string _filePath;
 
-    public string ModelId { get; }
+    public string? ModelId { get; private set; }
 
-    public string EndpointId { get; }
+    public string? EndpointId { get; private set; }
 
     public int? OutputSize { get; set; }
 
@@ -30,12 +30,8 @@ public class PromptsCache
     /// </summary>
     /// <param name="cacheId">id for identify sessions</param>
     /// <param name="cacheDirectory"></param>
-    /// <param name="endpointId"></param>
-    /// <param name="modelId"></param>
-    public PromptsCache(string cacheId, string cacheDirectory, string endpointId, string modelId)
+    public PromptsCache(string cacheId, string cacheDirectory)
     {
-        ModelId = modelId;
-        EndpointId = endpointId;
         _cache = new ConcurrentDictionary<string, string>();
         if (string.IsNullOrEmpty(cacheId))
         {
@@ -50,8 +46,19 @@ public class PromptsCache
         _filePath = Path.Combine(cacheDirectory, cacheId);
     }
 
-    public async Task InitializeAsync()
+    public bool IsLoaded { get; private set; }
+
+    public async Task LoadAsync(string endpointId, string modelId, int outputSize)
     {
+        if (IsLoaded)
+        {
+            return;
+        }
+
+        IsLoaded = true;
+        ModelId = modelId;
+        EndpointId = endpointId;
+        OutputSize = outputSize;
         if (!File.Exists(_filePath))
         {
             Trace.TraceInformation("Prompt cache file does not exist: {0}", _filePath);
@@ -67,29 +74,26 @@ public class PromptsCache
                 return;
             }
 
-            var modeId = jsonNode[nameof(ModelId)];
-            if (modeId == null || modeId.GetValue<string>() != ModelId)
+            var model = jsonNode[nameof(ModelId)];
+            if (model == null || model.GetValue<string>() != modelId)
             {
-                Trace.TraceInformation("ModelId mismatch: expected {0}, found {1}", ModelId, modeId);
+                Trace.TraceInformation("ModelId mismatch: expected {0}, found {1}", ModelId, model);
                 return;
             }
 
             var endPoint = jsonNode[nameof(EndpointId)];
-            if (endPoint == null || endPoint.GetValue<string>() != EndpointId)
+            if (endPoint == null || endPoint.GetValue<string>() != endpointId)
             {
                 Trace.TraceInformation("EndpointId mismatch: expected {0}, found {1}", EndpointId, endPoint);
                 return;
             }
 
-            if (OutputSize != null)
+            var output = jsonNode[nameof(OutputSize)];
+            if (output == null || output.GetValue<int>() != outputSize)
             {
-                var outputSize = jsonNode[nameof(OutputSize)];
-                if (outputSize == null || outputSize.GetValue<int>() != OutputSize.Value)
-                {
-                    Trace.TraceInformation("SummarySize mismatch: expected {0}, found {1}", OutputSize.Value,
-                        outputSize);
-                    return;
-                }
+                Trace.TraceInformation("SummarySize mismatch: expected {0}, found {1}", OutputSize.Value,
+                    output);
+                return;
             }
 
             var node = jsonNode["Prompts"];
@@ -159,7 +163,7 @@ public class PromptsCache
     {
         _cache.AddOrUpdate(key, value, (k, v) => value);
     }
-    
+
     public void Clear()
     {
         _cache.Clear();

@@ -1,14 +1,31 @@
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Text;
 using LLMClient.UI;
 using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Rag.Document;
+
+public interface IRawNode
+{
+    string Title { get; set; }
+
+    int Level { get; set; }
+
+    bool HasChildren { get; }
+
+    /// <summary>
+    /// used for summary generation, may contain markdown or plain text.
+    /// </summary>
+    string GetSummaryRaw();
+}
 
 /// <summary>
 /// raw node for representing a hierarchical structure in a document.
 /// </summary>
 /// <typeparam name="T"></typeparam>
 /// <typeparam name="TK"></typeparam>
-public abstract class RawNode<T, TK> : BaseViewModel where T : RawNode<T, TK>
+public abstract class RawNode<T, TK> : BaseViewModel, IRawNode where T : RawNode<T, TK>
     where TK : IContentUnit
 {
     private string _summary = string.Empty;
@@ -28,11 +45,6 @@ public abstract class RawNode<T, TK> : BaseViewModel where T : RawNode<T, TK>
     /// </summary>
     public int Level { get; set; }
 
-    /// <summary>
-    /// used for summary generation, may contain markdown or plain text.
-    /// </summary>
-    public string SummaryRaw { get; set; } = string.Empty;
-
     public string Summary
     {
         get => _summary;
@@ -51,7 +63,43 @@ public abstract class RawNode<T, TK> : BaseViewModel where T : RawNode<T, TK>
 
     public bool HasChildren => Children.Count > 0;
 
-    public List<TK> ContentUnits { get; set; } = new List<TK>();
+    public string GetSummaryRaw()
+    {
+        if (HasChildren)
+        {
+            var summaryBuilder = new StringBuilder(this.Title + "\nSubsections:");
+            foreach (var childNode in this.Children)
+            {
+                summaryBuilder.AppendLine($"- {childNode.Title}");
+                summaryBuilder.AppendLine(childNode.Summary);
+            }
+
+            return summaryBuilder.ToString();
+        }
+
+        var nodeContentBuilder = new StringBuilder();
+        var units = this.ContentUnits;
+        if (units.Count > 0)
+        {
+            for (var index = 0; index < units.Count; index++)
+            {
+                var page = units[index];
+                //note: paragraph不执行summary
+                var pageContent = page.Content;
+                if (string.IsNullOrEmpty(pageContent.Trim()))
+                {
+                    Trace.TraceWarning("跳过空页，所在节点：{0}，节点索引：{1}", this.Title, index);
+                    continue; // 跳过空段落
+                }
+
+                nodeContentBuilder.AppendLine(pageContent);
+            }
+        }
+
+        return nodeContentBuilder.ToString();
+    }
+
+    public ObservableCollection<TK> ContentUnits { get; set; } = new ObservableCollection<TK>();
 }
 
 public interface IContentUnit

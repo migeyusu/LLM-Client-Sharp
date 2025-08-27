@@ -10,8 +10,8 @@
         xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
         mc:Ignorable="d"
         Loaded="PDFExtractorWindow_OnLoaded"
-        d:DataContext="{d:DesignInstance local:PDFExtractorWindow}"
-        Title="PDF Extractor - Step 1: Select Margin" Height="850" Width="1000">
+        d:DataContext="{d:DesignInstance local:PDFExtractorViewModel}"
+        Title="{Binding Title,Mode=OneWay}" Height="850" Width="1000">
     <Window.Resources>
         <HierarchicalDataTemplate DataType="{x:Type local:PDFNode}"
                                   ItemsSource="{Binding Children}">
@@ -60,7 +60,7 @@
                               Margin="30,0,0,0"
                               HorizontalAlignment="Stretch"
                               VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding ContentUnits,Mode=OneTime}">
+                    <ItemsControl ItemsSource="{Binding ContentUnits,Mode=OneWay}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type local:PDFPage}">
                                 <StackPanel Orientation="Vertical"
@@ -110,7 +110,8 @@
                     <!-- 左侧控制面板 -->
                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="10">
                         <TextBlock Text="选择页面:" Margin="0,20,0,0" />
-                        <ComboBox x:Name="CmbPages" SelectionChanged="Page_SelectionChanged" />
+                        <ComboBox ItemsSource="{Binding Pages,Mode=OneTime}"
+                                  SelectedIndex="{Binding SelectedPageIndex,Mode=TwoWay}" />
                         <TextBlock Text="Top Margin (点):" Margin="0,20,0,0" />
                         <TextBox Text="{Binding TopMargin,Mode=TwoWay}" />
                         <TextBlock Text="Bottom Margin (点):" />
@@ -256,7 +257,7 @@
                                 Command="{x:Static materialDesign:Transitioner.MovePreviousCommand}"
                                 Style="{StaticResource MaterialDesignFlatButton}" />
                         <Button Content="清空Prompt缓存"
-                                Click="ClearCache_OnClick" />
+                                Command="{Binding ClearCacheCommand}" />
                         <Button Content="下一步"
                                 Margin="10,0,0,0"
                                 Command="{x:Static materialDesign:Transitioner.MoveNextCommand}" />
@@ -310,6 +311,7 @@
                                 Command="{x:Static materialDesign:Transitioner.MovePreviousCommand}"
                                 Style="{StaticResource MaterialDesignFlatButton}" />
                         <Button Content="接受"
+                                IsEnabled="{Binding IsSummaryFailed,Converter={StaticResource InvertBooleanConverter}}"
                                 Margin="10,0,0,0"
                                 Click="OK_OnClick"
                                 Width="120" />
@@ -317,20 +319,27 @@
                 </Grid>
             </materialDesign:TransitionerSlide>
         </materialDesign:Transitioner>
-        <materialDesign:Card
-            Visibility="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-            VerticalAlignment="Center"
-            HorizontalAlignment="Center">
+        <materialDesign:Card UniformCornerRadius="10"
+                             Visibility="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                             VerticalAlignment="Center"
+                             HorizontalAlignment="Center">
             <StackPanel Margin="30">
                 <ProgressBar IsIndeterminate="True"
                              Maximum="1"
                              Minimum="0"
                              Style="{StaticResource MaterialDesignCircularProgressBar}"
                              Value="{Binding ProgressValue,Mode=OneWay}" />
-                <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                <TextBlock Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
                            TextWrapping="Wrap"
+                           HorizontalAlignment="Center"
                            Margin="0,15,0,0"
                            Text="正在处理" />
+                <Button HorizontalAlignment="Center"
+                        Margin="0,5,0,0"
+                        Visibility="{Binding CanCancel,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Command="{Binding CancelCommand}"
+                        Content="CANCEL"
+                        Style="{StaticResource MaterialDesignFlatButton}" />
             </StackPanel>
         </materialDesign:Card>
     </Grid>

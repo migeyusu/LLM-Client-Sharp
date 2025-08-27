@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using LLMClient.Data;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
@@ -17,8 +18,10 @@ public class UITest
         {
             var app = new App();
             app.InitializeComponent();
-            app.Run(new PDFExtractorWindow(new PDFExtractor(@"C:\Users\jie.zhu\Desktop\semantic-kernel.pdf"),
-                new RagOption()));
+            var pdfExtractorViewModel = new PDFExtractorViewModel(
+                new PDFExtractor(@"C:\Users\jie.zhu\Desktop\semantic-kernel.pdf"), new RagOption(),
+                PromptsCache.NoCache);
+            app.Run(new PDFExtractorWindow(pdfExtractorViewModel));
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();

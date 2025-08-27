@@ -49,7 +49,7 @@
                                Margin="16,0"
                                Source="{Binding FileType,Mode=OneTime,Converter={x:Static converters:SnapConverters.DocumentTypeToImageConverter}}" />
                         <TextBox Grid.Row="0" Grid.Column="1"
-                                 Text="{Binding ResourceName,Mode=OneWay}"
+                                 Text="{Binding ResourceName,Mode=TwoWay,UpdateSourceTrigger=LostFocus}"
                                  TextWrapping="NoWrap"
                                  Margin="0,0,10,0"
                                  FontWeight="Black"

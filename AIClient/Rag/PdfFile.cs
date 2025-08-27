@@ -59,14 +59,17 @@ public class PdfFile : RagFileBase
     {
         using (var pdfExtractor = new PDFExtractor(FilePath))
         {
-            var pdfExtractorWindow = new PDFExtractorWindow(pdfExtractor, RagOption);
+            var promptsCache = new PromptsCache(this.DocumentId, PromptsCache.CacheFolderPath);
+            var pdfExtractorViewModel = new PDFExtractorViewModel(pdfExtractor, RagOption, promptsCache);
+            var pdfExtractorWindow = new PDFExtractorWindow(pdfExtractorViewModel);
             if (pdfExtractorWindow.ShowDialog() != true)
             {
                 throw new InvalidOperationException("PDF extraction was cancelled by the user.");
             }
 
+            await promptsCache.SaveAsync();
             // await Task.Yield();
-            var docChunks = await pdfExtractorWindow.ContentNodes
+            var docChunks = await pdfExtractorViewModel.ContentNodes
                 .ToDocChunks<PDFNode, PDFPage>(this.DocumentId, logger: this.ConstructionLogs);
             this.ConstructionLogs.LogInformation("PDF extraction completed, total chunks: {0}",
                 docChunks.Count);
