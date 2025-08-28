@@ -19,18 +19,19 @@ public class SearchConfigViewModel : BaseViewModel
             OnPropertyChanged();
             if (SelectedSearchService == null)
             {
-                this.SelectedSearchService = SelectableSearchServices?.FirstOrDefault();
+                this.SelectedSearchService = SelectableSearchOptions?.FirstOrDefault();
             }
         }
     }
 
-    public ISearchService[]? SelectableSearchServices
+    private ISearchOption[]? _selectableSearchOptions;
+    public ISearchOption[]? SelectableSearchOptions
     {
-        get => _selectableSearchServices;
+        get => _selectableSearchOptions;
         set
         {
-            if (Equals(value, _selectableSearchServices)) return;
-            _selectableSearchServices = value;
+            if (Equals(value, _selectableSearchOptions)) return;
+            _selectableSearchOptions = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsSearchAvailable));
         }
@@ -38,11 +39,12 @@ public class SearchConfigViewModel : BaseViewModel
 
     public bool IsSearchAvailable
     {
-        get => _selectableSearchServices is { Length: > 0 };
+        get => _selectableSearchOptions is { Length: > 0 };
     }
 
     //对于已选中的搜索服务不持久化，因为集合是预设的，而选中项是反序列化获取的，很难对得上实例
-    public ISearchService? SelectedSearchService
+    private ISearchOption? _selectedSearchService;
+    public ISearchOption? SelectedSearchService
     {
         get => _selectedSearchService;
         set
@@ -52,37 +54,34 @@ public class SearchConfigViewModel : BaseViewModel
             OnPropertyChanged();
         }
     }
+    
+    private readonly ISearchOption[] _builtInSearchOptions;
 
-    private readonly ISearchService[] _builtInSearchServices;
-
-    private ISearchService[]? _selectableSearchServices;
-    private ISearchService? _selectedSearchService;
-
-    public void ResetSearchFunction(ILLMChatClient model)
+    public void ResetSearch(ILLMChatClient model)
     {
-        this.SelectableSearchServices =
-            _builtInSearchServices.Where(service => service.CheckCompatible(model)).ToArray();
+        this.SelectableSearchOptions =
+            _builtInSearchOptions.Where(service => service.CheckCompatible(model)).ToArray();
     }
 
-    public ISearchService? GetUserSearchService()
+    public ISearchOption? GetUserSearchOption()
     {
-        ISearchService? searchService = null;
+        ISearchOption? searchOption = null;
         if (this is { SearchEnable: true, IsSearchAvailable: true })
         {
-            var selectedSearchService = this.SelectedSearchService ?? this.SelectableSearchServices?.FirstOrDefault();
-            searchService = selectedSearchService?.Clone() as ISearchService;
+            var selectedSearchService = this.SelectedSearchService ?? this.SelectableSearchOptions?.FirstOrDefault();
+            searchOption = selectedSearchService?.Clone() as ISearchOption;
         }
 
-        return searchService;
+        return searchOption;
     }
 
     public SearchConfigViewModel()
     {
-        _builtInSearchServices =
+        _builtInSearchOptions =
         [
-            new GeekAISearchService(),
+            new GeekAISearchOption(),
             new GoogleSearchPlugin(),
-            new OpenRouterSearchService()
+            new OpenRouterSearchOption()
         ];
     }
 }

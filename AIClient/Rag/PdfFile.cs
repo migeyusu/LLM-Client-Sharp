@@ -39,10 +39,10 @@ public class PdfFile : RagFileBase
             }
         }*/
 
-        if (this.Status == RagFileStatus.Constructing)
+        if (this.Status == RagStatus.Constructing)
         {
             //说明上次构建还未完成，需要删除之前的脏数据重新构建。
-            this.Status = RagFileStatus.Error;
+            this.Status = RagStatus.Error;
             this.ErrorMessage = "上次构建未完成，请重新构建。";
             // await this.DeleteAsync();
         }

@@ -311,13 +311,13 @@ public class UnitTest2
     {
         var requestViewItem = new RequestViewItem()
         {
-            SearchService = new OpenRouterSearchService(),
+            SearchOption = new OpenRouterSearchOption(),
             AdditionalProperties = new AdditionalPropertiesDictionary()
             {
                 {
-                    "plugins", new OpenRouterSearchService.PluginConfig[]
+                    "plugins", new OpenRouterSearchOption.PluginConfig[]
                     {
-                        new OpenRouterSearchService.PluginConfig()
+                        new OpenRouterSearchOption.PluginConfig()
                         {
                             Id = "web",
                             MaxResults = 5,

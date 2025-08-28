@@ -21,7 +21,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 
     public bool IsRunning
     {
-        get { return this.Sources.Any(source => source.Status == RagFileStatus.Constructing); }
+        get { return this.Sources.Any(source => source.Status == RagStatus.Constructing); }
     }
 
     public ICommand AddFileCommand => new ActionCommand((async o =>
@@ -90,7 +90,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
             switch (e.PropertyName)
             {
                 case nameof(RagFileBase.Status):
-                    if (ragFile.Status == RagFileStatus.Constructed)
+                    if (ragFile.Status == RagStatus.Constructed)
                     {
                         await this.SaveAsync();
                     }
@@ -113,7 +113,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
 
             if (o is RagFileBase fileSource)
             {
-                if (fileSource.Status == RagFileStatus.Constructing)
+                if (fileSource.Status == RagStatus.Constructing)
                 {
                     MessageBox.Show("文件正在构建中，请停止后删除。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;

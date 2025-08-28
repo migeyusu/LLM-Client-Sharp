@@ -24,9 +24,16 @@ public interface IRagFileSource : IRagSource
     long FileSize { get; }
 
     string DocumentId { get; }
+
+    /// <summary>
+    /// 将文档结构输出
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<ISearchResult> GetStructureAsync(CancellationToken cancellationToken = default);
 }
 
-public enum RagFileStatus
+public enum RagStatus
 {
     NotConstructed,
     Constructing,

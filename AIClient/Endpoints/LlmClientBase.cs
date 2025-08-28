@@ -162,7 +162,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var dialogItems = context.DialogItems;
             var systemPrompt = context.SystemPrompt;
             var requestViewItem = context.Request;
-            var searchService = requestViewItem?.SearchService;
+            var searchService = requestViewItem?.SearchOption;
             if (searchService != null)
             {
                 await searchService.ApplySearch(context);

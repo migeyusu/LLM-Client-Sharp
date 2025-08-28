@@ -7,7 +7,7 @@ using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
-public class GeekAISearchService : BaseViewModel, ISearchService
+public class GeekAISearchOption : BaseViewModel, ISearchOption
 {
     public enum SearchEngineType
     {
@@ -74,7 +74,7 @@ public class GeekAISearchService : BaseViewModel, ISearchService
 
     public object Clone()
     {
-        return new GeekAISearchService()
+        return new GeekAISearchOption()
         {
             SearchEngine = this.SearchEngine,
             ReturnResult = this.ReturnResult

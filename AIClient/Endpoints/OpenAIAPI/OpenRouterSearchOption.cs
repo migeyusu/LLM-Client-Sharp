@@ -7,7 +7,7 @@ using LLMClient.UI.Component;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
-public class OpenRouterSearchService : BaseViewModel, ISearchService
+public class OpenRouterSearchOption : BaseViewModel, ISearchOption
 {
     private int _maxResult = 5;
     private string? _searchPrompt;
@@ -89,7 +89,7 @@ public class OpenRouterSearchService : BaseViewModel, ISearchService
 
     public object Clone()
     {
-        return new OpenRouterSearchService()
+        return new OpenRouterSearchOption()
         {
             MaxResult = MaxResult,
             SearchPrompt = SearchPrompt,

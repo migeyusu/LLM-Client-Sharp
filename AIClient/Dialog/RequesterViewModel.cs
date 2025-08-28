@@ -253,7 +253,7 @@ public class RequesterViewModel : BaseViewModel
         }
 
         client.FunctionInterceptor = _authorizationInterceptor;
-        this.SearchConfig.ResetSearchFunction(client);
+        this.SearchConfig.ResetSearch(client);
         this.ThinkingConfig.ResetConfig(client);
     }
 
@@ -321,7 +321,7 @@ public class RequesterViewModel : BaseViewModel
             TextMessage = promptBuilder.ToString().Trim(),
             Attachments = Attachments.ToList(),
             FunctionGroups = tools == null ? [] : [..tools],
-            SearchService = SearchConfig.GetUserSearchService(),
+            SearchOption = SearchConfig.GetUserSearchOption(),
             ThinkingConfig = thinkingConfig,
             RagSources = ragSources.Length > 0 ? ragSources : null,
         };

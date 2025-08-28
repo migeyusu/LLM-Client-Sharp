@@ -20,7 +20,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     public GlobalOptions()
     {
         PopupSelectViewModel = PopupSelectViewModel =
-            new ModelSelectionPopupViewModel((model =>
+            new ModelSelectionPopupViewModel(model =>
                 {
                     var llmClient = model.GetClient();
                     if (llmClient == null)
@@ -29,7 +29,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
                     }
 
                     this.SummarizeClient = llmClient;
-                }))
+                })
                 { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
     }
 

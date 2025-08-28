@@ -23,7 +23,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
 
-    public ISearchService? SearchService { get; set; }
+    public ISearchOption? SearchOption { get; set; }
 
     /// <summary>
     /// 对Request附加的额外属性

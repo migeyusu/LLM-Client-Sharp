@@ -178,8 +178,13 @@
                                 VerticalAlignment="Center"
                                 HorizontalAlignment="Right"
                                 Command="{Binding SelectDatabaseCommand}"
-                                Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"/>
+                                Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}" />
                     </Grid>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="APIParallelism：" />
+                        <TextBox Text="{Binding MaxDigestParallelism,Mode=TwoWay}"
+                                 Width="80" />
+                    </StackPanel>
                 </StackPanel>
             </TabItem>
         </TabControl>

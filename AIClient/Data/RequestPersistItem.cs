@@ -16,7 +16,7 @@ public class RequestPersistItem : IDialogPersistItem
 
     public IList<IRagSource>? RagSources { get; set; }
 
-    public ISearchService? SearchService { get; set; }
+    public ISearchOption? SearchService { get; set; }
 
     /// <summary>
     /// 对Request附加的额外属性

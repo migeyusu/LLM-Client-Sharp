@@ -122,17 +122,17 @@
                                         <Setter Property="ContentTemplate" Value="{StaticResource DefaultTemplate}" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Status,Mode=OneWay}"
-                                                         Value="{x:Static local:RagFileStatus.Constructed}">
+                                                         Value="{x:Static local:RagStatus.Constructed}">
                                                 <Setter Property="ContentTemplate"
                                                         Value="{StaticResource ConstructedTemplate}" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status,Mode=OneWay}"
-                                                         Value="{x:Static local:RagFileStatus.Constructing}">
+                                                         Value="{x:Static local:RagStatus.Constructing}">
                                                 <Setter Property="ContentTemplate"
                                                         Value="{StaticResource ConstructingTemplate}" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status,Mode=OneWay}"
-                                                         Value="{x:Static local:RagFileStatus.Error}">
+                                                         Value="{x:Static local:RagStatus.Error}">
                                                 <Setter Property="ContentTemplate"
                                                         Value="{StaticResource ErrorTemplate}" />
                                             </DataTrigger>
@@ -196,7 +196,7 @@
                                                 Value="开始构建/重新构建" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Status,Mode=OneWay}"
-                                                         Value="{x:Static local:RagFileStatus.Constructing}">
+                                                         Value="{x:Static local:RagStatus.Constructing}">
                                                 <Setter Property="Content"
                                                         Value="{materialDesign:PackIcon Kind=Stop}" />
                                                 <Setter Property="Foreground"
@@ -227,7 +227,7 @@
                                             Value="Collapsed" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Status,Mode=OneWay}"
-                                                     Value="{x:Static local:RagFileStatus.Constructing}">
+                                                     Value="{x:Static local:RagStatus.Constructing}">
                                             <Setter Property="Visibility"
                                                     Value="Visible" />
                                         </DataTrigger>

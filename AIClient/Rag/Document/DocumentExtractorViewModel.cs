@@ -160,7 +160,8 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
         });
         using (_processTokenSource = new CancellationTokenSource())
         {
-            using (var semaphoreSlim = new SemaphoreSlim(5, 5))
+            var digestParallelism = _ragOption.MaxDigestParallelism <= 0 ? 5 : _ragOption.MaxDigestParallelism;
+            using (var semaphoreSlim = new SemaphoreSlim(digestParallelism, digestParallelism))
             {
                 var summarySize = Extension.SummarySize;
                 try
@@ -201,6 +202,7 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
                                     this.Logs.LogWarning("由于一个摘要任务失败，所有任务已被取消");
                                     await _processTokenSource.CancelAsync();
                                 }
+
                                 throw;
                             }
                         });

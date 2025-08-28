@@ -18,7 +18,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 {
     private string _resourceName = string.Empty;
     private string? _errorMessage;
-    private RagFileStatus _status = RagFileStatus.NotConstructed;
+    private RagStatus _status = RagStatus.NotConstructed;
 
     [JsonPropertyName("Name")]
     public string ResourceName
@@ -68,7 +68,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     [JsonIgnore] public IReadOnlyList<AIFunction>? AvailableTools { get; }
 
-    [JsonIgnore] public bool IsAvailable => IsInitialized && Status == RagFileStatus.Constructed;
+    [JsonIgnore] public bool IsAvailable => IsInitialized && Status == RagStatus.Constructed;
 
     public string GetUniqueId()
     {
@@ -105,19 +105,19 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     public DateTime EditTime { get; set; }
     public long FileSize { get; set; } = 0;
 
-    public RagFileStatus Status
+    public RagStatus Status
     {
         get => _status;
         set
         {
             if (value == _status) return;
-            if (_status == RagFileStatus.Constructing)
+            if (_status == RagStatus.Constructing)
             {
                 ConstructionLogs.Stop();
             }
 
             _status = value;
-            if (value == RagFileStatus.Constructing)
+            if (value == RagStatus.Constructing)
             {
                 ConstructionLogs.Start();
             }
@@ -194,13 +194,13 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public ICommand SwitchConstructCommand => new ActionCommand(async o =>
     {
-        if (Status == RagFileStatus.Constructing)
+        if (Status == RagStatus.Constructing)
         {
             await StopConstruct();
         }
         else
         {
-            if (Status == RagFileStatus.Constructed)
+            if (Status == RagStatus.Constructed)
             {
                 if (MessageBox.Show("是否要重新构建？", "提示",
                         MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No,
@@ -248,7 +248,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public virtual async Task ConstructAsync(CancellationToken cancellationToken = default)
     {
-        if (Status == RagFileStatus.Constructing)
+        if (Status == RagStatus.Constructing)
         {
             // Already constructing, no need to construct again.
             return;
@@ -260,16 +260,16 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             //must ensure the file is deleted before constructing again.
             await DeleteAsync(cancellationToken);
             // await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
-            Status = RagFileStatus.Constructing;
+            Status = RagStatus.Constructing;
             await ConstructCore(cancellationToken);
-            Status = RagFileStatus.Constructed;
+            Status = RagStatus.Constructed;
         }
         catch (Exception e)
         {
             await DeleteAsync(cancellationToken);
             ConstructionLogs.LogError("构建过程中发生错误: {ErrorMessage}", e.Message);
             ErrorMessage = e.Message;
-            Status = RagFileStatus.Error;
+            Status = RagStatus.Error;
             MessageBox.Show(e.Message);
         }
     }
@@ -294,7 +294,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
     {
         var semanticKernelStore = GetStore();
         await semanticKernelStore.RemoveFileAsync(this.DocumentId, cancellationToken);
-        this.Status = RagFileStatus.NotConstructed;
+        this.Status = RagStatus.NotConstructed;
     }
 
     protected abstract Task ConstructCore(CancellationToken cancellationToken = default);
@@ -308,7 +308,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
                 "The PDF file has not been initialized. Please call InitializeAsync first.");
         }
 
-        if (Status != RagFileStatus.Constructed)
+        if (Status != RagStatus.Constructed)
         {
             throw new InvalidOperationException(
                 "The PDF file has not been constructed. Please call ConstructAsync first.");
@@ -329,7 +329,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
                 "The PDF file has not been initialized. Please call InitializeAsync first.");
         }
 
-        if (Status != RagFileStatus.Constructed)
+        if (Status != RagStatus.Constructed)
         {
             throw new InvalidOperationException(
                 "The PDF file has not been constructed. Please call ConstructAsync first.");
@@ -562,8 +562,6 @@ public class StringQueryResult : ISearchResult
     {
         FormattedResult = formattedResult;
     }
-
-    public string? DocumentId { get; set; }
 
     public string FormattedResult { get; set; }
 }

@@ -151,11 +151,11 @@
                                                              Style="{StaticResource MaterialDesignToolPopupBox}">
                                         <materialDesign:PopupBox.PopupContentTemplate>
                                             <DataTemplate DataType="{x:Type mcp:SearchConfigViewModel}">
-                                                <ListBox ItemsSource="{Binding SelectableSearchServices,Mode=OneWay}"
+                                                <ListBox ItemsSource="{Binding SelectableSearchOptions,Mode=OneWay}"
                                                          SelectedItem="{Binding SelectedSearchService,Mode=TwoWay}"
                                                          SelectionMode="Single">
                                                     <ListBox.ItemTemplate>
-                                                        <DataTemplate DataType="{x:Type abstraction:ISearchService}">
+                                                        <DataTemplate DataType="{x:Type abstraction:ISearchOption}">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Image
                                                                     Source="{Binding Icon.CurrentSource,Mode=OneWay}"

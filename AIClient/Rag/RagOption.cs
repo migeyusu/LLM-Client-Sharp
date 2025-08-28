@@ -96,6 +96,17 @@ public class RagOption : BaseViewModel
         }
     }
 
+    public int MaxDigestParallelism
+    {
+        get => _maxDigestParallelism;
+        set
+        {
+            if (value == _maxDigestParallelism) return;
+            _maxDigestParallelism = value;
+            OnPropertyChanged();
+        }
+    }
+
     [JsonIgnore] public IEndpointService? EndpointService => ServiceLocator.GetService<IEndpointService>();
 
     [JsonIgnore]
@@ -105,6 +116,7 @@ public class RagOption : BaseViewModel
 
 
     private string? _dbConnection = "Data Source=file_embedding.db";
+    private int _maxDigestParallelism = 10;
 
     public string? DBConnection
     {
