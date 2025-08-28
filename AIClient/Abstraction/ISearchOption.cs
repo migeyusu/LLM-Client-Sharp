@@ -13,7 +13,7 @@ namespace LLMClient.Abstraction;
 [JsonDerivedType(typeof(OpenRouterSearchOption), "openrouter")]
 [JsonDerivedType(typeof(GeekAISearchOption), "geekai")]
 [JsonDerivedType(typeof(GoogleSearchPlugin), "google-search-plugin")]
-[JsonDerivedType(typeof(SearchAgent), "search-agent")]
+// [JsonDerivedType(typeof(SearchAgent), "search-agent")]
 public interface ISearchOption : ICloneable
 {
     string Name { get; }

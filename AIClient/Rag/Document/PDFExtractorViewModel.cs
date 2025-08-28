@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using LLMClient.Data;
@@ -14,7 +13,7 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
         base(ragOption, cache)
     {
         this.Title = "PDF Extractor - Step 1: Select Margin";
-        _extractor = extractor;
+        this._extractor = extractor;
         this.StructNodes = extractor.ExtractTree();
         foreach (var structNode in StructNodes.Flatten())
         {
@@ -155,6 +154,7 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
     {
         return (PDFNode pdfNode) =>
         {
+            var title = pdfNode.Title;
             string context;
             switch (languageIndex)
             {
@@ -162,12 +162,12 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
                     if (pdfNode.HasChildren)
                     {
                         context =
-                            $"The text blocks are summary or content of section {pdfNode.Title} in a pdf document.";
+                            $"The text blocks are hierarchical summary or content of section '{title}' in a pdf document.";
                     }
                     else
                     {
                         context =
-                            $"The text blocks are raw content of section {pdfNode.Title} in a pdf document. " +
+                            $"The text blocks are raw content of section '{title}' in a pdf document. " +
                             $"It's gathered by OCR or text extraction tool, so sentences may be broken in the middle, so you should notice blanks or newline characters first to identify sentence boundaries.";
                     }
 
@@ -176,12 +176,12 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
                     if (pdfNode.HasChildren)
                     {
                         context =
-                            $"这些文本块是pdf文档中章节 {pdfNode.Title} 的摘要或内容。";
+                            $"这些文本块是pdf文档中章节 '{title}' 的摘要或内容。";
                     }
                     else
                     {
                         context =
-                            $"这些文本块是pdf文档中章节 {pdfNode.Title} 的原始内容。" +
+                            $"这些文本块是pdf文档中章节 '{title}' 的原始内容。" +
                             $"这些内容是通过OCR或文本提取工具收集的，因此句子可能会在中间断开，你应该首先注意空格或换行符来识别句子的边界。";
                     }
 
@@ -315,17 +315,17 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
         //绘制Letters（可选：精确文本渲染；注释掉以简化，但可启用）
         foreach (var letter in page.Letters)
         {
-            var lx = letter.StartBaseLine.X;  // 使用基线位置而不是字形边界  
-            var ly = pageHeight - letter.StartBaseLine.Y;  // 基线Y坐标  
-            var ltxt = new TextBlock  
-            {  
-                Text = letter.Value,  
-                FontSize = letter.PointSize,  
-                Foreground = Brushes.Black  
-            };  
-            Canvas.SetLeft(ltxt, lx);  
-            Canvas.SetTop(ltxt, ly);  
-            pageChildren.Add(ltxt);  
+            var lx = letter.StartBaseLine.X; // 使用基线位置而不是字形边界  
+            var ly = pageHeight - letter.StartBaseLine.Y; // 基线Y坐标  
+            var ltxt = new TextBlock
+            {
+                Text = letter.Value,
+                FontSize = letter.PointSize,
+                Foreground = Brushes.Black
+            };
+            Canvas.SetLeft(ltxt, lx);
+            Canvas.SetTop(ltxt, ly);
+            pageChildren.Add(ltxt);
         }
     }
 

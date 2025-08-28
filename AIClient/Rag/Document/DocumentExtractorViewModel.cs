@@ -2,7 +2,6 @@
 using System.Windows.Input;
 using LLMClient.Data;
 using LLMClient.UI;
-using LLMClient.UI.Component;
 using LLMClient.UI.Log;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
@@ -206,7 +205,6 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
                                 throw;
                             }
                         });
-
                     MessageBox.Show("Summary generated successfully!");
                 }
                 catch (Exception e)

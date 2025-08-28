@@ -161,6 +161,7 @@ public class PDFExtractor : IDisposable
                 // 如果是最后一个章节，则直到文档末尾
                 endPage = Document.NumberOfPages;
             }
+
             currentNode.ContentUnits.Clear();
             // 提取并填充段落
             ExtractParagraphs(currentNode, index, endPage, nextTopLeft);
@@ -170,12 +171,12 @@ public class PDFExtractor : IDisposable
         return rootNodes;
     }
 
-    private Point GetTopLeft(PDFNode node)
+    private static Point GetTopLeft(PDFNode node, Page startPage)
     {
         var destination = node.Destination;
+        var boxBounds = startPage.MediaBox.Bounds;
         if (destination == null)
         {
-            var boxBounds = _cache[node.StartPage].Page.MediaBox.Bounds;
             return new Point(boxBounds.Left, boxBounds.Top);
         }
 
@@ -213,8 +214,7 @@ public class PDFExtractor : IDisposable
             case ExplicitDestinationType.FitVertically:
             case ExplicitDestinationType.FitBoundingBoxVertically:
                 // 只指定Left，使用默认Top=页面高度（假设从顶部开始）
-                var pageItem = _cache[node.StartPage]; // 获取页面以获取MediaBox
-                var defaultTop = pageItem.Page.MediaBox.Bounds.Height; // 或page.MediaBox.UpperLeftY
+                var defaultTop = boxBounds.Height; // 或page.MediaBox.UpperLeftY
                 if (coords.Left.HasValue)
                 {
                     topLeft = new Point((double)coords.Left, defaultTop);
@@ -223,7 +223,7 @@ public class PDFExtractor : IDisposable
                 break;
             case ExplicitDestinationType.FitRectangle:
                 // 使用矩形的左上角作为终止点
-                if (coords.Left.HasValue && coords.Top.HasValue)
+                if (coords is { Left: not null, Top: not null })
                 {
                     topLeft = new Point((double)coords.Left, (double)coords.Top);
                 }
@@ -235,8 +235,6 @@ public class PDFExtractor : IDisposable
             case ExplicitDestinationType.FitBoundingBox:
             default:
                 // 无坐标：假设页面左上角
-                pageItem = _cache[node.StartPage]; // 获取页面以获取MediaBox
-                var boxBounds = pageItem.Page.MediaBox.Bounds;
                 topLeft = new Point(boxBounds.Left, boxBounds.Top);
                 break;
         }
@@ -268,14 +266,16 @@ public class PDFExtractor : IDisposable
         {
             var nodeDestination = docNode.Destination;
             node.Destination = nodeDestination;
-            node.StartPage = docNode.PageNumber;
+            var startPage = docNode.PageNumber;
+            node.StartPage = startPage;
+            var startPoint = GetTopLeft(node, Document.GetPage(startPage));
+            node.StartPoint = startPoint;
             //判断是否需要创建隐式子节点（有些节点不但承担书签作用，还承担内容节点作用）
             if (contentNodes.Count > 0)
             {
-                var nodeStartPoint = GetTopLeft(node);
                 var firstChildNode = contentNodes[0];
-                var childDestination = GetTopLeft(firstChildNode);
-                if (!nodeStartPoint.Equals(childDestination))
+                var childStartPoint = firstChildNode.StartPoint;
+                if (!startPoint.Equals(childStartPoint) || firstChildNode.StartPage != startPage)
                 {
                     //起始点不同，说明当前节点既是书签节点，也是内容节点
                     //通过正则智能地创建子节点title，如果title是"1. Introduction"且子节点是"1.1 Background"，则创建子节点title为"1.0 Introduction"
@@ -288,8 +288,8 @@ public class PDFExtractor : IDisposable
                     var implicitNode = new PDFNode(implicitTitle, bookmark.Level + 1)
                     {
                         Destination = nodeDestination,
-                        StartPage = node.StartPage,
-                        StartPoint = nodeStartPoint
+                        StartPage = startPage,
+                        StartPoint = startPoint
                     };
                     contentNodes.Insert(0, implicitNode);
                 }
@@ -306,6 +306,7 @@ public class PDFExtractor : IDisposable
 
             node.Destination = contentNode.Destination;
             node.StartPage = contentNode.StartPage;
+            node.StartPoint = contentNode.StartPoint;
         }
         else
         {
@@ -313,7 +314,7 @@ public class PDFExtractor : IDisposable
             return null;
         }
 
-        node.StartPoint = GetTopLeft(node);
+
         return node;
     }
 
@@ -326,8 +327,6 @@ public class PDFExtractor : IDisposable
             return false;
         var dest1Coordinates = dest1.Coordinates;
         var dest2Coordinates = dest2.Coordinates;
-
-
         return true;
     }
 

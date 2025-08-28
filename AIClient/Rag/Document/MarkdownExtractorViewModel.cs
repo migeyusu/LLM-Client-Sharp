@@ -33,6 +33,7 @@ public class MarkdownExtractorViewModel : DocumentExtractorViewModel<MarkdownNod
     {
         return (MarkdownNode markdownNode) =>
         {
+            var title = markdownNode.Title.Trim();
             string context;
             switch (languageIndex)
             {
@@ -40,12 +41,12 @@ public class MarkdownExtractorViewModel : DocumentExtractorViewModel<MarkdownNod
                     if (markdownNode.HasChildren)
                     {
                         context =
-                            $"The text blocks are summaries or content under the heading {markdownNode.Title} in a markdown document.";
+                            $"The text blocks are hierarchical summaries or content under the heading '{title}' in a markdown document.";
                     }
                     else
                     {
                         context =
-                            $"The text blocks are the original content of section {markdownNode.Title} in a pdf document." +
+                            $"The text blocks are the original content of heading '{title}' in a pdf document." +
                             $"The content is provided in its original Markdown format, which may include headings, paragraphs, lists, code blocks, and other elements.";
                     }
 
@@ -54,12 +55,12 @@ public class MarkdownExtractorViewModel : DocumentExtractorViewModel<MarkdownNod
                     if (markdownNode.HasChildren)
                     {
                         context =
-                            $"这些文本块是Markdown文档中标题{markdownNode.Title}下的摘要或内容。";
+                            $"这些文本块是Markdown文档中标题'{title}'下的摘要或内容的组合。";
                     }
                     else
                     {
                         context =
-                            $"这些文本块是Markdown文档中标题{markdownNode.Title} 的原始内容。" +
+                            $"这些文本块是Markdown文档中标题'{title}'的原始内容。" +
                             $"这些内容以原始Markdown格式提供，可能包含标题、段落、列表、代码块等元素。";
                     }
 

@@ -1,33 +1,36 @@
 ﻿using System.IO;
-using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using Microsoft.SemanticKernel;
+using Newtonsoft.Json;
 
 namespace LLMClient.Rag;
 
-public class WordFile : RagFileBase
+public class TextFile : RagFileBase
 {
     [JsonConstructor]
-    public WordFile()
+    public TextFile()
     {
     }
 
-    public WordFile(FileInfo fileInfo) : base(fileInfo)
+    public TextFile(FileInfo fileInfo) : base(fileInfo)
     {
     }
 
     public override DocumentFileType FileType
     {
-        get { return DocumentFileType.Word; }
+        get { return DocumentFileType.Text; }
     }
-
+    
     protected override KernelFunctionFromMethodOptions QueryOptions
     {
-        get { return new KernelFunctionFromMethodOptions(); }
+        get
+        {
+            return new KernelFunctionFromMethodOptions();
+        }
     }
 
     protected override Task ConstructCore(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.CompletedTask;
     }
 }

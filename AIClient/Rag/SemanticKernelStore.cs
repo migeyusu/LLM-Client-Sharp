@@ -151,7 +151,8 @@ public class SemanticKernelStore
 
         var docCollection = GetDocCollection(docId);
         await docCollection.EnsureCollectionExistsAsync(token);
-        foreach (var docChunk in chunks)
+        await docCollection.UpsertAsync(chunks, token);
+        /*foreach (var docChunk in chunks)
         {
             try
             {
@@ -161,7 +162,7 @@ public class SemanticKernelStore
             {
                 throw new Exception($"Failed to upsert document {docId}, chunk key: {docChunk.Key}", e);
             }
-        }
+        }*/
     }
 
     /// <summary>

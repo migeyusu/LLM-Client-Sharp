@@ -72,6 +72,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
                     return;
             }
 
+            await source.InitializeAsync();
             source.PropertyChanged += RagFileOnPropertyChanged;
             Sources.Add(source);
             await SaveAsync();
