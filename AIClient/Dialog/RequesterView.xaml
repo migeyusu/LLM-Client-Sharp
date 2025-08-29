@@ -294,14 +294,33 @@
                                                  materialDesign:ElevationAssist.Elevation="Dp3">
                                 <StackPanel Orientation="Horizontal"
                                             Margin="10,0,0,0">
+                                    <Ellipse Width="5"
+                                             Height="5"
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,5,0">
+                                        <Ellipse.Style>
+                                            <Style TargetType="{x:Type Ellipse}">
+                                                <Setter Property="Fill"
+                                                        Value="Gray" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsRagEnabled,Mode=OneWay}"
+                                                                 Value="True">
+                                                        <Setter Property="Fill"
+                                                                Value="ForestGreen" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
                                     <TextBlock Text="RAG"
                                                VerticalAlignment="Center" />
                                     <materialDesign:PopupBox Margin="6,0"
                                                              StaysOpen="True"
                                                              PopupMode="Click"
                                                              Opened="RagPopupBox_OnOpened"
+                                                             Closed="RagPopupBox_OnClosed"
                                                              PlacementMode="TopAndAlignLeftEdges"
-                                                             ToggleContent="{materialDesign:PackIcon Kind=Matrix,Size=16}"
+                                                             ToggleContent="{materialDesign:PackIcon Kind=DataMatrixEdit,Size=16}"
                                                              ToggleCheckedContent="{materialDesign:PackIcon Kind=Add,Size=16}"
                                                              VerticalAlignment="Center"
                                                              ToolTip="RAG Resource As Tools"

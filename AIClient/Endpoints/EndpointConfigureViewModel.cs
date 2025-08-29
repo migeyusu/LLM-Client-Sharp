@@ -116,7 +116,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public IReadOnlyList<ILLMEndpoint> AvailableEndpoints
     {
-        get { return Endpoints.ToArray().AsReadOnly(); }
+        get { return Endpoints.ToArray(); }
     }
 
     public ObservableCollection<SuggestedModel> SuggestedModels { get; } =

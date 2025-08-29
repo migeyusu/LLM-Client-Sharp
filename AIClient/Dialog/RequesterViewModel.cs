@@ -112,6 +112,13 @@ public class RequesterViewModel : BaseViewModel
         }
     }
 
+    public void NotifyRagSelection()
+    {
+        OnPropertyChanged(nameof(IsRagEnabled));
+    }
+    
+    public bool IsRagEnabled => RagSources.Any(model => model.IsSelected && model.Data.IsAvailable);
+
     public void RefreshRagSources()
     {
         var selected = RagSources.Where(model => model.IsSelected).ToList();

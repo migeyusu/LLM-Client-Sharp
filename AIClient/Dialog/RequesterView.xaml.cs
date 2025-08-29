@@ -83,4 +83,9 @@ public partial class RequesterView : UserControl
             PromptTextBox.Paste();
         }
     }
+
+    private void RagPopupBox_OnClosed(object sender, RoutedEventArgs e)
+    {
+        ViewModel.NotifyRagSelection();
+    }
 }
