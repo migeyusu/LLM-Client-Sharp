@@ -82,7 +82,7 @@
                                            ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                            Model="{Binding Requester.DefaultClient.Model,Mode=OneWay}" />
                     <Button ToolTip="备份"
-                            Content="{materialDesign:PackIcon Kind=ContentSave,Size=20}"
+                            Content="{materialDesign:PackIcon Kind=ArchiveArrowUpOutline,Size=20}"
                             Command="{x:Static ui:CommonCommands.Backup}" />
                     <materialDesign:PopupBox StaysOpen="True">
                         <StackPanel MaxWidth="200"

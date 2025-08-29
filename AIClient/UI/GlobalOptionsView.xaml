@@ -109,15 +109,16 @@
                     <StackPanel Orientation="Horizontal"
                                 Margin="0,10,0,0">
                         <TextBlock Text="Embedding"
-                                   Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                                   VerticalAlignment="Center" />
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                   VerticalAlignment="Center"
+                                   Width="140" />
                         <TextBlock Text="Endpoint:"
-                                   Margin="20,0,0,0"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource MaterialDesignBody2TextBlock}" />
                         <ComboBox ItemsSource="{Binding EndpointService.AvailableEndpoints,Mode=OneWay}"
                                   SelectedItem="{Binding EmbeddingEndpoint,Mode=TwoWay}"
                                   Style="{StaticResource MaterialDesignFilledComboBox}"
+                                  Padding="12,5"
                                   DisplayMemberPath="DisplayName"
                                   MinWidth="120"
                                   Margin="12,0,0,0" />
@@ -133,13 +134,15 @@
                     <StackPanel Orientation="Horizontal"
                                 Margin="0,10,0,0">
                         <TextBlock Text="Summarization"
-                                   Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                   Width="140"
                                    VerticalAlignment="Center" />
                         <materialDesign:PopupBox Padding="2,0"
                                                  StaysOpen="True"
-                                                 Margin="10,0,0,0"
+                                                 Margin="0,0,0,0"
                                                  VerticalAlignment="Center"
-                                                 ToolTip="添加suggestion"
+                                                 ToolTip="选择模型"
+                                                 ToolTipService.InitialShowDelay="0"
                                                  Style="{StaticResource MaterialDesignToolPopupBox}"
                                                  PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}"
                                                  PopupContent="{Binding   SelectionViewModel,Mode=OneTime}">
@@ -157,21 +160,23 @@
                         </materialDesign:PopupBox>
                         <TextBlock Margin="12,0,0,0"
                                    VerticalAlignment="Center"
-                                   Style="{StaticResource MaterialDesignBody2TextBlock}">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}终结点：{0} 模型：{1}">
-                                    <Binding Path="DigestClientPersist.EndPointName" Mode="TwoWay" />
-                                    <Binding Path="DigestClientPersist.ModelName" Mode="OneWay" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
+                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                   Text="{Binding Path=DigestClientPersist.ModelName, Mode=OneWay, StringFormat=模型：{0}}" />
                     </StackPanel>
-                    <TextBlock Text="DbConnection："
-                               Margin="0,10,0,0" />
                     <Grid Margin="0,10,0,0">
-                        <TextBox Text="{Binding DBConnection,Mode=TwoWay}"
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="DbConnection"
+                                   Width="140"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding DBConnection,Mode=TwoWay}"
                                  Style="{StaticResource MaterialDesignFilledTextBox}" />
-                        <Button Content="{materialDesign:PackIcon Kind=DatabasePlus}"
+                        <Button Grid.Column="1"
+                                Content="{materialDesign:PackIcon Kind=DatabasePlus}"
                                 Margin="0,0,10,0"
                                 Width="28"
                                 Height="28"
@@ -180,8 +185,12 @@
                                 Command="{Binding SelectDatabaseCommand}"
                                 Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}" />
                     </Grid>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="APIParallelism：" />
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0,10,0,0">
+                        <TextBlock Text="API Parallelism"
+                                   VerticalAlignment="Center"
+                                   Width="140"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
                         <TextBox Text="{Binding MaxDigestParallelism,Mode=TwoWay}"
                                  Width="80" />
                     </StackPanel>

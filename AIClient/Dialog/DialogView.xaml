@@ -102,7 +102,7 @@
                     </Button>
                     <Button ToolTip="备份"
                             Command="{x:Static ui:CommonCommands.Backup}">
-                        <materialDesign:PackIcon Kind="Archive"
+                        <materialDesign:PackIcon Kind="ArchiveArrowUpOutline"
                                                  Width="20"
                                                  Height="20" />
                     </Button>

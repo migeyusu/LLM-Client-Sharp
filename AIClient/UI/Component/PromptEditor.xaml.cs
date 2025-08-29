@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
+using LLMClient.Data;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.UI.Component;
@@ -31,8 +32,9 @@ public partial class PromptEditor : UserControl
         set { SetValue(SourceProperty, value); }
     }
 
-    public void Button_OnClick(object sender, RoutedEventArgs e)
+    public void PromptEditorButton_OnClick(object sender, RoutedEventArgs e)
     {
+        //这里必须通过resouce发送到dialoghost，否则会绑定异常
         var findResource = this.FindResource("HeaderedContentControl");
         if (findResource is FrameworkElement frameworkElement)
         {

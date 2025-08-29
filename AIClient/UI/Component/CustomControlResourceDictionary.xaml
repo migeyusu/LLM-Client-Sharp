@@ -2,7 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-                    xmlns:endpoints="clr-namespace:LLMClient.Endpoints">
+                    xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+                    xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks">
     <Style TargetType="{x:Type component:PopupBoxEx}"
            BasedOn="{StaticResource MaterialDesignToolPopupBox}" />
     <Style x:Key="ArrowButtonStyle" TargetType="RepeatButton">
@@ -257,9 +258,14 @@
                                         Height="22"
                                         Style="{StaticResource MaterialDesignIconButton}"
                                         Command="{TemplateBinding ChangeModelCommand}">
-                                    <materialDesign:PackIcon Kind="SwapHorizontalBold"
+                                    <iconPacks:PackIconMaterialDesign Kind="ChangeCircle" 
+                                                                      Width="22"
+                                                                      Height="22"
+                                                                      Foreground="White"
+                                                                      Background="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                    <!--<materialDesign:PackIcon Kind="SwapHorizontalBold"
                                                              Width="15"
-                                                             Height="15" />
+                                                             Height="15" />-->
                                 </Button>
                             </StackPanel>
                         </Button>

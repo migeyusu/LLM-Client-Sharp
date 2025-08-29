@@ -377,7 +377,7 @@
                                 Margin="6,0,0,0"
                                 ToolTip="重试"
                                 Command="{Binding  RefreshSelectedCommand}"
-                                Content="{materialDesign:PackIcon Kind=Autorenew,Size=20}" />
+                                Content="{materialDesign:PackIcon Kind=Refresh,Size=20}" />
                         <Button Style="{StaticResource RefreshButtonStyle}"
                                 Command="{Binding EditCommand}"
                                 VerticalAlignment="Center"
