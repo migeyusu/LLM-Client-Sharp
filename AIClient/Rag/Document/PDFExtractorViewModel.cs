@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using LLMClient.Data;
@@ -204,6 +205,8 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
         _window = window;
     }
 
+    List<Image> pageImages = new();
+
     // 核心渲染方法
     public void RenderPage()
     {
@@ -217,6 +220,7 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
             return;
         }
 
+        pageImages.Clear();
         var pageChildren = _window.CanvasPage.Children;
         pageChildren.Clear();
         var pageCacheItem = _extractor.Deserialize(_extractor.GetPage(CurrentPageNumber), FileMargin);
@@ -248,8 +252,10 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
                 {
                     Source = imageSource,
                     Width = imageBounds.Width,
-                    Height = imageBounds.Height
+                    Height = imageBounds.Height,
+                    Stretch = Stretch.Uniform,
                 };
+                pageImages.Add(img);
                 var ix = imageBounds.TopLeft.X;
                 var iy = pageHeight - imageBounds.TopLeft.Y; // 转换为WPF左上原点
                 Canvas.SetLeft(img, ix);
@@ -257,7 +263,8 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
                 pageChildren.Add(img);
             }
         }
-        renderPaths2(pageChildren, page, pageHeight);
+
+        RenderPaths2(pageChildren, page, pageHeight);
         //绘制Letters（可选：精确文本渲染；注释掉以简化，但可启用）
         foreach (var letter in page.Letters)
         {
@@ -381,7 +388,7 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
         }
     }
 
-    void renderPaths2(UIElementCollection pageChildren, Page page, double pageHeight)
+    private void RenderPaths2(UIElementCollection pageChildren, Page page, double pageHeight)
     {
         foreach (var pdfPath in page.Paths)
         {
@@ -444,7 +451,7 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
                 }
 
                 wpfPath.Data = pathGeometry;
-                
+
                 // 设置路径的描边和填充
                 if (pdfPath.IsStroked)
                 {
@@ -484,7 +491,7 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
         return brush;
     }
 
-    Dictionary<Color, SolidColorBrush> _brushCache = new();
+    private readonly Dictionary<Color, SolidColorBrush> _brushCache = new();
 
     // 辅助方法：绘制margin线
     private void DrawMarginLine(Canvas canvas, double x1, double y1, double x2, double y2)

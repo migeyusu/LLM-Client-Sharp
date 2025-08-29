@@ -253,9 +253,11 @@ public static class ImageExtensions
         }
     }
 
-    public static ImageSource ToImageSource(this Stream stream, string extension, uint width = 32, uint height = 32)
+    public static ImageSource ToImageSource(this Stream stream, string extension, uint width = 32, uint height = 32,
+        bool shouldInvertColors = false)
     {
-        if (LocalSupportedImageExtensionsLazy.Value.Contains(extension, StringComparer.OrdinalIgnoreCase))
+        //LocalSupportedImageExtensionsLazy.Value.Contains(extension, StringComparer.OrdinalIgnoreCase)
+        if (extension.Equals(".ico"))
         {
             var image = new BitmapImage();
             image.BeginInit();
@@ -278,6 +280,11 @@ public static class ImageExtensions
                 Height = height,
                 BackgroundColor = MagickColors.Transparent,
             });
+            if (shouldInvertColors)
+            {
+                magickImage.Negate();
+            }
+
             var bitmapSource = magickImage.ToBitmapSource();
             bitmapSource.Freeze();
             return bitmapSource;

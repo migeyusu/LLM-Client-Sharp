@@ -274,6 +274,10 @@
         <Resource Include="Resources\Images\openrouter_logo.svg" />
         <None Remove="Resources\Images\geekai.png" />
         <Resource Include="Resources\Images\geekai.png" />
+        <None Remove="Resources\Shaders\Invert.ps" />
+        <Resource Include="Resources\Shaders\Invert.ps" />
+        <None Remove="Resources\Shaders\Invert.hlsl" />
+        <Resource Include="Resources\Shaders\Invert.hlsl" />
     </ItemGroup>
 
 </Project>

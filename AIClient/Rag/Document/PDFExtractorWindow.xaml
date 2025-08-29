@@ -100,13 +100,10 @@
                 </materialDesign:TransitionerSlide.ForwardWipe>
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200" />
                         <ColumnDefinition Width="300" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
                     <GridSplitter Grid.RowSpan="2"
                                   HorizontalAlignment="Right"
                                   VerticalAlignment="Stretch"
@@ -126,11 +123,31 @@
                         <TextBox Text="{Binding LeftMargin,Mode=TwoWay}" />
                         <TextBlock Text="Right Margin (点):" />
                         <TextBox Text="{Binding RightMargin,Mode=TwoWay}" />
+                        <!--<TextBlock Text="Gamma:" />
+                        <Slider Minimum="0.1" Maximum="3.0" Value="{Binding Gamma,Mode=TwoWay}"
+                                TickFrequency="0.1"
+                                IsSnapToTickEnabled="True" />
+                        <TextBlock Text="{Binding Gamma,Mode=OneWay, StringFormat='{}{0:F2}'}"
+                                   HorizontalAlignment="Center" />
+
+                        <TextBlock Text="Contrast:" Margin="0,10,0,0" />
+                        <Slider Minimum="0.0" Maximum="3.0" Value="{Binding Contrast,Mode=TwoWay}"
+                                TickFrequency="0.1"
+                                IsSnapToTickEnabled="True" />
+                        <TextBlock Text="{Binding Contrast,Mode=OneWay, StringFormat='{}{0:F2}'}"
+                                   HorizontalAlignment="Center" />
+
+                        <TextBlock Text="Saturation:" Margin="0,10,0,0" />
+                        <Slider Minimum="0.0" Maximum="3.0" Value="{Binding Saturation,Mode=TwoWay}"
+                                TickFrequency="0.1"
+                                IsSnapToTickEnabled="True" />
+                        <TextBlock Text="{Binding Saturation, Mode=OneWay, StringFormat='{}{0:F2}'}"
+                                   HorizontalAlignment="Center" />-->
                         <Button Content="下一步"
                                 Margin="0,20,0,0"
                                 Command="{x:Static materialDesign:Transitioner.MoveNextCommand}" />
                     </StackPanel>
-                    <materialDesign:DialogHost Grid.Row="1" Grid.Column="0"
+                    <materialDesign:DialogHost Grid.Column="1"
                                                DialogClosed="DialogHost_OnDialogClosed">
                         <TreeView ItemsSource="{Binding StructNodes,Mode=OneTime}"
                                   SelectedItemChanged="NodeTreeView_OnSelectedItemChanged">
@@ -218,9 +235,7 @@
                         </materialDesign:DialogHost.Resources>
                     </materialDesign:DialogHost>
                     <!-- 右侧Canvas用于渲染 -->
-                    <ScrollViewer Grid.Row="0"
-                                  Grid.RowSpan="2"
-                                  Grid.Column="1"
+                    <ScrollViewer Grid.Column="2"
                                   HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto"
                                   x:Name="ScrollViewerPage"

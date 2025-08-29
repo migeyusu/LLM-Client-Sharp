@@ -36,6 +36,8 @@ public class PDFPage : IContentUnit
 
     public string Content { get; }
 
+    public IReadOnlyList<IPdfImage> PdfImages { get; }
+    
     private IList<string>? _images;
 
     public async Task<IList<string>> GetImages(ILogger? logger)
@@ -43,27 +45,7 @@ public class PDFPage : IContentUnit
         if (_images != null) return _images;
         var imageTasks = this.PdfImages.Select(async image =>
         {
-            byte[]? imageBytes = null;
-            string extension = String.Empty;
-            // 首先尝试转换为PNG字节（推荐，用于大多数图像）
-            if (image.TryGetPng(out imageBytes))
-            {
-                extension = ".png";
-            }
-
-            if (image.TryGetBytesAsMemory(out var rawBytes))
-            {
-                imageBytes = rawBytes.ToArray();
-                extension = ".jpg";
-            }
-
-            if (image.ImageDictionary.TryGet(NameToken.Filter, out var token) && token.Equals(NameToken.DctDecode))
-            {
-                imageBytes = image.RawMemory.ToArray();
-                extension = ".jpg";
-            }
-
-            if (imageBytes != null)
+            if (image.TryGetBytes(out byte[]? imageBytes, out var extension, out _))
             {
                 using (var memoryStream = new MemoryStream(imageBytes))
                 {
@@ -77,11 +59,8 @@ public class PDFPage : IContentUnit
 
         var results = await Task.WhenAll(imageTasks);
         _images = results.Where(s => !string.IsNullOrEmpty(s)).ToList();
-
         return _images.ToArray();
     }
-
-    public IReadOnlyList<IPdfImage> PdfImages { get; }
 }
 
 [Experimental("ManualPdfImageDecoder")]

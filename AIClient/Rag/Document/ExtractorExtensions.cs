@@ -1,9 +1,13 @@
-﻿using System.IO;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Text;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using LLMClient.Data;
 using Microsoft.Extensions.Logging;
 using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Graphics.Colors;
+using UglyToad.PdfPig.Images;
 using UglyToad.PdfPig.Tokens;
 
 namespace LLMClient.Rag.Document;
@@ -165,43 +169,256 @@ public static class ExtractorExtensions
         return nodes.SelectMany(n => new[] { n }.Concat(Flatten(n.Children)));
     }
 
+    private static string GetExtensionFromFilter(NameToken filterName)
+    {
+        // DCT解码 - JPEG格式  
+        if (filterName.Equals(NameToken.DctDecode) || filterName.Equals(NameToken.DctDecodeAbbreviation))
+        {
+            return ".jpg";
+        }
+
+        // JPX解码 - JPEG2000格式  
+        if (filterName.Equals(NameToken.JpxDecode))
+        {
+            return ".jp2";
+        }
+
+        // JBIG2解码 - JBIG2格式  
+        if (filterName.Equals(NameToken.Jbig2Decode))
+        {
+            return ".jb2";
+        }
+
+        // CCITT传真解码 - TIFF格式  
+        if (filterName.Equals(NameToken.CcittfaxDecode) || filterName.Equals(NameToken.CcittfaxDecodeAbbreviation))
+        {
+            return ".tiff";
+        }
+
+        // Flate/LZW/RunLength/ASCII解码 - 通常是原始位图数据  
+        if (filterName.Equals(NameToken.FlateDecode) || filterName.Equals(NameToken.FlateDecodeAbbreviation) ||
+            filterName.Equals(NameToken.LzwDecode) || filterName.Equals(NameToken.LzwDecodeAbbreviation) ||
+            filterName.Equals(NameToken.RunLengthDecode) || filterName.Equals(NameToken.RunLengthDecodeAbbreviation) ||
+            filterName.Equals(NameToken.Ascii85Decode) || filterName.Equals(NameToken.Ascii85DecodeAbbreviation) ||
+            filterName.Equals(NameToken.AsciiHexDecode) || filterName.Equals(NameToken.AsciiHexDecodeAbbreviation))
+        {
+            return ".bmp"; // 原始位图数据  
+        }
+
+        return ".jpg"; // 默认  
+    }
+
+    public static bool TryGetBytes(this IPdfImage pdfImage, [NotNullWhen(true)] out byte[]? imageBytes,
+        [NotNullWhen(true)] out string? extension, out bool shouldInvertColors)
+    {
+        extension = null;
+        imageBytes = null;
+        if (pdfImage.TryGetPng(out imageBytes))
+        {
+            extension = ".png";
+            shouldInvertColors = ShouldInvertColors(pdfImage);
+            return true;
+        }
+
+        if (pdfImage.TryGetBytesAsMemory(out var memory))
+        {
+            imageBytes = memory.ToArray();
+            extension = ".jpg";
+            shouldInvertColors = ShouldInvertColors(pdfImage);
+            return true;
+        }
+
+        shouldInvertColors = false;
+        if (pdfImage.ImageDictionary.TryGet(NameToken.Filter, out var token))
+        {
+            shouldInvertColors = true;
+            if (token is NameToken name)
+            {
+                imageBytes = pdfImage.RawMemory.ToArray();
+                extension = GetExtensionFromFilter(name);
+            }
+            else if (token is ArrayToken arrayToken)
+            {
+                // 处理 Filter 数组：取最后一个（PDF Filter 从右到左应用，主要压缩通常在最后）
+                var names = arrayToken.Data.OfType<NameToken>().ToArray();
+                if (names.Length != 0)
+                {
+                    imageBytes = pdfImage.RawMemory.ToArray();
+                    extension = GetExtensionFromFilter(names.Last());
+                }
+            }
+        }
+
+        return extension != null;
+    }
+
+    /// <summary>
+    /// Checks the image's Decode array to determine if its colors should be inverted.
+    /// This is the most reliable method based on the PDF specification.
+    /// </summary>
+    /// <param name="image">The IPdfImage to check.</param>
+    /// <returns>True if the image colors are inverted, otherwise false.</returns>
+    public static bool ShouldInvertColors(this IPdfImage image)
+    {
+        // 1. Get the Decode array from the image dictionary.
+        if (!image.ImageDictionary.TryGet(NameToken.Decode, out var decodeToken) ||
+            !(decodeToken is ArrayToken decodeArray))
+        {
+            // If /Decode array is missing, it uses the default mapping, which is not inverted.
+            return false;
+        }
+
+        // 2. Analyze the Decode array based on the color space.
+        var colorSpace = image.ColorSpaceDetails;
+
+        if (colorSpace is DeviceGrayColorSpaceDetails)
+        {
+            // For DeviceGray, the default is [0 1]. Inverted is [1 0].
+            if (decodeArray.Data.Count == 2 &&
+                decodeArray.Data[0] is NumericToken first &&
+                decodeArray.Data[1] is NumericToken second)
+            {
+                return first.Int == 1 && second.Int == 0;
+            }
+        }
+        else if (colorSpace is DeviceRgbColorSpaceDetails)
+        {
+            // For DeviceRGB, default is [0 1 0 1 0 1]. Inverted is [1 0 1 0 1 0].
+            if (decodeArray.Data.Count == 6 &&
+                IsNumericSequence(decodeArray.Data, new[] { 1, 0, 1, 0, 1, 0 }))
+            {
+                return true;
+            }
+        }
+        else if (colorSpace is IndexedColorSpaceDetails indexed)
+        {
+            // For Indexed color spaces, inversion is complex. The Decode array applies
+            // to the palette indices, not the final colors. A [1 0] might mean it's
+            // using the color palette in reverse. True inversion detection would require
+            // analyzing the palette itself. However, a simple check for [1 0] is a
+            // reasonable heuristic if the base color space is Gray.
+            if (indexed.BaseColorSpace is DeviceGrayColorSpaceDetails &&
+                decodeArray.Data.Count == 2 &&
+                IsNumericSequence(decodeArray.Data, new[] { 1, 0 }))
+            {
+                return true;
+            }
+        }
+        // Note: CMYK inversion ([1 0 1 0 1 0 1 0]) is also possible but less common.
+        // Can be added if needed.
+
+        return false;
+    }
+
+    private static bool IsNumericSequence(IReadOnlyList<IToken> tokens, int[] expected)
+    {
+        if (tokens.Count != expected.Length) return false;
+        for (int i = 0; i < tokens.Count; i++)
+        {
+            if (!(tokens[i] is NumericToken num) || num.Int != expected[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public static ImageSource? ToImageSource(this IPdfImage pdfImage)
     {
         var imageBounds = pdfImage.Bounds;
-        byte[]? imageBytes = null;
-        string extension = string.Empty;
         try
         {
-            if (pdfImage.TryGetPng(out imageBytes))
-            {
-                extension = ".png";
-            }
-
-            if (pdfImage.TryGetBytesAsMemory(out var memory))
-            {
-                imageBytes = memory.ToArray();
-                extension = ".jpg";
-            }
-
-            if (pdfImage.ImageDictionary.TryGet(NameToken.Filter, out var token) && token.Equals(NameToken.DctDecode))
-            {
-                imageBytes = pdfImage.RawMemory.ToArray();
-                extension = ".jpg";
-            }
-
-            if (imageBytes != null)
+            if (pdfImage.TryGetBytes(out var imageBytes, out var extension, out var shouldInvertColors))
             {
                 using (var memoryStream = new MemoryStream(imageBytes))
                 {
-                    return memoryStream.ToImageSource(extension, (uint)imageBounds.Width, (uint)imageBounds.Height);
+                    return memoryStream.ToImageSource(extension, width: (uint)imageBounds.Width,
+                        height: (uint)imageBounds.Height, shouldInvertColors);
                 }
             }
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
 
-            return null;
+        //尝试手动解码
+        try
+        {
+            var bitmapSourceFromDecoded = CreateBitmapSourceFromDecoded(pdfImage, pdfImage.RawMemory,
+                pdfImage.WidthInSamples, pdfImage.HeightInSamples);
+            bitmapSourceFromDecoded?.Freeze();
+            return bitmapSourceFromDecoded;
         }
         catch (Exception)
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// 从解码字节创建 BitmapSource（使用 ColorSpaceDetailsByteConverter 转换为 RGB，然后适配 WPF 的 BGR24）。
+    /// </summary>
+    private static BitmapSource? CreateBitmapSourceFromDecoded(IPdfImage pdfImage, ReadOnlyMemory<byte> decoded,
+        int width, int height)
+    {
+        var spaceDetails = pdfImage.ColorSpaceDetails;
+        if (spaceDetails == null) return null;
+        ReadOnlySpan<byte> rgbBytes = ColorSpaceDetailsByteConverter.Convert(
+            spaceDetails,
+            decoded.ToArray(),
+            pdfImage.BitsPerComponent,
+            width,
+            height
+        );
+
+        // 根据颜色组件数动态计算长度
+        int channelCount = spaceDetails.NumberOfColorComponents;
+        int requiredLength = width * height * channelCount;
+
+        if (rgbBytes.Length < requiredLength)
+            return null;
+
+        // ===== 处理不同颜色空间 ===== //
+        switch (channelCount)
+        {
+            // 处理灰度图像 (Lab/DeviceGray 等)
+            case 1:
+                return BitmapSource.Create(
+                    width, height, 96, 96,
+                    PixelFormats.Gray8, // 标准 8位灰度
+                    null,
+                    rgbBytes[..requiredLength].ToArray(),
+                    width // Stride = width (1字节/像素)
+                );
+
+            // 处理 RGB 图像
+            case 3:
+                byte[] bgrBytes = new byte[requiredLength];
+                // 交换 R 和 B (R G B -> B G R)
+                for (int i = 0; i < rgbBytes.Length; i += 3)
+                {
+                    bgrBytes[i] = rgbBytes[i + 2];
+                    bgrBytes[i + 1] = rgbBytes[i + 1];
+                    bgrBytes[i + 2] = rgbBytes[i];
+                }
+
+                return BitmapSource.Create(
+                    width, height, 96, 96,
+                    PixelFormats.Bgr24,
+                    null,
+                    bgrBytes,
+                    width * 3
+                );
+
+            // 处理 CMYK 图像 (PdfPig 已转换为 RGB)
+            case 4:
+                // 注意: Convert() 已转为 RGB，所以 channelCount 实际为 3
+                // 此处仅为完整性
+                break;
+        }
+
+        return null;
     }
 }
