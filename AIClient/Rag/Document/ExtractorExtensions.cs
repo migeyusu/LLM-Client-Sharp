@@ -1,5 +1,10 @@
-﻿using System.Text;
+﻿using System.IO;
+using System.Text;
+using System.Windows.Media;
+using LLMClient.Data;
 using Microsoft.Extensions.Logging;
+using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Tokens;
 
 namespace LLMClient.Rag.Document;
 
@@ -158,5 +163,45 @@ public static class ExtractorExtensions
     public static IEnumerable<PDFNode> Flatten(this IEnumerable<PDFNode> nodes)
     {
         return nodes.SelectMany(n => new[] { n }.Concat(Flatten(n.Children)));
+    }
+
+    public static ImageSource? ToImageSource(this IPdfImage pdfImage)
+    {
+        var imageBounds = pdfImage.Bounds;
+        byte[]? imageBytes = null;
+        string extension = string.Empty;
+        try
+        {
+            if (pdfImage.TryGetPng(out imageBytes))
+            {
+                extension = ".png";
+            }
+
+            if (pdfImage.TryGetBytesAsMemory(out var memory))
+            {
+                imageBytes = memory.ToArray();
+                extension = ".jpg";
+            }
+
+            if (pdfImage.ImageDictionary.TryGet(NameToken.Filter, out var token) && token.Equals(NameToken.DctDecode))
+            {
+                imageBytes = pdfImage.RawMemory.ToArray();
+                extension = ".jpg";
+            }
+
+            if (imageBytes != null)
+            {
+                using (var memoryStream = new MemoryStream(imageBytes))
+                {
+                    return memoryStream.ToImageSource(extension, (uint)imageBounds.Width, (uint)imageBounds.Height);
+                }
+            }
+
+            return null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 }

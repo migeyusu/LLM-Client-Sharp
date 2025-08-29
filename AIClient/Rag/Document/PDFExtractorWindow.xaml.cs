@@ -82,8 +82,26 @@ public partial class PDFExtractorWindow : Window
             ScrollViewerPage.ScrollToHorizontalOffset(
                 horizontalOffset * zoomFactor + mousePosition.X * (zoomFactor - 1));
             ScrollViewerPage.ScrollToVerticalOffset(verticalOffset * zoomFactor + mousePosition.Y * (zoomFactor - 1));
-            e.Handled = true; // 防止事件继续传播
         }
+        else
+        {
+            if (e.Delta > 0)
+            {
+                if (_viewModel.SelectedPageIndex > 0)
+                {
+                    _viewModel.SelectedPageIndex -= 1;
+                }
+            }
+            else
+            {
+                if (_viewModel.SelectedPageIndex < _viewModel.Pages.Count - 1)
+                {
+                    _viewModel.SelectedPageIndex += 1;
+                }
+            }
+        }
+
+        e.Handled = true; // 防止事件继续传播
     }
 
     private void NodeTreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)

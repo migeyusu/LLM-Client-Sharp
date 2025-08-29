@@ -4,6 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using LLMClient.Data;
+using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Core;
+using Page = UglyToad.PdfPig.Content.Page;
 
 namespace LLMClient.Rag.Document;
 
@@ -234,6 +237,71 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
         Canvas.SetLeft(background, 0);
         Canvas.SetTop(background, 0);
         pageChildren.Add(background);
+        // 绘制PdfImages（可选）
+        foreach (var pdfImage in pageCacheItem.RemainingPdfImages)
+        {
+            var imageSource = pdfImage.ToImageSource();
+            var imageBounds = pdfImage.Bounds;
+            if (imageSource != null)
+            {
+                var img = new Image
+                {
+                    Source = imageSource,
+                    Width = imageBounds.Width,
+                    Height = imageBounds.Height
+                };
+                var ix = imageBounds.TopLeft.X;
+                var iy = pageHeight - imageBounds.TopLeft.Y; // 转换为WPF左上原点
+                Canvas.SetLeft(img, ix);
+                Canvas.SetTop(img, iy);
+                pageChildren.Add(img);
+            }
+        }
+        renderPaths2(pageChildren, page, pageHeight);
+        //绘制Letters（可选：精确文本渲染；注释掉以简化，但可启用）
+        foreach (var letter in page.Letters)
+        {
+            var (r, g, b) = letter.Color.ToRGBValues();
+            var color = Color.FromRgb((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
+            SolidColorBrush brush;
+            if (!_brushCache.TryGetValue(color, out brush))
+            {
+                brush = new SolidColorBrush(color);
+                brush.Freeze();
+                _brushCache.TryAdd(color, brush);
+            }
+
+            var lx = letter.GlyphRectangle.Left; // 使用基线位置而不是字形边界  
+            var ly = pageHeight - letter.StartBaseLine.Y - letter.PointSize; // 基线Y坐标  
+            var ltxt = new TextBlock
+            {
+                Text = letter.Value,
+                FontSize = letter.PointSize,
+                Foreground = brush,
+            };
+            switch (letter.TextOrientation)
+            {
+                case TextOrientation.Rotate180:
+                    ltxt.RenderTransform = new RotateTransform(180);
+                    break;
+                case TextOrientation.Rotate90:
+                    ly = pageHeight - letter.GlyphRectangle.Top - letter.PointSize;
+                    ltxt.RenderTransform = new RotateTransform(90);
+                    break;
+                case TextOrientation.Rotate270:
+                    ly = pageHeight - letter.GlyphRectangle.Top - letter.PointSize;
+                    ltxt.RenderTransform = new RotateTransform(-90);
+                    break;
+                default:
+                    //不处理
+                    break;
+            }
+
+            Canvas.SetLeft(ltxt, lx);
+            Canvas.SetTop(ltxt, ly);
+            pageChildren.Add(ltxt);
+        }
+
         var textBlocks = pageCacheItem.RemainingTextBlocks;
         // 绘制每个TextBlock的文本和边界框
         foreach (var block in textBlocks)
@@ -311,24 +379,112 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
                 pageChildren.Add(line2);
             }
         }
+    }
 
-        //绘制Letters（可选：精确文本渲染；注释掉以简化，但可启用）
-        foreach (var letter in page.Letters)
+    void renderPaths2(UIElementCollection pageChildren, Page page, double pageHeight)
+    {
+        foreach (var pdfPath in page.Paths)
         {
-            var lx = letter.StartBaseLine.X; // 使用基线位置而不是字形边界  
-            var ly = pageHeight - letter.StartBaseLine.Y; // 基线Y坐标  
-            var ltxt = new TextBlock
+            var wpfPath = new Path();
+            var pathGeometry = new PathGeometry
             {
-                Text = letter.Value,
-                FontSize = letter.PointSize,
-                Foreground = Brushes.Black
+                FillRule = pdfPath.FillingRule == FillingRule.EvenOdd ? FillRule.EvenOdd : FillRule.Nonzero
             };
-            Canvas.SetLeft(ltxt, lx);
-            Canvas.SetTop(ltxt, ly);
-            pageChildren.Add(ltxt);
+            foreach (var pdfSubpath in pdfPath)
+            {
+                // 如果路径仅用于裁剪，则不直接绘制。可根据需要修改此逻辑。
+                // if (pdfPath.IsClipping) continue;
+
+                if (pdfSubpath.Commands.Count == 0)
+                {
+                    continue;
+                }
+
+                PathFigure currentFigure = null;
+
+                // 定义一个局部函数来转换坐标系
+                Point Transform(PdfPoint p) => new Point(p.X, pageHeight - p.Y);
+                foreach (var command in pdfSubpath.Commands)
+                {
+                    switch (command)
+                    {
+                        case PdfSubpath.Move moveTo:
+                            // MoveTo 开始一个新的子路径 (PathFigure)
+                            currentFigure = new PathFigure
+                            {
+                                StartPoint = Transform(moveTo.Location),
+                                IsFilled = pdfPath.IsFilled // Figure的填充取决于整个Path的填充设置
+                            };
+                            pathGeometry.Figures.Add(currentFigure);
+                            break;
+
+                        case PdfSubpath.Line lineTo when currentFigure != null:
+                            currentFigure.Segments.Add(new LineSegment(Transform(lineTo.To), pdfPath.IsStroked));
+                            break;
+
+                        case PdfSubpath.CubicBezierCurve cubicBezier when currentFigure != null:
+                            currentFigure.Segments.Add(new BezierSegment(
+                                Transform(cubicBezier.FirstControlPoint),
+                                Transform(cubicBezier.SecondControlPoint),
+                                Transform(cubicBezier.EndPoint),
+                                pdfPath.IsStroked));
+                            break;
+
+                        case PdfSubpath.QuadraticBezierCurve quadraticBezier when currentFigure != null:
+                            currentFigure.Segments.Add(new QuadraticBezierSegment(
+                                Transform(quadraticBezier.ControlPoint),
+                                Transform(quadraticBezier.EndPoint),
+                                pdfPath.IsStroked));
+                            break;
+
+                        case PdfSubpath.Close when currentFigure != null:
+                            currentFigure.IsClosed = true;
+                            break;
+                    }
+                }
+
+                wpfPath.Data = pathGeometry;
+                
+                // 设置路径的描边和填充
+                if (pdfPath.IsStroked)
+                {
+                    wpfPath.StrokeThickness = pdfPath.LineWidth;
+                    wpfPath.Stroke = CreateBrush(pdfPath.StrokeColor) ?? Brushes.Black;
+                }
+
+                if (pdfPath.IsFilled)
+                {
+                    wpfPath.Fill = CreateBrush(pdfPath.FillColor) ?? Brushes.LightGray;
+                }
+            }
+
+
+            pageChildren.Add(wpfPath);
         }
     }
 
+    private Brush? CreateBrush(UglyToad.PdfPig.Graphics.Colors.IColor? pdfColor)
+    {
+        if (pdfColor == null)
+        {
+            return null;
+        }
+
+        // 目前主要处理RGB颜色空间
+        var (r, g, b) = pdfColor.ToRGBValues();
+        var color = Color.FromRgb((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
+
+        if (!_brushCache.TryGetValue(color, out var brush))
+        {
+            brush = new SolidColorBrush(color);
+            brush.Freeze(); // 为提高性能，冻结画刷
+            _brushCache.TryAdd(color, brush);
+        }
+
+        return brush;
+    }
+
+    Dictionary<Color, SolidColorBrush> _brushCache = new();
 
     // 辅助方法：绘制margin线
     private void DrawMarginLine(Canvas canvas, double x1, double y1, double x2, double y2)

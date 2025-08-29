@@ -119,7 +119,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     }
 
     [Experimental("SKEXP0001")]
-    private async Task AddTools(IEnumerable<IAIFunctionGroup> functionGroups, StringBuilder toolsPromptBuilder,
+    private async Task<bool> AddTools(IEnumerable<IAIFunctionGroup> functionGroups, StringBuilder toolsPromptBuilder,
         KernelPluginCollection kernelPluginCollection, CancellationToken cancellationToken)
     {
         var startCount = kernelPluginCollection.Count;
@@ -142,10 +142,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 availableTools.Select(function => function.AsKernelFunction()));
         }
 
-        if (kernelPluginCollection.Count == startCount)
-        {
-            Trace.TraceWarning("No available tools found in function groups.");
-        }
+        if (kernelPluginCollection.Count != startCount) return true;
+        Trace.TraceWarning("No available tools found in function groups.");
+        return false;
     }
 
     private readonly Stopwatch _stopwatch = new Stopwatch();
@@ -171,19 +170,22 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var thinkingConfig = requestViewItem?.ThinkingConfig;
             thinkingConfig?.EnableThinking(requestViewItem!);
             var chatHistory = new List<ChatMessage>();
-            AITool[]? tools = null;
             var kernelPluginCollection = new KernelPluginCollection();
-            var toolsPromptBuilder = new StringBuilder();
+            var additionalPromptBuilder = new StringBuilder();
             var functionGroups = requestViewItem?.FunctionGroups;
             if (functionGroups != null)
             {
+                var toolsPromptBuilder = new StringBuilder();
                 toolsPromptBuilder.AppendLine(
                     "For the following functions, you can call them by name with the required parameters:");
-                await AddTools(functionGroups, toolsPromptBuilder, kernelPluginCollection, cancellationToken);
+                if (await AddTools(functionGroups, toolsPromptBuilder, kernelPluginCollection, cancellationToken))
+                {
+                    additionalPromptBuilder.Append(toolsPromptBuilder);
+                }
             }
 
             var ragSources = requestViewItem?.RagSources;
-            if (ragSources != null)
+            if (ragSources != null && ragSources.Any(source => source.IsAvailable))
             {
                 var resourceIndex = 0;
                 foreach (var ragSource in ragSources)
@@ -195,18 +197,18 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     }
                 }
 
-                toolsPromptBuilder.AppendLine(
+                additionalPromptBuilder.AppendLine(
                     "For the following RAG(Retrieval-Augmented Generation) sources such as files, web contents, " +
                     "you can get information by call them with the required parameters:");
-                await AddTools(ragSources, toolsPromptBuilder, kernelPluginCollection, cancellationToken);
+                await AddTools(ragSources, additionalPromptBuilder, kernelPluginCollection, cancellationToken);
             }
 
-            tools = kernelPluginCollection.SelectMany((plugin => plugin)).ToArray<AITool>();
+            var tools = kernelPluginCollection.SelectMany((plugin => plugin)).ToArray<AITool>();
             if (tools.Length > 0)
             {
                 systemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
-                    ? toolsPromptBuilder.ToString()
-                    : $"{systemPrompt}\n{toolsPromptBuilder}";
+                    ? additionalPromptBuilder.ToString()
+                    : $"{systemPrompt}\n{additionalPromptBuilder}";
             }
 
             //todo: when model doest not support system prompt

@@ -75,10 +75,31 @@ public class PDFExtractor : IDisposable
             pdfImages = pdfImages.Where(img =>
             {
                 var boundingBox = img.Bounds;
-                return boundingBox.Bottom < thicknessValue.Top && // 图片的下边缘要低于页眉线
-                       boundingBox.Top > thicknessValue.Bottom && // 图片的上边缘要高于页脚线
-                       boundingBox.Left > thicknessValue.Left && // 图片的左边缘要在页边距右侧; 
-                       boundingBox.Right < thicknessValue.Right; // 图片的右边缘要在页边距左侧
+                // 计算图片边界框和页边距区域的交集
+                var intersectionLeft = Math.Max(boundingBox.Left, thicknessValue.Left);
+                var intersectionTop = Math.Min(boundingBox.Top, thicknessValue.Top);
+                var intersectionRight = Math.Min(boundingBox.Right, thicknessValue.Right);
+                var intersectionBottom = Math.Max(boundingBox.Bottom, thicknessValue.Bottom);
+
+                // 检查是否有交集
+                if (intersectionLeft >= intersectionRight || intersectionBottom >= intersectionTop)
+                {
+                    return false; // 无交集
+                }
+
+                return true;
+                /*// 计算交集面积
+                var intersectionArea = (intersectionRight - intersectionLeft) * (intersectionTop - intersectionBottom);
+
+                // 计算并集面积 = 图片面积 + 页边距面积 - 交集面积
+                var imgArea = boundingBox.Width * boundingBox.Height;
+                var thicknessArea = (thicknessValue.Right - thicknessValue.Left) * (thicknessValue.Top - thicknessValue.Bottom);
+                var unionArea = imgArea + thicknessArea - intersectionArea;
+
+                // 计算IOU（交并比）
+                var iou = intersectionArea / unionArea;
+
+                return iou > 0; // IOU大于0表示有交集*/
             }).ToArray();
         }
 

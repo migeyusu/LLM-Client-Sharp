@@ -43,28 +43,31 @@ public class PDFPage : IContentUnit
         if (_images != null) return _images;
         var imageTasks = this.PdfImages.Select(async image =>
         {
+            byte[]? imageBytes = null;
+            string extension = String.Empty;
             // 首先尝试转换为PNG字节（推荐，用于大多数图像）
-            if (image.TryGetPng(out var imageBytes))
+            if (image.TryGetPng(out imageBytes))
             {
-                using (var memoryStream = new MemoryStream(imageBytes))
-                {
-                    return await memoryStream.ToBase64StringAsync(".png");
-                }
+                extension = ".png";
             }
 
             if (image.TryGetBytesAsMemory(out var rawBytes))
             {
-                using (var memoryStream = new MemoryStream(rawBytes.ToArray()))
-                {
-                    return await memoryStream.ToBase64StringAsync(".jpg");
-                }
+                imageBytes = rawBytes.ToArray();
+                extension = ".jpg";
             }
 
             if (image.ImageDictionary.TryGet(NameToken.Filter, out var token) && token.Equals(NameToken.DctDecode))
             {
-                using (var memoryStream = new MemoryStream(image.RawBytes.ToArray()))
+                imageBytes = image.RawMemory.ToArray();
+                extension = ".jpg";
+            }
+
+            if (imageBytes != null)
+            {
+                using (var memoryStream = new MemoryStream(imageBytes))
                 {
-                    return await memoryStream.ToBase64StringAsync(".jpg");
+                    return await memoryStream.ToBase64StringAsync(extension);
                 }
             }
 

@@ -9,6 +9,7 @@ using LambdaConverters;
 using LLMClient.Data;
 using LLMClient.Project;
 using LLMClient.Rag;
+using LLMClient.Rag.Document;
 using MaterialDesignThemes.Wpf;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Images;
@@ -125,31 +126,7 @@ internal static class SnapConverters
     public static readonly IValueConverter PdfImageConverter = ValueConverter.Create<IPdfImage, ImageSource>(args =>
     {
         var pdfImage = args.Value;
-        if (pdfImage.TryGetPng(out var bytes))
-        {
-            using (var memoryStream = new MemoryStream(bytes))
-            {
-                return memoryStream.ToImageSource(".png");
-            }
-        }
-
-        if (pdfImage.TryGetBytesAsMemory(out var memory))
-        {
-            using (var memoryStream = new MemoryStream(memory.ToArray()))
-            {
-                return memoryStream.ToImageSource(".jpg");
-            }
-        }
-
-        if (pdfImage.ImageDictionary.TryGet(NameToken.Filter, out var token) && token.Equals(NameToken.DctDecode))
-        {
-            using (var memoryStream = new MemoryStream(pdfImage.RawBytes.ToArray()))
-            {
-                return memoryStream.ToImageSource(".jpg");
-            }
-        }
-
-        return ThemedIcon.EmptyIcon.CurrentSource;
+        return pdfImage.ToImageSource() ?? ThemedIcon.EmptyIcon.CurrentSource;
     });
 
     public static readonly IValueConverter Base64ToImageConverter =
