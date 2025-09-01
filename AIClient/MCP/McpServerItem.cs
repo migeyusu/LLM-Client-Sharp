@@ -195,7 +195,8 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
 
     public object Clone()
     {
-        var serialize = JsonSerializer.Serialize(this);
-        return JsonSerializer.Deserialize(serialize, this.GetType())!;
+        var options = Extension.DefaultJsonSerializerOptions;
+        var serialize = JsonSerializer.Serialize(this, options);
+        return JsonSerializer.Deserialize(serialize, this.GetType(), options)!;
     }
 }

@@ -108,7 +108,8 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
         {
             using (var fileStream = fileInfo.Open(FileMode.Create, FileAccess.Write))
             {
-                await JsonSerializer.SerializeAsync<IList<string>>(fileStream, this.Prompts);
+                await JsonSerializer.SerializeAsync<IList<string>>(fileStream, this.Prompts,
+                    Extension.DefaultJsonSerializerOptions);
             }
         }
 
@@ -127,7 +128,8 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
         {
             await using (var fileStream = fileInfo.OpenRead())
             {
-                var deserialize = JsonSerializer.Deserialize<IList<string>>(fileStream);
+                var deserialize = JsonSerializer.Deserialize<IList<string>>(fileStream,
+                    Extension.DefaultJsonSerializerOptions);
                 if (deserialize != null)
                 {
                     Prompts = new ObservableCollection<string>(deserialize);

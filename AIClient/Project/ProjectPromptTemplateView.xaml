@@ -1,0 +1,110 @@
+﻿<UserControl x:Class="LLMClient.Project.ProjectPromptTemplateView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLMClient.Project"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:ProjectPromptTemplateViewModel}"
+             d:DesignHeight="500" d:DesignWidth="600">
+    <UserControl.Resources>
+        <Style x:Key="GenerateRunStyle" TargetType="{x:Type Run}">
+            <Setter Property="Background" Value="LightGray" />
+            <Setter Property="Foreground"
+                    Value="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}" />
+        </Style>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <!--<Separator Height="1"
+                   VerticalAlignment="Bottom"
+                   Margin="0"
+                   Style="{StaticResource MaterialDesignDarkSeparator}" />-->
+        <GroupBox materialDesign:ColorZoneAssist.Mode="PrimaryLight"
+                  Style="{StaticResource MaterialDesignGroupBox}">
+            <GroupBox.Header>
+                <TextBlock Foreground="White"
+                           FontWeight="Black">
+                    Project Context
+                </TextBlock>
+            </GroupBox.Header>
+            <StackPanel DataContext="{Binding Project,Mode=OneTime}">
+                <TextBlock>
+                    <Run>我正在Windows上使用语言</Run>
+                    <Run Style="{StaticResource GenerateRunStyle}"
+                         Text="{Binding LanguageNames,Mode=OneWay,Converter={x:Static converters:SnapConverters.StringArrayToStringConverter}}" />
+                    <Run>上开发位于</Run>
+                    <Run Text="{Binding FolderPath,Mode=OneWay}"
+                         Style="{StaticResource GenerateRunStyle}" />
+                    <Run>的一个软件项目。</Run>
+                    <LineBreak />
+                    <Run>项目背景/描述如下：</Run>
+                    <LineBreak />
+                    <Run Text="{Binding Description,Mode=OneWay}"
+                         Style="{StaticResource GenerateRunStyle}" />
+                    <LineBreak />
+                </TextBlock>
+                <TextBlock>
+                    <Run>以下是与任务相关的信息：</Run>
+                    <Run Foreground="DimGray">(未选中任何任务则不会添加本行)</Run>
+                </TextBlock>
+                <ItemsControl ItemsSource="{Binding Tasks,Mode=OneWay}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type local:ProjectTaskViewModel}">
+                            <CheckBox IsChecked="{Binding  EnableInContext,Mode=TwoWay}"
+                                      materialDesign:CheckBoxAssist.CheckBoxSize="21">
+                                <CheckBox.Style>
+                                    <Style TargetType="{x:Type CheckBox}"
+                                           BasedOn="{StaticResource MaterialDesignCheckBox}">
+                                        <Setter Property="Background"
+                                                Value="{DynamicResource MaterialDesign.Brush.Primary.Light.Foreground}" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsChecked"
+                                                     Value="False">
+                                                <Setter Property="Background"
+                                                        Value="DimGray" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </CheckBox.Style>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name,Mode=OneWay}"
+                                               FontWeight="Black" />
+                                    <TextBlock Text="{Binding Summary,Mode=OneWay}"
+                                               TextWrapping="Wrap"
+                                               MaxHeight="100"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </CheckBox>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox Grid.Row="1"
+                  materialDesign:ColorZoneAssist.Background="Black"
+                  materialDesign:ColorZoneAssist.Foreground="White"
+                  materialDesign:ColorZoneAssist.Mode="Custom"
+                  Header="Custom Header"
+                  Style="{StaticResource MaterialDesignGroupBox}">
+            <StackPanel DataContext="{Binding Task,Mode=OneTime}">
+                <TextBlock>
+                    <Run>现在有一个</Run>
+                    <Run Style="{StaticResource GenerateRunStyle}"
+                         Text="{Binding Type,Mode=OneWay,Converter={x:Static converters:SnapConverters.EnumToDescriptionConverter}}" />
+                    <Run>类型的任务，我希望你能帮助我完成它。</Run>
+                    <LineBreak />
+                    <Run>任务描述：</Run>
+                    <LineBreak />
+                    <Run Text="{Binding Description,Mode=OneWay}"
+                         Style="{StaticResource GenerateRunStyle}" />
+                </TextBlock>
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>

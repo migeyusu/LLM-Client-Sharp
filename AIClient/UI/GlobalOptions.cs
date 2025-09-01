@@ -129,7 +129,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         fileInfo.Directory?.Create();
         using (var fileStream = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.Write))
         {
-            await JsonSerializer.SerializeAsync(fileStream, this);
+            await JsonSerializer.SerializeAsync(fileStream, this, Extension.DefaultJsonSerializerOptions);
         }
 
         MessageEventBus.Publish("Global configuration saved successfully.");

@@ -84,11 +84,12 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                 }
             }
 
-            endPointsNode[APIEndPoint.KeyName] = JsonSerializer.SerializeToNode(apiEndpoints);
+            var options = Extension.DefaultJsonSerializerOptions;
+            endPointsNode[APIEndPoint.KeyName] = JsonSerializer.SerializeToNode(apiEndpoints, options);
             var keyValuePairs = this.SuggestedModels
                 .Select(model => new KeyValuePair<string, string>(model.LlmModel.Endpoint.Name, model.LlmModel.Name))
                 .ToArray();
-            endPointsNode[SuggestedModelKey] = JsonSerializer.SerializeToNode(keyValuePairs);
+            endPointsNode[SuggestedModelKey] = JsonSerializer.SerializeToNode(keyValuePairs,options);
             await EndPointsOptions.SaveDoc(root);
             MessageEventBus.Publish("已保存！");
         }

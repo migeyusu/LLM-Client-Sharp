@@ -98,12 +98,14 @@
             </Grid>
         </materialDesign:Card>
         <Expander Grid.Row="1"
+                  materialDesign:ExpanderAssist.ExpanderButtonPosition="Start"
                   materialDesign:ExpanderAssist.HorizontalHeaderPadding="12,4">
             <Expander.Header>
                 <Grid Height="50">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="4"
                                 Orientation="Horizontal">
@@ -141,6 +143,15 @@
                              IsReadOnly="True"
                              MaxHeight="45"
                              VerticalScrollBarVisibility="Auto" />
+                    <Button Grid.Column="1"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right"
+                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                            Width="30"
+                            Height="30"
+                            Content="{materialDesign:PackIcon Kind=Eye}"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding SelectedTask.PromptTemplate,Mode=OneWay}" />
                 </Grid>
             </Expander.Header>
             <!--tasks listbox-->
@@ -155,11 +166,10 @@
                 </ListBox.ItemsPanel>
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type local:ProjectTaskViewModel}">
-                        <materialDesign:Card Width="200"
-                                             Height="90"
-                                             Padding="4"
+                        <materialDesign:Card Width="220"
+                                             Height="100"
+                                             Padding="3"
                                              BorderThickness="1"
-                                             BorderBrush="{Binding Status,Mode=OneWay,Converter={x:Static converters:SnapConverters.ProjectTaskStatusToBrush}}"
                                              materialDesign:ElevationAssist.Elevation="Dp4"
                                              Style="{StaticResource MaterialDesignOutlinedCard}">
                             <Grid>
@@ -187,8 +197,8 @@
                                     <Button HorizontalAlignment="Right"
                                             VerticalAlignment="Top"
                                             Style="{StaticResource ListBoxHoverButtonStyle}"
-                                            Width="26"
-                                            Height="26"
+                                            Width="23"
+                                            Height="23"
                                             Background="White"
                                             Content="{materialDesign:PackIcon Kind=ArrowLeftBold,Size=20}"
                                             Command="MoveLeft"
@@ -200,26 +210,39 @@
                                             Command="Delete"
                                             CommandParameter="{Binding Mode=OneTime}"
                                             Margin="6,0,0,0"
-                                            Width="26"
-                                            Height="26" />
+                                            Width="23"
+                                            Height="23" />
                                 </StackPanel>
-                                <TextBlock Grid.Row="1" Grid.Column="0"
-                                           Text="{Binding Type,Mode=OneWay,Converter={x:Static converters:SnapConverters.EnumToDescriptionConverter}}" />
-                                <TextBlock Grid.Row="2" Grid.Column="0"
-                                           Grid.ColumnSpan="2"
-                                           Style="{StaticResource MaterialDesignOverlineTextBlock}"
-                                           TextWrapping="NoWrap"
-                                           TextTrimming="CharacterEllipsis"
-                                           MaxHeight="30"
-                                           Foreground="DimGray"
-                                           VerticalAlignment="Bottom"
-                                           Text="{Binding  Description,Mode=OneWay}" />
-                                <materialDesign:PopupBox Grid.Row="2" Grid.Column="1"
+                                <Grid Grid.Row="1" Grid.Column="0"
+                                      Grid.ColumnSpan="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="{Binding Type,Mode=OneWay,Converter={x:Static converters:SnapConverters.EnumToDescriptionConverter}}" />
+                                    <TextBlock Grid.Column="1"
+                                               Margin="6,0,0,0"
+                                               Style="{StaticResource MaterialDesignOverlineTextBlock}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxHeight="30"
+                                               Foreground="DimGray"
+                                               VerticalAlignment="Center"
+                                               Text="{Binding  Description,Mode=OneWay}" />
+                                </Grid>
+                                <CheckBox Grid.Row="2"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          Content="Enable In Context" 
+                                          VerticalContentAlignment="Center"/>
+                                <materialDesign:PopupBox Grid.Row="2"
+                                                         Grid.Column="1"
                                                          StaysOpen="True"
                                                          PopupUniformCornerRadius="4"
                                                          HorizontalAlignment="Right">
-                                    <StackPanel Width="300"
-                                                MaxHeight="500">
+                                    <StackPanel Width="400"
+                                                MaxHeight="600">
                                         <StackPanel.Resources>
                                             <Style TargetType="{x:Type TextBox}"
                                                    BasedOn="{StaticResource MaterialDesignTextBox}">
@@ -248,6 +271,14 @@
                                                   materialDesign:HintAssist.Hint="Type"
                                                   materialDesign:HintAssist.IsFloating="True"
                                                   MaxDropDownHeight="200" />
+                                        <TextBox materialDesign:HintAssist.Hint="Summary"
+                                                 materialDesign:HintAssist.HelperText="Summary can be added to the context of subsequent tasks."
+                                                 TextWrapping="Wrap"
+                                                 AcceptsReturn="True"
+                                                 AcceptsTab="True"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 MaxHeight="300"
+                                                 Text="{Binding Summary,Mode=TwoWay,UpdateSourceTrigger=LostFocus}" />
                                     </StackPanel>
                                 </materialDesign:PopupBox>
                             </Grid>

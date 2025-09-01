@@ -228,6 +228,13 @@
                                               Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
+                <DataTemplate DataType="{x:Type project:ProjectPromptTemplateViewModel}">
+                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                            Header="Prompt Template">
+                        <project:ProjectPromptTemplateView Width="900"
+                                                           Height="600" />
+                    </HeaderedContentControl>
+                </DataTemplate>
             </materialDesign:DialogHost.Resources>
             <Grid Margin="10"
                   IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">

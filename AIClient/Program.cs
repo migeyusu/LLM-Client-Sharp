@@ -39,6 +39,7 @@ public class Program
         }
 
         IServiceProvider? serviceProvider = null;
+        MainWindow? mainWindow = null;
         var tempPath = new DirectoryInfo(Extension.TempPath);
         if (!tempPath.Exists)
         {
@@ -123,7 +124,8 @@ public class Program
                     "D:\\Dev\\LLM-Client-Sharp\\AIClient\\bin\\Release\\net8.0-windows\\publish\\win-x64\\Dialogs")
                 .Wait();
             return;*/
-            app.Run(serviceProvider.GetService<MainWindow>());
+            mainWindow = serviceProvider.GetService<MainWindow>();
+            app.Run(mainWindow);
         }
         catch (Exception e)
         {
@@ -132,8 +134,7 @@ public class Program
             logger?.LogCritical(e, "Application terminated unexpectedly");
             try
             {
-                var mainWindowViewModel = serviceProvider?.GetService<MainWindowViewModel>();
-                if (mainWindowViewModel is { IsInitialized: true })
+                if (mainWindow?.DataContext is MainWindowViewModel { IsInitialized: true } mainWindowViewModel)
                 {
                     mainWindowViewModel.SaveSessions().Wait(TimeSpan.FromSeconds(30));
                 }

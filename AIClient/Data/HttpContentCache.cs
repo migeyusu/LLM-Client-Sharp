@@ -49,7 +49,8 @@ public class HttpContentCache
         try
         {
             var json = File.ReadAllText(indexPath);
-            var persistedCache = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            var options = Extension.DefaultJsonSerializerOptions;
+            var persistedCache = JsonSerializer.Deserialize<Dictionary<string, string>>(json, options);
             if (persistedCache != null)
             {
                 foreach (var item in persistedCache)

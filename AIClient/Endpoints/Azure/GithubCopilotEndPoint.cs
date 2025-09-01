@@ -84,7 +84,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
 
     public void UpdateConfig(JsonNode document)
     {
-        var config = JsonSerializer.SerializeToNode(this.Option);
+        var config = JsonSerializer.SerializeToNode(this.Option, Extension.DefaultJsonSerializerOptions);
         document[Name] = config;
     }
 

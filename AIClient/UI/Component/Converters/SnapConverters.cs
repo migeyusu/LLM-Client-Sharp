@@ -37,24 +37,11 @@ internal static class SnapConverters
             }
         });
 
+    public static readonly IValueConverter StringArrayToStringConverter =
+        ValueConverter.Create<string[], string>(e => string.Join(", ", e.Value));
+
     public static readonly IValueConverter ThicknessToDoubleConverter =
         ValueConverter.Create<Thickness, double>(e => e.Value.Left);
-
-    public static readonly IValueConverter ProjectTaskStatusToBrush =
-        ValueConverter.Create<ProjectTaskStatus, Brush>(args =>
-        {
-            switch (args.Value)
-            {
-                case ProjectTaskStatus.InProgress:
-                    return Brushes.IndianRed;
-                case ProjectTaskStatus.Completed:
-                    return Brushes.Green;
-                case ProjectTaskStatus.RolledBack:
-                    return Brushes.Gray;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        });
 
     public static readonly IValueConverter EnumToDescriptionConverter =
         ValueConverter.Create<Enum, string>(e => e.Value.GetEnumDescription());

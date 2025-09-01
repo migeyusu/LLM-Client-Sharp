@@ -27,7 +27,6 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
 {
     private string? _name;
     private string? _summary;
-    private ProjectTaskStatus _status = ProjectTaskStatus.InProgress;
     private ProjectTaskType _type;
     private string? _description;
 
@@ -42,31 +41,6 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
-    public ProjectTaskViewModel(ProjectViewModel parentProject, IMapper mapper,
-        IList<CheckableFunctionGroupTree>? functionGroupTrees = null,
-        IList<IDialogItem>? items = null) : base(mapper, items)
-    {
-        ParentProject = parentProject;
-        SelectedFunctionGroups = functionGroupTrees;
-        PropertyChanged += OnPropertyChanged;
-    }
-
-    private readonly string[] _notTrackingProperties =
-    [
-        nameof(ScrollViewItem),
-        nameof(SearchText)
-    ];
-
-    private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        var propertyName = e.PropertyName;
-        if (_notTrackingProperties.Contains(propertyName))
-        {
-            return;
-        }
-
-        IsDataChanged = true;
-    }
 
     public Guid ID { get; } = Guid.NewGuid();
 
@@ -107,8 +81,11 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
+
     private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
     private IList<CheckableFunctionGroupTree>? _selectedFunctionGroups;
+
+    public ProjectPromptTemplateViewModel PromptTemplate { get; }
 
     /// <summary>
     /// Task内的上下文
@@ -123,7 +100,7 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
             }
 
             _systemPromptBuilder.Clear();
-            _systemPromptBuilder.Append(ParentProject.Context);
+            _systemPromptBuilder.AppendLine(ParentProject.Context);
             _systemPromptBuilder.AppendFormat("现在有一个{0}类型的任务，我希望你能帮助我完成它。", Type.GetEnumDescription());
             _systemPromptBuilder.AppendLine();
             _systemPromptBuilder.Append("任务描述：");
@@ -134,6 +111,20 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
     }
 
     public ProjectViewModel ParentProject { get; }
+
+    /// <summary>
+    /// indicate whether enable this task in context when generate response.
+    /// </summary>
+    public bool EnableInContext
+    {
+        get => _enableInContext;
+        set
+        {
+            if (value == _enableInContext) return;
+            _enableInContext = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <summary>
     /// summary of the task, when task end, generate for total context.
@@ -161,16 +152,35 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
-    public ProjectTaskStatus Status
+    public ProjectTaskViewModel(ProjectViewModel parentProject, IMapper mapper,
+        IList<CheckableFunctionGroupTree>? functionGroupTrees = null,
+        IList<IDialogItem>? items = null) : base(mapper, items)
     {
-        get => _status;
-        set
-        {
-            if (value == _status) return;
-            _status = value;
-            OnPropertyChanged();
-        }
+        ParentProject = parentProject;
+        SelectedFunctionGroups = functionGroupTrees;
+        PropertyChanged += OnPropertyChanged;
+        this.PromptTemplate = new ProjectPromptTemplateViewModel(this);
     }
+
+    private readonly string[] _notTrackingProperties =
+    [
+        nameof(ScrollViewItem),
+        nameof(SearchText)
+    ];
+
+    private bool _enableInContext;
+
+    private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        var propertyName = e.PropertyName;
+        if (_notTrackingProperties.Contains(propertyName))
+        {
+            return;
+        }
+
+        IsDataChanged = true;
+    }
+
 
     public bool Validate()
     {
@@ -210,4 +220,17 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
             }
         }
     }
+}
+
+public class ProjectPromptTemplateViewModel
+{
+    public ProjectPromptTemplateViewModel(ProjectTaskViewModel projectTask)
+    {
+        Task = projectTask;
+        Project = projectTask.ParentProject;
+    }
+
+    public ProjectTaskViewModel Task { get; }
+
+    public ProjectViewModel Project { get; }
 }

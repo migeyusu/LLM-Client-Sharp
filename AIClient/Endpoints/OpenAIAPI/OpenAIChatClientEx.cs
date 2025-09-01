@@ -35,7 +35,8 @@ public class OpenAIChatClientEx : ChatClient
 
                     foreach (var additionalObject in clientContext.AdditionalObjects)
                     {
-                        var node = JsonSerializer.SerializeToNode(additionalObject.Value);
+                        var node = JsonSerializer.SerializeToNode(additionalObject.Value,
+                            Extension.DefaultJsonSerializerOptions);
                         jsonNode[additionalObject.Key] = node;
                     }
 
@@ -61,6 +62,4 @@ public class OpenAIChatClientEx : ChatClient
 
         return result;
     }
-
 }
-

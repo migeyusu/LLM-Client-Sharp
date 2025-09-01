@@ -40,11 +40,11 @@ public class ProjectTaskPersistModel : DialogSessionPersistModel
 
     public string? Summary { get; set; }
     
+    public bool EnableInContext { get; set; }
+    
     public string? PromptString { get; set; }
     
     public string? Description { get; set; }
 
     public ProjectTaskType Type { get; set; }
-
-    public ProjectTaskStatus Status { get; set; }
 }

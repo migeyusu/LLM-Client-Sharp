@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Windows.Data;
 using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
@@ -148,7 +149,7 @@ public class ProjectViewModel : FileBasedSessionBase
                     {
                         File.Copy(fileInfo.FullName, newFilePath, true);
                         var info = new FileInfo(newFilePath);
-                        projectViewModel = await LoadFromFile(info,mapper);
+                        projectViewModel = await LoadFromFile(info, mapper);
                     }
                 }
                 catch (Exception e)
@@ -258,7 +259,7 @@ public class ProjectViewModel : FileBasedSessionBase
     }
 
     private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
-
+    
     /// <summary>
     /// 项目级别的上下文，在task间共享
     /// </summary>
@@ -276,7 +277,20 @@ public class ProjectViewModel : FileBasedSessionBase
             _systemPromptBuilder.AppendFormat("我正在Windows上使用语言{0}上开发位于{1}的一个软件项目。",
                 string.Join(",", LanguageNames), FolderPath);
             _systemPromptBuilder.AppendLine();
+            _systemPromptBuilder.AppendLine("项目背景/描述如下：");
             _systemPromptBuilder.AppendLine(Description);
+            var contextTasks = this.Tasks
+                .Where(model => model.EnableInContext && string.IsNullOrEmpty(model.Summary))
+                .ToArray();
+            if (contextTasks.Any())
+            {
+                _systemPromptBuilder.AppendLine("以下是与任务相关的信息：");
+                foreach (var projectTaskViewModel in contextTasks)
+                {
+                    _systemPromptBuilder.AppendLine(projectTaskViewModel.Description);
+                }
+            }
+
             return _systemPromptBuilder.ToString();
         }
     }
@@ -399,7 +413,17 @@ public class ProjectViewModel : FileBasedSessionBase
     public void AddTask(ProjectTaskViewModel task)
     {
         task.ResponseCompleted += TaskOnResponseCompleted;
+        this.PropertyChanged += OnTaskPropertyChanged;
         this.Tasks.Add(task);
+    }
+
+    private void OnTaskPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        var propertyName = e.PropertyName;
+        if (propertyName == nameof(ProjectTaskViewModel.EnableInContext))
+        {
+            OnPropertyChanged(nameof(Context));
+        }
     }
 
     public void RemoveTask(ProjectTaskViewModel task)

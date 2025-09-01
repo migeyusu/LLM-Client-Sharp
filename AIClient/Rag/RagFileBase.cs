@@ -528,8 +528,9 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
 
     public object Clone()
     {
-        var serialize = JsonSerializer.Serialize(this, Extension.DefaultJsonSerializerOptions);
-        return JsonSerializer.Deserialize(serialize, GetType(), Extension.DefaultJsonSerializerOptions)!;
+        var options = Extension.DefaultJsonSerializerOptions;
+        var serialize = JsonSerializer.Serialize(this, options);
+        return JsonSerializer.Deserialize(serialize, GetType(), options)!;
     }
 }
 

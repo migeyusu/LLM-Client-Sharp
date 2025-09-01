@@ -317,8 +317,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination.Name = source.Name;
             destination.Summary = source.Summary;
             destination.Description = source.Description;
+            destination.EnableInContext = source.EnableInContext;
             destination.Type = source.Type;
-            destination.Status = source.Status;
             destination.TokensConsumption = source.TokensConsumption;
             destination.TotalPrice = source.TotalPrice;
             destination.SelectedFunctionGroups = source.AllowedFunctions?
@@ -361,9 +361,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.Name = source.Name;
         destination.Summary = source.Summary;
         destination.Type = source.Type;
-        destination.Status = source.Status;
         destination.DialogItems = dialogItems;
         destination.Description = source.Description;
+        destination.EnableInContext = source.EnableInContext;
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
         destination.AllowedFunctions = source.SelectedFunctionGroups?

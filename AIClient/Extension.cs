@@ -389,7 +389,7 @@ public static class Extension
 
     public static T Clone<T>(T source) where T : class
     {
-        var json = JsonSerializer.Serialize(source);
+        var json = JsonSerializer.Serialize(source, DefaultJsonSerializerOptions);
         return JsonSerializer.Deserialize<T>(json) ?? throw new InvalidOperationException("Deserialization failed.");
     }
 
