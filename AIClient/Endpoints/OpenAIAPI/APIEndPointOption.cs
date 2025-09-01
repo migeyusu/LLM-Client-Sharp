@@ -91,16 +91,17 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
 
     public ICommand RefreshModelSource => new ActionCommand((async o =>
     {
-        if (ModelMapping == null)
+        var modelMapping = ModelMapping;
+        if (modelMapping == null)
         {
             return;
         }
 
-        if (await ModelMapping.Refresh())
+        if (await modelMapping.Refresh())
         {
             foreach (var apiModelInfo in this.Models)
             {
-                apiModelInfo.IsNotAvailable = !ModelMapping.MapInfo(apiModelInfo);
+                apiModelInfo.IsNotAvailable = !modelMapping.MapInfo(apiModelInfo);
             }
         }
 

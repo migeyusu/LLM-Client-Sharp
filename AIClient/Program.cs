@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using LLMClient.Abstraction;
@@ -39,6 +40,11 @@ public class Program
 
         IServiceProvider? serviceProvider = null;
         var tempPath = new DirectoryInfo(Extension.TempPath);
+        if (!tempPath.Exists)
+        {
+            tempPath.Create();
+        }
+
         try
         {
             var serviceCollection = new ServiceCollection();
@@ -51,21 +57,14 @@ public class Program
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
                 .AddSingleton<IRagSourceCollection, RagSourceCollection>()
-#if DEBUG
-                .AddLogging(builder => builder.AddDebug())
-#else
-                .AddLogging(builder =>
-                    builder.Services.AddSingleton<ILoggerFactory, NullLoggerFactory>())
-#endif
                 .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
                 .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()
                 .AddMap();
-            //debug mode
 #if DEBUG
             var resourceBuilder = ResourceBuilder
                 .CreateDefault()
                 .AddService("TelemetryConsoleQuickstart");
-// Enable model diagnostics with sensitive data.
+            // Enable model diagnostics with sensitive data.
             AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
 
             using var traceProvider = Sdk.CreateTracerProviderBuilder()
@@ -81,6 +80,7 @@ public class Program
                 .Build();
             collection.AddLogging(builder =>
             {
+                builder.AddDebug();
                 // Add OpenTelemetry as a logging provider
                 builder.AddOpenTelemetry(options =>
                 {
@@ -92,14 +92,29 @@ public class Program
                 });
                 builder.SetMinimumLevel(LogLevel.Information);
             });
+#else
+            var logPath = Path.GetFullPath("Logs");
+            if (!Directory.Exists(logPath))
+            {
+                Directory.CreateDirectory(logPath);
+            }
+
+            collection.AddLogging(builder =>
+            {
+                builder.AddFile("Logs/llmclient_{Date}.txt");
+                builder.SetMinimumLevel(LogLevel.Information);
+            });
 #endif
             serviceProvider = collection.BuildServiceProvider();
             BaseViewModel.ServiceLocator = serviceProvider;
-            if (!tempPath.Exists)
-            {
-                tempPath.Create();
-            }
-
+#if DEBUG
+            //禁止在Debug模式下注册LoggerTraceListener，避免重复日志
+#else
+            //注册LoggerFactory到Listeners
+            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+            var traceListener = new LoggerTraceListener(loggerFactory);
+            Trace.Listeners.Add(traceListener);
+#endif
             App app = new App();
             app.InitializeComponent();
             /*var version3Converter = new Version3Converter(serviceProvider);
@@ -113,6 +128,20 @@ public class Program
         catch (Exception e)
         {
             MessageBox.Show("An error occured: " + e + "process will be terminated.");
+            var logger = serviceProvider?.GetService<ILogger<Program>>();
+            logger?.LogCritical(e, "Application terminated unexpectedly");
+            try
+            {
+                var mainWindowViewModel = serviceProvider?.GetService<MainWindowViewModel>();
+                if (mainWindowViewModel is { IsInitialized: true })
+                {
+                    mainWindowViewModel.SaveSessions().Wait(TimeSpan.FromSeconds(30));
+                }
+            }
+            catch (Exception exception)
+            {
+                logger?.LogError(exception, "保存会话数据失败");
+            }
         }
         finally
         {

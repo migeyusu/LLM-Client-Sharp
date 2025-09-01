@@ -41,7 +41,7 @@ public class APIClient : LlmClientBase
     private readonly APIDefaultOption _option;
 
     public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option,
-        ILoggerFactory? loggerFactory)
+        ILoggerFactory loggerFactory)
     {
         _option = option;
         this._loggerFactory = loggerFactory;
@@ -67,7 +67,7 @@ public class APIClient : LlmClientBase
 
     private IChatClient? _chatClient;
 
-    private readonly ILoggerFactory? _loggerFactory;
+    private readonly ILoggerFactory _loggerFactory;
 
     private void EnsureKernel()
     {
@@ -80,12 +80,8 @@ public class APIClient : LlmClientBase
             Transport = new HttpClientPipelineTransport(httpClient)
         });
         var builder = Kernel.CreateBuilder();
-#if DEBUG
-        if (_loggerFactory != null)
-        {
-            builder.Services.AddSingleton(_loggerFactory);
-        }
-
+#if DEBUG //只有debug模式下才需要获取每次请求的日志
+        builder.Services.AddSingleton(_loggerFactory);
 #endif
 
         _kernel = builder.AddOpenAIChatCompletion(this.Model.Id, openAiClient)

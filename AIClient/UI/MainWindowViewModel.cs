@@ -394,23 +394,34 @@ public class MainWindowViewModel : BaseViewModel
 
     #endregion
 
+    // ReSharper disable once MemberCanBePrivate.Global
     public async void Initialize()
     {
-        IsProcessing = true;
-        await McpServiceCollection.LoadAsync();
-        await RagSourceCollection.LoadAsync();
-        await EndpointsViewModel.Initialize();
-        await InitialSessionsFromLocal();
-        if (SessionViewModels.Any())
+        try
         {
-            this.PreSession = SessionViewModels.First();
-        }
+            IsProcessing = true;
+            await McpServiceCollection.LoadAsync();
+            await RagSourceCollection.LoadAsync();
+            await EndpointsViewModel.Initialize();
+            await InitialSessionsFromLocal();
+            if (SessionViewModels.Any())
+            {
+                PreSession = SessionViewModels.First();
+            }
 
-        UpdateResource(_themeName);
-        await this.PromptsResource.Initialize();
-        IsProcessing = false;
-        IsInitialized = true;
-        // SemanticKernelStore.Test();
+            UpdateResource(_themeName);
+            await PromptsResource.Initialize();
+            IsInitialized = true;
+            // SemanticKernelStore.Test();
+        }
+        catch (Exception e)
+        {
+            MessageQueue.Enqueue("Init failed: " + e.Message);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
     }
 
 

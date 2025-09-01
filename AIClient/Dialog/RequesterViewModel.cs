@@ -25,6 +25,8 @@ public class RequesterViewModel : BaseViewModel
     /// </summary>
     public bool IsDataChanged { get; set; } = true;
 
+    public event Action<IResponse>? RequestCompleted;
+
     public ICommand NewRequestCommand => new ActionCommand(async o =>
     {
         try
@@ -36,6 +38,7 @@ public class RequesterViewModel : BaseViewModel
             }
 
             var completedResult = await _getResponse.Invoke(this.DefaultClient, requestViewItem, null);
+            OnRequestCompleted(completedResult);
             if (!completedResult.IsInterrupt)
             {
                 ClearRequest();
@@ -116,7 +119,7 @@ public class RequesterViewModel : BaseViewModel
     {
         OnPropertyChanged(nameof(IsRagEnabled));
     }
-    
+
     public bool IsRagEnabled => RagSources.Any(model => model.IsSelected && model.Data.IsAvailable);
 
     public void RefreshRagSources()
@@ -337,6 +340,11 @@ public class RequesterViewModel : BaseViewModel
     private void TagDataChanged(object? sender, PropertyChangedEventArgs e)
     {
         IsDataChanged = true;
+    }
+
+    protected virtual void OnRequestCompleted(IResponse obj)
+    {
+        RequestCompleted?.Invoke(obj);
     }
 }
 

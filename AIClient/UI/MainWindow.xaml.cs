@@ -82,7 +82,7 @@ public partial class MainWindow : ExtendedWindow
                 }
                 catch (Exception exception)
                 {
-                    MessageBox.Show(exception.Message);
+                    MessageBox.Show("保存会话数据失败: " + exception.Message);
                 }
 
                 _closing = false;
