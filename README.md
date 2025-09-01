@@ -25,8 +25,7 @@
    ![alt text](images/openrouter.png)
    上面是最大的模型供应商[openrouter](https://openrouter.com)，可见除了支持手动配置模型外，还可以填写模型id然后从openrouter拉取模型相关信息，方便用户。
    **创建对话**
-   在左下角选择''新建对话''，选择终结点和模型，输入问题即可开始对话。
-   ![alt text](images/createdialog.png)
+   在左下角选择''新建对话''，选择终结点和模型，输入问题即可开始对话。<img src="images/createdialog.png" alt="start dialog" style="zoom:50%;"/>
    ![alt text](images/modelselection.png)
    可见每个模型都有自己的特性，不同的特性将拥有不同的功能，比如支持流式输出、支持函数调用等。这些特性也会影响对话的功能可用性。
    **对话界面**
@@ -37,7 +36,7 @@
    - 可重发消息
    - 可对比消息（对比时完整支持上下文如函数调用）
    - 可切换模型和调整模型参数
-   - ![alt text](images/model_param.png)
+   <img src="images/model_param.png" alt="edit param" style="zoom:60%;"/>
    - 可搜索对话，并以黄色高亮显示，可快速定位搜索结果
    - 支持Markdown渲染，支持代码高亮
    - 支持对话导出为Markdown格式，便于存档和分享
@@ -45,8 +44,8 @@
    - 支持对话备份和导入
    - 支持对话记录的UI虚拟化，提升性能
    - 支持主题切换（暗黑模式和明亮模式）
-![项目截图](images/darkmode.png)
-![项目截图](images/lightmode.png)
+![暗黑模式](images/darkmode.png)
+![日间模式](images/lightmode.png)
    - 支持代码高亮主题切换
    **对话功能**
    - 参数更改、模型切换
@@ -60,12 +59,36 @@
    - 支持搜索参数（不同API供应商会有不同的附加参数，如OpenRouter）
    - 支持搜索工具（Function Call）
    - 支持Thinking开关（OpenRouter）
+----
 
 ## 精细RAG
 Retrieval-Augmented Generation 指的是通过检索相关信息来增强生成式模型的回答能力。在本项目中，RAG 功能允许用户将外部知识库（如文档、网页等）与大语言模型结合使用，以提供更准确和上下文相关的回答。不同于普通的RAG，本项目的RAG功能具三大特点：
 1. **精细化文件导入**：我们知道RAG瓶颈在于文档的预处理，在这个阶段可能丢失大量信息。本项目支持多种文件格式（如PDF、Word、文本文件等）的导入，并提供细粒度的分块和嵌入选项，确保最大限度地保留文档内容的完整性。
 2. **函数调用集成**：RAG 功能被封装为函数调用，不仅仅有Query，还有文档结构查询等功能，让LLM在理解文档概览的前提下生成Query字符串。这样可以充分利用大模型的推理能力，动态决定何时调用RAG功能，从而提升回答的相关性和准确性。
 3. **结构化查询**：文件不会被直接切分为扁平块，而是会被解析为结构化数据（如章节、段落等），每个节点自动生成Summary，从而支持更复杂的查询策略。查询过程会基于结构的特性，选择性地执行自顶向下或自底向上的检索策略。查询结果也会以结构化的形式返回，便于大模型理解和使用。比如，返回的某个段落将包含他的章节信息，方便模型理解上下文。
+
+**文件导入**
+用户可以通过UI界面导入文件，支持多种格式（目前只支持PDF、Markdown）。文件的管理页面如下：
+![alt text](images/rag_import.png)
+选择文件后，通过右侧的开关按钮![alt text](images/start_button.png)可以开始实施导入。一般来说，RAG在第一步**文件的结构化**遭遇信息损失，为了实现对RAG过程的高度可控，文件的导入过程提供了额外控制。比如下面的PDF，可以在界面中选择Margin，预览和更改Bookmark（有些PDF的Bookmark标记错误）。
+![alt text](images/pdf_extractor.png)
+![alt text](images/pdf_step2.png)
+上图表示依据Bookmark被划分的节点,下一步会生成Summary，最终文件会被Embedding后存入矢量数据库（本地Sqlite），最终我们可以预览他们：
+![alt text](images/query_view.png)
+如上图，数据以树形结构显示，对于Bookmark节点，显示其Summary，对于Paragraph/Page节点，显示实际内容。
+如果构建失败，可以在日志查看原因：
+<img src="images/rag_log.png" alt="log" style="zoom:70%;" />
+## MCP 支持
+-  支持UI和Json方式添加工具 ![MCP添加](images/mcp_add.png)
+-  Json方式的格式和Claude Code等工具类似
+![MCP Json](images/mcp_json.png)
+- 添加后可以手动刷新，获取工具列表
+![MCP列表](images/mcp_list.png)
+- MCP工具还可以附带一个Prompt，当选择该工具时会自动附加到System Prompt
+
+## Project（Experimental）
+项目功能允许用户创建和管理多个相关对话，他们共享同一个上下文，适用于需要跨多个对话进行协作或跟踪不同主题的场景。每个项目可以包含多个对话，并且可以方便地在项目之间切换和管理。
+![alt text](images/project.png)
 
 ## 待完成特性
 
@@ -79,7 +102,6 @@ Retrieval-Augmented Generation 指的是通过检索相关信息来增强生成�
 
 3. **自动上下文管理**
    - 提供上下文的智能管理功能，无需手动排除历史记录。
-   - 
 ## 如何参与项目
 
 本项目尚在开发阶段，您可以通过以下方式参与：
@@ -89,18 +111,6 @@ Retrieval-Augmented Generation 指的是通过检索相关信息来增强生成�
 3. 联系作者：如果有任何问题或者合作意向，可以通过 [GitHub Issues](https://github.com/) 联系我。
 
 
-## 使用方法
-
-> 待详细添加项目的编译、运行和配置说明。
-
-## 感谢
-
-感谢以下开源库和工具的支持：
-
-- [MaterialDesignInXAML](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit)
-- [TextmateSharp](https://github.com/microsoft/TextMateSharp)
-- [Microsoft.Extensions.AI](https://learn.microsoft.com/en-us/dotnet/)
-
 ---
 
-这是一个充满潜力的项目，欢迎大家加入进来，共同扩展其应用场景！
+这是一个学习性质的项目，请不吝赐教！
