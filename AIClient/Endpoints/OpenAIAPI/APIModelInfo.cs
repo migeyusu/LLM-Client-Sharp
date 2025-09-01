@@ -160,7 +160,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
     private string _name = string.Empty;
     private string? _infoUrl;
     private bool _isNotAvailable;
-    private bool _supportTextGeneration;
+    private bool _supportTextGeneration = true;
     private bool _supportVideoInput;
     private bool _supportAudioInput;
     private bool _supportFunctionCall;

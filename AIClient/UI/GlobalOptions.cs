@@ -127,7 +127,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     {
         var fileInfo = new FileInfo(DefaultConfigFile);
         fileInfo.Directory?.Create();
-        using (var fileStream = fileInfo.Open(FileMode.OpenOrCreate, FileAccess.Write))
+        using (var fileStream = fileInfo.Open(FileMode.Create, FileAccess.Write))
         {
             await JsonSerializer.SerializeAsync(fileStream, this, Extension.DefaultJsonSerializerOptions);
         }
@@ -145,7 +145,9 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             {
                 using (var fileStream = fileInfo.OpenRead())
                 {
-                    var config = await JsonSerializer.DeserializeAsync<GlobalOptions>(fileStream);
+                    var config =
+                        await JsonSerializer.DeserializeAsync<GlobalOptions>(fileStream,
+                            Extension.DefaultJsonSerializerOptions);
                     if (config != null)
                     {
                         return config;

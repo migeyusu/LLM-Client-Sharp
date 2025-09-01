@@ -89,7 +89,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             var keyValuePairs = this.SuggestedModels
                 .Select(model => new KeyValuePair<string, string>(model.LlmModel.Endpoint.Name, model.LlmModel.Name))
                 .ToArray();
-            endPointsNode[SuggestedModelKey] = JsonSerializer.SerializeToNode(keyValuePairs,options);
+            endPointsNode[SuggestedModelKey] = JsonSerializer.SerializeToNode(keyValuePairs, options);
             await EndPointsOptions.SaveDoc(root);
             MessageEventBus.Publish("已保存！");
         }
@@ -178,7 +178,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             {
                 if (jsonNode is JsonObject jsonObject)
                 {
-                    var endPoint = jsonObject.Deserialize<APIEndPointOption>();
+                    var endPoint = jsonObject.Deserialize<APIEndPointOption>(Extension.DefaultJsonSerializerOptions);
                     if (endPoint != null)
                     {
                         Endpoints.Add(new APIEndPoint(endPoint, _loggerFactory));
