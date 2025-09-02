@@ -279,7 +279,24 @@ public class EditableResponseViewItem : BaseViewModel
 
 public class EditableTextContent : BaseViewModel
 {
-    public ICommand RecoverCommand => new ActionCommand(() => { this.Text = _textContent.Text; });
+    public ICommand RecoverCommand => new ActionCommand(() =>
+    {
+        this.Text = _textContent.Text;
+        this.HasEdit = false;
+    });
+
+    public bool HasEdit
+    {
+        get => _hasEdit;
+        set
+        {
+            if (value == _hasEdit) return;
+            _hasEdit = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string? _text;
 
     public string? Text
     {
@@ -289,6 +306,7 @@ public class EditableTextContent : BaseViewModel
             if (value == _text) return;
             _text = value;
             OnPropertyChanged();
+            HasEdit = true;
         }
     }
 
@@ -307,16 +325,21 @@ public class EditableTextContent : BaseViewModel
 
     public void ApplyText()
     {
+        if (!HasEdit)
+        {
+            return;
+        }
+
         _textContent.Text = Text;
     }
 
     private readonly TextContent _textContent;
-    private string? _text;
+    private bool _hasEdit;
 
     public EditableTextContent(TextContent textContent, string? messageId)
     {
         this._textContent = textContent;
         this.MessageId = messageId;
-        this.Text = textContent.Text;
+        this._text = textContent.Text;
     }
 }

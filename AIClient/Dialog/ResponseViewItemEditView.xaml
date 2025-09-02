@@ -20,11 +20,15 @@
                         <Grid>
                             <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="5" />
-                            <Button Content="{materialDesign:PackIcon Kind=Restore}"
+                            <Button Content="{materialDesign:PackIcon Kind=Undo}"
                                     Command="{Binding RecoverCommand}"
+                                    Visibility="{Binding HasEdit,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                     VerticalAlignment="Top"
                                     HorizontalAlignment="Right"
                                     Margin="5"
+                                    Width="30"
+                                    Height="30"
+                                    ToolTip="Revert to original string"
                                     Style="{StaticResource MaterialDesignFloatingActionMiniButton}" />
                         </Grid>
                     </DataTemplate>
@@ -32,7 +36,7 @@
             </ItemsControl>
         </ScrollViewer>
         <Button Grid.Row="1"
-                Content="保存"
+                Content="确认更改"
                 HorizontalAlignment="Right"
                 Margin="5"
                 Command="{Binding  SaveCommand}" />

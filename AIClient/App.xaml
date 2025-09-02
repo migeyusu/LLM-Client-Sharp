@@ -22,6 +22,8 @@
                 <ResourceDictionary Source="Dialog/DialogTemplateDictionary.xaml" />
                 <ResourceDictionary Source="UI/ContainerResouce.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="{x:Type ScrollBar}"
+                   BasedOn="{StaticResource DefaultScrollBarStyle}" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

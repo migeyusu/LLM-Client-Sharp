@@ -259,7 +259,7 @@ public class ProjectViewModel : FileBasedSessionBase
     }
 
     private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
-    
+
     /// <summary>
     /// 项目级别的上下文，在task间共享
     /// </summary>
@@ -287,7 +287,9 @@ public class ProjectViewModel : FileBasedSessionBase
                 _systemPromptBuilder.AppendLine("以下是与任务相关的信息：");
                 foreach (var projectTaskViewModel in contextTasks)
                 {
-                    _systemPromptBuilder.AppendLine(projectTaskViewModel.Description);
+                    _systemPromptBuilder.Append("#");
+                    _systemPromptBuilder.AppendLine(projectTaskViewModel.Name);
+                    _systemPromptBuilder.AppendLine(projectTaskViewModel.Summary);
                 }
             }
 

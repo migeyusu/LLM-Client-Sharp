@@ -149,6 +149,7 @@
                             Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                             Width="30"
                             Height="30"
+                            Visibility="{Binding SelectedTask,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                             Content="{materialDesign:PackIcon Kind=Eye}"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                             CommandParameter="{Binding SelectedTask.PromptTemplate,Mode=OneWay}" />
@@ -234,8 +235,9 @@
                                 <CheckBox Grid.Row="2"
                                           Grid.Column="0"
                                           Grid.ColumnSpan="2"
-                                          Content="Enable In Context" 
-                                          VerticalContentAlignment="Center"/>
+                                          IsChecked="{Binding EnableInContext,Mode=TwoWay}"
+                                          Content="Enable In Context"
+                                          VerticalContentAlignment="Center" />
                                 <materialDesign:PopupBox Grid.Row="2"
                                                          Grid.Column="1"
                                                          StaysOpen="True"

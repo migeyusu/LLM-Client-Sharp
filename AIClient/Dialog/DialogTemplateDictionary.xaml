@@ -389,7 +389,7 @@
                                 CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                 VerticalAlignment="Center"
                                 Margin="6,0,0,0"
-                                ToolTip="复制当前回复文本"
+                                ToolTip="复制（仅文本）"
                                 Content="{materialDesign:PackIcon Kind=ContentPaste,Size=20}" />
                     </StackPanel>
                 </Grid>

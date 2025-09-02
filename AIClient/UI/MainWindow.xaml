@@ -672,8 +672,8 @@
                 <GridSplitter Grid.Row="0" Grid.Column="0"
                               VerticalAlignment="Stretch"
                               HorizontalAlignment="Right"
-                              Background="DarkGray"
-                              Margin="0,30"
+                              Style="{StaticResource MaterialDesignGridSplitter}"
+                              Margin="0,40,0,20"
                               Width="3" />
             </Grid>
         </materialDesign:DialogHost>
