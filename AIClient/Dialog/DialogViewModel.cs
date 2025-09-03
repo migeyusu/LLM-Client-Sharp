@@ -186,59 +186,6 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
-    public ICommand ExportCommand => new ActionCommand((async _ =>
-    {
-        try
-        {
-            var saveFileDialog = new SaveFileDialog()
-            {
-                AddExtension = true,
-                DefaultExt = ".md", CheckPathExists = true,
-                Filter = "markdown files (*.md)|*.md"
-            };
-            if (saveFileDialog.ShowDialog() != true)
-            {
-                return;
-            }
-
-            var stringBuilder = new StringBuilder(8192);
-            /*stringBuilder.AppendLine($"# {this.Topic}");
-        stringBuilder.AppendLine($"### {this.DefaultClient.Name}");*/
-            foreach (var viewItem in DialogItems.Where((item => item.IsAvailableInContext)))
-            {
-                if (viewItem is MultiResponseViewItem multiResponseView &&
-                    multiResponseView.AcceptedResponse is ResponseViewItem responseViewItem)
-                {
-                    var textContent = responseViewItem.TextContent;
-                    stringBuilder.AppendLine("## **Assistant:**");
-                    stringBuilder.Append(textContent ?? string.Empty);
-                    stringBuilder.AppendLine();
-                    stringBuilder.AppendLine();
-                    stringBuilder.AppendLine("***");
-                    stringBuilder.AppendLine();
-                }
-                else if (viewItem is RequestViewItem reqViewItem)
-                {
-                    stringBuilder.AppendLine("## **User:**");
-                    stringBuilder.Append(reqViewItem.TextMessage);
-                    stringBuilder.AppendLine();
-                    stringBuilder.AppendLine();
-                    stringBuilder.AppendLine("***");
-                    stringBuilder.AppendLine();
-                }
-            }
-
-            var fileName = saveFileDialog.FileName;
-            await File.WriteAllTextAsync(fileName, stringBuilder.ToString());
-            MessageEventBus.Publish("已导出");
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show(e.Message);
-        }
-    }));
-
-
     public DialogViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
         GlobalOptions options, IRagSourceCollection ragSourceCollection,
         IList<IDialogItem>? items = null) : base(mapper, items)

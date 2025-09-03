@@ -10,7 +10,7 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:DialogViewModel}"
              d:DesignHeight="600"
-             d:DesignWidth="1000">
+             d:DesignWidth="1600">
     <Grid Margin="10,0,10,6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -67,13 +67,6 @@
                         <LineBreak />
                         <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                     </TextBlock>
-                    <component:ModelButton VerticalAlignment="Center"
-                                           Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                           CommandParameter="{Binding Requester.DefaultClient,Mode=OneWay}"
-                                           ChangeModelEnable="True"
-                                           ChangeModelCommand="{Binding Requester.ChangeModelCommand}"
-                                           ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                           Model="{Binding Requester.DefaultClient.Model,Mode=OneWay}" />
                     <component:SearchBox Margin="10,0"
                                          Padding="8,4,8,4"
                                          Panel.ZIndex="1"

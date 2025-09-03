@@ -101,25 +101,35 @@ public class HttpContentCache
         {
             return new AsyncLazyFile(async () =>
             {
-                var extension = Path.GetExtension(url);
                 using (var cancellationTokenSource = new CancellationTokenSource(5000))
                 {
                     var cancellationToken = cancellationTokenSource.Token;
                     using (var message = await new HttpClient().GetAsync(url, cancellationToken))
                     {
                         message.EnsureSuccessStatusCode();
-                        if (string.IsNullOrEmpty(extension))
+                        var mediaType = message.Content.Headers.ContentType?.MediaType;
+                        string extension = String.Empty;
+                        if (!string.IsNullOrEmpty(mediaType))
                         {
-                            var mediaType = message.Content.Headers.ContentType?.MediaType;
-                            if (!string.IsNullOrEmpty(mediaType))
+                            try
                             {
                                 extension = MimeTypeMap.GetExtension(mediaType, false);
                             }
-
-                            if (string.IsNullOrEmpty(extension))
+                            catch (Exception e)
                             {
-                                extension = ".unknown";
+                                Trace.TraceError(
+                                    $"[Cache] Error getting extension for MIME type '{mediaType}': {e.Message}");
                             }
+                        }
+
+                        if (string.IsNullOrEmpty(extension))
+                        {
+                            extension = Path.GetExtension(url);
+                        }
+
+                        if (string.IsNullOrEmpty(extension))
+                        {
+                            extension = ".unknown";
                         }
 
                         await using (var stream = await message.Content.ReadAsStreamAsync(CancellationToken.None))

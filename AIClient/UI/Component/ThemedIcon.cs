@@ -106,7 +106,7 @@ public class AsyncThemedIcon : ThemedIcon
     {
         emptyIcon ??= EmptyIcon.CurrentSource;
         return new AsyncThemedIcon(
-            async () => await lightModeUri.GetImageAsync() ?? emptyIcon,
-            darkModeUri != null ? async () => await darkModeUri.GetImageAsync() ?? emptyIcon : null);
+            async () => await lightModeUri.GetImageSourceAsync() ?? emptyIcon,
+            darkModeUri != null ? async () => await darkModeUri.GetImageSourceAsync() ?? emptyIcon : null);
     }
 }

@@ -24,14 +24,14 @@ public partial class GlobalOptionsView : UserControl
         if (openFileDialog.ShowDialog() == true)
         {
             var fileName = openFileDialog.FileName;
-            var tryLoadDoc = await EndPointsOptions.TryLoadDoc(fileName);
+            var tryLoadDoc = await EndPointsConfig.TryLoadDoc(fileName);
             if (tryLoadDoc == null)
             {
                 MessageBox.Show("导入失败，文件格式不正确或文件不存在。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            var fullPath = Path.GetFullPath(EndPointsOptions.EndPointsJsonFileName);
+            var fullPath = Path.GetFullPath(EndPointsConfig.EndPointsJsonFileName);
             File.Copy(fullPath, fullPath + ".bak", true);
             File.Copy(fileName, fullPath, true);
             MessageEventBus.Publish("导入成功，已覆盖当前配置。请重启应用程序以使更改生效。");

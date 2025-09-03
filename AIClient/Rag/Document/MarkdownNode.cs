@@ -78,21 +78,15 @@ public class MarkdownText : BaseViewModel, IContentUnit
         {
             try
             {
-                if (imageLink.StartsWith(ImageExtensions.Base64ImagePrefix))
-                {
-                    var imageSourceFromBase64 = ImageExtensions.GetImageSourceFromBase64(imageLink);
-                    imageSources.Add(imageSourceFromBase64);
-                    continue;
-                }
-
                 if (Uri.TryCreate(imageLink, UriKind.RelativeOrAbsolute, out var uri) && uri.IsAbsoluteUri)
                 {
-                    var imageSource = await uri.GetImageAsync();
+                    var imageSource = await uri.GetImageSourceAsync();
                     if (imageSource != null)
                     {
                         imageSources.Add(imageSource);
                     }
                 }
+
                 var markdownDir = Path.GetDirectoryName(_markdownFilePath);
                 if (markdownDir != null)
                 {
@@ -149,40 +143,30 @@ public class MarkdownText : BaseViewModel, IContentUnit
 
                             if (filePath != null)
                             {
-                                try
+                                var fileInfo = new FileInfo(uri.LocalPath);
+                                if (fileInfo.Exists)
                                 {
-                                    var fileInfo = new FileInfo(uri.LocalPath);
-                                    if (fileInfo.Exists)
+                                    await using (var fileStream = fileInfo.OpenRead())
                                     {
-                                        await using (var fileStream = fileInfo.OpenRead())
-                                        {
-                                            _imageList.Add(
-                                                await fileStream.ToBase64StringAsync(
-                                                    Path.GetExtension(fileInfo.FullName)));
-                                            continue;
-                                        }
+                                        _imageList.Add(
+                                            await fileStream.ToBase64StringAsync(
+                                                Path.GetExtension(fileInfo.FullName)));
                                     }
-                                }
-                                catch (Exception ex)
-                                {
-                                    logger?.LogWarning(ex, "无法下载图像：{imageLink}", imageLink);
-                                    continue;
                                 }
                             }
                         }
-                    }
-
-                    if (!Path.IsPathRooted(imageLink))
-                    {
-                        var markdownDir = Path.GetDirectoryName(_markdownFilePath);
-                        if (markdownDir != null)
+                        else
                         {
-                            var imagePath = Path.Combine(markdownDir, imageLink);
-                            var fileInfo = new FileInfo(imagePath);
-                            if (fileInfo.Exists)
+                            var markdownDir = Path.GetDirectoryName(_markdownFilePath);
+                            if (markdownDir != null)
                             {
-                                await using var fileStream = fileInfo.OpenRead();
-                                _imageList.Add(await fileStream.ToBase64StringAsync(fileInfo.Extension));
+                                var imagePath = Path.Combine(markdownDir, imageLink);
+                                var fileInfo = new FileInfo(imagePath);
+                                if (fileInfo.Exists)
+                                {
+                                    await using var fileStream = fileInfo.OpenRead();
+                                    _imageList.Add(await fileStream.ToBase64StringAsync(fileInfo.Extension));
+                                }
                             }
                         }
                     }

@@ -75,12 +75,6 @@
                             ToolTip="Config Project"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                             CommandParameter="{Binding ConfigViewModel,Mode=OneTime}" />
-                    <component:ModelButton VerticalAlignment="Center"
-                                           Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                           CommandParameter="{Binding Requester.DefaultClient,Mode=OneWay}"
-                                           ChangeModelEnable="False"
-                                           ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                           Model="{Binding Requester.DefaultClient.Model,Mode=OneWay}" />
                     <Button ToolTip="备份"
                             Content="{materialDesign:PackIcon Kind=ArchiveArrowUpOutline,Size=20}"
                             Command="{x:Static ui:CommonCommands.Backup}" />
@@ -143,16 +137,66 @@
                              IsReadOnly="True"
                              MaxHeight="45"
                              VerticalScrollBarVisibility="Auto" />
-                    <Button Grid.Column="1"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                            Width="30"
-                            Height="30"
-                            Visibility="{Binding SelectedTask,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
-                            Content="{materialDesign:PackIcon Kind=Eye}"
-                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                            CommandParameter="{Binding SelectedTask.PromptTemplate,Mode=OneWay}" />
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                DataContext="{Binding SelectedTask,Mode=OneWay}"
+                                IsEnabled="{Binding IsBusy,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+                        <StackPanel.Resources>
+                            <Style TargetType="{x:Type Button}"
+                                   BasedOn="{StaticResource MaterialDesignIconButton}">
+                                <Setter Property="ToolTipService.InitialShowDelay" Value="0" />
+                                <Setter Property="Width"
+                                        Value="36" />
+                                <Setter Property="Height"
+                                        Value="36" />
+                            </Style>
+                        </StackPanel.Resources>
+                        <Button VerticalAlignment="Center"
+                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                Width="30"
+                                Height="30"
+                                Margin="0,0,10,0"
+                                Visibility="{Binding Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                Content="{materialDesign:PackIcon Kind=Eye}"
+                                Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                CommandParameter="{Binding PromptTemplate,Mode=OneWay}" />
+                        <TextBlock MaxWidth="140"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Right"
+                                   Margin="0,0,10,0"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource MaterialDesignOverlineTextBlock}">
+                            <Run Text="{Binding TokensConsumption, Mode=OneWay,StringFormat=Total Tokens:{0}}" />
+                            <LineBreak />
+                            <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
+                        </TextBlock>
+                        <component:SearchBox Margin="10,0"
+                                             Padding="8,4,8,4"
+                                             Panel.ZIndex="1"
+                                             VerticalAlignment="Center"
+                                             Text="{Binding SearchText,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                             SearchCommand="{Binding SearchCommand}"
+                                             GoToNextCommand="{Binding GoToNextHighlightCommand}"
+                                             GoToPreviousCommand="{Binding GoToPreviousHighlightCommand}" />
+                        <Button ToolTip="清空对话"
+                                Command="{Binding ClearDialogCommand}">
+                            <materialDesign:PackIcon Kind="Delete"
+                                                     Width="20"
+                                                     Height="20" />
+                        </Button>
+                        <Button ToolTip="清空上下文"
+                                Command="{Binding ClearContextCommand}">
+                            <materialDesign:PackIcon Kind="Eraser"
+                                                     Width="20"
+                                                     Height="20" />
+                        </Button>
+                        <Button ToolTip="导出对话为Markdown"
+                                Command="{Binding ExportCommand}">
+                            <materialDesign:PackIcon Kind="FileExport"
+                                                     Width="20"
+                                                     Height="20" />
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Expander.Header>
             <!--tasks listbox-->

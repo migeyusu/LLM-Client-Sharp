@@ -13,9 +13,28 @@ public class ImageTest
     }
 
     [Fact]
-    public void Uri()
+    public void Base64Uri()
     {
-        //base64:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        var testRaw = "base64:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...";
+        var tryCreate = System.Uri.TryCreate(testRaw, UriKind.RelativeOrAbsolute, out var uri);
+        _output.WriteLine($"TryCreate:{tryCreate}, Uri:{uri}");
+        if (tryCreate)
+        {
+            _output.WriteLine("IsAbsoluteUri:" + uri!.IsAbsoluteUri);
+            _output.WriteLine("Scheme:" + uri!.Scheme);
+        }
+    }
+
+    [Fact]
+    public void RelativeImage()
+    {
+        var testRaw = "image.png";
+        var tryCreate = System.Uri.TryCreate(testRaw, UriKind.RelativeOrAbsolute, out var uri);
+        _output.WriteLine($"TryCreate:{tryCreate}, Uri:{uri}");
+        if (tryCreate)
+        {
+            _output.WriteLine("IsAbsoluteUri:" + uri!.IsAbsoluteUri);
+        }
     }
 
     [Fact]

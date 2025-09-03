@@ -1,5 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
@@ -9,6 +11,7 @@ using LLMClient.UI;
 using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
@@ -511,6 +514,58 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
                 .Sum(item => item.Tokens);
         }
     }
+    
+     public ICommand ExportCommand => new ActionCommand((async _ =>
+    {
+        try
+        {
+            var saveFileDialog = new SaveFileDialog()
+            {
+                AddExtension = true,
+                DefaultExt = ".md", CheckPathExists = true,
+                Filter = "markdown files (*.md)|*.md"
+            };
+            if (saveFileDialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            var stringBuilder = new StringBuilder(8192);
+            /*stringBuilder.AppendLine($"# {this.Topic}");
+        stringBuilder.AppendLine($"### {this.DefaultClient.Name}");*/
+            foreach (var viewItem in DialogItems.Where((item => item.IsAvailableInContext)))
+            {
+                if (viewItem is MultiResponseViewItem multiResponseView &&
+                    multiResponseView.AcceptedResponse is ResponseViewItem responseViewItem)
+                {
+                    var textContent = responseViewItem.TextContent;
+                    stringBuilder.AppendLine("## **Assistant:**");
+                    stringBuilder.Append(textContent ?? string.Empty);
+                    stringBuilder.AppendLine();
+                    stringBuilder.AppendLine();
+                    stringBuilder.AppendLine("***");
+                    stringBuilder.AppendLine();
+                }
+                else if (viewItem is RequestViewItem reqViewItem)
+                {
+                    stringBuilder.AppendLine("## **User:**");
+                    stringBuilder.Append(reqViewItem.TextMessage);
+                    stringBuilder.AppendLine();
+                    stringBuilder.AppendLine();
+                    stringBuilder.AppendLine("***");
+                    stringBuilder.AppendLine();
+                }
+            }
+
+            var fileName = saveFileDialog.FileName;
+            await File.WriteAllTextAsync(fileName, stringBuilder.ToString());
+            MessageEventBus.Publish("已导出");
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message);
+        }
+    }));
 
     #region core methods
 

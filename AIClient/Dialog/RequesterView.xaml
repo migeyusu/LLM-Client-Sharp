@@ -14,7 +14,7 @@
              xmlns:ui="clr-namespace:LLMClient.UI"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
-             d:DesignHeight="300" d:DesignWidth="1000">
+             d:DesignHeight="120" d:DesignWidth="1600">
     <UserControl.Resources>
         <KeyBinding x:Key="PromptKeyBinding"
                     Key="Enter"
@@ -222,15 +222,15 @@
                                                                                 Property="HorizontalContentAlignment"
                                                                                 Value="Center" />
                                                                             <Setter Property="VerticalContentAlignment"
-                                                                                Value="Center" />
+                                                                                    Value="Center" />
                                                                             <Setter Property="MinWidth" Value="54" />
                                                                             <Setter Property="Height"
-                                                                                Value="30" />
+                                                                                    Value="30" />
                                                                             <Setter Property="Padding" Value="6,3" />
                                                                             <Setter Property="TextBlock.FontSize"
-                                                                                Value="16" />
+                                                                                    Value="16" />
                                                                             <Setter Property="TextBlock.FontWeight"
-                                                                                Value="Black" />
+                                                                                    Value="Black" />
                                                                         </Style>
                                                                     </Setter.Value>
                                                                 </Setter>
@@ -388,8 +388,15 @@
                                     Margin="0,4,0,0"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Bottom">
+                            <component:ModelButton VerticalAlignment="Center"
+                                                   Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                                   CommandParameter="{Binding DefaultClient,Mode=OneWay}"
+                                                   ChangeModelEnable="True"
+                                                   ChangeModelCommand="{Binding ChangeModelCommand}"
+                                                   ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                                   Model="{Binding DefaultClient.Model,Mode=OneWay}" />
                             <CheckBox Content="回车发送"
-                                      Margin="16,0,0,0"
+                                      Margin="10,0,0,0"
                                       Checked="EnterKeyInputBinding_OnChecked"
                                       Unchecked="EnterKeyInputBinding_OnUnchecked"
                                       materialDesign:CheckBoxAssist.CheckBoxSize="30" />
@@ -399,27 +406,27 @@
                                     Margin="16,0,0,0"
                                     Style="{StaticResource MaterialDesignRaisedDarkButton}">
                                 <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="发送"
+                                               VerticalAlignment="Center" />
                                     <materialDesign:PackIcon Kind="Send"
                                                              Width="16"
                                                              Height="16"
+                                                             Margin="6,0,0,0"
                                                              VerticalAlignment="Center" />
-                                    <TextBlock Text="发送"
-                                               Margin="6,0,0,0"
-                                               VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding SummarizeCommand}"
                                     Margin="16,0,0,0"
+                                    Width="80"
                                     Style="{StaticResource MaterialDesignPaperLightButton}">
                                 <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="总结"
+                                               VerticalAlignment="Center" />
                                     <materialDesign:PackIcon Kind="LightbulbOnOutline"
                                                              Width="16"
                                                              Height="16"
+                                                             Margin="6,0,0,0"
                                                              VerticalAlignment="Center" />
-                                    <TextBlock Text="总结"
-                                               Margin="6,0,0,0"
-                                               VerticalAlignment="Center" />
-
                                 </StackPanel>
                             </Button>
                             <!--<Button Command="{Binding TestCommand}"

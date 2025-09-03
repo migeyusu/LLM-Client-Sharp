@@ -68,7 +68,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             }
 
             var root = new JsonObject();
-            var endPointsNode = root.GetOrCreate(EndPointsOptions.EndpointsNodeName);
+            var endPointsNode = root.GetOrCreate(EndPointsConfig.EndpointsNodeName);
             _githubCopilotEndPoint?.UpdateConfig(endPointsNode);
             // 1. 拿到所有的 APIEndPoint
             var apiEndpoints = Endpoints
@@ -90,7 +90,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                 .Select(model => new KeyValuePair<string, string>(model.LlmModel.Endpoint.Name, model.LlmModel.Name))
                 .ToArray();
             endPointsNode[SuggestedModelKey] = JsonSerializer.SerializeToNode(keyValuePairs, options);
-            await EndPointsOptions.SaveDoc(root);
+            await EndPointsConfig.SaveDoc(root);
             MessageEventBus.Publish("已保存！");
         }
         catch (Exception e)
@@ -168,7 +168,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public async Task Initialize()
     {
-        var endPoints = (await EndPointsOptions.LoadEndpointsNode()).AsObject();
+        var endPoints = (await EndPointsConfig.LoadEndpointsNode()).AsObject();
         _githubCopilotEndPoint = GithubCopilotEndPoint.TryLoad(endPoints);
         Endpoints.Add(_githubCopilotEndPoint);
         if (endPoints.TryGetPropertyValue(APIEndPoint.KeyName, out var apisNode))

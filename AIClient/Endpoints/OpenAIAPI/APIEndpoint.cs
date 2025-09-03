@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows.Input;
 using System.Windows.Media;
 using LLMClient.Abstraction;
@@ -24,7 +25,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     public ImageSource Icon => Option.Icon;
 
     private int _selectedModelIndex = -1;
-    
+
     public int SelectedModelIndex
     {
         get => _selectedModelIndex;
@@ -85,7 +86,20 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     public APIEndPoint(APIEndPointOption option, ILoggerFactory loggerFactory)
     {
         Option = option;
+        option.PropertyChanged += OptionOnPropertyChanged;
         this._loggerFactory = loggerFactory;
+    }
+
+    private void OptionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Option.DisplayName))
+        {
+            OnPropertyChanged(nameof(DisplayName));
+        }
+        else if (e.PropertyName == nameof(Option.Icon))
+        {
+            OnPropertyChanged(nameof(Icon));
+        }
     }
 
 

@@ -59,7 +59,7 @@ public class AzureModelInfo : ILLMChatModel
                         else if (LogoUrl != null)
                         {
                             var requestUri = new Uri($"https://github.com{LogoUrl}");
-                            lightModeIconBrush = requestUri.GetImageAsync().Result;
+                            lightModeIconBrush = requestUri.GetImageSourceAsync().Result;
                         }
 
                         return lightModeIconBrush ?? ImageExtensions.APIIcon.CurrentSource;

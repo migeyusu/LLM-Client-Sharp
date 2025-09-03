@@ -77,8 +77,8 @@ public static class ImageExtensions
                 , UriKind.Absolute);
         }
 
-        return new AsyncThemedIcon(async () => await GetImageAsync(lightUri) ?? APIIcon.CurrentSource,
-            darkUri != null ? (async () => (await GetImageAsync(darkUri)) ?? APIIcon.CurrentSource) : null);
+        return new AsyncThemedIcon(async () => await GetImageSourceAsync(lightUri) ?? APIIcon.CurrentSource,
+            darkUri != null ? (async () => (await GetImageSourceAsync(darkUri)) ?? APIIcon.CurrentSource) : null);
     }
 
     private static readonly Lazy<string[]> LocalSupportedImageExtensionsLazy = new Lazy<string[]>(() =>
@@ -110,7 +110,7 @@ public static class ImageExtensions
                    .Contains(extension, StringComparer.OrdinalIgnoreCase);
     }
 
-    public static Task<ImageSource?> GetImageAsync(this Uri uri)
+    public static Task<ImageSource?> GetImageSourceAsync(this Uri uri)
     {
         return ImageCache.GetOrAdd(uri, u => new Lazy<Task<ImageSource?>>(() => CreateImageSourceAsync(u))).Value;
     }
@@ -167,16 +167,17 @@ public static class ImageExtensions
                 stream = fileInfo.OpenRead();
                 extension = Path.GetExtension(localPath);
             }
-        }
-        else if (uri.OriginalString.StartsWith(Base64ImagePrefix))
-        {
-            if (!TryGetBinaryFromBase64(uri.ToString(), out var bytes, out var ext))
+            else if (uri.Scheme == "data" && uri.OriginalString.StartsWith(Base64ImagePrefix))
             {
-                throw new ArgumentException("Invalid base64 image format", nameof(uri));
-            }
+                // data URI scheme
+                if (!TryGetBinaryFromBase64(uri.ToString(), out var bytes, out var ext))
+                {
+                    throw new ArgumentException("Invalid base64 image format", nameof(uri));
+                }
 
-            extension = "." + ext; // 添加点前缀以匹配扩展名
-            stream = new MemoryStream(bytes);
+                extension = "." + ext; // 添加点前缀以匹配扩展名
+                stream = new MemoryStream(bytes);
+            }
         }
 
         if (stream == null)

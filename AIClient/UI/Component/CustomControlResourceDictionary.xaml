@@ -231,12 +231,22 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type component:ModelButton}">
                     <StackPanel Orientation="Horizontal">
+                        <Button ToolTip="模型信息"
+                                Width="30"
+                                Height="30"
+                                Margin="0,0,4,0"
+                                Content="{materialDesign:PackIcon Kind=InformationOutline,Size=20}"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                Visibility="{TemplateBinding Model,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                Command="{TemplateBinding   ModelDetailCommand}"
+                                CommandParameter="{TemplateBinding Model}" />
                         <Button Command="{TemplateBinding Command}"
                                 CommandParameter="{TemplateBinding CommandParameter}"
                                 CommandTarget="{TemplateBinding CommandTarget}"
-                                Style="{StaticResource MaterialDesignRaisedLightButton}"
-                                Margin="0,0,10,0"
+                                Style="{StaticResource MaterialDesignPaperDarkButton}"
                                 materialDesign:ButtonAssist.CornerRadius="15"
+                                Background="White"
+                                BorderThickness="0"
                                 Padding="10,5"
                                 ToolTip="配置模型">
                             <StackPanel Orientation="Horizontal">
@@ -253,29 +263,21 @@
                                 <Button ToolTip="更改模型"
                                         Visibility="{TemplateBinding ChangeModelEnable,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
                                         Margin="10,0,0,0"
-                                        Background="White"
                                         Width="22"
                                         Height="22"
+                                        Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
                                         Style="{StaticResource MaterialDesignIconButton}"
                                         Command="{TemplateBinding ChangeModelCommand}">
-                                    <iconPacks:PackIconMaterialDesign Kind="ChangeCircle" 
+                                    <iconPacks:PackIconMaterialDesign Kind="ChangeCircle"
                                                                       Width="22"
                                                                       Height="22"
                                                                       Foreground="White"
-                                                                      Background="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                                                      Background="{DynamicResource MaterialDesign.Brush.Primary}" />
                                     <!--<materialDesign:PackIcon Kind="SwapHorizontalBold"
                                                              Width="15"
                                                              Height="15" />-->
                                 </Button>
                             </StackPanel>
-                        </Button>
-                        <Button ToolTip="模型信息"
-                                Visibility="{TemplateBinding Model,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
-                                Command="{TemplateBinding   ModelDetailCommand}"
-                                CommandParameter="{TemplateBinding Model}">
-                            <materialDesign:PackIcon Kind="InformationOutline"
-                                                     Width="20"
-                                                     Height="20" />
                         </Button>
                     </StackPanel>
                 </ControlTemplate>
