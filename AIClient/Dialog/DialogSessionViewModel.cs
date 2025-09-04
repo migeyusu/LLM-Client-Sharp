@@ -2,10 +2,15 @@
 using System.Collections.Specialized;
 using System.IO;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
+using ClosedXML;
+using Google.Apis.Util;
 using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI;
 using LLMClient.UI.Component;
@@ -514,8 +519,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
                 .Sum(item => item.Tokens);
         }
     }
-    
-     public ICommand ExportCommand => new ActionCommand((async _ =>
+
+    public ICommand ExportCommand => new ActionCommand((async _ =>
     {
         try
         {
@@ -702,6 +707,131 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         finally
         {
             IsNewResponding = false;
+        }
+    }
+
+    #endregion
+
+    #region copy items
+
+    private const string CopyFormat = "LMClient.Interaction";
+
+    /// <summary>
+    /// 复制单次交互
+    /// </summary>
+    /// <param name="responseViewItem"></param>
+    public void CopyInteraction(MultiResponseViewItem responseViewItem)
+    {
+        var indexOf = this.DialogItems.IndexOf(responseViewItem);
+        if (indexOf < 0)
+        {
+            return;
+        }
+
+        var jsonObject = new JsonObject();
+        var multiResponsePersistItem =
+            _mapper.Map<MultiResponseViewItem, MultiResponsePersistItem>(responseViewItem, (_ => { }));
+        jsonObject["response"] =
+            JsonNode.Parse(JsonSerializer.Serialize(multiResponsePersistItem, Extension.DefaultJsonSerializerOptions));
+        if (this.DialogItems[indexOf - 1] is RequestViewItem requestViewItem)
+        {
+            var requestPersistItem =
+                _mapper.Map<RequestViewItem, RequestPersistItem>(requestViewItem, (_ => { }));
+            jsonObject["request"] =
+                JsonNode.Parse(JsonSerializer.Serialize(requestPersistItem, Extension.DefaultJsonSerializerOptions));
+        }
+
+        var data = JsonSerializer.Serialize(jsonObject, Extension.DefaultJsonSerializerOptions);
+        var dataObject = new DataObject();
+        dataObject.SetData(CopyFormat, data);
+        Clipboard.SetDataObject(dataObject, true);
+        MessageEventBus.Publish("已复制到剪贴板，可以粘贴到其他会话");
+    }
+
+    public ICommand PastInteractionCommand => new ActionCommand((o => { PasteInteraction(); }));
+
+    public void PasteInteraction(int insertIndex = -1)
+    {
+        if (Clipboard.GetDataObject() is not DataObject dataObject)
+        {
+            return;
+        }
+
+        if (!dataObject.GetDataPresent(CopyFormat))
+        {
+            return;
+        }
+
+        if (dataObject.GetData(CopyFormat) is not string data)
+        {
+            return;
+        }
+
+        try
+        {
+            var jsonNode = JsonNode.Parse(data);
+            if (jsonNode is not JsonObject jsonObject)
+            {
+                return;
+            }
+
+            if (jsonObject.TryGetPropertyValue("request", out var requestNode) && requestNode != null)
+            {
+                var requestPersistItem =
+                    requestNode.Deserialize<RequestPersistItem>(Extension.DefaultJsonSerializerOptions);
+                if (requestPersistItem != null)
+                {
+                    var requestViewItem =
+                        _mapper.Map<RequestPersistItem, RequestViewItem>(requestPersistItem, (_ => { }));
+                    if (this.DialogItems.Contains(requestViewItem, DialogItemEqualityComparer.Instance))
+                    {
+                        return;
+                    }
+
+                    if (insertIndex == -1)
+                    {
+                        this.DialogItems.Add(requestViewItem);
+                    }
+                    else
+                    {
+                        this.DialogItems.Insert(insertIndex, requestViewItem);
+                        insertIndex++;
+                    }
+                }
+            }
+
+            if (jsonObject.TryGetPropertyValue("response", out var responseNode) && responseNode != null)
+            {
+                var multiResponsePersistItem =
+                    responseNode.Deserialize<MultiResponsePersistItem>(Extension.DefaultJsonSerializerOptions);
+                if (multiResponsePersistItem != null)
+                {
+                    var multiResponseViewItem =
+                        _mapper.Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem,
+                            options =>
+                            {
+                                options.Items.Add(AutoMapModelTypeConverter.ParentSessionViewModelKey, this);
+                            });
+                    if (this.DialogItems.Contains(multiResponseViewItem, DialogItemEqualityComparer.Instance))
+                    {
+                        return;
+                    }
+
+                    // multiResponseViewItem.ParentSession = this;
+                    if (insertIndex == -1)
+                    {
+                        this.DialogItems.Add(multiResponseViewItem);
+                    }
+                    else
+                    {
+                        this.DialogItems.Insert(insertIndex, multiResponseViewItem);
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "粘贴失败", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

@@ -88,7 +88,7 @@ public static class CommonCommands
                         try
                         {
                             Clipboard.SetText(copyText);
-                            MessageEventBus.Publish("已复制");
+                            MessageEventBus.Publish("已复制文本到剪贴板");
                         }
                         catch (Exception e)
                         {

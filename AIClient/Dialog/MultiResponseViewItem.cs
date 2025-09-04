@@ -207,6 +207,17 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
             DialogHost.Show(editView);
         }
     });
+    
+    public ICommand CopyInteractionCommand => new ActionCommand(o =>
+    {
+        this.ParentSession.CopyInteraction(this);
+    });
+    
+    public ICommand PasteInteractionCommand => new ActionCommand(o =>
+    {
+        var indexOf = this.ParentSession.DialogItems.IndexOf(this);
+        this.ParentSession.PasteInteraction(indexOf + 1);
+    });
 
     public MultiResponseViewItem(IEnumerable<IResponseViewItem> items, DialogSessionViewModel parentSession)
     {

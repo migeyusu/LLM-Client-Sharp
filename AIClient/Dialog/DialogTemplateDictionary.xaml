@@ -360,6 +360,12 @@
                                           IsCheckable="True"
                                           IsChecked="{Binding AcceptedResponse.IsManualValid,Mode=TwoWay}"
                                           Visibility="{Binding AcceptedResponse.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                                <MenuItem Command="{Binding CopyInteractionCommand}"
+                                          Header="复制对话（包括上下文）"
+                                          Icon="{materialDesign:PackIcon Kind=DataMatrixScan}" />
+                                <MenuItem Header="黏贴到之后"
+                                          Icon="{materialDesign:PackIcon Kind=ClipboardArrowDown}"
+                                          Command="{Binding PasteInteractionCommand}" />
                             </MenuItem>
                         </Menu>
                         <materialDesign:PopupBox Padding="4,0"
@@ -390,7 +396,7 @@
                                 VerticalAlignment="Center"
                                 Margin="6,0,0,0"
                                 ToolTip="复制（仅文本）"
-                                Content="{materialDesign:PackIcon Kind=ContentPaste,Size=20}" />
+                                Content="{materialDesign:PackIcon Kind=ContentCopy,Size=20}" />
                     </StackPanel>
                 </Grid>
                 <StackPanel Grid.Column="1"

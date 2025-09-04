@@ -142,9 +142,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    private const string ParentSessionViewModelKey = "ParentDialogViewModel";
+    public const string ParentSessionViewModelKey = "ParentDialogViewModel";
 
-    private const string ParentProjectViewModelKey = "ParentProjectViewModel";
+    public const string ParentProjectViewModelKey = "ParentProjectViewModel";
 
     public DialogViewModel Convert(DialogFilePersistModel source, DialogViewModel? destination,
         ResolutionContext context)
