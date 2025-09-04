@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.ClientModel;
+using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -35,6 +36,25 @@ public static class Extension
         IgnoreReadOnlyProperties = true,
         WriteIndented = true,
     };
+
+    public static async Task<JsonNode?> ToJsonNode(this ClientResult result)
+    {
+        var rawResponse = result.GetRawResponse();
+        var stream = rawResponse.ContentStream;
+        if (stream == null)
+        {
+            return null;
+        }
+
+        if (stream.Length == 0)
+        {
+            return null;
+        }
+
+        stream.Position = 0;
+
+        return await JsonNode.ParseAsync(stream);
+    }
 
     public static void UpgradeApiVersion(this ChatCompletionsClient client, string apiVersion = "2024-12-01-preview")
     {

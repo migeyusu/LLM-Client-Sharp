@@ -8,6 +8,9 @@ using OpenAI.Chat;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
+/// <summary>
+/// 原版的OpenAI ChatClient严格遵守OpenAI的API规范，无法支持许多网站
+/// </summary>
 public class OpenAIChatClientEx : ChatClient
 {
     public OpenAIChatClientEx(string model, ApiKeyCredential credential, OpenAIClientOptions options)
@@ -55,6 +58,13 @@ public class OpenAIChatClientEx : ChatClient
         }
 
         var result = await base.CompleteChatAsync(content, options);
+        /*var resultNode = await result.ToJsonNode();
+        if (resultNode == null)
+        {
+            throw new InvalidOperationException("Result is not valid JSON.");
+        }*/
+        // var choice = resultNode["choices"]?.AsArray();
+
         if (clientContext != null)
         {
             clientContext.Result = result;

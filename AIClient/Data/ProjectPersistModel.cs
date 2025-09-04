@@ -16,7 +16,6 @@ public class ProjectPersistModel
 
     public string[]? LanguageNames { get; set; }
 
-
     public string[]? AllowedFolderPaths { get; set; }
 
     public string? FolderPath { get; set; }
@@ -24,6 +23,8 @@ public class ProjectPersistModel
     #region requester
 
     public LLMClientPersistModel? Client { get; set; }
+
+    public string? UserPrompt { get; set; }
 
     #endregion
 
@@ -39,11 +40,11 @@ public class ProjectTaskPersistModel : DialogSessionPersistModel
     public string? Name { get; set; }
 
     public string? Summary { get; set; }
-    
+
     public bool EnableInContext { get; set; }
-    
+
     public string? PromptString { get; set; }
-    
+
     public string? Description { get; set; }
 
     public ProjectTaskType Type { get; set; }

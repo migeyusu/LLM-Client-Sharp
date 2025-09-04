@@ -127,4 +127,9 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
 
         return HasErrors;
     }
+
+    public object Clone()
+    {
+        throw new NotSupportedException();
+    }
 }

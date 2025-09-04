@@ -1,0 +1,24 @@
+{
+  "version": "1.2.1",
+  "description": "MATLAB TextMate grammar",
+  "scripts": {
+    "testGrammar": "vscode-tmgrammar-test -s source.matlab -g Matlab.tmbundle/Syntaxes/MATLAB.tmLanguage -t \"./test/*.m\"",
+    "testGrammarSnap": "vscode-tmgrammar-snap -s source.matlab -g Matlab.tmbundle/Syntaxes/MATLAB.tmLanguage -t \"./test/snap/*.m\"",
+    "testLintXML": "xmllint --noout \"Matlab.tmbundle/Syntaxes/MATLAB.tmLanguage\" && echo \"xmllint passed on MATLAB.tmLanguage\"",
+    "test": "npm run testLintXML && npm run testGrammar && npm run testGrammarSnap",
+    "updateGrammarSnap": "vscode-tmgrammar-snap -s source.matlab -g Matlab.tmbundle/Syntaxes/MATLAB.tmLanguage -t \"./test/snap/*.m\" -u"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mathworks/MATLAB-Language-grammar.git"
+  },
+  "author": "",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/mathworks/MATLAB-Language-grammar/issues"
+  },
+  "homepage": "https://github.com/mathworks/MATLAB-Language-grammar#readme",
+  "devDependencies": {
+    "vscode-tmgrammar-test": "0.0.11"
+  }
+}

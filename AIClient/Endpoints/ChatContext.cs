@@ -36,26 +36,11 @@ public class ChatContext
             return;
         }
 
-        var rawResponse = this.Result.GetRawResponse();
-        var stream = rawResponse.ContentStream;
-        if (stream == null)
-        {
-            return;
-        }
-
-        if (stream.Length == 0)
-        {
-            return;
-        }
-
-        stream.Position = 0;
-
-        var jsonNode = await JsonNode.ParseAsync(stream);
+        var jsonNode = await this.Result.ToJsonNode();
         if (jsonNode == null)
         {
             return;
         }
-
         result.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         var propertiesDictionary = result.AdditionalProperties;
         var provider = jsonNode["provider"]?.ToString();

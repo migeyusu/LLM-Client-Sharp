@@ -20,6 +20,16 @@ public class OpenRouterReasoningConfig : IThinkingConfig
         get => !Exclude;
         set => Exclude = !value;
     }
+
+    public object Clone()
+    {
+        return new OpenRouterReasoningConfig()
+        {
+            Effort = this.Effort,
+            BudgetTokens = this.BudgetTokens,
+            Exclude = this.Exclude
+        };
+    }
 }
 
 public class GeekAIThinkingConfig : IThinkingConfig
@@ -36,4 +46,13 @@ public class GeekAIThinkingConfig : IThinkingConfig
 
     //仅qwen3早期支持
     // _requestViewItem.AdditionalProperties["enable_thinking"] = true;
+    public object Clone()
+    {
+        return new GeekAIThinkingConfig()
+        {
+            Effort = this.Effort,
+            BudgetTokens = this.BudgetTokens,
+            ShowThinking = this.ShowThinking
+        };
+    }
 }

@@ -8,7 +8,7 @@ namespace LLMClient.Endpoints;
 
 [JsonDerivedType(typeof(OpenRouterReasoningConfig), "openrouter")]
 [JsonDerivedType(typeof(GeekAIThinkingConfig), "geekai")]
-public interface IThinkingConfig
+public interface IThinkingConfig : ICloneable
 {
     public string? Effort { get; }
 
@@ -36,13 +36,14 @@ public interface IThinkingConfig
 
     public void EnableThinking(RequestViewItem requestViewItem)
     {
+        object clone = this.Clone();
         if (this is OpenRouterReasoningConfig)
         {
-            requestViewItem.AdditionalProperties["reasoning"] = this;
+            requestViewItem.AdditionalProperties["reasoning"] = clone;
         }
         else if (this is GeekAIThinkingConfig)
         {
-            requestViewItem.AdditionalProperties["thinking_config"] = this;
+            requestViewItem.AdditionalProperties["thinking_config"] = clone;
         }
         else
         {

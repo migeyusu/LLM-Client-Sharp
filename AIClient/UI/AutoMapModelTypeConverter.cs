@@ -218,6 +218,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination = _viewModelFactory.CreateViewModel<ProjectViewModel>(defaultClient);
         }
 
+        destination.Requester.PromptString = source.UserPrompt;
         context.Items.Add(ParentProjectViewModelKey, destination);
         try
         {
@@ -268,6 +269,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
         destination.Client = context.Mapper.Map<ILLMChatClient, LLMClientPersistModel>(source.Requester.DefaultClient);
+        destination.UserPrompt = source.Requester.PromptString;
         destination.Tasks = projectTaskPersistModels;
         return destination;
     }

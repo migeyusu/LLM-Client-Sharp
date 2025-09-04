@@ -32,7 +32,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public override bool IsDataChanged
     {
-        get { return Tasks.Any(task => task.IsDataChanged) || _isDataChanged; }
+        get { return Tasks.Any(task => task.IsDataChanged) || Requester.IsDataChanged || _isDataChanged; }
         set
         {
             _isDataChanged = value;
@@ -42,6 +42,8 @@ public class ProjectViewModel : FileBasedSessionBase
                 {
                     projectTask.IsDataChanged = value;
                 }
+
+                Requester.IsDataChanged = value;
             }
         }
     }

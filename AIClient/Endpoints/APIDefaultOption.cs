@@ -34,7 +34,8 @@ public class APIDefaultOption : BaseViewModel
             OnPropertyChanged();
         }
     }
-
+    
+    
     public OpenAIClientEx? OpenAIClient
     {
         get
@@ -44,7 +45,7 @@ public class APIDefaultOption : BaseViewModel
                 return null;
             }
 
-            var httpClient = new HttpClient() { Timeout = TimeSpan.FromMinutes(10) };
+            var httpClient = new HttpClient(/*new DebugMessageLogger()*/) { Timeout = TimeSpan.FromMinutes(10) };
             return new OpenAIClientEx(new ApiKeyCredential(APIToken), new OpenAIClientOptions
             {
                 Endpoint = new Uri(URL),

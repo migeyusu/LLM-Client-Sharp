@@ -26,7 +26,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
 
     public override bool IsDataChanged
     {
-        get { return _isDataChanged | Requester.IsDataChanged; }
+        get { return _isDataChanged || Requester.IsDataChanged; }
         set
         {
             _isDataChanged = value;
