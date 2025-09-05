@@ -626,7 +626,7 @@
                                     <DataTemplate DataType="{x:Type dialog:DialogFileViewModel}">
                                         <dialog:DialogView DataContext="{Binding Dialog,Mode=OneTime}">
                                             <dialog:DialogView.CommandBindings>
-                                                <CommandBinding Command="{x:Static ui:CommonCommands.Branch}"
+                                                <CommandBinding Command="{x:Static ui:CommonCommands.Fork}"
                                                                 Executed="DialogBranch_OnExecuted" />
                                                 <CommandBinding Command="{x:Static ui:CommonCommands.ReprocessDialog}"
                                                                 Executed="DialogReprocess_OnExecuted" />

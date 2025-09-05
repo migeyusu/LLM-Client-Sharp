@@ -348,7 +348,7 @@
                                       Height="45"
                                       Padding="0">
                                 <MenuItem Header="由此创建新会话"
-                                          Command="{x:Static ui:CommonCommands.Branch}"
+                                          Command="{x:Static ui:CommonCommands.Fork}"
                                           CommandParameter="{Binding}"
                                           Icon="{materialDesign:PackIcon SourceBranchPlus}"
                                           Style="{StaticResource AutoHideMenuItemStyle}" />
