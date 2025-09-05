@@ -359,6 +359,8 @@
                     </ContextMenu>
                 </component:ListBoxEx.ContextMenu>
                 <ListBox.CommandBindings>
+                    <CommandBinding Command="{x:Static ui:CommonCommands.Fork}"
+                                    Executed="ProjectBranch_OnExecuted" />
                     <CommandBinding Command="Delete"
                                     Executed="OnDeleteExecuted" />
                     <CommandBinding Command="{x:Static ui:CommonCommands.Exclude}"

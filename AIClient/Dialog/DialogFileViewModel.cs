@@ -116,7 +116,7 @@ public class DialogFileViewModel : FileBasedSessionBase
         var dialogSessionClone = _mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
         dialogSessionClone.DialogItems = dialogSessionClone.DialogItems?.Take(of + 1).ToArray();
         var cloneSession =
-            _mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => { }));
+            _mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => ));
         cloneSession.IsDataChanged = true;
         return cloneSession;
     }

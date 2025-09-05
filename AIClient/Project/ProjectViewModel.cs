@@ -416,9 +416,14 @@ public class ProjectViewModel : FileBasedSessionBase
 
     public void AddTask(ProjectTaskViewModel task)
     {
-        task.ResponseCompleted += TaskOnResponseCompleted;
-        this.PropertyChanged += OnTaskPropertyChanged;
+        task.PropertyChanged += OnTaskPropertyChanged;
         this.Tasks.Add(task);
+    }
+
+    public void RemoveTask(ProjectTaskViewModel task)
+    {
+        task.PropertyChanged -= OnTaskPropertyChanged;
+        this.Tasks.Remove(task);
     }
 
     private void OnTaskPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -428,18 +433,6 @@ public class ProjectViewModel : FileBasedSessionBase
         {
             OnPropertyChanged(nameof(Context));
         }
-    }
-
-    public void RemoveTask(ProjectTaskViewModel task)
-    {
-        task.ResponseCompleted -= TaskOnResponseCompleted;
-        this.Tasks.Remove(task);
-    }
-
-    private void TaskOnResponseCompleted(CompletedResult obj)
-    {
-        this.TokensConsumption += obj.Tokens;
-        this.TotalPrice += (obj.Price ?? 0);
     }
 
     public ObservableCollection<ProjectTaskViewModel> Tasks { get; set; }
@@ -482,6 +475,11 @@ public class ProjectViewModel : FileBasedSessionBase
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedTask?.SelectedFunctionGroups));
         functionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
+        Requester.RequestCompleted += response =>
+        {
+            this.TokensConsumption += response.Tokens;
+            this.TotalPrice += (response.Price ?? 0);
+        };
         this.ConfigViewModel = new ProjectConfigViewModel(this);
         this.Tasks = [];
         if (tasks != null)
@@ -594,5 +592,36 @@ public class ProjectViewModel : FileBasedSessionBase
                 }
             }
         }
+    }
+
+    public void ForkPreTask(IDialogItem? dialogViewItem)
+    {
+        var projectTaskViewModel = this.SelectedTask;
+        if (projectTaskViewModel == null)
+        {
+            return;
+        }
+
+        var dialogSessionClone =
+            _mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(projectTaskViewModel, (options => { }));
+        if (dialogSessionClone == null)
+        {
+            return;
+        }
+
+        if (dialogViewItem != null)
+        {
+            var findIndex = projectTaskViewModel.DialogItems.IndexOf(dialogViewItem);
+            if (findIndex >= 0)
+            {
+                dialogSessionClone.DialogItems = dialogSessionClone.DialogItems?.Take(findIndex + 1).ToArray();
+            }
+        }
+
+        var cloneSession =
+            _mapper.Map<ProjectTaskPersistModel, ProjectTaskViewModel>(dialogSessionClone,
+                (options => { options.Items[AutoMapModelTypeConverter.ParentProjectViewModelKey] = this; }));
+        cloneSession.IsDataChanged = true;
+        this.AddTask(cloneSession);
     }
 }
