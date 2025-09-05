@@ -50,6 +50,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
         WriteIndented = true,
         ReferenceHandler = ReferenceHandler.Preserve,
         TypeInfoResolver = LLM_DataSerializeContext.Default,
+        Converters = { new AdditionalPropertiesConverter() }
     };
 
     protected FileBasedSessionBase()
