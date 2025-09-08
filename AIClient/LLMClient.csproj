@@ -52,6 +52,7 @@
         <PackageReference Include="MimeTypeMapOfficial" Version="1.0.17"/>
         <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.1"/>
         <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0"/>
+        <PackageReference Include="ReverseMarkdown" Version="4.7.0" />
         <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.0-preview.5.25277.114"/>
         <PackageReference Include="System.Text.Json" Version="9.0.8" />

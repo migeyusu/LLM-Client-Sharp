@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using LLMClient.MCP.Servers;
 using Microsoft.SemanticKernel;
 using Xunit.Abstractions;
 
@@ -58,6 +59,14 @@ public class FunctionCall
         // Assert & Output
         _output.WriteLine("Kernel Function Return Value JSON Schema:");
         _output.WriteLine(schemaJsonString);
+    }
+
+    [Fact]
+    public async Task WebFetch()
+    {
+        var webFetcherPlugin = new UrlFetcherPlugin();
+        var fetchHtmlAsync = await webFetcherPlugin.FetchMarkdownAsync("https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-plugins.html");
+        _output.WriteLine(fetchHtmlAsync);
     }
 }
 
