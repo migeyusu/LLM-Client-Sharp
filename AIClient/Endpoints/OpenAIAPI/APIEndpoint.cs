@@ -1,5 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Text.Json;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using LLMClient.Abstraction;
@@ -41,29 +43,89 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
 
     private const string NewModelName = "测试名称";
 
-    public ICommand AddNewCommand => new ActionCommand((o =>
-    {
-        int v = 0;
-        var newModelName = NewModelName + v;
-        while (Models.Any(info => info.Name == newModelName))
-        {
-            v++;
-            newModelName = NewModelName + v;
-        }
+    public ICommand AddNewCommand => new ActionCommand(o => { AddNewModel(); });
 
-        var apiModelInfo = new APIModelInfo() { Name = newModelName, Endpoint = this };
-        if (SelectedModelIndex > -1)
+    private void AddNewModel(APIModelInfo? modelInfo = null)
+    {
+        string newModelName;
+        int v = 0;
+        if (modelInfo == null)
         {
-            Models.Insert(SelectedModelIndex + 1, apiModelInfo);
+            modelInfo = new APIModelInfo();
+            newModelName = NewModelName + v;
         }
         else
         {
-            Models.Add(apiModelInfo);
+            newModelName = modelInfo.Name;
         }
 
-        SelectedModelIndex = Models.IndexOf(apiModelInfo);
+        while (Models.Any(info => info.Name == newModelName))
+        {
+            v++;
+            newModelName = modelInfo.Name + v;
+        }
+
+        modelInfo.Name = newModelName;
+        modelInfo.Endpoint = this;
+
+        if (SelectedModelIndex > -1)
+        {
+            Models.Insert(SelectedModelIndex + 1, modelInfo);
+        }
+        else
+        {
+            Models.Add(modelInfo);
+        }
+
+        SelectedModelIndex = Models.IndexOf(modelInfo);
         OnPropertyChanged(nameof(AvailableModels));
+    }
+
+    public const string CopyFormat = "LMClient.APIEndPoint.Model";
+    
+    public static void CopyToClipboard(APIModelInfo modelInfo)
+    {
+        string serialize = JsonSerializer.Serialize(modelInfo, Extension.DefaultJsonSerializerOptions);
+        var dataObject = new DataObject();
+        dataObject.SetData(CopyFormat, serialize);
+        Clipboard.SetDataObject(dataObject, true);
+    }
+
+    public ICommand PastCommand => new ActionCommand((o =>
+    {
+        try
+        {
+            PastFromClipboard();
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show("无法粘贴，出现错误:" + e.Message);
+        }
     }));
+    
+    public void PastFromClipboard()
+    {
+        if (Clipboard.GetDataObject() is DataObject dataObject)
+        {
+            if (dataObject.GetDataPresent(CopyFormat))
+            {
+                var serialize = dataObject.GetData(CopyFormat) as string;
+                if (!string.IsNullOrEmpty(serialize))
+                {
+                    try
+                    {
+                        var modelInfo =
+                            JsonSerializer.Deserialize<APIModelInfo>(serialize, Extension.DefaultJsonSerializerOptions);
+                        AddNewModel(modelInfo);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show("无法粘贴，数据格式错误:" + e.Message);
+                    }
+                }
+            }
+        }
+    }
 
     public ICommand RemoveCommand => new ActionCommand(o =>
     {

@@ -6,6 +6,7 @@ using LLMClient.Abstraction;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
+using Microsoft.Xaml.Behaviors.Core;
 using ModelContextProtocol.Client;
 
 namespace LLMClient.MCP;
@@ -112,15 +113,42 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         }
     }
 
-    public ICommand RefreshToolsCommand => new RelayCommand(async () => { await ListToolsAsync(); });
+    /// <summary>
+    /// indicate whether visible in mcp source
+    /// </summary>
+    public bool IsEnabled
+    {
+        get => _isEnabled;
+        set
+        {
+            if (value == _isEnabled) return;
+            _isEnabled = value;
+            OnPropertyChanged();
+        }
+    }
 
-    public ICommand ResetToolsCommand => new RelayCommand(async () => { await ResetToolsAsync(); });
+    public ICommand RefreshToolsCommand => new RelayCommand(async () => { await RefreshToolsAsync(); });
+
+    public ICommand ResetToolsCommand => new RelayCommand(async () => { await ResetAsync(); });
+
+    public ICommand SwitchEnableCommand => new RelayCommand(async () =>
+    {
+        if (IsEnabled)
+        {
+            IsEnabled = false;
+        }
+        else
+        {
+            IsEnabled = true;
+            await ResetAsync();
+        }
+    });
 
     /// <summary>
     /// 列举支持的操作
     /// </summary>
     /// <returns></returns>
-    public async Task<bool> ListToolsAsync(CancellationToken cancellationToken = default)
+    public async Task<bool> RefreshToolsAsync(CancellationToken cancellationToken = default)
     {
         if (!Validate())
         {
@@ -160,28 +188,30 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
     /// 重置工具列表
     /// </summary>
     /// <param name="cancellationToken"></param>
-    public async Task ResetToolsAsync(CancellationToken cancellationToken = default)
+    public async Task ResetAsync(CancellationToken cancellationToken = default)
     {
         AvailableTools = null;
+        IsAvailable = false;
         if (_client != null)
         {
             await _client.DisposeAsync();
             _client = null;
         }
 
-        await ListToolsAsync(cancellationToken);
+        await RefreshToolsAsync(cancellationToken);
     }
 
     private IMcpClient? _client;
     private Uri? _projectUrl;
     private string? _userPrompt;
     private bool _isAvailable;
+    private bool _isEnabled = true;
 
     public abstract string GetUniqueId();
 
     public Task EnsureAsync(CancellationToken token)
     {
-        return ListToolsAsync(token);
+        return RefreshToolsAsync(token);
     }
 
     protected abstract IClientTransport GetTransport();

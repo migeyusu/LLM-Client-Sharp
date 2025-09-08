@@ -42,7 +42,10 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
         }
     }
 
+    public IEnumerable<McpServerItem> EnabledServers => _items.Where(item => item.IsEnabled);
+
     private bool _isLoaded;
+
     public bool IsLoaded
     {
         get => _isLoaded;
@@ -117,7 +120,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
                         item.Name = name;
                         Items.Add(item);
                         SelectedServerItem = item;
-                        if (await item.ListToolsAsync())
+                        if (await item.RefreshToolsAsync())
                         {
                             MessageEventBus.Publish($"已导入MCP服务器: {item.Name},工具数量: {item.AvailableTools?.Count ?? 0}");
                         }
@@ -257,7 +260,9 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
 
             await using (var fileStream = fileInfo.OpenRead())
             {
-                var deserialize = JsonSerializer.Deserialize<IList<McpServerItem>>(fileStream,  Extension.DefaultJsonSerializerOptions);
+                var deserialize =
+                    JsonSerializer.Deserialize<IList<McpServerItem>>(fileStream,
+                        Extension.DefaultJsonSerializerOptions);
                 if (deserialize != null)
                 {
                     this.Items = new ObservableCollection<McpServerItem>(deserialize);
@@ -290,7 +295,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
     {
         //相同配置的mcp将使用唯一实例
         var hashCode = functionGroup.GetUniqueId();
-        foreach (var item in this.Items)
+        foreach (var item in this.EnabledServers)
         {
             if (item.GetUniqueId() == hashCode)
             {
@@ -308,11 +313,11 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
             return;
         }
 
-        foreach (var mcpServerItem in this.Items)
+        foreach (var mcpServerItem in this.EnabledServers)
         {
             try
             {
-                await mcpServerItem.ListToolsAsync();
+                await mcpServerItem.RefreshToolsAsync();
             }
             catch (Exception e)
             {
@@ -324,9 +329,8 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
         MessageEventBus.Publish("已刷新MCP服务器工具列表");
     }
 
-    public async void DeleteServerItem(McpServerItem? item)
+    public async void DeleteServerItem(McpServerItem item)
     {
-        if (item == null) return;
         Items.Remove(item);
         if (SelectedServerItem == item)
         {
@@ -338,7 +342,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
 
     public IEnumerator<IAIFunctionGroup> GetEnumerator()
     {
-        return Items.Cast<IAIFunctionGroup>().GetEnumerator();
+        return EnabledServers.Cast<IAIFunctionGroup>().GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()

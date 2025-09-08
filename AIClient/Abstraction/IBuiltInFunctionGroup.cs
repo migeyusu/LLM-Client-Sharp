@@ -1,6 +1,4 @@
-﻿using LLMClient.Abstraction;
-
-namespace LLMClient.MCP.Servers;
+﻿namespace LLMClient.Abstraction;
 
 public interface IBuiltInFunctionGroup : IAIFunctionGroup
 {

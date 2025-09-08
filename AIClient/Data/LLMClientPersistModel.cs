@@ -2,16 +2,19 @@
 
 namespace LLMClient.Data;
 
-public class LLMClientPersistModel
+public class LLMModelPersistModel
 {
     public string EndPointName { get; set; } = string.Empty;
 
     public string ModelName { get; set; } = string.Empty;
-
-    public IModelParams? Params { get; set; }
-
+    
     public override string ToString()
     {
         return $"{EndPointName} - {ModelName}";
     }
+}
+
+public class LLMClientPersistModel : LLMModelPersistModel
+{
+    public IModelParams? Params { get; set; }
 }

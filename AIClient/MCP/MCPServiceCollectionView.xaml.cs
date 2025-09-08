@@ -15,8 +15,14 @@ public partial class MCPServiceCollectionView : UserControl
 
     private void DeleteItem_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        var mcpServiceCollection = this.McpServiceCollection;
-        mcpServiceCollection?.DeleteServerItem(e.Parameter as McpServerItem);
+        if (e.Parameter is McpServerItem mcpServerItem)
+        {
+            if (MessageBox.Show("确认删除该服务？", "确认", MessageBoxButton.OKCancel, MessageBoxImage.Question) ==
+                MessageBoxResult.OK)
+            {
+                this.McpServiceCollection?.DeleteServerItem(mcpServerItem);
+            }
+        }
     }
 
     private async void MCPServiceCollectionView_OnLoaded(object sender, RoutedEventArgs e)

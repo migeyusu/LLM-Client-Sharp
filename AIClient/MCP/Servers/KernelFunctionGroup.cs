@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.Abstraction;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;

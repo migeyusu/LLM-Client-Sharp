@@ -26,7 +26,6 @@
                  BorderThickness="0,0,1,0"
                  BorderBrush="DimGray"
                  Grid.RowSpan="2"
-                 x:Name="ModelsListBox"
                  IsSynchronizedWithCurrentItem="True"
                  SelectedItem="{Binding SelectedServerItem,Mode=TwoWay}"
                  ItemsSource="{Binding Items,Mode=OneWay}">
@@ -56,7 +55,20 @@
                         <TextBlock Grid.Column="1" Text="{Binding Name,Mode=OneWay}"
                                    FontWeight="Bold"
                                    VerticalAlignment="Center"
-                                   Margin="0,0,5,0" />
+                                   Margin="0,0,5,0">
+                            <TextBlock.Style>
+                                <Style TargetType="{x:Type TextBlock}"
+                                       BasedOn="{StaticResource MaterialDesignSubtitle2TextBlock}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEnabled,Mode=OneWay}"
+                                                     Value="False">
+                                            <Setter Property="Foreground"
+                                                    Value="DimGray" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <Button Grid.Column="1"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
@@ -91,7 +103,8 @@
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Height="200">
-            <ContentControl Content="{Binding ElementName=ModelsListBox,Path=SelectedItem,Mode=OneWay}"
+            <ContentControl Content="{Binding SelectedServerItem,Mode=OneWay}"
+                            IsEnabled="{Binding SelectedServerItem.IsEnabled,Mode=OneWay,TargetNullValue=False}"
                             Margin="10,0">
                 <ContentControl.Resources>
                     <converters:ListToStringConverter x:Key="StringToListConverter" />
@@ -182,7 +195,7 @@
                                      MaxHeight="100"
                                      MinHeight="50"
                                      VerticalContentAlignment="Top"
-                                     materialDesign:HintAssist.Hint="为MCP附加额外的Prompt"
+                                     materialDesign:HintAssist.HelperText="Prompt会嵌入到SystemPrompt以更好地指导模型行为"
                                      Text="{Binding UserPrompt,Mode=TwoWay}" />
                         </Grid>
                     </DataTemplate>
@@ -280,6 +293,7 @@
         </ScrollViewer>
         <ScrollViewer Grid.Row="1" Grid.Column="1">
             <ItemsControl ItemsSource="{Binding SelectedServerItem.AvailableTools,Mode=TwoWay}"
+                          IsEnabled="{Binding SelectedServerItem.IsEnabled,Mode=OneWay,TargetNullValue=False}"
                           Margin="10,10,10,0">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type ai:AIFunction}">
@@ -363,12 +377,25 @@
                 </StackPanel>
             </materialDesign:PopupBox>
         </StackPanel>
-        <Button Content="{materialDesign:PackIcon Kind=Refresh}"
-                Command="{Binding  SelectedServerItem.ResetToolsCommand}"
-                Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
-                Grid.Row="1" Grid.Column="1"
-                Margin="10"
-                VerticalAlignment="Bottom"
-                HorizontalAlignment="Right" />
+        <StackPanel Grid.Row="1" Grid.Column="1"
+                    Margin="10"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Right"
+                    DataContext="{Binding SelectedServerItem}">
+            <ToggleButton materialDesign:ElevationAssist.Elevation="Dp4"
+                          Content="{materialDesign:PackIcon Kind=ServerNetworkOff}"
+                          Style="{StaticResource MaterialDesignActionToggleButton}"
+                          ToolTip="启用/禁用服务"
+                          IsChecked="{Binding IsEnabled,Mode=OneWay}"
+                          Command="{Binding SwitchEnableCommand}"
+                          Width="38"
+                          Height="38"
+                          Margin="0,0,0,10" />
+            <!-- materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=EmoticonHappy}"-->
+            <Button Content="{materialDesign:PackIcon Kind=Refresh}"
+                    Command="{Binding  ResetToolsCommand}"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
+                    ToolTip="重置工具" />
+        </StackPanel>
     </Grid>
 </UserControl>

@@ -164,7 +164,7 @@
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type endpoints:SuggestedModel}">
+                        <DataTemplate DataType="{x:Type abstraction:ILLMChatModel}">
                             <materialDesign:Chip IsDeletable="True"
                                                  MaxWidth="180"
                                                  Height="30"
@@ -172,13 +172,13 @@
                                                  Padding="5,0"
                                                  ToolTipService.InitialShowDelay="0"
                                                  IconBackground="White"
-                                                 ToolTip="{Binding LlmModel.Endpoint.DisplayName,Mode=OneTime}"
+                                                 ToolTip="{Binding Endpoint.DisplayName,Mode=OneTime}"
                                                  DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveSuggestedModelCommand}"
-                                                 Content="{Binding LlmModel.Name,Mode=OneTime}">
+                                                 Content="{Binding Name,Mode=OneTime}">
                                 <materialDesign:Chip.Icon>
-                                    <Image Source="{Binding LlmModel.Icon.CurrentSource,Mode=OneWay}" 
-                                           Width="26"
-                                           Height="26"/>
+                                    <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}" 
+                                           Width="23"
+                                           Height="23"/>
                                 </materialDesign:Chip.Icon>
                             </materialDesign:Chip>
                         </DataTemplate>

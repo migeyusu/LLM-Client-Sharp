@@ -101,9 +101,9 @@ public partial class MainWindow : ExtendedWindow
 
     private void SnapNewDialog_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is SuggestedModel suggested)
+        if (e.Parameter is ILLMChatModel suggested)
         {
-            var llmModelClient = suggested.LlmModel.CreateChatClient();
+            var llmModelClient = suggested.CreateChatClient();
             if (llmModelClient != null)
             {
                 _mainWindowViewModel.AddNewDialog(llmModelClient);

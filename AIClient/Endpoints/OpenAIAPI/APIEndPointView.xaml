@@ -99,6 +99,13 @@
                  IsSynchronizedWithCurrentItem="True"
                  SelectedIndex="{Binding SelectedModelIndex,Mode=TwoWay}"
                  ItemsSource="{Binding Option.Models,Mode=OneWay}">
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Command="{Binding PastCommand}"
+                              Icon="{materialDesign:PackIcon Kind=ContentPaste}"
+                              Header="黏贴" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
             <ListBox.ItemContainerStyle>
                 <Style TargetType="{x:Type ListBoxItem}"
                        BasedOn="{StaticResource {x:Type ListBoxItem}}">
@@ -106,6 +113,15 @@
                             Value="Stretch" />
                     <Setter Property="VerticalContentAlignment"
                             Value="Stretch" />
+                    <Setter Property="ContextMenu">
+                        <Setter.Value>
+                            <ContextMenu>
+                                <MenuItem Command="{Binding CopyCommand}"
+                                          Icon="{materialDesign:PackIcon Kind=ContentCopy}"
+                                          Header="复制" />
+                            </ContextMenu>
+                        </Setter.Value>
+                    </Setter>
                 </Style>
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>

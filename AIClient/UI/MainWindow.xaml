@@ -18,6 +18,7 @@
                           xmlns:dialog="clr-namespace:LLMClient.Dialog"
                           xmlns:mcp="clr-namespace:LLMClient.MCP"
                           xmlns:project="clr-namespace:LLMClient.Project"
+                          xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -587,21 +588,28 @@
                             <ItemsControl ItemsSource="{Binding  EndpointsViewModel.SuggestedModels,Mode=OneWay}"
                                           Margin="10">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type endpoints:SuggestedModel}">
+                                    <DataTemplate DataType="{x:Type abstraction:ILLMChatModel}">
                                         <StackPanel Orientation="Horizontal">
                                             <Button Command="Select"
                                                     CommandParameter="{Binding}"
                                                     Background="{DynamicResource MaterialDesign.Brush.Primary.Dark}">
-                                                <Image Source="{Binding LlmModel.Icon.CurrentSource,Mode=OneWay}" />
+                                                <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}" />
                                             </Button>
                                             <Border VerticalAlignment="Center"
                                                     Margin="10,0,0,0"
                                                     Background="{DynamicResource MaterialDesign.Brush.ToolTip.Background}"
                                                     CornerRadius="2">
-                                                <TextBlock Text="{Binding LlmModel.Name}"
-                                                           VerticalAlignment="Center"
-                                                           Foreground="{DynamicResource MaterialDesign.Brush.Background}"
-                                                           Margin="8" />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    Foreground="{DynamicResource MaterialDesign.Brush.Background}"
+                                                    Margin="8">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="{}{0}-{1}">
+                                                            <Binding Path="Endpoint.DisplayName" Mode="OneWay" />
+                                                            <Binding Path="Name" Mode="OneWay" />
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
                                             </Border>
                                         </StackPanel>
                                     </DataTemplate>

@@ -58,12 +58,22 @@ public class OpenAIChatClientEx : ChatClient
         }
 
         var result = await base.CompleteChatAsync(content, options);
-        /*var resultNode = await result.ToJsonNode();
+        
+        var resultNode = await result.ToJsonNode();
         if (resultNode == null)
         {
             throw new InvalidOperationException("Result is not valid JSON.");
-        }*/
-        // var choice = resultNode["choices"]?.AsArray();
+        }
+        var choice = resultNode["choices"]?.AsArray();
+        
+        if (choice != null && choice.Count > 0)
+        {
+            var message = choice[0]?["message"];
+            if (message != null)
+            {
+                
+            }
+        }
 
         if (clientContext != null)
         {

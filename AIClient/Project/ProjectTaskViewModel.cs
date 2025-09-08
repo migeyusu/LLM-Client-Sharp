@@ -41,9 +41,6 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
-
-    public Guid ID { get; } = Guid.NewGuid();
-
     public string? Name
     {
         get => _name;

@@ -1,14 +1,10 @@
-﻿using System.Collections.ObjectModel;
-using LLMClient.Endpoints;
-using LLMClient.UI;
-
-namespace LLMClient.Abstraction;
+﻿namespace LLMClient.Abstraction;
 
 public interface IEndpointService
 {
     IReadOnlyList<ILLMEndpoint> AvailableEndpoints { get; }
 
-    ObservableCollection<SuggestedModel> SuggestedModels { get; }
+    IReadOnlyList<ILLMChatModel> SuggestedModels { get; }
 
     Task Initialize();
 

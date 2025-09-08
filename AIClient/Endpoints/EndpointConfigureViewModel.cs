@@ -4,8 +4,10 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Input;
+using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
@@ -23,6 +25,7 @@ namespace LLMClient.Endpoints;
 public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 {
     private ILoggerFactory _loggerFactory;
+    private readonly IMapper _mapper;
 
     public ILLMEndpoint? SelectedEndpoint
     {
@@ -86,10 +89,14 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
             var options = Extension.DefaultJsonSerializerOptions;
             endPointsNode[APIEndPoint.KeyName] = JsonSerializer.SerializeToNode(apiEndpoints, options);
-            var keyValuePairs = this.SuggestedModels
-                .Select(model => new KeyValuePair<string, string>(model.LlmModel.Endpoint.Name, model.LlmModel.Name))
-                .ToArray();
-            endPointsNode[SuggestedModelKey] = JsonSerializer.SerializeToNode(keyValuePairs, options);
+            var keyValuePairs = this.SuggestedModels.Select((model => new LLMModelPersistModel()
+            {
+                ModelName = model.Name,
+                EndPointName = model.Endpoint.Name,
+            })).ToArray();
+            // .Select(model => new KeyValuePair<string, string>(model.LlmModel.Endpoint.Name, model.LlmModel.Name)
+            var serializeToNode = JsonSerializer.SerializeToNode(keyValuePairs, options);
+            endPointsNode[SuggestedModelKey] = serializeToNode;
             await EndPointsConfig.SaveDoc(root);
             MessageEventBus.Publish("已保存！");
         }
@@ -120,24 +127,31 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         get { return Endpoints.ToArray(); }
     }
 
-    public ObservableCollection<SuggestedModel> SuggestedModels { get; } =
-        new ObservableCollection<SuggestedModel>();
+    public IReadOnlyList<ILLMChatModel> SuggestedModels
+    {
+        get { return SuggestedModelsOb.ToArray(); }
+    }
+
+    public ObservableCollection<ILLMChatModel> SuggestedModelsOb { get; } =
+        new ObservableCollection<ILLMChatModel>();
 
     public ModelSelectionPopupViewModel PopupSelectViewModel { get; }
 
     public ICommand RemoveSuggestedModelCommand => new ActionCommand((o =>
     {
-        if (o is SuggestedModel suggestedModel)
+        if (o is ILLMChatModel suggestedModel)
         {
-            this.SuggestedModels.Remove(suggestedModel);
+            this.SuggestedModelsOb.Remove(suggestedModel);
+            OnPropertyChanged(nameof(SuggestedModels));
         }
     }));
 
     private ILLMEndpoint? _selectedEndpoint;
 
-    public EndpointConfigureViewModel(ILoggerFactory loggerFactory)
+    public EndpointConfigureViewModel(ILoggerFactory loggerFactory, IMapper mapper)
     {
         this._loggerFactory = loggerFactory;
+        this._mapper = mapper;
         PopupSelectViewModel = new ModelSelectionPopupViewModel(OnModelSelected)
             { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
         Endpoints.CollectionChanged += EndpointsOnCollectionChanged;
@@ -150,7 +164,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     private void OnModelSelected(ModelSelectionViewModel obj)
     {
-        if (SuggestedModels.Count > 6)
+        if (SuggestedModelsOb.Count > 6)
         {
             MessageEventBus.Publish("最多只能添加6个推荐模型");
             return;
@@ -159,7 +173,8 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         var llmModel = obj.SelectedModel;
         if (llmModel is null)
             return;
-        this.SuggestedModels.Add(new SuggestedModel(llmModel));
+        this.SuggestedModelsOb.Add(llmModel);
+        OnPropertyChanged(nameof(SuggestedModels));
     }
 
     private GithubCopilotEndPoint? _githubCopilotEndPoint;
@@ -194,23 +209,25 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
         if (endPoints.TryGetPropertyValue(SuggestedModelKey, out var suggestedModelsNode))
         {
-            var keyValuePair = suggestedModelsNode.Deserialize<KeyValuePair<string, String>[]>();
-            if (keyValuePair != null)
+            var modelPersistModels = suggestedModelsNode.Deserialize<LLMModelPersistModel[]>();
+            if (modelPersistModels != null)
             {
-                foreach (var valuePair in keyValuePair)
+                foreach (var modelPersistModel in modelPersistModels)
                 {
-                    var valuePairKey = valuePair.Key;
-                    var llmEndpoint = ((IEndpointService)this).GetEndpoint(valuePairKey);
+                    var endPointName = modelPersistModel.EndPointName;
+                    var llmEndpoint = ((IEndpointService)this).GetEndpoint(endPointName);
                     if (llmEndpoint != null)
                     {
-                        var llmModel = llmEndpoint.GetModel(valuePair.Value);
+                        var llmModel = llmEndpoint.GetModel(modelPersistModel.ModelName);
                         if (llmModel != null)
                         {
-                            SuggestedModels.Add(new SuggestedModel(llmModel));
+                            SuggestedModelsOb.Add(llmModel);
                         }
                     }
                 }
             }
+
+            OnPropertyChangedAsync(nameof(SuggestedModelsOb));
         }
     }
 }

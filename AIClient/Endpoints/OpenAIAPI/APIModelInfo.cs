@@ -1,8 +1,11 @@
 ﻿using System.Text.Json.Serialization;
+using System.Windows;
+using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI;
 using LLMClient.UI.Component;
+using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
@@ -511,6 +514,19 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
             OnPropertyChanged();
         }
     }
+    
+    
+    public ICommand CopyCommand => new ActionCommand(o =>
+    {
+        try
+        {
+            APIEndPoint.CopyToClipboard(this);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("复制失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    });
 
     private void UpdateIcon()
     {

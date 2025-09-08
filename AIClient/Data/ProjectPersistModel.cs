@@ -1,6 +1,4 @@
-﻿using LLMClient.Project;
-
-namespace LLMClient.Data;
+﻿namespace LLMClient.Data;
 
 public class ProjectPersistModel
 {
@@ -33,19 +31,4 @@ public class ProjectPersistModel
     public double TotalPrice { get; set; }
 
     public ProjectTaskPersistModel[]? Tasks { get; set; }
-}
-
-public class ProjectTaskPersistModel : DialogSessionPersistModel
-{
-    public string? Name { get; set; }
-
-    public string? Summary { get; set; }
-
-    public bool EnableInContext { get; set; }
-
-    public string? PromptString { get; set; }
-
-    public string? Description { get; set; }
-
-    public ProjectTaskType Type { get; set; }
 }
