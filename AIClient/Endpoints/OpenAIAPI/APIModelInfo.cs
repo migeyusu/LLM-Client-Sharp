@@ -136,7 +136,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
     private ThemedIcon? _icon = null;
     private bool _urlIconEnable = false;
     private ModelIconType _iconType = ModelIconType.None;
-    private bool _systemPromptEnable = true;
+    private bool _supportsystemPrompt = true;
     private bool _topPEnable;
     private bool _topKEnable;
     private bool _temperatureEnable;
@@ -171,9 +171,10 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
     private bool _supportImageOutput;
     private bool _reasonable = false;
     private bool _supportImageInput;
-    private bool _supoortVideoGeneration;
+    private bool _supportVideoGeneration;
     private bool _supportAudioGeneration;
     private bool _supportStreaming = true;
+    private bool _functionCallOnStreaming = false;
 
     public int MaxContextSize
     {
@@ -188,13 +189,14 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
 
     [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = new NullLLMEndpoint();
 
-    public bool SystemPromptEnable
+
+    public bool SupportSystemPrompt
     {
-        get => _systemPromptEnable;
+        get => _supportsystemPrompt;
         set
         {
-            if (value == _systemPromptEnable) return;
-            _systemPromptEnable = value;
+            if (value == _supportsystemPrompt) return;
+            _supportsystemPrompt = value;
             OnPropertyChanged();
         }
     }
@@ -366,6 +368,20 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
         }
     }
 
+    /// <summary>
+    /// 许多function call的实现不支持streaming，这个选项用于在function call时禁用streaming
+    /// </summary>
+    public bool FunctionCallOnStreaming
+    {
+        get => _functionCallOnStreaming;
+        set
+        {
+            if (value == _functionCallOnStreaming) return;
+            _functionCallOnStreaming = value;
+            OnPropertyChanged();
+        }
+    }
+
     public bool SupportStreaming
     {
         get => _supportStreaming;
@@ -405,11 +421,11 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
 
     public bool SupportVideoGeneration
     {
-        get => _supoortVideoGeneration;
+        get => _supportVideoGeneration;
         set
         {
-            if (value == _supoortVideoGeneration) return;
-            _supoortVideoGeneration = value;
+            if (value == _supportVideoGeneration) return;
+            _supportVideoGeneration = value;
             OnPropertyChanged();
         }
     }
@@ -514,8 +530,8 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
             OnPropertyChanged();
         }
     }
-    
-    
+
+
     public ICommand CopyCommand => new ActionCommand(o =>
     {
         try

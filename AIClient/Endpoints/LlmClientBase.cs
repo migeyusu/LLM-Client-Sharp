@@ -57,7 +57,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     {
         var modelInfo = this.Model;
         var modelParams = this.Parameters;
-        if (modelInfo.SystemPromptEnable && !string.IsNullOrWhiteSpace(systemPrompt))
+        if (modelInfo.SupportSystemPrompt && !string.IsNullOrWhiteSpace(systemPrompt))
         {
             messages.Add(new ChatMessage(ChatRole.System, systemPrompt));
         }

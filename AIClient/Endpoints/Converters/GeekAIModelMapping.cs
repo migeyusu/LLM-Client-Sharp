@@ -77,7 +77,7 @@ public class GeekAIModelMapping : ModelMapping
         modelInfo.Description = info.Desc;
         modelInfo.UrlIconEnable = !string.IsNullOrEmpty(info.Icon);
         modelInfo.IconUrl = info.Icon;
-        modelInfo.Streaming = info.Streamable;
+        modelInfo.SupportStreaming = info.Streamable;
         modelInfo.Reasonable = info.Reasonable;
         modelInfo.TemperatureEnable = Math.Abs(info.Temperature - 1f) <= float.Epsilon;
         modelInfo.Temperature = (float)info.Temperature;
@@ -92,7 +92,7 @@ public class GeekAIModelMapping : ModelMapping
         modelInfo.SupportVideoGeneration = info.Type == "video";
         modelInfo.SupportAudioGeneration = info.Type == "audio";
         modelInfo.SupportTextGeneration = info.Type == "chat";
-        modelInfo.SystemPromptEnable = info.Systemable;
+        modelInfo.SupportSystemPrompt = info.Systemable;
         if (modelInfo.PriceCalculator is TokenBasedPriceCalculator calculator)
         {
             calculator.DiscountFactor = 1;

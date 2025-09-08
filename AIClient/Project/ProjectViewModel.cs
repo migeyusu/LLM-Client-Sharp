@@ -468,7 +468,7 @@ public class ProjectViewModel : FileBasedSessionBase
         {
             FunctionTreeSelector =
             {
-                FunctionEnabled = true,
+                FunctionSelected = true,
             }
         };
         var functionTreeSelector = Requester.FunctionTreeSelector;

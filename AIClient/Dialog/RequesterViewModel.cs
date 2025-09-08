@@ -29,12 +29,21 @@ public class RequesterViewModel : BaseViewModel
 
     public ICommand NewRequestCommand => new ActionCommand(async o =>
     {
+        var streaming = this.DefaultClient.Parameters.Streaming;
         try
         {
             var requestViewItem = this.NewRequest();
             if (requestViewItem == null)
             {
                 return;
+            }
+
+            if (this.FunctionTreeSelector.FunctionSelected)
+            {
+                if (!this.DefaultClient.Model.FunctionCallOnStreaming)
+                {
+                    this.DefaultClient.Parameters.Streaming = false;
+                }
             }
 
             var completedResult = await _getResponse.Invoke(this.DefaultClient, requestViewItem, null);
@@ -47,6 +56,10 @@ public class RequesterViewModel : BaseViewModel
         catch (Exception e)
         {
             MessageEventBus.Publish(e.Message);
+        }
+        finally
+        {
+            this.DefaultClient.Parameters.Streaming = streaming;
         }
     });
 
@@ -309,7 +322,7 @@ public class RequesterViewModel : BaseViewModel
 
         promptBuilder.Append(PromptString);
         IList<CheckableFunctionGroupTree>? tools = null;
-        if (this.FunctionTreeSelector.FunctionEnabled)
+        if (this.FunctionTreeSelector.FunctionSelected)
         {
             tools = this.Source?.GetFunctionGroups().OfType<CheckableFunctionGroupTree>().ToArray();
         }

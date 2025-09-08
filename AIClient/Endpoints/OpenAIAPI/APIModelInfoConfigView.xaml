@@ -8,7 +8,7 @@
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="600"
+             d:DesignHeight="1000" d:DesignWidth="600"
              d:DataContext="{d:DesignInstance local:APIModelInfo}">
     <StackPanel>
         <StackPanel.Resources>
@@ -50,6 +50,7 @@
         <TextBox Text="{Binding Description,Mode=TwoWay}"
                  materialDesign:HintAssist.Hint="模型描述（markdown）"
                  Style="{StaticResource MaterialDesignFilledTextBox}"
+                 TextWrapping="Wrap"
                  MaxHeight="300"
                  Margin="0,0,0,10" />
         <ContentControl Content="{Binding PriceCalculator,Mode=OneWay}"
@@ -127,54 +128,50 @@
                       Content="Support Search" />
             <CheckBox IsChecked="{Binding SupportFunctionCall,Mode=TwoWay}"
                       Content="Support Function Call" />
+            <CheckBox IsChecked="{Binding SupportSystemPrompt,Mode=TwoWay}"
+                      Content="Support System Prompt" />
         </WrapPanel>
-        <CheckBox IsChecked="{Binding SystemPromptEnable,Mode=TwoWay}"
-                  Content="System Prompt Enable"
+        <CheckBox IsChecked="{Binding FunctionCallOnStreaming,Mode=TwoWay}"
+                  Content="Support Function Call when Streaming (Many models don't support this feature)"
                   materialDesign:CheckBoxAssist.CheckBoxSize="30"
                   HorizontalAlignment="Left"
                   VerticalAlignment="Center"
                   Margin="0,10,0,0" />
-        <endpoints:ParamConfigView PropertyName="Top P"
+        <endpoints:ParamConfigView PropertyName="Top P Enable"
                                    Value="{Binding TopP,Mode=TwoWay}"
-                                   Description="Controls text diversity by selecting the most probable words until a set probability is reached."
-                                   TickFrequency="0.01"
+                                   Description="通过选择最可能的词直到达到设定概率，控制文本多样性。"
                                    Maximum="1"
                                    Available="{Binding TopPEnable,Mode=TwoWay}"
                                    Minimum="0.01" />
-        <endpoints:ParamConfigView PropertyName="Top K"
+        <endpoints:ParamConfigView PropertyName="Top K Enable"
                                    Value="{Binding TopK,Mode=TwoWay}"
-                                   Description="Top-K sampling involves selecting the top K most likely words from the probability distribution and then sampling the next word only from this subset."
-                                   TickFrequency="1"
+                                   Description="Top-K采样会从概率分布中选择前K个最可能的词，然后只从这部分中采样下一个词。"
                                    Maximum="{Binding TopKMax,Mode=TwoWay}"
                                    MaximumEditable="True"
                                    Available="{Binding TopKEnable,Mode=TwoWay}"
                                    Minimum="5" />
-        <endpoints:ParamConfigView PropertyName="Temperature"
+        <endpoints:ParamConfigView PropertyName="Temperature  Enable"
                                    Available="{Binding TemperatureEnable,Mode=TwoWay}"
                                    Value="{Binding Temperature,Mode=TwoWay}"
-                                   Description="Controls randomness in the response, use lower to be more deterministic."
-                                   Maximum="1"
+                                   Description="控制回复的随机性，数值越低越确定。"
                                    Minimum="0"
                                    TickFrequency="0.01" />
-        <endpoints:ParamConfigView PropertyName="Max Tokens"
+        <endpoints:ParamConfigView PropertyName="Max Tokens  Enable"
                                    Unit="K"
                                    Available="{Binding MaxTokensEnable,Mode=TwoWay}"
                                    Value="{Binding MaxTokens,Mode=TwoWay,Converter={StaticResource KUnitConverter}}"
-                                   Description="Limit the maximum output tokens for the model response."
-                                   Maximum="{Binding  MaxTokenLimit,Mode=TwoWay,Converter={StaticResource KUnitConverter}}"
+                                   Description="限制模型回复的最大输出tokens数量。"
                                    MaximumEditable="True"
                                    Minimum="1" />
-        <endpoints:ParamConfigView PropertyName="Presence Penalty"
+        <endpoints:ParamConfigView PropertyName="Presence Penalty  Enable"
                                    Available="{Binding PresencePenaltyEnable,Mode=TwoWay}"
                                    Value="{Binding PresencePenalty,Mode=TwoWay}"
-                                   Description="Discourages the model from repeating the same words or phrases too frequently by applying a penalty (between -2.0 and 2.0) based on their presence in the text."
-                                   Maximum="2"
+                                   Description="通过对文本中已出现的词语施加惩罚（-2.0到2.0），减少模型重复相同词语或短语的频率。"
                                    Minimum="-2" />
-        <endpoints:ParamConfigView PropertyName="Frequency Penalty"
+        <endpoints:ParamConfigView PropertyName="Frequency Penalty  Enable"
                                    Available="{Binding FrequencyPenaltyEnable,Mode=TwoWay}"
                                    Value="{Binding FrequencyPenalty,Mode=TwoWay}"
-                                   Description="Discourages the model from generating the same words or phrases too frequently by applying a penalty (between -2.0 and 2.0) based on their existing frequency in the text."
-                                   Maximum="2"
+                                   Description="通过对文本中已存在的词语施加惩罚（-2.0到2.0），减少模型生成相同词语或短语的频率。"
                                    Minimum="-2" />
     </StackPanel>
 </UserControl>

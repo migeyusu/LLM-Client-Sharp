@@ -10,15 +10,15 @@ namespace LLMClient.MCP;
 
 public class AIFunctionTreeSelectorViewModel : BaseViewModel
 {
-    private bool _functionEnabled;
+    private bool _functionSelected;
 
-    public bool FunctionEnabled
+    public bool FunctionSelected
     {
-        get => _functionEnabled;
+        get => _functionSelected;
         set
         {
-            if (value == _functionEnabled) return;
-            _functionEnabled = value;
+            if (value == _functionSelected) return;
+            _functionSelected = value;
             OnPropertyChanged();
         }
     }

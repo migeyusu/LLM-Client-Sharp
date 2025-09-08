@@ -119,7 +119,7 @@
                                                  Visibility="{Binding IsModelSupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                                  materialDesign:ElevationAssist.Elevation="Dp3">
                                 <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                                          IsChecked="{Binding FunctionTreeSelector.FunctionEnabled,Mode=TwoWay}">
+                                          IsChecked="{Binding FunctionTreeSelector.FunctionSelected,Mode=TwoWay}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="Tools" />
                                         <materialDesign:PopupBox Margin="6,0"

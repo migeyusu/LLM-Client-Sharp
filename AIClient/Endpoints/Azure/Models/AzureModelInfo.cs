@@ -33,7 +33,7 @@ public class AzureModelInfo : ILLMChatModel
         get { return FriendlyName; }
     }
 
-    [JsonIgnore] public bool Streaming { get; set; }
+    [JsonIgnore] public bool Streaming { get; set; } = true;
 
     private ThemedIcon? _themedIcon;
 
@@ -87,7 +87,7 @@ public class AzureModelInfo : ILLMChatModel
 
     [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = NullLLMEndpoint.Instance;
 
-    [JsonIgnore] public bool SystemPromptEnable => true;
+    [JsonIgnore] public bool SupportSystemPrompt => true;
 
     [JsonIgnore] public bool TopPEnable { get; set; }
 
@@ -181,6 +181,8 @@ public class AzureModelInfo : ILLMChatModel
     {
         get { return Tags?.Contains("agents") == true; }
     }
+
+    public bool FunctionCallOnStreaming { get; } = true;
 
     public bool SupportAudioInput { get; } = false;
 

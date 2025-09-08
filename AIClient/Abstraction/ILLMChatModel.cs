@@ -19,7 +19,7 @@ public interface ILLMChatModel : IModelParams
 
     #region switch
 
-    bool SystemPromptEnable { get; }
+    bool SupportSystemPrompt { get; }
 
     bool TopPEnable { get; }
     bool TopKEnable { get; }
@@ -51,6 +51,8 @@ public interface ILLMChatModel : IModelParams
     bool SupportSearch { get; }
 
     bool SupportFunctionCall { get; }
+    
+    bool FunctionCallOnStreaming { get; }
 
     #endregion
 

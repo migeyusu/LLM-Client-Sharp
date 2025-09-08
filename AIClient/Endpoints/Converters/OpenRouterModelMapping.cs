@@ -118,7 +118,7 @@ public class OpenRouterModelMapping : ModelMapping
             }
         }
 
-        modelInfo.Streaming = endpoint.CanAbort == true;
+        modelInfo.SupportStreaming = endpoint.CanAbort == true;
         modelInfo.Reasonable = endpoint.SupportsReasoning == true;
         modelInfo.SupportFunctionCall = endpoint.SupportsToolParameters == true;
         var list = endpoint.SupportedParameters;

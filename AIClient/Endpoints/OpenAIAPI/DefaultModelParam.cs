@@ -13,7 +13,7 @@ public class DefaultModelParam : BaseViewModel, IModelParams
     private float _frequencyPenalty;
     private float _presencePenalty;
     private long? _seed;
-    private bool _streaming;
+    private bool _streaming = true;
 
     public bool Streaming
     {

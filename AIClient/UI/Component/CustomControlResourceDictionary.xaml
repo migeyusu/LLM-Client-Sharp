@@ -133,11 +133,14 @@
                             <TextBox materialDesign:HintAssist.Hint="Min"
                                      materialDesign:TextFieldAssist.SuffixText="{TemplateBinding Unit}"
                                      IsReadOnly="True"
+                                     Margin="0"
                                      VerticalAlignment="Center"
                                      Text="{Binding RelativeSource={RelativeSource TemplatedParent},Path=Minimum,Mode=TwoWay}" />
                             <TextBlock Text="-"
+                                       VerticalAlignment="Center"
                                        Margin="6,0" />
                             <TextBox materialDesign:HintAssist.Hint="Max"
+                                     Margin="0"
                                      VerticalAlignment="Center"
                                      materialDesign:TextFieldAssist.SuffixText="{TemplateBinding Unit}"
                                      IsReadOnly="{TemplateBinding MaximumEditable,Converter={StaticResource InvertBooleanConverter}}"
