@@ -150,9 +150,22 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             info.PresencePenalty = 0;
             info.PresencePenalty = 0;
         };
+        Action<AzureModelInfo> gpt_5 = (info) => { info.MaxTokens = 16384; };
 
         _predefinedModels = new Dictionary<string, Action<AzureModelInfo>>()
         {
+            { "OpenAI gpt-5", gpt_5 },
+            {
+                "OpenAI gpt-5-chat (preview)", (info =>
+                {
+                    info.TopP = 1;
+                    info.Temperature = 1;
+                    info.MaxTokens = 16384;
+                })
+            },
+            { "OpenAI gpt-5-mini", gpt_5 },
+            { "OpenAI gpt-5-nano", gpt_5 },
+
             { "OpenAI GPT-4.1", full },
             { "OpenAI GPT-4.1-mini", full },
             { "OpenAI GPT-4.1-nano", full },
@@ -161,33 +174,30 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             { "OpenAI GPT-4o mini", baseModel },
 
             { "OpenAI o1", empty },
+            { "OpenAI o1-mini", empty },
 
             { "OpenAI o3", empty },
             { "OpenAI o3-mini", empty },
+
             { "OpenAI o4-mini", empty },
 
             { "Ministral 3B", mistral },
             { "Mistral Large 24.11", mistral },
             { "Mistral Nemo", mistral },
-            { "Mistral Large", mistral },
-            { "Mistral Large (2407)", mistral },
-            { "Mistral Small", mistral },
+
+            { "Mistral Medium 3 (25.05)", mistral },
+            { "Mistral Small 3.1", mistral },
+            
             { "Codestral 25.01", mistral },
 
             { "Llama-3.3-70B-Instruct", llama3 },
             { "Meta-Llama-3.1-405B-Instruct", llama3 },
-            { "Meta-Llama-3.1-70B-Instruct", llama3 },
             { "Meta-Llama-3.1-8B-Instruct", llama3 },
-            { "Meta-Llama-3-8B-Instruct", llama3 },
-            { "Meta-Llama-3-70B-Instruct", llama3 },
 
             { "Llama 4 Maverick 17B 128E Instruct FP8", llama3 },
             { "Llama 4 Scout 17B 16E Instruct", llama3 },
 
-            { "DeepSeek-R1", deepSeek_R1 },
-            { "MAI-DS-R1", deepSeek_R1 },
             { "DeepSeek-R1-0528", deepSeek_R1 },
-
             { "DeepSeek-V3-0324", deepSeek_V3 },
 
             { "Phi-4", phi4 },
