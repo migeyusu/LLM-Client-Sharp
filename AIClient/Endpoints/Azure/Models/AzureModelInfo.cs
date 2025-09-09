@@ -209,8 +209,9 @@ public class AzureModelInfo : ILLMChatModel
             return false;
         }
     }
+
 /*Tags?.Contains("agents") == true;*/
-    public bool FunctionCallOnStreaming { get; } = true;
+    public bool FunctionCallOnStreaming { get; } = false;
 
     public bool SupportAudioInput { get; } = false;
 
