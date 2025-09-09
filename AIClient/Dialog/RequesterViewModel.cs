@@ -29,7 +29,6 @@ public class RequesterViewModel : BaseViewModel
 
     public ICommand NewRequestCommand => new ActionCommand(async o =>
     {
-        var streaming = this.DefaultClient.Parameters.Streaming;
         try
         {
             var requestViewItem = this.NewRequest();
@@ -37,15 +36,7 @@ public class RequesterViewModel : BaseViewModel
             {
                 return;
             }
-
-            if (this.FunctionTreeSelector.FunctionSelected)
-            {
-                if (!this.DefaultClient.Model.FunctionCallOnStreaming)
-                {
-                    this.DefaultClient.Parameters.Streaming = false;
-                }
-            }
-
+            
             var completedResult = await _getResponse.Invoke(this.DefaultClient, requestViewItem, null);
             OnRequestCompleted(completedResult);
             if (!completedResult.IsInterrupt)
@@ -56,10 +47,6 @@ public class RequesterViewModel : BaseViewModel
         catch (Exception e)
         {
             MessageEventBus.Publish(e.Message);
-        }
-        finally
-        {
-            this.DefaultClient.Parameters.Streaming = streaming;
         }
     });
 
@@ -103,7 +90,6 @@ public class RequesterViewModel : BaseViewModel
             _defaultClient = value;
             BindClient(value);
             OnPropertyChanged();
-            OnPropertyChanged(nameof(IsModelSupportFunctionCall));
             OnPropertyChanged(nameof(ThinkingAvailable));
         }
     }
@@ -195,11 +181,6 @@ public class RequesterViewModel : BaseViewModel
 
     public AIFunctionTreeSelectorViewModel FunctionTreeSelector { get; }
 
-    public bool IsModelSupportFunctionCall
-    {
-        get { return DefaultClient.Model.SupportFunctionCall; }
-    }
-
     #endregion
 
     public SearchConfigViewModel SearchConfig { get; }
@@ -278,6 +259,16 @@ public class RequesterViewModel : BaseViewModel
         client.FunctionInterceptor = _authorizationInterceptor;
         this.SearchConfig.ResetSearch(client);
         this.ThinkingConfig.ResetConfig(client);
+        this.FunctionTreeSelector.SelectableCallEngineTypes = DefaultClient.Model.SupportFunctionCall
+            ?
+            [
+                FunctionCallEngineType.OpenAI,
+                FunctionCallEngineType.Prompt
+            ]
+            :
+            [
+                FunctionCallEngineType.Prompt
+            ];
     }
 
     public void ClearRequest()
@@ -347,6 +338,7 @@ public class RequesterViewModel : BaseViewModel
             SearchOption = SearchConfig.GetUserSearchOption(),
             ThinkingConfig = thinkingConfig,
             RagSources = ragSources.Length > 0 ? ragSources : null,
+            CallEngine = this.FunctionTreeSelector.EngineType,
         };
     }
 

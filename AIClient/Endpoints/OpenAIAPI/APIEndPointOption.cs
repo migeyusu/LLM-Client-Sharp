@@ -101,7 +101,7 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         {
             foreach (var apiModelInfo in this.Models)
             {
-                apiModelInfo.IsNotAvailable = !modelMapping.MapInfo(apiModelInfo);
+                apiModelInfo.IsNotMatchFromSource = !modelMapping.MapInfo(apiModelInfo);
             }
         }
 

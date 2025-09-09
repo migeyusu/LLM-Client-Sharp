@@ -12,9 +12,10 @@
              xmlns:local="clr-namespace:LLMClient.Dialog"
              xmlns:rag="clr-namespace:LLMClient.Rag"
              xmlns:ui="clr-namespace:LLMClient.UI"
+             xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
-             d:DesignHeight="120" d:DesignWidth="1600">
+             d:DesignHeight="110" d:DesignWidth="1600">
     <UserControl.Resources>
         <KeyBinding x:Key="PromptKeyBinding"
                     Key="Enter"
@@ -116,20 +117,31 @@
                             <materialDesign:Card Padding="8,0"
                                                  UniformCornerRadius="12"
                                                  Height="32"
-                                                 Visibility="{Binding IsModelSupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                                  materialDesign:ElevationAssist.Elevation="Dp3">
                                 <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
-                                          IsChecked="{Binding FunctionTreeSelector.FunctionSelected,Mode=TwoWay}">
+                                          DataContext="{Binding FunctionTreeSelector,Mode=OneWay}"
+                                          IsChecked="{Binding FunctionSelected,Mode=TwoWay}">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Tools" />
-                                        <materialDesign:PopupBox Margin="6,0"
+                                        <TextBlock Text="Tools"
+                                                   VerticalAlignment="Center" />
+                                        <ComboBox Width="80"
+                                                  ToolTip="When only model don't support function call, only 'Prompt' mode is enable."
+                                                  ToolTipService.InitialShowDelay="0"
+                                                  BorderThickness="0"
+                                                  materialDesign:HintAssist.Hint="Mode"
+                                                  Padding="6,3"
+                                                  VerticalAlignment="Center"
+                                                  ItemsSource="{Binding SelectableCallEngineTypes,Mode=OneWay}"
+                                                  SelectedItem="{Binding EngineType,Mode=TwoWay}">
+                                        </ComboBox>
+                                        <materialDesign:PopupBox Margin="4,0,6,0"
                                                                  StaysOpen="True"
                                                                  PlacementMode="TopAndAlignLeftEdges"
                                                                  Opened="McpPopupBox_OnOpened"
                                                                  ToggleContent="{materialDesign:PackIcon Kind=Tools,Size=16}"
                                                                  VerticalAlignment="Center"
                                                                  ToolTip="Function Call工具"
-                                                                 PopupContent="{Binding FunctionTreeSelector,Mode=OneWay}"
+                                                                 PopupContent="{Binding Mode=OneWay}"
                                                                  PopupContentTemplate="{StaticResource FunctionTreeDataTemplate}"
                                                                  Style="{StaticResource MaterialDesignToolPopupBox}" />
                                     </StackPanel>
@@ -286,7 +298,7 @@
                                     <ToggleButton IsChecked="{Binding ThinkingConfig.Enable,Mode=TwoWay}" />
                                 </StackPanel>
                             </materialDesign:Card>
-                            <materialDesign:Card Padding="8,0"
+                            <materialDesign:Card Padding="6,0"
                                                  Margin="6,0,0,0"
                                                  UniformCornerRadius="12"
                                                  Height="32"
@@ -297,7 +309,7 @@
                                     <Ellipse Width="5"
                                              Height="5"
                                              VerticalAlignment="Center"
-                                             Margin="0,0,5,0">
+                                             Margin="0,0,8,0">
                                         <Ellipse.Style>
                                             <Style TargetType="{x:Type Ellipse}">
                                                 <Setter Property="Fill"

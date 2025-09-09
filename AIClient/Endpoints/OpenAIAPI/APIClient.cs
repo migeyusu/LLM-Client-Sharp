@@ -101,10 +101,9 @@ public class APIClient : LlmClientBase
         return _chatClient;
     }
 
-    protected override ChatOptions CreateChatOptions(IList<ChatMessage> messages, IList<AITool>? tools = null,
-        string? systemPrompt = null)
+    protected override ChatOptions CreateChatOptions()
     {
-        var chatOptions = base.CreateChatOptions(messages, tools, systemPrompt);
+        var chatOptions = base.CreateChatOptions();
         /*if (this.ModelInfo.ReasoningEnable)
         {
             chatOptions.AdditionalProperties = new AdditionalPropertiesDictionary(new Dictionary<string, object?>()

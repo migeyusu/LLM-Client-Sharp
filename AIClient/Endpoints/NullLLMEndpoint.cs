@@ -9,31 +9,30 @@ namespace LLMClient.Endpoints
         public static NullLLMEndpoint Instance { get; } = new NullLLMEndpoint();
         public string DisplayName => "Null Endpoint";
         public bool IsInbuilt => false;
-
-        public bool IsEnabled => false;
+        public bool IsEnabled => true;
         public string Name => "NullEndpoint";
         public ImageSource Icon => ImageExtensions.EndpointIcon;
-        
+
         public IReadOnlyCollection<ILLMChatModel> AvailableModels => [];
 
         public ILLMChatClient? NewChatClient(string modelName)
         {
-            throw new NotSupportedException();
+            return NullLlmModelClient.Instance;
         }
 
         public ILLMChatClient? NewChatClient(ILLMChatModel model)
         {
-            throw new NotSupportedException();
+            return NullLlmModelClient.Instance;
         }
 
         public ILLMChatModel? GetModel(string modelName)
         {
-            throw new NotSupportedException();
+            return NullLlmModelClient.Instance.Model;
         }
 
         public Task InitializeAsync()
         {
-            throw new NotSupportedException();
+            return Task.CompletedTask;
         }
     }
 }

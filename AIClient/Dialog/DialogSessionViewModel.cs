@@ -653,20 +653,20 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         try
         {
             multiResponseViewItem.Append(respondingViewItem);
-            completedResult = await client.SendRequest(new DialogContext(history, systemPrompt),
+            completedResult = await client.SendRequest(new DialogContext(history),
                 cancellationToken: respondingViewItem.RequestTokenSource.Token);
-            var responseViewItem = new ResponseViewItem(client);
-            _mapper.Map<IResponse, ResponseViewItem>(completedResult, responseViewItem);
-            multiResponseViewItem.Append(responseViewItem);
         }
         catch (Exception exception)
         {
-            MessageBox.Show(exception.Message, "请求异常", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(exception.Message, "发送失败", MessageBoxButton.OK, MessageBoxImage.Error);
             completedResult.ErrorMessage = exception.Message;
         }
         finally
         {
             respondingViewItem.RequestTokenSource.Dispose();
+            var responseViewItem = new ResponseViewItem(client);
+            _mapper.Map<IResponse, ResponseViewItem>(completedResult, responseViewItem);
+            multiResponseViewItem.Append(responseViewItem);
             multiResponseViewItem.Remove(respondingViewItem);
             RespondingCount--;
         }

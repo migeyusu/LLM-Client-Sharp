@@ -40,6 +40,8 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public IThinkingConfig? ThinkingConfig { get; set; }
 
+    public FunctionCallEngineType CallEngine { get; set; }
+
     public long Tokens
     {
         //估计tokens

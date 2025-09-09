@@ -34,13 +34,13 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
     }
 
     [JsonIgnore]
-    public bool IsNotAvailable
+    public bool IsNotMatchFromSource
     {
-        get => _isNotAvailable;
+        get => _isNotMatchFromSource;
         set
         {
-            if (value == _isNotAvailable) return;
-            _isNotAvailable = value;
+            if (value == _isNotMatchFromSource) return;
+            _isNotMatchFromSource = value;
             OnPropertyChanged();
         }
     }
@@ -162,7 +162,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
     private string _id = string.Empty;
     private string _name = string.Empty;
     private string? _infoUrl;
-    private bool _isNotAvailable;
+    private bool _isNotMatchFromSource;
     private bool _supportTextGeneration = true;
     private bool _supportVideoInput;
     private bool _supportAudioInput;

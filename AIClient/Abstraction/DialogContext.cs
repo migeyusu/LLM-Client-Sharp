@@ -1,10 +1,12 @@
 ﻿using LLMClient.Dialog;
+using LLMClient.Endpoints;
 
 namespace LLMClient.Abstraction;
 
 public class DialogContext
 {
-    public DialogContext(IList<IDialogItem> dialogItems, string? systemPrompt = null)
+    public DialogContext(IList<IDialogItem> dialogItems,
+        string? systemPrompt = null)
     {
         DialogItems = dialogItems;
         SystemPrompt = systemPrompt;

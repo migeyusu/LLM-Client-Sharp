@@ -138,7 +138,7 @@
                                                  Width="15"
                                                  Height="15"
                                                  Foreground="Red"
-                                                 Visibility="{Binding IsNotAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 Visibility="{Binding IsNotMatchFromSource,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                                  VerticalAlignment="Bottom"
                                                  HorizontalAlignment="Right"
                                                  Kind="AlertCircleOutline" />

@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -159,8 +159,20 @@ public class AzureModelInfo : ILLMChatModel
     {
         get
         {
-            return Capabilities?.ContainsKey("streaming") == true &&
-                   Capabilities["streaming"] is true;
+            if (Capabilities?.TryGetValue("streaming", out var streaming) == true)
+            {
+                if (streaming is true)
+                {
+                    return true;
+                }
+
+                if (streaming is JsonElement { ValueKind: JsonValueKind.True })
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 
@@ -179,9 +191,25 @@ public class AzureModelInfo : ILLMChatModel
 
     public bool SupportFunctionCall
     {
-        get { return Tags?.Contains("agents") == true; }
-    }
+        get
+        {
+            if (Capabilities?.TryGetValue("structuredOutput", out var streaming) == true)
+            {
+                if (streaming is true)
+                {
+                    return true;
+                }
 
+                if (streaming is JsonElement { ValueKind: JsonValueKind.True })
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+/*Tags?.Contains("agents") == true;*/
     public bool FunctionCallOnStreaming { get; } = true;
 
     public bool SupportAudioInput { get; } = false;

@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Endpoints;
 using LLMClient.MCP.Servers;
 using LLMClient.UI;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,28 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
         {
             if (value == _functionSelected) return;
             _functionSelected = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public IList<FunctionCallEngineType> SelectableCallEngineTypes
+    {
+        get => _selectableCallEngineTypes;
+        set
+        {
+            if (Equals(value, _selectableCallEngineTypes)) return;
+            _selectableCallEngineTypes = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public FunctionCallEngineType EngineType
+    {
+        get => _engineType;
+        set
+        {
+            if (value == _engineType) return;
+            _engineType = value;
             OnPropertyChanged();
         }
     }
@@ -135,7 +158,9 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
 
     private bool _isInitialized = false;
     private bool _isEnsuring = false;
-    
+    private FunctionCallEngineType _engineType;
+    private IList<FunctionCallEngineType> _selectableCallEngineTypes;
+
     /// <summary>
     /// 重置状态，表示需要重新初始化
     /// </summary>

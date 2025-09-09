@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Text.Json;
 using LLMClient.MCP.Servers;
 using Microsoft.SemanticKernel;
 using Xunit.Abstractions;
@@ -49,23 +50,33 @@ public class FunctionCall
     }
 
     [Fact]
-    public void ComplexResult()
+    public void WithResult()
     {
         var testPlugin = new TestPlugin();
         var kernelFunction = KernelFunctionFactory.CreateFromMethod(testPlugin.TestFunction);
-        var s = kernelFunction.JsonSchema.ToString();
-        var returnParameterSchema = kernelFunction.Metadata.ReturnParameter.Schema;
-        var schemaJsonString = returnParameterSchema?.ToString();
+        var s = kernelFunction.JsonSchema;
+        _output.WriteLine("Kernel Function JSON Schema:");
+        _output.WriteLine(s.ToString());
+        var returnParameterSchema = kernelFunction.Metadata.ReturnParameter.Schema?.ToString();
         // Assert & Output
         _output.WriteLine("Kernel Function Return Value JSON Schema:");
-        _output.WriteLine(schemaJsonString);
+        _output.WriteLine(returnParameterSchema);
+    }
+
+    [Fact]
+    public async Task Call()
+    {
+        var testPlugin = new TestPlugin();
+        var kernelFunction = KernelFunctionFactory.CreateFromMethod(testPlugin.TestFunction);
+        var invokeAsync = await kernelFunction.InvokeAsync();
     }
 
     [Fact]
     public async Task WebFetch()
     {
         var webFetcherPlugin = new UrlFetcherPlugin();
-        var fetchHtmlAsync = await webFetcherPlugin.FetchMarkdownAsync("https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-plugins.html");
+        var fetchHtmlAsync = await webFetcherPlugin.FetchMarkdownAsync(
+            "https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-plugins.html");
         _output.WriteLine(fetchHtmlAsync);
     }
 }
@@ -81,9 +92,7 @@ public class TestPlugin
 
 public class ComplexResultClass
 {
-    [Description("name description")]
-    public string Name { get; set; } = string.Empty;
-    
-    [Description("age description")]
-    public int Age { get; set; }
+    [Description("name description")] public string Name { get; set; } = string.Empty;
+
+    [Description("age description")] public int Age { get; set; }
 }
