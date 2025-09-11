@@ -185,15 +185,30 @@
         <component:DataTemplateTypePair>
             <component:DataTemplateTypePair.Template>
                 <DataTemplate DataType="{x:Type dialog:RespondingViewItem}">
-                    <GroupBox materialDesign:ColorZoneAssist.Mode="Dark"
-                              Style="{StaticResource MaterialDesignCardGroupBox}"
-                              Header="正在生成文档。。。。。。。。">
+                    <GroupBox materialDesign:ColorZoneAssist.Mode="PrimaryLight"
+                              Style="{StaticResource MaterialDesignCardGroupBox}">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="10"
+                                         Height="10"
+                                         Fill="ForestGreen"
+                                         VerticalAlignment="Center" />
+                                <TextBlock Text="正在生成文档。。。。。。。。"
+                                           Margin="10,0,0,0"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </GroupBox.Header>
                         <Grid>
-                            <ScrollViewer>
-                                <component:MarkdownTextBlock
-                                    TextWrapping="Wrap"
-                                    CollectionText="{Binding  Client.RespondingText,Mode=OneWay}" />
-                            </ScrollViewer>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <FlowDocumentScrollViewer Document="{Binding Document,Mode=OneWay}"
+                                                      MaxHeight="700" />
+                            <component:MarkdownTextBlock Grid.Row="1"
+                                                         TextWrapping="Wrap"
+                                                         VerticalAlignment="Top"
+                                                         Source="{Binding  RespondingText,Mode=OneTime}" />
                         </Grid>
                     </GroupBox>
                 </DataTemplate>

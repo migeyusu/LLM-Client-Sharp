@@ -1,10 +1,15 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
 using Markdig;
+using Markdig.Helpers;
+using Markdig.Parsers;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using Markdig.Wpf;
@@ -18,7 +23,7 @@ public class CustomRenderer : WpfRenderer
 
     private static readonly CustomRenderer Renderer;
 
-    private static readonly MarkdownPipeline DefaultPipeline =
+    public static readonly MarkdownPipeline DefaultPipeline =
         new MarkdownPipelineBuilder()
             .UseAdvancedExtensions()
             .UseThinkBlock()
@@ -43,7 +48,18 @@ public class CustomRenderer : WpfRenderer
         return renderer;
     }
 
-    public void RenderItem<T>(T obj, ComponentResourceKey styleKey)
+    public static ComponentResourceKey FunctionCallStyleKey { get; } =
+        new(typeof(CustomRenderer), nameof(FunctionCallStyleKey));
+
+    public static ComponentResourceKey FunctionResultStyleKey { get; } =
+        new(typeof(CustomRenderer), (object)nameof(FunctionResultStyleKey));
+
+    public static ComponentResourceKey TextReasoningStyleKey { get; } =
+        new(typeof(CustomRenderer), (object)nameof(TextReasoningStyleKey));
+
+    public static ComponentResourceKey AnnotationStyleKey => new(typeof(CustomRenderer), nameof(AnnotationStyleKey));
+
+    public void AppendItem<T>(T obj, ComponentResourceKey styleKey)
     {
         var expander = new Expander()
         {
@@ -56,30 +72,15 @@ public class CustomRenderer : WpfRenderer
         ((IAddChild)Document!).AddChild(blockUiContainer);
     }
 
-    public static ComponentResourceKey FunctionCallStyleKey { get; } =
-        new(typeof(CustomRenderer), nameof(FunctionCallStyleKey));
-
-    public static ComponentResourceKey FunctionResultStyleKey { get; } =
-        new(typeof(CustomRenderer), (object)nameof(FunctionResultStyleKey));
-
-    public static ComponentResourceKey TextReasoningStyleKey { get; } =
-        new(typeof(CustomRenderer), (object)nameof(TextReasoningStyleKey));
-
-    public static ComponentResourceKey AnnotationStyleKey => new(typeof(CustomRenderer), nameof(AnnotationStyleKey));
-
-    public static bool TryParseMarkdown(string raw, [NotNullWhen(true)] out MarkdownDocument? document)
+    public void AppendMarkdownObject(MarkdownObject obj)
     {
-        try
+        foreach (var renderer in ObjectRenderers)
         {
-            document = Markdown.Parse(raw, DefaultPipeline);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            // Log the error or handle it as needed
-            Trace.TraceWarning($"Error parsing markdown: {ex.Message}");
-            document = null;
-            return false;
+            if (renderer.Accept(this, obj.GetType()))
+            {
+                renderer.Write(this, obj);
+                break;
+            }
         }
     }
 
@@ -94,12 +95,14 @@ public class CustomRenderer : WpfRenderer
         this.Render(markdown);
     }
 
+
     public void RenderRaw(string raw)
     {
         if (string.IsNullOrEmpty(raw.Trim()))
         {
             return;
         }
+
         var markdown = Markdown.Parse(raw, DefaultPipeline);
         this.Render(markdown);
     }

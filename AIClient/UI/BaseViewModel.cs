@@ -66,7 +66,7 @@ public class BaseViewModel : INotifyPropertyChanged
         }
     }
 
-    public void Dispatch(Action action)
+    protected void Dispatch(Action action)
     {
         if (Dispatcher.CheckAccess())
         {
@@ -78,7 +78,7 @@ public class BaseViewModel : INotifyPropertyChanged
         }
     }
 
-    public async Task DispatchAsync(Action action)
+    protected async Task DispatchAsync(Action action)
     {
         if (!Dispatcher.CheckAccess())
         {

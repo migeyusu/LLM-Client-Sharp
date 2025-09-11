@@ -367,7 +367,7 @@ public static class Extension
         list.Add(Environment.NewLine);
     }
 
-    public static void NewLine(this IList<string> list, string? msg = null)
+    public static void NewLine(this ICollection<string> list, string? msg = null)
     {
         list.Add(Environment.NewLine);
         if (!string.IsNullOrEmpty(msg))
@@ -610,7 +610,7 @@ public static class Extension
                 int tryCount = 0;
                 while (tryCount < retryCount)
                 {
-                    response = await client.SendRequest(dialogContext, token);
+                    response = await client.SendRequest(dialogContext, cancellationToken: token);
                     tryCount++;
                     var textResponse = response.TextResponse;
                     if (!string.IsNullOrEmpty(textResponse) && !response.IsInterrupt)

@@ -19,7 +19,7 @@ public class SearchableDocument : BaseViewModel
 
     public bool HasMatched { get; private set; }
 
-    public SearchableDocument(string rawText)
+    /*public SearchableDocument(string rawText)
     {
         if (string.IsNullOrEmpty(rawText))
         {
@@ -28,7 +28,7 @@ public class SearchableDocument : BaseViewModel
 
         RawText = rawText;
         Document = rawText.RenderOnFlowDocument();
-    }
+    }*/
 
     public SearchableDocument(FlowDocument document)
     {

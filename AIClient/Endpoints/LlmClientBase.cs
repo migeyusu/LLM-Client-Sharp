@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
@@ -9,6 +10,7 @@ using LLMClient.MCP;
 using LLMClient.Rag;
 using LLMClient.UI;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using OpenAI.Chat;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
@@ -46,9 +48,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 
     public IFunctionInterceptor FunctionInterceptor { get; set; } = FunctionAuthorizationInterceptor.Instance;
-
-    [JsonIgnore]
-    public virtual ObservableCollection<string> RespondingText { get; } = new ObservableCollection<string>();
 
     protected abstract IChatClient GetChatClient();
 
@@ -124,7 +123,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
 
         if (kernelPluginCollection.Count != startCount) return true;
-        Trace.TraceWarning("No available tools found in function groups.");
         return false;
     }
 
@@ -132,12 +130,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     [Experimental("SKEXP0001")]
     public virtual async Task<CompletedResult> SendRequest(DialogContext context,
+        Action<string>? stream = null, ILogger? logger = null,
         CancellationToken cancellationToken = default)
     {
         var result = new CompletedResult();
         try
         {
-            RespondingText.Clear();
             IsResponding = true;
             var dialogItems = context.DialogItems;
             var systemPrompt = context.SystemPrompt;
@@ -204,7 +202,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             {
                 functionCallEngine.Initialize(requestOptions, Model, chatHistory);
             }
-            
+
             if (!this.Model.SupportFunctionCall && requestOptions.Tools?.Count > 0)
             {
                 throw new NotSupportedException(
@@ -272,7 +270,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 latency ??= (int)_stopwatch.ElapsedMilliseconds;
                                 preUpdates.Add(update);
                                 //只收集文本内容
-                                RespondingText.Add(update.Text);
+                                AddStream(update.Text);
                             }
 
                             preResponse = preUpdates.ToChatResponse();
@@ -284,7 +282,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             preResponse =
                                 await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
                             //只收集文本内容
-                            RespondingText.Add(preResponse.Text);
+                            AddStream(preResponse.Text);
                             await chatContext.CompleteResponse(preResponse, result);
                         }
 
@@ -302,24 +300,25 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                         //do nothing, textContent is already added to RespondingText
                                         break;
                                     case FunctionCallContent functionCallContent:
-                                        RespondingText.NewLine(functionCallContent.GetDebuggerString());
+                                        NewLine(functionCallContent.GetDebuggerString());
                                         break;
                                     case FunctionResultContent functionResultContent:
-                                        RespondingText.NewLine(functionResultContent.GetDebuggerString());
+                                        NewLine(functionResultContent.GetDebuggerString());
                                         break;
                                     case TextReasoningContent reasoningContent:
                                         var text = reasoningContent.Text;
                                         if (!string.IsNullOrEmpty(text))
                                         {
-                                            RespondingText.NewLine(text);
+                                            stream?.Invoke(Environment.NewLine);
+                                            stream?.Invoke(text);
                                         }
 
                                         break;
                                     default:
-                                        Trace.TraceWarning("unsupported content: " + content.GetType().Name);
-                                        RespondingText.NewLine(
+                                        logger?.LogWarning("unsupported content: " + content.GetType().Name);
+                                        NewLine(
                                             $"Unsupported content type: {content.GetType().Name}");
-                                        RespondingText.Add(content.RawRepresentation?.ToString() ?? string.Empty);
+                                        AddStream(content.RawRepresentation?.ToString() ?? string.Empty);
                                         break;
                                 }
                             }
@@ -336,31 +335,31 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         finishReason = preResponse.FinishReason ?? GetFinishReasonFromAdditional(preResponse);
                         if (finishReason == ChatFinishReason.ToolCalls)
                         {
-                            Trace.TraceInformation("Function call finished, need run function calls...");
+                            logger?.LogInformation("Function call finished, need run function calls...");
                         }
                         else if (finishReason == ChatFinishReason.Stop)
                         {
-                            Trace.TraceInformation("Response completed without function calls.");
+                            logger?.LogInformation("Response completed without function calls.");
                             break;
                         }
                         else if (finishReason == ChatFinishReason.Length)
                         {
-                            Trace.TraceInformation("Exceeded maximum response length.");
+                            logger?.LogInformation("Exceeded maximum response length.");
                             break;
                         }
                         else if (finishReason == ChatFinishReason.ContentFilter)
                         {
-                            Trace.TraceWarning("Response was filtered by content filter.");
+                            logger?.LogWarning("Response was filtered by content filter.");
                             break;
                         }
                         else
                         {
-                            Trace.TraceWarning($"Unexpected finish reason: {finishReason}");
+                            logger?.LogWarning($"Unexpected finish reason: {finishReason}");
                         }
 
                         if (!functionCallEngine.TryParseFunctionCalls(preResponse, out var preFunctionCalls))
                         {
-                            Trace.TraceInformation("No function calls were requested, response completed.");
+                            logger?.LogInformation("No function calls were requested, response completed.");
                             break;
                         }
 
@@ -373,7 +372,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                         #region function call
 
-                        RespondingText.NewLine("Processing function calls...");
+                        NewLine("Processing function calls...");
                         var chatMessage = new ChatMessage();
                         chatHistory.Add(chatMessage);
                         responseMessages.Add(chatMessage);
@@ -401,7 +400,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 //调用拦截器
                                 var invokeResult = await this.FunctionInterceptor.InvokeAsync(
                                     kernelFunction, arguments, functionCallContent, cancellationToken);
-                                RespondingText.NewLine(
+                                NewLine(
                                     $"Function '{functionCallContent.Name}' invoked successfully, result: {invokeResult}");
                                 functionResultContents.Add(new FunctionResultContent(functionCallContent.CallId,
                                     invokeResult));
@@ -419,7 +418,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             }
                             catch (Exception e)
                             {
-                                RespondingText.NewLine("Function call failed: " + e.Message);
+                                NewLine("Function call failed: " + e.Message);
                                 chatMessageContents.Add(new FunctionResultContent(functionCallContent.CallId, null)
                                     { Exception = e });
                                 if (IsQuitWhenFunctionCallFailed)
@@ -451,15 +450,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         }
 
                         errorMessage = ex.Message;
-                        Trace.TraceError($"Error during response: {ex}");
+                        logger?.LogError("Error during response: {Exception}", ex);
                     }
 
                     if (errorMessage != null)
                     {
                         break;
                     }
-                    
-                    RespondingText.NewLine();
+
+                    NewLine();
                 }
             }
 
@@ -477,6 +476,17 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         finally
         {
             IsResponding = false;
+        }
+
+        void NewLine(string? line = null)
+        {
+            stream?.Invoke(Environment.NewLine);
+            if (!string.IsNullOrEmpty(line)) stream?.Invoke(line);
+        }
+
+        void AddStream(string text)
+        {
+            stream?.Invoke(text);
         }
     }
 

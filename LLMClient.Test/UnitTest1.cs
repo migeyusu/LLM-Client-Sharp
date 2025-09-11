@@ -269,7 +269,7 @@ public class UnitTest1
     public void CircularMapping()
     {
         var mapper = serviceProvider.GetService<IMapper>();
-        var client = new FakeLLMClient();
+        var client = new NullLlmModelClient();
         var dialogViewModel =
             new DialogViewModel("test", client, mapper, new GlobalOptions(), new RagSourceCollection());
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
@@ -291,7 +291,7 @@ public class UnitTest1
     public void CircularSerialize()
     {
         var mapper = serviceProvider.GetService<IMapper>()!;
-        var client = new FakeLLMClient();
+        var client = new NullLlmModelClient();
         var dialogViewModel =
             new DialogViewModel("test", client, mapper, new GlobalOptions(), new RagSourceCollection());
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);

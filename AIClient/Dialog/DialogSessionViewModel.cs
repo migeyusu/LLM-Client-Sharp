@@ -653,8 +653,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         try
         {
             multiResponseViewItem.Append(respondingViewItem);
-            completedResult = await client.SendRequest(new DialogContext(history),
-                cancellationToken: respondingViewItem.RequestTokenSource.Token);
+            var dialogContext = new DialogContext(history);
+            completedResult = await respondingViewItem.SendRequest(dialogContext);
         }
         catch (Exception exception)
         {

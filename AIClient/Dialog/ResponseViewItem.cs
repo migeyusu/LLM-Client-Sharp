@@ -76,7 +76,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                 {
                     foreach (var annotation in this.Annotations)
                     {
-                        renderer.RenderItem(annotation,
+                        renderer.AppendItem(annotation,
                             CustomRenderer.AnnotationStyleKey);
                     }
                 }
@@ -88,18 +88,18 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                         switch (content)
                         {
                             case TextReasoningContent reasoningContent:
-                                renderer.RenderItem(reasoningContent,
+                                renderer.AppendItem(reasoningContent,
                                     CustomRenderer.TextReasoningStyleKey);
                                 break;
                             case TextContent textContent:
                                 renderer.RenderRaw(textContent.Text);
                                 break;
                             case FunctionCallContent functionCallContent:
-                                renderer.RenderItem(functionCallContent,
+                                renderer.AppendItem(functionCallContent,
                                     CustomRenderer.FunctionCallStyleKey);
                                 break;
                             case FunctionResultContent functionResultContent:
-                                renderer.RenderItem(functionResultContent,
+                                renderer.AppendItem(functionResultContent,
                                     CustomRenderer.FunctionResultStyleKey);
                                 break;
                             default:

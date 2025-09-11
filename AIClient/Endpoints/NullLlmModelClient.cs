@@ -1,8 +1,11 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
+using System.IO;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.MCP;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LLMClient.Endpoints;
@@ -89,12 +92,42 @@ public class NullLlmModelClient : ILLMChatClient
     };
 
     public IFunctionInterceptor FunctionInterceptor { get; set; } = FunctionAuthorizationInterceptor.Instance;
-    public ObservableCollection<string> RespondingText { get; } = new();
 
-    public Task<CompletedResult> SendRequest(DialogContext context,
+    private readonly string? _fakeFilePath;
+
+    public NullLlmModelClient(string? fakeFilePath = null)
+    {
+        this._fakeFilePath = fakeFilePath;
+    }
+
+    public async Task<CompletedResult> SendRequest(DialogContext context,
+        Action<string>? stream = null, ILogger? logger = null,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(new CompletedResult
+        if (!string.IsNullOrEmpty(_fakeFilePath))
+        {
+            if (File.Exists(_fakeFilePath))
+            {
+                var fakeResponse = await File.ReadAllTextAsync(_fakeFilePath, cancellationToken);
+                int next = Random.Shared.Next(8);
+                int index = 0;
+                while (index < fakeResponse.Length)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    var chunk = fakeResponse.Substring(index, Math.Min(next, fakeResponse.Length - index));
+                    stream?.Invoke(chunk);
+                    index += next;
+                    next = Random.Shared.Next(8);
+                    await Task.Delay(200, cancellationToken);
+                }
+            }
+        }
+
+        return new CompletedResult
         {
             Usage = new UsageDetails
             {
@@ -114,6 +147,6 @@ public class NullLlmModelClient : ILLMChatClient
             ],
             Annotations = null,
             AdditionalProperties = null
-        });
+        };
     }
 }

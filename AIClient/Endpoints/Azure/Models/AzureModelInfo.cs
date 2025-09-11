@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -248,24 +249,23 @@ public class AzureModelInfo : ILLMChatModel
 
     [JsonIgnore] public long? Seed { get; set; }
 
-    private FlowDocument? _description;
+    private FlowDocument? _document;
 
     [JsonIgnore]
-    public FlowDocument? Description
+    public FlowDocument? Document
     {
         get
         {
-            if (DescriptionRaw == null)
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine(DescriptionRaw);
+            stringBuilder.AppendLine(NotesRaw);
+            stringBuilder.AppendLine(EvaluationRaw);
+            if (_document == null)
             {
-                return null;
+                _document = stringBuilder.ToString().RenderOnFlowDocument();
             }
 
-            if (_description == null)
-            {
-                _description = DescriptionRaw.RenderOnFlowDocument();
-            }
-
-            return _description;
+            return _document;
         }
     }
 
@@ -275,50 +275,8 @@ public class AzureModelInfo : ILLMChatModel
 
     [JsonPropertyName("notes")] public string? NotesRaw { get; set; }
 
-    private FlowDocument? _notes;
-
-    [JsonIgnore]
-    public FlowDocument? Notes
-    {
-        get
-        {
-            if (NotesRaw == null)
-            {
-                return null;
-            }
-
-            if (_notes == null)
-            {
-                _notes = NotesRaw.RenderOnFlowDocument();
-            }
-
-            return _notes;
-        }
-    }
-
     [JsonPropertyName("evaluation")] public string? EvaluationRaw { get; set; }
-
-    private FlowDocument? _evaluation;
-
-    [JsonIgnore]
-    public FlowDocument? Evaluation
-    {
-        get
-        {
-            if (EvaluationRaw == null)
-            {
-                return null;
-            }
-
-            if (_evaluation == null)
-            {
-                _evaluation = EvaluationRaw.RenderOnFlowDocument();
-            }
-
-            return _evaluation;
-        }
-    }
-
+    
     [JsonPropertyName("dark_mode_icon")] public string? DarkModeIconString { get; set; }
 
     [JsonPropertyName("light_mode_icon")] public string? LightModeIconString { get; set; }

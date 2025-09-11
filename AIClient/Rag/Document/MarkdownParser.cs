@@ -13,7 +13,7 @@ public class MarkdownParser
     {
         //1. 解析文件
         var markdownText = await File.ReadAllTextAsync(markdownFilePath);
-        if (!CustomRenderer.TryParseMarkdown(markdownText, out var markdownDocument))
+        if (!RendererExtensions.TryParseMarkdown(markdownText, out var markdownDocument))
         {
             throw new Exception("Invalid markdown file");
         }

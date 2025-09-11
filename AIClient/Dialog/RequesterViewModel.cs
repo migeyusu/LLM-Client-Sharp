@@ -36,7 +36,7 @@ public class RequesterViewModel : BaseViewModel
             {
                 return;
             }
-            
+
             var completedResult = await _getResponse.Invoke(this.DefaultClient, requestViewItem, null);
             OnRequestCompleted(completedResult);
             if (!completedResult.IsInterrupt)
@@ -338,7 +338,8 @@ public class RequesterViewModel : BaseViewModel
             SearchOption = SearchConfig.GetUserSearchOption(),
             ThinkingConfig = thinkingConfig,
             RagSources = ragSources.Length > 0 ? ragSources : null,
-            CallEngine = this.FunctionTreeSelector.EngineType,
+            CallEngine = this.FunctionTreeSelector.EngineType ??
+                         this.FunctionTreeSelector.SelectableCallEngineTypes.FirstOrDefault(),
         };
     }
 

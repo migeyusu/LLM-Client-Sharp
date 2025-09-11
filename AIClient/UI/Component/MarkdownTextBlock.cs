@@ -9,8 +9,8 @@ namespace LLMClient.UI.Component;
 
 public class MarkdownTextBlock : TextBlock
 {
-    public static readonly DependencyProperty CollectionTextProperty = DependencyProperty.Register(
-        nameof(CollectionText), typeof(ObservableCollection<string>), typeof(MarkdownTextBlock),
+    public static readonly DependencyProperty SourceProperty = DependencyProperty.Register(
+        nameof(Source), typeof(ObservableCollection<string>), typeof(MarkdownTextBlock),
         new PropertyMetadata(default(ObservableCollection<string>), CollectionTextChangedCallback));
 
     private static void CollectionTextChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -21,10 +21,10 @@ public class MarkdownTextBlock : TextBlock
         }
     }
 
-    public ObservableCollection<string> CollectionText
+    public ObservableCollection<string> Source
     {
-        get { return (ObservableCollection<string>)GetValue(CollectionTextProperty); }
-        set { SetValue(CollectionTextProperty, value); }
+        get { return (ObservableCollection<string>)GetValue(SourceProperty); }
+        set { SetValue(SourceProperty, value); }
     }
 
     private void OnCollectionTextChanged(DependencyPropertyChangedEventArgs args)

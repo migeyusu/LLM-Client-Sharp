@@ -1,6 +1,8 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using LLMClient.Endpoints;
 using LLMClient.MCP;
+using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Abstraction;
 
@@ -21,8 +23,8 @@ public interface ILLMChatClient
 
     IFunctionInterceptor FunctionInterceptor { get; set; }
 
-    ObservableCollection<string> RespondingText { get; }
-
     Task<CompletedResult> SendRequest(DialogContext context,
+        Action<string>? stream = null,
+        ILogger? logger = null,
         CancellationToken cancellationToken = default);
 }

@@ -12,7 +12,7 @@ namespace LLMClient.Test;
 public class UITest
 {
     [Fact]
-    public void Run()
+    public void PDFRun()
     {
         var thread = new Thread(o =>
         {
@@ -22,6 +22,20 @@ public class UITest
                 new PDFExtractor(@"C:\Users\jie.zhu\Desktop\semantic-kernel.pdf"), new RagOption(),
                 PromptsCache.NoCache);
             app.Run(new PDFExtractorWindow(pdfExtractorViewModel));
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+    }
+    
+    [Fact]
+    public void StreamingMDRun()
+    {
+        var thread = new Thread(o =>
+        {
+            var app = new App();
+            app.InitializeComponent();
+            app.Run(new TestWindow());
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();

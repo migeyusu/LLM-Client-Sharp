@@ -66,7 +66,8 @@
                     Margin="10"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
-            <Button Style="{StaticResource MaterialDesignFlatLightButton}"
+            <Button Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Width="90"
                     Command="{Binding SubmitCommand}"
                     Content="确认" />
         </StackPanel>

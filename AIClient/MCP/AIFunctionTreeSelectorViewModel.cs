@@ -35,7 +35,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
         }
     }
 
-    public FunctionCallEngineType EngineType
+    public FunctionCallEngineType? EngineType
     {
         get => _engineType;
         set
@@ -158,7 +158,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
 
     private bool _isInitialized = false;
     private bool _isEnsuring = false;
-    private FunctionCallEngineType _engineType;
+    private FunctionCallEngineType? _engineType;
     private IList<FunctionCallEngineType> _selectableCallEngineTypes;
 
     /// <summary>
