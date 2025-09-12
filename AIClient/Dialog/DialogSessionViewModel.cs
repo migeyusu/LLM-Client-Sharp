@@ -28,15 +28,13 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     /// </summary>
     public virtual bool IsDataChanged { get; set; } = true;
 
-    public event Action<CompletedResult>? ResponseCompleted;
-
     public string? Shortcut
     {
         get
         {
             return DialogItems.OfType<MultiResponseViewItem>()
                 .FirstOrDefault(item => item.IsAvailableInContext)
-                ?.CurrentResponse?.TextContent?.Substring(0, 20);
+                ?.AcceptedResponse?.TextContent?.Substring(0, 20);
         }
     }
 
@@ -115,7 +113,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
             OnPropertyChanged();
             if (value is MultiResponseViewItem viewItem)
             {
-                viewItem.CurrentResponse?.Document?.EnsureSearch();
+                viewItem.AcceptedResponse?.SearchableDocument?.EnsureSearch();
             }
         }
     }
@@ -235,7 +233,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
             {
                 foreach (var responseViewItem in multiResponseViewItem.Items.OfType<ResponseViewItem>())
                 {
-                    responseViewItem.Document?.ApplySearch(_searchText);
+                    responseViewItem.SearchableDocument?.ApplySearch(_searchText);
                 }
             }
         }
@@ -243,7 +241,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         this.FocusedResponse = null;
         if (this.ScrollViewItem is MultiResponseViewItem viewItem)
         {
-            viewItem.CurrentResponse?.Document?.EnsureSearch();
+            viewItem.AcceptedResponse?.SearchableDocument?.EnsureSearch();
         }
     }));
 
@@ -257,7 +255,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         set
         {
             _focusedResponse = value;
-            var document = value?.CurrentResponse?.Document;
+            var document = value?.AcceptedResponse?.SearchableDocument;
             if (document is { HasMatched: true })
             {
                 document.EnsureSearch();
@@ -267,7 +265,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
 
     SearchableDocument? FocusedDocument
     {
-        get { return FocusedResponse?.CurrentResponse?.Document; }
+        get { return FocusedResponse?.AcceptedResponse?.SearchableDocument; }
     }
 
     private void CheckFocusResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
@@ -309,7 +307,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         }
 
         var responseViewItems = DialogItems.OfType<MultiResponseViewItem>()
-            .Where(item => item.AcceptedResponse is ResponseViewItem { Document.HasMatched: true }).ToArray();
+            .Where(item => item.AcceptedResponse is ResponseViewItem { SearchableDocument.HasMatched: true }).ToArray();
         if (responseViewItems.Length == 0)
         {
             MessageEventBus.Publish("没有找到匹配的结果！");
@@ -340,7 +338,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         }
 
         var responseViewItems = DialogItems.OfType<MultiResponseViewItem>()
-            .Where(item => item.AcceptedResponse is ResponseViewItem { Document.HasMatched: true }).ToArray();
+            .Where(item => item.AcceptedResponse is ResponseViewItem { SearchableDocument.HasMatched: true }).ToArray();
         if (responseViewItems.Length == 0)
         {
             MessageEventBus.Publish("没有找到匹配的结果！");
@@ -433,19 +431,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         {
             ScrollViewItem = this.DialogItems.LastOrDefault();
         }
-    }
-
-    public async Task AppendResponseOn(MultiResponseViewItem responseViewItem, ILLMChatClient client)
-    {
-        //获得之前的所有请求
-        var indexOf = DialogItems.IndexOf(responseViewItem);
-        if (indexOf < 1)
-        {
-            return;
-        }
-
-        var dialogItems = GenerateHistoryFromSelf(indexOf - 1);
-        await SendRequestCore(client, dialogItems, responseViewItem, this.SystemPrompt);
     }
 
     public void RemoveAfter(MultiResponseViewItem responseViewItem)
@@ -629,51 +614,67 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     public ICommand CancelLastCommand => new ActionCommand(_ =>
     {
         var multiResponseViewItem = DialogItems.LastOrDefault() as MultiResponseViewItem;
-        if (multiResponseViewItem?.AcceptedResponse is RespondingViewItem respondingViewItem)
-        {
-            respondingViewItem.CancelCommand.Execute(null);
-        }
+        multiResponseViewItem?.AcceptedResponse?.CancelCommand?.Execute(null);
     });
 
-    private readonly IMapper _mapper;
-
-    public async Task<CompletedResult> SendRequestCore(ILLMChatClient client,
-        IList<IDialogItem> history,
-        MultiResponseViewItem multiResponseViewItem, string? systemPrompt = null)
+    public DialogContext CreateDialogContextBefore(MultiResponseViewItem? responseViewItem = null)
     {
-        var completedResult = CompletedResult.Empty;
-        if (client.IsResponding)
+        int? endIndex = null;
+        if (responseViewItem != null)
         {
-            MessageEventBus.Publish("模型正在响应中，请稍后再试。");
-            return completedResult;
+            //获得之前的所有请求
+            var indexOf = DialogItems.IndexOf(responseViewItem);
+            if (indexOf >= 1)
+            {
+                endIndex = indexOf - 1;
+            }
         }
 
+
+        var dialogItems = GenerateHistoryFromSelf(endIndex);
+        return new DialogContext(dialogItems, this.SystemPrompt);
+    }
+
+    public async Task<CompletedResult> InvokeOn(Func<Task<CompletedResult>> invoke)
+    {
         RespondingCount++;
-        var respondingViewItem = new RespondingViewItem(client);
+        CompletedResult completedResult;
         try
         {
-            multiResponseViewItem.Append(respondingViewItem);
-            var dialogContext = new DialogContext(history);
-            completedResult = await respondingViewItem.SendRequest(dialogContext);
-        }
-        catch (Exception exception)
-        {
-            MessageBox.Show(exception.Message, "发送失败", MessageBoxButton.OK, MessageBoxImage.Error);
-            completedResult.ErrorMessage = exception.Message;
+            completedResult = await invoke.Invoke();
         }
         finally
         {
-            respondingViewItem.RequestTokenSource.Dispose();
-            var responseViewItem = new ResponseViewItem(client);
-            _mapper.Map<IResponse, ResponseViewItem>(completedResult, responseViewItem);
-            multiResponseViewItem.Append(responseViewItem);
-            multiResponseViewItem.Remove(respondingViewItem);
             RespondingCount--;
         }
 
         this.TokensConsumption += completedResult.Usage?.TotalTokenCount ?? 0;
         this.TotalPrice += completedResult.Price ?? 0;
-        OnResponseCompleted(completedResult);
+        return completedResult;
+    }
+
+    private readonly IMapper _mapper;
+
+    public async Task<CompletedResult> AddNewResponse(ILLMChatClient client,
+        IList<IDialogItem> history,
+        MultiResponseViewItem multiResponseViewItem, string? systemPrompt = null)
+    {
+        CompletedResult completedResult;
+        RespondingCount++;
+        var responseViewItem = new ResponseViewItem(client);
+        try
+        {
+            multiResponseViewItem.Append(responseViewItem);
+            var dialogContext = new DialogContext(history, systemPrompt);
+            completedResult = await responseViewItem.SendRequest(dialogContext);
+        }
+        finally
+        {
+            RespondingCount--;
+        }
+
+        this.TokensConsumption += completedResult.Usage?.TotalTokenCount ?? 0;
+        this.TotalPrice += completedResult.Price ?? 0;
         return completedResult;
     }
 
@@ -687,7 +688,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         {
             items.Add(requestViewItem);
             items.Add(multiResponseViewItem);
-            insertIndex = items.Count - 2;
         }
         else
         {
@@ -698,16 +698,18 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         }
 
         this.ScrollViewItem = multiResponseViewItem;
-        var history = this.GenerateHistoryFromSelf(insertIndex);
         this.IsNewResponding = true;
+        CompletedResult completedResult;
         try
         {
-            return await SendRequestCore(client, history, multiResponseViewItem, this.SystemPrompt);
+            completedResult = await multiResponseViewItem.New(client);
         }
         finally
         {
             IsNewResponding = false;
         }
+
+        return completedResult;
     }
 
     #endregion
@@ -854,10 +856,5 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     private void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         this.IsDataChanged = true;
-    }
-
-    protected virtual void OnResponseCompleted(CompletedResult obj)
-    {
-        ResponseCompleted?.Invoke(obj);
     }
 }

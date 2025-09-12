@@ -3,8 +3,8 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Endpoints;
 using LLMClient.UI;
-using LLMClient.UI.Component;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
@@ -60,7 +60,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
         }
     }
 
-    public ObservableCollection<IResponseViewItem> Items
+    public ObservableCollection<ResponseViewItem> Items
     {
         get => _items;
         set
@@ -74,10 +74,10 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
         }
     }
 
-    private int _acceptedIndex = -1;
     private bool _isMultiResponse = false;
-    private ObservableCollection<IResponseViewItem> _items;
+    private ObservableCollection<ResponseViewItem> _items;
     private ILLMChatModel? _selectedModel;
+    private ResponseViewItem? _acceptedResponse;
 
     public ILLMChatModel? SelectedModel
     {
@@ -106,7 +106,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
             PopupBox.ClosePopupCommand.Execute(this, frameworkElement);
         }
 
-        await ParentSession.AppendResponseOn(this, llmClient);
+        this.New(llmClient);
     });
 
     public ICommand RebaseCommand => new ActionCommand(o => { ParentSession.RemoveAfter(this); });
@@ -114,75 +114,34 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
     //标记为有效结果
     public ICommand MarkValid => new ActionCommand((o =>
     {
-        if (this.AcceptedResponse is ResponseViewItem responseViewItem)
+        if (this.AcceptedResponse != null)
         {
-            responseViewItem.IsManualValid = true;
+            this.AcceptedResponse.IsManualValid = true;
         }
     }));
 
     public ICommand RefreshSelectedCommand => new ActionCommand(o => RetryCurrent());
 
-    public int AcceptedIndex
-    {
-        get => _acceptedIndex;
-        set
-        {
-            if (value == _acceptedIndex) return;
-            _acceptedIndex = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(AcceptedResponse));
-        }
-    }
-
     public ICommand SetAsAvailableCommand => new ActionCommand(o =>
     {
-        if (o is IResponseViewItem response)
+        if (o is ResponseViewItem response)
         {
-            if (response is ResponseViewItem responseViewItem)
-            {
-                responseViewItem.SwitchAvailableInContext();
-            }
-            else if (response is RespondingViewItem)
-            {
-                MessageEventBus.Publish("正在回复！");
-            }
+            response.SwitchAvailableInContext();
         }
     });
 
-
-    public ResponseViewItem? CurrentResponse
+    public ResponseViewItem? AcceptedResponse
     {
-        get
+        get => _acceptedResponse;
+        set
         {
-            if (AcceptedResponse is ResponseViewItem response)
-            {
-                return response;
-            }
-
-            return null;
-        }
-    }
-
-    public IResponseViewItem? AcceptedResponse
-    {
-        get
-        {
-            if (Items.Count == 0)
-            {
-                return null;
-            }
-
-            if (Items.Count == 1)
-            {
-                return Items[0];
-            }
-
-            if (AcceptedIndex < 0)
-            {
-                AcceptedIndex = 0;
-            }
-
-            return Items[AcceptedIndex];
+            if (Equals(value, _acceptedResponse)) return;
+            _acceptedResponse = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAvailableInContext));
+            OnPropertyChanged(nameof(Tokens));
+            OnPropertyChanged(nameof(MarkValid));
+            OnPropertyChanged(nameof(EditCommand));
         }
     }
 
@@ -201,28 +160,25 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
 
     public ICommand EditCommand => new ActionCommand(o =>
     {
-        if (AcceptedResponse is ResponseViewItem response)
+        if (AcceptedResponse is { } response)
         {
             var editView = response.EditViewModel;
             DialogHost.Show(editView);
         }
     });
-    
-    public ICommand CopyInteractionCommand => new ActionCommand(o =>
-    {
-        this.ParentSession.CopyInteraction(this);
-    });
-    
+
+    public ICommand CopyInteractionCommand => new ActionCommand(o => { this.ParentSession.CopyInteraction(this); });
+
     public ICommand PasteInteractionCommand => new ActionCommand(o =>
     {
         var indexOf = this.ParentSession.DialogItems.IndexOf(this);
         this.ParentSession.PasteInteraction(indexOf + 1);
     });
 
-    public MultiResponseViewItem(IEnumerable<IResponseViewItem> items, DialogSessionViewModel parentSession)
+    public MultiResponseViewItem(IEnumerable<ResponseViewItem> items, DialogSessionViewModel parentSession)
     {
         ParentSession = parentSession;
-        _items = new ObservableCollection<IResponseViewItem>(items);
+        _items = new ObservableCollection<ResponseViewItem>(items);
         IsMultiResponse = Items.Count > 1;
     }
 
@@ -233,38 +189,40 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
     public async void RetryCurrent()
     {
         // var index = multiResponseViewItem.AcceptedIndex;
-        if (this.AcceptedResponse is not ResponseViewItem responseViewItem)
+        var responseViewItem = this.AcceptedResponse;
+        if (responseViewItem == null)
         {
-            MessageEventBus.Publish("未选择响应！");
+            MessageBox.Show("未选择响应！");
             return;
         }
 
-        var client = responseViewItem.Client;
-        if (client == null)
-        {
-            MessageEventBus.Publish("已无法找到模型！");
-            return;
-        }
-
-        this.Remove(responseViewItem);
-        await ParentSession.AppendResponseOn(this, client);
+        var dialogContext = ParentSession.CreateDialogContextBefore(this);
+        await ParentSession.InvokeOn(() => responseViewItem.SendRequest(dialogContext));
     }
 
-    public void Append(IResponseViewItem viewItem)
+    public Task<CompletedResult> New(ILLMChatClient chatClient)
+    {
+        var responseViewItem = new ResponseViewItem(chatClient);
+        this.Append(responseViewItem);
+        var dialogContext = ParentSession.CreateDialogContextBefore(this);
+        return ParentSession.InvokeOn(() => responseViewItem.SendRequest(dialogContext));
+    }
+
+    public void Append(ResponseViewItem viewItem)
     {
         this.Items.Add(viewItem);
-        this.AcceptedIndex = this.Items.Count - 1;
-        IsMultiResponse = Items.Count > 1;
+        this.AcceptedResponse = viewItem;
+        this.IsMultiResponse = Items.Count > 1;
     }
 
-    public void Insert(IResponseViewItem viewItem, int index)
+    public void Insert(ResponseViewItem viewItem, int index)
     {
         this.Items.Insert(index, viewItem);
-        this.AcceptedIndex = index;
-        IsMultiResponse = Items.Count > 1;
+        this.AcceptedResponse = viewItem;
+        this.IsMultiResponse = Items.Count > 1;
     }
 
-    public void Remove(IResponseViewItem viewItem)
+    public void Remove(ResponseViewItem viewItem)
     {
         var indexOf = this.Items.IndexOf(viewItem);
         if (indexOf < 0)
@@ -272,20 +230,24 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
             return;
         }
 
-        var acceptedIndex = AcceptedIndex;
+        var removeAccepted = AcceptedResponse == viewItem;
         this.Items.RemoveAt(indexOf);
-        if (acceptedIndex >= indexOf)
+        this.IsMultiResponse = Items.Count > 1;
+        if (removeAccepted)
         {
-            this.AcceptedIndex = acceptedIndex - 1;
+            this.AcceptedResponse = _items.FirstOrDefault();
         }
-
-        IsMultiResponse = Items.Count > 1;
     }
 
     public void RemoveAt(int index)
     {
+        var responseViewItem = this.Items[index];
         this.Items.RemoveAt(index);
-        this.AcceptedIndex = AcceptedIndex - 1;
-        IsMultiResponse = Items.Count > 1;
+        if (responseViewItem == AcceptedResponse)
+        {
+            this.AcceptedResponse = _items.FirstOrDefault();
+        }
+
+        this.IsMultiResponse = Items.Count > 1;
     }
 }

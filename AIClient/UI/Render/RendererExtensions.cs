@@ -92,7 +92,7 @@ public static class RendererExtensions
 
         var blockProcessor =
             new BlockProcessor(document, new BlockParserList(blockParsers), null);
-        ProcessBlocks(blockProcessor, source);
+        ProcessBlocksStreaming(blockProcessor, source);
         document.LineCount = blockProcessor.LineIndex;
 
 
@@ -113,7 +113,7 @@ public static class RendererExtensions
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ProcessBlocks(BlockProcessor blockProcessor, BlockingCollection<string> blocks)
+    private static void ProcessBlocksStreaming(BlockProcessor blockProcessor, BlockingCollection<string> blocks)
     {
         var lineReader = new LineReaderBuffer();
         foreach (var block in blocks.GetConsumingEnumerable())

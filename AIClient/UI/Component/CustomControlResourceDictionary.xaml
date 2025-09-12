@@ -248,7 +248,7 @@
                                 CommandTarget="{TemplateBinding CommandTarget}"
                                 Style="{StaticResource MaterialDesignPaperDarkButton}"
                                 materialDesign:ButtonAssist.CornerRadius="15"
-                                Background="White"
+                                Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
                                 BorderThickness="0"
                                 Padding="10,5"
                                 ToolTip="配置模型">

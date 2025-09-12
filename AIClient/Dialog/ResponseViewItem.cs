@@ -1,16 +1,22 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using LLMClient.UI.Render;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -41,24 +47,106 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
     public ILLMChatClient? Client { get; }
 
+    public bool IsResponding
+    {
+        get => _isResponding;
+        set
+        {
+            if (value == _isResponding) return;
+            _isResponding = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Document));
+        }
+    }
+
     /// <summary>
     /// 是否中断
     /// </summary>
-    public bool IsInterrupt { get; set; }
+    public bool IsInterrupt
+    {
+        get => _isInterrupt;
+        set
+        {
+            if (value == _isInterrupt) return;
+            _isInterrupt = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAvailableInContext));
+        }
+    }
 
-    public long Tokens { get; set; }
+    public long Tokens
+    {
+        get => _tokens;
+        set
+        {
+            if (value == _tokens) return;
+            _tokens = value;
+            OnPropertyChanged();
+        }
+    }
 
-    public int Latency { get; set; }
+    public int Latency
+    {
+        get => _latency;
+        set
+        {
+            if (value == _latency) return;
+            _latency = value;
+            OnPropertyChanged();
+        }
+    }
 
-    public int Duration { get; set; }
+    public int Duration
+    {
+        get => _duration;
+        set
+        {
+            if (value == _duration) return;
+            _duration = value;
+            OnPropertyChanged();
+        }
+    }
 
-    public string? ErrorMessage { get; set; }
+    public string? ErrorMessage
+    {
+        get => _errorMessage;
+        set
+        {
+            if (value == _errorMessage) return;
+            _errorMessage = value;
+            OnPropertyChanged();
+        }
+    }
 
-    public double? Price { get; set; }
+    public double? Price
+    {
+        get => _price;
+        set
+        {
+            if (Nullable.Equals(value, _price)) return;
+            _price = value;
+            OnPropertyChanged();
+        }
+    }
 
-    private SearchableDocument? _flowDocument = null;
+    private FlowDocument? _tempDocument;
 
-    public SearchableDocument? Document
+    public FlowDocument? Document
+    {
+        get
+        {
+            if (this.IsResponding)
+            {
+                return _tempDocument;
+            }
+
+            return ResultDocument;
+        }
+    }
+
+    private FlowDocument? _resultDocument;
+
+    private FlowDocument? ResultDocument
     {
         get
         {
@@ -67,11 +155,10 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                 return null;
             }
 
-            // 如果已经有了，则直接返回
-            if (_flowDocument == null)
+            if (_resultDocument == null)
             {
-                var flowDocument = new FlowDocument();
-                var renderer = CustomRenderer.NewRenderer(flowDocument);
+                _resultDocument = new FlowDocument();
+                var renderer = CustomRenderer.NewRenderer(_resultDocument);
                 if (this.Annotations != null)
                 {
                     foreach (var annotation in this.Annotations)
@@ -108,11 +195,29 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                         }
                     }
                 }
-
-                _flowDocument = new SearchableDocument(flowDocument);
             }
 
-            return _flowDocument;
+            return _resultDocument;
+        }
+    }
+
+    private SearchableDocument? _searchableDocument = null;
+
+    public SearchableDocument? SearchableDocument
+    {
+        get
+        {
+            // 如果已经有了，则直接返回
+            if (_searchableDocument == null)
+            {
+                var resultDocument = ResultDocument;
+                if (resultDocument != null)
+                {
+                    _searchableDocument = new SearchableDocument(resultDocument);
+                }
+            }
+
+            return _searchableDocument;
         }
     }
 
@@ -147,7 +252,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                 }
                 else
                 {
-                    _textContent = String.Empty;
+                    _textContent = string.Empty;
                 }
             }
 
@@ -159,13 +264,43 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
     /// <summary>
     /// response messages 来源于回复，但是为了前向兼容，允许基于raw生成
     /// </summary>
-    public IList<ChatMessage>? ResponseMessages { get; set; }
+    public IList<ChatMessage>? ResponseMessages
+    {
+        get => _responseMessages;
+        set
+        {
+            if (Equals(value, _responseMessages)) return;
+            _responseMessages = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SearchableDocument));
+            OnPropertyChanged(nameof(Document));
+            OnPropertyChanged(nameof(TextContent));
+        }
+    }
 
-    public ChatFinishReason? FinishReason { get; set; }
+    public ChatFinishReason? FinishReason
+    {
+        get => _finishReason;
+        set
+        {
+            if (Nullable.Equals(value, _finishReason)) return;
+            _finishReason = value;
+            OnPropertyChanged();
+        }
+    }
 
     public IList<ChatAnnotation>? Annotations { get; set; }
 
     private bool _isManualValid = false;
+    private bool _isInterrupt;
+    private long _tokens;
+    private int _latency;
+    private int _duration;
+    private string? _errorMessage;
+    private double? _price;
+    private IList<ChatMessage>? _responseMessages;
+    private ChatFinishReason? _finishReason;
+    private bool _isResponding;
 
     /// <summary>
     /// 手动标记为有效 
@@ -208,6 +343,82 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         Client = client;
     }
 
+    #region responding
+
+    public ICommand CancelCommand => new ActionCommand(o => { RequestTokenSource?.Cancel(); });
+
+    public CancellationTokenSource? RequestTokenSource { get; private set; }
+
+    public ObservableCollection<string> RespondingText { get; } = new();
+
+    public async Task<CompletedResult> SendRequest(DialogContext context)
+    {
+        var completedResult = CompletedResult.Empty;
+        try
+        {
+            //todo:?
+            if (Client == null)
+            {
+                throw new InvalidOperationException("Client is null");
+            }
+
+            if (Client.IsResponding)
+            {
+                throw new InvalidOperationException("Client is busy");
+            }
+
+            _tempDocument = new FlowDocument();
+            IsResponding = true;
+            RespondingText.Clear();
+            using (RequestTokenSource = new CancellationTokenSource())
+            {
+                using (var blockingCollection = new BlockingCollection<string>())
+                {
+                    var customRenderer = CustomRenderer.NewRenderer(_tempDocument);
+                    var task = Task.Run(() =>
+                    {
+                        // ReSharper disable once AccessToDisposedClosure
+                        RendererExtensions.StreamParse(blockingCollection,
+                            (_, block) =>
+                            {
+                                Dispatch(() =>
+                                {
+                                    RespondingText.Clear();
+                                    customRenderer.AppendMarkdownObject(block);
+                                });
+                            });
+                    });
+                    completedResult = await Client.SendRequest(context,
+                        responseText =>
+                        {
+                            blockingCollection.Add(responseText);
+                            Dispatch(() => RespondingText.Add(responseText));
+                        },
+                        cancellationToken: RequestTokenSource.Token);
+                    blockingCollection.CompleteAdding();
+                    await task.WaitAsync(CancellationToken.None);
+                    ServiceLocator.GetService<IMapper>()!
+                        .Map<IResponse, ResponseViewItem>(completedResult, this);
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(exception.Message, "发送失败", MessageBoxButton.OK, MessageBoxImage.Error);
+            this.ErrorMessage = exception.Message;
+        }
+        finally
+        {
+            RespondingText.Clear();
+            _tempDocument = null;
+            IsResponding = false;
+        }
+
+        return completedResult;
+    }
+
+    #endregion
+
     public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -223,9 +434,10 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
     public void TriggerTextContentUpdate()
     {
-        _flowDocument = null;
+        _resultDocument = null;
         _textContent = null;
         OnPropertyChanged(nameof(Document));
+        OnPropertyChanged(nameof(SearchableDocument));
         OnPropertyChanged(nameof(TextContent));
     }
 

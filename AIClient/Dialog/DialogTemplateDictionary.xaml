@@ -5,8 +5,7 @@
                     xmlns:ui="clr-namespace:LLMClient.UI"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
-                    xmlns:dialog="clr-namespace:LLMClient.Dialog"
-                    xmlns:local="clr-namespace:LLMClient.Rag">
+                    xmlns:dialog="clr-namespace:LLMClient.Dialog">
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
                   DataType="{x:Type dialog:RequestViewItem}">
         <Grid HorizontalAlignment="Right"
@@ -76,8 +75,8 @@
                                                      Margin="0"
                                                      ToolTipService.InitialShowDelay="0"
                                                      ToolTip="{Binding OriUri,Mode=OneTime}"
-                                                     Command="{Binding OpenFileCommand}"
-                                                     Content="{Binding Name,Mode=OneTime}">
+                                                     Content="{Binding Name,Mode=OneTime}"
+                                                     Command="{Binding OpenFileCommand}">
                                     <materialDesign:Chip.Icon>
                                         <materialDesign:PackIcon
                                             Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
@@ -95,185 +94,78 @@
             </materialDesign:Card>
         </Grid>
     </DataTemplate>
-    <component:TypeBasedDataTemplateSelector x:Key="MultiResponseHeaderTemplateSelector">
-        <component:DataTemplateTypePair>
-            <component:DataTemplateTypePair.Template>
-                <DataTemplate DataType="{x:Type dialog:ResponseViewItem}">
-                    <StackPanel Orientation="Horizontal"
-                                Margin="3"
-                                ToolTipService.InitialShowDelay="0"
-                                ToolTip="{Binding Model.Endpoint.DisplayName,Mode=OneTime}">
-                        <Image VerticalAlignment="Center"
-                               RenderOptions.BitmapScalingMode="HighQuality"
-                               Source="{Binding Model.Icon.CurrentSource,Mode=OneWay}"
-                               Width="26"
-                               Height="26" />
-                        <TextBlock Text="{Binding ModelName,Mode=OneTime}"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0"
-                                   MaxWidth="200"
-                                   TextTrimming="CharacterEllipsis"
-                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
-                        <materialDesign:PackIcon Kind="ExclamationThick"
-                                                 Foreground="Red"
-                                                 Height="30"
-                                                 Width="30"
-                                                 VerticalAlignment="Center"
-                                                 Margin="-5,0"
-                                                 ToolTip="当前回复有错误，将不加入对话上下文"
-                                                 Visibility="{Binding IsAvailableInContext,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
-                        <Button Width="16"
-                                Height="16"
-                                Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveCommand}"
-                                Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
-                                CommandParameter="{Binding  }"
-                                Margin="6,0,-6,0"
-                                VerticalAlignment="Center"
-                                ToolTip="删除当前"
-                                Template="{StaticResource ItemDeleteButtonTemplate}" />
-                    </StackPanel>
-                </DataTemplate>
-            </component:DataTemplateTypePair.Template>
-        </component:DataTemplateTypePair>
-        <component:DataTemplateTypePair>
-            <component:DataTemplateTypePair.Template>
-                <DataTemplate DataType="{x:Type dialog:RespondingViewItem}">
-                    <StackPanel Orientation="Horizontal">
-                        <Button Width="32"
-                                Height="32"
-                                Padding="0"
-                                Command="{Binding CancelCommand}"
-                                Style="{StaticResource MaterialDesignIconButton}">
-                            <Grid>
-                                <ProgressBar IsIndeterminate="True"
-                                             Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light.Foreground}"
-                                             Width="28"
-                                             Height="28"
-                                             Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                             Value="0" />
-                                <materialDesign:PackIcon Width="17"
-                                                         Height="17"
-                                                         Kind="Stop"
-                                                         VerticalAlignment="Center"
-                                                         HorizontalAlignment="Center" />
-                            </Grid>
-                        </Button>
-                        <TextBlock Text="{Binding ModelName,Mode=OneTime}"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0"
-                                   MaxWidth="200"
-                                   TextTrimming="CharacterEllipsis">
-                            <TextBlock.Style>
-                                <Style TargetType="{x:Type TextBlock}"
-                                       BasedOn="{StaticResource MaterialDesignSubtitle2TextBlock}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsAvailableInContext,Mode=OneWay}"
-                                                     Value="True">
-                                            <Setter Property="Foreground"
-                                                    Value="Red" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                </DataTemplate>
-            </component:DataTemplateTypePair.Template>
-        </component:DataTemplateTypePair>
-    </component:TypeBasedDataTemplateSelector>
-    <component:TypeBasedDataTemplateSelector x:Key="MultiResponseContentTemplateSelector">
-        <component:DataTemplateTypePair>
-            <component:DataTemplateTypePair.Template>
-                <DataTemplate DataType="{x:Type dialog:RespondingViewItem}">
-                    <GroupBox materialDesign:ColorZoneAssist.Mode="PrimaryLight"
-                              Style="{StaticResource MaterialDesignCardGroupBox}">
-                        <GroupBox.Header>
-                            <StackPanel Orientation="Horizontal">
-                                <Ellipse Width="10"
-                                         Height="10"
-                                         Fill="ForestGreen"
-                                         VerticalAlignment="Center" />
-                                <TextBlock Text="正在生成文档。。。。。。。。"
-                                           Margin="10,0,0,0"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </GroupBox.Header>
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition />
-                            </Grid.RowDefinitions>
-                            <FlowDocumentScrollViewer Document="{Binding Document,Mode=OneWay}"
-                                                      MaxHeight="700" />
-                            <component:MarkdownTextBlock Grid.Row="1"
-                                                         TextWrapping="Wrap"
-                                                         VerticalAlignment="Top"
-                                                         Source="{Binding  RespondingText,Mode=OneTime}" />
-                        </Grid>
-                    </GroupBox>
-                </DataTemplate>
-            </component:DataTemplateTypePair.Template>
-        </component:DataTemplateTypePair>
-        <component:DataTemplateTypePair>
-            <component:DataTemplateTypePair.Template>
-                <DataTemplate DataType="{x:Type dialog:ResponseViewItem}">
-                    <StackPanel>
-                        <component:FlowDocumentScrollViewerEx
-                            BorderThickness="0"
-                            HighlightableRanges="{Binding Document.FoundTextRanges,Mode=OneWay}"
-                            CleanDocument="{Binding Document.Document,Mode=OneWay}"
-                            Style="{StaticResource ExFlowDocumentScrollViewerStyle}"
-                            Visibility="{Binding Document,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance},Mode=OneTime}">
-                            <component:FlowDocumentScrollViewerEx.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Command="Copy"
-                                              Header="复制选定">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon
-                                                Kind="ContentCopy" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Command="SelectAll"
-                                              Header="全选">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon
-                                                Kind="SelectAll" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <Separator />
-                                    <MenuItem Header="复制文本"
-                                              Command="{x:Static ui:CommonCommands.CopyCommand}"
-                                              CommandParameter="{Binding Mode=OneTime}">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon
-                                                Kind="ContentCopy" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="导出"
-                                              ToolTip="导出为Markdown"
-                                              Command="{x:Static ui:CommonCommands.ExportCommand}"
-                                              CommandParameter="{Binding TextContent,Mode=OneTime}">
-                                        <MenuItem.Icon>
-                                            <materialDesign:PackIcon
-                                                Kind="Export" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                </ContextMenu>
-                            </component:FlowDocumentScrollViewerEx.ContextMenu>
-                        </component:FlowDocumentScrollViewerEx>
-                        <TextBox IsReadOnly="True"
-                                 materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                 BorderThickness="0"
-                                 Text="{Binding ErrorMessage,Mode=OneTime}"
-                                 TextWrapping="Wrap"
-                                 Foreground="Red"
-                                 Padding="10"
-                                 Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-                    </StackPanel>
-                </DataTemplate>
-            </component:DataTemplateTypePair.Template>
-        </component:DataTemplateTypePair>
-    </component:TypeBasedDataTemplateSelector>
+    <DataTemplate x:Key="ResponseContentTemplate" DataType="{x:Type dialog:ResponseViewItem}">
+        <StackPanel>
+            <materialDesign:Card Padding="8"
+                                 Visibility="{Binding IsResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
+                                 Background="{DynamicResource MaterialDesign.Brush.Primary.Dark}"
+                                 Foreground="{DynamicResource MaterialDesign.Brush.Primary.Dark.Foreground}">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="10"
+                             Height="10"
+                             Fill="ForestGreen"
+                             VerticalAlignment="Center" />
+                    <TextBlock Text="正在生成文档。。。。。。。。"
+                               Margin="10,0,0,0"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </materialDesign:Card>
+            <component:FlowDocumentScrollViewerEx
+                BorderThickness="0"
+                HighlightableRanges="{Binding SearchableDocument.FoundTextRanges,Mode=OneWay}"
+                CleanDocument="{Binding Document,Mode=OneWay}"
+                Style="{StaticResource ExFlowDocumentScrollViewerStyle}">
+                <component:FlowDocumentScrollViewerEx.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="Copy"
+                                  Header="复制选定">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon
+                                    Kind="ContentCopy" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Command="SelectAll"
+                                  Header="全选">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon
+                                    Kind="SelectAll" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="复制文本"
+                                  Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                  CommandParameter="{Binding Mode=OneTime}">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon
+                                    Kind="ContentCopy" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="导出"
+                                  ToolTip="导出为Markdown"
+                                  Command="{x:Static ui:CommonCommands.ExportCommand}"
+                                  CommandParameter="{Binding TextContent,Mode=OneWay}">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon
+                                    Kind="Export" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </component:FlowDocumentScrollViewerEx.ContextMenu>
+            </component:FlowDocumentScrollViewerEx>
+            <component:MarkdownTextBlock TextWrapping="Wrap"
+                                         VerticalAlignment="Top"
+                                         Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                         Source="{Binding  RespondingText,Mode=OneTime}" />
+            <TextBox IsReadOnly="True"
+                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                     BorderThickness="0"
+                     Text="{Binding ErrorMessage,Mode=OneWay}"
+                     TextWrapping="Wrap"
+                     Foreground="Red"
+                     Padding="10"
+                     Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+        </StackPanel>
+    </DataTemplate>
     <DataTemplate x:Key="EraseDataTemplate"
                   DataType="{x:Type dialog:EraseViewItem}">
         <Grid Height="30">
@@ -343,11 +235,72 @@
                              VerticalAlignment="Bottom"
                              VerticalContentAlignment="Bottom"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                             SelectedIndex="{Binding AcceptedIndex,Mode=TwoWay}"
+                             SelectedItem="{Binding AcceptedResponse,Mode=TwoWay}"
                              Style="{StaticResource MaterialDesignChoiceChipPrimaryListBox}"
                              ItemsSource="{Binding Items,Mode=OneWay}"
-                             ItemTemplateSelector="{StaticResource MultiResponseHeaderTemplateSelector}"
                              ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type dialog:ResponseViewItem}">
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="3"
+                                            ToolTipService.InitialShowDelay="0"
+                                            ToolTip="{Binding Model.Endpoint.DisplayName,Mode=OneTime}">
+                                    <Button Width="32"
+                                            Height="32"
+                                            Padding="0"
+                                            Margin="-10,0,6,0"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Command="{Binding CancelCommand}"
+                                            Style="{StaticResource MaterialDesignIconButton}">
+                                        <Grid>
+                                            <ProgressBar IsIndeterminate="True"
+                                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light.Foreground}"
+                                                         Width="28"
+                                                         Height="28"
+                                                         Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                                         Value="0" />
+                                            <materialDesign:PackIcon Width="17"
+                                                                     Height="17"
+                                                                     Kind="Stop"
+                                                                     VerticalAlignment="Center"
+                                                                     HorizontalAlignment="Center" />
+                                        </Grid>
+                                    </Button>
+                                    <Image VerticalAlignment="Center"
+                                           RenderOptions.BitmapScalingMode="HighQuality"
+                                           Source="{Binding Model.Icon.CurrentSource,Mode=OneWay}"
+                                           Width="26"
+                                           Height="26" />
+                                    <TextBlock Text="{Binding ModelName,Mode=OneTime}"
+                                               VerticalAlignment="Center"
+                                               Margin="6,0,0,0"
+                                               MaxWidth="200"
+                                               TextTrimming="CharacterEllipsis"
+                                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                    <materialDesign:PackIcon Kind="ExclamationThick"
+                                                             Foreground="Red"
+                                                             Height="30"
+                                                             Width="30"
+                                                             VerticalAlignment="Center"
+                                                             Margin="-5,0"
+                                                             ToolTip="当前回复有错误，将不加入对话上下文"
+                                                             Visibility="{Binding IsAvailableInContext,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
+                                    <Border BorderThickness="0"
+                                            Margin="6,0,-6,0"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding IsResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
+                                        <Button Width="16"
+                                                Height="16"
+                                                Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveCommand}"
+                                                Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
+                                                CommandParameter="{Binding  }"
+                                                ToolTip="删除当前"
+                                                Template="{StaticResource ItemDeleteButtonTemplate}" />
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
                         <ListBox.Resources>
                             <Style TargetType="{x:Type ScrollViewer}"
                                    BasedOn="{StaticResource HorizontalArrowScrollViewer}" />
@@ -434,7 +387,7 @@
                                  BorderThickness="0"
                                  Style="{StaticResource MaterialDesignOutlinedCard}">
                 <ContentControl Content="{Binding AcceptedResponse,Mode=OneWay}"
-                                ContentTemplateSelector="{StaticResource MultiResponseContentTemplateSelector}" />
+                                ContentTemplate="{StaticResource ResponseContentTemplate}" />
             </materialDesign:Card>
             <TextBlock DataContext="{Binding AcceptedResponse,Mode=OneWay}"
                        HorizontalAlignment="Left"
@@ -442,11 +395,11 @@
                 <TextBlock.Text>
                     <MultiBinding
                         StringFormat="Tokens: {0}, Price：{1:F4}$，Latency: {2}ms, Duration:{3}s, Speed:{4:F1}tps">
-                        <Binding Path="Tokens" Mode="OneTime" />
-                        <Binding Path="Price" Mode="OneTime" TargetNullValue="None" />
-                        <Binding Path="Latency" Mode="OneTime" />
-                        <Binding Path="Duration" Mode="OneTime" />
-                        <Binding Path="." Mode="OneTime"
+                        <Binding Path="Tokens" Mode="OneWay" TargetNullValue="None" />
+                        <Binding Path="Price" Mode="OneWay" TargetNullValue="None" />
+                        <Binding Path="Latency" Mode="OneWay" TargetNullValue="None" />
+                        <Binding Path="Duration" Mode="OneWay" TargetNullValue="None" />
+                        <Binding Path="." Mode="OneWay"
                                  Converter="{x:Static converters:TpsConverter.Instance}" />
                     </MultiBinding>
                 </TextBlock.Text>

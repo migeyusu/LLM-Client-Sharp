@@ -74,28 +74,29 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
 
         var items = source.ResponseItems.Select(x =>
-            context.Mapper.Map<ResponsePersistItem, ResponseViewItem>(x));
-        if (destination != null)
+            context.Mapper.Map<ResponsePersistItem, ResponseViewItem>(x)).ToArray();
+        if (destination == null)
         {
-            destination.Items = new ObservableCollection<IResponseViewItem>(items);
-            destination.AcceptedIndex = source.AcceptedIndex;
-            destination.InteractionId = source.InteractionId;
-            return destination;
+            destination = new MultiResponseViewItem(items, parentViewModel);
+        }
+        else
+        {
+            destination.Items = new ObservableCollection<ResponseViewItem>(items);
         }
 
-        return new MultiResponseViewItem(items, parentViewModel)
-        {
-            AcceptedIndex = source.AcceptedIndex,
-            InteractionId = source.InteractionId,
-        };
+        destination.AcceptedResponse = items.Length <= 0 ? null : items[Math.Max(source.AcceptedIndex, 0)];
+        destination.InteractionId = source.InteractionId;
+        return destination;
     }
 
     public MultiResponsePersistItem Convert(MultiResponseViewItem source, MultiResponsePersistItem? destination,
         ResolutionContext context)
     {
         destination ??= new MultiResponsePersistItem();
-        destination.AcceptedIndex = source.AcceptedIndex;
-        destination.ResponseItems = source.Items.OfType<ResponseViewItem>()
+        destination.AcceptedIndex = source.AcceptedResponse != null
+            ? source.Items.IndexOf(source.AcceptedResponse)
+            : source.Items.Count - 1;
+        destination.ResponseItems = source.Items
             .Select(x => context.Mapper.Map<ResponseViewItem, ResponsePersistItem>(x))
             .ToArray();
         destination.InteractionId = source.InteractionId;
@@ -105,11 +106,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     public DialogFilePersistModel Convert(DialogViewModel source, DialogFilePersistModel? destination,
         ResolutionContext context)
     {
-        if (destination == null)
-        {
-            destination = new DialogFilePersistModel();
-        }
-
+        destination ??= new DialogFilePersistModel();
         var mapper = context.Mapper;
         var dialogItems = source.DialogItems.Select<IDialogItem, IDialogPersistItem>(item =>
         {
