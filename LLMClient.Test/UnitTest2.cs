@@ -351,16 +351,17 @@ public class UnitTest2
     }
 
     [Fact]
-    public async Task AnnotationResult()
+    public async Task StreamingAnnotation()
     {
         var options = new OpenAIClientOptions()
         {
             Endpoint = new Uri("https://openrouter.ai/api/v1"),
-            Transport = new HttpClientPipelineTransport(new HttpClient(new DebugMessageLogger())),
+            Transport = new HttpClientPipelineTransport(new HttpClient()),
         };
         // options.AddPolicy();
+        var environmentVariable = Environment.GetEnvironmentVariable("OpenRouterKEY");
         var chatClient = new OpenAIChatClientEx("google/gemini-2.5-pro-preview",
-            new ApiKeyCredential("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"),
+            new ApiKeyCredential(environmentVariable ?? throw new InvalidOperationException("需要设置环境变量OpenRouterKEY")),
             options);
         await foreach (var update in chatClient.CompleteChatStreamingAsync(new ChatMessage[]
                        {

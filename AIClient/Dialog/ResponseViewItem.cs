@@ -207,13 +207,18 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
     {
         get
         {
+            if (_searchableDocument?.Document != Document)
+            {
+                _searchableDocument = null;
+            }
+
             // 如果已经有了，则直接返回
             if (_searchableDocument == null)
             {
-                var resultDocument = ResultDocument;
-                if (resultDocument != null)
+                var document = Document;
+                if (document != null)
                 {
-                    _searchableDocument = new SearchableDocument(resultDocument);
+                    _searchableDocument = new SearchableDocument(document);
                 }
             }
 
@@ -272,8 +277,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             if (Equals(value, _responseMessages)) return;
             _responseMessages = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(SearchableDocument));
-            OnPropertyChanged(nameof(Document));
             OnPropertyChanged(nameof(TextContent));
         }
     }
@@ -356,7 +359,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         var completedResult = CompletedResult.Empty;
         try
         {
-            //todo:?
             if (Client == null)
             {
                 throw new InvalidOperationException("Client is null");

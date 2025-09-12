@@ -1,9 +1,12 @@
 ﻿using System.ClientModel;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using DocumentFormat.OpenXml.Wordprocessing;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
+using OpenAI.Chat;
 
 namespace LLMClient.Endpoints;
 
@@ -24,9 +27,80 @@ public class ChatContext
 
     public ClientResult? Result { get; set; }
 
-    public Task CompleteStreamResponse(CompletedResult result)
+    private static readonly PropertyInfo AdditionalRawDataPropertyInfo =
+        typeof(StreamingChatCompletionUpdate).GetProperty("SerializedAdditionalRawData",
+            BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    private static readonly PropertyInfo InternalChoicePropertyInfo =
+        typeof(StreamingChatCompletionUpdate).GetProperty("InternalChoiceDelta",
+            BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    private static PropertyInfo? ChoiceAdditional;
+
+    public void CompleteStreamResponse(CompletedResult result, ChatResponseUpdate update)
     {
-        return Task.CompletedTask;
+        result.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        var dictionary = result.AdditionalProperties;
+        if (update.RawRepresentation is StreamingChatCompletionUpdate rawUpdate)
+        {
+            if (AdditionalRawDataPropertyInfo.GetValue(rawUpdate) is IDictionary<string, BinaryData> value)
+            {
+                foreach (var kv in value)
+                {
+                    dictionary[kv.Key] = kv.Value.ToString();
+                }
+            }
+
+            var choice = InternalChoicePropertyInfo.GetValue(rawUpdate);
+            if (choice != null)
+            {
+                if (ChoiceAdditional == null)
+                {
+                    ChoiceAdditional = choice.GetType().GetProperty("SerializedAdditionalRawData",
+                        BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (ChoiceAdditional == null)
+                    {
+                        return;
+                    }
+                }
+
+                if (ChoiceAdditional.GetValue(choice) is IDictionary<string, BinaryData> choiceValue)
+                {
+                    if (choiceValue.TryGetValue("reasoning", out var reasoning))
+                    {
+                        var s = reasoning?.ToString();
+                        if (!string.IsNullOrEmpty(s))
+                        {
+                            update.Contents.Add(new TextReasoningContent(s));
+                        }
+                    }
+
+                    if (choiceValue.TryGetValue("annotations", out var annotations))
+                    {
+                        var s = annotations?.ToString();
+                        if (string.IsNullOrEmpty(s)) return;
+                        var jsonNode = JsonNode.Parse(s);
+                        if (jsonNode == null)
+                        {
+                            return;
+                        }
+
+                        var tryGetAnnotations = TryGetAnnotations(jsonNode.AsArray());
+                        if (result.Annotations == null)
+                        {
+                            result.Annotations = new List<ChatAnnotation>(tryGetAnnotations);
+                        }
+                        else
+                        {
+                            foreach (var chatAnnotation in tryGetAnnotations)
+                            {
+                                result.Annotations.Add(chatAnnotation);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public async Task CompleteResponse(ChatResponse response, CompletedResult result)
@@ -41,6 +115,7 @@ public class ChatContext
         {
             return;
         }
+
         result.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         var propertiesDictionary = result.AdditionalProperties;
         var provider = jsonNode["provider"]?.ToString();
@@ -83,20 +158,19 @@ public class ChatContext
 
                         if (index == 0)
                         {
-                            var annotations = message["annotations"]?.AsArray();
-                            if (annotations != null)
+                            var annotationsArray = message["annotations"]?.AsArray();
+                            if (annotationsArray != null)
                             {
-                                result.Annotations ??= new List<ChatAnnotation>();
-                                foreach (var annotation in annotations)
+                                var annotations = TryGetAnnotations(annotationsArray);
+                                if (result.Annotations == null)
                                 {
-                                    if (annotation is JsonObject annotationObject)
+                                    result.Annotations = new List<ChatAnnotation>(annotations);
+                                }
+                                else
+                                {
+                                    foreach (var chatAnnotation in annotations)
                                     {
-                                        var annotationJson = annotationObject.ToJsonString();
-                                        var annotationObj = JsonSerializer.Deserialize<ChatAnnotation>(annotationJson);
-                                        if (annotationObj != null)
-                                        {
-                                            result.Annotations.Add(annotationObj);
-                                        }
+                                        result.Annotations.Add(chatAnnotation);
                                     }
                                 }
                             }
@@ -105,6 +179,22 @@ public class ChatContext
                 }
 
                 index++;
+            }
+        }
+    }
+
+    private IEnumerable<ChatAnnotation> TryGetAnnotations(JsonArray annotationsArray)
+    {
+        foreach (var annotation in annotationsArray)
+        {
+            if (annotation is JsonObject annotationObject)
+            {
+                var annotationJson = annotationObject.ToJsonString();
+                var annotationObj = JsonSerializer.Deserialize<ChatAnnotation>(annotationJson);
+                if (annotationObj != null)
+                {
+                    yield return annotationObj;
+                }
             }
         }
     }

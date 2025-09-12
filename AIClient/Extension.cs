@@ -45,7 +45,6 @@ public static class Extension
         {
             return null;
         }
-
         if (stream.Length == 0)
         {
             return null;

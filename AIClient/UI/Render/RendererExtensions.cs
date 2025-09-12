@@ -318,9 +318,7 @@ public static class RendererExtensions
         CustomRenderer.Instance.RenderRaw(raw, result);
         return result;
     }
-
-    //todo: markdig渲染 改进： 1. 支持动态增加obj，每次循环后在原有FlowDocument基础上增加 2. 支持动态增加文本
-
+    
     internal static string SubstringAtIndexes(this string str, int startIndex, int endIndex)
     {
         return str.Substring(startIndex, endIndex - startIndex);

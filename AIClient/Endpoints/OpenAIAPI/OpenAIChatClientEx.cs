@@ -3,6 +3,7 @@ using System.ClientModel.Primitives;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Azure;
 using OpenAI;
 using OpenAI.Chat;
 
@@ -58,23 +59,22 @@ public class OpenAIChatClientEx : ChatClient
         }
 
         var result = await base.CompleteChatAsync(content, options);
-        
-        var resultNode = await result.ToJsonNode();
-        if (resultNode == null)
+#if DEBUG
+        // var binaryData = result.GetRawResponse();
+        /*var jsonNode = JsonNode.Parse(contentString);
+        if (jsonNode != null)
         {
-            throw new InvalidOperationException("Result is not valid JSON.");
-        }
-        var choice = resultNode["choices"]?.AsArray();
-        
-        if (choice != null && choice.Count > 0)
-        {
-            var message = choice[0]?["message"];
-            if (message != null)
-            {
-                
-            }
-        }
+            var choice = jsonNode["choices"]?.AsArray();
 
+            if (choice != null && choice.Count > 0)
+            {
+                var message = choice[0]?["message"];
+                if (message != null)
+                {
+                }
+            }
+        }*/
+#endif
         if (clientContext != null)
         {
             clientContext.Result = result;
@@ -82,4 +82,37 @@ public class OpenAIChatClientEx : ChatClient
 
         return result;
     }
+
+
+    public override AsyncCollectionResult<StreamingChatCompletionUpdate> CompleteChatStreamingAsync(
+        IEnumerable<ChatMessage> messages, ChatCompletionOptions options = null,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        return base.CompleteChatStreamingAsync(messages, options, cancellationToken);
+    }
 }
+
+/*public class CustomAsyncCollectionResult : AsyncCollectionResult<StreamingChatCompletionUpdate>
+{
+    private AsyncCollectionResult<StreamingChatCompletionUpdate> _inner;
+
+    public CustomAsyncCollectionResult(AsyncCollectionResult<StreamingChatCompletionUpdate> inner)
+    {
+        _inner = inner;
+    }
+
+    public override IAsyncEnumerable<ClientResult> GetRawPagesAsync()
+    {
+        return _inner.GetRawPagesAsync();
+    }
+
+    public override ContinuationToken? GetContinuationToken(ClientResult page)
+    {
+        return _inner.GetContinuationToken(page);
+    }
+
+    protected override IAsyncEnumerable<StreamingChatCompletionUpdate> GetValuesFromPageAsync(ClientResult page)
+    {
+        return _inner.GetValuesFromPageAsync(page);
+    }
+}*/

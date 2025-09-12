@@ -269,13 +269,63 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             {
                                 latency ??= (int)_stopwatch.ElapsedMilliseconds;
                                 preUpdates.Add(update);
+                                chatContext.CompleteStreamResponse(result, update);
                                 //只收集文本内容
                                 AddStream(update.Text);
                             }
 
+                            /*foreach (var chatResponseUpdate in preUpdates)
+                            {
+                                var textReasoningContents = chatResponseUpdate.Contents.OfType<TextReasoningContent>()
+                                    .ToArray();
+                                if (textReasoningContents.Any())
+                                {
+
+                                }
+
+                            }*/
                             preResponse = preUpdates.ToChatResponse();
+                            foreach (var message in preResponse.Messages)
+                            {
+                                var groupedContents = message.Contents
+                                    .GroupBy(content => content.GetType())
+                                    .ToArray();
+                                message.Contents.Clear();
+                                foreach (var group in groupedContents)
+                                {
+                                    var contentType = group.Key;
+                                    if (contentType == typeof(TextContent))
+                                    {
+                                        var mergedText = string.Join("", group.Cast<TextContent>().Select(c => c.Text));
+                                        message.Contents.Add(new TextContent(mergedText));
+                                    }
+                                    else if (contentType == typeof(TextReasoningContent))
+                                    {
+                                        var mergedText = string.Join("",
+                                            group.Cast<TextReasoningContent>().Select(c => c.Text));
+                                        message.Contents.Add(new TextReasoningContent(mergedText));
+                                    }
+                                    else if (contentType == typeof(UsageContent))
+                                    {
+                                        var mergedUsage = new UsageDetails();
+                                        foreach (var content in group.Cast<UsageContent>())
+                                        {
+                                            mergedUsage.Add(content.Details);
+                                        }
+
+                                        message.Contents.Add(new UsageContent(mergedUsage));
+                                    }
+                                    else
+                                    {
+                                        foreach (var aiContent in group)
+                                        {
+                                            message.Contents.Add(aiContent);   
+                                        }
+                                    }
+                                }
+                            }
+
                             preUpdates.Clear();
-                            await chatContext.CompleteStreamResponse(result);
                         }
                         else
                         {
