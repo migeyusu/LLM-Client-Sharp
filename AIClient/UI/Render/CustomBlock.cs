@@ -1,12 +1,13 @@
 ﻿using System.Text;
+using Markdig.Extensions.CustomContainers;
 using Markdig.Parsers;
 using Markdig.Syntax;
 
 namespace LLMClient.UI.Render;
 
-public class CustomBlock : LeafBlock
+public class CustomLeafBlock : LeafBlock
 {
-    public CustomBlock(BlockParser parser) : base(parser)
+    public CustomLeafBlock(BlockParser parser) : base(parser)
     {
     }
 

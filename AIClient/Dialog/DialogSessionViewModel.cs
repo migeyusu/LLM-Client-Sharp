@@ -32,9 +32,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     {
         get
         {
-            return DialogItems.OfType<MultiResponseViewItem>()
+            var textContent = DialogItems.OfType<MultiResponseViewItem>()
                 .FirstOrDefault(item => item.IsAvailableInContext)
-                ?.AcceptedResponse?.TextContent?.Substring(0, 20);
+                ?.AcceptedResponse?.TextContent;
+            return string.IsNullOrEmpty(textContent)
+                ? null
+                : textContent?.Substring(0, int.Min(20, textContent.Length));
         }
     }
 

@@ -7,6 +7,7 @@ public class ThinkBlockExtension : IMarkdownExtension
 {
     public void Setup(MarkdownPipelineBuilder pipeline)
     {
+        //do nothing, the parser is registered in CustomPipeline
         pipeline.BlockParsers.Insert(0, new ThinkBlockParser());
     }
 

@@ -14,6 +14,7 @@ using LLMClient.Endpoints.Messages;
 using LLMClient.UI;
 using LLMClient.UI.Component;
 using LLMClient.UI.Render;
+using Markdig.Syntax;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -175,8 +176,13 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                         switch (content)
                         {
                             case TextReasoningContent reasoningContent:
-                                renderer.AppendItem(reasoningContent,
-                                    CustomRenderer.TextReasoningStyleKey);
+                                var stringBuilder = new StringBuilder();
+                                stringBuilder.Append(":::think\n");
+                                stringBuilder.Append(reasoningContent.Text);
+                                stringBuilder.Append("\n:::\n");
+                                renderer.RenderRaw(stringBuilder.ToString());
+                                /*renderer.AppendItem(reasoningContent,
+                                    ThinkBlockRenderer.ThinkBlockExpanderStyleKey);*/
                                 break;
                             case TextContent textContent:
                                 renderer.RenderRaw(textContent.Text);
@@ -369,6 +375,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                 throw new InvalidOperationException("Client is busy");
             }
 
+            _resultDocument = null;
             _tempDocument = new FlowDocument();
             IsResponding = true;
             RespondingText.Clear();

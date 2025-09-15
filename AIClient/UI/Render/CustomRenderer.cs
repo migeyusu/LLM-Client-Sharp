@@ -54,9 +54,6 @@ public class CustomRenderer : WpfRenderer
     public static ComponentResourceKey FunctionResultStyleKey { get; } =
         new(typeof(CustomRenderer), (object)nameof(FunctionResultStyleKey));
 
-    public static ComponentResourceKey TextReasoningStyleKey { get; } =
-        new(typeof(CustomRenderer), (object)nameof(TextReasoningStyleKey));
-
     public static ComponentResourceKey AnnotationStyleKey => new(typeof(CustomRenderer), nameof(AnnotationStyleKey));
 
     public void AppendItem<T>(T obj, ComponentResourceKey styleKey)
@@ -71,6 +68,7 @@ public class CustomRenderer : WpfRenderer
         var blockUiContainer = new BlockUIContainer(expander);
         ((IAddChild)Document!).AddChild(blockUiContainer);
     }
+    
 
     public void AppendMarkdownObject(MarkdownObject obj)
     {

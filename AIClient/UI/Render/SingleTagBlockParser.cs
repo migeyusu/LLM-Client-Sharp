@@ -4,7 +4,7 @@ using Markdig.Syntax;
 
 namespace LLMClient.UI.Render;
 
-public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomBlock
+public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeafBlock
 {
     private readonly string _openTag;
     private readonly string _closeTag;
@@ -25,6 +25,11 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomBloc
             return BlockState.None;
         }
 
+        if (processor.IsBlankLine)
+        {
+            return BlockState.None;
+        }
+
         // 检查当前行是否以 <think> 开头(忽略大小写)
         var line = processor.Line;
         int index;
@@ -37,8 +42,16 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomBloc
         // 设置块的起始位置和列号
         Debug.Assert(customBlock != null, nameof(customBlock) + " != null");
         customBlock.Column = processor.Column;
+        customBlock.Line = processor.LineIndex;
         customBlock.Span = new SourceSpan(line.Start, line.End);
         line.Start = index + _openTag.Length; // 更新行的起始位置，跳过 "<think>" 标签
+        if (processor.TrackTrivia)
+        {
+            customBlock.LinesBefore = processor.LinesBefore;
+            processor.LinesBefore = null;
+            customBlock.NewLine = processor.Line.NewLine;
+        }
+
         // 将新块推送到处理器中
         processor.NewBlocks.Push(customBlock);
         // 检查是否在同一行就闭合了
@@ -55,6 +68,12 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomBloc
     public override BlockState TryContinue(BlockProcessor processor, Block block)
     {
         // 检查当前行是否包含结束标签
+        if (processor.IsBlankLine)
+        {
+            // 如果是空行，继续
+            return BlockState.Continue;
+        }
+
         var line = processor.Line;
         if (line.IndexOf(_closeTag, 0, true) >= 0)
         {
@@ -62,31 +81,36 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomBloc
             return BlockState.Break;
         }
 
+        block.NewLine = processor.Line.NewLine;
+        block.UpdateSpanEnd(processor.Line.End);
         return BlockState.Continue;
     }
 
     public override bool Close(BlockProcessor processor, Block block)
     {
-        var customBlock = (CustomBlock)block;
-        // 在关闭块时，从最后一行移除 "</think>" 标签
-        ref var lastLine = ref customBlock.Lines.Lines[customBlock.Lines.Count - 1];
-        var endIndex = lastLine.Slice.IndexOf(_closeTag, 0, true);
-        if (endIndex != -1)
+        if (block is T customBlock)
         {
-            // 更新最后一行的结束位置，以去除闭合标签
-            lastLine.Slice.End = endIndex - 1;
+            // 在关闭块时，从最后一行移除 "</think>" 标签
+            ref var lastLine = ref customBlock.Lines.Lines[customBlock.Lines.Count - 1];
+            var endIndex = lastLine.Slice.IndexOf(_closeTag, 0, true);
+            if (endIndex != -1)
+            {
+                // 更新最后一行的结束位置，以去除闭合标签
+                lastLine.Slice.End = endIndex - 1;
+            }
+
+            ref var firstLine = ref customBlock.Lines.Lines[0];
+            var startIndex = firstLine.Slice.IndexOf(_openTag, 0, true);
+            if (startIndex != -1)
+            {
+                // 更新第一行的起始位置，以去除开始标签
+                firstLine.Slice.Start = startIndex + _openTag.Length;
+            }
+
+            // 更新块的结束位置
+            customBlock.UpdateSpanEnd(endIndex + _closeTag.Length);
         }
 
-        ref var firstLine = ref customBlock.Lines.Lines[0];
-        var startIndex = firstLine.Slice.IndexOf(_openTag, 0, true);
-        if (startIndex != -1)
-        {
-            // 更新第一行的起始位置，以去除开始标签
-            firstLine.Slice.Start = startIndex + _openTag.Length;
-        }
-
-        // 更新块的结束位置
-        customBlock.UpdateSpanEnd(endIndex + _closeTag.Length);
         return true;
     }
 }

@@ -244,7 +244,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var streaming = this.Model.SupportStreaming && this.Parameters.Streaming;
             if (kernelPluginCollection.Count > 0)
             {
-                if (!this.Model.FunctionCallOnStreaming)
+                //在openai调用引擎下，如果不可流式输出，则关闭流式输出
+                if (!this.Model.FunctionCallOnStreaming &&
+                    functionCallEngine.GetType() == typeof(DefaultFunctionCallEngine))
                 {
                     streaming = false;
                 }
@@ -271,56 +273,56 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 preUpdates.Add(update);
                                 chatContext.CompleteStreamResponse(result, update);
                                 //只收集文本内容
-                                AddStream(update.Text);
+                                AddStream(update.GetText());
                             }
-
-                            /*foreach (var chatResponseUpdate in preUpdates)
-                            {
-                                var textReasoningContents = chatResponseUpdate.Contents.OfType<TextReasoningContent>()
-                                    .ToArray();
-                                if (textReasoningContents.Any())
-                                {
-
-                                }
-
-                            }*/
+                            
                             preResponse = preUpdates.ToChatResponse();
                             foreach (var message in preResponse.Messages)
                             {
-                                var groupedContents = message.Contents
-                                    .GroupBy(content => content.GetType())
+                                var oriContents = message.Contents
                                     .ToArray();
                                 message.Contents.Clear();
-                                foreach (var group in groupedContents)
+                                foreach (var oriContent in oriContents)
                                 {
-                                    var contentType = group.Key;
-                                    if (contentType == typeof(TextContent))
+                                    if (oriContent is TextContent textContent)
                                     {
-                                        var mergedText = string.Join("", group.Cast<TextContent>().Select(c => c.Text));
-                                        message.Contents.Add(new TextContent(mergedText));
-                                    }
-                                    else if (contentType == typeof(TextReasoningContent))
-                                    {
-                                        var mergedText = string.Join("",
-                                            group.Cast<TextReasoningContent>().Select(c => c.Text));
-                                        message.Contents.Add(new TextReasoningContent(mergedText));
-                                    }
-                                    else if (contentType == typeof(UsageContent))
-                                    {
-                                        var mergedUsage = new UsageDetails();
-                                        foreach (var content in group.Cast<UsageContent>())
+                                        var @default = message.Contents.OfType<TextContent>().FirstOrDefault();
+                                        if (@default != null)
                                         {
-                                            mergedUsage.Add(content.Details);
+                                            @default.Text += textContent.Text;
                                         }
-
-                                        message.Contents.Add(new UsageContent(mergedUsage));
+                                        else
+                                        {
+                                            message.Contents.Add(textContent);
+                                        }
+                                    }
+                                    else if (oriContent is TextReasoningContent textReasoningContent)
+                                    {
+                                        var @default = message.Contents.OfType<TextReasoningContent>().FirstOrDefault();
+                                        if (@default != null)
+                                        {
+                                            @default.Text += textReasoningContent.Text;
+                                        }
+                                        else
+                                        {
+                                            message.Contents.Insert(0, textReasoningContent);
+                                        }
+                                    }
+                                    else if (oriContent is UsageContent usageContent)
+                                    {
+                                        var @default = message.Contents.OfType<UsageContent>().FirstOrDefault();
+                                        if (@default != null)
+                                        {
+                                            @default.Details.Add(usageContent.Details);
+                                        }
+                                        else
+                                        {
+                                            message.Contents.Add(usageContent);
+                                        }
                                     }
                                     else
                                     {
-                                        foreach (var aiContent in group)
-                                        {
-                                            message.Contents.Add(aiContent);   
-                                        }
+                                        message.Contents.Add(oriContent);
                                     }
                                 }
                             }
@@ -356,13 +358,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                         NewLine(functionResultContent.GetDebuggerString());
                                         break;
                                     case TextReasoningContent reasoningContent:
-                                        var text = reasoningContent.Text;
-                                        if (!string.IsNullOrEmpty(text))
-                                        {
-                                            stream?.Invoke(Environment.NewLine);
-                                            stream?.Invoke(text);
-                                        }
-
+                                        //do nothing, reasoningContent is already added to RespondingText
                                         break;
                                     default:
                                         logger?.LogWarning("unsupported content: " + content.GetType().Name);

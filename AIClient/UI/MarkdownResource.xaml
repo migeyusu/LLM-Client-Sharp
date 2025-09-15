@@ -30,18 +30,33 @@
         </Setter>
     </Style>
     <Style x:Key="ExpanderDownHeaderStyle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="BorderThickness"
+                Value="0" />
+        <Setter Property="VerticalContentAlignment"
+                Value="Center" />
+        <Setter Property="HorizontalContentAlignment"
+                Value="Left" />
+        <Setter Property="Height"
+                Value="45" />
+        <Setter Property="Padding"
+                Value="10,0,0,0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ToggleButton}">
-                    <Border Padding="{TemplateBinding Padding}">
+                    <Border Padding="{TemplateBinding Padding}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding  materialDesign:ButtonAssist.CornerRadius}">
                         <Grid Background="Transparent" SnapsToDevicePixels="False">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <ContentPresenter Grid.Column="0" HorizontalAlignment="Left" Margin="4,0,0,0"
+                            <ContentPresenter Grid.Column="0"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              Margin="{TemplateBinding Padding}"
                                               RecognizesAccessKey="True" SnapsToDevicePixels="True"
-                                              VerticalAlignment="Center" />
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                             <materialDesign:PackIcon Grid.Column="1"
                                                      Width="20"
                                                      Height="20"
@@ -80,6 +95,8 @@
         <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="BorderThickness" Value="2" />
         <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Card.Border}" />
+        <Setter Property="Margin"
+                Value="0,0,0,10" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Expander}">
@@ -89,8 +106,7 @@
                                    StrokeThickness="{TemplateBinding BorderThickness, Converter={x:Static converters:SnapConverters.ThicknessToDoubleConverter}}"
                                    RadiusX="4" RadiusY="4"
                                    StrokeDashArray="6,2"
-                                   SnapsToDevicePixels="True"
-                                   Margin="5" />
+                                   SnapsToDevicePixels="True" />
                         <DockPanel>
                             <ToggleButton x:Name="HeaderSite" ContentTemplate="{TemplateBinding HeaderTemplate}"
                                           Content="{TemplateBinding Header}"
@@ -104,7 +120,9 @@
                                           FontSize="{TemplateBinding FontSize}"
                                           HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                          Margin="1" MinWidth="0" MinHeight="0" Padding="{TemplateBinding Padding}"
+                                          Margin="1"
+                                          MinWidth="0"
+                                          MinHeight="0"
                                           Style="{StaticResource ExpanderDownHeaderStyle}"
                                           VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
                             <ContentPresenter x:Name="ExpandSite" DockPanel.Dock="Bottom" Focusable="false"
@@ -258,35 +276,78 @@
                 Value="{DynamicResource CodeBlock.TextMateSharp.Theme}" />
     </Style>
 
-    <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render:ThinkBlockRenderer.ThinkBlockExpanderStyleKey}">
+    <Style TargetType="{x:Type ToggleButton}"
+           x:Key="{x:Static render:ThinkBlockRenderer.ThinkBlockToggleStyleKey}">
+        <Setter Property="FocusVisualStyle"
+                Value="{StaticResource ExpanderHeaderFocusVisual}" />
+        <Setter Property="Background" Value="Transparent" /> <!--{DynamicResource MaterialDesign.Brush.Background}-->
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="Padding"
-                Value="16" />
-        <Setter Property="HeaderTemplate">
+                Value="10,0,0,0" />
+        <Setter Property="Height"
+                Value="40" />
+        <Setter Property="Content">
             <Setter.Value>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline" 
-                                                 VerticalAlignment="Center"/>
-                        <TextBlock Text="已完成思考"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
-                    </StackPanel>
-                </DataTemplate>
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"
+                                             VerticalAlignment="Center" />
+                    <TextBlock Text="已完成思考"
+                               VerticalAlignment="Center"
+                               Margin="6,0,0,0"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                </StackPanel>
             </Setter.Value>
         </Setter>
-        <Setter Property="ContentTemplate">
+        <Setter Property="Template">
             <Setter.Value>
-                <DataTemplate>
-                    <TextBlock Foreground="DarkGray"
-                               FontStyle="Italic"
-                               TextWrapping="Wrap"
-                               Text="{Binding}" />
-                </DataTemplate>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <materialDesign:Card Padding="{TemplateBinding Padding}"
+                                         BorderBrush="{TemplateBinding BorderBrush}"
+                                         BorderThickness="{TemplateBinding BorderThickness}"
+                                         materialDesign:ElevationAssist.Elevation="Dp4"
+                                         UniformCornerRadius="6">
+                        <Grid Background="Transparent" SnapsToDevicePixels="False">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter Grid.Column="0"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              Margin="{TemplateBinding Padding}"
+                                              RecognizesAccessKey="True" SnapsToDevicePixels="True"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            <materialDesign:PackIcon Grid.Column="1"
+                                                     Width="20"
+                                                     Height="20"
+                                                     VerticalAlignment="Center"
+                                                     Margin="6,0"
+                                                     Kind="ChevronDown"
+                                                     x:Name="Icon" />
+                        </Grid>
+                    </materialDesign:Card>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Kind" TargetName="Icon"
+                                    Value="ChevronUp" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="true">
+                            <Setter Property="Foreground" TargetName="Icon"
+                                    Value="{StaticResource Expander.MouseOver.Circle.Stroke}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="true">
+                            <Setter Property="Foreground" TargetName="Icon"
+                                    Value="{StaticResource Expander.Pressed.Circle.Stroke}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" TargetName="Icon"
+                                    Value="{DynamicResource MaterialDesign.Brush.CheckBox.Disabled}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
@@ -335,41 +396,6 @@
                         <Run
                             Text="{Binding Arguments,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToJsonConverter}}" />
                     </TextBlock>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render:CustomRenderer.TextReasoningStyleKey}">
-        <Setter Property="Padding"
-                Value="16" />
-        <Setter Property="HeaderTemplate">
-            <Setter.Value>
-                <DataTemplate DataType="{x:Type ai:TextReasoningContent}">
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"
-                                                 Width="20"
-                                                 VerticalAlignment="Center"
-                                                 Height="20" />
-                        <TextBlock Text="已完成思考"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
-                    </StackPanel>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="ContentTemplate">
-            <Setter.Value>
-                <DataTemplate DataType="{x:Type ai:TextReasoningContent}">
-                    <TextBlock Foreground="DarkGray"
-                               FontStyle="Italic"
-                               TextWrapping="Wrap"
-                               Text="{Binding Text,Mode=OneTime}" />
                 </DataTemplate>
             </Setter.Value>
         </Setter>
@@ -581,5 +607,12 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type Section}" x:Key="{x:Static render:ThinkBlockRenderer.ThinkBlockSectionStyleKey}">
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Card.Border}" />
+        <Setter Property="BorderThickness" Value="1,0,1,1" />
+        <!-- <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Chip.OutlineBorder}" /> -->
+        <Setter Property="Padding" Value="10,0" />
     </Style>
 </ResourceDictionary>

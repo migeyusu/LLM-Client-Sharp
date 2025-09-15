@@ -3,7 +3,7 @@
 namespace LLMClient.UI.Render;
 
 [Obsolete]
-public class FunctionResultBlock : CustomBlock
+public class FunctionResultBlock : CustomLeafBlock
 {
     public FunctionResultBlock(BlockParser parser) : base(parser)
     {

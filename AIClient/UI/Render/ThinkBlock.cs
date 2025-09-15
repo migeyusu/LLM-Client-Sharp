@@ -2,7 +2,7 @@
 
 namespace LLMClient.UI.Render;
 
-public class ThinkBlock : CustomBlock
+public class ThinkBlock : CustomLeafBlock
 {
     public ThinkBlock(BlockParser parser) : base(parser)
     {

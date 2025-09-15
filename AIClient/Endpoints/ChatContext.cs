@@ -68,7 +68,7 @@ public class ChatContext
                 {
                     if (choiceValue.TryGetValue("reasoning", out var reasoning))
                     {
-                        var s = reasoning?.ToString();
+                        var s = reasoning.ToObjectFromJson<string>();
                         if (!string.IsNullOrEmpty(s))
                         {
                             update.Contents.Add(new TextReasoningContent(s));
