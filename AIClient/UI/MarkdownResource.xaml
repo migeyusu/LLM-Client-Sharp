@@ -405,20 +405,22 @@
            x:Key="{x:Static  render:ToolCallBlockRenderer.ToolCallStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
-        <Setter Property="Header">
+        <Setter Property="HeaderTemplate">
             <Setter.Value>
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center">
-                    <materialDesign:PackIcon Kind="Function"
-                                             Width="20"
-                                             VerticalAlignment="Center"
-                                             Height="20" />
-                    <TextBlock Text="函数调用"
-                               VerticalAlignment="Center"
-                               Margin="6,0,0,0"
-                               FontWeight="Bold"
-                               Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
-                </StackPanel>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Function"
+                                                 Width="20"
+                                                 VerticalAlignment="Center"
+                                                 Height="20" />
+                        <TextBlock Text="函数调用"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                    </StackPanel>
+                </DataTemplate>
             </Setter.Value>
         </Setter>
         <Setter Property="ContentTemplate">
@@ -494,19 +496,21 @@
            x:Key="{x:Static render:ToolCallResultBlockRenderer.ToolCallResultStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
-        <Setter Property="Header">
+        <Setter Property="HeaderTemplate">
             <Setter.Value>
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center">
-                    <materialDesign:PackIcon Kind="CallReceived"
-                                             Width="20"
-                                             Height="20" />
-                    <TextBlock Text="函数调用结果"
-                               VerticalAlignment="Center"
-                               Margin="6,0,0,0"
-                               FontWeight="Bold"
-                               Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
-                </StackPanel>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="CallReceived"
+                                                 Width="20"
+                                                 Height="20" />
+                        <TextBlock Text="函数调用结果"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                    </StackPanel>
+                </DataTemplate>
             </Setter.Value>
         </Setter>
         <Setter Property="ContentTemplate">
@@ -524,7 +528,8 @@
                                         <Run Text="{Binding Name,Mode=OneTime}" />
                                         <LineBreak />
                                         <Run FontWeight="Black">Result:</Run>
-                                        <Run Text="{Binding ResultContent,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringUnescapeConverter}}" />
+                                        <Run
+                                            Text="{Binding ResultContent,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringUnescapeConverter}}" />
                                     </TextBlock>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
