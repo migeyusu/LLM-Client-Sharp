@@ -373,12 +373,9 @@
                             Margin="6,0,0,0"
                             FontWeight="Bold"
                             Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}[{0}]-函数调用：{1}">
-                                    <Binding Path="CallId" Mode="OneTime" />
-                                    <Binding Path="Name" Mode="OneTime" />
-                                </MultiBinding>
-                            </TextBlock.Text>
+                            <Run Text="{Binding Name,StringFormat=函数调用：{0},Mode=OneTime}" />
+                            <Run Text="{Binding CallId,StringFormat=[{0}],Mode=OneTime}"
+                                 Foreground="DimGray" />
                         </TextBlock>
                     </StackPanel>
                 </DataTemplate>
@@ -416,7 +413,7 @@
                         <materialDesign:PackIcon Kind="CallReceived"
                                                  Width="20"
                                                  Height="20" />
-                        <TextBlock Text="{Binding CallId,Mode=OneTime,StringFormat={}[{0}]-函数调用结果}"
+                        <TextBlock Text="{Binding CallId,Mode=OneTime,StringFormat={}[{0}]-调用结果}"
                                    VerticalAlignment="Center"
                                    Margin="6,0,0,0"
                                    FontWeight="Bold"
