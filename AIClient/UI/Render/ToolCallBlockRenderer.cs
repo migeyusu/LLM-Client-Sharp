@@ -6,20 +6,22 @@ using Markdig.Renderers.Wpf;
 
 namespace LLMClient.UI.Render;
 
-[Obsolete]
-public class FunctionCallBlockRenderer : WpfObjectRenderer<FunctionCallBlock>
+public class ToolCallBlockRenderer : WpfObjectRenderer<ToolCallBlock>
 {
-    protected override void Write(WpfRenderer renderer, FunctionCallBlock obj)
+    public static ComponentResourceKey ToolCallStyleKey { get; } =
+        new ComponentResourceKey(typeof(ToolCallBlockRenderer), (object)nameof(ToolCallStyleKey));
+    
+    protected override void Write(WpfRenderer renderer, ToolCallBlock obj)
     {
         var blockUiContainer = new BlockUIContainer();
         renderer.Push(blockUiContainer);
         var expander = new Expander()
         {
             IsExpanded = false,
+            Content = obj,
         };
-        expander.SetResourceReference(FrameworkElement.StyleProperty, CustomRenderer.FunctionCallStyleKey);
+        expander.SetResourceReference(FrameworkElement.StyleProperty, ToolCallStyleKey);
         renderer.Push(expander);
-        expander.Content = obj.Lines.ToString().Trim();
         renderer.Pop();
         renderer.Pop();
     }

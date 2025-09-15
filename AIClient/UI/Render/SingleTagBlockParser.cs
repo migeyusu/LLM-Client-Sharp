@@ -109,8 +109,17 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeaf
 
             // 更新块的结束位置
             customBlock.UpdateSpanEnd(endIndex + _closeTag.Length);
+            Process(customBlock);
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// called after the block is closed
+    /// </summary>
+    /// <param name="block"></param>
+    protected virtual void Process(T block)
+    {
     }
 }

@@ -92,9 +92,12 @@ public class PromptFunctionCallEngine : FunctionCallEngine
     {
         var promptBuilder = new StringBuilder();
         promptBuilder.AppendLine(
-            "In this environment you have access to a set of tools you can use to answer the user's question. You can use one or more tools per message, and will receive the result of that tool use in the user's response. You use tools step-by-step to accomplish a given task, with each tool use informed by the result of the previous tool use.");
+            "In this environment you have access to a set of tools to help with answering, you can use them and wait for results for next response.");
+        promptBuilder.AppendLine("");
+        promptBuilder.AppendLine("## Tool Definition Formatting");
+        promptBuilder.AppendLine("");
         promptBuilder.AppendLine(
-            "You are provided with tool signatures within <tools></tools> XML tags:");
+            "Tools are formatted within several <tool></tool> XML tags:");
         promptBuilder.AppendLine("<tools>");
         promptBuilder.AppendLine("  <tool>");
         promptBuilder.AppendLine("    <name>{tool1_name}</name>");
@@ -109,18 +112,26 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         promptBuilder.AppendLine("    <returns>{return_json_schema}</returns>");
         promptBuilder.AppendLine("  </tool>");
         promptBuilder.AppendLine("</tools>");
-        promptBuilder.AppendLine("## Tool Use Formatting");
         promptBuilder.AppendLine(
-            "For each tool call, return a json object with tool name and arguments within <tool_call></tool_call> XML tags,and the arguments should be a JSON object containing the parameters required by that tool. formatted as follows:");
+            "As previous shown, each tool has a name, a description, and a json schema for its parameters and return values. <tool> tags are enclosed within <tools> tags.");
+        promptBuilder.AppendLine("");
+        promptBuilder.AppendLine("## Tool Call Request Formatting");
+        promptBuilder.AppendLine("You can select one or more tools then lists in message by following format:");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("<tool_calls>");
         promptBuilder.AppendLine("  <tool_call>");
-        promptBuilder.AppendLine("      <name>{tool_name}</name>");
+        promptBuilder.AppendLine("      <name>{tool1_name}</name>");
+        promptBuilder.AppendLine("      <arguments>{arguments-json-object}</arguments>");
+        promptBuilder.AppendLine("  </tool_call>");
+        promptBuilder.AppendLine("  <tool_call>");
+        promptBuilder.AppendLine("      <name>{tool2_name}</name>");
         promptBuilder.AppendLine("      <arguments>{arguments-json-object}</arguments>");
         promptBuilder.AppendLine("  </tool_call>");
         promptBuilder.AppendLine("</tool_calls>");
         promptBuilder.AppendLine("");
-        promptBuilder.AppendLine("For example:");
+        promptBuilder.AppendLine(
+            "As previous shown, tool name and arguments within <tool_call></tool_call> XML tags,and the arguments should be a JSON object containing the parameters required by that tool.");
+        promptBuilder.AppendLine("For example(for only one tool call):");
         promptBuilder.AppendLine("<tool_calls>");
         promptBuilder.AppendLine("  <tool_call>");
         promptBuilder.AppendLine("      <name>python_interpreter</name>");
@@ -129,7 +140,12 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         promptBuilder.AppendLine("</tool_calls>");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine(
-            "The user will respond with the result of the tool use, which should be formatted as follows:");
+            "'python_interpreter' is the tool name, and '{\"code\": \"5 + 3 + 1294.678\"}' is the JSON object representing the arguments for that tool.");
+        promptBuilder.AppendLine("");
+        promptBuilder.AppendLine("## Tool Call Result Formatting");
+        promptBuilder.AppendLine("");
+        promptBuilder.AppendLine(
+            "Then you are provided the result of that tool call in the user's request which should be formatted as follows:");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("<tool_call_results>");
         promptBuilder.AppendLine("  <tool_call_result>");
@@ -139,7 +155,9 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         promptBuilder.AppendLine("</tool_call_results>");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine(
-            "The result should be a string, which can represent a file or any other output type. You can use this result as input for the next action.");
+            "The result are formatted within <tool_call_result></tool_call_result> XML tags, which can represent a file or any other output type. You can use this result as input for the next action.");
+        promptBuilder.AppendLine(
+            "Warning: you can and only can call the tools and wait for answer but not imagine results by yourself!");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("## Tool Use Examples");
         promptBuilder.AppendLine("");
@@ -208,7 +226,8 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("## Tool Use Available Tools");
         promptBuilder.AppendLine(
-            "Above example were using notional tools that might not exist for you. You only have access to these tools:");
+            "Above example were using notional tools that might not exist for you.");
+        promptBuilder.AppendLine("NOW you only have access to these tools:");
         promptBuilder.AppendLine("<tools>");
         foreach (var func in functions)
         {

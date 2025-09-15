@@ -330,20 +330,18 @@ public static class RendererExtensions
         pipeline.Extensions.ReplaceOrAdd<ThinkBlockExtension>(new ThinkBlockExtension());
         return pipeline;
     }
-
-    [Obsolete]
+    
     public static MarkdownPipelineBuilder UseFunctionCallBlock(
         this MarkdownPipelineBuilder pipeline)
     {
-        pipeline.Extensions.ReplaceOrAdd<FunctionCallBlockExtension>(new FunctionCallBlockExtension());
+        pipeline.Extensions.ReplaceOrAdd<ToolCallBlockExtension>(new ToolCallBlockExtension());
         return pipeline;
     }
-
-    [Obsolete]
+    
     public static MarkdownPipelineBuilder UseFunctionResultBlock(
         this MarkdownPipelineBuilder pipeline)
     {
-        pipeline.Extensions.ReplaceOrAdd<FunctionResultBlockExtension>(new FunctionResultBlockExtension());
+        pipeline.Extensions.ReplaceOrAdd<ToolCallResultBlockExtension>(new ToolCallResultBlockExtension());
         return pipeline;
     }
 }

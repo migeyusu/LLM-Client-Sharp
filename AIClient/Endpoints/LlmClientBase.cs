@@ -117,8 +117,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 continue;
             }
 
-            toolsPromptBuilder.AppendLine(functionGroup.AdditionPrompt);
-            kernelPluginCollection.AddFromFunctions(functionGroup.Name,
+            var functionGroupName = functionGroup.Name;
+            var additionPrompt = functionGroup.AdditionPrompt;
+            toolsPromptBuilder.AppendLine(string.IsNullOrEmpty(additionPrompt)
+                ? functionGroupName
+                : $"{functionGroupName}:{additionPrompt}");
+            kernelPluginCollection.AddFromFunctions(functionGroupName,
                 availableTools.Select(function => function.AsKernelFunction()));
         }
 
@@ -237,13 +241,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var totalUsageDetails = new UsageDetails
             {
                 InputTokenCount = 0,
-                OutputTokenCount = 0,
                 TotalTokenCount = 0,
+                OutputTokenCount = 0,
             };
             ChatFinishReason? finishReason = null;
             var streaming = this.Model.SupportStreaming && this.Parameters.Streaming;
+            var softFunctionCall = false;
             if (kernelPluginCollection.Count > 0)
             {
+                softFunctionCall = requestViewItem?.CallEngine == FunctionCallEngineType.Prompt;
                 //在openai调用引擎下，如果不可流式输出，则关闭流式输出
                 if (!this.Model.FunctionCallOnStreaming &&
                     functionCallEngine.GetType() == typeof(DefaultFunctionCallEngine))
@@ -275,7 +281,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 //只收集文本内容
                                 AddStream(update.GetText());
                             }
-                            
+
                             preResponse = preUpdates.ToChatResponse();
                             foreach (var message in preResponse.Messages)
                             {
@@ -357,7 +363,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                     case FunctionResultContent functionResultContent:
                                         NewLine(functionResultContent.GetDebuggerString());
                                         break;
-                                    case TextReasoningContent reasoningContent:
+                                    case TextReasoningContent:
                                         //do nothing, reasoningContent is already added to RespondingText
                                         break;
                                     default:
@@ -385,8 +391,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         }
                         else if (finishReason == ChatFinishReason.Stop)
                         {
-                            logger?.LogInformation("Response completed without function calls.");
-                            break;
+                            if (!softFunctionCall)
+                            {
+                                logger?.LogInformation("Response completed without function calls.");
+                                break;
+                            }
                         }
                         else if (finishReason == ChatFinishReason.Length)
                         {

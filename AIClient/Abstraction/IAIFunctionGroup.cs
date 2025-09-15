@@ -15,6 +15,7 @@ namespace LLMClient.Abstraction;
 [JsonDerivedType(typeof(FileSystemPlugin), "filesystemplugin")]
 [JsonDerivedType(typeof(WinCLIPlugin), "winclipplugin")]
 [JsonDerivedType(typeof(GoogleSearchPlugin), "googlesearchplugin")]
+[JsonDerivedType(typeof(UrlFetcherPlugin), "urlfetcherplugin")]
 public interface IAIFunctionGroup : ICloneable
 {
     string Name { get; }

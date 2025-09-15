@@ -27,8 +27,8 @@ public class CustomRenderer : WpfRenderer
         new MarkdownPipelineBuilder()
             .UseAdvancedExtensions()
             .UseThinkBlock()
-            /*.UseFunctionCallBlock()
-            .UseFunctionResultBlock()*/
+            .UseFunctionCallBlock()
+            .UseFunctionResultBlock()
             .UseGenericAttributes()
             .Build();
 
@@ -51,6 +51,7 @@ public class CustomRenderer : WpfRenderer
     public static ComponentResourceKey FunctionCallStyleKey { get; } =
         new(typeof(CustomRenderer), nameof(FunctionCallStyleKey));
 
+    
     public static ComponentResourceKey FunctionResultStyleKey { get; } =
         new(typeof(CustomRenderer), (object)nameof(FunctionResultStyleKey));
 
