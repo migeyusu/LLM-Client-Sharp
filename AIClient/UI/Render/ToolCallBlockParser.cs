@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 
 namespace LLMClient.UI.Render;
@@ -27,6 +28,7 @@ public class ToolCallBlockParser : SingleTagBlockParser<ToolCallBlock>
             if (toolCallsElement != null)
             {
                 block.ToolCalls = toolCallsElement;
+                
             }
         }
         catch (Exception exception)

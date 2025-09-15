@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
@@ -173,4 +174,36 @@ internal static class SnapConverters
     }))*/
     public static readonly IValueConverter RagFileStatusToBoolConverter =
         ValueConverter.Create<RagStatus, bool>(e => e.Value == RagStatus.Constructed);
+
+    public static readonly IValueConverter StringUnescapeConverter = ValueConverter.Create<string, string>(args =>
+    {
+        var rawJson = args.Value;
+        if (string.IsNullOrWhiteSpace(rawJson))
+        {
+            return rawJson;
+        }
+
+        try
+        {
+            // 配置序列化选项
+            var options = new JsonSerializerOptions
+            {
+                // 1. 美化输出，带缩进和换行
+                WriteIndented = true,
+                // 2. 使用一个“宽松”的编码器，以避免将 ' " & < > + 以及中文等非ASCII字符转义成 \uXXXX
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+
+            // 使用JsonDocument解析，它非常高效，适合只读操作
+            using var jsonDoc = JsonDocument.Parse(rawJson);
+
+            // 将解析后的JSON文档对象重新序列化为美化后的字符串
+            return JsonSerializer.Serialize(jsonDoc.RootElement, options);
+        }
+        catch (JsonException)
+        {
+            // 如果传入的字符串不是有效的JSON，则直接返回原始字符串，避免程序崩溃
+            return rawJson;
+        }
+    });
 }

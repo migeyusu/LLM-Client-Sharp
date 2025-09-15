@@ -436,7 +436,8 @@
                                         <Run Text="{Binding Name,Mode=OneTime}" />
                                         <LineBreak />
                                         <Run FontWeight="Black">Arguments:</Run>
-                                        <Run Text="{Binding Arguments,Mode=OneTime}" />
+                                        <Run
+                                            Text="{Binding Arguments,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringUnescapeConverter}}" />
                                     </TextBlock>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -523,7 +524,7 @@
                                         <Run Text="{Binding Name,Mode=OneTime}" />
                                         <LineBreak />
                                         <Run FontWeight="Black">Result:</Run>
-                                        <Run Text="{Binding ResultContent,Mode=OneTime}" />
+                                        <Run Text="{Binding ResultContent,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringUnescapeConverter}}" />
                                     </TextBlock>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
