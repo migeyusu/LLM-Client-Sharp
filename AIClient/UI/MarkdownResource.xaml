@@ -288,18 +288,20 @@
                 Value="10,0,0,0" />
         <Setter Property="Height"
                 Value="40" />
-        <Setter Property="Content">
+        <Setter Property="ContentTemplate">
             <Setter.Value>
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center">
-                    <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"
-                                             VerticalAlignment="Center" />
-                    <TextBlock Text="已完成思考"
-                               VerticalAlignment="Center"
-                               Margin="6,0,0,0"
-                               FontWeight="Bold"
-                               Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
-                </StackPanel>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"
+                                                 VerticalAlignment="Center" />
+                        <TextBlock Text="已完成思考"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                    </StackPanel>
+                </DataTemplate>
             </Setter.Value>
         </Setter>
         <Setter Property="Template">
