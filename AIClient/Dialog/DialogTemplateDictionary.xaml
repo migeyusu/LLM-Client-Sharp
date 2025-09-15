@@ -49,8 +49,8 @@
                                  Grid.Column="1"
                                  UniformCornerRadius="8"
                                  BorderThickness="0"
-                                 Background="{DynamicResource MaterialDesign.Brush.Primary.Light}"
-                                 Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light.Foreground}">
+                                 Background="{DynamicResource MaterialDesign.Brush.Primary.Dark}"
+                                 Foreground="{DynamicResource MaterialDesign.Brush.Primary.Dark.Foreground}">
                 <StackPanel>
                     <TextBox TextWrapping="Wrap"
                              IsReadOnly="True"
