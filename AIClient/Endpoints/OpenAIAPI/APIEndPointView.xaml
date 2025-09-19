@@ -69,12 +69,12 @@
             <TextBox Grid.Row="2" Grid.Column="1"
                      Text="{Binding ApiLogUrl,Mode=TwoWay}" />
             <TextBlock Grid.Row="2" Grid.Column="2" Text="Source：" />
-            <StackPanel Grid.Row="2" Grid.Column="3"
-                        Orientation="Horizontal">
+            <DockPanel Grid.Row="2" Grid.Column="3">
                 <ComboBox VerticalAlignment="Bottom"
                           HorizontalAlignment="Stretch"
+                          DockPanel.Dock="Left"
                           SelectedValue="{Binding ModelsSource,Mode=TwoWay}"
-                          Width="230">
+                          Width="170">
                     <ComboBox.Items>
                         <converters:ModelSource>None</converters:ModelSource>
                         <converters:ModelSource>OpenRouter</converters:ModelSource>
@@ -83,15 +83,17 @@
                         <converters:ModelSource>O3Fan</converters:ModelSource>
                     </ComboBox.Items>
                 </ComboBox>
-                <Button Style="{StaticResource MaterialDesignIconForegroundButton}"
+                <Button Style="{StaticResource MaterialDesignPaperButton}"
                         Margin="10,0"
-                        Width="26"
-                        Height="26"
                         VerticalAlignment="Bottom"
                         Command="{Binding RefreshModelSource}">
-                    <materialDesign:PackIcon Kind="Refresh" />
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Refresh"
+                                                 VerticalAlignment="Center" />
+                        <TextBlock Margin="6,0,0,0">同步模型</TextBlock>
+                    </StackPanel>
                 </Button>
-            </StackPanel>
+            </DockPanel>
         </Grid>
         <ListBox Grid.Row="1" Grid.Column="0"
                  Margin="0,16,0,0"

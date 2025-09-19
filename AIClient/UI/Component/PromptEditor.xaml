@@ -13,7 +13,7 @@
     <UserControl.Resources>
         <HeaderedContentControl x:Key="HeaderedContentControl"
                                 Style="{StaticResource DialogContentControlStyle}"
-                                Header="System Prompt"
+                                Header="{Binding Header,Mode=OneTime}"
                                 Width="600">
             <Grid>
                 <TextBox Text="{Binding PromptString,Mode=TwoWay, UpdateSourceTrigger=LostFocus}"

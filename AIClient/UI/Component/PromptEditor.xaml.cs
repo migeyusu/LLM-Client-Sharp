@@ -32,6 +32,15 @@ public partial class PromptEditor : UserControl
         set { SetValue(SourceProperty, value); }
     }
 
+    public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(
+        nameof(Header), typeof(string), typeof(PromptEditor), new PropertyMetadata("System Prompt"));
+
+    public string Header
+    {
+        get { return (string)GetValue(HeaderProperty); }
+        set { SetValue(HeaderProperty, value); }
+    }
+
     public void PromptEditorButton_OnClick(object sender, RoutedEventArgs e)
     {
         //这里必须通过resouce发送到dialoghost，否则会绑定异常

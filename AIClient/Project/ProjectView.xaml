@@ -43,6 +43,7 @@
                 <component:PromptEditor Grid.Column="1"
                                         VerticalAlignment="Stretch"
                                         Margin="0,0,10,0"
+                                        Header="Project Description"
                                         Source="{Binding Source={StaticResource PromptsResource}, Path=SystemPrompts,Mode=OneWay}"
                                         PromptString="{Binding Description,Mode=TwoWay,UpdateSourceTrigger=LostFocus}" />
                 <StackPanel Grid.Column="2"
@@ -105,7 +106,7 @@
                                 Orientation="Horizontal">
                         <StackPanel.Resources>
                             <Style TargetType="{x:Type Button}"
-                                   BasedOn="{StaticResource MaterialDesignFloatingActionMiniSecondaryDarkButton}">
+                                   BasedOn="{StaticResource MaterialDesignFloatingActionMiniDarkButton}">
                                 <Setter Property="VerticalAlignment"
                                         Value="Center" />
                                 <Setter Property="Height"

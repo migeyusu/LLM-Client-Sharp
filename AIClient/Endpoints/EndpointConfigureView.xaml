@@ -29,14 +29,14 @@
             </Grid.ColumnDefinitions>
             <materialDesign:PopupBox Grid.Column="0"
                                      Margin="5"
-                                     ToolTip="添加新的API"
+                                     ToolTip="添加新的终结点"
                                      ToolTipService.InitialShowDelay="0"
                                      PlacementMode="BottomAndAlignCentres"
                                      VerticalAlignment="Center"
                                      materialDesign:ElevationAssist.Elevation="Dp4"
                                      Width="30"
                                      Height="30"
-                                     Style="{StaticResource MaterialDesignMultiFloatingActionSecondaryPopupBox}">
+                                     Style="{StaticResource MaterialDesignMultiFloatingActionPopupBox}">
                 <materialDesign:PopupBox.ToggleCheckedContent>
                     <materialDesign:PackIcon Width="20"
                                              Height="20"
