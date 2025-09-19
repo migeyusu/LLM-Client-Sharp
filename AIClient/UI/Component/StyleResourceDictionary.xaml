@@ -134,7 +134,7 @@
         <Setter Property="Stylus.IsFlicksEnabled" Value="false" />
         <!-- <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ScrollBar.Foreground}" /> -->
         <Setter Property="Foreground"
-                Value="DarkGray"/>
+                Value="DarkGray" />
         <Setter Property="Width" Value="12" />
         <Setter Property="Template">
             <Setter.Value>
@@ -524,11 +524,13 @@
                 <system:Boolean>False</system:Boolean>
             </Setter.Value>
         </Setter>
-        <Setter Property="Content">
+        <Setter Property="ContentTemplate">
             <Setter.Value>
-                <materialDesign:PackIcon Kind="CloseThick"
-                                         Width="16"
-                                         Height="16" />
+                <DataTemplate>
+                    <materialDesign:PackIcon Kind="CloseThick"
+                                             Width="16"
+                                             Height="16" />
+                </DataTemplate>
             </Setter.Value>
         </Setter>
     </Style>
@@ -623,18 +625,20 @@
     <Style x:Key="StopButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignRaisedDarkButton}">
-        <Setter Property="Content">
+        <Setter Property="ContentTemplate">
             <Setter.Value>
-                <StackPanel Orientation="Horizontal">
-                    <ProgressBar IsIndeterminate="True"
-                                 Foreground="White"
-                                 Margin="-6,0,0,0"
-                                 Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                 Value="0" />
-                    <TextBlock Text="停止"
-                               Margin="10,0,0,0"
-                               Style="{StaticResource MaterialDesignBody1TextBlock}" />
-                </StackPanel>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <ProgressBar IsIndeterminate="True"
+                                     Foreground="White"
+                                     Margin="-6,0,0,0"
+                                     Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                     Value="0" />
+                        <TextBlock Text="停止"
+                                   Margin="10,0,0,0"
+                                   Style="{StaticResource MaterialDesignBody1TextBlock}" />
+                    </StackPanel>
+                </DataTemplate>
             </Setter.Value>
         </Setter>
         <Setter Property="materialDesign:ElevationAssist.Elevation"
