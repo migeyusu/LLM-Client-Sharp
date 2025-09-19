@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Dialog;
@@ -116,7 +117,7 @@ public class MainWindowViewModel : BaseViewModel
 
     #region dialog
 
-    public ICommand ImportCommand => new ActionCommand((async o =>
+    public ICommand ImportDialogCommand => new ActionCommand((async o =>
     {
         try
         {
@@ -161,28 +162,28 @@ public class MainWindowViewModel : BaseViewModel
         }
     }));
 
-    public ICommand NewDialogCommand => new ActionCommand((async _ =>
+    public ICommand NewDialogCommand => new ActionCommand(async _ =>
     {
         try
         {
             var selectionViewModel = new ModelSelectionPopupViewModel();
             if (await DialogHost.Show(selectionViewModel) is true)
             {
-                var model = selectionViewModel.GetClient();
-                if (model == null)
+                var chatClient = selectionViewModel.GetClient();
+                if (chatClient == null)
                 {
-                    MessageBox.Show("No model created!");
+                    MessageBox.Show("Create client failed!");
                     return;
                 }
 
-                AddNewDialog(model);
+                AddNewDialog(chatClient);
             }
         }
         catch (Exception e)
         {
             MessageBox.Show(e.Message);
         }
-    }));
+    });
 
     private readonly IMapper _mapper;
 
@@ -213,6 +214,8 @@ public class MainWindowViewModel : BaseViewModel
         AddSession(dialogSession);
     }
 
+    #endregion
+
     public ObservableCollection<ILLMSession> SessionViewModels { get; set; } =
         new ObservableCollection<ILLMSession>();
 
@@ -228,8 +231,6 @@ public class MainWindowViewModel : BaseViewModel
             OnPropertyChanged();
         }
     }
-
-    #endregion
 
     public ICommand LoadCommand => new ActionCommand((_ =>
     {

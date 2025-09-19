@@ -33,14 +33,19 @@ public class CompletedResult : IResponse
 
     public ChatFinishReason? FinishReason { get; set; }
 
-    public string? TextResponse
+    public string? FirstTextResponse
     {
         get { return ResponseMessages?.FirstOrDefault()?.Text; }
     }
-    
+
     public IList<ChatMessage>? ResponseMessages { get; set; }
 
     public IList<ChatAnnotation>? Annotations { get; set; }
 
     public AdditionalPropertiesDictionary? AdditionalProperties { get; set; }
+
+    public string? GetContentAsString()
+    {
+        return ResponseMessages?.Aggregate(string.Empty, (current, message) => current + message.Text);
+    }
 }

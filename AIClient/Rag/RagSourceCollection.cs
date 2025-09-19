@@ -162,9 +162,9 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
     {
         var fullPath = Path.GetFullPath(ConfigFileName);
         var json = JsonSerializer.Serialize(this.Sources, Extension.DefaultJsonSerializerOptions);
-        await SaveSemaphore.WaitAsync();
         try
         {
+            await SaveSemaphore.WaitAsync();
             await File.WriteAllTextAsync(fullPath, json);
         }
         finally

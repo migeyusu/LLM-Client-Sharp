@@ -55,15 +55,12 @@ public class BaseViewModel : INotifyPropertyChanged
 
     protected virtual async void OnPropertyChangedAsync([CallerMemberName] string? propertyName = null)
     {
-        if (Dispatcher.CheckAccess())
+        if (PropertyChanged == null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            return;
         }
-        else
-        {
-            await Dispatcher.InvokeAsync(() =>
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)));
-        }
+
+        await DispatchAsync(() => OnPropertyChanged(propertyName));
     }
 
     protected void Dispatch(Action action)
@@ -83,6 +80,10 @@ public class BaseViewModel : INotifyPropertyChanged
         if (!Dispatcher.CheckAccess())
         {
             await Dispatcher.InvokeAsync(action);
+        }
+        else
+        {
+            action.Invoke();
         }
     }
 }

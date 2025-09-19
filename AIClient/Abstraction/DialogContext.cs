@@ -1,5 +1,7 @@
-﻿using LLMClient.Dialog;
+﻿using System.Runtime.CompilerServices;
+using LLMClient.Dialog;
 using LLMClient.Endpoints;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;
 
@@ -21,4 +23,5 @@ public class DialogContext
     public IList<IDialogItem> DialogItems { get; }
 
     public RequestViewItem? Request { get; }
+    
 }

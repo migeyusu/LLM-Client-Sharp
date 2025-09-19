@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
@@ -50,6 +49,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public RequestViewItem() : base()
     {
+        InteractionId = Guid.NewGuid();
     }
 
     public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(

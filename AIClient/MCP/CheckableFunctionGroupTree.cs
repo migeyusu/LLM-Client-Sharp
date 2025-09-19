@@ -82,6 +82,7 @@ public class CheckableFunctionGroupTree : BaseViewModel, IAIFunctionGroup
     public virtual async Task EnsureAsync(CancellationToken cancellationToken)
     {
         await Data.EnsureAsync(cancellationToken);
+        await UIThread.SwitchTo();
         var availableTools = Data.AvailableTools?.ToList();
         if (availableTools != null)
         {

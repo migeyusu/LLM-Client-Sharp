@@ -268,7 +268,7 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
         return new TextSearchOptions() { Skip = skipValue, Top = topValue };
     }
 
-    TextSearchOptions ConvertDynamicToTextSearchOptions(dynamic dynamicOptions)
+    private static TextSearchOptions ConvertDynamicToTextSearchOptions(dynamic dynamicOptions)
     {
         try
         {

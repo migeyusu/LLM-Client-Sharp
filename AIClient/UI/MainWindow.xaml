@@ -533,22 +533,13 @@
                                                          Height="24"
                                                          Kind="Pencil" />
                             </materialDesign:PopupBox.ToggleCheckedContent>
-                            <StackPanel>
-                                <!--<Button ToolTip="新建Workflow"
-                                        Margin="5,10,5,0">
-                                    <iconPacks:PackIconMaterialDesign Kind="History"
-                                                                      Width="18"
-                                                                      Height="18" />
-                                </Button>-->
+                            <StackPanel Margin="10,0">
                                 <Button ToolTip="新建对话"
-                                        Margin="5,10,5,0"
-                                        Command="{Binding NewDialogCommand}">
-                                    <materialDesign:PackIcon Width="18"
-                                                             Height="18"
-                                                             Kind="Forum" />
-                                </Button>
+                                        Margin="0,10,0,0"
+                                        Content="{materialDesign:PackIcon Kind=Forum,Size=18}"
+                                        Command="{Binding NewDialogCommand}" />
                                 <Button ToolTip="新建工程"
-                                        Margin="5,10,5,10"
+                                        Margin="0,10,0,10"
                                         Command="{Binding NewProjectCommand}">
                                     <iconPacks:PackIconMaterialDesign Kind="Workspaces"
                                                                       Width="18"
@@ -560,7 +551,7 @@
                                 Margin="10,0,0,0"
                                 ToolTip="导入对话"
                                 CommandParameter="dialog"
-                                Command="{Binding ImportCommand}">
+                                Command="{Binding ImportDialogCommand}">
                             <materialDesign:PackIcon Kind="ForumPlus"
                                                      Width="18"
                                                      Height="18" />

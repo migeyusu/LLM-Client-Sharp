@@ -1,43 +1,85 @@
-﻿using System.Runtime.CompilerServices;
+﻿using LLMClient.Abstraction;
 using LLMClient.Dialog;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Agent;
 
 public static class Agents
 {
-    public static PromptAgent SchedularAgent { get; } = new PromptAgent
-    {
-        InteractionId = Guid.NewGuid(),
-        Prompt = "You are a helpful AI assistant. Please assist the user with their queries."
-    };
 }
 
 public interface IAgent
 {
 }
 
-public abstract class AgentBase : IAgent, IRequestItem
+public class PromptAgent : IAgent
 {
-    public virtual long Tokens { get; } = 0;
+    private readonly ILLMChatClient _chatClient;
 
-    public abstract IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken);
+    private readonly Action<string>? _stream;
 
-    public bool IsAvailableInContext { get; } = true;
-    public Guid InteractionId { get; set; }
-}
+    private readonly ILogger? _promptLogger;
 
-public class PromptAgent : AgentBase
-{
-    public string Prompt { get; set; } = string.Empty;
+    public UsageDetails Usage { get; set; } = new();
 
-    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    public double? Price { get; set; } = 0;
+
+    public PromptAgent(ILLMChatClient chatClient, Action<string>? stream, ILogger? promptLogger)
     {
-        if (string.IsNullOrEmpty(Prompt))
+        _chatClient = chatClient;
+        _stream = stream;
+        _promptLogger = promptLogger;
+    }
+
+    public int RetryCount { get; set; } = 3;
+
+    public async Task<string> GetMessageAsync(string prompt, string? systemPrompt = null,
+        CancellationToken cancellationToken = default)
+    {
+        var context = new DialogContext([
+            new RequestViewItem()
+            {
+                TextMessage = prompt
+            }
+        ], systemPrompt);
+        var tryCount = 0;
+        while (tryCount < RetryCount)
         {
-            throw new NotSupportedException("Prompt cannot be null or empty.");
+            var completedResult = await _chatClient.SendRequest(context, _stream, _promptLogger, cancellationToken)
+                .ConfigureAwait(false);
+            tryCount++;
+            if (completedResult.IsInterrupt)
+            {
+                _promptLogger?.LogWarning(
+                    "The LLM request was interrupted. Retrying... (Attempt {TryCount}/{RetryCount})",
+                    tryCount, RetryCount);
+            }
+
+            if (completedResult.Usage != null)
+            {
+                Usage.Add(completedResult.Usage);
+            }
+
+            if (completedResult.Price != null)
+            {
+                Price += completedResult.Price;
+            }
+
+            var contentAsString = completedResult.GetContentAsString();
+            if (string.IsNullOrEmpty(contentAsString))
+            {
+                _promptLogger?.LogWarning(
+                    "The LLM returned an empty response. Retrying... (Attempt {TryCount}/{RetryCount})",
+                    tryCount, RetryCount);
+            }
+            else
+            {
+                return contentAsString;
+            }
         }
 
-        yield return new ChatMessage(ChatRole.User, Prompt);
+        _promptLogger?.LogError("Failed to get a valid response from the LLM after {RetryCount} attempts.", RetryCount);
+        throw new Exception("Failed to get a valid response from the LLM.");
     }
 }

@@ -287,7 +287,6 @@ public class RequesterViewModel : BaseViewModel
             {
                 SummaryPrompt = _options.TokenSummarizePrompt,
                 OutputLength = _options.SummarizeWordsCount,
-                InteractionId = Guid.NewGuid(),
             };
             var summarizeModel = _options.SummarizeClient ?? this.DefaultClient;
             await _getResponse.Invoke(summarizeModel, summaryRequest, index);
@@ -331,7 +330,6 @@ public class RequesterViewModel : BaseViewModel
         //每次搜索的条件可能不同，所以传递的是副本
         return new RequestViewItem()
         {
-            InteractionId = Guid.NewGuid(),
             TextMessage = promptBuilder.ToString().Trim(),
             Attachments = Attachments.ToList(),
             FunctionGroups = tools == null ? [] : [..tools],

@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using LLMClient.UI.Component;
 
 namespace LLMClient.MCP;
 
@@ -33,7 +34,14 @@ public partial class MCPServiceCollectionView : UserControl
         var mcpServiceCollection = this.McpServiceCollection;
         if (mcpServiceCollection != null)
         {
-            await mcpServiceCollection.EnsureAsync();
+            try
+            {
+                await mcpServiceCollection.EnsureAsync();
+            }
+            catch (Exception exception)
+            {
+                MessageEventBus.Publish("加载 MCP 服务失败: " + exception.Message);
+            }
         }
     }
 }

@@ -14,7 +14,11 @@
         <Platforms>AnyCPU;x64</Platforms>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     </PropertyGroup>
-
+    
+    <PropertyGroup>
+        <NoWarn>$(NoWarn);OPENAI001</NoWarn>
+    </PropertyGroup>
+    
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <PlatformTarget>x64</PlatformTarget>
     </PropertyGroup>
@@ -33,25 +37,24 @@
         <PackageReference Include="Markdig" Version="0.41.3" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
         <PackageReference Include="MaterialDesignThemes" Version="5.2.2-ci998"/>
-        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.7.1" />
-        <PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" Version="9.6.0-preview.1.25310.2"/>
-        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.6.0-preview.1.25310.2"/>
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.9.0" />
+        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.9.0-preview.1.25458.4" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0-preview.5.25277.114"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0-preview.5.25277.114"/>
         <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.0-preview.5.25277.114"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-preview.5.25277.114"/>
         <PackageReference Include="Microsoft.KernelMemory.AI.OpenAI" Version="0.98.250508.3" />
         <PackageReference Include="Microsoft.KernelMemory.Core" Version="0.98.250508.3" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.60.0" />
+        <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.65.0" />
+        <PackageReference Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.65.0-preview" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.65.0" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.61.0-preview" />
-        <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.60.0" />
-        <PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.57.0-alpha"/>
-        <PackageReference Include="Microsoft.SemanticKernel.Plugins.Memory" Version="1.57.0-alpha"/>
+        <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.65.0" />
         <PackageReference Include="Microsoft.SemanticKernel.Plugins.Web" Version="1.60.0-alpha" />
         <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3344-prerelease"/>
         <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135"/>
         <PackageReference Include="MimeTypeMapOfficial" Version="1.0.17"/>
-        <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.1"/>
+        <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.4" />
         <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0"/>
         <PackageReference Include="ReverseMarkdown" Version="4.7.0" />
         <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />

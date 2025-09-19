@@ -25,7 +25,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         {
             if (value == _errorMessage) return;
             _errorMessage = value;
-            OnPropertyChanged();
+            OnPropertyChangedAsync();
         }
     }
 
@@ -97,7 +97,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         {
             if (Equals(value, _availableTools)) return;
             _availableTools = value;
-            OnPropertyChanged();
+            OnPropertyChangedAsync();
         }
     }
 
@@ -109,7 +109,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         {
             if (value == _isAvailable) return;
             _isAvailable = value;
-            OnPropertyChanged();
+            OnPropertyChangedAsync();
         }
     }
 
@@ -144,6 +144,8 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         }
     });
 
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
+
     /// <summary>
     /// 列举支持的操作
     /// </summary>
@@ -157,6 +159,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
 
         try
         {
+            await _refreshLock.WaitAsync(cancellationToken);
             ErrorMessage = null;
             if (_client == null)
             {
@@ -182,6 +185,10 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
             MessageEventBus.Publish($"Error refreshing tools {this.Name}: {e.Message}");
             return false;
         }
+        finally
+        {
+            _refreshLock.Release();
+        }
     }
 
     /// <summary>
@@ -206,6 +213,11 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
     private string? _userPrompt;
     private bool _isAvailable;
     private bool _isEnabled = true;
+
+
+    protected McpServerItem()
+    {
+    }
 
     public abstract string GetUniqueId();
 

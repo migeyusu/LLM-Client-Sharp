@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
@@ -22,7 +23,9 @@ namespace LLMClient.Data;
 [JsonSerializable(typeof(List<string>))]
 [JsonSerializable(typeof(object))]
 [JsonSerializable(typeof(ChatTokenUsage))]
+#pragma warning disable OPENAI001
 [JsonSerializable(typeof(ChatMessageAnnotation))]
+#pragma warning restore OPENAI001
 [JsonSerializable(typeof(GeekAISearchOption))]
 [JsonSerializable(typeof(OpenRouterSearchOption))]
 [JsonSerializable(typeof(GoogleSearchPlugin))]

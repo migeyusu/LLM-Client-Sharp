@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.Json;
-using System.Windows.Data;
 using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
@@ -48,9 +47,9 @@ public class ProjectViewModel : FileBasedSessionBase
         }
     }
 
-    public override bool IsBusy { get; } = false;
+    public override bool IsBusy { get; }
 
-    private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveDir)));
+    private static readonly Lazy<string> SaveFolderPathLazy = new(() => Path.GetFullPath(SaveDir));
 
     public static string SaveFolderPath => SaveFolderPathLazy.Value;
 
@@ -91,7 +90,7 @@ public class ProjectViewModel : FileBasedSessionBase
                     return null;
                 }
 
-                var viewModel = mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, (options => { }));
+                var viewModel = mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, _ => { });
                 viewModel.FileFullPath = fileInfo.FullName;
                 viewModel.IsDataChanged = false;
                 return viewModel;
@@ -173,14 +172,14 @@ public class ProjectViewModel : FileBasedSessionBase
 
     protected override async Task SaveToStream(Stream stream)
     {
-        var dialogModel = _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, (options => { }));
+        var dialogModel = _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, _ => { });
         await JsonSerializer.SerializeAsync(stream, dialogModel, SerializerOption);
     }
 
     public override object Clone()
     {
-        var projectPersistModel = _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, (options => { }));
-        var cloneProject = _mapper.Map<ProjectPersistModel, ProjectViewModel>(projectPersistModel, (options => { }));
+        var projectPersistModel = _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, _ => { });
+        var cloneProject = _mapper.Map<ProjectPersistModel, ProjectViewModel>(projectPersistModel, _ => { });
         cloneProject.IsDataChanged = true;
         return cloneProject;
     }
@@ -412,7 +411,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     #region tasks
 
-    public ICommand NewTaskCommand => new ActionCommand(o => { AddTask(new ProjectTaskViewModel(this, _mapper)); });
+    public ICommand NewTaskCommand => new ActionCommand(_ => { AddTask(new ProjectTaskViewModel(this, _mapper)); });
 
     public void AddTask(ProjectTaskViewModel task)
     {
@@ -461,7 +460,7 @@ public class ProjectViewModel : FileBasedSessionBase
     ];
 
     public ProjectViewModel(ILLMChatClient modelClient, IMapper mapper, GlobalOptions options,
-        IRagSourceCollection ragSourceCollection, IEnumerable<ProjectTaskViewModel>? tasks = null) : base()
+        IRagSourceCollection ragSourceCollection, IEnumerable<ProjectTaskViewModel>? tasks = null)
     {
         _mapper = mapper;
         Requester = new RequesterViewModel(modelClient, GetResponse, options, ragSourceCollection, mapper)
@@ -603,7 +602,7 @@ public class ProjectViewModel : FileBasedSessionBase
         }
 
         var dialogSessionClone =
-            _mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(projectTaskViewModel, (options => { }));
+            _mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(projectTaskViewModel, _ => { });
         if (dialogSessionClone == null)
         {
             return;

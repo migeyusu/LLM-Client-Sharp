@@ -251,31 +251,24 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
             return;
         }
 
-        try
+        foreach (var mcpServerItem in Items)
         {
-            foreach (var mcpServerItem in Items)
-            {
-                await mcpServerItem.DisposeAsync();
-            }
-
-            await using (var fileStream = fileInfo.OpenRead())
-            {
-                var deserialize =
-                    JsonSerializer.Deserialize<IList<McpServerItem>>(fileStream,
-                        Extension.DefaultJsonSerializerOptions);
-                if (deserialize != null)
-                {
-                    this.Items = new ObservableCollection<McpServerItem>(deserialize);
-                }
-            }
-
-            this.IsLoaded = true;
-            MessageEventBus.Publish("已加载MCP服务器配置");
+            await mcpServerItem.DisposeAsync();
         }
-        catch (Exception e)
+
+        await using (var fileStream = fileInfo.OpenRead())
         {
-            Trace.TraceError(e.ToString());
+            var deserialize =
+                JsonSerializer.Deserialize<IList<McpServerItem>>(fileStream,
+                    Extension.DefaultJsonSerializerOptions);
+            if (deserialize != null)
+            {
+                this.Items = new ObservableCollection<McpServerItem>(deserialize);
+            }
         }
+
+        this.IsLoaded = true;
+        MessageEventBus.Publish("已加载MCP服务器配置");
     }
 
     public async Task EnsureAsync()
@@ -285,7 +278,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
             await this.LoadAsync();
         }
 
-        if (!this.IsInitialized)
+        if (this.IsLoaded && !this.IsInitialized)
         {
             await this.InitializeToolsAsync();
         }
@@ -313,20 +306,10 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
             return;
         }
 
-        foreach (var mcpServerItem in this.EnabledServers)
-        {
-            try
-            {
-                await mcpServerItem.RefreshToolsAsync();
-            }
-            catch (Exception e)
-            {
-                Trace.TraceWarning($"mcp service {mcpServerItem.Name} get tools failed: {e.Message}");
-            }
-        }
-
+        await Parallel.ForEachAsync(this.EnabledServers,
+            async (mcpServerItem, ct) => { await mcpServerItem.RefreshToolsAsync(ct); });
         this.IsInitialized = true;
-        MessageEventBus.Publish("已刷新MCP服务器工具列表");
+        MessageEventBus.Publish("已加载MCP服务器工具列表");
     }
 
     public async void DeleteServerItem(McpServerItem item)

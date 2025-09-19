@@ -22,7 +22,9 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
 
     public const string DefaultEffortLevel = "Default";
 
+#pragma warning disable OPENAI001
     public IList<ChatReasoningEffortLevel> EffortLevels { get; } =
+
     [
         new(DefaultEffortLevel),
         ChatReasoningEffortLevel.Low,
@@ -42,6 +44,8 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
             OnPropertyChanged();
         }
     }
+
+#pragma warning restore OPENAI001
 
     public string? Effort
     {

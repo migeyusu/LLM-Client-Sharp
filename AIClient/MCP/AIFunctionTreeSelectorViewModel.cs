@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
@@ -78,6 +79,8 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
     public ICommand SelectCommand => new ActionCommand((o) => { AfterSelect?.Invoke(); });
 
     public ICommand RefreshSourceCommand => new ActionCommand(async (o) => { await RefreshSourceAsync(); });
+
+    public ICommand CancelRefreshCommand => new ActionCommand((o) => { _refreshSource?.Cancel(); });
 
     public IEnumerable<CheckableFunctionGroupTree>? SelectedFunctionGroups
     {
@@ -159,7 +162,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
     private bool _isInitialized = false;
     private bool _isEnsuring = false;
     private FunctionCallEngineType? _engineType;
-    private IList<FunctionCallEngineType> _selectableCallEngineTypes;
+    private IList<FunctionCallEngineType> _selectableCallEngineTypes = [];
 
     /// <summary>
     /// 重置状态，表示需要重新初始化
@@ -179,6 +182,8 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
         await RefreshSourceAsync();
         _isInitialized = true;
     }
+
+    private CancellationTokenSource? _refreshSource;
 
     public async Task RefreshSourceAsync()
     {
@@ -255,9 +260,21 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
 
             McpServices = FunctionGroups.Where((model => model.Data is McpServerItem)).ToArray();
             BuiltInFunctions = FunctionGroups.Where((model => model.Data is IBuiltInFunctionGroup)).ToArray();
-            foreach (var aiFunctionGroup in this.FunctionGroups.ToArray())
+            try
             {
-                await aiFunctionGroup.EnsureAsync(CancellationToken.None);
+                using (_refreshSource = new CancellationTokenSource())
+                {
+                    await Parallel.ForEachAsync(this.FunctionGroups.ToArray(), _refreshSource.Token,
+                        async (aiFunctionGroup, ct) => { await aiFunctionGroup.EnsureAsync(ct); });
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                //忽略
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError("Failed to refresh function groups: " + e);
             }
 
             foreach (var functionGroup in this.FunctionGroups)
