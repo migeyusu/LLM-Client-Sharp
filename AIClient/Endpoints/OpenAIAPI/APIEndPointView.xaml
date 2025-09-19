@@ -85,6 +85,9 @@
                 </ComboBox>
                 <Button Style="{StaticResource MaterialDesignPaperButton}"
                         Margin="10,0"
+                        Padding="0"
+                        VerticalContentAlignment="Center"
+                        HorizontalContentAlignment="Center"
                         VerticalAlignment="Bottom"
                         Command="{Binding RefreshModelSource}">
                     <StackPanel Orientation="Horizontal">

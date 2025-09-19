@@ -227,7 +227,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                 }
             }
 
-            OnPropertyChangedAsync(nameof(SuggestedModelsOb));
+            OnPropertyChangedAsync(nameof(SuggestedModels));
         }
     }
 }
