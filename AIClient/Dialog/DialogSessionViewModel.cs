@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using AutoMapper;
 using ClosedXML;
@@ -174,6 +175,25 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
     });
 
     public ICommand ScrollToLastItemCommand => new ActionCommand((o => { ScrollToLast(); }));
+
+    public ICommand ScrollToTopCommand => new ActionCommand((o =>
+    {
+        if (o is ListBox listBox)
+        {
+            var scrollViewer = listBox.FindVisualChild<ScrollViewer>();
+            scrollViewer?.ScrollToTop();
+        }
+    }));
+
+
+    public ICommand ScrollToEndCommand => new ActionCommand((o =>
+    {
+        if (o is ListBox listBox)
+        {
+            var scrollViewer = listBox.FindVisualChild<ScrollViewer>();
+            scrollViewer?.ScrollToBottom();
+        }
+    }));
 
     public void ScrollToLast()
     {
