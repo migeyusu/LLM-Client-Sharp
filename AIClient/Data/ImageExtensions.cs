@@ -15,6 +15,7 @@ using MaterialDesignThemes.Wpf;
 using MimeTypes;
 using Brushes = System.Windows.Media.Brushes;
 using Pen = System.Windows.Media.Pen;
+using Size = System.Drawing.Size;
 
 namespace LLMClient.Data;
 
@@ -254,7 +255,7 @@ public static class ImageExtensions
         }
     }
 
-    public static ImageSource ToImageSource(this Stream stream, string extension, uint width = 32, uint height = 32,
+    public static ImageSource ToImageSource(this Stream stream, string extension, Size? size = null,
         bool shouldInvertColors = false)
     {
         //LocalSupportedImageExtensionsLazy.Value.Contains(extension, StringComparer.OrdinalIgnoreCase)
@@ -275,12 +276,18 @@ public static class ImageExtensions
                 StringComparer.OrdinalIgnoreCase))
 
         {
-            var magickImage = new MagickImage(stream, new MagickReadSettings()
+            var settings = new MagickReadSettings()
             {
-                Width = width,
-                Height = height,
                 BackgroundColor = MagickColors.Transparent,
-            });
+            };
+            //自动获取大小
+            if (size != null)
+            {
+                settings.Width = (uint)size.Value.Width;
+                settings.Height = (uint)size.Value.Height;
+            }
+
+            var magickImage = new MagickImage(stream, settings);
             if (shouldInvertColors)
             {
                 magickImage.Negate();

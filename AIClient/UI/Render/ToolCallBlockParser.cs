@@ -15,7 +15,7 @@ public class ToolCallBlockParser : SingleTagBlockParser<ToolCallBlock>
     {
     }
 
-    protected override void Process(ToolCallBlock block)
+    protected override void PostProcess(ToolCallBlock block)
     {
         var content = block.Lines.ToString().Trim();
         // parse xml content

@@ -6,6 +6,8 @@
         xmlns:local="clr-namespace:LLMClient"
         xmlns:test="clr-namespace:LLMClient.Test"
         xmlns:component="clr-namespace:LLMClient.UI.Component"
+        xmlns:controls="clr-namespace:WpfMath.Controls;assembly=WpfMath"
+        xmlns:wpf="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance test:TestWindow}"
         Title="TestWindow" Height="800" Width="1200">
@@ -14,12 +16,19 @@
             <RowDefinition Height="Auto" />
             <RowDefinition />
         </Grid.RowDefinitions>
-        <FlowDocumentScrollViewer Document="{Binding Document,Mode=OneWay}" 
-                                  MaxHeight="700"/>
+        <Image Source="{Binding LatexSource,Mode=OneWay}"
+               Stretch="None"/>
+        <wpf:WebView2 Grid.Row="1"
+                      x:Name="WebView2"/>
+        <!--<FlowDocumentScrollViewer Document="{Binding Document,Mode=OneWay}" 
+                                  MaxHeight="700"/>-->
+        <!--<controls:FormulaControl Grid.Row="0"
+                                 Formula="x \cos \theta + y \sin \theta = s" />-->
+        <!--
         <component:MarkdownTextBlock Grid.Row="1"
                                      TextWrapping="Wrap"
                                      VerticalAlignment="Top"
-                                     Source="{Binding  Collection,Mode=OneTime}" />
+                                     Source="{Binding  Collection,Mode=OneTime}" />-->
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"

@@ -92,12 +92,12 @@ public class PromptFunctionCallEngine : FunctionCallEngine
     {
         var promptBuilder = new StringBuilder();
         promptBuilder.AppendLine(
-            "In this environment you have access to a set of tools to help with answering, you can use them and wait for results for next response.");
+            "In this environment you have access to a set of tools to help with answering, you can use them and wait for results.");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("## Tool Definition Formatting");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine(
-            "Tools are formatted within several <tool></tool> XML tags:");
+            "Tools are formatted within several <tool></tool> XML tags.:");
         promptBuilder.AppendLine("<tools>");
         promptBuilder.AppendLine("  <tool>");
         promptBuilder.AppendLine("    <name>{tool1_name}</name>");
@@ -116,7 +116,7 @@ public class PromptFunctionCallEngine : FunctionCallEngine
             "As previous shown, each tool has a name, a description, and a json schema for its parameters and return values. <tool> tags are enclosed within <tools> tags.");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("## Tool Call Request Formatting");
-        promptBuilder.AppendLine("You can select one or more tools then lists in message by following format:");
+        promptBuilder.AppendLine("You can use tools by listing in message by following format:");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("<tool_calls>");
         promptBuilder.AppendLine("  <tool_call>");
@@ -143,9 +143,8 @@ public class PromptFunctionCallEngine : FunctionCallEngine
             "'python_interpreter' is the tool name, and '{\"code\": \"5 + 3 + 1294.678\"}' is the JSON object representing the arguments for that tool.");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("## Tool Call Result Formatting");
-        promptBuilder.AppendLine("");
         promptBuilder.AppendLine(
-            "Then you are provided the result of that tool call in the user's request which should be formatted as follows:");
+            "After you output the tool call request, environment will call the tool(s), and Then you are provided the result of that tool call in the user's request which should be formatted as follows:");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("<tool_call_results>");
         promptBuilder.AppendLine("  <tool_call_result>");
@@ -157,7 +156,7 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         promptBuilder.AppendLine(
             "The result are formatted within <tool_call_result></tool_call_result> XML tags, which can represent a file or any other output type. You can use this result as input for the next action.");
         promptBuilder.AppendLine(
-            "Warning: you can and only can call the tools and wait for answer but not imagine results by yourself!");
+            "Warning: **you can and only can send requests of tools calling, but not imagine results by yourself!**");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("## Tool Use Examples");
         promptBuilder.AppendLine("");
@@ -199,8 +198,7 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         promptBuilder.AppendLine("<tool_call_results>");
         promptBuilder.AppendLine("  <tool_call_result>");
         promptBuilder.AppendLine("      <name>search</name>");
-        promptBuilder.AppendLine(
-            "      <result>Guangzhou has a population of 15 million inhabitants as of 2021.</result>");
+        promptBuilder.AppendLine("      <result>Guangzhou has a population of 15 million inhabitants as of 2021.</result>");
         promptBuilder.AppendLine("  </tool_call_result>");
         promptBuilder.AppendLine("</tool_call_results>");
         promptBuilder.AppendLine("");
@@ -220,13 +218,11 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         promptBuilder.AppendLine("  </tool_call_result>");
         promptBuilder.AppendLine("</tool_call_results>");
         promptBuilder.AppendLine("");
-        promptBuilder.AppendLine(
-            "Assistant: The population of Shanghai is 26 million, while Guangzhou has a population of 15 million. Therefore, Shanghai has the highest population.");
+        promptBuilder.AppendLine("Assistant: The population of Shanghai is 26 million, while Guangzhou has a population of 15 million. Therefore, Shanghai has the highest population.");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("## Tool Use Available Tools");
-        promptBuilder.AppendLine(
-            "Above example were using notional tools that might not exist for you.");
+        promptBuilder.AppendLine("Above example were using notional tools that might not exist for you.");
         promptBuilder.AppendLine("NOW you only have access to these tools:");
         promptBuilder.AppendLine("<tools>");
         foreach (var func in functions)

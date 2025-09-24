@@ -137,6 +137,7 @@
                                         <materialDesign:PopupBox Margin="4,0,6,0"
                                                                  StaysOpen="True"
                                                                  PlacementMode="TopAndAlignLeftEdges"
+                                                                 PopupUniformCornerRadius="8"
                                                                  Opened="McpPopupBox_OnOpened"
                                                                  ToggleContent="{materialDesign:PackIcon Kind=Tools,Size=16}"
                                                                  VerticalAlignment="Center"
@@ -159,6 +160,7 @@
                                                              ToggleContent="{materialDesign:PackIcon Kind=Web,Size=16}"
                                                              VerticalAlignment="Center"
                                                              ToolTip="Web Search工具"
+                                                             PopupUniformCornerRadius="8"
                                                              PopupContent="{Binding SearchConfig,Mode=OneWay}"
                                                              Style="{StaticResource MaterialDesignToolPopupBox}">
                                         <materialDesign:PopupBox.PopupContentTemplate>
@@ -197,7 +199,7 @@
                                                  materialDesign:ElevationAssist.Elevation="Dp3">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PopupBox StaysOpen="True"
-                                                             PopupUniformCornerRadius="6"
+                                                             PopupUniformCornerRadius="8"
                                                              PopupElevation="Dp3"
                                                              Padding="10"
                                                              PlacementMode="TopAndAlignLeftEdges"
@@ -335,6 +337,7 @@
                                                              ToggleContent="{materialDesign:PackIcon Kind=DataMatrixEdit,Size=16}"
                                                              ToggleCheckedContent="{materialDesign:PackIcon Kind=Add,Size=16}"
                                                              VerticalAlignment="Center"
+                                                             PopupUniformCornerRadius="8"
                                                              ToolTip="RAG Resource As Tools"
                                                              PopupContent="{Binding }"
                                                              Style="{StaticResource MaterialDesignToolPopupBox}">

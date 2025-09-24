@@ -1,0 +1,463 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>MathJax LaTeX 渲染器</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            padding: 25px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #3498db;
+        }
+
+        .formula-input {
+            width: 100%;
+            min-height: 80px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        .formula-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #95a5a6;
+        }
+
+        button.secondary:hover {
+            background: #7f8c8d;
+        }
+
+        #render-container {
+            display: inline-block;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px dashed #ddd;
+            margin: 20px 0;
+            min-width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .ready {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .rendering {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .complete {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .dimensions {
+            margin-top: 15px;
+            font-family: monospace;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #eee;
+        }
+
+        .examples {
+            margin-top: 30px;
+        }
+
+        .example {
+            display: inline-block;
+            margin: 10px 15px 10px 0;
+            padding: 8px 15px;
+            background: #e8f4fc;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .example:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .footer {
+            margin-top: 35px;
+            text-align: center;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+    </style>
+    <script>
+        // 配置MathJax
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                packages: {'[+]': ['ams']}, // 加载ams扩展
+                tags: 'ams', // 使用AMS编号
+                autoload: {
+                    box: ['boxed'] // 确保boxed命令被加载
+                }
+            },
+            svg: {
+                fontCache: 'none'
+            },
+            startup: {
+                ready: () => {
+                    MathJax.startup.defaultReady();
+                    // 渲染完成后，通知页面我们准备好了
+                    updateStatus('ready', 'MathJax 已加载完成，可以渲染公式');
+                }
+            }
+        };
+
+        // 更新状态显示
+        function updateStatus(type, message) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + type;
+
+            if (type === 'ready') {
+                document.getElementById('renderBtn').disabled = false;
+            }
+        }
+
+        // 核心函数：渲染LaTeX
+        async function renderLatex() {
+            const latexString = document.getElementById('latexInput').value;
+            const container = document.getElementById('render-container');
+
+            if (!latexString.trim()) {
+                updateStatus('error', '请输入LaTeX公式');
+                return;
+            }
+
+            updateStatus('rendering', '正在渲染公式...');
+            container.innerHTML = `\\[${latexString}\\]`;
+
+            try {
+                // 清除之前的渲染结果
+                MathJax.typesetClear([container]);
+
+                // 重新渲染
+                await MathJax.typesetPromise([container]);
+
+                // 获取渲染后的尺寸
+                const mathElement = container.querySelector('mjx-container');
+                if (mathElement) {
+                    const rect = mathElement.getBoundingClientRect();
+
+                    // 显示尺寸信息
+                    document.getElementById('dimensions').innerHTML = `
+                        <strong>渲染尺寸:</strong><br>
+                        X: ${rect.x.toFixed(2)}px<br>
+                        Y: ${rect.y.toFixed(2)}px<br>
+                        宽度: ${rect.width.toFixed(2)}px<br>
+                        高度: ${rect.height.toFixed(2)}px
+                    `;
+
+                    updateStatus('complete', '公式渲染完成');
+                }
+            } catch (err) {
+                updateStatus('error', '渲染错误: ' + err.toString());
+            }
+        }
+
+        // 清除内容
+        function clearContent() {
+            document.getElementById('latexInput').value = '';
+            document.getElementById('render-container').innerHTML = '';
+            document.getElementById('dimensions').innerHTML = '';
+            updateStatus('ready', '准备就绪');
+        }
+
+        // 插入示例公式
+        function insertExample(formula) {
+            document.getElementById('latexInput').value = formula;
+        }
+
+        /**
+         * 使用 dom-to-image-more 可靠地将 DOM 节点转换为 PNG 图片
+         * @param {HTMLElement} node - 要截图的 DOM 节点.
+         * @param {number} scale - 放大倍数，用于生成更高分辨率的图片.
+         * @returns {Promise<string>} - 返回 PNG 图片的 Base64 Data URL.
+         */
+        async function captureNodeAsPng(node, scale = 2) {
+            if (!node) {
+                throw new Error("Target node not found.");
+            }
+
+            const rect = node.getBoundingClientRect();
+            const options = {
+                // 设置输出图片的尺寸，乘以 scale 提高清晰度
+                width: rect.width * scale,
+                height: rect.height * scale,
+                // 应用 scale 变换，使内容放大
+                style: {
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left'
+                },
+                // 如果需要白色背景而不是透明
+                // bgcolor: '#ffffff',
+                // 质量（用于jpeg/webp）
+                quality: 1.0,
+            };
+
+            try {
+                // 等待字体加载完成，这对于确保公式字体正确渲染至关重要
+                if (document.fonts && document.fonts.ready) {
+                    await document.fonts.ready;
+                }
+
+                const dataUrl = await domtoimage.toPng(node, options);
+                return dataUrl;
+
+            } catch (error) {
+                console.error('oops, something went wrong!', error);
+                throw error;
+            }
+        }
+
+        async function printByCanvas(svgElement) {
+            // 2. 创建 Canvas 并设置尺寸（基于 SVG 的边界框）
+            const canvas = document.createElement('canvas');
+            // 使用 canvg 库将 SVG 转换为 Canvas
+            const {createCanvas} = await import('https://cdn.skypack.dev/canvg@^3.0.0');
+            // 获取 SVG 内容
+            const svgContent = new XMLSerializer().serializeToString(svgElement);
+
+            // 创建 canvas
+            const ctx = canvas.getContext('2d');
+            // 使用 canvg 渲染
+            const v = await canvg.Canvg.fromString(ctx, svgContent);
+            await v.render();
+            // 4. 导出为 PNG 数据 URL
+            const pngDataUrl = canvas.toDataURL('image/png');
+            return pngDataUrl;
+        }
+
+        async function mathJaxSvgToPng(svgEl, scale = 1) {
+            // svgEl 是 MathJax 生成的 <svg class="mjx-svg"> 节点
+            const {width, height} = svgEl.getBoundingClientRect();
+
+            const w = Math.ceil(width * scale);
+            const h = Math.ceil(height * scale);
+
+            // 克隆一份，设定像素宽高，保留 viewBox
+            const clone = svgEl.cloneNode(true);
+            clone.setAttribute('width', w);
+            clone.setAttribute('height', h);
+
+            // 序列化为 SVG 字符串
+            const xml = new XMLSerializer().serializeToString(clone);
+            const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+
+            // 画到 canvas
+            const img = await new Promise((resolve, reject) => {
+                const image = new Image();
+                image.onload = () => resolve(image);
+                image.onerror = reject;
+                image.src = url;
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+
+            // 得到 Blob（或 dataURL）
+            return new Promise(resolve => canvas.toBlob(blob => resolve(blob), 'image/png'));
+        }
+
+        // 使用现代浏览器的原生 SVG 到 PNG 转换
+        // 默认1倍分辨率
+        async function modernSvgToPng(svgElement, ratio = 1) {
+            // 获取 SVG 内容
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const svgUrl = URL.createObjectURL(svgBlob);
+
+            // 创建图片
+            const img = new Image();
+            img.src = svgUrl;
+
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
+
+            // 绘制到 canvas
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = img.width * ratio;   
+            canvas.height = img.height * ratio;
+
+            ctx.scale(2, 2);
+            ctx.drawImage(img, 0, 0);
+
+            URL.revokeObjectURL(svgUrl);
+
+            return canvas.toDataURL('image/png');
+        }
+
+        async function print() {
+            try {
+                const resultImg = document.getElementById('result-img');
+                const container = document.getElementById('render-container');
+                let svgNode = container.querySelector('svg');
+                if (!svgNode) {
+                    alert("MathJax 公式尚未渲染完成，请稍候...");
+                    return;
+                }
+                let pngDataUrl = await modernSvgToPng(svgNode);
+
+                // const pngDataUrl = await captureNodeAsPng(svgNode, 1);
+                /*const blob = await mathJaxSvgToPng(svgNode, 2); // 2x 放大以提高分辨率
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'math.png';
+                a.click();*/
+                resultImg.src = pngDataUrl;
+            } catch (error) {
+                alert(`截图失败: ${error.message}`);
+            }
+
+        }
+    </script>
+    <!-- 使用最新的MathJax版本 -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@2.10.1/dist/dom-to-image-more.min.js"></script>
+
+</head>
+<body>
+<div class="container">
+    <h1>LaTeX MathJax 渲染器</h1>
+
+    <div class="instructions">
+        <p>此页面使用MathJax渲染LaTeX公式，特别支持<code>\boxed</code>命令。输入LaTeX公式后点击"渲染"按钮。</p>
+    </div>
+
+    <div class="examples">
+        <strong>示例公式:</strong>
+        <div class="example" onclick="insertExample('\\boxed{x=\\frac{-b\\pm\\sqrt{b^2-4ac}}{2a}}')">二次方程公式</div>
+        <div class="example" onclick="insertExample('\\int_{a}^{b} x^2 \\,dx')">积分示例</div>
+        <div class="example" onclick="insertExample('\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}')">
+            求和示例
+        </div>
+        <div class="example" onclick="insertExample('\\begin{pmatrix}a & b\\\\c & d\\end{pmatrix}')">矩阵示例</div>
+    </div>
+
+    <textarea id="latexInput" class="formula-input" placeholder="输入LaTeX公式，例如: \boxed{E = mc^2}"></textarea>
+
+    <div class="buttons">
+        <button id="renderBtn" onclick="renderLatex()" disabled>渲染公式</button>
+        <button class="secondary" onclick="clearContent()">清除</button>
+        <button class="secondary" onclick="print()">打印</button>
+    </div>
+
+    <div id="status" class="status">正在加载MathJax...</div>
+
+    <div id="render-container">
+        渲染结果将显示在这里...
+    </div>
+
+    <h3>截图结果：</h3>
+    <img id="result-img" style="border: 1px solid #ccc; background-color: #f0f0f0;">
+
+    <div id="dimensions" class="dimensions"></div>
+
+    <div class="footer">
+        <p>使用MathJax 3.2.2 | 支持AMSmath扩展 | 特别支持\boxed命令</p>
+    </div>
+</div>
+
+<script>
+    // 初始禁用渲染按钮，直到MathJax加载完成
+    document.getElementById('renderBtn').disabled = true;
+</script>
+</body>
+</html>

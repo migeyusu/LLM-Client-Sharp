@@ -5,6 +5,9 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Media;
+using Aspose.TeX.Features;
+using LLMClient.UI;
 using LLMClient.UI.Render;
 
 namespace LLMClient.Test;
@@ -15,6 +18,22 @@ public partial class TestWindow : Window, INotifyPropertyChanged
     {
         this.DataContext = this;
         InitializeComponent();
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+    }
+
+    public ImageSource? LatexSource
+    {
+        get => _latexSource;
+        set
+        {
+            if (Equals(value, _latexSource)) return;
+            _latexSource = value;
+            OnPropertyChanged();
+        }
     }
 
     public FlowDocument Document { get; set; } = new FlowDocument();
@@ -23,6 +42,10 @@ public partial class TestWindow : Window, INotifyPropertyChanged
 
     public CancellationTokenSource? RequestTokenSource { get; set; }
 
+    private LatexRenderService? latexRenderService;
+
+    private ImageSource? _latexSource;
+
     public void Stop()
     {
         RequestTokenSource?.Cancel();
@@ -30,6 +53,15 @@ public partial class TestWindow : Window, INotifyPropertyChanged
 
     public async void Start()
     {
+        if (latexRenderService == null)
+        {
+            latexRenderService = await LatexRenderService.CreateAsync(WebView2);
+        }
+
+        var imageSource =
+            await latexRenderService.RenderAsync("\\[\n\\boxed{ Rf(\\theta, s) = \\int_{L_{\\theta,s}} f(x, y) \\, ds }\n\\]");
+        this.LatexSource = imageSource;
+        return;
         RequestTokenSource?.Cancel();
         RequestTokenSource = new CancellationTokenSource();
         try

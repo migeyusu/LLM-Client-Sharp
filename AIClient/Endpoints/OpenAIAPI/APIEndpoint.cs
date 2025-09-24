@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.UI;
 using Microsoft.Extensions.Logging;
@@ -82,7 +83,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
     }
 
     public const string CopyFormat = "LMClient.APIEndPoint.Model";
-    
+
     public static void CopyToClipboard(APIModelInfo modelInfo)
     {
         string serialize = JsonSerializer.Serialize(modelInfo, Extension.DefaultJsonSerializerOptions);
@@ -91,7 +92,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         Clipboard.SetDataObject(dataObject, true);
     }
 
-    public ICommand PastCommand => new ActionCommand((o =>
+    public ICommand PastCommand => new ActionCommand(o =>
     {
         try
         {
@@ -101,8 +102,8 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         {
             MessageBox.Show("无法粘贴，出现错误:" + e.Message);
         }
-    }));
-    
+    });
+
     public void PastFromClipboard()
     {
         if (Clipboard.GetDataObject() is DataObject dataObject)

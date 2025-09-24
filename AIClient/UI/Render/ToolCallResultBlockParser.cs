@@ -14,7 +14,7 @@ public class ToolCallResultBlockParser : SingleTagBlockParser<ToolCallResultBloc
     {
     }
 
-    protected override void Process(ToolCallResultBlock block)
+    protected override void PostProcess(ToolCallResultBlock block)
     {
         var content = block.Lines.ToString().Trim();
 

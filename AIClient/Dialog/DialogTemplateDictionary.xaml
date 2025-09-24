@@ -155,7 +155,7 @@
             <component:MarkdownTextBlock TextWrapping="Wrap"
                                          VerticalAlignment="Top"
                                          Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                         Source="{Binding  RespondingText,Mode=OneTime}" />
+                                         Source="{Binding  TempResponseText,Mode=OneTime}" />
             <TextBox IsReadOnly="True"
                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                      BorderThickness="0"
@@ -338,6 +338,7 @@
                         </Menu>
                         <materialDesign:PopupBox Padding="4,0"
                                                  StaysOpen="True"
+                                                 PopupUniformCornerRadius="8"
                                                  VerticalAlignment="Center"
                                                  ToolTip="对比其他模型"
                                                  Margin="10,0,0,0"
@@ -375,6 +376,7 @@
                     <TextBlock Text="在上下文中有效"
                                VerticalAlignment="Center" />
                     <ToggleButton Command="{Binding SetAsAvailableCommand}"
+                                  CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                   VerticalAlignment="Center"
                                   Margin="6,0"
                                   ToolTip="通过将当前回复设置为在上下文中有效，可以跳过一些回复，减少上下文的长度"

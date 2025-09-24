@@ -15,7 +15,6 @@ using LLMClient.UI;
 using LLMClient.UI.Component;
 using LLMClient.UI.Render;
 using Markdig.Syntax;
-using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
@@ -177,7 +176,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                         {
                             case TextReasoningContent reasoningContent:
                                 var stringBuilder = new StringBuilder();
-                                stringBuilder.Append(":::think\n");
+                                stringBuilder.Append("\n:::think\n");
                                 stringBuilder.Append(reasoningContent.Text);
                                 stringBuilder.Append("\n:::\n");
                                 renderer.RenderRaw(stringBuilder.ToString());
@@ -340,6 +339,9 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         IsAvailableInContextSwitch = !IsAvailableInContextSwitch;
     }
 
+    /// <summary>
+    /// 可以通过手动控制实现叠加的上下文可用性
+    /// </summary>
     public bool IsAvailableInContextSwitch { get; set; } = true;
 
     public bool IsAvailableInContext
@@ -358,7 +360,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
     public CancellationTokenSource? RequestTokenSource { get; private set; }
 
-    public ObservableCollection<string> RespondingText { get; } = new();
+    public ObservableCollection<string> TempResponseText { get; } = new();
 
     public async Task<CompletedResult> SendRequest(DialogContext context)
     {
@@ -376,9 +378,10 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             }
 
             _resultDocument = null;
+            ErrorMessage = null;
             _tempDocument = new FlowDocument();
             IsResponding = true;
-            RespondingText.Clear();
+            TempResponseText.Clear();
             using (RequestTokenSource = new CancellationTokenSource())
             {
                 using (var blockingCollection = new BlockingCollection<string>())
@@ -392,7 +395,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                             {
                                 Dispatch(() =>
                                 {
-                                    RespondingText.Clear();
+                                    TempResponseText.Clear();
                                     customRenderer.AppendMarkdownObject(block);
                                 });
                             });
@@ -401,7 +404,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                         responseText =>
                         {
                             blockingCollection.Add(responseText);
-                            Dispatch(() => RespondingText.Add(responseText));
+                            Dispatch(() => TempResponseText.Add(responseText));
                         },
                         cancellationToken: RequestTokenSource.Token);
                     blockingCollection.CompleteAdding();
@@ -418,7 +421,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         }
         finally
         {
-            RespondingText.Clear();
+            TempResponseText.Clear();
             _tempDocument = null;
             IsResponding = false;
         }
@@ -453,114 +456,5 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
     public string GetCopyText()
     {
         return TextContent ?? string.Empty;
-    }
-}
-
-public class EditableResponseViewItem : BaseViewModel
-{
-    public List<EditableTextContent> TextContents { get; } = new();
-
-    public ICommand SaveCommand => new ActionCommand(() =>
-    {
-        if (TextContents.Any(textContent => !textContent.Check()))
-        {
-            return;
-        }
-
-        foreach (var textContent in TextContents)
-        {
-            textContent.ApplyText();
-        }
-
-        MessageEventBus.Publish("文本内容已更改");
-        DialogHost.CloseDialogCommand.Execute(null, null);
-        this._response.TriggerTextContentUpdate();
-    });
-
-    private readonly ResponseViewItem _response;
-
-    public EditableResponseViewItem(ResponseViewItem response)
-    {
-        this._response = response;
-        var messages = response.GetMessagesAsync(CancellationToken.None)
-            .ToBlockingEnumerable();
-        foreach (var message in messages)
-        {
-            var messageId = message.MessageId;
-            foreach (var content in message.Contents)
-            {
-                if (content is TextContent textContent)
-                {
-                    TextContents.Add(new EditableTextContent(textContent, messageId));
-                }
-            }
-        }
-    }
-}
-
-public class EditableTextContent : BaseViewModel
-{
-    public ICommand RecoverCommand => new ActionCommand(() =>
-    {
-        this.Text = _textContent.Text;
-        this.HasEdit = false;
-    });
-
-    public bool HasEdit
-    {
-        get => _hasEdit;
-        set
-        {
-            if (value == _hasEdit) return;
-            _hasEdit = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private string? _text;
-
-    public string? Text
-    {
-        get => _text;
-        set
-        {
-            if (value == _text) return;
-            _text = value;
-            OnPropertyChanged();
-            HasEdit = true;
-        }
-    }
-
-    public string? MessageId { get; }
-
-    public bool Check()
-    {
-        if (string.IsNullOrEmpty(Text))
-        {
-            MessageEventBus.Publish($"{MessageId}：文本内容不能为空");
-            return false;
-        }
-
-        return true;
-    }
-
-    public void ApplyText()
-    {
-        if (!HasEdit)
-        {
-            return;
-        }
-
-        _textContent.Text = Text;
-    }
-
-    private readonly TextContent _textContent;
-    private bool _hasEdit;
-
-    public EditableTextContent(TextContent textContent, string? messageId)
-    {
-        this._textContent = textContent;
-        this.MessageId = messageId;
-        this._text = textContent.Text;
     }
 }

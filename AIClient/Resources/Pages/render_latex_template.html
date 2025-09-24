@@ -1,0 +1,100 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        /* 确保内容从左上角开始，没有边距 */
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 容器，用于包裹公式 */
+        #container {
+            display: inline-block; /* 让容器紧紧包裹内容 */
+            padding: 2px; /* 可选：给公式一点内边距 */
+        }
+    </style>
+    <script>
+        // 配置MathJax
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                packages: {'[+]': ['ams', 'bbox']} // 加载amsmath和bbox包(boxed需要bbox)
+            },
+            svg: {
+                fontCache: 'none' // 使用SVG渲染，质量高
+            },
+            startup: {
+                ready: () => {
+                    MathJax.startup.defaultReady();
+                    // 渲染完成后，通知C#端我们准备好了
+                    window.chrome.webview.postMessage({type: 'ready'});
+                }
+            }
+        };
+
+        // 使用现代浏览器的原生 SVG 到 PNG 转换
+        // 默认1倍分辨率
+        async function modernSvgToPng(svgElement, ratio = 1) {
+            // 获取 SVG 内容
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const svgUrl = URL.createObjectURL(svgBlob);
+
+            // 创建图片
+            const img = new Image();
+            img.src = svgUrl;
+
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
+
+            // 绘制到 canvas
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = img.width * ratio;
+            canvas.height = img.height * ratio;
+
+            ctx.scale(ratio, ratio);
+            ctx.drawImage(img, 0, 0);
+
+            URL.revokeObjectURL(svgUrl);
+
+            return canvas.toDataURL('image/png');
+        }
+
+        // 核心函数：由C#调用
+        async function renderLatex(latexString) {
+            const container = document.getElementById('container');
+            container.innerHTML = latexString;
+
+            try {
+                // 等待MathJax完成排版
+                await MathJax.typesetPromise([container]);
+
+                // 寻找MathJax渲染的根元素
+                const svgElement = container.querySelector('svg');
+                if (svgElement) {
+                    const dataUrl = await modernSvgToPng(svgElement, 1);
+                    // 将 Data URI 发送回 C#
+                    window.chrome.webview.postMessage({
+                        type: 'svgRenderComplete',
+                        svgDataUrl: dataUrl,
+                    });
+                }
+            } catch (err) {
+                window.chrome.webview.postMessage({type: 'renderError', message: err.toString()});
+            }
+        }
+    </script>
+    <script id="MathJax-script" src="https://assets/tex-svg.js"></script>
+    <script src="https://assets/html2canvas.js"></script>
+</head>
+<body>
+<div id="container"></div>
+</body>
+</html>

@@ -199,9 +199,20 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             var requestOptions = this.CreateChatOptions();
-            var functionCallEngine =
-                FunctionCallEngine.Create(requestViewItem?.CallEngine ?? FunctionCallEngineType.OpenAI,
+            FunctionCallEngine functionCallEngine;
+            if (!this.Model.SupportFunctionCall)
+            {
+                //如果不原生支持函数调用，切换到prompt实现
+                functionCallEngine = FunctionCallEngine.Create(FunctionCallEngineType.Prompt,
                     kernelPluginCollection);
+            }
+            else
+            {
+                functionCallEngine =
+                    FunctionCallEngine.Create(requestViewItem?.CallEngine ?? FunctionCallEngineType.OpenAI,
+                        kernelPluginCollection);
+            }
+
             if (kernelPluginCollection.Count > 0)
             {
                 functionCallEngine.Initialize(requestOptions, Model, chatHistory);
@@ -221,10 +232,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            requestOptions.AdditionalProperties ??= new AdditionalPropertiesDictionary();
             var additionalProperties = requestViewItem?.AdditionalProperties;
             if (additionalProperties != null)
             {
+                requestOptions.AdditionalProperties ??= new AdditionalPropertiesDictionary();
                 foreach (var additionalProperty in additionalProperties)
                 {
                     requestOptions.AdditionalProperties[additionalProperty.Key] = additionalProperty.Value;

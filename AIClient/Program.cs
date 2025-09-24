@@ -8,6 +8,7 @@ using LLMClient.Endpoints;
 using LLMClient.MCP;
 using LLMClient.MCP.Servers;
 using LLMClient.Rag;
+using LLMClient.Test;
 using LLMClient.UI;
 using LLMClient.UI.Log;
 using Microsoft.Extensions.DependencyInjection;
@@ -118,14 +119,9 @@ public class Program
 #endif
             App app = new App();
             app.InitializeComponent();
-            /*var version3Converter = new Version3Converter(serviceProvider);
-            version3Converter
-                .ConvertToVersion3(
-                    "D:\\Dev\\LLM-Client-Sharp\\AIClient\\bin\\Release\\net8.0-windows\\publish\\win-x64\\Dialogs")
-                .Wait();
-            return;*/
-            mainWindow = serviceProvider.GetService<MainWindow>();
-            app.Run(mainWindow);
+            app.Run(new TestWindow());
+            // mainWindow = serviceProvider.GetService<MainWindow>();
+            // app.Run(mainWindow);
         }
         catch (Exception e)
         {

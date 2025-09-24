@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Windows.Media;
@@ -333,8 +334,9 @@ public static class ExtractorExtensions
             {
                 using (var memoryStream = new MemoryStream(imageBytes))
                 {
-                    return memoryStream.ToImageSource(extension, width: (uint)imageBounds.Width,
-                        height: (uint)imageBounds.Height, shouldInvertColors);
+                    return memoryStream.ToImageSource(extension,
+                        new Size((int)imageBounds.Width, (int)imageBounds.Height),
+                        shouldInvertColors);
                 }
             }
         }

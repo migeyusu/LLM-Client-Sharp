@@ -1,15 +1,8 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
 using Markdig;
-using Markdig.Helpers;
-using Markdig.Parsers;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using Markdig.Wpf;
@@ -27,6 +20,7 @@ public class CustomRenderer : WpfRenderer
         new MarkdownPipelineBuilder()
             .UseAdvancedExtensions()
             .UseThinkBlock()
+            .UseMathematics()
             .UseFunctionCallBlock()
             .UseFunctionResultBlock()
             .UseGenericAttributes()

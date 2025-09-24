@@ -124,6 +124,8 @@
                                 <MenuItem Command="{Binding CopyCommand}"
                                           Icon="{materialDesign:PackIcon Kind=ContentCopy}"
                                           Header="复制" />
+                                <MenuItem Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.PastCommand}"
+                                          Header="黏贴到之后"/>
                             </ContextMenu>
                         </Setter.Value>
                     </Setter>

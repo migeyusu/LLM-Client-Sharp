@@ -26,4 +26,15 @@ public class MarkdownTest
         var markdownDocument = Markdown.Parse(text,pipeline);
         var array = markdownDocument.Descendants().ToArray();
     }
+
+    [Fact]
+    public void CustomMath()
+    {
+        var text = "This is a math block:\n\\[\n\\boxed{ Rf(\\theta, s) = \\int_{L_{\\theta,s}} f(x, y) \\, ds }\n\\]";
+        var pipeline = new MarkdownPipelineBuilder()
+            .UseMathematics()
+            .Build();
+        var markdownDocument = Markdown.Parse(text, pipeline);
+        var array = markdownDocument.Descendants().ToArray();
+    }
 }

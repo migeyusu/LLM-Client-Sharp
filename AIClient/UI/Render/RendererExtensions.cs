@@ -344,4 +344,6 @@ public static class RendererExtensions
         pipeline.Extensions.ReplaceOrAdd<ToolCallResultBlockExtension>(new ToolCallResultBlockExtension());
         return pipeline;
     }
+    
+    
 }

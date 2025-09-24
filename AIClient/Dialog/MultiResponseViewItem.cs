@@ -30,7 +30,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
             yield return chatMessage;
         }
     }
-
+    
     /// <summary>
     /// warning: 禁止用于绑定，因为没有实现属性通知
     /// </summary>
