@@ -45,9 +45,5 @@ public interface IThinkingConfig : ICloneable
         {
             requestViewItem.AdditionalProperties["thinking_config"] = clone;
         }
-        else
-        {
-            throw new NotSupportedException();
-        }
     }
 }

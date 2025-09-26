@@ -45,53 +45,70 @@
                               Icon="{materialDesign:PackIcon Kind=DeleteOutline}" />
                 </Menu>
             </materialDesign:PopupBox>
-            <materialDesign:Card Padding="8"
-                                 Grid.Column="1"
-                                 UniformCornerRadius="8"
-                                 BorderThickness="0"
-                                 Background="{DynamicResource MaterialDesign.Brush.Primary.Dark}"
-                                 Foreground="{DynamicResource MaterialDesign.Brush.Primary.Dark.Foreground}">
-                <StackPanel>
+
+            <StackPanel Grid.Column="1">
+                <materialDesign:Card Padding="8"
+                                     UniformCornerRadius="8"
+                                     BorderThickness="0"
+                                     Background="{DynamicResource MaterialDesign.Brush.Primary.Dark}"
+                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary.Dark.Foreground}">
                     <TextBox TextWrapping="Wrap"
                              IsReadOnly="True"
                              Margin="0"
                              BorderThickness="0"
                              materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                              Text="{Binding TextMessage,Mode=OneTime}" />
-                    <ItemsControl ItemsSource="{Binding Attachments,Mode=OneTime}"
-                                  Margin="0,8,0,0"
-                                  Visibility="Visible">
-                        <b:Interaction.Triggers>
-                            <b:DataTrigger Binding="{Binding Attachments.Count}"
-                                           Value="0">
-                                <b:ChangePropertyAction PropertyName="Visibility"
-                                                        Value="Collapsed" />
-                            </b:DataTrigger>
-                        </b:Interaction.Triggers>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type dialog:Attachment}">
-                                <materialDesign:Chip IsDeletable="False"
-                                                     MaxWidth="140"
-                                                     Margin="0"
-                                                     ToolTipService.InitialShowDelay="0"
-                                                     ToolTip="{Binding OriUri,Mode=OneTime}"
-                                                     Content="{Binding Name,Mode=OneTime}"
-                                                     Command="{Binding OpenFileCommand}">
-                                    <materialDesign:Chip.Icon>
-                                        <materialDesign:PackIcon
-                                            Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
-                                    </materialDesign:Chip.Icon>
-                                </materialDesign:Chip>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel IsItemsHost="True" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                    </ItemsControl>
+                </materialDesign:Card>
+                <ItemsControl ItemsSource="{Binding Attachments,Mode=OneTime}"
+                              Margin="0,8,0,0"
+                              HorizontalAlignment="Right"
+                              Visibility="Visible">
+                    <b:Interaction.Triggers>
+                        <b:DataTrigger Binding="{Binding Attachments.Count}"
+                                       Value="0">
+                            <b:ChangePropertyAction PropertyName="Visibility"
+                                                    Value="Collapsed" />
+                        </b:DataTrigger>
+                    </b:Interaction.Triggers>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type dialog:Attachment}">
+                            <materialDesign:Chip IsDeletable="False"
+                                                 MaxWidth="140"
+                                                 Margin="0"
+                                                 ToolTipService.InitialShowDelay="0"
+                                                 ToolTip="{Binding OriUri,Mode=OneTime}"
+                                                 Content="{Binding Name,Mode=OneTime}"
+                                                 Command="{Binding OpenFileCommand}">
+                                <materialDesign:Chip.Icon>
+                                    <materialDesign:PackIcon
+                                        Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
+                                </materialDesign:Chip.Icon>
+                            </materialDesign:Chip>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel IsItemsHost="True" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <StackPanel Orientation="Horizontal"
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Right">
+                    <materialDesign:PackIcon Kind="Function"
+                                             Visibility="{Binding HasFunctions,Mode=OneTime}"
+                                             Margin="8,0,0,0" />
+                    <materialDesign:PackIcon Kind="Web"
+                                             Visibility="{Binding SearchOption,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                             Margin="8,0,0,0" />
+                    <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"
+                                             Visibility="{Binding ThinkingConfig,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                             Margin="8,0,0,0" />
+                    <materialDesign:PackIcon Kind="DataMatrix"
+                                             Visibility="{Binding RagSources,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                             Margin="8,0,0,0" />
                 </StackPanel>
-            </materialDesign:Card>
+            </StackPanel>
         </Grid>
     </DataTemplate>
     <DataTemplate x:Key="ResponseContentTemplate" DataType="{x:Type dialog:ResponseViewItem}">

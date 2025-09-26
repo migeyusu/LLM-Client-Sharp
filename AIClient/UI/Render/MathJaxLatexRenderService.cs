@@ -47,6 +47,12 @@ public class MathJaxLatexRenderService : IDisposable
         return _instance;
     }
 
+    public static void DisposeInstance()
+    {
+        _instance?.Dispose();
+        _instance = null;
+    }
+
     private MathJaxLatexRenderService(WebView2 webView)
     {
         _webView = webView;
@@ -186,6 +192,7 @@ public class MathJaxLatexRenderService : IDisposable
 
     public void Dispose()
     {
+        _hostWindow?.Close();
         _webView?.Dispose();
         _renderSemaphore?.Dispose();
     }

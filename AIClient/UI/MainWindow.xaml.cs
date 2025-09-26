@@ -9,6 +9,7 @@ using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
 using LLMClient.UI.Log;
+using LLMClient.UI.Render;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.UI;
@@ -181,6 +182,7 @@ public partial class MainWindow : ExtendedWindow
     protected override void OnClosed(EventArgs e)
     {
         this._logWindow.Shutdown();
+        MathJaxLatexRenderService.DisposeInstance();
         base.OnClosed(e);
     }
 

@@ -22,6 +22,27 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
 
+    public bool HasFunctions
+    {
+        get
+        {
+            if (FunctionGroups == null)
+            {
+                return false;
+            }
+
+            foreach (var group in FunctionGroups)
+            {
+                if (group.IsSelected != false && group.Functions.Count > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     public ISearchOption? SearchOption { get; set; }
 
     /// <summary>
