@@ -32,4 +32,10 @@
       <ProjectReference Include="..\AIClient\LLMClient.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="svgmath.xml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

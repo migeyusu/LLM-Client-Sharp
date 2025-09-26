@@ -23,7 +23,6 @@
         <PlatformTarget>x64</PlatformTarget>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Aspose.TeX" Version="25.8.0" />
         <PackageReference Include="AutoMapper" Version="15.0.1" />
         <PackageReference Include="AvalonEdit" Version="6.3.1.120"/>
         <PackageReference Include="Azure.AI.TextAnalytics" Version="5.3.0"/>
@@ -31,8 +30,9 @@
         <PackageReference Include="DiffPlex" Version="1.8.0"/>
         <PackageReference Include="Karl.PdfPig" Version="0.1.12-alpha001" />
         <PackageReference Include="LambdaConverters" Version="4.0.0"/>
-        <PackageReference Include="Magick.NET-Q8-x64" Version="14.7.0" />
-        <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.7" />
+        <PackageReference Include="LatexToMathML" Version="1.0.0" />
+        <PackageReference Include="Magick.NET-Q8-x64" Version="14.8.2" />
+        <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.10" />
         <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="6.1.0" />
         <PackageReference Include="MahApps.Metro.IconPacks.MaterialDesign" Version="5.1.0"/>
         <PackageReference Include="Markdig" Version="0.41.3" />
@@ -59,6 +59,8 @@
         <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0"/>
         <PackageReference Include="ReverseMarkdown" Version="4.7.0" />
         <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
+        <PackageReference Include="SharpVectors.Wpf" Version="1.8.5" />
+        <PackageReference Include="SvgMath" Version="1.0.0" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.0-preview.5.25277.114"/>
         <PackageReference Include="System.Text.Json" Version="9.0.8" />
         <PackageReference Include="TextMateSharp" Version="1.0.70" />
@@ -95,6 +97,9 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="Endpoints\Azure\Models\models.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="svgmath.xml">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

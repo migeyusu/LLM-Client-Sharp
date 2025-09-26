@@ -9,7 +9,8 @@
                     xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
                     xmlns:chat="clr-namespace:OpenAI.Chat;assembly=OpenAI"
                     xmlns:messages="clr-namespace:LLMClient.Endpoints.Messages"
-                    xmlns:render="clr-namespace:LLMClient.UI.Render">
+                    xmlns:render="clr-namespace:LLMClient.UI.Render"
+                    xmlns:ui="clr-namespace:LLMClient.UI">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary
             Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.button.xaml" />
@@ -263,7 +264,7 @@
                             </Button>
                             <Button Style="{DynamicResource CopyCommandStyle}"
                                     Margin="10,0,0,0"
-                                    Command="{Binding CopyCommand}" />
+                                    Command="{x:Static ui:CommonCommands.CopyCommand}" />
                         </StackPanel>
                     </Grid>
                 </DataTemplate>
@@ -486,6 +487,54 @@
                                    Visibility="{Binding Exception,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                    Text="{Binding Exception,Mode=OneTime,StringFormat=Exception:{0}}" />
                     </StackPanel>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ContentControl}"
+           x:Key="{x:Static render:MathBlockRenderer.MathBlockStyleKey}">
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type render:MathBlockContext}">
+                    <Image Source="{Binding Image.CurrentSource,Mode=OneWay}"
+                           Stretch="None"
+                           ToolTip="{Binding Latex,Mode=OneTime}"
+                           ToolTipService.InitialShowDelay="0"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           HorizontalAlignment="Center">
+                        <Image.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Copy LaTeX"
+                                          Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                          CommandParameter="{Binding Latex,Mode=OneTime}" />
+                            </ContextMenu>
+                        </Image.ContextMenu>
+                    </Image>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ContentControl}"
+           x:Key="{x:Static render:MathBlockInlineRenderer.MathInlineStyleKey}">
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type render:MathInlineContext}">
+                    <Image Source="{Binding Image.CurrentSource,Mode=OneWay}"
+                           Stretch="None"
+                           ToolTip="{Binding Latex,Mode=OneTime}"
+                           ToolTipService.InitialShowDelay="0"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           HorizontalAlignment="Center">
+                        <Image.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Copy LaTeX"
+                                          Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                          CommandParameter="{Binding Latex,Mode=OneTime}" />
+                            </ContextMenu>
+                        </Image.ContextMenu>
+                    </Image>
                 </DataTemplate>
             </Setter.Value>
         </Setter>

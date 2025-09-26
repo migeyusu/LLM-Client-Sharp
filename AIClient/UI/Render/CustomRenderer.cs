@@ -21,6 +21,7 @@ public class CustomRenderer : WpfRenderer
             .UseAdvancedExtensions()
             .UseThinkBlock()
             .UseMathematics()
+            .UseCustomMathematics()
             .UseFunctionCallBlock()
             .UseFunctionResultBlock()
             .UseGenericAttributes()
@@ -45,7 +46,7 @@ public class CustomRenderer : WpfRenderer
     public static ComponentResourceKey FunctionCallStyleKey { get; } =
         new(typeof(CustomRenderer), nameof(FunctionCallStyleKey));
 
-    
+
     public static ComponentResourceKey FunctionResultStyleKey { get; } =
         new(typeof(CustomRenderer), (object)nameof(FunctionResultStyleKey));
 
@@ -63,7 +64,7 @@ public class CustomRenderer : WpfRenderer
         var blockUiContainer = new BlockUIContainer(expander);
         ((IAddChild)Document!).AddChild(blockUiContainer);
     }
-    
+
 
     public void AppendMarkdownObject(MarkdownObject obj)
     {

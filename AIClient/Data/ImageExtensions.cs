@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
@@ -101,8 +102,7 @@ public static class ImageExtensions
             .ToArray();
     });
 
-    private static readonly ConcurrentDictionary<Uri, Lazy<Task<ImageSource?>>> ImageCache =
-        new ConcurrentDictionary<Uri, Lazy<Task<ImageSource?>>>();
+    private static readonly ConcurrentDictionary<Uri, Lazy<Task<ImageSource?>>> ImageCache = new();
 
     public static bool IsSupportedImageExtension(string extension)
     {
@@ -363,5 +363,53 @@ public static class ImageExtensions
 
         var base64 = Convert.ToBase64String(buffer);
         return $"{Base64ImagePrefix}{extension.ToLower()};base64,{base64}";
+    }
+    
+    
+
+    /// <summary>
+    /// 从字符串生成一个包含指定文本的 ImageSource。
+    /// </summary>
+    /// <param name="text">要显示的文本。</param>
+    /// <param name="fontFamily">字体族，例如 new FontFamily("Microsoft YaHei UI")。</param>
+    /// <param name="fontSize">字体大小，单位是 DIP (Device Independent Pixels)。</param>
+    /// <param name="textColor">文本颜色。</param>
+    /// <param name="dpi">渲染的DPI，通常使用96.0。</param>
+    /// <returns>一个可用的 ImageSource 对象。</returns>
+    public static ImageSource CreateImageSourceFromText(
+        string text,
+        FontFamily fontFamily,
+        double fontSize,
+        Brush textColor,
+        double dpi = 96.0)
+    {
+        var typeface = new Typeface(fontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+        var formattedText = new FormattedText(
+            text,
+            CultureInfo.CurrentCulture,
+            FlowDirection.LeftToRight,
+            typeface,
+            fontSize,
+            textColor,
+            null, // 可以传入一个 Brush 用于文本高亮
+            VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip // DPI缩放因子
+        );
+
+        var drawingVisual = new DrawingVisual();
+        using (DrawingContext drawingContext = drawingVisual.RenderOpen())
+        {
+            drawingContext.DrawText(formattedText, new Point(0, 0));
+        }
+
+        var renderTargetBitmap = new RenderTargetBitmap(
+            (int)Math.Ceiling(formattedText.Width),
+            (int)Math.Ceiling(formattedText.Height),
+            dpi,
+            dpi,
+            PixelFormats.Pbgra32 // 支持透明度的像素格式
+        );
+        renderTargetBitmap.Render(drawingVisual);
+        renderTargetBitmap.Freeze();
+        return renderTargetBitmap;
     }
 }

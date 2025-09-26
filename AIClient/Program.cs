@@ -11,6 +11,7 @@ using LLMClient.Rag;
 using LLMClient.Test;
 using LLMClient.UI;
 using LLMClient.UI.Log;
+using LLMClient.UI.Render;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -119,9 +120,9 @@ public class Program
 #endif
             App app = new App();
             app.InitializeComponent();
-            app.Run(new TestWindow());
-            // mainWindow = serviceProvider.GetService<MainWindow>();
-            // app.Run(mainWindow);
+            // app.Run(new TestWindow());
+            mainWindow = serviceProvider.GetService<MainWindow>();  
+            app.Run(mainWindow);
         }
         catch (Exception e)
         {

@@ -5,10 +5,11 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Input;
 using System.Windows.Media;
-using Aspose.TeX.Features;
 using LLMClient.UI;
 using LLMClient.UI.Render;
+using WpfMath.Controls;
 
 namespace LLMClient.Test;
 
@@ -24,6 +25,21 @@ public partial class TestWindow : Window, INotifyPropertyChanged
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
     }
+
+    public int FormulaHasErrors { get; set; }
+
+    public string Formula
+    {
+        get => _formula;
+        set
+        {
+            if (value == _formula) return;
+            _formula = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ObservableCollection<Exception> Exceptions { get; set; }
 
     public ImageSource? LatexSource
     {
@@ -42,9 +58,10 @@ public partial class TestWindow : Window, INotifyPropertyChanged
 
     public CancellationTokenSource? RequestTokenSource { get; set; }
 
-    private LatexRenderService? latexRenderService;
+    private MathJaxLatexRenderService? latexRenderService;
 
     private ImageSource? _latexSource;
+    private string _formula;
 
     public void Stop()
     {
@@ -55,11 +72,12 @@ public partial class TestWindow : Window, INotifyPropertyChanged
     {
         if (latexRenderService == null)
         {
-            latexRenderService = await LatexRenderService.CreateAsync(WebView2);
+            latexRenderService = await MathJaxLatexRenderService.CreateAsync(WebView2);
         }
 
         var imageSource =
-            await latexRenderService.RenderAsync("\\[\n\\boxed{ Rf(\\theta, s) = \\int_{L_{\\theta,s}} f(x, y) \\, ds }\n\\]");
+            await latexRenderService.RenderAsync(
+                "R(f)(\\theta, s) = \\iint_{-\\infty}^{\\infty} f(x, y) \\, \\delta(x \\cos \\theta + y \\sin \\theta - s) \\, dx \\, dy");
         this.LatexSource = imageSource;
         return;
         RequestTokenSource?.Cancel();
@@ -139,5 +157,10 @@ public partial class TestWindow : Window, INotifyPropertyChanged
     private void OK_OnClick(object sender, RoutedEventArgs e)
     {
         this.Start();
+    }
+
+    private void Input_OnClick(object sender, RoutedEventArgs e)
+    {
+        this.Formula = FormulaInput.Text;
     }
 }

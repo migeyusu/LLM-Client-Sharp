@@ -22,21 +22,7 @@ public abstract class CustomFencedBlockParser<T> : FencedBlockParserBase where T
         _openTag = openTag;
         _closeTag = closeTag;
         // 当一行以 '<' 开头时，Markdig 会尝试调用这个解析器
-        OpeningCharacters = [openTag.First()];
-    }
-
-    private static bool NoInfoParser(BlockProcessor state, ref StringSlice line, IFencedBlock fenced,
-        char openingCharacter)
-    {
-        for (int i = line.Start; i <= line.End; i++)
-        {
-            if (!line.Text[i].IsSpaceOrTab())
-            {
-                return false;
-            }
-        }
-
-        return true;
+        OpeningCharacters = openTag.ToArray();
     }
 
     public override BlockState TryOpen(BlockProcessor processor)
@@ -54,15 +40,16 @@ public abstract class CustomFencedBlockParser<T> : FencedBlockParserBase where T
 
         // 检查当前行是否为 tag 开头(忽略大小写)
         var line = processor.Line;
+        var startChar = line.CurrentChar;
         int index;
-        if ((index = line.IndexOf(_openTag, 0, IgnoreCase)) != 0) // true for case-insensitive
+        if ((index = line.IndexOf(_openTag, 0, IgnoreCase)) < 0) // true for case-insensitive
         {
             return BlockState.None;
         }
 
-        if (line.ToString().Trim() != _openTag)
+        if (!processor.TrackTrivia)
         {
-            return BlockState.None;
+            line.TrimStart();
         }
 
         var customBlock = CreateBlock(processor);
@@ -78,6 +65,14 @@ public abstract class CustomFencedBlockParser<T> : FencedBlockParserBase where T
             customBlock.NewLine = processor.Line.NewLine;
         }
 
+        index += _openTag.Length;
+        line.Start = index;
+        // If the info parser was not successful, early exit
+        if (InfoParser != null && !InfoParser(processor, ref line, customBlock, startChar))
+        {
+            return BlockState.None;
+        }
+
         processor.NewBlocks.Push(customBlock);
         return BlockState.ContinueDiscard;
     }
@@ -86,22 +81,31 @@ public abstract class CustomFencedBlockParser<T> : FencedBlockParserBase where T
     {
         var fence = (T)block;
         var line = processor.Line;
+        var sourcePosition = processor.Start;
+        var matchIndex = line.IndexOf(_closeTag, 0, IgnoreCase);
+        if (matchIndex >= 0)
+        {
+            line.Start = matchIndex + _closeTag.Length;
+        }
+
+        var startBeforeTrim = line.Start;
+        var currentChar = line.CurrentChar;
         // 检查当前行是否包含结束标签
-        if (processor.IsBlankLine || processor.IsCodeIndent || line.IndexOf(_closeTag, 0, IgnoreCase) != 0)
+        if (processor.IsBlankLine || processor.IsCodeIndent || matchIndex < 0
+            || !currentChar.IsWhiteSpaceOrZero() || !line.TrimEnd())
         {
             processor.GoToColumn(processor.ColumnBeforeIndent);
             return BlockState.Continue;
         }
 
         fence.ClosingFencedCharCount = _closeTag.Length;
-        var lineEnd = line.End;
-        block.UpdateSpanEnd(lineEnd);
+
+        block.UpdateSpanEnd(startBeforeTrim - 1);
         if (processor.TrackTrivia)
         {
             block.NewLine = line.NewLine;
-            var processorStart = processor.Start;
-            fence.TriviaAfterFencedChar = processor.UseTrivia(processorStart - 1);
-            fence.TriviaAfter = new StringSlice(line.Text, processorStart + _closeTag.Length, lineEnd);
+            fence.TriviaAfterFencedChar = processor.UseTrivia(sourcePosition - 1);
+            fence.TriviaAfter = new StringSlice(line.Text, processor.Start + _closeTag.Length, processor.Line.End);
         }
 
         return BlockState.BreakDiscard;

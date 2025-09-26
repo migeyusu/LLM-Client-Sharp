@@ -10,7 +10,7 @@ public class ToolCallBlockRenderer : WpfObjectRenderer<ToolCallBlock>
 {
     public static ComponentResourceKey ToolCallStyleKey { get; } =
         new ComponentResourceKey(typeof(ToolCallBlockRenderer), (object)nameof(ToolCallStyleKey));
-    
+
     protected override void Write(WpfRenderer renderer, ToolCallBlock obj)
     {
         var blockUiContainer = new BlockUIContainer();
@@ -26,4 +26,3 @@ public class ToolCallBlockRenderer : WpfObjectRenderer<ToolCallBlock>
         renderer.Pop();
     }
 }
-

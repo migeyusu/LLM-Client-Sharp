@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -9,7 +10,10 @@ using Microsoft.Web.WebView2.Wpf;
 
 namespace LLMClient.UI.Render;
 
-public class LatexRenderService : IDisposable
+/// <summary>
+/// 使用 MathJax 在 WebView2 中渲染 LaTeX 公式，并将其转换为 ImageSource 的服务。
+/// </summary>
+public class MathJaxLatexRenderService : IDisposable
 {
     private readonly WebView2 _webView;
 
@@ -17,30 +21,38 @@ public class LatexRenderService : IDisposable
 
     private Window? _hostWindow;
 
-    private TaskCompletionSource<ImageSource?>? _renderTcs;
+    private TaskCompletionSource<ImageSource>? _renderTcs;
 
     private readonly SemaphoreSlim _renderSemaphore = new SemaphoreSlim(1, 1);
 
     // 缓存已渲染的公式
-    private readonly ConcurrentDictionary<string, ImageSource?> _cache = new();
+    private readonly ConcurrentDictionary<string, ImageSource> _cache = new();
 
     /// <summary>
     /// 异步工厂方法，用于创建和初始化服务。
     /// </summary>
     [STAThread]
-    public static async Task<LatexRenderService> CreateAsync(WebView2? webView = null)
+    public static async Task<MathJaxLatexRenderService> CreateAsync(WebView2? webView = null)
     {
-        var service = webView == null ? new LatexRenderService() : new LatexRenderService(webView);
-        await service.InitializeHostWindow();
+        var service = webView == null ? new MathJaxLatexRenderService() : new MathJaxLatexRenderService(webView);
+        await service.InitializeHostWindow().WaitAsync(TimeSpan.FromSeconds(10));
         return service;
     }
 
-    private LatexRenderService(WebView2 webView)
+    private static MathJaxLatexRenderService? _instance = null;
+
+    public static async Task<MathJaxLatexRenderService> InstanceAsync()
+    {
+        _instance ??= await CreateAsync();
+        return _instance;
+    }
+
+    private MathJaxLatexRenderService(WebView2 webView)
     {
         _webView = webView;
     }
 
-    private LatexRenderService()
+    private MathJaxLatexRenderService()
     {
         _hostWindow = new Window
         {
@@ -88,7 +100,7 @@ public class LatexRenderService : IDisposable
     }
 
 
-    public async Task<ImageSource?> RenderAsync(string latex)
+    public async Task<ImageSource> RenderAsync(string latex, double fontSize = 16)
     {
         // 优先从缓存获取
         if (_cache.TryGetValue(latex, out var cachedImage))
@@ -100,10 +112,10 @@ public class LatexRenderService : IDisposable
         await _renderSemaphore.WaitAsync();
         try
         {
-            _renderTcs = new TaskCompletionSource<ImageSource?>();
-            string script = $"renderLatex({JsonSerializer.Serialize(latex)})";
-            await _webView.CoreWebView2.ExecuteScriptAsync(script);
-            var imageSource = await _renderTcs.Task;
+            _renderTcs = new TaskCompletionSource<ImageSource>();
+            var script = $"renderLatex({JsonSerializer.Serialize(latex)}, {fontSize})";
+            await _webView.CoreWebView2.ExecuteScriptAsync(script).WaitAsync(TimeSpan.FromSeconds(5));
+            var imageSource = await _renderTcs.Task.WaitAsync(TimeSpan.FromSeconds(10));
             _cache.TryAdd(latex, imageSource);
             return imageSource;
         }
@@ -113,7 +125,7 @@ public class LatexRenderService : IDisposable
         }
     }
 
-    private async void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    private void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
         var message = e.WebMessageAsJson;
         if (string.IsNullOrEmpty(message)) return;
@@ -131,49 +143,26 @@ public class LatexRenderService : IDisposable
             case "svgRenderComplete":
             {
                 var root = jsonDoc.RootElement;
-                var element = root.GetProperty("svgDataUrl");
-                var s = element.GetString();
-                
-                ImageSource? imageSource;
+                var s = root.GetProperty("svgDataUrl").GetString();
                 if (!string.IsNullOrEmpty(s))
                 {
-                    imageSource = ImageExtensions.GetImageSourceFromBase64(s);
+                    var imageSource = ImageExtensions.GetImageSourceFromBase64(s);
+                    _renderTcs?.TrySetResult(imageSource);
                 }
                 else
                 {
-                    imageSource = null;
-                }
-                /*var rect = new Rect(
-                    root.GetProperty("x").GetDouble(),
-                    root.GetProperty("y").GetDouble(),
-                    root.GetProperty("width").GetDouble(),
-                    root.GetProperty("height").GetDouble()
-                );
-
-                // 如果宽高为0，则可能渲染了空内容，直接返回null
-                if (rect.Width == 0 || rect.Height == 0)
-                {
-                    _renderTcs?.TrySetResult(null);
-                    return;
+                    _renderTcs?.TrySetException(new Exception("Failed to get SVG data URL."));
                 }
 
-                using var stream = new MemoryStream();
-                // 核心：使用从JS获取的精确矩形进行截图
-                await _webView.CoreWebView2.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, stream);
-                stream.Position = 0;
-
-                // 将流转换为WPF的BitmapImage
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.StreamSource = stream;
-                bitmap.EndInit();
-                bitmap.Freeze(); // 跨线程使用必须冻结*/
-                _renderTcs?.TrySetResult(imageSource);
                 break;
             }
 
             case "renderError":
+                if (jsonDoc.RootElement.TryGetProperty("snapshot", out var snapshot))
+                {
+                    Debug.WriteLine($"LaTeX Render Snapshot: {snapshot}");
+                }
+
                 var errorMessage = jsonDoc.RootElement.GetProperty("message").GetString();
                 _renderTcs?.TrySetException(new Exception($"LaTeX render error: {errorMessage}"));
                 break;

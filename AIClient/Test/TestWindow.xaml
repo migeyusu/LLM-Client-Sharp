@@ -3,11 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:LLMClient"
         xmlns:test="clr-namespace:LLMClient.Test"
-        xmlns:component="clr-namespace:LLMClient.UI.Component"
-        xmlns:controls="clr-namespace:WpfMath.Controls;assembly=WpfMath"
         xmlns:wpf="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        xmlns:controls="clr-namespace:WpfMath.Controls;assembly=WpfMath"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance test:TestWindow}"
         Title="TestWindow" Height="800" Width="1200">
@@ -17,13 +15,18 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <Image Source="{Binding LatexSource,Mode=OneWay}"
-               Stretch="None"/>
+               Stretch="None" />
         <wpf:WebView2 Grid.Row="1"
-                      x:Name="WebView2"/>
+                      x:Name="WebView2" />
         <!--<FlowDocumentScrollViewer Document="{Binding Document,Mode=OneWay}" 
                                   MaxHeight="700"/>-->
-        <!--<controls:FormulaControl Grid.Row="0"
-                                 Formula="x \cos \theta + y \sin \theta = s" />-->
+        <StackPanel Grid.Row="0">
+            <controls:FormulaControl Scale="30"
+                                     Formula="{Binding Formula,Mode=OneWay}" />
+            <TextBox AcceptsReturn="True"
+                     x:Name="FormulaInput"/>
+        </StackPanel>
+
         <!--
         <component:MarkdownTextBlock Grid.Row="1"
                                      TextWrapping="Wrap"
@@ -34,7 +37,13 @@
                     HorizontalAlignment="Right"
                     VerticalAlignment="Bottom"
                     Margin="10">
+            <Button Content="选择"
+                    Click="Input_OnClick"
+                    Margin="10,0,0,0"/>
+            <Button Content="test"
+                    Margin="10,0,0,0"/>
             <Button Click="OK_OnClick"
+                    Margin="10,0,0,0"
                     Content="OK" />
             <Button Click="Cancel_OnClick"
                     Content="Cancel"

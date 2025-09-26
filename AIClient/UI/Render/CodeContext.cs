@@ -8,7 +8,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.Render;
 
-public class CodeContext
+public class CodeContext: CommonCommands.ICopyable
 {
     public CodeContext(string? name, StringLineGroup code)
     {
@@ -20,22 +20,6 @@ public class CodeContext
     public StringLineGroup CodeGroup { get; set; }
 
     public string? Extension { get; set; }
-
-    public ICommand CopyCommand => new ActionCommand(o =>
-    {
-        var s = CodeGroup.ToString();
-        if (!string.IsNullOrEmpty(s))
-        {
-            try
-            {
-                Clipboard.SetText(s);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message);
-            }
-        }
-    });
 
     public ICommand SaveCommand => new ActionCommand(o =>
     {
@@ -70,6 +54,11 @@ public class CodeContext
             }
         }
     });
+
+    public string GetCopyText()
+    {
+        return CodeGroup.ToString();
+    }
 }
 
 /*var code = content.TrimStart("cpp".ToCharArray()).TrimStart('\n');

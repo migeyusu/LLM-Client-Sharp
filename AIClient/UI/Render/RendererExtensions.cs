@@ -318,7 +318,7 @@ public static class RendererExtensions
         CustomRenderer.Instance.RenderRaw(raw, result);
         return result;
     }
-    
+
     internal static string SubstringAtIndexes(this string str, int startIndex, int endIndex)
     {
         return str.Substring(startIndex, endIndex - startIndex);
@@ -330,20 +330,25 @@ public static class RendererExtensions
         pipeline.Extensions.ReplaceOrAdd<ThinkBlockExtension>(new ThinkBlockExtension());
         return pipeline;
     }
-    
+
     public static MarkdownPipelineBuilder UseFunctionCallBlock(
         this MarkdownPipelineBuilder pipeline)
     {
         pipeline.Extensions.ReplaceOrAdd<ToolCallBlockExtension>(new ToolCallBlockExtension());
         return pipeline;
     }
-    
+
     public static MarkdownPipelineBuilder UseFunctionResultBlock(
         this MarkdownPipelineBuilder pipeline)
     {
         pipeline.Extensions.ReplaceOrAdd<ToolCallResultBlockExtension>(new ToolCallResultBlockExtension());
         return pipeline;
     }
-    
-    
+
+    public static MarkdownPipelineBuilder UseCustomMathematics(
+        this MarkdownPipelineBuilder pipeline)
+    {
+        pipeline.Extensions.ReplaceOrAdd<CustomMathBlockExtension>(new CustomMathBlockExtension());
+        return pipeline;
+    }
 }

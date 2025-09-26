@@ -1,10 +1,12 @@
-﻿using Aspose.TeX.Features;
+﻿using System.Xml.Linq;
+using LatexToMathML;
+using SvgMath;
 
 namespace LLMClient.Test;
 
 public class Latex
 {
-    [Fact]
+    /*[Fact]
     public void Test1()
     {
         var options = new PngMathRendererOptions
@@ -30,5 +32,19 @@ public class Latex
             var pngMathRenderer = new PngMathRenderer();
             pngMathRenderer.Render(@"\boxed{ Rf(\theta, s) = \int_{L_{\theta,s}} f(x, y) \, ds }", stream, options);
         }
+    }*/
+
+    [Fact]
+    public void Convet()
+    {
+        String begin = @"\begin{document} $";
+        String end = @"$ \end{document}";
+        var formula = begin + @"R(f)(\theta, s) = \int_{L(\theta, s)} f(x, y) \, dl" + end;
+        var parser = new LatexParser(formula, new LatexMathToMathMLConverter());
+        var root = parser.Root;
+        var convert = root.Convert();
+        var xElement = XElement.Parse(convert);
+        Mml m = new Mml(xElement,Path.GetFullPath("svgmath.xml"));
+        m.MakeSvg().Save("test.svg");
     }
 }

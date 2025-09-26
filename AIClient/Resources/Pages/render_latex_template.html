@@ -37,7 +37,7 @@
 
         // 使用现代浏览器的原生 SVG 到 PNG 转换
         // 默认1倍分辨率
-        async function modernSvgToPng(svgElement, ratio = 1) {
+        async function modernSvgToPng(svgElement, scale = 1) {
             // 获取 SVG 内容
             const svgData = new XMLSerializer().serializeToString(svgElement);
             const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
@@ -56,10 +56,10 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            canvas.width = img.width * ratio;
-            canvas.height = img.height * ratio;
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
 
-            ctx.scale(ratio, ratio);
+            ctx.scale(scale, scale);
             ctx.drawImage(img, 0, 0);
 
             URL.revokeObjectURL(svgUrl);
@@ -68,14 +68,15 @@
         }
 
         // 核心函数：由C#调用
-        async function renderLatex(latexString) {
+        async function renderLatex(latexString, fontSize = 16) {
             const container = document.getElementById('container');
-            container.innerHTML = latexString;
+            container.style.fontSize = fontSize + 'px';
+            container.innerHTML = `\\[${latexString}\\]`;
 
             try {
+                MathJax.typesetClear([container]);
                 // 等待MathJax完成排版
                 await MathJax.typesetPromise([container]);
-
                 // 寻找MathJax渲染的根元素
                 const svgElement = container.querySelector('svg');
                 if (svgElement) {
@@ -84,6 +85,12 @@
                     window.chrome.webview.postMessage({
                         type: 'svgRenderComplete',
                         svgDataUrl: dataUrl,
+                    });
+                } else {
+                    window.chrome.webview.postMessage({
+                        type: 'renderError',
+                        message: 'No SVG element found after rendering.',
+                        snapshot: container.innerHTML
                     });
                 }
             } catch (err) {

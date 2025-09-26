@@ -80,7 +80,8 @@ public class LocalThemedIcon : ThemedIcon
 
 public class AsyncThemedIcon : ThemedIcon
 {
-    public AsyncThemedIcon(Func<Task<ImageSource>> lightModeSourceTask, Func<Task<ImageSource>>? darkModeSourceTask)
+    public AsyncThemedIcon(Func<Task<ImageSource>> lightModeSourceTask,
+        Func<Task<ImageSource>>? darkModeSourceTask = null)
         : base(EmptyIcon, darkModeSourceTask != null, EmptyIcon)
     {
         UpdateSource(lightModeSourceTask, darkModeSourceTask);

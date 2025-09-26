@@ -80,20 +80,29 @@ public static class CommonCommands
         {
             return _copyCommand ??= new ActionCommand((o =>
             {
-                if (o is ICopyable copyable)
+                string copyText;
+                switch (o)
                 {
-                    var copyText = copyable.GetCopyText();
-                    if (!string.IsNullOrEmpty(copyText))
+                    case ICopyable copyable:
+                        copyText = copyable.GetCopyText();
+                        break;
+                    case string s:
+                        copyText = s;
+                        break;
+                    default:
+                        return;
+                }
+
+                if (!string.IsNullOrEmpty(copyText))
+                {
+                    try
                     {
-                        try
-                        {
-                            Clipboard.SetText(copyText);
-                            MessageEventBus.Publish("已复制文本到剪贴板");
-                        }
-                        catch (Exception e)
-                        {
-                            MessageBox.Show(e.Message);
-                        }
+                        Clipboard.SetText(copyText);
+                        MessageEventBus.Publish("已复制文本到剪贴板");
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
                     }
                 }
             }));
@@ -106,7 +115,7 @@ public static class CommonCommands
     {
         get
         {
-            return _exportCommand ??= new ActionCommand((async o =>
+            return _exportCommand ??= new ActionCommand((async void (o) =>
             {
                 if (o is string text && !string.IsNullOrEmpty(text))
                 {
@@ -117,12 +126,19 @@ public static class CommonCommands
                     };
                     if (fileDialog.ShowDialog() == true)
                     {
-                        using (var openFile = fileDialog.OpenFile())
+                        try
                         {
-                            using (var streamWriter = new StreamWriter(openFile))
+                            using (var openFile = fileDialog.OpenFile())
                             {
-                                await streamWriter.WriteAsync(text);
+                                using (var streamWriter = new StreamWriter(openFile))
+                                {
+                                    await streamWriter.WriteAsync(text);
+                                }
                             }
+                        }
+                        catch (Exception e)
+                        {
+                            MessageBox.Show("Export failed: " + e.Message);
                         }
                     }
                 }
