@@ -128,6 +128,7 @@
                 </StackPanel>
             </materialDesign:Card>
             <component:FlowDocumentScrollViewerEx
+                FontFamily="Segoe UI Emoji"
                 BorderThickness="0"
                 HighlightableRanges="{Binding SearchableDocument.FoundTextRanges,Mode=OneWay}"
                 CleanDocument="{Binding Document,Mode=OneWay}"

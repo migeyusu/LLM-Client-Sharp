@@ -1,7 +1,12 @@
-﻿using System.Text;
+﻿using System.IO;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml;
 using System.Xml.Linq;
+using System.Xml.Serialization;
 using LLMClient.Abstraction;
+using LLMClient.UI.Render;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
@@ -198,7 +203,8 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         promptBuilder.AppendLine("<tool_call_results>");
         promptBuilder.AppendLine("  <tool_call_result>");
         promptBuilder.AppendLine("      <name>search</name>");
-        promptBuilder.AppendLine("      <result>Guangzhou has a population of 15 million inhabitants as of 2021.</result>");
+        promptBuilder.AppendLine(
+            "      <result>Guangzhou has a population of 15 million inhabitants as of 2021.</result>");
         promptBuilder.AppendLine("  </tool_call_result>");
         promptBuilder.AppendLine("</tool_call_results>");
         promptBuilder.AppendLine("");
@@ -218,7 +224,8 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         promptBuilder.AppendLine("  </tool_call_result>");
         promptBuilder.AppendLine("</tool_call_results>");
         promptBuilder.AppendLine("");
-        promptBuilder.AppendLine("Assistant: The population of Shanghai is 26 million, while Guangzhou has a population of 15 million. Therefore, Shanghai has the highest population.");
+        promptBuilder.AppendLine(
+            "Assistant: The population of Shanghai is 26 million, while Guangzhou has a population of 15 million. Therefore, Shanghai has the highest population.");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("");
         promptBuilder.AppendLine("## Tool Use Available Tools");
@@ -308,37 +315,37 @@ public class PromptFunctionCallEngine : FunctionCallEngine
     public override void EncapsulateResult(ChatMessage replyMessage, IList<FunctionResultContent> results)
     {
         replyMessage.Role = ChatRole.User;
-        var resultBuilder = new StringBuilder();
-        resultBuilder.AppendLine("<tool_call_results>");
-
-        foreach (var result in results)
+        var container = new ToolCallResultsContainer
         {
-            resultBuilder.AppendLine("  <tool_call_result>");
-            resultBuilder.AppendLine($"      <name>{result.CallId}</name>");
-            string resultString;
-            if (result.Result != null)
+            ToolCalls = results.Select(r =>
             {
-                if (result.Result is string stringContent)
+                string resultString = r.Result switch
                 {
-                    resultString = stringContent;
-                }
-                else
-                {
-                    resultString = System.Text.Json.JsonSerializer.Serialize(result.Result);
-                }
-            }
-            else
-            {
-                resultString = "null";
-            }
+                    null => "null",
+                    string s => s,
+                    _ => JsonSerializer.Serialize(r.Result)
+                };
 
-            resultBuilder.AppendLine($"      <result>{resultString}</result>");
-            resultBuilder.AppendLine("  </tool_call_result>");
+                return new ToolCallResultElement
+                {
+                    Name = r.CallId,
+                    ResultContent = resultString
+                };
+            }).ToList()
+        };
+
+        // 2. 用 XmlSerializer 把对象序列化为字符串
+        var serializer = new XmlSerializer(typeof(ToolCallResultsContainer));
+        var sb = new StringBuilder();
+        using (var sw = new StringWriter(sb))
+        {
+            using (XmlWriter xmlWriter = XmlWriter.Create(sw, new XmlWriterSettings() { Indent = true }))
+            {
+                serializer.Serialize(xmlWriter, container);
+            }
         }
-
-        resultBuilder.AppendLine("</tool_call_results>");
-
+        
         // 添加到回复消息中
-        replyMessage.Contents.Insert(0, new TextContent(resultBuilder.ToString()));
+        replyMessage.Contents.Insert(0, new TextContent(sb.ToString()));
     }
 }

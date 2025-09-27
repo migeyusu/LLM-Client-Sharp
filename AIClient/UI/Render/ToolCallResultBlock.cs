@@ -17,7 +17,8 @@ public class ToolCallResultBlock : CustomLeafBlock
 [XmlRoot("tool_call_results")]
 public class ToolCallResultsContainer
 {
-    [XmlElement("tool_call_result")] public List<ToolCallResultElement> ToolCalls { get; set; } = new List<ToolCallResultElement>();
+    [XmlElement("tool_call_result")]
+    public List<ToolCallResultElement> ToolCalls { get; set; } = new List<ToolCallResultElement>();
 }
 
 public class ToolCallResultElement
