@@ -8,4 +8,5 @@
     <converters:KUnitConverter x:Key="KUnitConverter" />
     <materialDesign:InvertBooleanConverter x:Key="InvertBooleanConverter" />
     <component:SiYuanFont x:Key="DefaultFontFamily" />
+    <converters:RoundFloatConverter x:Key="RoundFloatConverter" />
 </ResourceDictionary>

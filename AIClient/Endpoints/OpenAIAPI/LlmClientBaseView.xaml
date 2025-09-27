@@ -16,14 +16,14 @@
                   IsChecked="{Binding Parameters.Streaming,Mode=TwoWay}" />
         <endpoints:ParamView PropertyName="Top P"
                              Value="{Binding Parameters.TopP,Mode=TwoWay}"
-                             Description="Controls text diversity by selecting the most probable words until a set probability is reached."
+                             Description="通过选择最可能的单词，直到达到设定的概率阈值，从而控制文本多样性。"
                              TickFrequency="0.01"
                              Maximum="1"
                              Visibility="{Binding Model.TopPEnable,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
                              Minimum="0.01" />
         <endpoints:ParamView PropertyName="Top K"
                              Value="{Binding Parameters.TopK,Mode=TwoWay}"
-                             Description="Top-K sampling involves selecting the top K most likely words from the probability distribution and then sampling the next word only from this subset."
+                             Description="Top-K 采样会从概率分布中选取概率最高的 K 个单词，然后仅从这部分中采样下一个单词。"
                              TickFrequency="1"
                              Maximum="50"
                              Visibility="{Binding Model.TopKEnable,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -31,7 +31,7 @@
         <endpoints:ParamView PropertyName="Temperature"
                              Visibility="{Binding Model.TemperatureEnable,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
                              Value="{Binding Parameters.Temperature,Mode=TwoWay}"
-                             Description="Controls randomness in the response, use lower to be more deterministic."
+                             Description="控制回复的随机性，数值越低结果越确定。"
                              Maximum="1"
                              Minimum="0"
                              TickFrequency="0.01" />
@@ -40,19 +40,21 @@
                              TickFrequency="1"
                              Unit="K"
                              Value="{Binding Parameters.MaxTokens,Mode=TwoWay,Converter={StaticResource KUnitConverter}}"
-                             Description="Limit the maximum output tokens for the model response."
+                             Description="限制模型回复的最大输出 token 数。"
                              Maximum="{Binding  Model.MaxTokenLimit,Mode=OneWay,Converter={StaticResource KUnitConverter}}"
                              Minimum="1" />
         <endpoints:ParamView PropertyName="Presence Penalty"
                              Visibility="{Binding Model.PresencePenaltyEnable,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
                              Value="{Binding Parameters.PresencePenalty,Mode=TwoWay}"
-                             Description="Discourages the model from repeating the same words or phrases too frequently by applying a penalty (between -2.0 and 2.0) based on their presence in the text."
+                             Description="通过对文本中已出现的词语施加惩罚（范围 -2.0 到 2.0），抑制模型重复相同词语或短语的频率。"
+                             TickFrequency="0.01"
                              Maximum="2"
                              Minimum="-2" />
         <endpoints:ParamView PropertyName="Frequency Penalty"
                              Visibility="{Binding Model.FrequencyPenaltyEnable,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
                              Value="{Binding Parameters.FrequencyPenalty,Mode=TwoWay}"
-                             Description="Discourages the model from generating the same words or phrases too frequently by applying a penalty (between -2.0 and 2.0) based on their existing frequency in the text."
+                             Description="通过对文本中已存在的词语施加惩罚（范围 -2.0 到 2.0），抑制模型频繁生成相同词语或短语。"
+                             TickFrequency="0.01"
                              Maximum="2"
                              Minimum="-2" />
     </StackPanel>

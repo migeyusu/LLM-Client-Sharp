@@ -264,7 +264,8 @@
                             </Button>
                             <Button Style="{DynamicResource CopyCommandStyle}"
                                     Margin="10,0,0,0"
-                                    Command="{x:Static ui:CommonCommands.CopyCommand}" />
+                                    Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                    CommandParameter="{Binding}"/>
                         </StackPanel>
                     </Grid>
                 </DataTemplate>
