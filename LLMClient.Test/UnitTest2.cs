@@ -312,7 +312,7 @@ public class UnitTest2
         var requestViewItem = new RequestViewItem()
         {
             SearchOption = new OpenRouterSearchOption(),
-            AdditionalProperties = new AdditionalPropertiesDictionary()
+            TempAdditionalProperties = new AdditionalPropertiesDictionary()
             {
                 {
                     "plugins", new OpenRouterSearchOption.PluginConfig[]

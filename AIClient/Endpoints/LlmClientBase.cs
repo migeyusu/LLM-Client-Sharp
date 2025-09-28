@@ -232,7 +232,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            var additionalProperties = requestViewItem?.AdditionalProperties;
+            var additionalProperties = requestViewItem?.TempAdditionalProperties;
             if (additionalProperties != null)
             {
                 requestOptions.AdditionalProperties ??= new AdditionalPropertiesDictionary();
@@ -269,7 +269,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            var chatContext = new ChatContext(requestViewItem?.AdditionalProperties)
+            var chatContext = new ChatContext(requestViewItem?.TempAdditionalProperties)
                 { Streaming = streaming };
             using (AsyncContext<ChatContext>.Create(chatContext))
             {

@@ -54,6 +54,13 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
             var s = EffortLevel.ToString();
             return s == DefaultEffortLevel ? null : s;
         }
+        set
+        {
+            EffortLevel = value == null
+                ? new ChatReasoningEffortLevel(DefaultEffortLevel)
+                : new ChatReasoningEffortLevel(value);
+            OnPropertyChanged();
+        }
     }
 
     private bool _enableBudgetTokens;
@@ -99,6 +106,11 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
             _showThinking = value;
             OnPropertyChanged();
         }
+    }
+
+    public void EnableThinking(RequestViewItem requestViewItem)
+    {
+        throw new NotImplementedException();
     }
 
     public IThinkingConfig? Config

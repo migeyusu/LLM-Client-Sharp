@@ -62,7 +62,7 @@ public class OpenRouterSearchOption : BaseViewModel, ISearchOption
         if (string.IsNullOrEmpty(SearchPrompt))
         {
             Trace.WriteLine("SearchPrompt cannot be null or empty");
-            requestViewItem.AdditionalProperties["plugins"] =
+            requestViewItem.TempAdditionalProperties["plugins"] =
                 new PluginConfig[]
                 {
                     new PluginConfig()
@@ -73,7 +73,7 @@ public class OpenRouterSearchOption : BaseViewModel, ISearchOption
         }
         else
         {
-            requestViewItem.AdditionalProperties["plugins"] = new PluginConfig[]
+            requestViewItem.TempAdditionalProperties["plugins"] = new PluginConfig[]
             {
                 new PluginConfig()
                 {

@@ -23,8 +23,8 @@ public class RequestPersistItem : IDialogPersistItem
     /// <summary>
     /// 对Request附加的额外属性
     /// </summary>
-    [JsonPropertyName("RequestAdditionalProperties")]
-    public AdditionalPropertiesDictionary AdditionalProperties { get; set; } = new();
+    // [JsonPropertyName("RequestAdditionalProperties")]
+    // public AdditionalPropertiesDictionary AdditionalProperties { get; set; } = new();
 
     public List<Attachment>? Attachments { get; set; }
 

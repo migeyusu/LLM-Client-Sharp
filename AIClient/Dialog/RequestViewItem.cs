@@ -46,9 +46,9 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     public ISearchOption? SearchOption { get; set; }
 
     /// <summary>
-    /// 对Request附加的额外属性
+    /// 对Request附加的额外属性，不持久化
     /// </summary>
-    public AdditionalPropertiesDictionary AdditionalProperties { get; set; } = new AdditionalPropertiesDictionary();
+    public AdditionalPropertiesDictionary TempAdditionalProperties { get; set; } = new AdditionalPropertiesDictionary();
 
     private ChatMessage? _message = null;
 

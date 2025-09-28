@@ -8,13 +8,14 @@ namespace LLMClient.Endpoints;
 
 [JsonDerivedType(typeof(OpenRouterReasoningConfig), "openrouter")]
 [JsonDerivedType(typeof(GeekAIThinkingConfig), "geekai")]
+[JsonDerivedType(typeof(NVDAAPIThinkingConfig), "nvda")]
 public interface IThinkingConfig : ICloneable
 {
-    public string? Effort { get; }
+    public string? Effort { get; set; }
 
-    public int? BudgetTokens { get; }
+    public int? BudgetTokens { get; set; }
 
-    public bool ShowThinking { get; }
+    public bool ShowThinking { get; set; }
 
     public static IThinkingConfig? Get(ILLMChatModel model)
     {
@@ -27,23 +28,18 @@ public interface IThinkingConfig : ICloneable
                 case ModelSource.GeekAI:
                     return new GeekAIThinkingConfig();
                 default:
-                    return null;
+                    break;
+            }
+
+            if (apiEndPoint.Option.ConfigOption.URL == "https://integrate.api.nvidia.com/v1")
+            {
+                return new NVDAAPIThinkingConfig();
             }
         }
 
         return null;
     }
 
-    public void EnableThinking(RequestViewItem requestViewItem)
-    {
-        object clone = this.Clone();
-        if (this is OpenRouterReasoningConfig)
-        {
-            requestViewItem.AdditionalProperties["reasoning"] = clone;
-        }
-        else if (this is GeekAIThinkingConfig)
-        {
-            requestViewItem.AdditionalProperties["thinking_config"] = clone;
-        }
-    }
+
+    public void EnableThinking(RequestViewItem requestViewItem);
 }

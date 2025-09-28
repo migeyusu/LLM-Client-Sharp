@@ -66,6 +66,7 @@ public static class Extension
                 .ConvertUsing<AutoMapModelTypeConverter>();
             expression.CreateMap<IThinkingConfig, GeekAIThinkingConfig>();
             expression.CreateMap<IThinkingConfig, OpenRouterReasoningConfig>();
+            expression.CreateMap<IThinkingConfig, NVDAAPIThinkingConfig>();
             expression.CreateMap<IAIContent, AIContent>().IncludeAllDerived();
             expression.CreateMap<AIContent, IAIContent>().IncludeAllDerived();
             expression.CreateMap<ChatMessage, ChatMessagePO>();

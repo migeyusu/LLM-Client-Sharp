@@ -58,10 +58,10 @@ public class GeekAISearchOption : BaseViewModel, ISearchOption
             return Task.CompletedTask;
         }
 
-        requestViewItem.AdditionalProperties["enable_search"] = true;
+        requestViewItem.TempAdditionalProperties["enable_search"] = true;
         if (SearchEngine != null)
         {
-            requestViewItem.AdditionalProperties["search_config"] = new GeekAISearchConfig()
+            requestViewItem.TempAdditionalProperties["search_config"] = new GeekAISearchConfig()
             {
                 Engine = SearchEngine.GetEnumDescription(),
                 ReturnResult = ReturnResult

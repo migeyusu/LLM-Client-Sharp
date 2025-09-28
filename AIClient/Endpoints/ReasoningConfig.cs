@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.Dialog;
 
 namespace LLMClient.Endpoints;
 
@@ -19,6 +20,12 @@ public class OpenRouterReasoningConfig : IThinkingConfig
     {
         get => !Exclude;
         set => Exclude = !value;
+    }
+
+    public void EnableThinking(RequestViewItem requestViewItem)
+    {
+        object clone = this.Clone();
+        requestViewItem.TempAdditionalProperties["reasoning"] = clone;
     }
 
     public object Clone()
@@ -44,6 +51,12 @@ public class GeekAIThinkingConfig : IThinkingConfig
 
     [JsonPropertyName("include_thoughts")] public bool ShowThinking { get; set; } = true;
 
+    public void EnableThinking(RequestViewItem requestViewItem)
+    {
+        object clone = this.Clone();
+        requestViewItem.TempAdditionalProperties["thinking_config"] = clone;
+    }
+
     //仅qwen3早期支持
     // _requestViewItem.AdditionalProperties["enable_thinking"] = true;
     public object Clone()
@@ -53,6 +66,31 @@ public class GeekAIThinkingConfig : IThinkingConfig
             Effort = this.Effort,
             BudgetTokens = this.BudgetTokens,
             ShowThinking = this.ShowThinking
+        };
+    }
+}
+
+/// <summary>
+/// nvidia的api，当前只有deepseek v3.1支持
+/// </summary>
+public class NVDAAPIThinkingConfig : IThinkingConfig
+{
+    public object Clone()
+    {
+        return new NVDAAPIThinkingConfig();
+    }
+
+    [JsonIgnore] public string? Effort { get; set; }
+
+    [JsonIgnore] public int? BudgetTokens { get; set; }
+
+    [JsonIgnore] public bool ShowThinking { get; set; }
+
+    public void EnableThinking(RequestViewItem requestViewItem)
+    {
+        requestViewItem.TempAdditionalProperties["chat_template_kwargs"] = new Dictionary<string, object>
+        {
+            { "thinking", true }
         };
     }
 }
