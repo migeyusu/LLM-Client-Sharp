@@ -22,7 +22,7 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="180" />
+            <ColumnDefinition Width="220" />
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
         <Grid Grid.ColumnSpan="2"
@@ -40,6 +40,7 @@
                 </Style>
             </Grid.Resources>
             <Grid.RowDefinitions>
+                <RowDefinition Height="36" />
                 <RowDefinition Height="36" />
                 <RowDefinition Height="36" />
                 <RowDefinition Height="36" />
@@ -97,6 +98,33 @@
                     </StackPanel>
                 </Button>
             </DockPanel>
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Proxy：" />
+            <StackPanel Grid.Row="3" Grid.Column="1"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        DataContext="{Binding ConfigOption,Mode=OneTime}">
+                <RadioButton IsChecked="{Binding UseGlobalProxy,Mode=TwoWay}"
+                             Content="使用共享设置" />
+                <RadioButton Margin="10,0,0,0"
+                             IsChecked="{Binding UseGlobalProxy,Mode=TwoWay,Converter={StaticResource InvertBooleanConverter}}">
+                    <DockPanel>
+                        <TextBlock Text="独立配置："
+                                   VerticalAlignment="Center"
+                                   Margin="10,0,0,0" />
+                        <materialDesign:PopupBox PopupContent="{Binding ProxyOption,Mode=OneTime}"
+                                                 PopupContentTemplate="{StaticResource ProxyOptionDataTemplate}"
+                                                 PlacementMode="TopAndAlignLeftEdges"
+                                                 Padding="10"
+                                                 ToggleContent="{materialDesign:PackIcon Kind=ProxyOutline}"
+                                                 PopupElevation="Dp4"
+                                                 PopupUniformCornerRadius="8"
+                                                 ToolTip="代理"
+                                                 StaysOpen="True"
+                                                 VerticalAlignment="Center"
+                                                 Style="{StaticResource MaterialDesignToolPopupBox}" />
+                    </DockPanel>
+                </RadioButton>
+            </StackPanel>
         </Grid>
         <ListBox Grid.Row="1" Grid.Column="0"
                  Margin="0,16,0,0"
@@ -124,8 +152,9 @@
                                 <MenuItem Command="{Binding CopyCommand}"
                                           Icon="{materialDesign:PackIcon Kind=ContentCopy}"
                                           Header="复制" />
-                                <MenuItem Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.PastCommand}"
-                                          Header="黏贴到之后"/>
+                                <MenuItem
+                                    Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.PastCommand}"
+                                    Header="黏贴到之后" />
                             </ContextMenu>
                         </Setter.Value>
                     </Setter>

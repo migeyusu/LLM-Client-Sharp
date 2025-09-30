@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Net.Http;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -60,7 +61,8 @@ public class APIClient : LlmClientBase
 
     private void OptionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        EnsureKernel();
+        _chatClient?.Dispose();
+        _chatClient = null;
     }
 
     private Kernel? _kernel;
@@ -71,9 +73,15 @@ public class APIClient : LlmClientBase
 
     private void EnsureKernel()
     {
+        if (_chatClient != null)
+            return;
         var apiToken = _option.APIToken;
         var apiUri = new Uri(_option.URL);
-        var httpClient = new HttpClient(/*new DebugMessageLogger()*/) { Timeout = TimeSpan.FromMinutes(10) };
+        var proxyOption = _option.UseGlobalProxy
+            ? ServiceLocator.GetService<GlobalOptions>()!.ProxyOption
+            : _option.ProxyOption;
+        ;
+        var httpClient = new HttpClient( /*new DebugMessageLogger()*/) { Timeout = TimeSpan.FromMinutes(10) };
         var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
         {
             Endpoint = apiUri,
@@ -83,15 +91,14 @@ public class APIClient : LlmClientBase
 #if DEBUG //只有debug模式下才需要获取每次请求的日志
         builder.Services.AddSingleton(_loggerFactory);
 #endif
-
         _kernel = builder.AddOpenAIChatCompletion(this.Model.Id, openAiClient)
             .Build();
         _chatClient = _kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
-        _chatClient?.Dispose();
     }
 
     protected override IChatClient GetChatClient()
     {
+        EnsureKernel();
         if (_chatClient == null)
         {
             throw new NullReferenceException(

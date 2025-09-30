@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.UI.Component;
 using ModelContextProtocol.Client;
 
 namespace LLMClient.MCP;
@@ -10,6 +11,7 @@ public class SseServerItem : McpServerItem
     private string? _url;
     private HttpTransportMode _transportMode = HttpTransportMode.AutoDetect;
     private IDictionary<string, string>? _additionalHeaders;
+    private bool _useGlobalProxy = true;
     public override string Type => "sse";
 
     public override bool Validate()
@@ -61,6 +63,19 @@ public class SseServerItem : McpServerItem
         }
     }
 
+    public bool UseGlobalProxy
+    {
+        get => _useGlobalProxy;
+        set
+        {
+            if (value == _useGlobalProxy) return;
+            _useGlobalProxy = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ProxyOption ProxyOption { get; set; } = new ProxyOption();
+
     public ICommand ConfigHeadersCommand => new RelayCommand(() =>
     {
         var envWindow = new KeyValueConfigWindow()
@@ -102,12 +117,12 @@ public class SseServerItem : McpServerItem
             throw new NotSupportedException("Url cannot be null or empty.");
         }
 
-        var sseClientTransportOptions = new SseClientTransportOptions()
+        var sseClientTransportOptions = new SseClientTransportOptions
         {
             Name = this.Name,
             Endpoint = new Uri(this.Url),
             TransportMode = TransportMode,
-            AdditionalHeaders = this.AdditionalHeaders
+            AdditionalHeaders = this.AdditionalHeaders,
         };
         return new SseClientTransport(sseClientTransportOptions);
     }

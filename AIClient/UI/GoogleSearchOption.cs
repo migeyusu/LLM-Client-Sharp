@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection.Metadata.Ecma335;
+using LLMClient.UI.Component;
 
 namespace LLMClient.UI;
 
@@ -6,6 +8,7 @@ public class GoogleSearchOption : BaseViewModel, ICloneable
 {
     private string? _apiKey;
     private string? _searchEngineId;
+    private bool _useGlobalProxy = true;
 
     public string? ApiKey
     {
@@ -28,6 +31,19 @@ public class GoogleSearchOption : BaseViewModel, ICloneable
             OnPropertyChanged();
         }
     }
+
+    public bool UseGlobalProxy
+    {
+        get => _useGlobalProxy;
+        set
+        {
+            if (value == _useGlobalProxy) return;
+            _useGlobalProxy = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ProxyOption ProxyOption { get; set; } = new();
 
     [MemberNotNullWhen(true, nameof(ApiKey), nameof(SearchEngineId))]
     public bool IsValid()

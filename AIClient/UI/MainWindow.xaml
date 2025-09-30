@@ -151,8 +151,8 @@
                                                Height="600" />
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type endpoints:EndpointConfigureViewModel}">
-                    <endpoints:EndpointConfigureView Width="800"
-                                                     Height="600" />
+                    <endpoints:EndpointConfigureView Width="900"
+                                                     Height="710" />
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type endpoints:LlmClientBase}">
                     <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"

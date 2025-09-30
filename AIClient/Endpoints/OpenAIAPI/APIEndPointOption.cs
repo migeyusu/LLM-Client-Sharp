@@ -74,18 +74,7 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         }
     }
 
-    private APIDefaultOption _configOption = new APIDefaultOption();
-
-    public APIDefaultOption ConfigOption
-    {
-        get => _configOption;
-        set
-        {
-            if (Equals(value, _configOption)) return;
-            _configOption = value;
-            OnPropertyChanged();
-        }
-    }
+    public APIDefaultOption ConfigOption { get; } = new APIDefaultOption();
 
     private ModelMapping? ModelMapping => ModelMapping.Create(this.ModelsSource);
 
@@ -122,6 +111,7 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
     }
 
     private ImageSource? _icon = null;
+
 
     public virtual ImageSource Icon
     {

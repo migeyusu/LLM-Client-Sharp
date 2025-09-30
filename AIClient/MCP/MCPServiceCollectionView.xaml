@@ -230,6 +230,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
@@ -276,8 +277,35 @@
                                       SelectedItem="{Binding TransportMode,Mode=TwoWay}"
                                       ItemsSource="{Binding Source={component:EnumBindingSource {x:Type client:HttpTransportMode}}}" />
                             <TextBlock Grid.Row="5" Grid.Column="0"
+                                       Text="代理：" />
+                            <StackPanel Grid.Row="5" Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        Margin="0,5">
+                                <RadioButton IsChecked="{Binding UseGlobalProxy,Mode=TwoWay}"
+                                             Content="使用共享设置" />
+                                <RadioButton Margin="10,0,0,0"
+                                             IsChecked="{Binding UseGlobalProxy,Mode=TwoWay,Converter={StaticResource InvertBooleanConverter}}">
+                                    <DockPanel>
+                                        <TextBlock Text="独立配置："
+                                                   VerticalAlignment="Center"
+                                                   Margin="10,0,0,0" />
+                                        <materialDesign:PopupBox PopupContent="{Binding ProxyOption,Mode=OneTime}"
+                                                                 PopupContentTemplate="{StaticResource ProxyOptionDataTemplate}"
+                                                                 PlacementMode="TopAndAlignLeftEdges"
+                                                                 Padding="10"
+                                                                 ToggleContent="{materialDesign:PackIcon Kind=ProxyOutline}"
+                                                                 PopupElevation="Dp4"
+                                                                 PopupUniformCornerRadius="8"
+                                                                 ToolTip="代理"
+                                                                 StaysOpen="True"
+                                                                 VerticalAlignment="Center"
+                                                                 Style="{StaticResource MaterialDesignToolPopupBox}" />
+                                    </DockPanel>
+                                </RadioButton>
+                            </StackPanel>
+                            <TextBlock Grid.Row="6" Grid.Column="0"
                                        Text="Prompt:" />
-                            <TextBox Grid.Row="5" Grid.Column="1"
+                            <TextBox Grid.Row="6" Grid.Column="1"
                                      AcceptsReturn="True"
                                      VerticalScrollBarVisibility="Auto"
                                      TextWrapping="Wrap"
@@ -285,7 +313,7 @@
                                      MinHeight="50"
                                      VerticalContentAlignment="Top"
                                      materialDesign:HintAssist.Hint="为MCP附加额外的Prompt"
-                                     Text="{Binding UserPrompts,Mode=TwoWay}" />
+                                     Text="{Binding UserPrompt,Mode=TwoWay}" />
                         </Grid>
                     </DataTemplate>
                 </ContentControl.Resources>

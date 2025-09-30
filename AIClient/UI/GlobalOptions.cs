@@ -120,6 +120,11 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
 
     public GoogleSearchOption GoogleSearchOption { get; set; } = new GoogleSearchOption();
 
+    /// <summary>
+    /// as global option
+    /// </summary>
+    public ProxyOption ProxyOption { get; set; } = new ProxyOption();
+
     public RagOption RagOption { get; set; } = new RagOption();
 
     [JsonIgnore]

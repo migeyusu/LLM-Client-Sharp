@@ -3,6 +3,7 @@ using System.ClientModel.Primitives;
 using System.Net.Http;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using OpenAI;
 
 namespace LLMClient.Endpoints;
@@ -35,6 +36,19 @@ public class APIDefaultOption : BaseViewModel
         }
     }
     
+    private bool _useGlobalProxy = true;
+    public bool UseGlobalProxy
+    {
+        get => _useGlobalProxy;
+        set
+        {
+            if (value == _useGlobalProxy) return;
+            _useGlobalProxy = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ProxyOption ProxyOption { get; set; } = new ProxyOption();
     
     public OpenAIClientEx? OpenAIClient
     {
