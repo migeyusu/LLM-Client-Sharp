@@ -2,6 +2,8 @@
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using Google.Apis.Http;
+using IHttpClientFactory = Google.Apis.Http.IHttpClientFactory;
 
 namespace LLMClient.UI.Component;
 
@@ -41,19 +43,53 @@ public class ProxyOption : BaseViewModel
         }
     }
 
-    public IWebProxy? CreateProxy()
+    public HttpClientHandler CreateHandler()
     {
         switch (ProxyType)
         {
             case ProxyType.Default:
-                return null;
+                return new HttpClientHandler();
             case ProxyType.System:
-                return new DynamicProxy();
+                return new HttpClientHandler()
+                {
+                    Proxy = DynamicProxy.Instance,
+                    UseProxy = true,
+                };
             case ProxyType.Custom:
-                return string.IsNullOrEmpty(ProxyString) ? null : new WebProxy(new Uri(ProxyString));
+                if (string.IsNullOrEmpty(ProxyString))
+                {
+                    return new HttpClientHandler();
+                }
 
+                return new HttpClientHandler()
+                {
+                    UseProxy = true,
+                    Proxy = new WebProxy(new Uri(ProxyString))
+                };
+            case ProxyType.Direct:
+                return new HttpClientHandler() { UseProxy = false };
             default:
                 throw new ArgumentOutOfRangeException();
+        }
+    }
+    
+    public IHttpClientFactory CreateFactory()
+    {
+        return new ProxyOptionFactory(this);
+    }
+    
+    public class ProxyOptionFactory: HttpClientFactory
+    {
+        private readonly ProxyOption _option;
+
+        public ProxyOptionFactory(ProxyOption option)
+        {
+            _option = option;
+        }
+
+        protected override HttpClientHandler CreateClientHandler()
+        {
+            return _option.CreateHandler();
         }
     }
 }
@@ -63,6 +99,8 @@ public class ProxyOption : BaseViewModel
 /// </summary>
 public class DynamicProxy : IWebProxy
 {
+    public static DynamicProxy Instance { get; } = new DynamicProxy();
+
     private static readonly MethodInfo? TryCreateMethod;
 
     static DynamicProxy()

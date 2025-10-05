@@ -73,8 +73,8 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
             OnPropertyChanged();
         }
     }
-
-    public APIDefaultOption ConfigOption { get; } = new APIDefaultOption();
+    
+    public APIDefaultOption ConfigOption { get; set; } = new APIDefaultOption();
 
     private ModelMapping? ModelMapping => ModelMapping.Create(this.ModelsSource);
 

@@ -2,6 +2,7 @@
 using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Google.Apis.Http;
 using Google.Apis.Services;
 using LLMClient.Abstraction;
 using LLMClient.Rag;
@@ -61,12 +62,18 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
     public async Task EnsureAsync(CancellationToken token)
     {
         var config = ServiceLocator.GetService<GlobalOptions>()?.GoogleSearchOption;
-        if (config?.IsValid() == true && !config.Equals(_config))
+        if (_config != null && config?.IsValid() == true && !config.Equals(_config))
         {
+            var proxyOption = _config.UseGlobalProxy
+                ? ServiceLocator.GetService<GlobalOptions>()!.ProxyOption
+                : _config.ProxyOption;
 #pragma warning disable SKEXP0050
             _textSearch = new GoogleTextSearch(
                 initializer: new BaseClientService.Initializer
-                    { ApiKey = config.ApiKey }, config.SearchEngineId);
+                {
+                    ApiKey = config.ApiKey,
+                    HttpClientFactory = proxyOption.CreateFactory(),
+                }, config.SearchEngineId);
 #pragma warning restore SKEXP0050
 #pragma warning disable SKEXP0001
             this.AvailableTools = [CreateGetSearchResults(_textSearch)];

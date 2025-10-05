@@ -1,7 +1,10 @@
 ﻿using System.Collections.ObjectModel;
+using System.Net.Http;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.UI;
 using LLMClient.UI.Component;
+using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Client;
 
 namespace LLMClient.MCP;
@@ -117,6 +120,9 @@ public class SseServerItem : McpServerItem
             throw new NotSupportedException("Url cannot be null or empty.");
         }
 
+        var proxyOption = UseGlobalProxy
+            ? ServiceLocator.GetService<GlobalOptions>()!.ProxyOption
+            : ProxyOption;
         var sseClientTransportOptions = new SseClientTransportOptions
         {
             Name = this.Name,
@@ -124,6 +130,6 @@ public class SseServerItem : McpServerItem
             TransportMode = TransportMode,
             AdditionalHeaders = this.AdditionalHeaders,
         };
-        return new SseClientTransport(sseClientTransportOptions);
+        return new SseClientTransport(sseClientTransportOptions, new HttpClient(ProxyOption.CreateHandler()));
     }
 }

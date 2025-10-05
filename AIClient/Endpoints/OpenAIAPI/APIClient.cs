@@ -2,6 +2,7 @@
 using System.ClientModel.Primitives;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
 using AutoMapper;
 using LLMClient.Abstraction;
@@ -80,8 +81,8 @@ public class APIClient : LlmClientBase
         var proxyOption = _option.UseGlobalProxy
             ? ServiceLocator.GetService<GlobalOptions>()!.ProxyOption
             : _option.ProxyOption;
-        ;
-        var httpClient = new HttpClient( /*new DebugMessageLogger()*/) { Timeout = TimeSpan.FromMinutes(10) };
+        var handler = proxyOption.CreateHandler();
+        var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(10) };
         var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
         {
             Endpoint = apiUri,
