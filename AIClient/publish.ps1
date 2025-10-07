@@ -1,0 +1,1 @@
+dotnet publish .\LLMClient.csproj -p:PublishProfile=FolderProfile
