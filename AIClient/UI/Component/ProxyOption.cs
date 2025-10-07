@@ -7,7 +7,7 @@ using IHttpClientFactory = Google.Apis.Http.IHttpClientFactory;
 
 namespace LLMClient.UI.Component;
 
-public enum ProxyType
+public enum ProxyType:int
 {
     Default = 0,
     System = 1,
@@ -15,7 +15,7 @@ public enum ProxyType
     Direct = 3,
 }
 
-public class ProxyOption : BaseViewModel
+public class ProxyOption : BaseViewModel<ProxyOption>
 {
     private ProxyType _proxyType;
 
@@ -72,13 +72,31 @@ public class ProxyOption : BaseViewModel
                 throw new ArgumentOutOfRangeException();
         }
     }
-    
+
+    protected bool Equals(ProxyOption other)
+    {
+        return _proxyType == other._proxyType && _proxyString == other._proxyString;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((ProxyOption)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(this.ProxyType, this.ProxyString);
+    }
+
     public IHttpClientFactory CreateFactory()
     {
         return new ProxyOptionFactory(this);
     }
-    
-    public class ProxyOptionFactory: HttpClientFactory
+
+    public class ProxyOptionFactory : HttpClientFactory
     {
         private readonly ProxyOption _option;
 

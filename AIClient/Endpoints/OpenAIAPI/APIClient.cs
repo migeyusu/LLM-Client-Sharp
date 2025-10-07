@@ -2,11 +2,11 @@
 using System.ClientModel.Primitives;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Net;
 using System.Net.Http;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -42,45 +42,41 @@ public class APIClient : LlmClientBase
 
     private readonly APIDefaultOption _option;
 
+    private APIDefaultOption _optionCopy;
+
     public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option,
         ILoggerFactory loggerFactory)
     {
         _option = option;
+        _optionCopy = Extension.Clone(option);
         this._loggerFactory = loggerFactory;
-        option.PropertyChanged += OptionOnPropertyChanged;
         this.Endpoint = endPoint;
         ModelInfo = modelInfo;
         Mapper.Map<APIModelInfo, IModelParams>(modelInfo, this.Parameters);
-        EnsureKernel();
     }
 
     ~APIClient()
     {
-        _option.PropertyChanged -= OptionOnPropertyChanged;
         _chatClient?.Dispose();
     }
 
-    private void OptionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        _chatClient?.Dispose();
-        _chatClient = null;
-    }
-
-    private Kernel? _kernel;
+    // private Kernel? _kernel;
 
     private IChatClient? _chatClient;
 
     private readonly ILoggerFactory _loggerFactory;
 
-    private void EnsureKernel()
+    private IChatClient EnsureKernel()
     {
         if (_chatClient != null)
-            return;
+        {
+            _chatClient.Dispose();
+        }
+
         var apiToken = _option.APIToken;
         var apiUri = new Uri(_option.URL);
-        var proxyOption = _option.UseGlobalProxy
-            ? ServiceLocator.GetService<GlobalOptions>()!.ProxyOption
-            : _option.ProxyOption;
+        var proxyOption = _option.ProxySetting.GetRealProxy();
+        _proxySettingCopy = Extension.Clone(proxyOption);
         var handler = proxyOption.CreateHandler();
         var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(10) };
         var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
@@ -92,18 +88,20 @@ public class APIClient : LlmClientBase
 #if DEBUG //只有debug模式下才需要获取每次请求的日志
         builder.Services.AddSingleton(_loggerFactory);
 #endif
-        _kernel = builder.AddOpenAIChatCompletion(this.Model.Id, openAiClient)
+        var kernel = builder.AddOpenAIChatCompletion(this.Model.Id, openAiClient)
             .Build();
-        _chatClient = _kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
+        return kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
     }
+
+    private ProxyOption? _proxySettingCopy;
 
     protected override IChatClient GetChatClient()
     {
-        EnsureKernel();
-        if (_chatClient == null)
+        if (_chatClient == null || !_option.PublicEquals(_optionCopy) ||
+            !_option.ProxySetting.GetRealProxy().PublicEquals(_proxySettingCopy!))
         {
-            throw new NullReferenceException(
-                "Chat client is not initialized. Ensure that the EnsureKernel method has been called.");
+            _chatClient = EnsureKernel();
+            _optionCopy = Extension.Clone(_optionCopy);
         }
 
         return _chatClient;

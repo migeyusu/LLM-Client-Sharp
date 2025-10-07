@@ -372,6 +372,7 @@
                              materialDesign:TextFieldAssist.HasClearButton="True"
                              materialDesign:HintAssist.Hint="support socket or http mode."
                              VerticalAlignment="Center"
+                             Text="{Binding ProxyString,Mode=TwoWay}"
                              Margin="10,0,0,0" />
                 </Grid>
             </RadioButton>

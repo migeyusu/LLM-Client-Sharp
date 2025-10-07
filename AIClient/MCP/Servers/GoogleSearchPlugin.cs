@@ -62,11 +62,9 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
     public async Task EnsureAsync(CancellationToken token)
     {
         var config = ServiceLocator.GetService<GlobalOptions>()?.GoogleSearchOption;
-        if (_config != null && config?.IsValid() == true && !config.Equals(_config))
+        if (_config != null && config?.IsValid() == true && !config.PublicEquals(_config))
         {
-            var proxyOption = _config.UseGlobalProxy
-                ? ServiceLocator.GetService<GlobalOptions>()!.ProxyOption
-                : _config.ProxyOption;
+            var proxyOption = _config.ProxySetting.GetRealProxy();
 #pragma warning disable SKEXP0050
             _textSearch = new GoogleTextSearch(
                 initializer: new BaseClientService.Initializer

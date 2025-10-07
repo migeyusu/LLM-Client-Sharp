@@ -422,7 +422,8 @@ public static class Extension
     public static T Clone<T>(T source) where T : class
     {
         var json = JsonSerializer.Serialize(source, DefaultJsonSerializerOptions);
-        return JsonSerializer.Deserialize<T>(json) ?? throw new InvalidOperationException("Deserialization failed.");
+        return JsonSerializer.Deserialize<T>(json, DefaultJsonSerializerOptions) ??
+               throw new InvalidOperationException("Deserialization failed.");
     }
 
     public static string GetStructure(this IEnumerable<ChunkNode> nodes)
@@ -545,7 +546,7 @@ public static class Extension
     {
         return Path.GetFullPath(prefix + Guid.NewGuid().ToString().Replace('-', '_'), TempPath);
     }
-    
+
     /// <summary>
     /// 返回一个可等待的对象，用于将执行上下文切换到此Dispatcher关联的线程。
     /// 用法: await myDispatcher.SwitchToAsync();

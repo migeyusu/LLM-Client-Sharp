@@ -14,7 +14,6 @@ public class SseServerItem : McpServerItem
     private string? _url;
     private HttpTransportMode _transportMode = HttpTransportMode.AutoDetect;
     private IDictionary<string, string>? _additionalHeaders;
-    private bool _useGlobalProxy = true;
     public override string Type => "sse";
 
     public override bool Validate()
@@ -66,18 +65,7 @@ public class SseServerItem : McpServerItem
         }
     }
 
-    public bool UseGlobalProxy
-    {
-        get => _useGlobalProxy;
-        set
-        {
-            if (value == _useGlobalProxy) return;
-            _useGlobalProxy = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public ProxyOption ProxyOption { get; set; } = new ProxyOption();
+    public ProxySetting ProxySetting { get; set; } = new ProxySetting();
 
     public ICommand ConfigHeadersCommand => new RelayCommand(() =>
     {
@@ -120,9 +108,7 @@ public class SseServerItem : McpServerItem
             throw new NotSupportedException("Url cannot be null or empty.");
         }
 
-        var proxyOption = UseGlobalProxy
-            ? ServiceLocator.GetService<GlobalOptions>()!.ProxyOption
-            : ProxyOption;
+        var proxyOption = this.ProxySetting.GetRealProxy();
         var sseClientTransportOptions = new SseClientTransportOptions
         {
             Name = this.Name,
@@ -130,6 +116,6 @@ public class SseServerItem : McpServerItem
             TransportMode = TransportMode,
             AdditionalHeaders = this.AdditionalHeaders,
         };
-        return new SseClientTransport(sseClientTransportOptions, new HttpClient(ProxyOption.CreateHandler()));
+        return new SseClientTransport(sseClientTransportOptions, new HttpClient(proxyOption.CreateHandler()));
     }
 }

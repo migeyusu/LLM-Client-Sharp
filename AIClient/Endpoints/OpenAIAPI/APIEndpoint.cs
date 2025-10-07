@@ -7,6 +7,7 @@ using System.Windows.Media;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -164,7 +165,6 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
             OnPropertyChanged(nameof(Icon));
         }
     }
-
 
     public IReadOnlyCollection<ILLMChatModel> AvailableModels
     {

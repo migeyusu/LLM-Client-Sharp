@@ -4,11 +4,10 @@ using LLMClient.UI.Component;
 
 namespace LLMClient.UI;
 
-public class GoogleSearchOption : BaseViewModel, ICloneable
+public class GoogleSearchOption : BaseViewModel<GoogleSearchOption>, ICloneable
 {
     private string? _apiKey;
     private string? _searchEngineId;
-    private bool _useGlobalProxy = true;
 
     public string? ApiKey
     {
@@ -32,18 +31,7 @@ public class GoogleSearchOption : BaseViewModel, ICloneable
         }
     }
 
-    public bool UseGlobalProxy
-    {
-        get => _useGlobalProxy;
-        set
-        {
-            if (value == _useGlobalProxy) return;
-            _useGlobalProxy = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public ProxyOption ProxyOption { get; set; } = new();
+    public ProxySetting ProxySetting { get; set; } = new ProxySetting();
 
     [MemberNotNullWhen(true, nameof(ApiKey), nameof(SearchEngineId))]
     public bool IsValid()
@@ -66,15 +54,16 @@ public class GoogleSearchOption : BaseViewModel, ICloneable
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(_apiKey, _searchEngineId);
+        return HashCode.Combine(_apiKey, _searchEngineId, ProxySetting);
     }
 
     public object Clone()
     {
         return new GoogleSearchOption()
         {
-            _apiKey = this._apiKey,
-            _searchEngineId = this._searchEngineId
+            ApiKey = this._apiKey,
+            SearchEngineId = this._searchEngineId,
+            ProxySetting = this.ProxySetting
         };
     }
 }

@@ -112,15 +112,15 @@
                                Margin="0,10,0,0" />
                     <StackPanel Orientation="Horizontal"
                                 Margin="0,10,0,0">
-                        <RadioButton IsChecked="{Binding UseGlobalProxy,Mode=TwoWay}"
+                        <RadioButton IsChecked="{Binding ProxySetting.UseGlobalProxy,Mode=TwoWay}"
                                      Content="使用共享设置" />
                         <RadioButton Margin="10,0,0,0"
-                                     IsChecked="{Binding UseGlobalProxy,Mode=TwoWay,Converter={StaticResource InvertBooleanConverter}}">
+                                     IsChecked="{Binding ProxySetting.UseGlobalProxy,Mode=TwoWay,Converter={StaticResource InvertBooleanConverter}}">
                             <DockPanel>
                                 <TextBlock Text="独立配置："
                                            VerticalAlignment="Center"
                                            Margin="10,0,0,0" />
-                                <materialDesign:PopupBox PopupContent="{Binding ProxyOption,Mode=OneTime}"
+                                <materialDesign:PopupBox PopupContent="{Binding ProxySetting.ProxyOption,Mode=OneTime}"
                                                          PopupContentTemplate="{StaticResource ProxyOptionDataTemplate}"
                                                          PlacementMode="TopAndAlignLeftEdges"
                                                          Padding="10"

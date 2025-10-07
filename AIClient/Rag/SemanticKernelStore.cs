@@ -49,7 +49,7 @@ public class SemanticKernelStore
         OpenAIClient? openAiClient;
         if (endpoint is APIEndPoint apiEndPoint)
         {
-            openAiClient = apiEndPoint.Option.ConfigOption.OpenAIClient;
+            openAiClient = apiEndPoint.Option.ConfigOption.CreateOpenAIClient();
         }
         else
         {

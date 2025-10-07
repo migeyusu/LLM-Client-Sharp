@@ -8,7 +8,7 @@ using OpenAI;
 
 namespace LLMClient.Endpoints;
 
-public class APIDefaultOption : BaseViewModel
+public class APIDefaultOption : BaseViewModel<APIDefaultOption>
 {
     private string _apiToken = string.Empty;
 
@@ -35,36 +35,21 @@ public class APIDefaultOption : BaseViewModel
             OnPropertyChanged();
         }
     }
-    
-    private bool _useGlobalProxy = true;
-    public bool UseGlobalProxy
-    {
-        get => _useGlobalProxy;
-        set
-        {
-            if (value == _useGlobalProxy) return;
-            _useGlobalProxy = value;
-            OnPropertyChanged();
-        }
-    }
 
-    public ProxyOption ProxyOption { get; set; } = new ProxyOption();
-    
-    public OpenAIClientEx? OpenAIClient
-    {
-        get
-        {
-            if (string.IsNullOrEmpty(APIToken) || string.IsNullOrEmpty(URL))
-            {
-                return null;
-            }
+    public ProxySetting ProxySetting { get; set; } = new ProxySetting();
 
-            var httpClient = new HttpClient(/*new DebugMessageLogger()*/) { Timeout = TimeSpan.FromMinutes(10) };
-            return new OpenAIClientEx(new ApiKeyCredential(APIToken), new OpenAIClientOptions
-            {
-                Endpoint = new Uri(URL),
-                Transport = new HttpClientPipelineTransport(httpClient)
-            });
+    public OpenAIClientEx? CreateOpenAIClient()
+    {
+        if (string.IsNullOrEmpty(APIToken) || string.IsNullOrEmpty(URL))
+        {
+            return null;
         }
+
+        var httpClient = new HttpClient( /*new DebugMessageLogger()*/) { Timeout = TimeSpan.FromMinutes(10) };
+        return new OpenAIClientEx(new ApiKeyCredential(APIToken), new OpenAIClientOptions
+        {
+            Endpoint = new Uri(URL),
+            Transport = new HttpClientPipelineTransport(httpClient)
+        });
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Threading;
@@ -85,5 +86,71 @@ public class BaseViewModel : INotifyPropertyChanged
         {
             action.Invoke();
         }
+    }
+}
+
+public class BaseViewModel<T> : BaseViewModel where T : class
+{
+    private PropertyInfo[]? _publicProperties;
+
+    public bool PublicEquals(T other)
+    {
+        if (ReferenceEquals(this, other)) return true;
+        if (GetType() != other.GetType()) return false;
+
+        _publicProperties ??= GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanRead)
+            .ToArray();
+
+        foreach (var publicProperty in _publicProperties)
+        {
+            var value = publicProperty.GetValue(this);
+            var comparedValue = publicProperty.GetValue(other);
+            if (value == null && comparedValue == null) continue;
+            if (value == null || comparedValue == null) return false;
+
+            // 检查是否是BaseViewModel<T>的子类
+            if (IsBaseViewModelType(value.GetType()) && IsBaseViewModelType(comparedValue.GetType()))
+            {
+                // 如果是BaseViewModel<T>类型，调用PublicEquals方法
+                var method = value.GetType().GetMethod("PublicEquals");
+                if (method != null)
+                {
+                    var result = (bool)method.Invoke(value, new[] { comparedValue });
+                    if (!result) return false;
+                }
+                else
+                {
+                    // 如果没有PublicEquals方法，使用默认比较
+                    if (!value.Equals(comparedValue)) return false;
+                }
+            }
+            else
+            {
+                // 普通类型比较
+                if (!value.Equals(comparedValue)) return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool IsBaseViewModelType(Type type)
+    {
+        // 检查类型是否继承自BaseViewModel<T>
+        var currentType = type;
+        while (currentType != null)
+        {
+            if (currentType.IsGenericType &&
+                currentType.GetGenericTypeDefinition() == typeof(BaseViewModel<>))
+            {
+                return true;
+            }
+
+            currentType = currentType.BaseType;
+        }
+
+        return false;
     }
 }
