@@ -96,7 +96,7 @@
                             Margin="0,8,0,0"
                             HorizontalAlignment="Right">
                     <materialDesign:PackIcon Kind="Function"
-                                             Visibility="{Binding HasFunctions,Mode=OneTime}"
+                                             Visibility="{Binding HasFunctions,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
                                              Margin="8,0,0,0" />
                     <materialDesign:PackIcon Kind="Web"
                                              Visibility="{Binding SearchOption,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"

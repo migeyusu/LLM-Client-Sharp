@@ -26,7 +26,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     {
         get
         {
-            if (FunctionGroups == null)
+            if (FunctionGroups == null || FunctionGroups.Count == 0)
             {
                 return false;
             }

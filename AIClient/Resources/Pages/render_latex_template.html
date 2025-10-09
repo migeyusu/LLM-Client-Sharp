@@ -23,6 +23,10 @@
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 packages: {'[+]': ['ams', 'bbox']} // 加载amsmath和bbox包(boxed需要bbox)
             },
+            options: {
+                enableMenu: false, // 禁用菜单节省资源
+                processHtmlClass: 'tex2jax_process'
+            },
             svg: {
                 fontCache: 'none' // 使用SVG渲染，质量高
             },
@@ -36,7 +40,6 @@
         };
 
         // 使用现代浏览器的原生 SVG 到 PNG 转换
-        // 默认1倍分辨率
         async function modernSvgToPng(svgElement, scale = 1) {
             // 获取 SVG 内容
             const svgData = new XMLSerializer().serializeToString(svgElement);
@@ -58,13 +61,14 @@
 
             canvas.width = img.width * scale;
             canvas.height = img.height * scale;
-
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.scale(scale, scale);
             ctx.drawImage(img, 0, 0);
 
             URL.revokeObjectURL(svgUrl);
 
-            return canvas.toDataURL('image/png');
+            return canvas.toDataURL('image/png', 1.0);
         }
 
         // 核心函数：由C#调用
