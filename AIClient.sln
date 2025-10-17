@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LLMClient", "AIClient\LLMCl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LLMClient.Test", "LLMClient.Test\LLMClient.Test.csproj", "{4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LLMScripts", "LLMScripts\LLMScripts.csproj", "{2A71B6BC-BBD2-45D1-8AFC-B78023B464F1}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,14 +31,6 @@ Global
 		{4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84}.Release|x64.ActiveCfg = Release|Any CPU
 		{4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84}.Release|x64.Build.0 = Release|Any CPU
-		{2A71B6BC-BBD2-45D1-8AFC-B78023B464F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2A71B6BC-BBD2-45D1-8AFC-B78023B464F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2A71B6BC-BBD2-45D1-8AFC-B78023B464F1}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{2A71B6BC-BBD2-45D1-8AFC-B78023B464F1}.Debug|x64.Build.0 = Debug|Any CPU
-		{2A71B6BC-BBD2-45D1-8AFC-B78023B464F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2A71B6BC-BBD2-45D1-8AFC-B78023B464F1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2A71B6BC-BBD2-45D1-8AFC-B78023B464F1}.Release|x64.ActiveCfg = Release|Any CPU
-		{2A71B6BC-BBD2-45D1-8AFC-B78023B464F1}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
