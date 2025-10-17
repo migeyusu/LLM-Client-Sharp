@@ -15,7 +15,8 @@
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
-             d:DesignHeight="110" d:DesignWidth="1600">
+             d:DesignHeight="110" d:DesignWidth="1600"
+             AllowDrop="True">
     <UserControl.Resources>
         <KeyBinding x:Key="PromptKeyBinding"
                     Key="Enter"
@@ -23,6 +24,10 @@
     </UserControl.Resources>
     <Border CornerRadius="8"
             ClipToBounds="True"
+            AllowDrop="True"
+            DragEnter="PromptTextBox_OnDragEnter"
+            DragLeave="UIElement_OnDragLeave"
+            Drop="PromptTextBox_OnDrop"
             Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
             BorderThickness="1.5">
         <Border.Style>
@@ -45,6 +50,7 @@
                      Margin="8"
                      materialDesign:HintAssist.Hint="输入Prompt"
                      materialDesign:HintAssist.HintHorizontalAlignment="Left"
+                     AllowDrop="True"
                      AcceptsReturn="True"
                      AcceptsTab="True"
                      VerticalAlignment="Stretch"
@@ -415,6 +421,10 @@
                                       Checked="EnterKeyInputBinding_OnChecked"
                                       Unchecked="EnterKeyInputBinding_OnUnchecked"
                                       materialDesign:CheckBoxAssist.CheckBoxSize="30" />
+                            <!--<Button Width="120"
+                                    Height="30"
+                                    Content="安全黏贴"
+                                    Click="TestPaste_OnClick"/>-->
                             <Button Command="{Binding NewRequestCommand}"
                                     Width="80"
                                     Height="30"

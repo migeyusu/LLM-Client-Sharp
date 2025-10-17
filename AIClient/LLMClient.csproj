@@ -35,7 +35,7 @@
         <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.10" />
         <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="6.1.0" />
         <PackageReference Include="MahApps.Metro.IconPacks.MaterialDesign" Version="5.1.0"/>
-        <PackageReference Include="Markdig" Version="0.41.3" />
+        <PackageReference Include="Markdig" Version="0.42.0" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
         <PackageReference Include="MaterialDesignThemes" Version="5.2.2-ci998"/>
         <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.9.0" />
@@ -57,6 +57,7 @@
         <PackageReference Include="MimeTypeMapOfficial" Version="1.0.17"/>
         <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.4" />
         <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0"/>
+        <PackageReference Include="PInvoke.User32" Version="0.7.124" />
         <PackageReference Include="ReverseMarkdown" Version="4.7.0" />
         <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
         <PackageReference Include="SharpVectors.Wpf" Version="1.8.5" />

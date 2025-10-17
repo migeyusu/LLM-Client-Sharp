@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -87,5 +88,43 @@ public partial class RequesterView : UserControl
     private void RagPopupBox_OnClosed(object sender, RoutedEventArgs e)
     {
         ViewModel.NotifyRagSelection();
+    }
+
+
+    private void PromptTextBox_OnDragEnter(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            e.Effects = DragDropEffects.Move;
+        }
+
+        e.Handled = true;
+    }
+
+    private void PromptTextBox_OnDrop(object sender, DragEventArgs e)
+    {
+        var dataObject = e.Data;
+        if (dataObject.GetDataPresent(DataFormats.FileDrop))
+        {
+            var data = e.Data.GetData(DataFormats.FileDrop, true);
+            if (data is IEnumerable<string> paths)
+            {
+                var stringBuilder = new StringBuilder();
+                foreach (var path in paths)
+                {
+                    if (File.Exists(path))
+                    {
+                        var readAllText = File.ReadAllText(path);
+                        stringBuilder.AppendLine(readAllText);
+                    }
+                }
+
+                (this.DataContext as RequesterViewModel)!.PromptString += stringBuilder.ToString();
+            }
+        }
+    }
+
+    private void UIElement_OnDragLeave(object sender, DragEventArgs e)
+    {
     }
 }

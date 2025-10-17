@@ -93,7 +93,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         var githubCopilotEndPoint = new GithubCopilotEndPoint();
         if (document.TryGetPropertyValue(GithubCopilotName, out var jsonNode))
         {
-            var azureOption = jsonNode?.Deserialize<AzureOption>();
+            var azureOption = jsonNode?.Deserialize<AzureOption>(Extension.DefaultJsonSerializerOptions);
             if (azureOption != null)
             {
                 githubCopilotEndPoint.Option = azureOption;
@@ -187,7 +187,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
 
             { "Mistral Medium 3 (25.05)", mistral },
             { "Mistral Small 3.1", mistral },
-            
+
             { "Codestral 25.01", mistral },
 
             { "Llama-3.3-70B-Instruct", llama3 },

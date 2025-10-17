@@ -25,6 +25,7 @@
                           WindowStartupLocation="CenterScreen"
                           Height="950"
                           Width="1600"
+                          AllowDrop="True"
                           Closing="MainWindow_OnClosing"
                           d:DataContext="{d:DesignInstance ui:MainWindowViewModel}">
     <Window.Style>
