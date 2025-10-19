@@ -8,6 +8,7 @@ using LLMClient.Endpoints;
 using LLMClient.MCP;
 using LLMClient.MCP.Servers;
 using LLMClient.Rag;
+using LLMClient.Research;
 using LLMClient.Test;
 using LLMClient.UI;
 using LLMClient.UI.Log;
@@ -60,6 +61,7 @@ public class Program
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
                 .AddSingleton<IRagSourceCollection, RagSourceCollection>()
+                .AddSingleton<IResearchModelService, ResearchModelService>()
                 .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
                 .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()
                 .AddMap();
@@ -121,7 +123,7 @@ public class Program
             App app = new App();
             app.InitializeComponent();
             // app.Run(new TestWindow());
-            mainWindow = serviceProvider.GetService<MainWindow>();  
+            mainWindow = serviceProvider.GetService<MainWindow>();
             app.Run(mainWindow);
         }
         catch (Exception e)

@@ -11,7 +11,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
 
-public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
+public class MultiResponseViewItem : BaseViewModel, IDialogItem
 {
     public Guid InteractionId { get; set; }
 
@@ -30,7 +30,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
             yield return chatMessage;
         }
     }
-    
+
     /// <summary>
     /// warning: 禁止用于绑定，因为没有实现属性通知
     /// </summary>
@@ -76,38 +76,10 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
 
     private bool _isMultiResponse = false;
     private ObservableCollection<ResponseViewItem> _items;
-    private ILLMChatModel? _selectedModel;
+
     private ResponseViewItem? _acceptedResponse;
 
-    public ILLMChatModel? SelectedModel
-    {
-        get => _selectedModel;
-        set
-        {
-            if (Equals(value, _selectedModel)) return;
-            _selectedModel = value;
-            OnPropertyChanged();
-        }
-    }
-
-    /// <summary>
-    /// used for append new response
-    /// </summary>
-    public ICommand SubmitCommand => new ActionCommand(async o =>
-    {
-        var llmClient = SelectedModel?.CreateChatClient();
-        if (llmClient == null)
-        {
-            return;
-        }
-
-        if (o is FrameworkElement frameworkElement)
-        {
-            PopupBox.ClosePopupCommand.Execute(this, frameworkElement);
-        }
-
-        this.New(llmClient);
-    });
+    public ModelSelectionPopupViewModel SelectionPopup { get; }
 
     public ICommand RebaseCommand => new ActionCommand(o => { ParentSession.RemoveAfter(this); });
 
@@ -180,6 +152,10 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem, IModelSelection
         ParentSession = parentSession;
         _items = new ObservableCollection<ResponseViewItem>(items);
         IsMultiResponse = Items.Count > 1;
+        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.New(client); })
+        {
+            SuccessRoutedCommand = PopupBox.ClosePopupCommand
+        };
     }
 
     public MultiResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)

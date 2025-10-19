@@ -166,18 +166,11 @@ public class MainWindowViewModel : BaseViewModel
     {
         try
         {
-            var selectionViewModel = new ModelSelectionPopupViewModel();
-            if (await DialogHost.Show(selectionViewModel) is true)
+            var selectionViewModel = new ModelSelectionPopupViewModel((client =>
             {
-                var chatClient = selectionViewModel.GetClient();
-                if (chatClient == null)
-                {
-                    MessageBox.Show("Create client failed!");
-                    return;
-                }
-
-                AddNewDialog(chatClient);
-            }
+                AddNewDialog(client);
+            }));
+            await DialogHost.Show(selectionViewModel);
         }
         catch (Exception e)
         {
