@@ -15,6 +15,7 @@ using Microsoft.SemanticKernel;
 using OpenAI.Chat;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
+using ChatResponseFormat = Microsoft.Extensions.AI.ChatResponseFormat;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
 using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
@@ -199,6 +200,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             var requestOptions = this.CreateChatOptions();
+            requestOptions.ResponseFormat = requestViewItem?.ResponseFormat;
             FunctionCallEngine functionCallEngine;
             if (!this.Model.SupportFunctionCall)
             {
@@ -411,7 +413,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         else if (finishReason == ChatFinishReason.Length)
                         {
                             logger?.LogInformation("Exceeded maximum response length.");
-                            break;
+                            throw new OutOfContextWindowException()
+                            {
+                                ChatResponse = preResponse
+                            };
                         }
                         else if (finishReason == ChatFinishReason.ContentFilter)
                         {
@@ -507,6 +512,13 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         {
                             responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
                         }
+
+                        break;
+                    }
+                    catch (OutOfContextWindowException)
+                    {
+                        //对于上下文窗口异常，直接抛出，因为此时输入已经错误
+                        throw;
                     }
                     catch (Exception ex)
                     {
@@ -517,6 +529,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                         errorMessage = ex.Message;
                         logger?.LogError("Error during response: {Exception}", ex);
+                        if (ex.Message.Contains("context_length_exceeded"))
+                        {
+                            throw new OutOfContextWindowException();
+                        }
                     }
 
                     if (errorMessage != null)

@@ -82,7 +82,9 @@ public class APIClient : LlmClientBase
         var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
         {
             Endpoint = apiUri,
-            Transport = new HttpClientPipelineTransport(httpClient)
+            Transport = new HttpClientPipelineTransport(httpClient),
+            RetryPolicy = new ClientRetryPolicy(0),
+            NetworkTimeout = Timeout.InfiniteTimeSpan
         });
         var builder = Kernel.CreateBuilder();
 #if DEBUG //只有debug模式下才需要获取每次请求的日志

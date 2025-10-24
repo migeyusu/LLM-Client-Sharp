@@ -17,7 +17,9 @@ public class RequestPersistItem : IDialogPersistItem
     public IList<IRagSource>? RagSources { get; set; }
 
     public ISearchOption? SearchService { get; set; }
-    
+
+    public ChatResponseFormat? ResponseFormat { get; set; }
+
     public FunctionCallEngineType CallEngine { get; set; }
 
     /// <summary>

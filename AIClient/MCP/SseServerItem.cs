@@ -2,9 +2,7 @@
 using System.Net.Http;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
-using LLMClient.UI;
 using LLMClient.UI.Component;
-using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Client;
 
 namespace LLMClient.MCP;
@@ -109,13 +107,14 @@ public class SseServerItem : McpServerItem
         }
 
         var proxyOption = this.ProxySetting.GetRealProxy();
-        var sseClientTransportOptions = new SseClientTransportOptions
+ 
+        var sseClientTransportOptions = new HttpClientTransportOptions()
         {
             Name = this.Name,
             Endpoint = new Uri(this.Url),
             TransportMode = TransportMode,
             AdditionalHeaders = this.AdditionalHeaders,
         };
-        return new SseClientTransport(sseClientTransportOptions, new HttpClient(proxyOption.CreateHandler()));
+        return new HttpClientTransport(sseClientTransportOptions, new HttpClient(proxyOption.CreateHandler()));
     }
 }

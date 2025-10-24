@@ -59,7 +59,22 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
     [JsonIgnore]
     public ThemedIcon Icon
     {
-        get { return _icon ?? ImageExtensions.APIIcon; }
+        get
+        {
+            if (_icon == null)
+            {
+                if (UrlIconEnable && !string.IsNullOrEmpty(IconUrl))
+                {
+                    _icon = AsyncThemedIcon.FromUri(new Uri(this.IconUrl));
+                }
+                else if (!UrlIconEnable)
+                {
+                    _icon = ImageExtensions.GetIcon(this.IconType);
+                }
+            }
+
+            return _icon ?? ImageExtensions.APIIcon;
+        }
         private set
         {
             if (Equals(value, _icon)) return;
@@ -76,7 +91,8 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
             if (value == _urlIconEnable) return;
             _urlIconEnable = value;
             OnPropertyChanged();
-            UpdateIcon();
+            _icon = null;
+            OnPropertyChanged(nameof(Icon));
         }
     }
 
@@ -88,7 +104,8 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
             if (value == _iconType) return;
             _iconType = value;
             OnPropertyChanged();
-            UpdateIcon();
+            _icon = null;
+            OnPropertyChanged(nameof(Icon));
         }
     }
 
@@ -100,7 +117,8 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
             if (value == _iconUrl) return;
             _iconUrl = value;
             OnPropertyChanged();
-            UpdateIcon();
+            _icon = null;
+            OnPropertyChanged(nameof(Icon));
         }
     }
 
@@ -543,19 +561,4 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
             MessageBox.Show("复制失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     });
-
-    private void UpdateIcon()
-    {
-        if (UrlIconEnable)
-        {
-            if (!string.IsNullOrEmpty(IconUrl))
-            {
-                this.Icon = AsyncThemedIcon.FromUri(new Uri(this.IconUrl));
-            }
-        }
-        else
-        {
-            this.Icon = ImageExtensions.GetIcon(this.IconType);
-        }
-    }
 }
