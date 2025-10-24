@@ -9,7 +9,8 @@
                     xmlns:azure="clr-namespace:LLMClient.Endpoints.Azure"
                     xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                     xmlns:mcp="clr-namespace:LLMClient.MCP"
-                    xmlns:abstraction="clr-namespace:LLMClient.Abstraction">
+                    xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
     <ItemsPanelTemplate x:Key="HorizontalItemsPanelTemplate">
         <StackPanel Orientation="Horizontal"
                     IsItemsHost="True" />
@@ -157,7 +158,7 @@
         </Grid>
     </DataTemplate>
     <DataTemplate x:Key="PopupSelectModelDataTemplate"
-                  DataType="{x:Type ui:IModelSelection}">
+                  DataType="{x:Type ui:BaseModelSelectionViewModel}">
         <StackPanel Margin="10"
                     Width="350">
             <DockPanel Height="200">
@@ -196,10 +197,24 @@
                     <Button Style="{StaticResource MaterialDesignFlatLightButton}"
                             Command="{x:Static materialDesign:PopupBox.ClosePopupCommand}"
                             Content="取消" />
-                    <Button Style="{StaticResource MaterialDesignFlatLightButton}"
-                            Command="{Binding  SubmitCommand}"
-                            Content="确认"
-                            CommandParameter="{Binding RelativeSource={RelativeSource Self}}" />
+                    <materialDesign:SplitButton Command="{Binding  CreateDefaultCommand}"
+                                                Content="确认"
+                                                CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
+                        <materialDesign:SplitButton.SplitContent>
+                            <ListBox
+                                ItemsSource="{Binding Source={component:Service {x:Type abstraction:IResearchModelService}},Path=AvailableResearchModels,Mode=OneTime}"
+                                SelectionMode="Single">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type sys:String}">
+                                        <Button Style="{StaticResource MaterialDesignFlatLightButton}"
+                                                Content="{Binding Mode=OneTime}"
+                                                Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.CreateResearchCommand}"
+                                                CommandParameter="{Binding Mode=OneTime}" />
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </materialDesign:SplitButton.SplitContent>
+                    </materialDesign:SplitButton>
                 </StackPanel>
             </Grid>
         </StackPanel>

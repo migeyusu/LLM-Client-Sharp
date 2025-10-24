@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Navigation;
 
 namespace LLMClient.UI;
@@ -12,5 +13,11 @@ public partial class DataTemplateDictionary : ResourceDictionary
         // see https://learn.microsoft.com/dotnet/api/system.diagnostics.processstartinfo.useshellexecute#property-value
         Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
         e.Handled = true;
+    }
+    
+
+    private void ResearchClientsSelector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // BaseViewModel.ServiceLocator.GetService<>()
     }
 }

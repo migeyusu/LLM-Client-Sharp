@@ -54,18 +54,9 @@ public class RequesterViewModel : BaseViewModel
 
     public ICommand ChangeModelCommand => new ActionCommand(async o =>
     {
-        var selectionViewModel = new ModelSelectionPopupViewModel();
-        if (await DialogHost.Show(selectionViewModel) is true)
-        {
-            var model = selectionViewModel.GetClient();
-            if (model == null)
-            {
-                MessageBox.Show("No model created!");
-                return;
-            }
-
-            this.DefaultClient = model;
-        }
+        var selectionViewModel = new ModelSelectionPopupViewModel((model => { this.DefaultClient = model; }));
+        await DialogHost.Show(selectionViewModel);
+        //todo: test
     });
 
     private ILLMChatClient _defaultClient;

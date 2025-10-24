@@ -119,46 +119,8 @@
                     Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
                     Command="{Binding AddAllowedFolderPathsCommand}" />
         </Grid>
-        <Grid Grid.Row="0" Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            <ListBox Grid.Row="0"
-                     MaxHeight="300"
-                     x:Name="AvailableEndpointsListBox"
-                     SelectedItem="{Binding SelectedModel.Endpoint,Mode=OneWay}"
-                     ItemsSource="{Binding Source={StaticResource EndpointService},Path=AvailableEndpoints,Mode=OneWay}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type abstraction:ILLMEndpoint}">
-                        <StackPanel Orientation="Horizontal">
-                            <Image Width="20"
-                                   Height="20"
-                                   Source="{Binding Icon,Mode=OneWay}" />
-                            <TextBlock Text="{Binding DisplayName,Mode=OneWay}"
-                                       Margin="5,0,0,0" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-            <ListBox Grid.Row="1"
-                     SelectedItem="{Binding SelectedModel,Mode=TwoWay}"
-                     ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type abstraction:ILLMChatModel}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Name,Mode=OneWay}"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center" />
-                            <materialDesign:PackIcon Kind="Function"
-                                                     Margin="5,0,0,0"
-                                                     VerticalAlignment="Center"
-                                                     Visibility="{Binding SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </Grid>
+        <ContentControl Grid.Row="0" Grid.Column="1"
+                        Content="{Binding ModelSelectionViewModel,Mode=OneTime}" />
         <GridSplitter Grid.Row="0"
                       Grid.Column="0"
                       VerticalAlignment="Stretch"
@@ -172,9 +134,9 @@
                    VerticalAlignment="Center"
                    TextTrimming="CharacterEllipsis">
             <Run
-                Text="{Binding SelectedModel.Endpoint.DisplayName, StringFormat=服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
+                Text="{Binding ModelSelectionViewModel.SelectedModel.Endpoint.DisplayName, StringFormat=服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
             <Run
-                Text="{Binding SelectedModel.Name,StringFormat=模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
+                Text="{Binding ModelSelectionViewModel.SelectedModel.Name,StringFormat=模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
         </TextBlock>
         <Button Grid.Row="1"
                 Grid.Column="1"

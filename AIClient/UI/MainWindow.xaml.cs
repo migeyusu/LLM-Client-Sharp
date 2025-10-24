@@ -128,19 +128,12 @@ public partial class MainWindow : ExtendedWindow
     {
         if (e.Parameter is DialogViewModel oldDialog)
         {
-            var selectionViewModel = new ModelSelectionPopupViewModel();
-            if (await DialogHost.Show(selectionViewModel) is true)
+            var selectionViewModel = new ModelSelectionPopupViewModel((client =>
             {
-                var model = selectionViewModel.GetClient();
-                if (model == null)
-                {
-                    MessageBox.Show("No model created!");
-                    return;
-                }
-
-                var newDialog = _mainWindowViewModel.AddNewDialog(model, oldDialog.Topic);
+                var newDialog = _mainWindowViewModel.AddNewDialog(client, oldDialog.Topic);
                 newDialog.Dialog.SequentialChain(oldDialog.DialogItems);
-            }
+            }));
+            await DialogHost.Show(selectionViewModel);
         }
     }
 

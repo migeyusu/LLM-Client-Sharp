@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -20,16 +21,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     public GlobalOptions()
     {
         PopupSelectViewModel = PopupSelectViewModel =
-            new ModelSelectionPopupViewModel(model =>
-                {
-                    var llmClient = model.GetClient();
-                    if (llmClient == null)
-                    {
-                        return;
-                    }
-
-                    this.SummarizeClient = llmClient;
-                })
+            new ModelSelectionPopupViewModel(client => { this.SummarizeClient = client; })
                 { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
     }
 
@@ -126,6 +118,9 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     public ProxyOption ProxyOption { get; set; } = new ProxyOption();
 
     public RagOption RagOption { get; set; } = new RagOption();
+
+    /*public ObservableCollection<ILLMChatModel> SuggestedModels { get; } =
+        new ObservableCollection<ILLMChatModel>();*/
 
     [JsonIgnore]
     public ICommand SaveCommand => new ActionCommand(async (param) =>

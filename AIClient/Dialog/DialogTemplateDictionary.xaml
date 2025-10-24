@@ -363,7 +363,7 @@
                                                  Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
                                                  ToggleContent="{materialDesign:PackIcon Kind=AddBold,Size=20}"
                                                  Style="{StaticResource MaterialDesignToolPopupBox}"
-                                                 PopupContent="{Binding }"
+                                                 PopupContent="{Binding  SelectionPopup,Mode=OneTime}"
                                                  PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}" />
                         <Button Style="{StaticResource RefreshButtonStyle}"
                                 VerticalAlignment="Center"

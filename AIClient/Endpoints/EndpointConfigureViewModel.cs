@@ -162,7 +162,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         this.OnPropertyChanged(nameof(AvailableEndpoints));
     }
 
-    private void OnModelSelected(ModelSelectionViewModel obj)
+    private void OnModelSelected(ILLMChatClient obj)
     {
         if (SuggestedModelsOb.Count > 6)
         {
@@ -170,10 +170,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             return;
         }
 
-        var llmModel = obj.SelectedModel;
-        if (llmModel is null)
-            return;
-        this.SuggestedModelsOb.Add(llmModel);
+        this.SuggestedModelsOb.Add(obj.Model);
         OnPropertyChanged(nameof(SuggestedModels));
     }
 

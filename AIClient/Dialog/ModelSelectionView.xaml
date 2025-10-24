@@ -6,7 +6,9 @@
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:ModelSelectionPopupViewModel}"
              d:DesignHeight="400" d:DesignWidth="600">
@@ -52,24 +54,38 @@
                 </ContentControl.ContentTemplateSelector>
             </ContentControl>
         </Grid>
-        <StackPanel HorizontalAlignment="Left"
-                    Grid.Row="2"
-                    VerticalAlignment="Center"
-                    Margin="10,0">
-            <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}">
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                       VerticalAlignment="Center"
+                       Margin="10,0">
                 <Run
                     Text="{Binding SelectedModel.Endpoint.DisplayName, StringFormat=选择的服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
                 <Run Text="{Binding SelectedModel.Name,StringFormat=选择的模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
             </TextBlock>
-        </StackPanel>
-        <StackPanel Grid.Row="2"
-                    Margin="10"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right">
-            <Button Style="{StaticResource MaterialDesignOutlinedButton}"
-                    Width="90"
-                    Command="{Binding SubmitCommand}"
-                    Content="确认" />
-        </StackPanel>
+            <materialDesign:SplitButton Grid.Column="1"
+                                        Command="{Binding  CreateDefaultCommand}"
+                                        Content="确认"
+                                        Width="120"
+                                        CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
+                <materialDesign:SplitButton.SplitContent>
+                    <ListBox Width="120"
+                             ItemsSource="{Binding Source={component:Service {x:Type abstraction:IResearchModelService}},Path=AvailableResearchModels,Mode=OneTime}"
+                             SelectionMode="Single">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type sys:String}">
+                                <Button Style="{StaticResource MaterialDesignFlatLightButton}"
+                                        Content="{Binding Mode=OneTime}"
+                                        Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.CreateResearchCommand}"
+                                        CommandParameter="{Binding Mode=OneTime}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </materialDesign:SplitButton.SplitContent>
+            </materialDesign:SplitButton>
+        </Grid>
     </Grid>
 </UserControl>
