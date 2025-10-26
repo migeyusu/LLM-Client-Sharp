@@ -19,6 +19,7 @@
                           xmlns:mcp="clr-namespace:LLMClient.MCP"
                           xmlns:project="clr-namespace:LLMClient.Project"
                           xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
+                          xmlns:research="clr-namespace:LLMClient.Research"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -235,6 +236,13 @@
                                             Header="Prompt Template">
                         <project:ProjectPromptTemplateView Width="900"
                                                            Height="600" />
+                    </HeaderedContentControl>
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type research:ResearchClient}">
+                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                            Header="Prompt Template">
+                        <research:ResearchClientView Width="900"
+                                                     Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
             </materialDesign:DialogHost.Resources>

@@ -70,21 +70,26 @@
                                         Command="{Binding  CreateDefaultCommand}"
                                         Content="确认"
                                         Width="120"
+                                        PopupUniformCornerRadius="6"
+                                        PopupElevation="Dp3"
+                                        PopupContent="{Binding}"
                                         CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                <materialDesign:SplitButton.SplitContent>
-                    <ListBox Width="120"
-                             ItemsSource="{Binding Source={component:Service {x:Type abstraction:IResearchModelService}},Path=AvailableResearchModels,Mode=OneTime}"
-                             SelectionMode="Single">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type sys:String}">
-                                <Button Style="{StaticResource MaterialDesignFlatLightButton}"
-                                        Content="{Binding Mode=OneTime}"
-                                        Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.CreateResearchCommand}"
-                                        CommandParameter="{Binding Mode=OneTime}" />
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </materialDesign:SplitButton.SplitContent>
+                <materialDesign:SplitButton.PopupContentTemplate>
+                    <DataTemplate>
+                        <ListBox
+                            ItemsSource="{Binding Source={component:Service {x:Type abstraction:IResearchModelService}},Path=AvailableResearchModels,Mode=OneTime}"
+                            SelectionMode="Single">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type sys:String}">
+                                    <Button Style="{StaticResource MaterialDesignFlatLightButton}"
+                                            Content="{Binding Mode=OneTime}"
+                                            Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.CreateResearchCommand}"
+                                            CommandParameter="{Binding Mode=OneTime}" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DataTemplate>
+                </materialDesign:SplitButton.PopupContentTemplate>
             </materialDesign:SplitButton>
         </Grid>
     </Grid>

@@ -32,9 +32,9 @@ public abstract class ResearchClient : BaseViewModel, ILLMChatClient
         set => ProxyClient.Parameters = value;
     }
 
-    public IFunctionInterceptor FunctionInterceptor { get; set; }
+    public IFunctionInterceptor FunctionInterceptor { get; set; } = FunctionAuthorizationInterceptor.Instance;
 
-    public ILLMChatClient ProxyClient { get; }
+    public ILLMChatClient ProxyClient { get; set; }
 
     protected ResearchClient(ILLMChatClient proxyClient)
     {
@@ -44,4 +44,6 @@ public abstract class ResearchClient : BaseViewModel, ILLMChatClient
     public abstract Task<CompletedResult> SendRequest(DialogContext context, Action<string>? stream = null,
         ILogger? logger = null,
         CancellationToken cancellationToken = default);
+    
+    
 }
