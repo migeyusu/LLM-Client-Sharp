@@ -125,7 +125,9 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     [JsonIgnore]
     public ICommand SaveCommand => new ActionCommand(async (param) =>
     {
-        var fileInfo = new FileInfo(DefaultConfigFile);
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var configFilePath = Path.GetFullPath(DefaultConfigFile, currentDirectory);
+        var fileInfo = new FileInfo(configFilePath);
         fileInfo.Directory?.Create();
         using (var fileStream = fileInfo.Open(FileMode.Create, FileAccess.Write))
         {
@@ -138,6 +140,8 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     public static async Task<GlobalOptions> LoadOrCreate(string? configFilePath = DEFAULT_GLOBAL_CONFIG_FILE)
     {
         configFilePath ??= DefaultConfigFile;
+        var currentDirectory = Directory.GetCurrentDirectory();
+        configFilePath = Path.GetFullPath(configFilePath, currentDirectory);
         var fileInfo = new FileInfo(configFilePath);
         if (fileInfo.Exists)
         {

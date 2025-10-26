@@ -45,6 +45,8 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public ISearchOption? SearchOption { get; set; }
 
+    public ChatResponseFormat? ResponseFormat { get; set; }
+
     /// <summary>
     /// 对Request附加的额外属性，不持久化
     /// </summary>

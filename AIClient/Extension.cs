@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -342,13 +343,15 @@ public static class Extension
     }
 
     //json schema create code
-    /* JsonSerializerOptions options = new()
+    public static string CreateJsonScheme<T>(string? description = null)
+    {
+        JsonSerializerOptions options = new()
         {
             TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
             Converters = { new JsonStringEnumConverter() },
         };
         options.MakeReadOnly();
-        AIJsonSchemaCreateOptions s_jsonSchemaCreateOptions = new()
+        AIJsonSchemaCreateOptions sJsonSchemaCreateOptions = new()
         {
             TransformOptions = new()
             {
@@ -357,9 +360,10 @@ public static class Extension
                 MoveDefaultKeywordToDescription = true,
             }
         };
-        var jsonElement = AIJsonUtilities.CreateJsonSchema(typeof(SseServerItem), "test description",
-            serializerOptions: options, inferenceOptions: s_jsonSchemaCreateOptions);
-        var rawText = jsonElement.GetRawText();*/
+        var jsonElement = AIJsonUtilities.CreateJsonSchema(typeof(T), description,
+            serializerOptions: options, inferenceOptions: sJsonSchemaCreateOptions);
+        return jsonElement.GetRawText();
+    }
 
     #endregion
 
