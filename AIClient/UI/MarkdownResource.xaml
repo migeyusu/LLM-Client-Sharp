@@ -10,7 +10,8 @@
                     xmlns:chat="clr-namespace:OpenAI.Chat;assembly=OpenAI"
                     xmlns:messages="clr-namespace:LLMClient.Endpoints.Messages"
                     xmlns:render="clr-namespace:LLMClient.UI.Render"
-                    xmlns:ui="clr-namespace:LLMClient.UI">
+                    xmlns:ui="clr-namespace:LLMClient.UI"
+                    xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary
             Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.button.xaml" />
@@ -250,6 +251,7 @@
                                     Orientation="Horizontal">
                             <Button Style="{StaticResource MaterialDesignFlatLightButton}"
                                     Command="{Binding SaveCommand}"
+                                    Margin="10,0,0,0"
                                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
                                 <Button.Content>
                                     <StackPanel Orientation="Horizontal">
@@ -265,13 +267,72 @@
                             <Button Style="{DynamicResource CopyCommandStyle}"
                                     Margin="10,0,0,0"
                                     Command="{x:Static ui:CommonCommands.CopyCommand}"
-                                    CommandParameter="{Binding}"/>
+                                    CommandParameter="{Binding}" />
                         </StackPanel>
                     </Grid>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
     </Style>
+    
+    <Style TargetType="{x:Type HeaderedContentControl}" x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockGroupBoxStyleKey}">
+        <Setter Property="HorizontalAlignment"
+                Value="Stretch" />
+        <Setter Property="HeaderTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type render:CodeContext}">
+                    <Grid>
+                        <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch" />
+                        <TextBlock Text="{Binding  Extension,Mode=OneTime}"
+                                   Padding="10,0,0,0"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Center" />
+                        <StackPanel HorizontalAlignment="Right"
+                                    Orientation="Horizontal">
+                            <ListBox Margin="10,0,0,0"
+                                     Visibility="{Binding CanView,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     SelectedIndex="{Binding  SelectedViewMode,Mode=TwoWay}"
+                                     Style="{StaticResource MaterialDesignToolToggleListBox}">
+                                <ListBoxItem
+                                    Content="{materialDesign:PackIcon Kind=Text}" />
+                                <ListBoxItem
+                                    Content="{materialDesign:PackIcon Kind=ImageText}" />
+                                <ListBoxItem
+                                    Content="{materialDesign:PackIcon Kind=Image}" />
+                            </ListBox>
+                            <Button Style="{StaticResource MaterialDesignFlatLightButton}"
+                                    Command="{Binding RunCommand}"
+                                    Margin="10,0,0,0"
+                                    Visibility="{Binding CanRun,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <Button Style="{StaticResource MaterialDesignFlatLightButton}"
+                                    Command="{Binding SaveCommand}"
+                                    Margin="10,0,0,0"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ContentSave"
+                                                                 Width="20"
+                                                                 Height="20" />
+                                        <TextBlock Text="Save"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0,0,0" />
+                                    </StackPanel>
+                                </Button.Content>
+                            </Button>
+                            <Button Style="{DynamicResource CopyCommandStyle}"
+                                    Margin="10,0,0,0"
+                                    Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                    CommandParameter="{Binding}" />
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
     <Style TargetType="{x:Type render:TextmateColoredRun}"
            x:Key="{x:Static render:TextMateCodeRenderer.TokenStyleKey}">
         <Setter Property="ThemeColors"
@@ -666,6 +727,21 @@
                 Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="FontFamily" Value="Consolas, Lucida Sans Typewriter, Courier New" />
     </Style>
+    <Style TargetType="{x:Type TextBlock}" x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockTextStyleKey}">
+        <Setter Property="Cursor"
+                Value="IBeam" />
+        <Setter Property="Margin"
+                Value="0,0,0,0" />
+        
+        <Setter Property="Background" Value="{DynamicResource MaterialDesign.Brush.Background}" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+        <Setter Property="FontFamily" Value="Consolas, Lucida Sans Typewriter, Courier New" />
+        <Setter Property="Padding"
+                Value="5,10" />
+
+    </Style>
+
     <Style TargetType="{x:Type Run}" x:Key="{x:Static markdig:Styles.CodeStyleKey}">
         <Setter Property="Background" Value="{DynamicResource MaterialDesign.Brush.TextBox.FilledBackground}" />
         <Setter Property="FontWeight"

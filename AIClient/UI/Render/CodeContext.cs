@@ -8,7 +8,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.UI.Render;
 
-public class CodeContext: CommonCommands.ICopyable
+public class CodeContext : CommonCommands.ICopyable
 {
     public CodeContext(string? name, StringLineGroup code)
     {
@@ -19,11 +19,70 @@ public class CodeContext: CommonCommands.ICopyable
     public string? Name { get; set; }
     public StringLineGroup CodeGroup { get; set; }
 
+    /// <summary>
+    /// 0: text, 1:imagetext 2:image
+    /// </summary>
+    public int SelectedViewMode { get; set; } = 0;
+
     public string? Extension { get; set; }
+
+    private readonly string[] _supportedViewExtensions = new[] { ".html" };
+
+    private readonly string[] _supportedRunExtensions = new[] { ".ps1", ".bat", ".powershell", };
+
+    public bool CanView
+    {
+        get
+        {
+            return !string.IsNullOrEmpty(Extension) && _supportedViewExtensions.Contains(Extension.ToLower().Trim());
+        }
+    }
+
+    public bool CanRun
+    {
+        get { return !string.IsNullOrEmpty(Extension) && _supportedRunExtensions.Contains(Extension.ToLower().Trim()); }
+    }
+
+    /// <summary>
+    /// 切换视图
+    /// </summary>
+    public ICommand SwitchViewCommand => new ActionCommand(o =>
+    {
+        try
+        {
+            if (o is true)
+            {
+            }
+        }
+        catch (Exception e)
+        {
+            MessageEventBus.Publish(e.Message);
+        }
+    });
+
+    public ICommand RunCommand => new ActionCommand(o =>
+    {
+        try
+        {
+            //可以通过webview执行html
+            var s = GetCopyText();
+            if (!string.IsNullOrEmpty(s))
+            {
+                var tempFile = Path.GetTempFileName();
+                var codeFile = Path.ChangeExtension(tempFile, ".html");
+                File.Move(tempFile, codeFile);
+                File.WriteAllText(codeFile, s);
+            }
+        }
+        catch (Exception e)
+        {
+            MessageEventBus.Publish(e.Message);
+        }
+    });
 
     public ICommand SaveCommand => new ActionCommand(o =>
     {
-        var s = CodeGroup.ToString();
+        var s = GetCopyText();
         if (!string.IsNullOrEmpty(s))
         {
             try

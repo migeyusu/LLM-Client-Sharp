@@ -49,7 +49,7 @@ public class NvidiaResearchClient : ResearchClient
             // ====================================================================
             // 阶段 1: 研究 
             // ====================================================================
-            Information("Received research request: '{Prompt}'", prompt);
+            Information("Received research request: '{0}'", prompt);
 
             var isPromptValid = await CheckIfPromptIsValidAsync(agent, prompt);
             if (!isPromptValid)
@@ -59,10 +59,10 @@ public class NvidiaResearchClient : ResearchClient
 
             Information("Analyzing the research request...");
             (var taskPrompt, var formatPrompt) = await PerformPromptDecompositionAsync(agent, prompt, logger);
-            Information("Prompt analysis completed. Task: '{TaskPrompt}'", taskPrompt);
+            Information("Prompt analysis completed. Task: '{0}'", taskPrompt);
 
             var topics = await GenerateTopicsAsync(agent, taskPrompt);
-            Information("Task analysis completed. Will be researching {TopicCount} topics.", topics.Count);
+            Information("Task analysis completed. Will be researching {0} topics.", topics.Count);
 
             var topicRelevantSegments = new Dictionary<string, List<string>>();
             var searchResultUrls = new List<string>();
@@ -71,10 +71,10 @@ public class NvidiaResearchClient : ResearchClient
             foreach (var topic in topics)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                Information("Researching '{Topic}'", topic);
+                Information("Researching '{0}'", topic);
 
                 var searchPhrases = await ProduceSearchPhrasesAsync(agent, taskPrompt, topic);
-                Information("Will invoke {SearchPhraseCount} search phrases to research '{Topic}'.",
+                Information("Will invoke {0} search phrases to research '{Topic}'.",
                     searchPhrases.Count, topic);
 
                 topicRelevantSegments[topic] = [];
@@ -82,7 +82,7 @@ public class NvidiaResearchClient : ResearchClient
                 foreach (var searchPhrase in searchPhrases)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    Information("Searching for '{SearchPhrase}'", searchPhrase);
+                    Information("Searching for '{0}'", searchPhrase);
                     List<InternalSearchResult> originalSearchResults;
                     if (_searchService is GoogleSearchPlugin)
                     {
@@ -110,7 +110,7 @@ public class NvidiaResearchClient : ResearchClient
                     searchResultUrls.AddRange(originalSearchResults.Select(r => r.Url));
                     allResults.AddRange(originalSearchResults);
 
-                    Information("Processing {ResultCount} new search results.", originalSearchResults.Count);
+                    Information("Processing {0} new search results.", originalSearchResults.Count);
 
                     foreach (var searchResult in originalSearchResults)
                     {
@@ -199,7 +199,7 @@ public class NvidiaResearchClient : ResearchClient
     {
         var response = await promptAgent.GetMessageAsync(
             $"Is the following prompt a valid information research prompt? Respond with 'yes' or 'no'. Do not output any other text.\n\n{prompt}\n\n Reminders: Find out if the above-given prompt is a valid information research prompt. Do not output any other text.",
-            "You are a helpful assistant that checks if a prompt is a valid deep information research prompt. A valid prompt is in English and gives a task to research one or more topics and produce a report. Invalid prompts are general language model prompts that ask simple (perhaps even yes or no) questions, ask for explanations, or attempt to have a conversation. Examples of valid prompts: 'What was the capital of France in 1338?', 'Write a report on stock market situation on during this morning', 'Produce a thorough report on the major event happened in the Christian world on the 21st of April 2025.', 'Produce a report on the differences between the US and European economy health in 2024.', 'What is the short history of the internet?'. Examples of invalid prompts: 'Is the weather in Tokyo good?', 'ppdafsfgr hdafdf', 'Hello, how are you?', 'The following is a code. Can you please explain it to me and then simulate it?'");
+            "You are a helpful assistant that checks if a prompt is a valid deep information research prompt. A valid prompt gives a task to research one or more topics and produce a report. Invalid prompts are general language model prompts that ask simple (perhaps even yes or no) questions, ask for explanations, or attempt to have a conversation. Examples of valid prompts: 'What was the capital of France in 1338?', 'Write a report on stock market situation on during this morning', 'Produce a thorough report on the major event happened in the Christian world on the 21st of April 2025.', 'Produce a report on the differences between the US and European economy health in 2024.', 'What is the short history of the internet?'. Examples of invalid prompts: 'Is the weather in Tokyo good?', 'ppdafsfgr hdafdf', 'Hello, how are you?', 'The following is a code. Can you please explain it to me and then simulate it?'");
         return response.Trim().Equals("yes", StringComparison.OrdinalIgnoreCase);
     }
 
