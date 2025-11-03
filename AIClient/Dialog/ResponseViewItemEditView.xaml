@@ -19,6 +19,10 @@
                     <DataTemplate DataType="{x:Type local:EditableTextContent}">
                         <Grid>
                             <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     AcceptsTab="True"
+                                     TextWrapping="Wrap"
                                      Margin="5" />
                             <Button Content="{materialDesign:PackIcon Kind=Undo}"
                                     Command="{Binding RecoverCommand}"

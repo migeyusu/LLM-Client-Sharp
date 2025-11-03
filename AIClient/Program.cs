@@ -106,7 +106,6 @@ public class Program
 
             collection.AddLogging(builder =>
             {
-                builder.AddFile("Logs/llmclient_{Date}.txt");
                 builder.SetMinimumLevel(LogLevel.Information);
             });
 #endif

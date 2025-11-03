@@ -423,9 +423,13 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             logger?.LogWarning("Response was filtered by content filter.");
                             break;
                         }
-                        else
+                        else if (finishReason != null)
                         {
                             logger?.LogWarning($"Unexpected finish reason: {finishReason}");
+                        }
+                        else
+                        {
+                            logger?.LogWarning("Finish reason is null");
                         }
 
                         if (!functionCallEngine.TryParseFunctionCalls(preResponse, out var preFunctionCalls))

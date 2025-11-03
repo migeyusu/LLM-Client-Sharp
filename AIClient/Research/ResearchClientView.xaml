@@ -11,6 +11,5 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition />
         </Grid.RowDefinitions>
-        <LlmModel
     </Grid>
 </UserControl>
