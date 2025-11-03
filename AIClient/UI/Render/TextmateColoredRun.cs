@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.Windows;
 using System.Windows.Documents;
 using TextMateSharp.Grammars;
 
@@ -6,11 +7,11 @@ namespace LLMClient.UI.Render;
 
 public class TextmateColoredRun : Run
 {
-    public IToken Token { get; }
+    public IToken? Token { get; }
 
     public static readonly DependencyProperty ThemeColorsProperty = DependencyProperty.Register(
         nameof(ThemeColors), typeof(TextMateThemeColors), typeof(TextmateColoredRun),
-        new FrameworkPropertyMetadata(TextMateCodeRenderer.GetTheme(ThemeName.Light),
+        new FrameworkPropertyMetadata(null,
             new PropertyChangedCallback(ThemePropertyChangedCallback)));
 
     private static void ThemePropertyChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -26,13 +27,16 @@ public class TextmateColoredRun : Run
         get { return (TextMateThemeColors)GetValue(ThemeColorsProperty); }
         set { SetValue(ThemeColorsProperty, value); }
     }
-    
+
+    public TextmateColoredRun()
+    {
+    }
 
     public TextmateColoredRun(string text, IToken token) : base(text)
     {
         Token = token;
     }
-    
+
     protected override void OnInitialized(EventArgs e)
     {
         base.OnInitialized(e);
@@ -41,6 +45,11 @@ public class TextmateColoredRun : Run
 
     private void Color(TextMateThemeColors textMateThemeColors)
     {
+        if (this.Token == null)
+        {
+            return;
+        }
+
         var foreground = -1;
         // var background = -1;
         // var textMateThemeColors = this.ThemeColors;

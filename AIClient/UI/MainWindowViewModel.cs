@@ -62,8 +62,6 @@ public class MainWindowViewModel : BaseViewModel
         }
     }
 
-    private const string ThemeColorResourceKey = "CodeBlock.TextMateSharp.Theme";
-
     private ThemeName _themeName = ThemeName.LightPlus;
 
     public ThemeName ThemeName
@@ -74,7 +72,7 @@ public class MainWindowViewModel : BaseViewModel
             if (value == _themeName) return;
             _themeName = value;
             OnPropertyChanged();
-            UpdateResource(value);
+            TextMateCodeRenderer.UpdateResource(value);
         }
     }
 
@@ -166,10 +164,7 @@ public class MainWindowViewModel : BaseViewModel
     {
         try
         {
-            var selectionViewModel = new ModelSelectionPopupViewModel((client =>
-            {
-                AddNewDialog(client);
-            }));
+            var selectionViewModel = new ModelSelectionPopupViewModel((client => { AddNewDialog(client); }));
             await DialogHost.Show(selectionViewModel);
         }
         catch (Exception e)
@@ -394,6 +389,7 @@ public class MainWindowViewModel : BaseViewModel
         try
         {
             IsProcessing = true;
+            await TextMateCodeRenderer.InitializeAsync();
             await McpServiceCollection.LoadAsync();
             await RagSourceCollection.LoadAsync();
             await EndpointsViewModel.Initialize();
@@ -403,7 +399,7 @@ public class MainWindowViewModel : BaseViewModel
                 PreSession = SessionViewModels.First();
             }
 
-            UpdateResource(_themeName);
+            TextMateCodeRenderer.UpdateResource(_themeName);
             await PromptsResource.Initialize();
             IsInitialized = true;
             // SemanticKernelStore.Test();
@@ -416,19 +412,6 @@ public class MainWindowViewModel : BaseViewModel
         {
             IsProcessing = false;
         }
-    }
-
-
-    public static void UpdateResource(ThemeName themeName)
-    {
-        var application = Application.Current;
-        if (application == null)
-        {
-            return;
-        }
-
-        var sourceDictionary = application.Resources;
-        sourceDictionary[ThemeColorResourceKey] = TextMateCodeRenderer.GetTheme(themeName);
     }
 
     private static void ModifyTheme(Action<Theme> modificationAction)

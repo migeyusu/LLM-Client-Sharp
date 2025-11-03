@@ -8,6 +8,7 @@ using Markdig;
 using Markdig.Helpers;
 using Markdig.Parsers;
 using Markdig.Parsers.Inlines;
+using Markdig.Renderers;
 using Markdig.Syntax;
 using Block = Markdig.Syntax.Block;
 
@@ -309,6 +310,17 @@ public static class RendererExtensions
             }
 
             blocks[--blockCount] = default;
+        }
+    }
+
+    public static void WriteRawLines(this WpfRenderer renderer, StringLineGroup lines1)
+    {
+        StringLine[] lines2 = lines1.Lines;
+        for (int index = 0; index < lines1.Count; ++index)
+        {
+            if (index != 0)
+                renderer.WriteInline(new LineBreak());
+            renderer.WriteText(ref lines2[index].Slice);
         }
     }
 

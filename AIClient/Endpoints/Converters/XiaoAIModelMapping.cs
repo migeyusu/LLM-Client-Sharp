@@ -16,10 +16,12 @@ public class XiaoAIModelMapping : ModelMapping
 
     public override IList<string> AvailableModels
     {
-        get { return priceInfos.Keys.ToArray(); }
+        get { return _priceInfos.Keys.ToArray(); }
     }
 
-    Dictionary<string, ModelDetails> priceInfos = new Dictionary<string, ModelDetails>();
+    private Dictionary<string, ModelDetails> _priceInfos = new Dictionary<string, ModelDetails>();
+
+    private const string EnabledGroup = "default";
 
     public override async Task<bool> Refresh()
     {
@@ -55,7 +57,9 @@ public class XiaoAIModelMapping : ModelMapping
                                 return false;
                             }
 
-                            this.priceInfos = modelDetails.ToDictionary(modelDetail => modelDetail.ModelName);
+                            this._priceInfos = modelDetails
+                                .Where(modelDetail => modelDetail.EnableGroups?.Contains(EnabledGroup) == true)
+                                .ToDictionary(modelDetail => modelDetail.ModelName);
                             return true;
                         }
                     }
@@ -83,7 +87,7 @@ public class XiaoAIModelMapping : ModelMapping
     public override bool MapInfo(APIModelInfo modelInfo)
     {
         var modelInfoId = modelInfo.Id;
-        if (priceInfos.TryGetValue(modelInfoId, out var modelDetails))
+        if (_priceInfos.TryGetValue(modelInfoId, out var modelDetails))
         {
             if (modelInfo.PriceCalculator is TokenBasedPriceCalculator calculator)
             {

@@ -1,17 +1,14 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
-                    xmlns:llmClient="clr-namespace:LLMClient"
                     x:Class="LLMClient.UI.MarkdownResource"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
                     xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
-                    xmlns:chat="clr-namespace:OpenAI.Chat;assembly=OpenAI"
                     xmlns:messages="clr-namespace:LLMClient.Endpoints.Messages"
                     xmlns:render="clr-namespace:LLMClient.UI.Render"
                     xmlns:ui="clr-namespace:LLMClient.UI"
-                    xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit">
+                    xmlns:b="http://schemas.microsoft.com/xaml/behaviors">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary
             Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.button.xaml" />
@@ -230,58 +227,15 @@
         <Setter Property="Foreground"
                 Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
     </Style>
-    <Style TargetType="{x:Type ContentControl}" x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockHeaderStyleKey}">
-        <Setter Property="Height"
-                Value="40" />
-        <Setter Property="HorizontalAlignment"
-                Value="Stretch" />
-        <Setter Property="ContentTemplate">
-            <Setter.Value>
-                <DataTemplate DataType="{x:Type render:CodeContext}">
-                    <Grid>
-                        <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.Background}"
-                                   HorizontalAlignment="Stretch"
-                                   VerticalAlignment="Stretch" />
-                        <TextBlock Text="{Binding  Extension,Mode=OneTime}"
-                                   Padding="10,0,0,0"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Center" />
-                        <StackPanel HorizontalAlignment="Right"
-                                    Orientation="Horizontal">
-                            <Button Style="{StaticResource MaterialDesignFlatLightButton}"
-                                    Command="{Binding SaveCommand}"
-                                    Margin="10,0,0,0"
-                                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
-                                <Button.Content>
-                                    <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="ContentSave"
-                                                                 Width="20"
-                                                                 Height="20" />
-                                        <TextBlock Text="Save"
-                                                   VerticalAlignment="Center"
-                                                   Margin="6,0,0,0" />
-                                    </StackPanel>
-                                </Button.Content>
-                            </Button>
-                            <Button Style="{DynamicResource CopyCommandStyle}"
-                                    Margin="10,0,0,0"
-                                    Command="{x:Static ui:CommonCommands.CopyCommand}"
-                                    CommandParameter="{Binding}" />
-                        </StackPanel>
-                    </Grid>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    
-    <Style TargetType="{x:Type HeaderedContentControl}" x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockGroupBoxStyleKey}">
+
+    <Style TargetType="{x:Type HeaderedContentControl}"
+           x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockGroupBoxStyleKey}">
         <Setter Property="HorizontalAlignment"
                 Value="Stretch" />
         <Setter Property="HeaderTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type render:CodeContext}">
-                    <Grid>
+                    <Grid Height="40">
                         <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.Background}"
                                    HorizontalAlignment="Stretch"
                                    VerticalAlignment="Stretch" />
@@ -293,6 +247,7 @@
                         <StackPanel HorizontalAlignment="Right"
                                     Orientation="Horizontal">
                             <ListBox Margin="10,0,0,0"
+                                     materialDesign:ElevationAssist.Elevation="Dp0"
                                      Visibility="{Binding CanView,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
                                      SelectedIndex="{Binding  SelectedViewMode,Mode=TwoWay}"
                                      Style="{StaticResource MaterialDesignToolToggleListBox}">
@@ -331,8 +286,56 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type render:CodeContext}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition x:Name="CodeColumn" Width="*" />
+                            <ColumnDefinition x:Name="PreviewColumn" Width="0" />
+                        </Grid.ColumnDefinitions>
+                        <!--code-->
+                        <RichTextBox x:Name="CodeView" Grid.Column="0"
+                                     BorderThickness="0"
+                                     Background="{DynamicResource MaterialDesign.Brush.Background}"
+                                     HorizontalAlignment="Stretch"
+                                     IsReadOnly="True"
+                                     Padding="0"
+                                     Style="{x:Null}">
+                            <b:Interaction.Behaviors>
+                                <render:RichTextBoxBehaviour Document="{Binding CodeDocument,Mode=OneTime}" />
+                            </b:Interaction.Behaviors>
+                        </RichTextBox>
+                        <!--view-->
+                        <Image x:Name="PreviewView" Grid.Column="1" Visibility="Collapsed" />
+                    </Grid>
+                    <DataTemplate.Triggers>
+                        <!--Code Only-->
+                        <DataTrigger Binding="{Binding SelectedViewMode}" Value="0">
+                            <Setter TargetName="CodeColumn"
+                                    Property="Width"
+                                    Value="*" />
+                            <Setter TargetName="PreviewColumn" Property="Width" Value="0" />
+                            <Setter TargetName="PreviewView" Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                        <!-- Code & Preview -->
+                        <DataTrigger Binding="{Binding SelectedViewMode}" Value="1">
+                            <Setter TargetName="CodeColumn" Property="Width" Value="*" />
+                            <Setter TargetName="PreviewColumn" Property="Width" Value="*" />
+                            <Setter TargetName="PreviewView" Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                        <!-- Preview Only -->
+                        <DataTrigger Binding="{Binding SelectedViewMode}" Value="2">
+                            <Setter TargetName="CodeColumn" Property="Width" Value="0" />
+                            <Setter TargetName="PreviewColumn" Property="Width" Value="*" />
+                            <Setter TargetName="CodeView" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PreviewView" Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
-    
     <Style TargetType="{x:Type render:TextmateColoredRun}"
            x:Key="{x:Static render:TextMateCodeRenderer.TokenStyleKey}">
         <Setter Property="ThemeColors"
@@ -726,20 +729,6 @@
         <Setter Property="Foreground"
                 Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
         <Setter Property="FontFamily" Value="Consolas, Lucida Sans Typewriter, Courier New" />
-    </Style>
-    <Style TargetType="{x:Type TextBlock}" x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockTextStyleKey}">
-        <Setter Property="Cursor"
-                Value="IBeam" />
-        <Setter Property="Margin"
-                Value="0,0,0,0" />
-        
-        <Setter Property="Background" Value="{DynamicResource MaterialDesign.Brush.Background}" />
-        <Setter Property="Foreground"
-                Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
-        <Setter Property="FontFamily" Value="Consolas, Lucida Sans Typewriter, Courier New" />
-        <Setter Property="Padding"
-                Value="5,10" />
-
     </Style>
 
     <Style TargetType="{x:Type Run}" x:Key="{x:Static markdig:Styles.CodeStyleKey}">

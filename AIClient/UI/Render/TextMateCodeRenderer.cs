@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
+using Markdig.Helpers;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using Markdig.Wpf;
@@ -10,7 +11,6 @@ using TextMateSharp.Registry;
 using TextMateSharp.Themes;
 using CodeBlockRenderer = Markdig.Renderers.Wpf.CodeBlockRenderer;
 using Path = System.IO.Path;
-using TextBlock = System.Windows.Controls.TextBlock;
 
 namespace LLMClient.UI.Render;
 
@@ -19,157 +19,163 @@ public class TextMateCodeRenderer : CodeBlockRenderer
     public static ComponentResourceKey TokenStyleKey { get; } =
         new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(TokenStyleKey));
 
-    public static ComponentResourceKey CodeBlockHeaderStyleKey { get; } =
-        new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(CodeBlockHeaderStyleKey));
-
     public static ComponentResourceKey CodeBlockGroupBoxStyleKey { get; } =
         new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(CodeBlockGroupBoxStyleKey));
 
-    public static ComponentResourceKey CodeBlockTextStyleKey { get; } =
-        new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(CodeBlockTextStyleKey));
-
-    private static readonly RegistryOptions Options;
-
-    static readonly Dictionary<ThemeName, TextMateThemeColors>
-        Themes = new Dictionary<ThemeName, TextMateThemeColors>();
-
-    public static TextMateThemeColors GetTheme(ThemeName themeName)
+    private class TextMateCodeRendererSettings
     {
-        if (!Themes.TryGetValue(themeName, out var theme))
+        public RegistryOptions Options { get; }
+
+        public Registry Registry { get; }
+
+        private readonly Dictionary<ThemeName, TextMateThemeColors>
+            _themes = new Dictionary<ThemeName, TextMateThemeColors>();
+
+        public TextMateCodeRendererSettings()
         {
-            theme = new TextMateThemeColors(Theme.CreateFromRawTheme(
-                Options.LoadTheme(themeName), Options));
-            Themes.Add(themeName, theme);
+            Options = new RegistryOptions(ThemeName.Light);
+            Options.LoadFromLocalDir(@"Resources\Grammars");
+            Registry = new Registry(Options);
+            GetOrAddTheme(ThemeName.LightPlus);
+            GetOrAddTheme(ThemeName.DarkPlus);
         }
 
-        return theme;
+        public TextMateThemeColors GetOrAddTheme(ThemeName themeName)
+        {
+            if (!_themes.TryGetValue(themeName, out var theme))
+            {
+                theme = new TextMateThemeColors(Theme.CreateFromRawTheme(
+                    Options.LoadTheme(themeName), Options));
+                _themes.Add(themeName, theme);
+            }
+
+            return theme;
+        }
     }
 
-    static TextMateCodeRenderer()
+    private const string ThemeColorResourceKey = "CodeBlock.TextMateSharp.Theme";
+
+    public static void UpdateResource(ThemeName themeName)
     {
-        Options = new RegistryOptions(ThemeName.Light);
+        var application = Application.Current;
+        if (application == null)
+        {
+            return;
+        }
+
+        var sourceDictionary = application.Resources;
+        sourceDictionary[ThemeColorResourceKey] = Settings.GetOrAddTheme(themeName);
     }
 
-    private readonly Registry _registry;
+    private static TextMateCodeRendererSettings Settings =>
+        _settings ??= new TextMateCodeRendererSettings();
 
-    public TextMateCodeRenderer()
+    private static TextMateCodeRendererSettings? _settings = null;
+
+    public static Task InitializeAsync()
     {
-        Options.LoadFromLocalDir(@"Resources\Grammars");
-        _registry = new Registry(Options);
+        return Task.Run(() => { _settings = new TextMateCodeRendererSettings(); });
     }
 
     protected override void Write(WpfRenderer renderer, CodeBlock obj)
     {
-        var table = new Table();
+        // spilt by flowdocument，性能更好(尤其是切换高亮主题），但不适合显示复杂布局
+        /*var table = new Table();
         table.Columns.Add(new TableColumn() { Width = new GridLength(1, GridUnitType.Star) });
         table.Columns.Add(new TableColumn() { Width = new GridLength(1, GridUnitType.Star) });
         var tableCell = new TableCell();
-        var paragraph = new Paragraph(){TextAlignment = TextAlignment.Left};
+        var paragraph = new Paragraph() { TextAlignment = TextAlignment.Left };
         tableCell.Blocks.Add(paragraph);
         var rightCell = new TableCell();
-        rightCell.Blocks.Add(new BlockUIContainer(new Button(){Content = "asdfasdfasdfa"}));
-        TableRow tableRow = new TableRow();
+        var label = new Label() { Content = "这里将被替换为视图" };
+        var blockUiContainer = new BlockUIContainer(label);
+        rightCell.Blocks.Add(blockUiContainer);
+        var tableRow = new TableRow();
         tableRow.Cells.Add(tableCell);
         tableRow.Cells.Add(rightCell);
-        TableRowGroup tableRowGroup = new TableRowGroup();
+        var tableRowGroup = new TableRowGroup();
         tableRowGroup.Rows.Add(tableRow);
         table.RowGroups.Add(tableRowGroup);
         renderer.Push(table);
         renderer.Pop();
-        /*var blockUiContainer = new BlockUIContainer();
+        var codeContext = CreateCodeContext(obj);
+        var grammar = codeContext.Grammar;
+        paragraph.BeginInit();
+        paragraph.SetResourceReference(FrameworkContentElement.StyleProperty, Styles.CodeBlockStyleKey);
+        if (grammar != null)
+        {
+            Tokenize(paragraph, codeContext.CodeGroup, grammar);
+        }
+        else
+        {
+            // wpfRenderer.WriteRawLines(codeContext.CodeGroup);
+        }
+
+        paragraph.EndInit(); */
+
+        //spilt by richtextbox
+        var blockUiContainer = new BlockUIContainer();
         var codeBlockContainer = new HeaderedContentControl();
         codeBlockContainer.SetResourceReference(FrameworkElement.StyleProperty, CodeBlockGroupBoxStyleKey);
         ((IAddChild)blockUiContainer).AddChild(codeBlockContainer);
         renderer.Push(blockUiContainer);
-        renderer.Pop();*/
-        /*var textBlock = new TextBlock
-        {
-            TextWrapping = TextWrapping.Wrap,
-            TextAlignment = TextAlignment.Left,
-            Padding = new Thickness(5, 10, 5, 10)
-        };
-        textBlock.SetResourceReference(FrameworkElement.StyleProperty, CodeBlockTextStyleKey);
-        codeBlockContainer.Content = textBlock;*/
-        var written = false;
-        if (obj is FencedCodeBlock fencedCodeBlock)
+        renderer.Pop();
+        var codeContext = CreateCodeContext(obj);
+        codeBlockContainer.Header = codeContext;
+        codeBlockContainer.Content = codeContext;
+    }
+
+    private CodeContext CreateCodeContext(LeafBlock block)
+    {
+        string? extension = null;
+        IGrammar? grammar = null;
+        if (block is FencedCodeBlock fencedCodeBlock)
         {
             var name = fencedCodeBlock.Info;
-            var codeContext = new CodeContext(name, fencedCodeBlock.Lines);
-            // codeBlockContainer.Header = codeContext;
             if (name != null)
             {
-                var scope = Options.GetScopeByLanguageId(name) ?? Options.GetScopeByExtension("." + name);
+                var rendererSettings = Settings;
+                var options = rendererSettings.Options;
+                var scope = options.GetScopeByLanguageId(name) ?? options.GetScopeByExtension("." + name);
                 if (!string.IsNullOrEmpty(scope))
                 {
-                    codeContext.Extension = Path.GetExtension(scope);
+                    extension = Path.GetExtension(scope);
                 }
 
-                var grammar = _registry.LoadGrammar(scope);
-                if (grammar != null)
-                {
-                    written = true;
-                    Tokenize(paragraph, fencedCodeBlock, grammar);
-                }
+                grammar = rendererSettings.Registry.LoadGrammar(scope);
             }
         }
 
-        //todo:
-        /*if (!written)
-        {
-            renderer.WriteLeafRawLines(obj);
-        }*/
+        return new CodeContext(block.Lines, extension, grammar);
+    }
 
-        /*#region header
-
-        var blockUiContainer = new BlockUIContainer();
-        var contentControl = new ContentControl();
-        contentControl.SetResourceReference(FrameworkElement.StyleProperty, CodeBlockHeaderStyleKey);
-        ((IAddChild)blockUiContainer).AddChild(contentControl);
-        renderer.Push(blockUiContainer);
-        renderer.Pop();
-
-        #endregion
-
+    public static FlowDocument Render(CodeContext codeContext)
+    {
+        var flowDocument = new FlowDocument();
+        var wpfRenderer = new WpfRenderer(flowDocument);
         var paragraph = new Paragraph();
         paragraph.BeginInit();
         paragraph.SetResourceReference(FrameworkContentElement.StyleProperty, Styles.CodeBlockStyleKey);
-        renderer.Push(paragraph);
-        var written = false;
-        if (obj is FencedCodeBlock fencedCodeBlock)
+        wpfRenderer.Push(paragraph);
+        var grammar = codeContext.Grammar;
+        if (grammar != null)
         {
-            var name = fencedCodeBlock.Info;
-            var codeContext = new CodeContext(name, fencedCodeBlock.Lines);
-            contentControl.Content = codeContext;
-            if (name != null)
-            {
-                var scope = Options.GetScopeByLanguageId(name) ?? Options.GetScopeByExtension("." + name);
-                if (!string.IsNullOrEmpty(scope))
-                {
-                    codeContext.Extension = Path.GetExtension(scope);
-                }
-
-                var grammar = _registry.LoadGrammar(scope);
-                if (grammar != null)
-                {
-                    written = true;
-                    Tokenize(renderer, fencedCodeBlock, grammar);
-                }
-            }
+            Tokenize(paragraph, codeContext.CodeGroup, grammar);
         }
-
-        if (!written)
+        else
         {
-            renderer.WriteLeafRawLines(obj);
+            wpfRenderer.WriteRawLines(codeContext.CodeGroup);
         }
 
         paragraph.EndInit();
-        renderer.Pop();*/
+        wpfRenderer.Pop();
+        return flowDocument;
     }
 
-    private static void Tokenize(IAddChild addChild, FencedCodeBlock block, IGrammar grammar)
+
+    private static void Tokenize(IAddChild addChild, StringLineGroup stringLineGroup, IGrammar grammar)
     {
         IStateStack? ruleStack = null;
-        var stringLineGroup = block.Lines;
         if (stringLineGroup.Lines == null)
         {
             return;

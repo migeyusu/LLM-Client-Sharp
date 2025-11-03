@@ -1,40 +1,66 @@
 ﻿using System.IO;
-using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Input;
 using LLMClient.UI.Component;
 using Markdig.Helpers;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
+using TextMateSharp.Grammars;
 
 namespace LLMClient.UI.Render;
 
-public class CodeContext : CommonCommands.ICopyable
+public class CodeContext : BaseViewModel, CommonCommands.ICopyable
 {
-    public CodeContext(string? name, StringLineGroup code)
+    public CodeContext(StringLineGroup code, string? extension, IGrammar? grammar = null)
     {
-        Name = name;
+        Extension = extension;
         CodeGroup = code;
+        Grammar = grammar;
+        _codeStringLazy = new Lazy<string>(code.ToString);
+        _codeDocumentLazy = new Lazy<FlowDocument>(() => TextMateCodeRenderer.Render(this));
     }
 
-    public string? Name { get; set; }
-    public StringLineGroup CodeGroup { get; set; }
+    public IGrammar? Grammar { get; }
+
+    public string? Extension { get; }
+
+    private Lazy<string> _codeStringLazy;
+    public string CodeString => _codeStringLazy.Value;
+
+    public StringLineGroup CodeGroup { get; }
+
+    private Lazy<FlowDocument> _codeDocumentLazy;
+
+    public FlowDocument CodeDocument
+    {
+        get => _codeDocumentLazy.Value;
+    }
 
     /// <summary>
     /// 0: text, 1:imagetext 2:image
     /// </summary>
-    public int SelectedViewMode { get; set; } = 0;
-
-    public string? Extension { get; set; }
+    public int SelectedViewMode
+    {
+        get => _selectedViewMode;
+        set
+        {
+            if (value == _selectedViewMode) return;
+            _selectedViewMode = value;
+            OnPropertyChanged();
+        }
+    }
 
     private readonly string[] _supportedViewExtensions = new[] { ".html" };
 
     private readonly string[] _supportedRunExtensions = new[] { ".ps1", ".bat", ".powershell", };
+    private int _selectedViewMode = 0;
 
     public bool CanView
     {
         get
         {
-            return !string.IsNullOrEmpty(Extension) && _supportedViewExtensions.Contains(Extension.ToLower().Trim());
+            return true;
+            //return !string.IsNullOrEmpty(Extension) && _supportedViewExtensions.Contains(Extension.ToLower().Trim());
         }
     }
 
@@ -65,7 +91,7 @@ public class CodeContext : CommonCommands.ICopyable
         try
         {
             //可以通过webview执行html
-            var s = GetCopyText();
+            var s = CodeString;
             if (!string.IsNullOrEmpty(s))
             {
                 var tempFile = Path.GetTempFileName();
@@ -116,7 +142,7 @@ public class CodeContext : CommonCommands.ICopyable
 
     public string GetCopyText()
     {
-        return CodeGroup.ToString();
+        return CodeString;
     }
 }
 
