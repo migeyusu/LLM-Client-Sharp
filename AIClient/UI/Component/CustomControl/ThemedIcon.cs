@@ -3,7 +3,7 @@ using System.Windows.Media.Imaging;
 using LLMClient.Data;
 using MaterialDesignThemes.Wpf;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.CustomControl;
 
 public abstract class ThemedIcon : BaseViewModel
 {

@@ -13,6 +13,7 @@
              xmlns:rag="clr-namespace:LLMClient.Rag"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+             xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
              d:DesignHeight="110" d:DesignWidth="1600"
@@ -409,7 +410,7 @@
                                     Margin="0,4,0,0"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Bottom">
-                            <component:ModelButton VerticalAlignment="Center"
+                            <customControl:ModelButton VerticalAlignment="Center"
                                                    Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                                    CommandParameter="{Binding DefaultClient,Mode=OneWay}"
                                                    ChangeModelEnable="True"

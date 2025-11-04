@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.CustomControl;
 
 public class CustomVirtualizingStackPanel : VirtualizingStackPanel
 {

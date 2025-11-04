@@ -2,7 +2,7 @@
 using System.Windows.Data;
 using LLMClient.UI.Render;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.Converters;
 
 public class MarkdownToDocumentConverter : IValueConverter
 {

@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using ImageMagick;
 using LLMClient.Endpoints;
 using LLMClient.UI.Component;
+using LLMClient.UI.Component.CustomControl;
 using MaterialDesignThemes.Wpf;
 using MimeTypes;
 using Brushes = System.Windows.Media.Brushes;

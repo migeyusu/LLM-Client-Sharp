@@ -1,6 +1,6 @@
 ﻿using System.Windows.Markup;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.Extension;
 
 [MarkupExtensionReturnType(typeof(object))]
 public class ServiceExtension : MarkupExtension

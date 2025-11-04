@@ -7,6 +7,7 @@
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
+             xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:DialogViewModel}"
              d:DesignHeight="600"
@@ -67,7 +68,7 @@
                         <LineBreak />
                         <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                     </TextBlock>
-                    <component:SearchBox Margin="10,0"
+                    <customControl:SearchBox Margin="10,0"
                                          Padding="8,4,8,4"
                                          Panel.ZIndex="1"
                                          VerticalAlignment="Center"
@@ -121,7 +122,7 @@
                 </StackPanel>
             </Grid>
         </materialDesign:Card>
-        <component:ListBoxEx Grid.Row="1"
+        <customControl:ListBoxEx Grid.Row="1"
                              Style="{StaticResource DialogListBoxStyle}"
                              CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"
                              ItemsSource="{Binding DialogItems,Mode=OneWay}"
@@ -137,7 +138,7 @@
                 <CommandBinding Command="{x:Static ui:CommonCommands.Conclusion}"
                                 Executed="ConclusionBefore_OnExecuted" />
             </ListBox.CommandBindings>
-        </component:ListBoxEx>
+        </customControl:ListBoxEx>
         <StackPanel Grid.Row="1"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Bottom"

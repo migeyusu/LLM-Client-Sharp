@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.CustomControl;
 
 public class ListBoxEx : ListBox
 {

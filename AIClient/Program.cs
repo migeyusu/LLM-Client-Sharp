@@ -11,6 +11,7 @@ using LLMClient.Rag;
 using LLMClient.Research;
 using LLMClient.Test;
 using LLMClient.UI;
+using LLMClient.UI.Component;
 using LLMClient.UI.Log;
 using LLMClient.UI.Render;
 using Microsoft.Extensions.DependencyInjection;

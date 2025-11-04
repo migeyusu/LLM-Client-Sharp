@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.CustomControl;
 
 public class MarkdownTextBlock : TextBlock
 {

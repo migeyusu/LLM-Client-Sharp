@@ -3,7 +3,8 @@
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
-                    xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks">
+                    xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                    xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl">
     <Style TargetType="{x:Type component:PopupBoxEx}"
            BasedOn="{StaticResource MaterialDesignToolPopupBox}" />
     <Style x:Key="ArrowButtonStyle" TargetType="RepeatButton">
@@ -26,7 +27,7 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <Style TargetType="{x:Type component:FlowDocumentScrollViewerEx}"
+    <Style TargetType="{x:Type customControl:FlowDocumentScrollViewerEx}"
            x:Key="ExFlowDocumentScrollViewerStyle">
         <Setter Property="FontFamily"
                 Value="Microsoft YaHei" />
@@ -39,12 +40,12 @@
         <Setter Property="KeyboardNavigation.TabNavigation" Value="Local" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type component:FlowDocumentScrollViewerEx}">
+                <ControlTemplate TargetType="{x:Type customControl:FlowDocumentScrollViewerEx}">
                     <Border BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Background="{TemplateBinding Background}"
                             Margin="{TemplateBinding Padding}">
-                        <component:ScrollViewerEx x:Name="PART_ContentHost" CanContentScroll="True"
+                        <customControl:ScrollViewerEx x:Name="PART_ContentHost" CanContentScroll="True"
                                                   HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                   VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
@@ -178,10 +179,10 @@
                 Value="0,10,0,0" />
     </Style>
 
-    <Style TargetType="{x:Type component:SearchBox}">
+    <Style TargetType="{x:Type customControl:SearchBox}">
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type component:SearchBox}">
+                <ControlTemplate TargetType="{x:Type customControl:SearchBox}">
                     <materialDesign:ColorZone Padding="8,4,8,4"
                                               Panel.ZIndex="1"
                                               materialDesign:ElevationAssist.Elevation="Dp2"
@@ -230,10 +231,10 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <Style TargetType="{x:Type component:ModelButton}">
+    <Style TargetType="{x:Type customControl:ModelButton}">
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type component:ModelButton}">
+                <ControlTemplate TargetType="{x:Type customControl:ModelButton}">
                     <StackPanel Orientation="Horizontal">
                         <Button ToolTip="模型信息"
                                 Width="30"

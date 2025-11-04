@@ -11,6 +11,7 @@ using LLMClient.Data;
 using LLMClient.Project;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
+using LLMClient.UI.Component.CustomControl;
 using MaterialDesignThemes.Wpf;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Images;
@@ -52,7 +53,7 @@ internal static class SnapConverters
 
     public static readonly IValueConverter ObjectToJsonConverter =
         ValueConverter.Create<object?, string>(e => e.Value != null
-            ? JsonSerializer.Serialize(e.Value, Extension.DefaultJsonSerializerOptions)
+            ? JsonSerializer.Serialize(e.Value, LLMClient.Extension.DefaultJsonSerializerOptions)
             : string.Empty);
 
     public static readonly IValueConverter CountToVisibilityConverter =

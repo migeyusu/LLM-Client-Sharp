@@ -4,6 +4,7 @@ using LLMClient.Abstraction;
 using LLMClient.Endpoints.Converters;
 using LLMClient.UI;
 using LLMClient.UI.Component;
+using LLMClient.UI.Component.CustomControl;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 

@@ -11,9 +11,10 @@ namespace LLMClient.UI.Render;
 
 public class CodeContext : BaseViewModel, CommonCommands.ICopyable
 {
-    public CodeContext(StringLineGroup code, string? extension, IGrammar? grammar = null)
+    public CodeContext(StringLineGroup code, string? extension, string? name, IGrammar? grammar = null)
     {
         Extension = extension;
+        Name = name ?? string.Empty;
         CodeGroup = code;
         Grammar = grammar;
         _codeStringLazy = new Lazy<string>(code.ToString);
@@ -21,6 +22,8 @@ public class CodeContext : BaseViewModel, CommonCommands.ICopyable
     }
 
     public IGrammar? Grammar { get; }
+
+    public string Name { get; }
 
     public string? Extension { get; }
 
@@ -36,6 +39,17 @@ public class CodeContext : BaseViewModel, CommonCommands.ICopyable
         get => _codeDocumentLazy.Value;
     }
 
+    public string? HtmlContent
+    {
+        get => _htmlContent;
+        set
+        {
+            if (value == _htmlContent) return;
+            _htmlContent = value;
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>
     /// 0: text, 1:imagetext 2:image
     /// </summary>
@@ -47,44 +61,31 @@ public class CodeContext : BaseViewModel, CommonCommands.ICopyable
             if (value == _selectedViewMode) return;
             _selectedViewMode = value;
             OnPropertyChanged();
+            if (value != 0)
+            {
+                if (HtmlContent == null)
+                {
+                    HtmlContent = CodeString;
+                }
+            }
         }
     }
 
-    private readonly string[] _supportedViewExtensions = new[] { ".html" };
+    private readonly string[] _supportedViewExtensions = new[] { "html" };
 
-    private readonly string[] _supportedRunExtensions = new[] { ".ps1", ".bat", ".powershell", };
+    private readonly string[] _supportedRunExtensions = new[] { "bash", "powershell", };
     private int _selectedViewMode = 0;
+    private string? _htmlContent;
 
     public bool CanView
     {
-        get
-        {
-            return true;
-            //return !string.IsNullOrEmpty(Extension) && _supportedViewExtensions.Contains(Extension.ToLower().Trim());
-        }
+        get { return !string.IsNullOrEmpty(Name) && _supportedViewExtensions.Contains(Name.ToLower().Trim()); }
     }
 
     public bool CanRun
     {
-        get { return !string.IsNullOrEmpty(Extension) && _supportedRunExtensions.Contains(Extension.ToLower().Trim()); }
+        get { return !string.IsNullOrEmpty(Name) && _supportedRunExtensions.Contains(Name.ToLower().Trim()); }
     }
-
-    /// <summary>
-    /// 切换视图
-    /// </summary>
-    public ICommand SwitchViewCommand => new ActionCommand(o =>
-    {
-        try
-        {
-            if (o is true)
-            {
-            }
-        }
-        catch (Exception e)
-        {
-            MessageEventBus.Publish(e.Message);
-        }
-    });
 
     public ICommand RunCommand => new ActionCommand(o =>
     {

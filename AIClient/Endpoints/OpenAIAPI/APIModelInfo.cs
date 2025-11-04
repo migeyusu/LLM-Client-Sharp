@@ -5,6 +5,7 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.UI;
 using LLMClient.UI.Component;
+using LLMClient.UI.Component.CustomControl;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;

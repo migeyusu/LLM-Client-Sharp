@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.CustomControl;
 
 public class ScrollViewerEx : ScrollViewer
 {

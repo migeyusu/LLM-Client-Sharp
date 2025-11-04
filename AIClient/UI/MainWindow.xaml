@@ -1,4 +1,4 @@
-﻿<component:ExtendedWindow x:Class="LLMClient.UI.MainWindow"
+﻿<customControl:ExtendedWindow x:Class="LLMClient.UI.MainWindow"
                           xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                           xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -20,6 +20,7 @@
                           xmlns:project="clr-namespace:LLMClient.Project"
                           xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
                           xmlns:research="clr-namespace:LLMClient.Research"
+                          xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -86,7 +87,7 @@
             </Setter>
         </Style>
     </Window.Style>
-    <component:ExtendedWindow.Banner>
+    <customControl:ExtendedWindow.Banner>
         <StackPanel Orientation="Horizontal"
                     IsEnabled="{Binding ElementName=MainDialogHost, Path=IsOpen,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
             <StackPanel.Resources>
@@ -137,7 +138,7 @@
                       WindowChrome.IsHitTestVisibleInChrome="True"
                       SelectedItem="{Binding ThemeName,Mode=TwoWay}" />
         </StackPanel>
-    </component:ExtendedWindow.Banner>
+    </customControl:ExtendedWindow.Banner>
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Loaded">
             <b:CallMethodAction TargetObject="{Binding}" MethodName="Initialize" />
@@ -687,4 +688,4 @@
         </materialDesign:DialogHost>
         <materialDesign:Snackbar MessageQueue="{Binding MessageQueue,Mode=OneWay}" />
     </Grid>
-</component:ExtendedWindow>
+</customControl:ExtendedWindow>

@@ -13,6 +13,7 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
 using LLMClient.UI;
 using LLMClient.UI.Component;
+using LLMClient.UI.Component.CustomControl;
 using LLMClient.UI.Render;
 using Markdig.Syntax;
 using Microsoft.Extensions.AI;

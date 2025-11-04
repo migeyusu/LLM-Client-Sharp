@@ -9,6 +9,7 @@
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
              xmlns:ui="clr-namespace:LLMClient.UI"
+             xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:FileQueryViewModel}"
              d:DesignHeight="500" d:DesignWidth="600">
@@ -74,7 +75,7 @@
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         IsEnabled="{Binding SelectedSource.Status,Mode=OneWay,Converter={x:Static converters:SnapConverters.RagFileStatusToBoolConverter}}">
-                <ComboBox ItemsSource="{Binding Source={component:EnumBindingSource {x:Type rag:SearchAlgorithm}}}"
+                <ComboBox ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type rag:SearchAlgorithm}}}"
                           SelectedItem="{Binding Algorithm,Mode=TwoWay}"
                           Style="{StaticResource MaterialDesignOutlinedComboBox}"
                           materialDesign:HintAssist.Hint="Search Algorithm"

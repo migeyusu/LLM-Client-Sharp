@@ -10,7 +10,9 @@
                     xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                     xmlns:mcp="clr-namespace:LLMClient.MCP"
                     xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
-                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+                    xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension">
     <ItemsPanelTemplate x:Key="HorizontalItemsPanelTemplate">
         <StackPanel Orientation="Horizontal"
                     IsItemsHost="True" />
@@ -165,7 +167,7 @@
                 <ListBox DisplayMemberPath="DisplayName"
                          Width="150"
                          x:Name="AvailableEndpointsListBox"
-                         ItemsSource="{Binding Source={component:Service {x:Type abstraction:IEndpointService}},Path=AvailableEndpoints,Mode=OneWay}" />
+                         ItemsSource="{Binding Source={extension:Service {x:Type abstraction:IEndpointService}},Path=AvailableEndpoints,Mode=OneWay}" />
                 <ListBox DockPanel.Dock="Right"
                          HorizontalAlignment="Stretch"
                          DisplayMemberPath="Name"
@@ -202,7 +204,7 @@
                                                 CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
                         <materialDesign:SplitButton.SplitContent>
                             <ListBox
-                                ItemsSource="{Binding Source={component:Service {x:Type abstraction:IResearchModelService}},Path=AvailableResearchModels,Mode=OneTime}"
+                                ItemsSource="{Binding Source={extension:Service {x:Type abstraction:IResearchModelService}},Path=AvailableResearchModels,Mode=OneTime}"
                                 SelectionMode="Single">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate DataType="{x:Type sys:String}">
@@ -345,7 +347,7 @@
                 </WrapPanel>
             </StackPanel>
             <FlowDocumentScrollViewer Grid.Row="1"
-                                      Document="{Binding Description,Mode=OneWay, Converter={x:Static component:MarkdownToDocumentConverter.Instance}}" />
+                                      Document="{Binding Description,Mode=OneWay, Converter={x:Static converters:MarkdownToDocumentConverter.Instance}}" />
         </Grid>
     </DataTemplate>
     <DataTemplate x:Key="ProxyOptionDataTemplate" DataType="{x:Type component:ProxyOption}">

@@ -4,7 +4,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.CustomControl;
 
 public class FlowDocumentScrollViewerEx : FlowDocumentScrollViewer
 {

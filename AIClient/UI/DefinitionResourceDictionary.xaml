@@ -3,11 +3,12 @@
                     xmlns:system="clr-namespace:System;assembly=System.Runtime"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
-                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters">
+                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+                    xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension">
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     <converters:KUnitConverter x:Key="KUnitConverter" />
     <materialDesign:InvertBooleanConverter x:Key="InvertBooleanConverter" />
-    <component:SiYuanFont x:Key="DefaultFontFamily" />
+    <extension:SiYuanFont x:Key="DefaultFontFamily" />
     <converters:RoundFloatConverter x:Key="RoundFloatConverter" />
     <converters:EnumToBoolConverter x:Key="EnumToBoolConverter" />
 </ResourceDictionary>

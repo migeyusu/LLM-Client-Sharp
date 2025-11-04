@@ -1,7 +1,7 @@
 ﻿using System.Windows.Markup;
 using System.Windows.Media;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.Extension;
 
 /// <summary>
 /// 用于字体的示例代码

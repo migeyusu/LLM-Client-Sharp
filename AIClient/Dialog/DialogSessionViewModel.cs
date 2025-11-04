@@ -15,6 +15,7 @@ using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.UI;
 using LLMClient.UI.Component;
+using LLMClient.UI.Component.CustomControl;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;

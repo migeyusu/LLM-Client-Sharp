@@ -7,6 +7,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+             xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension"
              mc:Ignorable="d"
              d:DesignHeight="1000" d:DesignWidth="600"
              d:DataContext="{d:DesignInstance local:APIModelInfo}">
@@ -78,7 +79,7 @@
                     <ComboBox SelectedItem="{Binding IconType,Mode=TwoWay}"
                               Margin="10,0,0,0"
                               Width="90"
-                              ItemsSource="{Binding Source={component:EnumBindingSource {x:Type endpoints:ModelIconType}}}">
+                              ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type endpoints:ModelIconType}}}">
                         <!--<ComboBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type endpoints:ModelIconType}">
                                 <DockPanel>

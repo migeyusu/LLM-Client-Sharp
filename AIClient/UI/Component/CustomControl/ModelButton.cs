@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using LLMClient.Abstraction;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.CustomControl;
 
 public class ModelButton : Button
 {

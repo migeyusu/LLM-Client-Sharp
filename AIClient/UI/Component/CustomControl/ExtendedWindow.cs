@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace LLMClient.UI.Component;
+namespace LLMClient.UI.Component.CustomControl;
 
 public class ExtendedWindow : Window
 {

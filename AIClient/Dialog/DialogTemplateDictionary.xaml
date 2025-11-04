@@ -5,7 +5,8 @@
                     xmlns:ui="clr-namespace:LLMClient.UI"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
-                    xmlns:dialog="clr-namespace:LLMClient.Dialog">
+                    xmlns:dialog="clr-namespace:LLMClient.Dialog"
+                    xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl">
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
                   DataType="{x:Type dialog:RequestViewItem}">
         <Grid HorizontalAlignment="Right"
@@ -127,13 +128,13 @@
                                VerticalAlignment="Center" />
                 </StackPanel>
             </materialDesign:Card>
-            <component:FlowDocumentScrollViewerEx
+            <customControl:FlowDocumentScrollViewerEx
                 FontFamily="Segoe UI Emoji"
                 BorderThickness="0"
                 HighlightableRanges="{Binding SearchableDocument.FoundTextRanges,Mode=OneWay}"
                 CleanDocument="{Binding Document,Mode=OneWay}"
                 Style="{StaticResource ExFlowDocumentScrollViewerStyle}">
-                <component:FlowDocumentScrollViewerEx.ContextMenu>
+                <customControl:FlowDocumentScrollViewerEx.ContextMenu>
                     <ContextMenu>
                         <MenuItem Command="Copy"
                                   Header="复制选定">
@@ -168,9 +169,9 @@
                             </MenuItem.Icon>
                         </MenuItem>
                     </ContextMenu>
-                </component:FlowDocumentScrollViewerEx.ContextMenu>
-            </component:FlowDocumentScrollViewerEx>
-            <component:MarkdownTextBlock TextWrapping="Wrap"
+                </customControl:FlowDocumentScrollViewerEx.ContextMenu>
+            </customControl:FlowDocumentScrollViewerEx>
+            <customControl:MarkdownTextBlock TextWrapping="Wrap"
                                          VerticalAlignment="Top"
                                          Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                          Source="{Binding  TempResponseText,Mode=OneTime}" />
@@ -459,7 +460,7 @@
         <component:DataTemplateTypePair Template="{StaticResource EraseDataTemplate}" />
     </component:TypeBasedDataTemplateSelector>
     <Style x:Key="DialogListBoxStyle"
-           TargetType="{x:Type component:ListBoxEx}"
+           TargetType="{x:Type customControl:ListBoxEx}"
            BasedOn="{StaticResource {x:Type ListBox}}">
         <Setter Property="Margin" Value="0,0,5,5" />
         <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
@@ -473,7 +474,7 @@
         <Setter Property="ItemsPanel">
             <Setter.Value>
                 <ItemsPanelTemplate>
-                    <component:CustomVirtualizingStackPanel IsItemsHost="True" />
+                    <customControl:CustomVirtualizingStackPanel IsItemsHost="True" />
                 </ItemsPanelTemplate>
             </Setter.Value>
         </Setter>

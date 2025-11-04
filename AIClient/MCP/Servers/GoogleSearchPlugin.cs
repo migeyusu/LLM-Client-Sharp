@@ -8,6 +8,7 @@ using LLMClient.Abstraction;
 using LLMClient.Rag;
 using LLMClient.UI;
 using LLMClient.UI.Component;
+using LLMClient.UI.Component.CustomControl;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;

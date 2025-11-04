@@ -3,7 +3,7 @@
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net8.0-windows</TargetFramework>
-        <!--        <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>-->
+                <!--<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>-->
         <UseWindowsAppSDK>true</UseWindowsAppSDK>
         <WindowsPackageType>None</WindowsPackageType> <!-- For unpackaged apps -->
         <Nullable>enable</Nullable>
@@ -13,59 +13,62 @@
         <ApplicationIcon>smart_toy.ico</ApplicationIcon>
         <Platforms>AnyCPU;x64</Platforms>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+<!--        <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>-->
+                <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
     </PropertyGroup>
-    
+
     <PropertyGroup>
         <NoWarn>$(NoWarn);OPENAI001</NoWarn>
     </PropertyGroup>
-    
+
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <PlatformTarget>x64</PlatformTarget>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="15.0.1" />
+        <PackageReference Include="AutoMapper" Version="15.0.1"/>
         <PackageReference Include="AvalonEdit" Version="6.3.1.120"/>
         <PackageReference Include="Azure.AI.TextAnalytics" Version="5.3.0"/>
+        <PackageReference Include="CefSharp.Wpf.NETCore" Version="141.0.110" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0"/>
-        <PackageReference Include="DiffPlex" Version="1.9.0" />
-        <PackageReference Include="Karl.PdfPig" Version="0.1.12-alpha001" />
+        <PackageReference Include="DiffPlex" Version="1.9.0"/>
+        <PackageReference Include="Karl.PdfPig" Version="0.1.12-alpha001"/>
         <PackageReference Include="LambdaConverters" Version="4.0.0"/>
-        <PackageReference Include="LatexToMathML" Version="1.0.0.1" />
-        <PackageReference Include="Magick.NET-Q8-x64" Version="14.9.0" />
-        <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.11" />
-        <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="6.1.0" />
-        <PackageReference Include="MahApps.Metro.IconPacks.MaterialDesign" Version="6.1.0" />
-        <PackageReference Include="Markdig" Version="0.42.0" />
+        <PackageReference Include="LatexToMathML" Version="1.0.0.1"/>
+        <PackageReference Include="Magick.NET-Q8-x64" Version="14.9.0"/>
+        <PackageReference Include="Magick.NET.SystemWindowsMedia" Version="8.0.11"/>
+        <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="6.1.0"/>
+        <PackageReference Include="MahApps.Metro.IconPacks.MaterialDesign" Version="6.1.0"/>
+        <PackageReference Include="Markdig" Version="0.42.0"/>
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
-        <PackageReference Include="MaterialDesignThemes" Version="5.3.0" />
-        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.10.0" />
-        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.10.0-preview.1.25513.3" />
+        <PackageReference Include="MaterialDesignThemes" Version="5.3.0"/>
+        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.10.0"/>
+        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.10.0-preview.1.25513.3"/>
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0-preview.5.25277.114"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0-rc.2.25502.107" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0-rc.2.25502.107"/>
         <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.0-preview.5.25277.114"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-rc.2.25502.107" />
-        <PackageReference Include="Microsoft.KernelMemory.AI.OpenAI" Version="0.98.250508.3" />
-        <PackageReference Include="Microsoft.KernelMemory.Core" Version="0.98.250508.3" />
-        <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.66.0" />
-        <PackageReference Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.66.0-preview" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.66.0" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.66.0-preview" />
-        <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.66.0" />
-        <PackageReference Include="Microsoft.SemanticKernel.Plugins.Web" Version="1.66.0-alpha" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-rc.2.25502.107"/>
+        <PackageReference Include="Microsoft.KernelMemory.AI.OpenAI" Version="0.98.250508.3"/>
+        <PackageReference Include="Microsoft.KernelMemory.Core" Version="0.98.250508.3"/>
+        <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.66.0"/>
+        <PackageReference Include="Microsoft.SemanticKernel.Agents.Orchestration" Version="1.66.0-preview"/>
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.66.0"/>
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.66.0-preview"/>
+        <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.66.0"/>
+        <PackageReference Include="Microsoft.SemanticKernel.Plugins.Web" Version="1.66.0-alpha"/>
         <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3344-prerelease"/>
         <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135"/>
         <PackageReference Include="MimeTypeMapOfficial" Version="1.0.17"/>
-        <PackageReference Include="ModelContextProtocol" Version="0.4.0-preview.3" />
-        <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.13.1" />
-        <PackageReference Include="PInvoke.User32" Version="0.7.124" />
-        <PackageReference Include="ReverseMarkdown" Version="4.7.0" />
-        <PackageReference Include="SharpVectors.Wpf" Version="1.8.5" />
-        <PackageReference Include="SvgMath" Version="1.0.0" />
+        <PackageReference Include="ModelContextProtocol" Version="0.4.0-preview.3"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.13.1"/>
+        <PackageReference Include="PInvoke.User32" Version="0.7.124"/>
+        <PackageReference Include="ReverseMarkdown" Version="4.7.0"/>
+        <PackageReference Include="SharpVectors.Wpf" Version="1.8.5"/>
+        <PackageReference Include="SvgMath" Version="1.0.0"/>
         <PackageReference Include="System.Drawing.Common" Version="10.0.0-preview.5.25277.114"/>
-        <PackageReference Include="System.Text.Json" Version="9.0.8" />
-        <PackageReference Include="TextMateSharp" Version="1.0.70" />
-        <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.2" />
-        <PackageReference Include="WpfMath" Version="2.1.0" />
+        <PackageReference Include="System.Text.Json" Version="9.0.8"/>
+        <PackageReference Include="TextMateSharp" Version="1.0.70"/>
+        <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.2"/>
+        <PackageReference Include="WpfMath" Version="2.1.0"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -97,10 +100,10 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="Endpoints\Azure\Models\models.json">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="svgmath.xml">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 
@@ -144,170 +147,170 @@
             <SubType>Designer</SubType>
         </Page>
         <Page Update="Endpoints\EndpointConfigureView.xaml">
-          <Generator>MSBuild:Compile</Generator>
-          <XamlRuntime>Wpf</XamlRuntime>
-          <SubType>Designer</SubType>
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
         </Page>
         <Page Update="MCP\EnvironmentVariablesWindow.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="MCP\JsonEditorWindow.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="MCP\MCPServiceCollectionView.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="MCP\KeyValueConfigWindow.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Dialog\ModelSelectionView.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Dialog\DialogView.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Dialog\DialogTemplateDictionary.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Dialog\RequesterView.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Dialog\ResponseViewItemEditView.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Project\ProjectConfigView.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Project\ProjectView.xaml">
-          <Generator>MSBuild:Compile</Generator>
+            <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Test\TestWindow.xaml">
-          <Generator>MSBuild:Compile</Generator>
-          <XamlRuntime>Wpf</XamlRuntime>
-          <SubType>Designer</SubType>
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
         </Page>
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Bold.otf" />
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Bold.otf" />
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-ExtraLight.otf" />
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-ExtraLight.otf" />
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Heavy.otf" />
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Heavy.otf" />
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Light.otf" />
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Light.otf" />
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Medium.otf" />
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Medium.otf" />
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf" />
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf" />
-        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
-        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf" />
-        <None Remove="Resources\Images\llm\chatglm.svg" />
-        <None Remove="Resources\Images\llm\codegeex.svg" />
-        <None Remove="Resources\Images\llm\cohere.svg" />
-        <None Remove="Resources\Images\llm\doubao.svg" />
-        <None Remove="Resources\Images\llm\hunyuan.svg" />
-        <None Remove="Resources\Images\llm\kimi.svg" />
-        <None Remove="Resources\Images\llm\microsoft.svg" />
-        <None Remove="Resources\Images\llm\midjourney.svg" />
-        <None Remove="Resources\Images\llm\nvidia.svg" />
-        <None Remove="Resources\Images\llm\qingyan.svg" />
-        <None Remove="Resources\Images\llm\yi.svg" />
-        <None Remove="Resources\Images\llm\zhipu.svg" />
-        <None Remove="Resources\Images\llm\meta.svg" />
-        <None Remove="Resources\Images\llm\deepseek.svg" />
-        <None Remove="Resources\Images\llm\gemini.svg" />
-        <None Remove="Resources\Images\llm\grok.svg" />
-        <None Remove="Resources\Images\llm\claude.svg" />
-        <None Remove="Resources\Images\llm\chatgpt.svg" />
-        <None Remove="Resources\Images\llm\mistral.svg" />
-        <None Remove="Resources\Images\llm\moonshot.svg" />
-        <None Remove="Resources\Images\llm\qwen.svg" />
-        <None Remove="Resources\Images\llm\wenxin.svg" />
-        <None Remove="Resources\Images\llm\chatglm.png" />
-        <Resource Include="Resources\Images\llm\chatglm.png" />
-        <None Remove="Resources\Images\llm\chatgpt.png" />
-        <None Remove="Resources\Images\llm\claude.png" />
-        <Resource Include="Resources\Images\llm\claude.png" />
-        <None Remove="Resources\Images\llm\codegeex.png" />
-        <Resource Include="Resources\Images\llm\codegeex.png" />
-        <None Remove="Resources\Images\llm\cohere.png" />
-        <Resource Include="Resources\Images\llm\cohere.png" />
-        <None Remove="Resources\Images\llm\deepseek.png" />
-        <Resource Include="Resources\Images\llm\deepseek.png" />
-        <None Remove="Resources\Images\llm\doubao.png" />
-        <Resource Include="Resources\Images\llm\doubao.png" />
-        <None Remove="Resources\Images\llm\gemini.png" />
-        <Resource Include="Resources\Images\llm\gemini.png" />
-        <None Remove="Resources\Images\llm\grok.png" />
-        <None Remove="Resources\Images\llm\hunyuan.png" />
-        <Resource Include="Resources\Images\llm\hunyuan.png" />
-        <None Remove="Resources\Images\llm\kimi.png" />
-        <None Remove="Resources\Images\llm\meta.png" />
-        <Resource Include="Resources\Images\llm\meta.png" />
-        <None Remove="Resources\Images\llm\microsoft.png" />
-        <Resource Include="Resources\Images\llm\microsoft.png" />
-        <None Remove="Resources\Images\llm\mistral.png" />
-        <Resource Include="Resources\Images\llm\mistral.png" />
-        <None Remove="Resources\Images\llm\moonshot.png" />
-        <None Remove="Resources\Images\llm\nvidia.png" />
-        <Resource Include="Resources\Images\llm\nvidia.png" />
-        <None Remove="Resources\Images\llm\qingyan.png" />
-        <Resource Include="Resources\Images\llm\qingyan.png" />
-        <None Remove="Resources\Images\llm\qwen.png" />
-        <Resource Include="Resources\Images\llm\qwen.png" />
-        <None Remove="Resources\Images\llm\wenxin.png" />
-        <Resource Include="Resources\Images\llm\wenxin.png" />
-        <None Remove="Resources\Images\llm\yi.png" />
-        <None Remove="Resources\Images\llm\zhipu.png" />
-        <Resource Include="Resources\Images\llm\zhipu.png" />
-        <None Remove="Resources\Images\github-copilot-icon.png" />
-        <Resource Include="Resources\Images\github-copilot-icon.png" />
-        <None Remove="Resources\Images\azure-icon.png" />
-        <Resource Include="Resources\Images\azure-icon.png" />
-        <None Remove="Resources\Images\Document-New-32.png" />
-        <Resource Include="Resources\Images\Document-New-32.png" />
-        <None Remove="Resources\Images\llm\chatgpt-dark.png" />
-        <Resource Include="Resources\Images\llm\chatgpt-dark.png" />
-        <None Remove="Resources\Images\llm\chatgpt-light.png" />
-        <Resource Include="Resources\Images\llm\chatgpt-light.png" />
-        <None Remove="Resources\Images\llm\grok-dark.png" />
-        <Resource Include="Resources\Images\llm\grok-dark.png" />
-        <None Remove="Resources\Images\llm\grok-light.png" />
-        <Resource Include="Resources\Images\llm\grok-light.png" />
-        <None Remove="Resources\Images\llm\kimi-dark.png" />
-        <Resource Include="Resources\Images\llm\kimi-dark.png" />
-        <None Remove="Resources\Images\llm\kimi-light.png" />
-        <Resource Include="Resources\Images\llm\kimi-light.png" />
-        <None Remove="Resources\Images\llm\moonshot-dark.png" />
-        <Resource Include="Resources\Images\llm\moonshot-dark.png" />
-        <None Remove="Resources\Images\llm\moonshot-light.png" />
-        <Resource Include="Resources\Images\llm\moonshot-light.png" />
-        <None Remove="Resources\Images\llm\yi-dark.png" />
-        <Resource Include="Resources\Images\llm\yi-dark.png" />
-        <None Remove="Resources\Images\llm\yi-light.png" />
-        <Resource Include="Resources\Images\llm\yi-light.png" />
-        <None Remove="Resources\Images\openrouter_logo.svg" />
-        <Resource Include="Resources\Images\openrouter_logo.svg" />
-        <None Remove="Resources\Images\geekai.png" />
-        <Resource Include="Resources\Images\geekai.png" />
-        <None Remove="Resources\Shaders\Invert.ps" />
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Bold.otf"/>
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Bold.otf"/>
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-ExtraLight.otf"/>
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-ExtraLight.otf"/>
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Heavy.otf"/>
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Heavy.otf"/>
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Light.otf"/>
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Light.otf"/>
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Medium.otf"/>
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Medium.otf"/>
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf"/>
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Normal.otf"/>
+        <None Remove="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf"/>
+        <Resource Include="Resources\Fonts\SiYuan\SourceHanSansCN-Regular.otf"/>
+        <None Remove="Resources\Images\llm\chatglm.svg"/>
+        <None Remove="Resources\Images\llm\codegeex.svg"/>
+        <None Remove="Resources\Images\llm\cohere.svg"/>
+        <None Remove="Resources\Images\llm\doubao.svg"/>
+        <None Remove="Resources\Images\llm\hunyuan.svg"/>
+        <None Remove="Resources\Images\llm\kimi.svg"/>
+        <None Remove="Resources\Images\llm\microsoft.svg"/>
+        <None Remove="Resources\Images\llm\midjourney.svg"/>
+        <None Remove="Resources\Images\llm\nvidia.svg"/>
+        <None Remove="Resources\Images\llm\qingyan.svg"/>
+        <None Remove="Resources\Images\llm\yi.svg"/>
+        <None Remove="Resources\Images\llm\zhipu.svg"/>
+        <None Remove="Resources\Images\llm\meta.svg"/>
+        <None Remove="Resources\Images\llm\deepseek.svg"/>
+        <None Remove="Resources\Images\llm\gemini.svg"/>
+        <None Remove="Resources\Images\llm\grok.svg"/>
+        <None Remove="Resources\Images\llm\claude.svg"/>
+        <None Remove="Resources\Images\llm\chatgpt.svg"/>
+        <None Remove="Resources\Images\llm\mistral.svg"/>
+        <None Remove="Resources\Images\llm\moonshot.svg"/>
+        <None Remove="Resources\Images\llm\qwen.svg"/>
+        <None Remove="Resources\Images\llm\wenxin.svg"/>
+        <None Remove="Resources\Images\llm\chatglm.png"/>
+        <Resource Include="Resources\Images\llm\chatglm.png"/>
+        <None Remove="Resources\Images\llm\chatgpt.png"/>
+        <None Remove="Resources\Images\llm\claude.png"/>
+        <Resource Include="Resources\Images\llm\claude.png"/>
+        <None Remove="Resources\Images\llm\codegeex.png"/>
+        <Resource Include="Resources\Images\llm\codegeex.png"/>
+        <None Remove="Resources\Images\llm\cohere.png"/>
+        <Resource Include="Resources\Images\llm\cohere.png"/>
+        <None Remove="Resources\Images\llm\deepseek.png"/>
+        <Resource Include="Resources\Images\llm\deepseek.png"/>
+        <None Remove="Resources\Images\llm\doubao.png"/>
+        <Resource Include="Resources\Images\llm\doubao.png"/>
+        <None Remove="Resources\Images\llm\gemini.png"/>
+        <Resource Include="Resources\Images\llm\gemini.png"/>
+        <None Remove="Resources\Images\llm\grok.png"/>
+        <None Remove="Resources\Images\llm\hunyuan.png"/>
+        <Resource Include="Resources\Images\llm\hunyuan.png"/>
+        <None Remove="Resources\Images\llm\kimi.png"/>
+        <None Remove="Resources\Images\llm\meta.png"/>
+        <Resource Include="Resources\Images\llm\meta.png"/>
+        <None Remove="Resources\Images\llm\microsoft.png"/>
+        <Resource Include="Resources\Images\llm\microsoft.png"/>
+        <None Remove="Resources\Images\llm\mistral.png"/>
+        <Resource Include="Resources\Images\llm\mistral.png"/>
+        <None Remove="Resources\Images\llm\moonshot.png"/>
+        <None Remove="Resources\Images\llm\nvidia.png"/>
+        <Resource Include="Resources\Images\llm\nvidia.png"/>
+        <None Remove="Resources\Images\llm\qingyan.png"/>
+        <Resource Include="Resources\Images\llm\qingyan.png"/>
+        <None Remove="Resources\Images\llm\qwen.png"/>
+        <Resource Include="Resources\Images\llm\qwen.png"/>
+        <None Remove="Resources\Images\llm\wenxin.png"/>
+        <Resource Include="Resources\Images\llm\wenxin.png"/>
+        <None Remove="Resources\Images\llm\yi.png"/>
+        <None Remove="Resources\Images\llm\zhipu.png"/>
+        <Resource Include="Resources\Images\llm\zhipu.png"/>
+        <None Remove="Resources\Images\github-copilot-icon.png"/>
+        <Resource Include="Resources\Images\github-copilot-icon.png"/>
+        <None Remove="Resources\Images\azure-icon.png"/>
+        <Resource Include="Resources\Images\azure-icon.png"/>
+        <None Remove="Resources\Images\Document-New-32.png"/>
+        <Resource Include="Resources\Images\Document-New-32.png"/>
+        <None Remove="Resources\Images\llm\chatgpt-dark.png"/>
+        <Resource Include="Resources\Images\llm\chatgpt-dark.png"/>
+        <None Remove="Resources\Images\llm\chatgpt-light.png"/>
+        <Resource Include="Resources\Images\llm\chatgpt-light.png"/>
+        <None Remove="Resources\Images\llm\grok-dark.png"/>
+        <Resource Include="Resources\Images\llm\grok-dark.png"/>
+        <None Remove="Resources\Images\llm\grok-light.png"/>
+        <Resource Include="Resources\Images\llm\grok-light.png"/>
+        <None Remove="Resources\Images\llm\kimi-dark.png"/>
+        <Resource Include="Resources\Images\llm\kimi-dark.png"/>
+        <None Remove="Resources\Images\llm\kimi-light.png"/>
+        <Resource Include="Resources\Images\llm\kimi-light.png"/>
+        <None Remove="Resources\Images\llm\moonshot-dark.png"/>
+        <Resource Include="Resources\Images\llm\moonshot-dark.png"/>
+        <None Remove="Resources\Images\llm\moonshot-light.png"/>
+        <Resource Include="Resources\Images\llm\moonshot-light.png"/>
+        <None Remove="Resources\Images\llm\yi-dark.png"/>
+        <Resource Include="Resources\Images\llm\yi-dark.png"/>
+        <None Remove="Resources\Images\llm\yi-light.png"/>
+        <Resource Include="Resources\Images\llm\yi-light.png"/>
+        <None Remove="Resources\Images\openrouter_logo.svg"/>
+        <Resource Include="Resources\Images\openrouter_logo.svg"/>
+        <None Remove="Resources\Images\geekai.png"/>
+        <Resource Include="Resources\Images\geekai.png"/>
+        <None Remove="Resources\Shaders\Invert.ps"/>
         <None Include="Resources\Pages\Assets\html2canvas.js">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Include="Resources\Pages\Assets\tex-svg.js">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <Resource Include="Resources\Shaders\Invert.ps" />
-        <None Remove="Resources\Shaders\Invert.hlsl" />
-        <Resource Include="Resources\Shaders\Invert.hlsl" />
-        <None Remove="Resources\Pages\render-template.html" />
+        <Resource Include="Resources\Shaders\Invert.ps"/>
+        <None Remove="Resources\Shaders\Invert.hlsl"/>
+        <Resource Include="Resources\Shaders\Invert.hlsl"/>
+        <None Remove="Resources\Pages\render-template.html"/>
         <Resource Include="Resources\Pages\render_latex_template.html">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </Resource>
-        <None Remove="Resources\Pages\tex-svg.js" />
-        <None Remove="Resources\Pages\html2canvas.js" />
+        <None Remove="Resources\Pages\tex-svg.js"/>
+        <None Remove="Resources\Pages\html2canvas.js"/>
     </ItemGroup>
 
 </Project>

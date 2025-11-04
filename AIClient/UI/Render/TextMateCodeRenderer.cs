@@ -79,41 +79,6 @@ public class TextMateCodeRenderer : CodeBlockRenderer
 
     protected override void Write(WpfRenderer renderer, CodeBlock obj)
     {
-        // spilt by flowdocument，性能更好(尤其是切换高亮主题），但不适合显示复杂布局
-        /*var table = new Table();
-        table.Columns.Add(new TableColumn() { Width = new GridLength(1, GridUnitType.Star) });
-        table.Columns.Add(new TableColumn() { Width = new GridLength(1, GridUnitType.Star) });
-        var tableCell = new TableCell();
-        var paragraph = new Paragraph() { TextAlignment = TextAlignment.Left };
-        tableCell.Blocks.Add(paragraph);
-        var rightCell = new TableCell();
-        var label = new Label() { Content = "这里将被替换为视图" };
-        var blockUiContainer = new BlockUIContainer(label);
-        rightCell.Blocks.Add(blockUiContainer);
-        var tableRow = new TableRow();
-        tableRow.Cells.Add(tableCell);
-        tableRow.Cells.Add(rightCell);
-        var tableRowGroup = new TableRowGroup();
-        tableRowGroup.Rows.Add(tableRow);
-        table.RowGroups.Add(tableRowGroup);
-        renderer.Push(table);
-        renderer.Pop();
-        var codeContext = CreateCodeContext(obj);
-        var grammar = codeContext.Grammar;
-        paragraph.BeginInit();
-        paragraph.SetResourceReference(FrameworkContentElement.StyleProperty, Styles.CodeBlockStyleKey);
-        if (grammar != null)
-        {
-            Tokenize(paragraph, codeContext.CodeGroup, grammar);
-        }
-        else
-        {
-            // wpfRenderer.WriteRawLines(codeContext.CodeGroup);
-        }
-
-        paragraph.EndInit(); */
-
-        //spilt by richtextbox
         var blockUiContainer = new BlockUIContainer();
         var codeBlockContainer = new HeaderedContentControl();
         codeBlockContainer.SetResourceReference(FrameworkElement.StyleProperty, CodeBlockGroupBoxStyleKey);
@@ -129,9 +94,10 @@ public class TextMateCodeRenderer : CodeBlockRenderer
     {
         string? extension = null;
         IGrammar? grammar = null;
+        string? name = null;
         if (block is FencedCodeBlock fencedCodeBlock)
         {
-            var name = fencedCodeBlock.Info;
+            name = fencedCodeBlock.Info;
             if (name != null)
             {
                 var rendererSettings = Settings;
@@ -146,7 +112,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
             }
         }
 
-        return new CodeContext(block.Lines, extension, grammar);
+        return new CodeContext(block.Lines, extension, name, grammar);
     }
 
     public static FlowDocument Render(CodeContext codeContext)

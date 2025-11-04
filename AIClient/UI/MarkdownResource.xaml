@@ -8,7 +8,9 @@
                     xmlns:messages="clr-namespace:LLMClient.Endpoints.Messages"
                     xmlns:render="clr-namespace:LLMClient.UI.Render"
                     xmlns:ui="clr-namespace:LLMClient.UI"
-                    xmlns:b="http://schemas.microsoft.com/xaml/behaviors">
+                    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+                    xmlns:component="clr-namespace:LLMClient.UI.Component"
+                    xmlns:wpf="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary
             Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.button.xaml" />
@@ -289,7 +291,7 @@
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type render:CodeContext}">
-                    <Grid>
+                    <Grid ClipToBounds="True">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition x:Name="CodeColumn" Width="*" />
                             <ColumnDefinition x:Name="PreviewColumn" Width="0" />
@@ -307,7 +309,15 @@
                             </b:Interaction.Behaviors>
                         </RichTextBox>
                         <!--view-->
-                        <Image x:Name="PreviewView" Grid.Column="1" Visibility="Collapsed" />
+                        <wpf:ChromiumWebBrowser Grid.Column="1"
+                                                x:Name="PreviewView">
+                            <b:Interaction.Behaviors>
+                                <component:WebBrowserHtmlBehavior HtmlContent="{Binding HtmlContent,Mode=OneWay}" />
+                            </b:Interaction.Behaviors>
+                        </wpf:ChromiumWebBrowser>
+                        <!--<component:WebViewContainer Grid.Column="1"
+                                                    HtmlContent="{Binding HtmlContent,Mode=OneWay}"
+                                                    x:Name="PreviewView" />-->
                     </Grid>
                     <DataTemplate.Triggers>
                         <!--Code Only-->

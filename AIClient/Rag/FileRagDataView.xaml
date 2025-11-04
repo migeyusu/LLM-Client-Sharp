@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:LLMClient.Rag"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
+             xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:FileRagDataViewModel}"
              d:DesignHeight="400" d:DesignWidth="700">
@@ -26,7 +27,7 @@
         </TreeView>
         <StackPanel Grid.Column="0"
                     VerticalAlignment="Top">
-            <ComboBox ItemsSource="{Binding Source={component:EnumBindingSource {x:Type local:SearchAlgorithm}}}"
+            <ComboBox ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type local:SearchAlgorithm}}}"
                       SelectedItem="{Binding Algorithm,Mode=TwoWay}"
                       Style="{StaticResource MaterialDesignOutlinedComboBox}"
                       materialDesign:HintAssist.Hint="Search Algorithm"
