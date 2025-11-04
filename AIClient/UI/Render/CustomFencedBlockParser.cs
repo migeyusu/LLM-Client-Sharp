@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Markdig.Helpers;
 using Markdig.Parsers;
 using Markdig.Syntax;

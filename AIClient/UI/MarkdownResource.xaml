@@ -10,7 +10,8 @@
                     xmlns:ui="clr-namespace:LLMClient.UI"
                     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
-                    xmlns:wpf="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf">
+                    xmlns:wpf="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
+                    xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary
             Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.button.xaml" />
@@ -281,7 +282,7 @@
                             </Button>
                             <Button Style="{DynamicResource CopyCommandStyle}"
                                     Margin="10,0,0,0"
-                                    Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                    Command="{x:Static utility:CommonCommands.CopyCommand}"
                                     CommandParameter="{Binding}" />
                         </StackPanel>
                     </Grid>
@@ -581,7 +582,7 @@
                         <Image.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Copy LaTeX"
-                                          Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                          Command="{x:Static utility:CommonCommands.CopyCommand}"
                                           CommandParameter="{Binding Latex,Mode=OneTime}" />
                             </ContextMenu>
                         </Image.ContextMenu>
@@ -605,7 +606,7 @@
                         <Image.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Copy LaTeX"
-                                          Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                          Command="{x:Static utility:CommonCommands.CopyCommand}"
                                           CommandParameter="{Binding Latex,Mode=OneTime}" />
                             </ContextMenu>
                         </Image.ContextMenu>

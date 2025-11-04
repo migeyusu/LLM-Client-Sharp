@@ -1,7 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Data;
-using LLMClient.UI.Component;
 using LLMClient.UI.Component.CustomControl;
 using MaterialDesignThemes.Wpf;
 

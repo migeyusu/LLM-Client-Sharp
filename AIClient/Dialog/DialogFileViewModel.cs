@@ -4,10 +4,10 @@ using System.IO;
 using System.Text.Json;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Configuration;
 using LLMClient.Data;
-using LLMClient.UI;
-using LLMClient.UI.Component;
-using Microsoft.Extensions.DependencyInjection;
+using LLMClient.UI.Component.Utility;
+using LLMClient.UI.ViewModel;
 
 namespace LLMClient.Dialog;
 

@@ -1,7 +1,8 @@
 ﻿using System.IO;
 using System.Windows.Documents;
 using System.Windows.Input;
-using LLMClient.UI.Component;
+using LLMClient.UI.Component.Utility;
+using LLMClient.UI.ViewModel.Base;
 using Markdig.Helpers;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;

@@ -1,24 +1,21 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using CefSharp;
+using CefSharp.Wpf;
 using LLMClient.Abstraction;
+using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using LLMClient.MCP;
-using LLMClient.MCP.Servers;
 using LLMClient.Rag;
 using LLMClient.Research;
-using LLMClient.Test;
+using LLMClient.ToolCall;
+using LLMClient.ToolCall.Servers;
 using LLMClient.UI;
-using LLMClient.UI.Component;
-using LLMClient.UI.Log;
-using LLMClient.UI.Render;
+using LLMClient.UI.ViewModel;
+using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging.Debug;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -120,6 +117,7 @@ public class Program
             var traceListener = new LoggerTraceListener(loggerFactory);
             Trace.Listeners.Add(traceListener);
 #endif
+            CefInitialize();
             App app = new App();
             app.InitializeComponent();
             // app.Run(new TestWindow());
@@ -149,7 +147,20 @@ public class Program
             {
                 Mutex.ReleaseMutex();
             }
+
             // tempPath.Delete(true);//默认不删除
+            Cef.Shutdown();
         }
+    }
+
+    private static void CefInitialize()
+    {
+        var settings = new CefSettings
+        {
+            LogFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cef_debug.log"),
+            CachePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CefCache"),
+            PersistSessionCookies = true,
+        };
+        Cef.Initialize(settings, performDependencyCheck: true, browserProcessHandler: null);
     }
 }

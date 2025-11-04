@@ -2,9 +2,8 @@
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.Converters;
-using LLMClient.UI;
-using LLMClient.UI.Component;
 using LLMClient.UI.Component.CustomControl;
+using LLMClient.UI.ViewModel.Base;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 

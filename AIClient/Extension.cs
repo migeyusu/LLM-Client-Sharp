@@ -15,14 +15,15 @@ using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.MCP;
 using LLMClient.Project;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
+using LLMClient.ToolCall;
 using LLMClient.UI;
+using LLMClient.UI.Component.Utility;
+using LLMClient.UI.ViewModel;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace LLMClient;
 

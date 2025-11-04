@@ -5,7 +5,7 @@
                     xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
                     xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
                     xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl">
-    <Style TargetType="{x:Type component:PopupBoxEx}"
+    <Style TargetType="{x:Type customControl:PopupBoxEx}"
            BasedOn="{StaticResource MaterialDesignToolPopupBox}" />
     <Style x:Key="ArrowButtonStyle" TargetType="RepeatButton">
         <Setter Property="Width" Value="30" />

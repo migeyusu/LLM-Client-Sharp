@@ -1,4 +1,5 @@
 ﻿using System.Windows.Markup;
+using LLMClient.UI.ViewModel.Base;
 
 namespace LLMClient.UI.Component.Extension;
 

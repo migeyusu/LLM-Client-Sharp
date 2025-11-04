@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
+using LLMClient.UI.Component.Utility;
 
 namespace LLMClient.UI.Log;
 

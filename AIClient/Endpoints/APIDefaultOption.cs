@@ -1,9 +1,9 @@
 ﻿using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Net.Http;
+using LLMClient.Configuration;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.UI;
-using LLMClient.UI.Component;
+using LLMClient.UI.ViewModel.Base;
 using OpenAI;
 
 namespace LLMClient.Endpoints;

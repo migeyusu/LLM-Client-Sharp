@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Text.Json.Serialization;
-using LLMClient.Abstraction;
 using Microsoft.SemanticKernel;
 
 namespace LLMClient.Rag;

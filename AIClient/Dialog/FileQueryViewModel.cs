@@ -3,8 +3,9 @@ using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Rag;
-using LLMClient.UI;
-using LLMClient.UI.Component;
+using LLMClient.UI.Component.Utility;
+using LLMClient.UI.ViewModel;
+using LLMClient.UI.ViewModel.Base;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;

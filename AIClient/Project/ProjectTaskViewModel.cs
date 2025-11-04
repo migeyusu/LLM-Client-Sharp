@@ -3,8 +3,8 @@ using System.Text;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
-using LLMClient.MCP;
-using LLMClient.MCP.Servers;
+using LLMClient.ToolCall;
+using LLMClient.ToolCall.Servers;
 
 namespace LLMClient.Project;
 

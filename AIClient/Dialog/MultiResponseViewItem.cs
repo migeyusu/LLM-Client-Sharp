@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
-using LLMClient.UI;
+using LLMClient.UI.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;

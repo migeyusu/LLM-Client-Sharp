@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -7,8 +6,8 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
-using LLMClient.UI;
-using LLMClient.UI.Component;
+using LLMClient.UI.Component.Utility;
+using LLMClient.UI.ViewModel.Base;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 

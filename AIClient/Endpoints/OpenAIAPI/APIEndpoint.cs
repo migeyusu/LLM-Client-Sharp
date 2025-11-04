@@ -4,10 +4,8 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
-using LLMClient.UI;
-using LLMClient.UI.Component;
+using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
 

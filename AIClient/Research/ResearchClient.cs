@@ -1,7 +1,7 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Endpoints;
-using LLMClient.MCP;
-using LLMClient.UI;
+using LLMClient.ToolCall;
+using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Research;

@@ -5,11 +5,8 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using LLMClient.UI;
 using LLMClient.UI.Render;
-using WpfMath.Controls;
 
 namespace LLMClient.Test;
 

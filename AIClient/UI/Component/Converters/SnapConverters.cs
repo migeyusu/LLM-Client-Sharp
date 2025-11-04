@@ -1,21 +1,16 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using LambdaConverters;
 using LLMClient.Data;
-using LLMClient.Project;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
 using LLMClient.UI.Component.CustomControl;
 using MaterialDesignThemes.Wpf;
 using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.Images;
-using UglyToad.PdfPig.Tokens;
 
 namespace LLMClient.UI.Component.Converters;
 

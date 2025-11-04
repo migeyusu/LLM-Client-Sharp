@@ -4,8 +4,9 @@ using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using LLMClient.MCP;
-using LLMClient.UI;
+using LLMClient.ToolCall;
+using LLMClient.UI.Component.Utility;
+using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.AI;
 using MimeTypes;
 

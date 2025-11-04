@@ -1,5 +1,5 @@
 ﻿using LLMClient.Abstraction;
-using LLMClient.UI;
+using LLMClient.UI.ViewModel.Base;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 

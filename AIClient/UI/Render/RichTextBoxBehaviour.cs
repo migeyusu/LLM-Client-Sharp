@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using Microsoft.Xaml.Behaviors;
 
 namespace LLMClient.UI.Render;
@@ -7,10 +8,11 @@ namespace LLMClient.UI.Render;
 public class RichTextBoxBehaviour : Behavior<RichTextBox>
 {
     public static readonly DependencyProperty DocumentProperty =
-        DependencyProperty.Register(nameof(Document), typeof(System.Windows.Documents.FlowDocument), typeof(RichTextBoxBehaviour), 
+        DependencyProperty.Register(nameof(Document), typeof(System.Windows.Documents.FlowDocument),
+            typeof(RichTextBoxBehaviour),
             new PropertyMetadata(null, OnDocumentChanged));
 
-    public System.Windows.Documents.FlowDocument Document
+    public FlowDocument Document
     {
         get => (System.Windows.Documents.FlowDocument)GetValue(DocumentProperty);
         set => SetValue(DocumentProperty, value);
@@ -20,13 +22,31 @@ public class RichTextBoxBehaviour : Behavior<RichTextBox>
     {
         if (d is RichTextBoxBehaviour behavior && behavior.AssociatedObject != null)
         {
-            behavior.AssociatedObject.Document = (System.Windows.Documents.FlowDocument)e.NewValue;
+            if (e.NewValue is FlowDocument newDocument)
+            {
+                if (newDocument.Parent is RichTextBox oldOwner && !ReferenceEquals(oldOwner, behavior.AssociatedObject))
+                {
+                    oldOwner.Document = new FlowDocument();
+                }
+                behavior.AssociatedObject.Document = newDocument;
+            }
         }
     }
 
     protected override void OnAttached()
     {
         base.OnAttached();
-        AssociatedObject.Document = Document;
+        if (Document?.Parent is RichTextBox richTextBox && !ReferenceEquals(richTextBox, AssociatedObject))
+        {
+            richTextBox.Document = new FlowDocument();
+        }
+
+        AssociatedObject.Document = Document ?? new FlowDocument();
+    }
+
+    protected override void OnDetaching()
+    {
+        base.OnDetaching();
+        AssociatedObject.Document = new FlowDocument();
     }
 }

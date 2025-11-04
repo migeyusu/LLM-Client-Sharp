@@ -1,9 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.MCP.Servers;
+using LLMClient.ToolCall.Servers;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
 

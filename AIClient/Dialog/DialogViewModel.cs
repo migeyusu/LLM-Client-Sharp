@@ -1,21 +1,13 @@
 ﻿// #define TESTMODE
 
-using System.IO;
-using System.Text;
 using System.Windows;
-using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
-using LLMClient.Data;
-using LLMClient.MCP;
-using LLMClient.MCP.Servers;
-using LLMClient.UI;
-using LLMClient.UI.Component;
+using LLMClient.Configuration;
+using LLMClient.ToolCall;
+using LLMClient.ToolCall.Servers;
 using MaterialDesignThemes.Wpf;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Xaml.Behaviors.Core;
 using MessageBox = System.Windows.MessageBox;
-using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace LLMClient.Dialog;
 

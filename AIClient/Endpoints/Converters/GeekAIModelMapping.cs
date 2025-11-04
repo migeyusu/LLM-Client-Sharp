@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.UI.Component;
+using LLMClient.UI.Component.Utility;
 
 namespace LLMClient.Endpoints.Converters;
 

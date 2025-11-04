@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using DocumentFormat.OpenXml.Wordprocessing;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;

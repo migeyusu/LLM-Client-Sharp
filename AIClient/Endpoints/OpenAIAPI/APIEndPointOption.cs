@@ -3,8 +3,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using LLMClient.Data;
 using LLMClient.Endpoints.Converters;
-using LLMClient.UI;
-using LLMClient.UI.Component;
+using LLMClient.UI.Component.Utility;
+using LLMClient.UI.ViewModel.Base;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;

@@ -1,6 +1,6 @@
 ﻿using System.Windows.Input;
 using LLMClient.Abstraction;
-using LLMClient.UI;
+using LLMClient.UI.ViewModel;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Dialog;

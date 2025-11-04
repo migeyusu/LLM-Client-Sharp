@@ -1,6 +1,6 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Endpoints;
-using LLMClient.UI;
+using LLMClient.UI.ViewModel.Base;
 using OpenAI.Chat;
 
 namespace LLMClient.Dialog;

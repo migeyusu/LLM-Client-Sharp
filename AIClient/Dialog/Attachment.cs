@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using LLMClient.UI.Component;
+using LLMClient.UI.Component.Utility;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;

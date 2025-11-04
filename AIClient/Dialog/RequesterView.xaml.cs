@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using LLMClient.Data;
-using LLMClient.MCP;
+using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Dialog;

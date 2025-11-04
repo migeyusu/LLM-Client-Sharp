@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
-using LLMClient.UI;
+using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Rag.Document;

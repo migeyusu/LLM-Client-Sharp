@@ -1,7 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using LLMClient.Dialog;
-using LLMClient.Endpoints;
-using Microsoft.Extensions.AI;
+﻿using LLMClient.Dialog;
 
 namespace LLMClient.Abstraction;
 

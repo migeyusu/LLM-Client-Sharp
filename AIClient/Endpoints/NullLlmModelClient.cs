@@ -1,9 +1,7 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
-using System.IO;
+﻿using System.IO;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.MCP;
+using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

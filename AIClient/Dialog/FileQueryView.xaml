@@ -10,6 +10,7 @@
              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension"
+             xmlns:viewModel="clr-namespace:LLMClient.UI.ViewModel"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:FileQueryViewModel}"
              d:DesignHeight="500" d:DesignWidth="600">
@@ -49,7 +50,7 @@
                 <component:TypeBasedDataTemplateSelector>
                     <component:TypeBasedDataTemplateSelector.EmptyTemplate>
                         <HierarchicalDataTemplate ItemsSource="{Binding Data.Children,Mode=OneTime}"
-                                                  DataType="{x:Type ui:SelectableViewModel`1[]}">
+                                                  DataType="{x:Type viewModel:SelectableViewModel`1[]}">
                             <StackPanel Orientation="Horizontal">
                                 <CheckBox Margin="0,0,5,0"
                                           IsChecked="{Binding IsSelected,Mode=TwoWay}" />

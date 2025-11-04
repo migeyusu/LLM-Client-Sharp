@@ -8,12 +8,13 @@
              xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
-             xmlns:mcp="clr-namespace:LLMClient.MCP"
              xmlns:local="clr-namespace:LLMClient.Dialog"
              xmlns:rag="clr-namespace:LLMClient.Rag"
              xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
+             xmlns:viewModel="clr-namespace:LLMClient.UI.ViewModel"
+             xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
              d:DesignHeight="110" d:DesignWidth="1600"
@@ -171,7 +172,7 @@
                                                              PopupContent="{Binding SearchConfig,Mode=OneWay}"
                                                              Style="{StaticResource MaterialDesignToolPopupBox}">
                                         <materialDesign:PopupBox.PopupContentTemplate>
-                                            <DataTemplate DataType="{x:Type mcp:SearchConfigViewModel}">
+                                            <DataTemplate DataType="{x:Type toolCall:SearchConfigViewModel}">
                                                 <ListBox ItemsSource="{Binding SelectableSearchOptions,Mode=OneWay}"
                                                          SelectedItem="{Binding SelectedSearchService,Mode=TwoWay}"
                                                          SelectionMode="Single">
@@ -352,7 +353,7 @@
                                             <DataTemplate DataType="{x:Type local:RequesterViewModel}">
                                                 <ItemsControl ItemsSource="{Binding RagSources,Mode=OneWay}">
                                                     <ItemsControl.ItemTemplate>
-                                                        <DataTemplate DataType="{x:Type  ui:SelectableViewModel`1[]}">
+                                                        <DataTemplate DataType="{x:Type  viewModel:SelectableViewModel`1[]}">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <CheckBox IsChecked="{Binding IsSelected,Mode=TwoWay}"
                                                                           materialDesign:CheckBoxAssist.CheckBoxSize="20"

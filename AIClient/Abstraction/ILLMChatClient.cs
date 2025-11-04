@@ -1,7 +1,5 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
-using LLMClient.Endpoints;
-using LLMClient.MCP;
+﻿using LLMClient.Endpoints;
+using LLMClient.ToolCall;
 using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Abstraction;

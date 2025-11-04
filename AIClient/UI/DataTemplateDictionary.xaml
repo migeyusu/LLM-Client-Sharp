@@ -8,11 +8,13 @@
                     xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
                     xmlns:azure="clr-namespace:LLMClient.Endpoints.Azure"
                     xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
-                    xmlns:mcp="clr-namespace:LLMClient.MCP"
                     xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
-                    xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension">
+                    xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension"
+                    xmlns:configuration="clr-namespace:LLMClient.Configuration"
+                    xmlns:viewModel="clr-namespace:LLMClient.UI.ViewModel"
+                    xmlns:toolCall="clr-namespace:LLMClient.ToolCall">
     <ItemsPanelTemplate x:Key="HorizontalItemsPanelTemplate">
         <StackPanel Orientation="Horizontal"
                     IsItemsHost="True" />
@@ -75,7 +77,7 @@
         </component:DataTemplateTypePair>
     </component:TypeBasedDataTemplateSelector>
     <DataTemplate x:Key="FunctionTreeDataTemplate"
-                  DataType="{x:Type mcp:AIFunctionTreeSelectorViewModel}">
+                  DataType="{x:Type toolCall:AIFunctionTreeSelectorViewModel}">
         <Grid Width="400"
               Height="500">
             <Grid.RowDefinitions>
@@ -84,7 +86,7 @@
             </Grid.RowDefinitions>
             <TreeView ItemsSource="{Binding FunctionGroups,Mode=OneWay}">
                 <TreeView.Resources>
-                    <HierarchicalDataTemplate DataType="{x:Type mcp:CheckableFunctionGroupTree}"
+                    <HierarchicalDataTemplate DataType="{x:Type toolCall:CheckableFunctionGroupTree}"
                                               ItemsSource="{Binding Functions,Mode=OneWay}">
                         <CheckBox IsThreeState="True"
                                   IsEnabled="{Binding Data.IsAvailable,Mode=OneWay}"
@@ -99,7 +101,7 @@
                                        Text="{Binding Name,Mode=OneTime}" />
                         </CheckBox>
                     </HierarchicalDataTemplate>
-                    <DataTemplate DataType="{x:Type mcp:VirtualFunctionViewModel}">
+                    <DataTemplate DataType="{x:Type toolCall:VirtualFunctionViewModel}">
                         <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
                                   IsEnabled="{Binding IsEnabled,Mode=OneWay}"
                                   ToolTip="{Binding Description,Mode=OneWay}"
@@ -160,7 +162,7 @@
         </Grid>
     </DataTemplate>
     <DataTemplate x:Key="PopupSelectModelDataTemplate"
-                  DataType="{x:Type ui:BaseModelSelectionViewModel}">
+                  DataType="{x:Type viewModel:BaseModelSelectionViewModel}">
         <StackPanel Margin="10"
                     Width="350">
             <DockPanel Height="200">
@@ -328,7 +330,7 @@
                               Content="Support Reasoning"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center" />
-                    <CheckBox IsChecked="{Binding Streaming,Mode=OneWay}"
+                    <CheckBox IsChecked="{Binding SupportStreaming,Mode=OneWay}"
                               Content="Support Streaming" />
                     <CheckBox IsChecked="{Binding SupportImageInput,Mode=OneWay}"
                               Content="Support Image Input" />
@@ -350,31 +352,31 @@
                                       Document="{Binding Description,Mode=OneWay, Converter={x:Static converters:MarkdownToDocumentConverter.Instance}}" />
         </Grid>
     </DataTemplate>
-    <DataTemplate x:Key="ProxyOptionDataTemplate" DataType="{x:Type component:ProxyOption}">
+    <DataTemplate x:Key="ProxyOptionDataTemplate" DataType="{x:Type configuration:ProxyOption}">
         <StackPanel>
             <RadioButton Content="默认（基于APP启动时系统配置，只初始化一次）"
                          IsChecked="{Binding ProxyType, 
                                     Converter={StaticResource  EnumToBoolConverter}, 
-                                    ConverterParameter={x:Static component:ProxyType.Default},
+                                    ConverterParameter={x:Static configuration:ProxyType.Default},
                                     UpdateSourceTrigger=PropertyChanged}" />
             <RadioButton Content="直连"
                          Margin="0,10,0,0"
                          IsChecked="{Binding ProxyType, 
                                     Converter={StaticResource EnumToBoolConverter}, 
-                                    ConverterParameter={x:Static component:ProxyType.Direct},
+                                    ConverterParameter={x:Static configuration:ProxyType.Direct},
                                     UpdateSourceTrigger=PropertyChanged}" />
 
             <RadioButton Content="跟随系统"
                          Margin="0,10,0,0"
                          IsChecked="{Binding ProxyType, 
                                     Converter={StaticResource EnumToBoolConverter}, 
-                                    ConverterParameter={x:Static component:ProxyType.System},
+                                    ConverterParameter={x:Static configuration:ProxyType.System},
                                     UpdateSourceTrigger=PropertyChanged}" />
             <RadioButton Margin="0,10,0,0"
                          HorizontalContentAlignment="Stretch"
                          IsChecked="{Binding ProxyType, 
                                     Converter={StaticResource EnumToBoolConverter}, 
-                                    ConverterParameter={x:Static component:ProxyType.Custom},
+                                    ConverterParameter={x:Static configuration:ProxyType.Custom},
                                     UpdateSourceTrigger=PropertyChanged}">
                 <Grid Margin="0,0,0,0">
                     <Grid.ColumnDefinitions>

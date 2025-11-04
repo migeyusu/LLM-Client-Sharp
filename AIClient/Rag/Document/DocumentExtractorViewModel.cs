@@ -5,8 +5,8 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using LLMClient.UI;
 using LLMClient.UI.Log;
+using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
 

@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using LLMClient.UI.Component;
 using LLMClient.UI.Component.CustomControl;
 using Markdig.Extensions.Mathematics;
 using Markdig.Renderers;

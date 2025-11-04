@@ -1,12 +1,10 @@
 ﻿using System.ClientModel;
 using System.ClientModel.Primitives;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Net.Http;
 using AutoMapper;
 using LLMClient.Abstraction;
-using LLMClient.UI;
-using LLMClient.UI.Component;
+using LLMClient.Configuration;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

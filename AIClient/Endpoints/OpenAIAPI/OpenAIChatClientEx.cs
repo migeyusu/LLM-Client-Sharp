@@ -3,7 +3,7 @@ using System.ClientModel.Primitives;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Azure;
+using LLMClient.UI.Component.Utility;
 using OpenAI;
 using OpenAI.Chat;
 

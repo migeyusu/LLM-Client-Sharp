@@ -6,7 +6,8 @@
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
                     xmlns:dialog="clr-namespace:LLMClient.Dialog"
-                    xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl">
+                    xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
+                    xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility">
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
                   DataType="{x:Type dialog:RequestViewItem}">
         <Grid HorizontalAlignment="Right"
@@ -23,21 +24,21 @@
                 <Menu Padding="0"
                       ItemsPanel="{StaticResource VerticalItemsPanelTemplate}">
                     <MenuItem Header="复制"
-                              Command="{x:Static ui:CommonCommands.CopyCommand}"
+                              Command="{x:Static utility:CommonCommands.CopyCommand}"
                               CommandParameter="{Binding Mode=OneTime}"
                               Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
                     <MenuItem Header="总结之前对话"
-                              Command="{x:Static ui:CommonCommands.Conclusion}"
+                              Command="{x:Static utility:CommonCommands.Conclusion}"
                               CommandParameter="{Binding}"
                               Icon="{materialDesign:PackIcon Kind=TagText}" />
                     <MenuItem Header="排除之前对话"
                               ToolTip="将之前的对话清出上下文"
-                              Command="{x:Static ui:CommonCommands.Exclude}"
+                              Command="{x:Static utility:CommonCommands.Exclude}"
                               CommandParameter="{Binding}"
                               Icon="{materialDesign:PackIcon Kind=FormatAlignTop}" />
                     <MenuItem Header="清空之前对话"
                               ToolTip="删除之前的对话内容"
-                              Command="{x:Static ui:CommonCommands.Clear}"
+                              Command="{x:Static utility:CommonCommands.Clear}"
                               CommandParameter="{Binding}"
                               Icon="{materialDesign:PackIcon Kind=WaveArrowUp}" />
                     <MenuItem Header="删除"
@@ -152,7 +153,7 @@
                         </MenuItem>
                         <Separator />
                         <MenuItem Header="复制文本"
-                                  Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                  Command="{x:Static utility:CommonCommands.CopyCommand}"
                                   CommandParameter="{Binding Mode=OneTime}">
                             <MenuItem.Icon>
                                 <materialDesign:PackIcon
@@ -161,7 +162,7 @@
                         </MenuItem>
                         <MenuItem Header="导出"
                                   ToolTip="导出为Markdown"
-                                  Command="{x:Static ui:CommonCommands.ExportCommand}"
+                                  Command="{x:Static utility:CommonCommands.ExportCommand}"
                                   CommandParameter="{Binding TextContent,Mode=OneWay}">
                             <MenuItem.Icon>
                                 <materialDesign:PackIcon
@@ -335,7 +336,7 @@
                                       Height="45"
                                       Padding="0">
                                 <MenuItem Header="由此创建新会话"
-                                          Command="{x:Static ui:CommonCommands.Fork}"
+                                          Command="{x:Static utility:CommonCommands.Fork}"
                                           CommandParameter="{Binding}"
                                           Icon="{materialDesign:PackIcon SourceBranchPlus}"
                                           Style="{StaticResource AutoHideMenuItemStyle}" />
@@ -379,7 +380,7 @@
                                 ToolTip="编辑当前回复"
                                 Content="{materialDesign:PackIcon Kind=PencilOutline,Size=20}" />
                         <Button Style="{StaticResource RefreshButtonStyle}"
-                                Command="{x:Static ui:CommonCommands.CopyCommand}"
+                                Command="{x:Static utility:CommonCommands.CopyCommand}"
                                 CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                 VerticalAlignment="Center"
                                 Margin="6,0,0,0"

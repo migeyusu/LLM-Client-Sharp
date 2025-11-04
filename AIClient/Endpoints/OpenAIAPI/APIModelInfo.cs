@@ -3,9 +3,8 @@ using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
-using LLMClient.UI;
-using LLMClient.UI.Component;
 using LLMClient.UI.Component.CustomControl;
+using LLMClient.UI.ViewModel.Base;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
@@ -409,10 +408,8 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
             if (value == _supportStreaming) return;
             _supportStreaming = value;
             OnPropertyChanged();
-            if (!value)
-            {
-                Streaming = false;
-            }
+            //streaming 将默认随着这个选项变化
+            Streaming = value;
         }
     }
 

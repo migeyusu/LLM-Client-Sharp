@@ -4,8 +4,9 @@ using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using LLMClient.MCP;
 using LLMClient.Project;
+using LLMClient.ToolCall;
+using LLMClient.UI.ViewModel;
 
 namespace LLMClient.UI;
 

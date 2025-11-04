@@ -8,6 +8,7 @@
              xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
              xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
+             xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:DialogViewModel}"
              d:DesignHeight="600"
@@ -39,7 +40,7 @@
                          MinWidth="100"
                          MaxWidth="300"
                          TextWrapping="Wrap" />
-                <component:PromptEditor Grid.Column="1"
+                <ui:PromptEditor Grid.Column="1"
                                         VerticalAlignment="Stretch"
                                         Margin="0,0,10,0"
                                         Source="{Binding  Source={StaticResource PromptsResource},Path=SystemPrompts, Mode=OneWay}"
@@ -95,13 +96,13 @@
                                                  Height="20" />
                     </Button>
                     <Button ToolTip="备份"
-                            Command="{x:Static ui:CommonCommands.Backup}">
+                            Command="{x:Static utility:CommonCommands.Backup}">
                         <materialDesign:PackIcon Kind="ArchiveArrowUpOutline"
                                                  Width="20"
                                                  Height="20" />
                     </Button>
                     <Button ToolTip="克隆"
-                            Command="{x:Static ui:CommonCommands.Clone}">
+                            Command="{x:Static utility:CommonCommands.Clone}">
                         <materialDesign:PackIcon Kind="BoxShadow"
                                                  Width="20"
                                                  Height="20" />
@@ -112,11 +113,11 @@
                             <Button Content="对话重执行"
                                     ToolTip="基于现有对话，使用新模型重新执行"
                                     CommandParameter="{Binding}"
-                                    Command="{x:Static ui:CommonCommands.ReprocessDialog}" />
+                                    Command="{x:Static utility:CommonCommands.ReprocessDialog}" />
                             <Button Content="清空无效对话"
                                     Command="{Binding ClearUnavailableCommand}" />
                             <Button Content="打开文件"
-                                    Command="{x:Static ui:CommonCommands.OpenSource}" />
+                                    Command="{x:Static utility:CommonCommands.OpenSource}" />
                         </StackPanel>
                     </materialDesign:PopupBox>
                 </StackPanel>
@@ -131,11 +132,11 @@
             <ListBox.CommandBindings>
                 <CommandBinding Command="Delete"
                                 Executed="OnDeleteExecuted" />
-                <CommandBinding Command="{x:Static ui:CommonCommands.Exclude}"
+                <CommandBinding Command="{x:Static utility:CommonCommands.Exclude}"
                                 Executed="OnExcludeExecuted" />
-                <CommandBinding Command="{x:Static ui:CommonCommands.Clear}"
+                <CommandBinding Command="{x:Static utility:CommonCommands.Clear}"
                                 Executed="ClearBefore_OnExecuted" />
-                <CommandBinding Command="{x:Static ui:CommonCommands.Conclusion}"
+                <CommandBinding Command="{x:Static utility:CommonCommands.Conclusion}"
                                 Executed="ConclusionBefore_OnExecuted" />
             </ListBox.CommandBindings>
         </customControl:ListBoxEx>

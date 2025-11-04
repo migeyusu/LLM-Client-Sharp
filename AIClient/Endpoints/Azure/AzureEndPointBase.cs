@@ -1,7 +1,7 @@
 ﻿using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LLMClient.Abstraction;
-using LLMClient.UI;
+using LLMClient.UI.ViewModel.Base;
 
 namespace LLMClient.Endpoints.Azure;
 

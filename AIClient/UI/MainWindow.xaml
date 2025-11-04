@@ -16,11 +16,13 @@
                           xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
                           xmlns:rag="clr-namespace:LLMClient.Rag"
                           xmlns:dialog="clr-namespace:LLMClient.Dialog"
-                          xmlns:mcp="clr-namespace:LLMClient.MCP"
                           xmlns:project="clr-namespace:LLMClient.Project"
                           xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
                           xmlns:research="clr-namespace:LLMClient.Research"
                           xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
+                          xmlns:configuration="clr-namespace:LLMClient.Configuration"
+                          xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility"
+                          xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
                           mc:Ignorable="d"
                           FontFamily="Microsoft YaHei UI"
                           Title="LLM Client"
@@ -171,17 +173,17 @@
                         <models:AzureModelInfoView Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type ui:GlobalOptions}">
+                <DataTemplate DataType="{x:Type configuration:GlobalOptions}">
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="软件配置">
-                        <ui:GlobalOptionsView Width="800"
+                        <configuration:GlobalOptionsView Width="800"
                                               Height="500" />
                     </HeaderedContentControl>
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type ui:PromptsResourceViewModel}">
+                <DataTemplate DataType="{x:Type configuration:PromptsResourceViewModel}">
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="Prompts">
-                        <ui:PromptsResourceView Width="800"
+                        <configuration:PromptsResourceView Width="800"
                                                 Height="500" />
                     </HeaderedContentControl>
                 </DataTemplate>
@@ -193,10 +195,10 @@
                                             Height="600"
                                             ContentTemplate="{StaticResource ApiModelInfoDataTemplate}" />
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type mcp:McpServiceCollection}">
+                <DataTemplate DataType="{x:Type toolCall:McpServiceCollection}">
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="MCP Server">
-                        <mcp:MCPServiceCollectionView Width="800"
+                        <toolCall:MCPServiceCollectionView Width="800"
                                                       Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
@@ -635,11 +637,11 @@
                                     <DataTemplate DataType="{x:Type dialog:DialogFileViewModel}">
                                         <dialog:DialogView DataContext="{Binding Dialog,Mode=OneTime}">
                                             <dialog:DialogView.CommandBindings>
-                                                <CommandBinding Command="{x:Static ui:CommonCommands.Fork}"
+                                                <CommandBinding Command="{x:Static utility:CommonCommands.Fork}"
                                                                 Executed="DialogBranch_OnExecuted" />
-                                                <CommandBinding Command="{x:Static ui:CommonCommands.ReprocessDialog}"
+                                                <CommandBinding Command="{x:Static utility:CommonCommands.ReprocessDialog}"
                                                                 Executed="DialogReprocess_OnExecuted" />
-                                                <CommandBinding Command="{x:Static ui:CommonCommands.Clone}"
+                                                <CommandBinding Command="{x:Static utility:CommonCommands.Clone}"
                                                                 Executed="CloneCommand_OnExecuted" />
                                             </dialog:DialogView.CommandBindings>
                                         </dialog:DialogView>
@@ -657,9 +659,9 @@
                     </ContentControl.ContentTemplateSelector>
                     <ContentControl.CommandBindings>
                         <!--session 级别command-->
-                        <CommandBinding Command="{x:Static ui:CommonCommands.Backup}"
+                        <CommandBinding Command="{x:Static utility:CommonCommands.Backup}"
                                         Executed="BackupCommand_OnExecuted" />
-                        <CommandBinding Command="{x:Static ui:CommonCommands.OpenSource}"
+                        <CommandBinding Command="{x:Static utility:CommonCommands.OpenSource}"
                                         Executed="OpenSessionFile_OnExecuted" />
                     </ContentControl.CommandBindings>
                 </ContentControl>

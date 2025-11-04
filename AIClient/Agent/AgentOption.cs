@@ -1,5 +1,5 @@
 ﻿using LLMClient.Data;
-using LLMClient.UI;
+using LLMClient.UI.ViewModel.Base;
 
 namespace LLMClient.Agent;
 
