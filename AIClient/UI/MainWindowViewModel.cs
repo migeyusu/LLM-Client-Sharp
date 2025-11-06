@@ -307,6 +307,7 @@ public class MainWindowViewModel : BaseViewModel
 
         foreach (var llmSession in sessions.OrderByDescending((session => session.EditTime)))
         {
+            ((INotifyPropertyChanged)llmSession).PropertyChanged += SessionOnEditTimeChanged;
             this.SessionViewModels.Add(llmSession);
         }
     }

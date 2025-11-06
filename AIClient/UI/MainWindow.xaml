@@ -1,37 +1,37 @@
 ﻿<customControl:ExtendedWindow x:Class="LLMClient.UI.MainWindow"
-                          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                          xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                          xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                          xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-                          xmlns:ui="clr-namespace:LLMClient.UI"
-                          xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
-                          xmlns:component="clr-namespace:LLMClient.UI.Component"
-                          xmlns:system="clr-namespace:System;assembly=System.Runtime"
-                          xmlns:grammars="clr-namespace:TextMateSharp.Grammars;assembly=TextMateSharp.Grammars"
-                          xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
-                          xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
-                          xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
-                          xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-                          xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
-                          xmlns:rag="clr-namespace:LLMClient.Rag"
-                          xmlns:dialog="clr-namespace:LLMClient.Dialog"
-                          xmlns:project="clr-namespace:LLMClient.Project"
-                          xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
-                          xmlns:research="clr-namespace:LLMClient.Research"
-                          xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
-                          xmlns:configuration="clr-namespace:LLMClient.Configuration"
-                          xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility"
-                          xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
-                          mc:Ignorable="d"
-                          FontFamily="Microsoft YaHei UI"
-                          Title="LLM Client"
-                          WindowStartupLocation="CenterScreen"
-                          Height="950"
-                          Width="1600"
-                          AllowDrop="True"
-                          Closing="MainWindow_OnClosing"
-                          d:DataContext="{d:DesignInstance ui:MainWindowViewModel}">
+                              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                              xmlns:ui="clr-namespace:LLMClient.UI"
+                              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+                              xmlns:component="clr-namespace:LLMClient.UI.Component"
+                              xmlns:system="clr-namespace:System;assembly=System.Runtime"
+                              xmlns:grammars="clr-namespace:TextMateSharp.Grammars;assembly=TextMateSharp.Grammars"
+                              xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
+                              xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
+                              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+                              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                              xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+                              xmlns:rag="clr-namespace:LLMClient.Rag"
+                              xmlns:dialog="clr-namespace:LLMClient.Dialog"
+                              xmlns:project="clr-namespace:LLMClient.Project"
+                              xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
+                              xmlns:research="clr-namespace:LLMClient.Research"
+                              xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
+                              xmlns:configuration="clr-namespace:LLMClient.Configuration"
+                              xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility"
+                              xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
+                              mc:Ignorable="d"
+                              FontFamily="Microsoft YaHei UI"
+                              Title="LLM Client"
+                              WindowStartupLocation="CenterScreen"
+                              Height="950"
+                              Width="1600"
+                              AllowDrop="True"
+                              Closing="MainWindow_OnClosing"
+                              d:DataContext="{d:DesignInstance ui:MainWindowViewModel}">
     <Window.Style>
         <Style TargetType="{x:Type ui:MainWindow}"
                BasedOn="{StaticResource MaterialDesignWindow}">
@@ -177,14 +177,14 @@
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="软件配置">
                         <configuration:GlobalOptionsView Width="800"
-                                              Height="500" />
+                                                         Height="500" />
                     </HeaderedContentControl>
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type configuration:PromptsResourceViewModel}">
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="Prompts">
                         <configuration:PromptsResourceView Width="800"
-                                                Height="500" />
+                                                           Height="500" />
                     </HeaderedContentControl>
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type openAiapi:APIModelInfo}">
@@ -199,7 +199,7 @@
                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                             Header="MCP Server">
                         <toolCall:MCPServiceCollectionView Width="800"
-                                                      Height="600" />
+                                                           Height="600" />
                     </HeaderedContentControl>
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type project:ProjectConfigViewModel}">
@@ -539,7 +539,7 @@
                         <materialDesign:PopupBox PlacementMode="TopAndAlignCentres"
                                                  Width="40"
                                                  Height="40"
-                                                 Style="{StaticResource MaterialDesignMultiFloatingActionSecondaryPopupBox}">
+                                                 Style="{StaticResource MaterialDesignMultiFloatingActionPopupBox}">
                             <materialDesign:PopupBox.ToggleCheckedContent>
                                 <materialDesign:PackIcon Width="24"
                                                          Height="24"
@@ -559,7 +559,7 @@
                                 </Button>
                             </StackPanel>
                         </materialDesign:PopupBox>
-                        <Button Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
+                        <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                 Margin="10,0,0,0"
                                 ToolTip="导入对话"
                                 CommandParameter="dialog"
@@ -569,7 +569,7 @@
                                                      Height="18" />
                         </Button>
                         <materialDesign:PopupBox PlacementMode="TopAndAlignLeftEdges"
-                                                 Style="{StaticResource MaterialDesignMultiFloatingActionSecondaryPopupBox}"
+                                                 Style="{StaticResource MaterialDesignMultiFloatingActionPopupBox}"
                                                  ToolTip="Snap create dialog"
                                                  Margin="10,0,0,0"
                                                  Width="40"
@@ -595,7 +595,7 @@
                                         <StackPanel Orientation="Horizontal">
                                             <Button Command="Select"
                                                     CommandParameter="{Binding}"
-                                                    Background="{DynamicResource MaterialDesign.Brush.Primary.Dark}">
+                                                    Background="{DynamicResource MaterialDesign.Brush.Background}">
                                                 <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}" />
                                             </Button>
                                             <Border VerticalAlignment="Center"
@@ -639,8 +639,9 @@
                                             <dialog:DialogView.CommandBindings>
                                                 <CommandBinding Command="{x:Static utility:CommonCommands.Fork}"
                                                                 Executed="DialogBranch_OnExecuted" />
-                                                <CommandBinding Command="{x:Static utility:CommonCommands.ReprocessDialog}"
-                                                                Executed="DialogReprocess_OnExecuted" />
+                                                <CommandBinding
+                                                    Command="{x:Static utility:CommonCommands.ReprocessDialog}"
+                                                    Executed="DialogReprocess_OnExecuted" />
                                                 <CommandBinding Command="{x:Static utility:CommonCommands.Clone}"
                                                                 Executed="CloneCommand_OnExecuted" />
                                             </dialog:DialogView.CommandBindings>
