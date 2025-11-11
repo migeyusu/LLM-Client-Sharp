@@ -275,7 +275,7 @@
                                             Style="{StaticResource MaterialDesignIconButton}">
                                         <Grid>
                                             <ProgressBar IsIndeterminate="True"
-                                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light.Foreground}"
+                                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light}"
                                                          Width="28"
                                                          Height="28"
                                                          Style="{StaticResource MaterialDesignCircularProgressBar}"
@@ -283,6 +283,7 @@
                                             <materialDesign:PackIcon Width="17"
                                                                      Height="17"
                                                                      Kind="Stop"
+                                                                     Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
                                                                      VerticalAlignment="Center"
                                                                      HorizontalAlignment="Center" />
                                         </Grid>

@@ -9,6 +9,8 @@
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:project="clr-namespace:LLMClient.Project"
+             xmlns:viewModel="clr-namespace:LLMClient.UI.ViewModel"
+             xmlns:dialog="clr-namespace:LLMClient.Dialog"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance project:ProjectConfigViewModel}"
              d:DesignHeight="600" d:DesignWidth="800">
@@ -120,7 +122,52 @@
                     Command="{Binding AddAllowedFolderPathsCommand}" />
         </Grid>
         <ContentControl Grid.Row="0" Grid.Column="1"
-                        Content="{Binding ModelSelectionViewModel,Mode=OneTime}" />
+                        Content="{Binding ModelSelectionViewModel,Mode=OneTime}">
+            <ContentControl.ContentTemplate>
+                <DataTemplate DataType="{x:Type viewModel:ModelSelectionViewModel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <ListBox Grid.Row="0"
+                                 MaxHeight="300"
+                                 x:Name="AvailableEndpointsListBox"
+                                 SelectedItem="{Binding SelectedModel.Endpoint,Mode=OneWay}"
+                                 ItemsSource="{Binding Source={StaticResource EndpointService},Path=AvailableEndpoints,Mode=OneWay}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type abstraction:ILLMEndpoint}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Width="20"
+                                               Height="20"
+                                               Source="{Binding Icon,Mode=OneWay}" />
+                                        <TextBlock Text="{Binding DisplayName,Mode=OneWay}"
+                                                   Margin="5,0,0,0" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <ListBox Grid.Row="1"
+                                 SelectedItem="{Binding SelectedModel,Mode=TwoWay}"
+                                 ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type abstraction:ILLMChatModel}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Name,Mode=OneWay}"
+                                                   Margin="5,0,0,0"
+                                                   VerticalAlignment="Center" />
+                                        <materialDesign:PackIcon Kind="Function"
+                                                                 Margin="5,0,0,0"
+                                                                 VerticalAlignment="Center"
+                                                                 Visibility="{Binding SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </DataTemplate>
+            </ContentControl.ContentTemplate>
+        </ContentControl>
         <GridSplitter Grid.Row="0"
                       Grid.Column="0"
                       VerticalAlignment="Stretch"

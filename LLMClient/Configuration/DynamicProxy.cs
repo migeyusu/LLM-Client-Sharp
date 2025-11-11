@@ -30,7 +30,7 @@ public class DynamicProxy : IWebProxy
         {
             return currentProxy;
         }
-
+        
         return null;
     }
 

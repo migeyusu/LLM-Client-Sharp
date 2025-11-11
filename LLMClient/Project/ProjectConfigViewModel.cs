@@ -11,8 +11,6 @@ public class ProjectConfigViewModel
 {
     public ProjectViewModel Project { get; }
 
-    public ILLMChatClient SelectedClient { get; set; }
-
     public ModelSelectionViewModel ModelSelectionViewModel { get; }
 
     public ICommand SubmitCommand => new ActionCommand(o =>
@@ -22,9 +20,16 @@ public class ProjectConfigViewModel
             return;
         }
 
-        if (this.SelectedClient != Project.Requester.DefaultClient)
+        if (this.ModelSelectionViewModel.SelectedModel != Project.Requester.DefaultClient.Model)
         {
-            Project.Requester.DefaultClient = this.SelectedClient;
+            var llmChatClient = this.ModelSelectionViewModel.GetClient();
+            if (llmChatClient == null)
+            {
+                MessageBox.Show("模型客户端初始化失败", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            Project.Requester.DefaultClient = llmChatClient;
         }
 
 
@@ -35,13 +40,12 @@ public class ProjectConfigViewModel
     public ProjectConfigViewModel(ProjectViewModel project) : base()
     {
         Project = project;
-        ModelSelectionViewModel = new ModelSelectionViewModel(client => { SelectedClient = client; });
+        ModelSelectionViewModel = new ModelSelectionViewModel();
     }
 
     public void Initialize()
     {
         var requesterDefaultClient = this.Project.Requester.DefaultClient;
         ModelSelectionViewModel.SelectedModel = requesterDefaultClient.Model;
-        
     }
 }

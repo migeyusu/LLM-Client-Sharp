@@ -29,7 +29,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     [JsonIgnore] public abstract ILLMChatModel Model { get; }
 
-    public bool IsQuitWhenFunctionCallFailed { get; set; } = true;
+    /// <summary>
+    /// 默认情况下，应该让LLM了解函数调用失败的情况，并继续生成内容。
+    /// </summary>
+    public bool IsQuitWhenFunctionCallFailed { get; set; } = false;
 
     private bool _isResponding;
 
@@ -530,6 +533,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         }
 
                         errorMessage = ex.Message;
+                        if (ex is HttpOperationException { ResponseContent: not null } exception)
+                        {
+                            errorMessage += $"\nResponse Content: {exception.ResponseContent}";
+                        }
+
                         logger?.LogError("Error during response: {Exception}", ex);
                         if (ex.Message.Contains("context_length_exceeded"))
                         {
