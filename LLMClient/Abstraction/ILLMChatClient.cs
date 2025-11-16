@@ -19,10 +19,8 @@ public interface ILLMChatClient
 
     IModelParams Parameters { get; set; }
 
-    IFunctionInterceptor FunctionInterceptor { get; set; }
-
     Task<CompletedResult> SendRequest(DialogContext context,
-        Action<string>? stream = null,
+        IInvokeInteractor? interactor = null,
         ILogger? logger = null,
         CancellationToken cancellationToken = default);
 }

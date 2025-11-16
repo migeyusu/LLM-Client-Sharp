@@ -6,6 +6,7 @@ using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Rag;
 using LLMClient.ToolCall;
+using LLMClient.UI.Component;
 using LLMClient.UI.Component.Utility;
 using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.AI;
@@ -48,8 +49,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     }
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
-
-    public IFunctionInterceptor FunctionInterceptor { get; set; } = FunctionAuthorizationInterceptor.Instance;
 
     protected abstract IChatClient GetChatClient();
 
@@ -136,9 +135,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     [Experimental("SKEXP0001")]
     public virtual async Task<CompletedResult> SendRequest(DialogContext context,
-        Action<string>? stream = null, ILogger? logger = null,
+        IInvokeInteractor? interactor = null, ILogger? logger = null,
         CancellationToken cancellationToken = default)
     {
+        if (interactor == null)
+        {
+            interactor = new DebugInvokeInteractor();
+        }
+
         var result = new CompletedResult();
         try
         {
@@ -274,7 +278,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
             var chatContext = new ChatContext(requestViewItem?.TempAdditionalProperties)
                 { Streaming = streaming };
-            using (AsyncContext<ChatContext>.Create(chatContext))
+            using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
                 while (true)
                 {
@@ -293,7 +297,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 preUpdates.Add(update);
                                 chatContext.CompleteStreamResponse(result, update);
                                 //只收集文本内容
-                                AddStream(update.GetText());
+                                interactor.Info(update.GetText());
                             }
 
                             preResponse = preUpdates.ToChatResponse();
@@ -302,6 +306,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 var oriContents = message.Contents
                                     .ToArray();
                                 message.Contents.Clear();
+                                //合并相同类型的内容
                                 foreach (var oriContent in oriContents)
                                 {
                                     if (oriContent is TextContent textContent)
@@ -354,7 +359,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             preResponse =
                                 await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
                             //只收集文本内容
-                            AddStream(preResponse.Text);
+                            interactor.Info(preResponse.Text);
                             await chatContext.CompleteResponse(preResponse, result);
                         }
 
@@ -372,19 +377,24 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                         //do nothing, textContent is already added to RespondingText
                                         break;
                                     case FunctionCallContent functionCallContent:
-                                        NewLine(functionCallContent.GetDebuggerString());
+                                        interactor.WriteLine(functionCallContent.GetDebuggerString());
                                         break;
                                     case FunctionResultContent functionResultContent:
-                                        NewLine(functionResultContent.GetDebuggerString());
+                                        interactor.WriteLine(functionResultContent.GetDebuggerString());
                                         break;
                                     case TextReasoningContent:
                                         //do nothing, reasoningContent is already added to RespondingText
                                         break;
+                                    case ErrorContent errorContent:
+                                        logger?.LogError(
+                                            "Error content received: {ErrorContent}, {Details}, {ErrorCode}",
+                                            errorContent.Message, errorContent.Details, errorContent.ErrorCode);
+                                        break;
                                     default:
                                         logger?.LogWarning("unsupported content: " + content.GetType().Name);
-                                        NewLine(
+                                        interactor.Warning(
                                             $"Unsupported content type: {content.GetType().Name}");
-                                        AddStream(content.RawRepresentation?.ToString() ?? string.Empty);
+                                        interactor.Warning(content.RawRepresentation?.ToString() ?? string.Empty);
                                         break;
                                 }
                             }
@@ -401,7 +411,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         finishReason = preResponse.FinishReason ?? GetFinishReasonFromAdditional(preResponse);
                         if (finishReason == ChatFinishReason.ToolCalls)
                         {
-                            logger?.LogInformation("Function call finished, need run function calls...");
+                            logger?.LogInformation("Function call detect, need run function calls...");
                         }
                         else if (finishReason == ChatFinishReason.Stop)
                         {
@@ -448,7 +458,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                         #region function call
 
-                        NewLine("Processing function calls...");
+                        interactor.WriteLine("Processing function calls...");
                         var chatMessage = new ChatMessage();
                         chatHistory.Add(chatMessage);
                         responseMessages.Add(chatMessage);
@@ -458,50 +468,59 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             if (!kernelPluginCollection.TryGetFunction(null, functionCallContent.Name,
                                     out var kernelFunction))
                             {
-                                errorMessage =
-                                    $"Function '{functionCallContent.Name}' not found, call failed. Procedure interrupted.";
-                                break;
-                            }
-
-                            var additionalFunctionCallResults = chatContext.AdditionalFunctionCallResult;
-                            //additionalFunctionCallResults 不能包含 FunctionResultContent
-                            Trace.Assert(additionalFunctionCallResults.All(c => c is not FunctionResultContent));
-                            var additionalUserMessageBuilder = chatContext.AdditionalUserMessage;
-                            var chatMessageContents = chatMessage.Contents;
-                            try
-                            {
-                                var arguments = new AIFunctionArguments(functionCallContent.Arguments);
-                                additionalFunctionCallResults.Clear();
-                                additionalUserMessageBuilder.Clear();
-                                //调用拦截器
-                                var invokeResult = await this.FunctionInterceptor.InvokeAsync(
-                                    kernelFunction, arguments, functionCallContent, cancellationToken);
-                                NewLine(
-                                    $"Function '{functionCallContent.Name}' invoked successfully, result: {invokeResult}");
-                                functionResultContents.Add(new FunctionResultContent(functionCallContent.CallId,
-                                    invokeResult));
-                                var additionalUserMessage = additionalUserMessageBuilder.ToString();
-                                if (!string.IsNullOrEmpty(additionalUserMessage))
-                                {
-                                    chatMessageContents.Add(new TextContent(
-                                        $"For function {functionCallContent.Name} call (call id:{functionCallContent.CallId}) result: {additionalUserMessage}"));
-                                }
-
-                                foreach (var additionalFunctionCallResult in additionalFunctionCallResults)
-                                {
-                                    chatMessageContents.Add(additionalFunctionCallResult);
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                NewLine("Function call failed: " + e.Message);
-                                chatMessageContents.Add(new FunctionResultContent(functionCallContent.CallId, null)
-                                    { Exception = e });
+                                interactor.Error(
+                                    $"Function '{functionCallContent.Name}' not exist, call failed.");
+                                functionResultContents.Add(new FunctionResultContent(functionCallContent.CallId, null)
+                                    { Exception = new Exception("Function not exist") });
                                 if (IsQuitWhenFunctionCallFailed)
                                 {
-                                    errorMessage =
-                                        $"Function '{functionCallContent.Name}' invocation failed: {e.Message}";
+                                    errorMessage = $"Function '{functionCallContent.Name}' not exist.";
                                     break;
+                                }
+                            }
+                            else
+                            {
+                                var additionalFunctionCallResults = chatContext.AdditionalFunctionCallResult;
+                                // additionalFunctionCallResults不能包含 FunctionResultContent
+                                Trace.Assert(additionalFunctionCallResults.All(c => c is not FunctionResultContent));
+                                var additionalUserMessageBuilder = chatContext.AdditionalUserMessage;
+                                var chatMessageContents = chatMessage.Contents;
+                                try
+                                {
+                                    var arguments = new AIFunctionArguments(functionCallContent.Arguments);
+                                    additionalFunctionCallResults.Clear();
+                                    additionalUserMessageBuilder.Clear();
+                                    var invokeResult = await kernelFunction.InvokeAsync(arguments, cancellationToken);
+                                    interactor.WriteLine(
+                                        $"Function '{functionCallContent.Name}' invoked successfully, result: {invokeResult}");
+                                    functionResultContents.Add(new FunctionResultContent(functionCallContent.CallId,
+                                        invokeResult));
+
+                                    //用于特殊需求，某些函数调用后，可能需要额外的内容返回给LLM
+                                    var additionalUserMessage = additionalUserMessageBuilder.ToString();
+                                    if (!string.IsNullOrEmpty(additionalUserMessage))
+                                    {
+                                        chatMessageContents.Add(new TextContent(
+                                            $"For function {functionCallContent.Name} call (call id:{functionCallContent.CallId}) result: {additionalUserMessage}"));
+                                    }
+
+                                    foreach (var additionalFunctionCallResult in additionalFunctionCallResults)
+                                    {
+                                        chatMessageContents.Add(additionalFunctionCallResult);
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    interactor.Error("Function call failed: " + e.Message);
+                                    functionResultContents.Add(
+                                        new FunctionResultContent(functionCallContent.CallId, null)
+                                            { Exception = e });
+                                    if (IsQuitWhenFunctionCallFailed)
+                                    {
+                                        errorMessage =
+                                            $"Function '{functionCallContent.Name}' invocation failed: {e.Message}";
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -550,7 +569,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         break;
                     }
 
-                    NewLine();
+                    interactor.WriteLine();
                 }
             }
 
@@ -568,17 +587,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         finally
         {
             IsResponding = false;
-        }
-
-        void NewLine(string? line = null)
-        {
-            stream?.Invoke(Environment.NewLine);
-            if (!string.IsNullOrEmpty(line)) stream?.Invoke(line);
-        }
-
-        void AddStream(string text)
-        {
-            stream?.Invoke(text);
         }
     }
 

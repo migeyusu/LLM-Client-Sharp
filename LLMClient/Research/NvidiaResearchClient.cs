@@ -28,9 +28,9 @@ public class NvidiaResearchClient : ResearchClient
     }
 
     [Experimental("SKEXP0110")]
-    public override async Task<CompletedResult> SendRequest(DialogContext context, Action<string>? stream = null,
+    public override async Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? stream = null,
         ILogger? logger = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = bad)
     {
         try
         {

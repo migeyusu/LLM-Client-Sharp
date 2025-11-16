@@ -9,6 +9,9 @@ using OpenAI.Chat;
 
 namespace LLMClient.Endpoints;
 
+/// <summary>
+/// 用于在聊天过程中存储额外的上下文信息
+/// </summary>
 public class ChatContext
 {
     public ChatContext(AdditionalPropertiesDictionary? additionalObjects = null)

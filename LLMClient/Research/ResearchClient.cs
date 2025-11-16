@@ -1,4 +1,5 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Windows.Shell;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using LLMClient.UI.ViewModel.Base;
@@ -31,9 +32,7 @@ public abstract class ResearchClient : BaseViewModel, ILLMChatClient
         get => ProxyClient.Parameters;
         set => ProxyClient.Parameters = value;
     }
-
-    public IFunctionInterceptor FunctionInterceptor { get; set; } = FunctionAuthorizationInterceptor.Instance;
-
+    
     public ILLMChatClient ProxyClient { get; set; }
 
     protected ResearchClient(ILLMChatClient proxyClient)
@@ -41,7 +40,7 @@ public abstract class ResearchClient : BaseViewModel, ILLMChatClient
         ProxyClient = proxyClient;
     }
 
-    public abstract Task<CompletedResult> SendRequest(DialogContext context, Action<string>? stream = null,
+    public abstract Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? stream = null,
         ILogger? logger = null,
         CancellationToken cancellationToken = default);
     

@@ -1,5 +1,6 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Dialog;
+using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
@@ -13,7 +14,7 @@ public interface IAgent
 {
 }
 
-public class PromptAgent : IAgent
+public class PromptAgent : IAgent, IInvokeInteractor
 {
     private readonly ILLMChatClient _chatClient;
 
@@ -46,7 +47,7 @@ public class PromptAgent : IAgent
         var tryCount = 0;
         while (tryCount < RetryCount)
         {
-            var completedResult = await _chatClient.SendRequest(context, _stream, _promptLogger, cancellationToken)
+            var completedResult = await _chatClient.SendRequest(context, this, _promptLogger, cancellationToken)
                 .ConfigureAwait(false);
             tryCount++;
             if (completedResult.IsInterrupt)
@@ -81,5 +82,38 @@ public class PromptAgent : IAgent
 
         _promptLogger?.LogError("Failed to get a valid response from the LLM after {RetryCount} attempts.", RetryCount);
         throw new Exception("Failed to get a valid response from the LLM.");
+    }
+
+    public void Info(string message)
+    {
+        _stream?.Invoke(message);
+    }
+
+    public void Error(string message)
+    {
+        _stream?.Invoke(message);
+        _stream?.Invoke(Environment.NewLine);
+    }
+
+    public void Warning(string message)
+    {
+        _stream?.Invoke(message);
+        _stream?.Invoke(Environment.NewLine);
+    }
+
+    public void WriteLine(string? message = null)
+    {
+        _stream?.Invoke(Environment.NewLine);
+        if (!string.IsNullOrEmpty(message)) _stream?.Invoke(message);
+    }
+
+    public bool WaitForPermission(string message)
+    {
+        return true;
+    }
+
+    public bool WaitForPermission(object content)
+    {
+        return true;
     }
 }

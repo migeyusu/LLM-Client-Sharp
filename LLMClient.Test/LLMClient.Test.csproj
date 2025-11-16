@@ -29,7 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\AIClient\LLMClient.csproj" />
+      <ProjectReference Include="..\LLMClient\LLMClient.csproj" />
     </ItemGroup>
 
     <ItemGroup>

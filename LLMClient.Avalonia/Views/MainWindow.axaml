@@ -15,6 +15,25 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    
+    <StackPanel>
+        
+        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <ContentControl Design.DataContext="">
+            <ContentControl.DataTemplates>
+                <DataTemplate >
+                    
+                </DataTemplate>
+            </ContentControl.DataTemplates>
+            <ContentControl.Styles>
+                <Style Animations="" ></Style>
+            </ContentControl.Styles>
+            <ContentControl.Template>
+                <ControlTemplate>
+                    
+                </ControlTemplate>
+            </ContentControl.Template>
+        </ContentControl>
+    </StackPanel>
 
 </Window>

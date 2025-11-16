@@ -3,7 +3,7 @@
 // TInstance 可以是您希望在上下文中传递的任何类型
 namespace LLMClient.UI.Component.Utility;
 
-public static class AsyncContext<TInstance> where TInstance : class
+public static class AsyncContextStore<TInstance> where TInstance : class
 {
     // 内部类，用于持有上下文实例和指向父级上下文的链接
     private sealed class ChatContextHolder
@@ -27,7 +27,7 @@ public static class AsyncContext<TInstance> where TInstance : class
     /// </summary>
     /// <param name="instance">要设置在此上下文作用域中的实例。</param>
     /// <returns>一个IDisposable对象，该对象在被释放时会自动恢复到上一个上下文。</returns>
-    public static IDisposable Create(TInstance instance)
+    public static IDisposable CreateInstance(TInstance instance)
     {
         if (instance == null) throw new ArgumentNullException(nameof(instance));
 

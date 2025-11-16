@@ -89,8 +89,6 @@ public class NullLlmModelClient : ILLMChatClient
         Seed = 666
     };
 
-    public IFunctionInterceptor FunctionInterceptor { get; set; } = FunctionAuthorizationInterceptor.Instance;
-
     private readonly string? _fakeFilePath;
 
     public NullLlmModelClient(string? fakeFilePath = null)
@@ -99,8 +97,8 @@ public class NullLlmModelClient : ILLMChatClient
     }
 
     public async Task<CompletedResult> SendRequest(DialogContext context,
-        Action<string>? stream = null, ILogger? logger = null,
-        CancellationToken cancellationToken = default)
+        IInvokeInteractor? stream = null, ILogger? logger = null,
+        CancellationToken cancellationToken = bad)
     {
         if (!string.IsNullOrEmpty(_fakeFilePath))
         {

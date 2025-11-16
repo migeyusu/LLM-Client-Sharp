@@ -78,7 +78,6 @@ public class RequesterViewModel : BaseViewModel
                 oldParameters.PropertyChanged -= TagDataChanged;
             }
 
-            _defaultClient.FunctionInterceptor = FunctionAuthorizationInterceptor.Instance;
             _defaultClient = value;
             BindClient(value);
             OnPropertyChanged();
@@ -229,11 +228,6 @@ public class RequesterViewModel : BaseViewModel
         this.PropertyChanged += (sender, args) => { this.IsDataChanged = true; };
     }
 
-    private readonly FunctionAuthorizationInterceptor _authorizationInterceptor = new FunctionAuthorizationInterceptor()
-    {
-        Filters = { new CommandAuthorization() }
-    };
-
     private readonly IMapper _mapper;
 
     private void BindClient(ILLMChatClient client)
@@ -247,8 +241,7 @@ public class RequesterViewModel : BaseViewModel
         {
             newParameters.PropertyChanged += TagDataChanged;
         }
-
-        client.FunctionInterceptor = _authorizationInterceptor;
+        
         this.SearchConfig.ResetSearch(client);
         this.ThinkingConfig.ResetConfig(client);
         this.FunctionTreeSelector.SelectableCallEngineTypes = DefaultClient.Model.SupportFunctionCall
@@ -341,20 +334,5 @@ public class RequesterViewModel : BaseViewModel
     protected virtual void OnRequestCompleted(IResponse obj)
     {
         RequestCompleted?.Invoke(obj);
-    }
-}
-
-public class CommandAuthorization : IFunctionAuthorizationFilter
-{
-    public bool Matches(FunctionCallContent functionCall)
-    {
-        return functionCall.Name == "WinCLI_ExecuteCommand";
-    }
-
-    public Task<bool> AuthorizeAsync(FunctionCallContent functionCall, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(MessageBox.Show(
-            $"Function call {functionCall.Name} is requested, parameters: {functionCall.GetDebuggerString()}.\r\n permmit?",
-            "Function Call Request", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes);
     }
 }

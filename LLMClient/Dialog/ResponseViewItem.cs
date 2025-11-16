@@ -130,6 +130,8 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         }
     }
 
+    public ObservableCollection<string> TempResponseText { get; } = new();
+
     private FlowDocument? _tempDocument;
 
     public FlowDocument? Document
@@ -361,8 +363,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
     public CancellationTokenSource? RequestTokenSource { get; private set; }
 
-    public ObservableCollection<string> TempResponseText { get; } = new();
-
     public async Task<CompletedResult> SendRequest(DialogContext context)
     {
         var completedResult = CompletedResult.Empty;
@@ -385,33 +385,11 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             TempResponseText.Clear();
             using (RequestTokenSource = new CancellationTokenSource())
             {
-                using (var blockingCollection = new BlockingCollection<string>())
+                await using (var interactor = new ResponseViewItemInteractor(_tempDocument, this))
                 {
-                    var customRenderer = CustomRenderer.NewRenderer(_tempDocument);
-                    var task = Task.Run(() =>
-                    {
-                        // ReSharper disable once AccessToDisposedClosure
-                        RendererExtensions.StreamParse(blockingCollection,
-                            (_, block) =>
-                            {
-                                Dispatch(() =>
-                                {
-                                    TempResponseText.Clear();
-                                    customRenderer.AppendMarkdownObject(block);
-                                });
-                            });
-                    });
-                    completedResult = await Client.SendRequest(context,
-                        responseText =>
-                        {
-                            blockingCollection.Add(responseText);
-                            Dispatch(() => TempResponseText.Add(responseText));
-                        },
+                    completedResult = await Client.SendRequest(context, interactor,
                         cancellationToken: RequestTokenSource.Token);
-                    blockingCollection.CompleteAdding();
-                    await task.WaitAsync(CancellationToken.None);
-                    ServiceLocator.GetService<IMapper>()!
-                        .Map<IResponse, ResponseViewItem>(completedResult, this);
+                    ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItem>(completedResult, this);
                 }
             }
         }
@@ -457,5 +435,81 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
     public string GetCopyText()
     {
         return TextContent ?? string.Empty;
+    }
+
+    private class ResponseViewItemInteractor : BaseViewModel, IInvokeInteractor, IAsyncDisposable
+    {
+        private readonly BlockingCollection<string> _blockingCollection = new();
+
+        private readonly Task _task;
+
+        public ResponseViewItemInteractor(FlowDocument flowDocument, ResponseViewItem responseViewItem)
+        {
+            var responseViewItem1 = responseViewItem;
+            var customRenderer = CustomRenderer.NewRenderer(flowDocument);
+            _task = Task.Run(() =>
+            {
+                // ReSharper disable once AccessToDisposedClosure
+                RendererExtensions.StreamParse(_blockingCollection,
+                    (_, block) =>
+                    {
+                        Dispatch(() =>
+                        {
+                            responseViewItem.TempResponseText.Clear();
+                            customRenderer.AppendMarkdownObject(block);
+                        });
+                    });
+            });
+            _outputAction = (message) =>
+            {
+                _blockingCollection.Add(message);
+                Dispatch(() => responseViewItem1.TempResponseText.Add(message));
+            };
+        }
+
+        private readonly Action<string> _outputAction;
+
+        public void Info(string message)
+        {
+            _outputAction(message);
+        }
+
+        public void Error(string message)
+        {
+            _outputAction(message);
+        }
+
+        public void Warning(string message)
+        {
+            _outputAction(message);
+        }
+
+        public void WriteLine(string? message = null)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                _outputAction(Environment.NewLine);
+            }
+            else
+            {
+                _outputAction(message + Environment.NewLine);
+            }
+        }
+
+        public bool WaitForPermission(string message)
+        {
+        }
+
+        public bool WaitForPermission(object content)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            _blockingCollection.CompleteAdding();
+            await _task.WaitAsync(CancellationToken.None);
+            _blockingCollection.Dispose();
+        }
     }
 }

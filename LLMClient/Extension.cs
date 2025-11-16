@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using LLMClient.Abstraction;
 using LLMClient.Data;
@@ -455,7 +456,7 @@ public static class Extension
 
     public static void TryAddAdditionalFunctionCallResult(this IEnumerable<ChunkNode> nodes)
     {
-        var chatContext = AsyncContext<ChatContext>.Current;
+        var chatContext = AsyncContextStore<ChatContext>.Current;
         if (chatContext == null)
         {
             return;
