@@ -269,8 +269,7 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
         {
             var (r, g, b) = letter.Color.ToRGBValues();
             var color = Color.FromRgb((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
-            SolidColorBrush brush;
-            if (!_brushCache.TryGetValue(color, out brush))
+            if (!_brushCache.TryGetValue(color, out var brush))
             {
                 brush = new SolidColorBrush(color);
                 brush.Freeze();
@@ -406,7 +405,7 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
                     continue;
                 }
 
-                PathFigure currentFigure = null;
+                PathFigure? currentFigure = null;
 
                 // 定义一个局部函数来转换坐标系
                 Point Transform(PdfPoint p) => new Point(p.X, pageHeight - p.Y);

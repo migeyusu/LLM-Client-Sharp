@@ -56,7 +56,7 @@ public class UnitTest1
     }
 
     [Fact]
-    public async Task Convert()
+    public void Convert()
     {
         if (Uri.TryCreate("./syntaxes/qml.tmLanguage.json", UriKind.RelativeOrAbsolute, out var uri))
         {
@@ -259,7 +259,7 @@ public class UnitTest1
     [Fact]
     public void Mapping()
     {
-        var mapper = serviceProvider.GetService<IMapper>();
+        var mapper = serviceProvider.GetService<IMapper>()!;
         var dialogSession =
             new DialogFileViewModel(
                 new DialogViewModel("sadg", new NullLlmModelClient(), mapper, new GlobalOptions(),
@@ -272,7 +272,7 @@ public class UnitTest1
     [Fact]
     public void CircularMapping()
     {
-        var mapper = serviceProvider.GetService<IMapper>();
+        var mapper = serviceProvider.GetService<IMapper>()!;
         var client = new NullLlmModelClient();
         var dialogViewModel =
             new DialogViewModel("test", client, mapper, new GlobalOptions(), new RagSourceCollection());

@@ -61,8 +61,8 @@ public class UnitTest2
                 {
                     var message = await httpContent.ReadAsStringAsync();
                     var jsonNode = JsonNode.Parse(message);
-                    var node = jsonNode["payload"];
-                    var modelInfo = node.Deserialize<AzureDetailModelInfo>();
+                    var node = jsonNode!["payload"];
+                    var modelInfo = node.Deserialize<AzureDetailModelInfo>()!;
                     output.WriteLine(modelInfo.ToString());
                 }
             }
@@ -308,7 +308,7 @@ public class UnitTest2
 
 
     [Fact]
-    public async Task SearchService()
+    public void SearchService()
     {
         var requestViewItem = new RequestViewItem()
         {
@@ -409,16 +409,14 @@ public class UnitTest2
         // 下载完成后保存图片
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(bitmapImage));
-        using (var fileStream = new FileStream("D:\\openrouterai.png", FileMode.Create))
-        {
-            encoder.Save(fileStream);
-        }
+        await using var fileStream = new FileStream("D:\\openrouterai.png", FileMode.Create);
+        encoder.Save(fileStream);
     }
 
     [Fact]
     public void Random()
     {
-        if (Uri.TryCreate("file:c:\\test.img", UriKind.RelativeOrAbsolute, out Uri uri))
+        if (Uri.TryCreate("file:c:\\test.img", UriKind.RelativeOrAbsolute, out Uri? uri))
         {
             Debugger.Break();
         }

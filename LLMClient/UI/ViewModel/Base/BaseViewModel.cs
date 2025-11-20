@@ -117,8 +117,8 @@ public class BaseViewModel<T> : BaseViewModel where T : class
                 var method = value.GetType().GetMethod("PublicEquals");
                 if (method != null)
                 {
-                    var result = (bool)method.Invoke(value, new[] { comparedValue });
-                    if (!result) return false;
+                    var result = (bool?)method.Invoke(value, new[] { comparedValue });
+                    if (result == false) return false;
                 }
                 else
                 {

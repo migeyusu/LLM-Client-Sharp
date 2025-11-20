@@ -9,7 +9,7 @@ namespace LLMClient.Test;
 public class FileSystemPluginComparisonTests : IClassFixture<FileSystemTestFixture>
 {
     private readonly FileSystemPlugin _csPlugin;
-    private readonly IMcpClient _mcpClient;
+    private readonly McpClient _mcpClient;
     private readonly FileSystemTestFixture _fixture;
 
     private readonly ITestOutputHelper _output;

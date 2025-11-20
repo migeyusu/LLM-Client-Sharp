@@ -126,11 +126,11 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         }
     }
 
-    public ICommand RefreshToolsCommand => new RelayCommand(async () => { await RefreshToolsAsync(); });
+    public ICommand RefreshToolsCommand => new RelayCommand(async void () => { await RefreshToolsAsync(); });
 
-    public ICommand ResetToolsCommand => new RelayCommand(async () => { await ResetAsync(); });
+    public ICommand ResetToolsCommand => new RelayCommand(async void () => { await ResetAsync(); });
 
-    public ICommand SwitchEnableCommand => new RelayCommand(async () =>
+    public ICommand SwitchEnableCommand => new RelayCommand(async void () =>
     {
         if (IsEnabled)
         {
@@ -163,7 +163,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
             if (_client == null)
             {
                 var transport = this.GetTransport();
-                _client = await McpClientFactory.CreateAsync(transport, cancellationToken: cancellationToken);
+                _client = await McpClient.CreateAsync(transport, cancellationToken: cancellationToken);
             }
 
             this.AvailableTools =
@@ -207,7 +207,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         await RefreshToolsAsync(cancellationToken);
     }
 
-    private IMcpClient? _client;
+    private McpClient? _client;
     private Uri? _projectUrl;
     private string? _userPrompt;
     private bool _isAvailable;

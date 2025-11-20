@@ -76,7 +76,7 @@ public partial class TestWindow : Window, INotifyPropertyChanged
             await latexRenderService.RenderAsync(
                 "R(f)(\\theta, s) = \\iint_{-\\infty}^{\\infty} f(x, y) \\, \\delta(x \\cos \\theta + y \\sin \\theta - s) \\, dx \\, dy");
         this.LatexSource = imageSource;
-        return;
+        
         RequestTokenSource?.Cancel();
         RequestTokenSource = new CancellationTokenSource();
         try

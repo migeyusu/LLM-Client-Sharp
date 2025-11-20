@@ -21,11 +21,11 @@ public class PdfFile : RagFileBase
 
     public override DocumentFileType FileType => DocumentFileType.Pdf;
 
-    public override async Task InitializeAsync()
+    public override Task InitializeAsync()
     {
         if (IsInitialized)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         /*if (this.Status == ConstructStatus.Constructed)
@@ -46,6 +46,7 @@ public class PdfFile : RagFileBase
         }
 
         IsInitialized = true;
+        return Task.CompletedTask;
     }
 
     /// <summary>

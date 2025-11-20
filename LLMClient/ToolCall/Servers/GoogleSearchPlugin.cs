@@ -58,7 +58,7 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
     private GoogleTextSearch? _textSearch;
 #pragma warning restore SKEXP0050
 
-    public async Task EnsureAsync(CancellationToken token)
+    public Task EnsureAsync(CancellationToken token)
     {
         var config = ServiceLocator.GetService<GlobalOptions>()?.GoogleSearchOption;
         if (_config != null && config?.IsValid() == true && !config.PublicEquals(_config))
@@ -77,6 +77,8 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
 #pragma warning restore SKEXP0001
             _config = config;
         }
+
+        return Task.CompletedTask;
     }
 
     [Experimental("SKEXP0001")]

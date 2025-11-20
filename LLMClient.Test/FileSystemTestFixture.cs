@@ -13,7 +13,7 @@ public class FileSystemTestFixture : IDisposable
     public string SubFolderPath { get; }
     public string DataJsonPath { get; }
 
-    public IMcpClient McpClient { get; }
+    public McpClient McpClient { get; }
 
     public FileSystemTestFixture()
     {
@@ -21,7 +21,7 @@ public class FileSystemTestFixture : IDisposable
         TestDirectory = Path.Combine(Path.GetTempPath(), "FileSystemPluginTests_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(TestDirectory);
         Debug.WriteLine($"Test Directory created:{TestDirectory}");
-        McpClient = McpClientFactory.CreateAsync(new StdioClientTransport(new StdioClientTransportOptions()
+        McpClient = McpClient.CreateAsync(new StdioClientTransport(new StdioClientTransportOptions()
         {
             Name = "filesystem",
             Command = "npx",
