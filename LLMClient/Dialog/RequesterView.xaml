@@ -83,10 +83,9 @@
             </TextBox>
             <Border Background="{DynamicResource MaterialDesignTextFieldBoxBackground}">
                 <StackPanel Margin="8,0">
-                    <ScrollViewer Margin="0,5,0,0"
-                                  Style="{StaticResource HorizontalArrowScrollViewer}"
+                    <ScrollViewer Style="{StaticResource HorizontalArrowScrollViewer}"
                                   Visibility="{Binding  Attachments.Count,Converter={x:Static converters:SnapConverters.CountToVisibilityConverter}}">
-                        <ItemsControl Padding="0"
+                        <ItemsControl Padding="0,5,0,0"
                                       ItemsSource="{Binding Attachments,Mode=OneWay}"
                                       ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
                             <ItemsControl.ItemTemplate>
@@ -114,7 +113,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
-                    <Grid Margin="0,6">
+                    <Grid Margin="0,5">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition />
@@ -353,7 +352,8 @@
                                             <DataTemplate DataType="{x:Type local:RequesterViewModel}">
                                                 <ItemsControl ItemsSource="{Binding RagSources,Mode=OneWay}">
                                                     <ItemsControl.ItemTemplate>
-                                                        <DataTemplate DataType="{x:Type  viewModel:SelectableViewModel`1[]}">
+                                                        <DataTemplate
+                                                            DataType="{x:Type  viewModel:SelectableViewModel`1[]}">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <CheckBox IsChecked="{Binding IsSelected,Mode=TwoWay}"
                                                                           materialDesign:CheckBoxAssist.CheckBoxSize="20"
@@ -408,19 +408,20 @@
                         </StackPanel>
                         <StackPanel Grid.Column="2"
                                     Orientation="Horizontal"
-                                    Margin="0,4,0,0"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Bottom">
                             <customControl:ModelButton VerticalAlignment="Center"
-                                                   Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                                   CommandParameter="{Binding DefaultClient,Mode=OneWay}"
-                                                   ChangeModelEnable="True"
-                                                   ChangeModelCommand="{Binding ChangeModelCommand}"
-                                                   ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                                   Model="{Binding DefaultClient.Model,Mode=OneWay}" />
+                                                       Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                                       CommandParameter="{Binding DefaultClient,Mode=OneWay}"
+                                                       ChangeModelEnable="True"
+                                                       ChangeModelCommand="{Binding ChangeModelCommand}"
+                                                       ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                                       Model="{Binding DefaultClient.Model,Mode=OneWay}" />
                             <CheckBox Content="回车发送"
                                       Margin="10,0,0,0"
                                       Checked="EnterKeyInputBinding_OnChecked"
+                                      Padding="0,0,0,0"
+                                      Height="36"
                                       Unchecked="EnterKeyInputBinding_OnUnchecked"
                                       materialDesign:CheckBoxAssist.CheckBoxSize="30" />
                             <!--<Button Width="120"

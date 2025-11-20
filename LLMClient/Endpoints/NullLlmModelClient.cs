@@ -97,8 +97,8 @@ public class NullLlmModelClient : ILLMChatClient
     }
 
     public async Task<CompletedResult> SendRequest(DialogContext context,
-        IInvokeInteractor? stream = null, ILogger? logger = null,
-        CancellationToken cancellationToken = bad)
+        IInvokeInteractor? stream = null,
+        CancellationToken cancellationToken = default)
     {
         if (!string.IsNullOrEmpty(_fakeFilePath))
         {
@@ -115,7 +115,7 @@ public class NullLlmModelClient : ILLMChatClient
                     }
 
                     var chunk = fakeResponse.Substring(index, Math.Min(next, fakeResponse.Length - index));
-                    stream?.Invoke(chunk);
+                    stream?.Info(chunk);
                     index += next;
                     next = Random.Shared.Next(8);
                     await Task.Delay(200, cancellationToken);

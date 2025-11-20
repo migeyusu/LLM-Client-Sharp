@@ -589,7 +589,7 @@ public class ProjectViewModel : FileBasedSessionBase
             {
                 if (aiFunctionGroup.Data is FileSystemPlugin fileSystemPlugin)
                 {
-                    fileSystemPlugin.AllowedPaths = AllowedFolderPaths;
+                    fileSystemPlugin.BypassPaths = AllowedFolderPaths;
                 }
             }
         }

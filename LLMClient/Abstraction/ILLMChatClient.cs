@@ -1,5 +1,4 @@
 ﻿using LLMClient.Endpoints;
-using LLMClient.ToolCall;
 using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Abstraction;
@@ -21,6 +20,5 @@ public interface ILLMChatClient
 
     Task<CompletedResult> SendRequest(DialogContext context,
         IInvokeInteractor? interactor = null,
-        ILogger? logger = null,
         CancellationToken cancellationToken = default);
 }

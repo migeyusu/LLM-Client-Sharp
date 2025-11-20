@@ -11,7 +11,13 @@
                     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
                     xmlns:wpf="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
-                    xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility">
+                    xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility"
+                    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    xmlns:dialog="clr-namespace:LLMClient.Dialog"
+                    xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+                    mc:Ignorable="d">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary
             Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.button.xaml" />
@@ -661,6 +667,78 @@
                         </ItemsControl>
                         <TextBlock Text="{Binding Raw,Mode=OneTime}"
                                    Visibility="{Binding Raw,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}" />
+                    </StackPanel>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type Expander}"
+           BasedOn="{StaticResource AIContentExpander}"
+           x:Key="{x:Static render:CustomRenderer.PermissionRequestStyleKey}">
+        <Setter Property="Padding"
+                Value="16" />
+        <Setter Property="HeaderTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type dialog:PermissionViewModel}">
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="LockOpenOutline"
+                                                 Width="20"
+                                                 Height="20" />
+                        <TextBlock Text="{Binding Title,Mode=OneTime,StringFormat=权限请求：{0},TargetNullValue=权限请求}"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                    </StackPanel>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type dialog:PermissionViewModel}">
+                    <StackPanel>
+                        <ContentPresenter Margin="10"
+                                          Content="{Binding Content,Mode=OneTime}">
+                            <ContentPresenter.ContentTemplateSelector>
+                                <component:TypeBasedDataTemplateSelector>
+                                    <component:TypeBasedDataTemplateSelector.EmptyTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Mode=OneTime}" />
+                                        </DataTemplate>
+                                    </component:TypeBasedDataTemplateSelector.EmptyTemplate>
+                                    <component:DataTemplateTypePair>
+                                        <component:DataTemplateTypePair.Template>
+                                            <DataTemplate DataType="{x:Type toolCall:ToolCallRequestViewModel}">
+                                                <StackPanel>
+                                                    <TextBlock FontWeight="Bold"
+                                                               Text="{Binding CallerClassName,Mode=OneTime,StringFormat=请求对象：{0}}" />
+                                                    <TextBlock FontWeight="Bold"
+                                                               Text="{Binding CallerMethodName,Mode=OneTime,StringFormat=请求工具：{0}}" />
+                                                    <TextBlock Text="{Binding Message,Mode=OneTime}"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </component:DataTemplateTypePair.Template>
+                                    </component:DataTemplateTypePair>
+                                </component:TypeBasedDataTemplateSelector>
+                            </ContentPresenter.ContentTemplateSelector>
+                        </ContentPresenter>
+                        <StackPanel HorizontalAlignment="Right"
+                                    Orientation="Horizontal"
+                                    Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
+                            <Button Content="Decline"
+                                    Margin="0,8,8,0"
+                                    IsCancel="True"
+                                    Command="{Binding RejectCommand}"
+                                    Style="{StaticResource MaterialDesignOutlinedSecondaryButton}" />
+                            <Button Margin="0,8,0,0"
+                                    Command="{Binding PermitCommand}"
+                                    Content="YES"
+                                    IsDefault="True"
+                                    Style="{StaticResource MaterialDesignFlatMidBgButton}" />
+                        </StackPanel>
                     </StackPanel>
                 </DataTemplate>
             </Setter.Value>

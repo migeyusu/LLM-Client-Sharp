@@ -19,24 +19,29 @@ public class ConsoleInvokeInteractor : IInvokeInteractor
         Console.WriteLine(message);
     }
 
+    public void Write(string message)
+    {
+        Console.Write(message);
+    }
+
     public void WriteLine(string? message = null)
     {
         Console.WriteLine(message);
     }
 
-    public bool WaitForPermission(string message)
+    public Task<bool> WaitForPermission(string message)
     {
         Console.WriteLine(message);
         Console.WriteLine("Press Enter to continue...");
         Console.ReadLine();
-        return true;
+        return Task.FromResult(true);
     }
 
-    public bool WaitForPermission(object content)
+    public Task<bool> WaitForPermission(object content)
     {
         Console.WriteLine(content);
         Console.WriteLine("Press Enter to continue...");
         Console.ReadLine();
-        return true;
+        return Task.FromResult(true);
     }
 }

@@ -41,7 +41,6 @@ public abstract class ResearchClient : BaseViewModel, ILLMChatClient
     }
 
     public abstract Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? stream = null,
-        ILogger? logger = null,
         CancellationToken cancellationToken = default);
     
     

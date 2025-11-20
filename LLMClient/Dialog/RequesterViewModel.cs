@@ -57,7 +57,6 @@ public class RequesterViewModel : BaseViewModel
     {
         var selectionViewModel = new ModelSelectionPopupViewModel((model => { this.DefaultClient = model; }));
         await DialogHost.Show(selectionViewModel);
-        //todo: test
     });
 
     private ILLMChatClient _defaultClient;

@@ -19,19 +19,24 @@ public class DebugInvokeInteractor : IInvokeInteractor
     {
         Debug.WriteLine(message);
     }
-    
+
+    public void Write(string message)
+    {
+        Debug.Write(message);
+    }
+
     public void WriteLine(string? message = null)
     {
         Debug.WriteLine(message);
     }
 
-    public bool WaitForPermission(string message)
+    public Task<bool> WaitForPermission(string message)
     {
-        return true;
+        return Task.FromResult(true);
     }
 
-    public bool WaitForPermission(object content)
+    public Task<bool> WaitForPermission(object content)
     {
-        return true;
+        return Task.FromResult(true);
     }
 }

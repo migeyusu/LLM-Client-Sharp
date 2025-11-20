@@ -14,23 +14,20 @@ public interface IAgent
 {
 }
 
-public class PromptAgent : IAgent, IInvokeInteractor
+public class PromptAgent : IAgent
 {
     private readonly ILLMChatClient _chatClient;
 
-    private readonly Action<string>? _stream;
-
-    private readonly ILogger? _promptLogger;
+    private readonly IInvokeInteractor? _interactor;
 
     public UsageDetails Usage { get; set; } = new();
 
     public double? Price { get; set; } = 0;
 
-    public PromptAgent(ILLMChatClient chatClient, Action<string>? stream, ILogger? promptLogger)
+    public PromptAgent(ILLMChatClient chatClient, IInvokeInteractor? interactor)
     {
         _chatClient = chatClient;
-        _stream = stream;
-        _promptLogger = promptLogger;
+        _interactor = interactor;
     }
 
     public int RetryCount { get; set; } = 3;
@@ -47,14 +44,14 @@ public class PromptAgent : IAgent, IInvokeInteractor
         var tryCount = 0;
         while (tryCount < RetryCount)
         {
-            var completedResult = await _chatClient.SendRequest(context, this, _promptLogger, cancellationToken)
+            var completedResult = await _chatClient.SendRequest(context, _interactor, cancellationToken)
                 .ConfigureAwait(false);
             tryCount++;
             if (completedResult.IsInterrupt)
             {
-                _promptLogger?.LogWarning(
-                    "The LLM request was interrupted. Retrying... (Attempt {TryCount}/{RetryCount})",
-                    tryCount, RetryCount);
+                _interactor?.Warning(
+                    string.Format("The LLM request was interrupted. Retrying... (Attempt {0}/{1})", tryCount,
+                        RetryCount));
             }
 
             if (completedResult.Usage != null)
@@ -70,9 +67,9 @@ public class PromptAgent : IAgent, IInvokeInteractor
             var contentAsString = completedResult.GetContentAsString();
             if (string.IsNullOrEmpty(contentAsString))
             {
-                _promptLogger?.LogWarning(
-                    "The LLM returned an empty response. Retrying... (Attempt {TryCount}/{RetryCount})",
-                    tryCount, RetryCount);
+                _interactor?.Warning(
+                    string.Format("The LLM returned an empty response. Retrying... (Attempt {0}/{1})",
+                    tryCount, RetryCount));
             }
             else
             {
@@ -80,40 +77,7 @@ public class PromptAgent : IAgent, IInvokeInteractor
             }
         }
 
-        _promptLogger?.LogError("Failed to get a valid response from the LLM after {RetryCount} attempts.", RetryCount);
+        _interactor?.Error(string.Format("Failed to get a valid response from the LLM after {0} attempts.", RetryCount));
         throw new Exception("Failed to get a valid response from the LLM.");
-    }
-
-    public void Info(string message)
-    {
-        _stream?.Invoke(message);
-    }
-
-    public void Error(string message)
-    {
-        _stream?.Invoke(message);
-        _stream?.Invoke(Environment.NewLine);
-    }
-
-    public void Warning(string message)
-    {
-        _stream?.Invoke(message);
-        _stream?.Invoke(Environment.NewLine);
-    }
-
-    public void WriteLine(string? message = null)
-    {
-        _stream?.Invoke(Environment.NewLine);
-        if (!string.IsNullOrEmpty(message)) _stream?.Invoke(message);
-    }
-
-    public bool WaitForPermission(string message)
-    {
-        return true;
-    }
-
-    public bool WaitForPermission(object content)
-    {
-        return true;
     }
 }

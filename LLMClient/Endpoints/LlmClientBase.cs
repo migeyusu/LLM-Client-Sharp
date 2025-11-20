@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -133,15 +134,16 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     private readonly Stopwatch _stopwatch = new Stopwatch();
 
+    const string ToolCalls = "ToolCalls";
+
     [Experimental("SKEXP0001")]
     public virtual async Task<CompletedResult> SendRequest(DialogContext context,
-        IInvokeInteractor? interactor = null, ILogger? logger = null,
+        IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
-        if (interactor == null)
-        {
-            interactor = new DebugInvokeInteractor();
-        }
+#if DEBUG
+        interactor ??= new DebugInvokeInteractor();
+#endif
 
         var result = new CompletedResult();
         try
@@ -276,7 +278,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            var chatContext = new ChatContext(requestViewItem?.TempAdditionalProperties)
+            var chatContext = new ChatContext(interactor, requestViewItem?.TempAdditionalProperties)
                 { Streaming = streaming };
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
@@ -297,61 +299,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 preUpdates.Add(update);
                                 chatContext.CompleteStreamResponse(result, update);
                                 //只收集文本内容
-                                interactor.Info(update.GetText());
+                                interactor?.Info(update.GetText());
                             }
 
-                            preResponse = preUpdates.ToChatResponse();
-                            foreach (var message in preResponse.Messages)
-                            {
-                                var oriContents = message.Contents
-                                    .ToArray();
-                                message.Contents.Clear();
-                                //合并相同类型的内容
-                                foreach (var oriContent in oriContents)
-                                {
-                                    if (oriContent is TextContent textContent)
-                                    {
-                                        var @default = message.Contents.OfType<TextContent>().FirstOrDefault();
-                                        if (@default != null)
-                                        {
-                                            @default.Text += textContent.Text;
-                                        }
-                                        else
-                                        {
-                                            message.Contents.Add(textContent);
-                                        }
-                                    }
-                                    else if (oriContent is TextReasoningContent textReasoningContent)
-                                    {
-                                        var @default = message.Contents.OfType<TextReasoningContent>().FirstOrDefault();
-                                        if (@default != null)
-                                        {
-                                            @default.Text += textReasoningContent.Text;
-                                        }
-                                        else
-                                        {
-                                            message.Contents.Insert(0, textReasoningContent);
-                                        }
-                                    }
-                                    else if (oriContent is UsageContent usageContent)
-                                    {
-                                        var @default = message.Contents.OfType<UsageContent>().FirstOrDefault();
-                                        if (@default != null)
-                                        {
-                                            @default.Details.Add(usageContent.Details);
-                                        }
-                                        else
-                                        {
-                                            message.Contents.Add(usageContent);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        message.Contents.Add(oriContent);
-                                    }
-                                }
-                            }
-
+                            preResponse = MergeResponse(preUpdates);
                             preUpdates.Clear();
                         }
                         else
@@ -359,7 +310,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             preResponse =
                                 await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
                             //只收集文本内容
-                            interactor.Info(preResponse.Text);
+                            interactor?.WriteLine(preResponse.Text);
                             await chatContext.CompleteResponse(preResponse, result);
                         }
 
@@ -374,27 +325,26 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                         (loopUsageDetails ??= new UsageDetails()).Add(usageContent.Details);
                                         break;
                                     case TextContent:
-                                        //do nothing, textContent is already added to RespondingText
-                                        break;
-                                    case FunctionCallContent functionCallContent:
-                                        interactor.WriteLine(functionCallContent.GetDebuggerString());
-                                        break;
-                                    case FunctionResultContent functionResultContent:
-                                        interactor.WriteLine(functionResultContent.GetDebuggerString());
-                                        break;
+                                    //do nothing, textContent is already added to RespondingText
                                     case TextReasoningContent:
                                         //do nothing, reasoningContent is already added to RespondingText
                                         break;
+                                    case FunctionCallContent functionCallContent:
+                                        interactor?.WriteLine("Function call requested: " +
+                                                              functionCallContent.GetDebuggerString());
+                                        break;
+                                    case FunctionResultContent functionResultContent:
+                                        interactor?.WriteLine(functionResultContent.GetDebuggerString());
+                                        break;
                                     case ErrorContent errorContent:
-                                        logger?.LogError(
-                                            "Error content received: {ErrorContent}, {Details}, {ErrorCode}",
-                                            errorContent.Message, errorContent.Details, errorContent.ErrorCode);
+                                        interactor?.Error(
+                                            string.Format("Error content received: {0}, {1}, {2}",
+                                                errorContent.Message, errorContent.Details, errorContent.ErrorCode));
                                         break;
                                     default:
-                                        logger?.LogWarning("unsupported content: " + content.GetType().Name);
-                                        interactor.Warning(
+                                        interactor?.Warning(
                                             $"Unsupported content type: {content.GetType().Name}");
-                                        interactor.Warning(content.RawRepresentation?.ToString() ?? string.Empty);
+                                        interactor?.Warning(content.RawRepresentation?.ToString() ?? string.Empty);
                                         break;
                                 }
                             }
@@ -409,43 +359,49 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         }
 
                         finishReason = preResponse.FinishReason ?? GetFinishReasonFromAdditional(preResponse);
-                        if (finishReason == ChatFinishReason.ToolCalls)
+                        var finishReasonValue = finishReason?.Value;
+                        if (finishReasonValue == null)
                         {
-                            logger?.LogInformation("Function call detect, need run function calls...");
-                        }
-                        else if (finishReason == ChatFinishReason.Stop)
-                        {
-                            if (!softFunctionCall)
-                            {
-                                logger?.LogInformation("Response completed without function calls.");
-                                break;
-                            }
-                        }
-                        else if (finishReason == ChatFinishReason.Length)
-                        {
-                            logger?.LogInformation("Exceeded maximum response length.");
-                            throw new OutOfContextWindowException()
-                            {
-                                ChatResponse = preResponse
-                            };
-                        }
-                        else if (finishReason == ChatFinishReason.ContentFilter)
-                        {
-                            logger?.LogWarning("Response was filtered by content filter.");
-                            break;
-                        }
-                        else if (finishReason != null)
-                        {
-                            logger?.LogWarning($"Unexpected finish reason: {finishReason}");
+                            interactor?.Warning("Finish reason is null");
                         }
                         else
                         {
-                            logger?.LogWarning("Finish reason is null");
+                            if (finishReasonValue.Equals(ChatFinishReason.ToolCalls.Value) ||
+                                finishReasonValue.Equals(ToolCalls, StringComparison.OrdinalIgnoreCase))
+                            {
+                                interactor?.Info("Function call detect, need run function calls...");
+                            }
+                            else if (finishReason == ChatFinishReason.Stop)
+                            {
+                                if (!softFunctionCall)
+                                {
+                                    interactor?.Info("Response completed without function calls.");
+                                    break;
+                                }
+                            }
+                            else if (finishReason == ChatFinishReason.Length)
+                            {
+                                interactor?.Info("Exceeded maximum response length.");
+                                throw new OutOfContextWindowException()
+                                {
+                                    ChatResponse = preResponse
+                                };
+                            }
+                            else if (finishReason == ChatFinishReason.ContentFilter)
+                            {
+                                interactor?.Warning("Response was filtered by content filter.");
+                                break;
+                            }
+                            else
+                            {
+                                interactor?.Warning($"Unexpected finish reason: {finishReason}");
+                            }
                         }
+
 
                         if (!functionCallEngine.TryParseFunctionCalls(preResponse, out var preFunctionCalls))
                         {
-                            logger?.LogInformation("No function calls were requested, response completed.");
+                            interactor?.Info("No function calls were requested, response completed.");
                             break;
                         }
 
@@ -458,7 +414,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                         #region function call
 
-                        interactor.WriteLine("Processing function calls...");
+                        interactor?.WriteLine("Processing function calls...");
                         var chatMessage = new ChatMessage();
                         chatHistory.Add(chatMessage);
                         responseMessages.Add(chatMessage);
@@ -468,7 +424,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             if (!kernelPluginCollection.TryGetFunction(null, functionCallContent.Name,
                                     out var kernelFunction))
                             {
-                                interactor.Error(
+                                interactor?.Error(
                                     $"Function '{functionCallContent.Name}' not exist, call failed.");
                                 functionResultContents.Add(new FunctionResultContent(functionCallContent.CallId, null)
                                     { Exception = new Exception("Function not exist") });
@@ -491,7 +447,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                     additionalFunctionCallResults.Clear();
                                     additionalUserMessageBuilder.Clear();
                                     var invokeResult = await kernelFunction.InvokeAsync(arguments, cancellationToken);
-                                    interactor.WriteLine(
+                                    interactor?.WriteLine(
                                         $"Function '{functionCallContent.Name}' invoked successfully, result: {invokeResult}");
                                     functionResultContents.Add(new FunctionResultContent(functionCallContent.CallId,
                                         invokeResult));
@@ -511,7 +467,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 }
                                 catch (Exception e)
                                 {
-                                    interactor.Error("Function call failed: " + e.Message);
+                                    interactor?.Error("Function call failed: " + e.Message);
                                     functionResultContents.Add(
                                         new FunctionResultContent(functionCallContent.CallId, null)
                                             { Exception = e });
@@ -557,7 +513,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             errorMessage += $"\nResponse Content: {exception.ResponseContent}";
                         }
 
-                        logger?.LogError("Error during response: {Exception}", ex);
+                        interactor?.Error(string.Format("Error during response: {0}", ex));
                         if (ex.Message.Contains("context_length_exceeded"))
                         {
                             throw new OutOfContextWindowException();
@@ -569,7 +525,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         break;
                     }
 
-                    interactor.WriteLine();
+                    interactor?.WriteLine();
                 }
             }
 
@@ -612,6 +568,63 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
 
         return null;
+    }
+
+    public static ChatResponse MergeResponse(IEnumerable<ChatResponseUpdate> updates)
+    {
+        var chatResponse = updates.ToChatResponse();
+        foreach (var message in chatResponse.Messages)
+        {
+            var oriContents = message.Contents
+                .ToArray();
+            message.Contents.Clear();
+            //合并相同类型的内容
+            foreach (var oriContent in oriContents)
+            {
+                if (oriContent is TextContent textContent)
+                {
+                    var @default = message.Contents.OfType<TextContent>().FirstOrDefault();
+                    if (@default != null)
+                    {
+                        @default.Text += textContent.Text;
+                    }
+                    else
+                    {
+                        message.Contents.Add(textContent);
+                    }
+                }
+                else if (oriContent is TextReasoningContent textReasoningContent)
+                {
+                    var @default = message.Contents.OfType<TextReasoningContent>().FirstOrDefault();
+                    if (@default != null)
+                    {
+                        @default.Text += textReasoningContent.Text;
+                    }
+                    else
+                    {
+                        message.Contents.Insert(0, textReasoningContent);
+                    }
+                }
+                else if (oriContent is UsageContent usageContent)
+                {
+                    var @default = message.Contents.OfType<UsageContent>().FirstOrDefault();
+                    if (@default != null)
+                    {
+                        @default.Details.Add(usageContent.Details);
+                    }
+                    else
+                    {
+                        message.Contents.Add(usageContent);
+                    }
+                }
+                else
+                {
+                    message.Contents.Add(oriContent);
+                }
+            }
+        }
+
+        return chatResponse;
     }
 
     private static UsageDetails? GetUsageDetailsFromAdditional(ChatResponse? response)

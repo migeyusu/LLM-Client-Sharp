@@ -6,7 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="300"
+             d:DesignHeight="600" d:DesignWidth="500"
              d:DataContext="{d:DesignInstance endpoints:LlmClientBase}">
     <StackPanel>
         <CheckBox Content="Streaming"

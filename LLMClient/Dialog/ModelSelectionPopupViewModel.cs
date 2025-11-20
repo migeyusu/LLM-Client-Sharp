@@ -17,7 +17,6 @@ public class ModelSelectionPopupViewModel : ModelSelectionViewModel
     protected override void SubmitClient(ILLMChatClient client)
     {
         SuccessAction?.Invoke(client);
-        //todo:test
         SuccessRoutedCommand?.Execute(true, null);
     }
 }

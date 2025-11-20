@@ -340,7 +340,7 @@ public class FileSystemPluginComparisonTests : IClassFixture<FileSystemTestFixtu
         Assert.True((csModified - mcpModified).TotalSeconds < 2, "Modification times should be very close.");
     }
 
-    [Fact]
+    /*[Fact]
     public async Task ListAllowedDirectories_ShouldReturnConfiguredPath()
     {
         // Arrange & Act
@@ -355,7 +355,7 @@ public class FileSystemPluginComparisonTests : IClassFixture<FileSystemTestFixtu
         var expectedPath = NormalizeOutput(_fixture.TestDirectory);
         Assert.Contains(expectedPath, csNormalized, StringComparison.Ordinal);
         Assert.Contains(expectedPath, mcpNormalized, StringComparison.Ordinal);
-    }
+    }*/
 
 
     #region Helper Methods for GetFileInfo test

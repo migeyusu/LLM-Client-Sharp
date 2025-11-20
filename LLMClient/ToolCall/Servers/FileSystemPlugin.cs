@@ -11,6 +11,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -19,7 +20,10 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using LLMClient;
+using LLMClient.Endpoints;
+using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;
+using LLMClient.UI.Component.Utility;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.SemanticKernel;
 
@@ -32,13 +36,17 @@ public class FileSystemPlugin : KernelFunctionGroup
 {
     public Guid Id =Guid.NewGuid();
     
-    private ObservableCollection<string> _allowedPaths=new ObservableCollection<string>();
-    public ObservableCollection<string> AllowedPaths
+    private ObservableCollection<string> _byPassPaths=new ObservableCollection<string>();
+    
+    /// <summary>
+    /// indicates the list of directories that do not require special permissions to access.
+    /// </summary>
+    public ObservableCollection<string> BypassPaths
     {
-        get => _allowedPaths;
+        get => _byPassPaths;
         set
         {
-            _allowedPaths = value; 
+            _byPassPaths = value; 
         }
     }
     
@@ -49,8 +57,8 @@ public class FileSystemPlugin : KernelFunctionGroup
             return;
         }
         var normalizedPath = ExpandAndNormalizePath(path);
-        if (AllowedPaths.Contains(normalizedPath)) return;
-        AllowedPaths.Add(normalizedPath);
+        if (BypassPaths.Contains(normalizedPath)) return;
+        BypassPaths.Add(normalizedPath);
     }
 
     public void RemoveAllowedPath(string path)
@@ -60,9 +68,9 @@ public class FileSystemPlugin : KernelFunctionGroup
             return;
         }
         var normalizedPath = ExpandAndNormalizePath(path);
-        if (AllowedPaths.Contains(normalizedPath))
+        if (BypassPaths.Contains(normalizedPath))
         {
-            AllowedPaths.Remove(normalizedPath);
+            BypassPaths.Remove(normalizedPath);
         }
     }
     
@@ -75,13 +83,6 @@ public class FileSystemPlugin : KernelFunctionGroup
     public FileSystemPlugin() : base("FileSystem")
     {
         
-    }
-
-    [KernelFunction, Description("Returns the list of directories that this server is allowed to access. " +
-                                 "Use this to understand which directories are available before trying to access files.")]
-    public string ListAllowedDirectories()
-    {
-        return $"Allowed directories:\n{string.Join('\n', _allowedPaths)}";
     }
 
     [KernelFunction, Description("Read the complete contents of a file from the file system. Handles various text encodings and provides detailed error messages if the file cannot be read. Use this tool when you need to examine the contents of a single file. Use the 'head' parameter to read only the first N lines of a file, or the 'tail' parameter to read only the last N lines of a file. Only works within allowed directories.")]
@@ -143,7 +144,16 @@ public class FileSystemPlugin : KernelFunctionGroup
         [Description("The content to write into the file.")] string content)
     {
         // For writing, we validate the parent directory of the target path.
-        var fullPath = await ValidateAndResolvePathAsync(path, checkParentOnly: true);
+        var fullPath = await ValidateAndResolvePathAsync(path);
+        var stringBuilder = new StringBuilder();
+        stringBuilder.Append("Writing file at ");
+        stringBuilder.AppendLine(fullPath);
+        stringBuilder.AppendLine("Content:");
+        stringBuilder.AppendLine(content);
+        if (!await RequestPermission("fullPath",stringBuilder.ToString() , checkParentOnly: true))
+        {
+            throw new UnauthorizedAccessException();
+        }
         await File.WriteAllTextAsync(fullPath, content);
         return $"Successfully wrote to {path}";
     }
@@ -240,7 +250,11 @@ public class FileSystemPlugin : KernelFunctionGroup
     public async Task<string> CreateDirectoryAsync(
         [Description("The path of the directory to create.")] string path)
     {
-        var fullPath = await ValidateAndResolvePathAsync(path, checkParentOnly: true);
+        var fullPath = await ValidateAndResolvePathAsync(path);
+        if (!await RequestPermission("fullPath", $"Creating directory at {fullPath}", checkParentOnly: true))
+        {
+            throw new UnauthorizedAccessException("Permission denied to create the specified directory.");
+        }
         Directory.CreateDirectory(fullPath);
         return $"Successfully created directory {path}";
     }
@@ -333,8 +347,12 @@ public class FileSystemPlugin : KernelFunctionGroup
         [Description("The destination path.")] string destination)
     {
         var validSource = await ValidateAndResolvePathAsync(source);
-        var validDest = await ValidateAndResolvePathAsync(destination, checkParentOnly: true);
-
+        var validDest = await ValidateAndResolvePathAsync(destination);
+        if (!await RequestPermission(validSource, $"Moving file or directory from {validSource} to {validDest}",
+                checkParentOnly: true))
+        {
+            throw new UnauthorizedAccessException("Permission denied to move the specified file or directory.");
+        }
         if (File.Exists(validSource))
         {
             File.Move(validSource, validDest);
@@ -467,52 +485,14 @@ public class FileSystemPlugin : KernelFunctionGroup
         return Path.GetFullPath(path);
     }
     
-    private async Task<string> ValidateAndResolvePathAsync(string requestedPath, bool checkParentOnly = false)
+    private async Task<string> ValidateAndResolvePathAsync(string requestedPath)
     {
-        if (!_allowedPaths.Any())
-        {
-            throw new InvalidOperationException("No allowed directories have been configured for this plugin.");
-        }
         if (string.IsNullOrWhiteSpace(requestedPath))
         {
             throw new ArgumentException("Path cannot be null or empty.", nameof(requestedPath));
         }
-
+        
         string absolutePath = ExpandAndNormalizePath(requestedPath);
-        string pathToValidate = checkParentOnly ? Path.GetDirectoryName(absolutePath) ?? "" : absolutePath;
-
-        if (string.IsNullOrEmpty(pathToValidate))
-        {
-            throw new UnauthorizedAccessException($"Cannot determine parent directory for path: {requestedPath}");
-        }
-
-        // 1. Check if the path is within one of the allowed directories.
-        var isAllowed = _allowedPaths.Any(dir => pathToValidate.StartsWith(dir, StringComparison.OrdinalIgnoreCase));
-        if (!isAllowed)
-        {
-            throw new UnauthorizedAccessException($"Access denied. The path '{requestedPath}' is outside the allowed directories.");
-        }
-
-        // 2. Handle symbolic links to prevent escaping the allowed directories.
-        // We check the real path of the final target.
-        string realPath;
-        try
-        {
-            // For existing files/directories, resolve the final physical path.
-            realPath = new DirectoryInfo(pathToValidate).ResolveLinkTarget(true)?.FullName ?? pathToValidate;
-        }
-        catch (IOException) // Handles cases where path does not exist yet
-        {
-            // For new files/dirs, trust the absolute path after the initial check.
-            realPath = pathToValidate;
-        }
-
-        var isRealPathAllowed = _allowedPaths.Any(dir => realPath.StartsWith(dir, StringComparison.OrdinalIgnoreCase));
-        if (!isRealPathAllowed)
-        {
-            throw new UnauthorizedAccessException("Access denied. The path or its symbolic link target is outside the allowed directories.");
-        }
-
         // Return the original, non-resolved absolute path if validation passes.
         // This is crucial for creating new files in directories that might themselves be symlinks.
         return await Task.FromResult(absolutePath);
@@ -618,7 +598,60 @@ public class FileSystemPlugin : KernelFunctionGroup
     {
         return new FileSystemPlugin()
         {
-            AllowedPaths = new ObservableCollection<string>(AllowedPaths)
+            BypassPaths = new ObservableCollection<string>(BypassPaths)
         };
+    }
+
+    private Task<bool> RequestPermission(string absolutePath, string message,
+        bool checkParentOnly = false,[CallerMemberName] string? callerName = null)
+    {
+        if (_byPassPaths.Any())
+        {
+            string pathToValidate = checkParentOnly ? Path.GetDirectoryName(absolutePath) ?? "" : absolutePath;
+            if (string.IsNullOrEmpty(pathToValidate))
+            {
+                throw new UnauthorizedAccessException($"Cannot determine parent directory for path: {absolutePath}");
+            }
+        
+            // 1. Check if the path is within one of the allowed directories.
+            var isBypass = _byPassPaths.Any(dir => pathToValidate.StartsWith(dir, StringComparison.OrdinalIgnoreCase));
+            if (isBypass)
+            {
+                return Task.FromResult(true);
+            }
+        
+            // 2. Handle symbolic links to prevent escaping the allowed directories.
+            // We check the real path of the final target.
+            string realPath;
+            try
+            {
+                // For existing files/directories, resolve the final physical path.
+                realPath = new DirectoryInfo(pathToValidate).ResolveLinkTarget(true)?.FullName ?? pathToValidate;
+            }
+            catch (IOException) // Handles cases where path does not exist yet
+            {
+                // For new files/dirs, trust the absolute path after the initial check.
+                realPath = pathToValidate;
+            }
+
+            var isRealPathBypass = _byPassPaths.Any(dir => realPath.StartsWith(dir, StringComparison.OrdinalIgnoreCase));
+            if (isRealPathBypass)
+            {
+                return Task.FromResult(true);
+            }
+        }
+
+        var interactor = AsyncContextStore<ChatContext>.Current?.Interactor;
+        if (interactor == null)
+        {
+            return Task.FromResult(true);
+        }
+        var toolCallInfo = new ToolCallRequestViewModel()
+        {
+            CallerClassName = nameof(FileSystemPlugin),
+            CallerMethodName = callerName,
+            Message = message,
+        };
+        return interactor.WaitForPermission(toolCallInfo);
     }
 }

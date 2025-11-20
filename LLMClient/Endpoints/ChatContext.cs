@@ -14,8 +14,9 @@ namespace LLMClient.Endpoints;
 /// </summary>
 public class ChatContext
 {
-    public ChatContext(AdditionalPropertiesDictionary? additionalObjects = null)
+    public ChatContext(IInvokeInteractor? interactor = null, AdditionalPropertiesDictionary? additionalObjects = null)
     {
+        Interactor = interactor;
         AdditionalObjects = additionalObjects ?? new AdditionalPropertiesDictionary();
     }
 
@@ -27,17 +28,15 @@ public class ChatContext
 
     public StringBuilder AdditionalUserMessage { get; } = new StringBuilder();
 
-    public ClientResult? Result { get; set; }
+    public IInvokeInteractor? Interactor { get; }
 
-    private static readonly PropertyInfo AdditionalRawDataPropertyInfo =
-        typeof(StreamingChatCompletionUpdate).GetProperty("SerializedAdditionalRawData",
-            BindingFlags.NonPublic | BindingFlags.Instance)!;
+    public ClientResult? Result { get; set; }
 
     private static readonly PropertyInfo InternalChoicePropertyInfo =
         typeof(StreamingChatCompletionUpdate).GetProperty("InternalChoiceDelta",
             BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-    private static PropertyInfo? ChoiceAdditional;
+    private static PropertyInfo? _choiceAdditional;
 
     public void CompleteStreamResponse(CompletedResult result, ChatResponseUpdate update)
     {
@@ -45,28 +44,35 @@ public class ChatContext
         var dictionary = result.AdditionalProperties;
         if (update.RawRepresentation is StreamingChatCompletionUpdate rawUpdate)
         {
-            if (AdditionalRawDataPropertyInfo.GetValue(rawUpdate) is IDictionary<string, BinaryData> value)
+            var patch = rawUpdate.Patch.ToString();
+            var node = (JsonArray?)JsonNode.Parse(patch);
+            if (node?.Count > 0)
             {
-                foreach (var kv in value)
+                var deserialize = node.Deserialize<Dictionary<string, string>>();
+                if (deserialize != null && deserialize.Count != 0)
                 {
-                    dictionary[kv.Key] = kv.Value.ToString();
+                    foreach (var kv in deserialize)
+                    {
+                        dictionary[kv.Key] = kv.Value;
+                    }
                 }
             }
+
 
             var choice = InternalChoicePropertyInfo.GetValue(rawUpdate);
             if (choice != null)
             {
-                if (ChoiceAdditional == null)
+                if (_choiceAdditional == null)
                 {
-                    ChoiceAdditional = choice.GetType().GetProperty("SerializedAdditionalRawData",
+                    _choiceAdditional = choice.GetType().GetProperty("SerializedAdditionalRawData",
                         BindingFlags.NonPublic | BindingFlags.Instance);
-                    if (ChoiceAdditional == null)
+                    if (_choiceAdditional == null)
                     {
                         return;
                     }
                 }
 
-                if (ChoiceAdditional.GetValue(choice) is IDictionary<string, BinaryData> choiceValue)
+                if (_choiceAdditional.GetValue(choice) is IDictionary<string, BinaryData> choiceValue)
                 {
                     if (choiceValue.TryGetValue("reasoning", out var reasoning))
                     {

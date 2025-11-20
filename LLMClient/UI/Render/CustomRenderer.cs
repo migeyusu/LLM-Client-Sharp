@@ -34,6 +34,9 @@ public class CustomRenderer : WpfRenderer
         DefaultPipeline.Setup(Renderer);
     }
 
+    public static ComponentResourceKey PermissionRequestStyleKey=>
+        new(typeof(CustomRenderer), nameof(PermissionRequestStyleKey));
+
     public static CustomRenderer NewRenderer(FlowDocument flowDocument)
     {
         var renderer = new CustomRenderer();
@@ -52,7 +55,7 @@ public class CustomRenderer : WpfRenderer
 
     public static ComponentResourceKey AnnotationStyleKey => new(typeof(CustomRenderer), nameof(AnnotationStyleKey));
 
-    public void AppendItem<T>(T obj, ComponentResourceKey styleKey)
+    public void AppendExpanderItem<T>(T obj, ComponentResourceKey styleKey)
     {
         var expander = new Expander()
         {
@@ -64,7 +67,6 @@ public class CustomRenderer : WpfRenderer
         var blockUiContainer = new BlockUIContainer(expander);
         ((IAddChild)Document!).AddChild(blockUiContainer);
     }
-
 
     public void AppendMarkdownObject(MarkdownObject obj)
     {

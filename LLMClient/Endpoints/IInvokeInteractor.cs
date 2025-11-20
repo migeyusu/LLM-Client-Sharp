@@ -8,9 +8,11 @@ public interface IInvokeInteractor
 
     void Warning(string message);
 
+    void Write(string message);
+
     void WriteLine(string? message = null);
 
-    bool WaitForPermission(string message);
+    Task<bool> WaitForPermission(string message);
 
-    bool WaitForPermission(object content);
+    Task<bool> WaitForPermission(object content);
 }

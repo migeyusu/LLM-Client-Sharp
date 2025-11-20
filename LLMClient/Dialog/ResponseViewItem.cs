@@ -7,18 +7,22 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
 using AutoMapper;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
+using LLMClient.ToolCall;
 using LLMClient.UI.Component.CustomControl;
 using LLMClient.UI.Component.Utility;
 using LLMClient.UI.Render;
 using LLMClient.UI.ViewModel;
 using LLMClient.UI.ViewModel.Base;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
+using OpenAI.Responses;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
@@ -166,7 +170,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                 {
                     foreach (var annotation in this.Annotations)
                     {
-                        renderer.AppendItem(annotation,
+                        renderer.AppendExpanderItem(annotation,
                             CustomRenderer.AnnotationStyleKey);
                     }
                 }
@@ -190,11 +194,11 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                                 renderer.RenderRaw(textContent.Text);
                                 break;
                             case FunctionCallContent functionCallContent:
-                                renderer.AppendItem(functionCallContent,
+                                renderer.AppendExpanderItem(functionCallContent,
                                     CustomRenderer.FunctionCallStyleKey);
                                 break;
                             case FunctionResultContent functionResultContent:
-                                renderer.AppendItem(functionResultContent,
+                                renderer.AppendExpanderItem(functionResultContent,
                                     CustomRenderer.FunctionResultStyleKey);
                                 break;
                             default:
@@ -443,10 +447,12 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
         private readonly Task _task;
 
+        private readonly CustomRenderer _customRenderer;
+
         public ResponseViewItemInteractor(FlowDocument flowDocument, ResponseViewItem responseViewItem)
         {
             var responseViewItem1 = responseViewItem;
-            var customRenderer = CustomRenderer.NewRenderer(flowDocument);
+            _customRenderer = CustomRenderer.NewRenderer(flowDocument);
             _task = Task.Run(() =>
             {
                 // ReSharper disable once AccessToDisposedClosure
@@ -456,7 +462,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                         Dispatch(() =>
                         {
                             responseViewItem.TempResponseText.Clear();
-                            customRenderer.AppendMarkdownObject(block);
+                            _customRenderer.AppendMarkdownObject(block);
                         });
                     });
             });
@@ -484,6 +490,11 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             _outputAction(message);
         }
 
+        public void Write(string message)
+        {
+            _outputAction(message);
+        }
+
         public void WriteLine(string? message = null)
         {
             if (string.IsNullOrEmpty(message))
@@ -496,13 +507,20 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             }
         }
 
-        public bool WaitForPermission(string message)
+        public Task<bool> WaitForPermission(string message)
         {
+            var permissionViewModel = new PermissionViewModel() { Content = message };
+            _customRenderer.AppendExpanderItem(permissionViewModel,
+                CustomRenderer.PermissionRequestStyleKey);
+            return permissionViewModel.Task;
         }
 
-        public bool WaitForPermission(object content)
+        public Task<bool> WaitForPermission(object content)
         {
-            throw new NotImplementedException();
+            var permissionViewModel = new PermissionViewModel() { Content = content };
+            _customRenderer.AppendExpanderItem(permissionViewModel,
+                CustomRenderer.PermissionRequestStyleKey);
+            return permissionViewModel.Task;
         }
 
         public async ValueTask DisposeAsync()
@@ -512,4 +530,39 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             _blockingCollection.Dispose();
         }
     }
+}
+
+public class PermissionViewModel : BaseViewModel
+{
+    public string? Title { get; set; }
+
+    public required object Content { get; set; }
+
+    public bool IsCompleted
+    {
+        get => _isCompleted;
+        set
+        {
+            if (value == _isCompleted) return;
+            _isCompleted = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private readonly TaskCompletionSource<bool> _tcs = new TaskCompletionSource<bool>();
+    private bool _isCompleted;
+
+    public Task<bool> Task => _tcs.Task;
+
+    public ICommand PermitCommand => new RelayCommand(() =>
+    {
+        _tcs.TrySetResult(true);
+        IsCompleted = true;
+    });
+
+    public ICommand RejectCommand => new RelayCommand(() =>
+    {
+        _tcs.TrySetResult(false);
+        IsCompleted = true;
+    });
 }

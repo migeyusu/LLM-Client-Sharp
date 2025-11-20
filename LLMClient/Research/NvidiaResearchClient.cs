@@ -28,9 +28,8 @@ public class NvidiaResearchClient : ResearchClient
     }
 
     [Experimental("SKEXP0110")]
-    public override async Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? stream = null,
-        ILogger? logger = null,
-        CancellationToken cancellationToken = bad)
+    public override async Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -42,7 +41,7 @@ public class NvidiaResearchClient : ResearchClient
                 throw new ArgumentException("The dialog context must contain a non-empty request.");
             }
 
-            var agent = new PromptAgent(this.ProxyClient, stream, logger);
+            var agent = new PromptAgent(this.ProxyClient, interactor);
 
             // ====================================================================
             // 阶段 1: 研究 
@@ -56,7 +55,7 @@ public class NvidiaResearchClient : ResearchClient
             }
 
             Information("Analyzing the research request...");
-            (var taskPrompt, var formatPrompt) = await PerformPromptDecompositionAsync(agent, prompt, logger);
+            (var taskPrompt, var formatPrompt) = await PerformPromptDecompositionAsync(agent, prompt, interactor);
             Information("Prompt analysis completed. Task: '{0}'", taskPrompt);
 
             var topics = await GenerateTopicsAsync(agent, taskPrompt);
@@ -125,9 +124,9 @@ public class NvidiaResearchClient : ResearchClient
                             topicRelevantSegments[topic].AddRange(relevantSegments);
                         }
 
-                        logger?.LogDebug(
-                            "Processed search result {Index}. Found {SegmentCount} relevant segments for URL {Url}",
-                            searchResultUrlIndex, relevantSegments.Count, searchResult.Url);
+                        interactor?.Info(
+                            string.Format("Processed search result {0}. Found {1} relevant segments for URL {2}",
+                                searchResultUrlIndex, relevantSegments.Count, searchResult.Url));
                     }
                 }
             }
@@ -178,7 +177,7 @@ public class NvidiaResearchClient : ResearchClient
             void Information(string chunk, params object[] args)
             {
                 var formattedChunk = args.Length != 0 ? string.Format(chunk, args) : chunk;
-                stream?.Invoke(formattedChunk);
+                interactor?.WriteLine(formattedChunk);
             }
         }
         catch (Exception e)
@@ -203,7 +202,7 @@ public class NvidiaResearchClient : ResearchClient
 
     private async Task<(string TaskPrompt, string FormatPrompt)> PerformPromptDecompositionAsync(
         PromptAgent promptAgent,
-        string prompt, ILogger? logger)
+        string prompt, IInvokeInteractor? logger)
     {
         var response = await promptAgent.GetMessageAsync(
             $"Decompose the PROMPT into a task to be performed and a format in which the report should be produced. If there is no formatting constraint, output 'No formatting constraint' in the second prompt. Do not output any other text.\n\nEXAMPLE PROMPT:\nWrite a three-chapter report on the differences between the US and European economy health in 2024. The first chapter should be about the US economy health, the second chapter should be about the European economy health, and the third chapter should be about the differences between the two.\n\nEXAMPLE OUTPUT:\nWrite a report on the differences between the US and European economy health in 2024.\n\nThe report should be in the form of a three-chapter report. The first chapter should be about the US economy health, the second chapter should be about the European economy health, and the third chapter should be about the differences between the two.\n\nPROMPT: {prompt}\n\nReminders: The output should be two prompts separated by a double-newline. The first prompt is the task to be performed, and the second prompt is the format in which the report should be produced. If there is no formatting constraint, output 'No formatting constraint' in the second prompt. Do not output any other text.",
@@ -211,7 +210,7 @@ public class NvidiaResearchClient : ResearchClient
         var parts = response.Split(["\n\n"], 2, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 2)
         {
-            logger?.LogWarning(
+            logger?.Warning(
                 "Failed to perform prompt decomposition. Falling back to using the original prompt as task and no format.");
             return (prompt, "No formatting constraint");
         }
