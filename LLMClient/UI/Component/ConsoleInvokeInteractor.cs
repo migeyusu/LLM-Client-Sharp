@@ -29,8 +29,9 @@ public class ConsoleInvokeInteractor : IInvokeInteractor
         Console.WriteLine(message);
     }
 
-    public Task<bool> WaitForPermission(string message)
+    public Task<bool> WaitForPermission(string title, string message)
     {
+        Console.WriteLine(title);
         Console.WriteLine(message);
         Console.WriteLine("Press Enter to continue...");
         Console.ReadLine();

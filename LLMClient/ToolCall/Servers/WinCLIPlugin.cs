@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using LLMClient.Endpoints;
+using LLMClient.UI.Component.Utility;
 using Microsoft.SemanticKernel;
 
 namespace LLMClient.ToolCall.Servers;
@@ -12,7 +14,7 @@ namespace LLMClient.ToolCall.Servers;
 /// </summary>
 public sealed class WinCLIPlugin : KernelFunctionGroup
 {
-    public HashSet<string> DeniedCommands { get; set; }
+    public HashSet<string> VerifyRequiredCommands { get; set; }
 
     /// <summary>
     /// 获取一个默认的、用于阻止执行的危险命令列表。
@@ -50,12 +52,12 @@ public sealed class WinCLIPlugin : KernelFunctionGroup
     public WinCLIPlugin(IEnumerable<string> deniedCommands) : base("WinCLI")
     {
         // 将所有禁止的命令转换为小写并存入 HashSet，便于快速、不区分大小写地查找
-        DeniedCommands = new HashSet<string>(deniedCommands.Select(cmd => cmd.ToLowerInvariant()));
+        VerifyRequiredCommands = new HashSet<string>(deniedCommands.Select(cmd => cmd.ToLowerInvariant()));
     }
 
     [KernelFunction]
     [Description(
-        "Executes a command-line command in the specified shell (PowerShell or CMD). Blocks the execution of dangerous commands on the denylist.")]
+        "Executes a command-line command in the specified shell (PowerShell or CMD). ")]
     public async Task<string> ExecuteCommandAsync(
         Kernel kernel,
         [Description("The full command to execute, for example, 'Get-Process -Name chrome' or 'ipconfig /all'.")]
@@ -72,9 +74,19 @@ public sealed class WinCLIPlugin : KernelFunctionGroup
         // 注意：这种检查方式相对基础，聪明的用户可能通过复杂方式绕过。
         // 例如 'cmd /c "del C:\\file.txt"'，这里的检查只会看到 'cmd'。
         var commandBase = command.Trim().Split(' ')[0].ToLowerInvariant();
-        if (DeniedCommands.Contains(commandBase))
+        if (VerifyRequiredCommands.Contains(commandBase))
         {
-            return $"错误：命令 '{commandBase}' 在拒绝列表中，出于安全原因被拒绝执行。";
+            var interactor = AsyncContextStore<ChatContext>.Current?.Interactor;
+            if (interactor == null)
+            {
+                return $"错误：命令 '{commandBase}' 被默认禁止执行。";
+            }
+
+            if (await interactor.WaitForPermission("安全警告",
+                    $"请求执行命令：{command}\n该命令被列为危险命令，可能会对系统造成损害。是否继续？"))
+            {
+                throw new UnauthorizedAccessException("用户拒绝执行危险命令。");
+            }
         }
 
         try
@@ -150,7 +162,7 @@ public sealed class WinCLIPlugin : KernelFunctionGroup
     {
         return new WinCLIPlugin()
         {
-            DeniedCommands = new HashSet<string>(DeniedCommands)
+            VerifyRequiredCommands = new HashSet<string>(VerifyRequiredCommands)
         };
     }
 }

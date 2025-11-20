@@ -507,9 +507,9 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             }
         }
 
-        public Task<bool> WaitForPermission(string message)
+        public Task<bool> WaitForPermission(string title, string message)
         {
-            var permissionViewModel = new PermissionViewModel() { Content = message };
+            var permissionViewModel = new PermissionViewModel() { Title = title, Content = message };
             _customRenderer.AppendExpanderItem(permissionViewModel,
                 CustomRenderer.PermissionRequestStyleKey);
             return permissionViewModel.Task;

@@ -30,7 +30,7 @@ public class DebugInvokeInteractor : IInvokeInteractor
         Debug.WriteLine(message);
     }
 
-    public Task<bool> WaitForPermission(string message)
+    public Task<bool> WaitForPermission(string title, string message)
     {
         return Task.FromResult(true);
     }

@@ -12,7 +12,7 @@ public interface IInvokeInteractor
 
     void WriteLine(string? message = null);
 
-    Task<bool> WaitForPermission(string message);
+    Task<bool> WaitForPermission(string title, string message);
 
     Task<bool> WaitForPermission(object content);
 }
