@@ -1,10 +1,5 @@
-﻿using System.ClientModel;
-using System.ClientModel.Primitives;
-using System.Net.Http;
-using LLMClient.Configuration;
-using LLMClient.Endpoints.OpenAIAPI;
+﻿using LLMClient.Configuration;
 using LLMClient.UI.ViewModel.Base;
-using OpenAI;
 
 namespace LLMClient.Endpoints;
 
@@ -24,6 +19,8 @@ public class APIDefaultOption : BaseViewModel<APIDefaultOption>
     }
 
     private string _url = string.Empty;
+    
+    private bool _isOpenAiCompatible = true;
 
     public string URL
     {
@@ -38,18 +35,14 @@ public class APIDefaultOption : BaseViewModel<APIDefaultOption>
 
     public ProxySetting ProxySetting { get; set; } = new ProxySetting();
 
-    public OpenAIClientEx? CreateOpenAIClient()
+    public bool IsOpenAICompatible
     {
-        if (string.IsNullOrEmpty(APIToken) || string.IsNullOrEmpty(URL))
+        get => _isOpenAiCompatible;
+        set
         {
-            return null;
+            if (value == _isOpenAiCompatible) return;
+            _isOpenAiCompatible = value;
+            OnPropertyChanged();
         }
-
-        var httpClient = new HttpClient( /*new DebugMessageLogger()*/) { Timeout = TimeSpan.FromMinutes(10) };
-        return new OpenAIClientEx(new ApiKeyCredential(APIToken), new OpenAIClientOptions
-        {
-            Endpoint = new Uri(URL),
-            Transport = new HttpClientPipelineTransport(httpClient)
-        });
     }
 }

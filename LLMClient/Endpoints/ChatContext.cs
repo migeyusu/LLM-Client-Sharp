@@ -48,12 +48,14 @@ public class ChatContext
             var node = (JsonArray?)JsonNode.Parse(patch);
             if (node?.Count > 0)
             {
-                var deserialize = node.Deserialize<Dictionary<string, string>>();
-                if (deserialize != null && deserialize.Count != 0)
+                foreach (var jsonNode in node)
                 {
-                    foreach (var kv in deserialize)
+                    if (jsonNode is JsonObject jsonObject)
                     {
-                        dictionary[kv.Key] = kv.Value;
+                        foreach (var keyValuePair in jsonObject)
+                        {
+                            dictionary[keyValuePair.Key] = keyValuePair.Value?.ToString() ?? string.Empty;
+                        }   
                     }
                 }
             }

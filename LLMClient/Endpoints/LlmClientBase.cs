@@ -14,6 +14,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using OpenAI.Chat;
+using OpenAI.Responses;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
@@ -158,8 +159,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 await searchService.ApplySearch(context);
             }
 
-            var thinkingConfig = requestViewItem?.ThinkingConfig;
-            thinkingConfig?.EnableThinking(requestViewItem!);
             var chatHistory = new List<ChatMessage>();
             var kernelPluginCollection = new KernelPluginCollection();
             var additionalPromptBuilder = new StringBuilder();
@@ -277,6 +276,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     streaming = false;
                 }
             }
+
+            var thinkingConfig = requestViewItem?.ThinkingConfig;
+            thinkingConfig?.EnableThinking(requestOptions);
 
             var chatContext = new ChatContext(interactor, requestViewItem?.TempAdditionalProperties)
                 { Streaming = streaming };

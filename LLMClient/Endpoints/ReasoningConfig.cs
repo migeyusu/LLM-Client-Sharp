@@ -1,5 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Dialog;
+using Microsoft.Extensions.AI;
+using OpenAI.Responses;
 
 namespace LLMClient.Endpoints;
 
@@ -22,10 +24,11 @@ public class OpenRouterReasoningConfig : IThinkingConfig
         set => Exclude = !value;
     }
 
-    public void EnableThinking(RequestViewItem requestViewItem)
+    public void EnableThinking(ChatOptions options)
     {
         object clone = this.Clone();
-        requestViewItem.TempAdditionalProperties["reasoning"] = clone;
+        options.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        options.AdditionalProperties["reasoning"] = clone;
     }
 
     public object Clone()
@@ -36,6 +39,36 @@ public class OpenRouterReasoningConfig : IThinkingConfig
             BudgetTokens = this.BudgetTokens,
             Exclude = this.Exclude
         };
+    }
+}
+
+public class DefaultThinkingConfig : IThinkingConfig
+{
+    [JsonIgnore] public string? Effort { get; set; }
+
+    [JsonIgnore] public int? BudgetTokens { get; set; }
+
+    [JsonIgnore] public bool ShowThinking { get; set; }
+
+    public void EnableThinking(ChatOptions options)
+    {
+        options.RawRepresentationFactory = _ => new ResponseCreationOptions
+        {
+            ReasoningOptions = new()
+            {
+                ReasoningEffortLevel = string.IsNullOrEmpty(Effort)
+                    ? ResponseReasoningEffortLevel.High
+                    : new ResponseReasoningEffortLevel(Effort),
+                ReasoningSummaryVerbosity = ShowThinking
+                    ? ResponseReasoningSummaryVerbosity.Detailed
+                    : ResponseReasoningSummaryVerbosity.Auto
+            }
+        };
+    }
+
+    public object Clone()
+    {
+        return new DefaultThinkingConfig();
     }
 }
 
@@ -51,10 +84,11 @@ public class GeekAIThinkingConfig : IThinkingConfig
 
     [JsonPropertyName("include_thoughts")] public bool ShowThinking { get; set; } = true;
 
-    public void EnableThinking(RequestViewItem requestViewItem)
+    public void EnableThinking(ChatOptions options)
     {
         object clone = this.Clone();
-        requestViewItem.TempAdditionalProperties["thinking_config"] = clone;
+        options.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        options.AdditionalProperties["thinking_config"] = clone;
     }
 
     //仅qwen3早期支持
@@ -86,9 +120,10 @@ public class NVDAAPIThinkingConfig : IThinkingConfig
 
     [JsonIgnore] public bool ShowThinking { get; set; }
 
-    public void EnableThinking(RequestViewItem requestViewItem)
+    public void EnableThinking(ChatOptions options)
     {
-        requestViewItem.TempAdditionalProperties["chat_template_kwargs"] = new Dictionary<string, object>
+        options.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        options.AdditionalProperties["chat_template_kwargs"] = new Dictionary<string, object>
         {
             { "thinking", true }
         };

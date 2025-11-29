@@ -16,6 +16,7 @@ public interface ILLMEndpoint
     string Name { get; }
 
     ImageSource Icon { get; }
+    
 
     IReadOnlyCollection<ILLMChatModel> AvailableModels { get; }
 

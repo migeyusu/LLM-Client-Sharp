@@ -3,9 +3,10 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using Google.Apis.Util;
 using LLMClient.Abstraction;
-using LLMClient.Configuration;
 using LLMClient.Dialog;
 using LLMClient.UI.Component.CustomControl;
 using LLMClient.UI.Component.Utility;
@@ -23,12 +24,9 @@ public partial class MainWindow : ExtendedWindow
 {
     private readonly MainWindowViewModel _mainWindowViewModel;
 
-    private readonly GlobalOptions _globalConfig;
-
-    public MainWindow(MainWindowViewModel mainWindowViewModel, GlobalOptions globalConfig)
+    public MainWindow(MainWindowViewModel mainWindowViewModel)
     {
         this._mainWindowViewModel = mainWindowViewModel;
-        _globalConfig = globalConfig;
         this.DataContext = mainWindowViewModel;
         InitializeComponent();
     }
@@ -93,11 +91,6 @@ public partial class MainWindow : ExtendedWindow
                 Dispatcher.Invoke(this.Close);
             }));
         }
-    }
-
-    private async void OpenConfig_OnClick(object sender, RoutedEventArgs e)
-    {
-        await this.ShowDialog(_globalConfig);
     }
 
     #region dialog
@@ -205,8 +198,22 @@ public partial class MainWindow : ExtendedWindow
         }
     }
 
-    /*private void LeftPanelCollapse_OnClick(object sender, RoutedEventArgs e)
+    public void DialogListsSwitchButton_OnClick(object sender, RoutedEventArgs e)
     {
-        LeftPanelColumnDefinition.MinWidth
-    }*/
+        if (sender is ToggleButton toggleButton)
+        {
+            if (toggleButton.IsChecked == true)
+            {
+                LeftColumnDefinition.Width = new GridLength(260);
+                LeftColumnDefinition.MinWidth = 230;
+                _mainWindowViewModel.IsLeftDrawerOpen = true;
+            }
+            else
+            {
+                LeftColumnDefinition.Width = new GridLength(0);
+                LeftColumnDefinition.MinWidth = 0;
+                _mainWindowViewModel.IsLeftDrawerOpen = false;
+            }
+        }
+    }
 }

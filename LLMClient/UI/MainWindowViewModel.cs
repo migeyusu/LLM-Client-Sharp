@@ -24,6 +24,19 @@ public class MainWindowViewModel : BaseViewModel
 {
     public SnackbarMessageQueue MessageQueue { get; set; } = new();
 
+    public bool IsLeftDrawerOpen
+    {
+        get => _isLeftDrawerOpen;
+        set
+        {
+            if (value == _isLeftDrawerOpen) return;
+            _isLeftDrawerOpen = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public GlobalOptions GlobalOptions => _globalOptions;
+
     public IEndpointService EndpointsViewModel { get; }
 
     public IPromptsResource PromptsResource { get; }
@@ -252,6 +265,7 @@ public class MainWindowViewModel : BaseViewModel
 
     private bool _isProcessing;
     private string _loadingMessage = "Loading...";
+    private bool _isLeftDrawerOpen = true;
 
     public MainWindowViewModel(IEndpointService configureViewModel, IPromptsResource promptsResource,
         IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection, IMapper mapper,

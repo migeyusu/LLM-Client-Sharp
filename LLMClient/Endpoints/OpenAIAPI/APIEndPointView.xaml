@@ -125,6 +125,14 @@
                     </DockPanel>
                 </RadioButton>
             </StackPanel>
+            <CheckBox Grid.Row="3" Grid.Column="2"
+                      Grid.ColumnSpan="2"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center"
+                      IsChecked="{Binding ConfigOption.IsOpenAICompatible,Mode=TwoWay}"
+                      materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                      Height="35"
+                      Content="OpenAI Compatible" />
         </Grid>
         <ListBox Grid.Row="1" Grid.Column="0"
                  Margin="0,16,0,0"

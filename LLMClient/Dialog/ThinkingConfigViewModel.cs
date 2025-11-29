@@ -1,6 +1,7 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.UI.ViewModel.Base;
+using Microsoft.Extensions.AI;
 using OpenAI.Chat;
 
 namespace LLMClient.Dialog;
@@ -108,7 +109,7 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
         }
     }
 
-    public void EnableThinking(RequestViewItem requestViewItem)
+    public void EnableThinking(ChatOptions options)
     {
         throw new NotImplementedException();
     }

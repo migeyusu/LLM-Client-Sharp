@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using LLMClient.Abstraction;
@@ -264,7 +265,7 @@ public class AzureModelInfo : ILLMChatModel
             {
                 _document = stringBuilder.ToString().RenderOnFlowDocument();
             }
-
+            
             return _document;
         }
     }

@@ -1,7 +1,11 @@
-﻿using System.ComponentModel;
+﻿using System.ClientModel;
+using System.ClientModel.Primitives;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
+using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,6 +46,21 @@ public class SemanticKernelStore
 
     private readonly Kernel _kernel;
 
+    private OpenAIClientEx? CreateOpenAIClient(APIDefaultOption option)
+    {
+        if (string.IsNullOrEmpty(option.APIToken) || string.IsNullOrEmpty(option.URL))
+        {
+            return null;
+        }
+
+        var httpClient = new HttpClient( /*new DebugMessageLogger()*/) { Timeout = TimeSpan.FromMinutes(10) };
+        return new OpenAIClientEx(new ApiKeyCredential(option.APIToken), new OpenAIClientOptions
+        {
+            Endpoint = new Uri(option.URL),
+            Transport = new HttpClientPipelineTransport(httpClient)
+        });
+    }
+
     [Experimental("SKEXP0010")]
     public SemanticKernelStore(ILLMEndpoint endpoint, string modelId = "text-embedding-3-small",
         string dbConnectionString = "Data Source=file_embedding.db")
@@ -49,7 +68,7 @@ public class SemanticKernelStore
         OpenAIClient? openAiClient;
         if (endpoint is APIEndPoint apiEndPoint)
         {
-            openAiClient = apiEndPoint.Option.ConfigOption.CreateOpenAIClient();
+            openAiClient = CreateOpenAIClient(apiEndPoint.Option.ConfigOption);
         }
         else
         {

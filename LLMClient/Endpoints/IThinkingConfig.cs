@@ -3,6 +3,7 @@ using LLMClient.Abstraction;
 using LLMClient.Dialog;
 using LLMClient.Endpoints.Converters;
 using LLMClient.Endpoints.OpenAIAPI;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Endpoints;
 
@@ -27,19 +28,20 @@ public interface IThinkingConfig : ICloneable
                     return new OpenRouterReasoningConfig();
                 case ModelSource.GeekAI:
                     return new GeekAIThinkingConfig();
-                default:
-                    break;
             }
 
             if (apiEndPoint.Option.ConfigOption.URL == "https://integrate.api.nvidia.com/v1")
             {
                 return new NVDAAPIThinkingConfig();
             }
+            if (apiEndPoint.Option.ConfigOption.IsOpenAICompatible)
+            {
+                return new DefaultThinkingConfig();
+            }
         }
-
         return null;
     }
 
 
-    public void EnableThinking(RequestViewItem requestViewItem);
+    public void EnableThinking(ChatOptions options);
 }

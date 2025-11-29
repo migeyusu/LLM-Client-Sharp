@@ -101,6 +101,7 @@
                            Margin="0,10,0,5"
                            HorizontalAlignment="Center" />
                 <FlowDocumentScrollViewer Focusable="False"
+                                          Unloaded="FrameworkElement_OnUnloaded"
                                           Document="{Binding Document,Mode=OneTime}" />
             </StackPanel>
         </ScrollViewer>
