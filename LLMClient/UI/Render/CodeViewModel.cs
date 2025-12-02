@@ -79,6 +79,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
     private readonly string[] _supportedViewExtensions = new[] { "html" };
 
     private readonly string[] _supportedRunExtensions = new[] { "bash", "powershell", };
+    
     private int _selectedViewMode = 0;
 
     private string _nameLower;

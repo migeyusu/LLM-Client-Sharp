@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
@@ -126,7 +127,6 @@ public class TextMateCodeRenderer : CodeBlockRenderer
 
     public static Table CreateTable(Block left, Block right)
     {
-        // 构造表格
         var table = new Table { CellSpacing = 4 };
         // 两列
         table.Columns.Add(new TableColumn() { Width = new GridLength(1, GridUnitType.Star) });
@@ -136,22 +136,25 @@ public class TextMateCodeRenderer : CodeBlockRenderer
         var row = new TableRow();
         rowGroup.Rows.Add(row);
         table.RowGroups.Add(rowGroup);
-        // 单元格 1：图片
-        var cell1 = new TableCell(right);
-        var cell2 = new TableCell(left);
+        var cell1 = new TableCell(left);
+        var cell2 = new TableCell(right);
         row.Cells.Add(cell1);
         row.Cells.Add(cell2);
         return table;
     }
 
-    public static BlockUIContainer CreateHtmlView(string codeString)
+    public static Block CreateHtmlView(string codeString)
     {
         var htmlViewContext = new HtmlViewContext() { HtmlContent = codeString };
-        var blockUiContainer = new BlockUIContainer();
+        var blockUiContainer = new BlockUIContainer(){Margin = new Thickness(5)};
         var contentControl = new ContentControl();
         contentControl.SetResourceReference(FrameworkElement.StyleProperty, HtmlViewContext.HtmlViewContextKey);
         ((IAddChild)blockUiContainer).AddChild(contentControl);
         contentControl.Content = htmlViewContext;
+        blockUiContainer.Loaded+= (s, e) =>
+        {
+            Debugger.Break();
+        };
         return blockUiContainer;
     }
 }

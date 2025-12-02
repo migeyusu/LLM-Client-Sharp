@@ -301,12 +301,22 @@
            x:Key="{x:Static render:HtmlViewContext.HtmlViewContextKey}">
         <Setter Property="HorizontalAlignment"
                 Value="Stretch" />
+        <Setter Property="VerticalAlignment"
+                Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment"
+                Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment"
+                Value="Stretch"/>
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type render:HtmlViewContext}">
-                    <wpf:ChromiumWebBrowser x:Name="PreviewView">
+                    <wpf:ChromiumWebBrowser x:Name="PreviewView"
+                                            VerticalAlignment="Stretch"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalContentAlignment="Stretch"
+                                            HorizontalContentAlignment="Stretch">
                         <b:Interaction.Behaviors>
-                            <component:WebBrowserHtmlBehavior HtmlContent="{Binding HtmlContent,Mode=OneWay}" />
+                            <component:WebBrowserHtmlBehavior HtmlContent="{Binding HtmlContent,Mode=OneTime}" />
                         </b:Interaction.Behaviors>
                     </wpf:ChromiumWebBrowser>
                 </DataTemplate>
@@ -773,7 +783,7 @@
         <Setter Property="Cursor"
                 Value="IBeam" />
         <Setter Property="Padding"
-                Value="5,10" />
+                Value="10" />
         <Setter Property="Margin"
                 Value="0,0,0,0" />
         <Setter Property="Foreground"
