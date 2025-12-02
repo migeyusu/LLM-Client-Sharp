@@ -107,7 +107,7 @@
                                              Visibility="{Binding ThinkingConfig,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                              Margin="8,0,0,0" />
                     <materialDesign:PackIcon Kind="DataMatrix"
-                                             Visibility="{Binding RagSources,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                             Visibility="{Binding HasRagSources,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
                                              Margin="8,0,0,0" />
                 </StackPanel>
             </StackPanel>
@@ -275,7 +275,7 @@
                                             Style="{StaticResource MaterialDesignIconButton}">
                                         <Grid>
                                             <ProgressBar IsIndeterminate="True"
-                                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light}"
+                                                         Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
                                                          Width="28"
                                                          Height="28"
                                                          Style="{StaticResource MaterialDesignCircularProgressBar}"

@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace LLMClient;
+namespace LLMClient.UI.Log;
 
 public static class DebugEx
 {

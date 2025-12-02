@@ -6,8 +6,6 @@
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
                     xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
                     xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
-                    xmlns:azure="clr-namespace:LLMClient.Endpoints.Azure"
-                    xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                     xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
                     xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
@@ -25,33 +23,7 @@
     </ItemsPanelTemplate>
     <component:TypeBasedDataTemplateSelector x:Key="ModelsDataTemplateSelector">
         <component:DataTemplateTypePair>
-            <HierarchicalDataTemplate DataType="{x:Type azure:GithubCopilotEndPoint}"
-                                      ItemsSource="{Binding AvailableModels, Mode=OneTime}">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="{Binding Icon,Mode=OneTime}"
-                           Width="26"
-                           Height="26" />
-                    <TextBlock Margin="10,0"
-                               VerticalAlignment="Center"
-                               Text="{Binding DisplayName, Mode=OneTime}" />
-                </StackPanel>
-            </HierarchicalDataTemplate>
-        </component:DataTemplateTypePair>
-        <component:DataTemplateTypePair>
-            <DataTemplate DataType="{x:Type models:AzureModelInfo}">
-                <DockPanel>
-                    <Image DockPanel.Dock="Left"
-                           Width="23"
-                           Height="23"
-                           Source="{Binding  Icon.CurrentSource,Mode=OneWay}" />
-                    <TextBlock Margin="10,2"
-                               VerticalAlignment="Center"
-                               Text="{Binding FriendlyName,Mode=OneTime }" />
-                </DockPanel>
-            </DataTemplate>
-        </component:DataTemplateTypePair>
-        <component:DataTemplateTypePair>
-            <HierarchicalDataTemplate DataType="{x:Type openAiapi:APIEndPoint}"
+            <HierarchicalDataTemplate DataType="{x:Type abstraction:ILLMEndpoint}"
                                       ItemsSource="{Binding AvailableModels,Mode=OneWay}">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="{Binding Icon,Mode=OneWay}"
@@ -64,7 +36,7 @@
             </HierarchicalDataTemplate>
         </component:DataTemplateTypePair>
         <component:DataTemplateTypePair>
-            <DataTemplate DataType="{x:Type openAiapi:APIModelInfo}">
+            <DataTemplate DataType="{x:Type abstraction:ILLMChatModel}">
                 <StackPanel Orientation="Horizontal">
                     <Image Width="23"
                            Height="23"
@@ -74,6 +46,8 @@
                                VerticalAlignment="Center" />
                 </StackPanel>
             </DataTemplate>
+        </component:DataTemplateTypePair>
+        <component:DataTemplateTypePair>
         </component:DataTemplateTypePair>
     </component:TypeBasedDataTemplateSelector>
     <DataTemplate x:Key="FunctionTreeDataTemplate"
@@ -168,13 +142,22 @@
             <DockPanel Height="200">
                 <ListBox DisplayMemberPath="DisplayName"
                          Width="150"
+                         SelectedIndex="0"
                          x:Name="AvailableEndpointsListBox"
-                         ItemsSource="{Binding Source={extension:Service {x:Type abstraction:IEndpointService}},Path=AvailableEndpoints,Mode=OneWay}" />
+                         ItemsSource="{Binding Source={extension:Service {x:Type abstraction:IEndpointService}},Path=CandidateEndpoints,Mode=OneWay}" />
                 <ListBox DockPanel.Dock="Right"
                          HorizontalAlignment="Stretch"
                          DisplayMemberPath="Name"
+                         materialDesign:RippleAssist.IsDisabled="True"
                          SelectedItem="{Binding SelectedModel,Mode=TwoWay}"
-                         ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}" />
+                         ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}">
+                    <!--<b:Interaction.Triggers>
+                        <b:EventTrigger EventName="MouseDoubleClick">
+                            <b:InvokeCommandAction 
+                                Command="{Binding CreateDefaultCommand}"/>
+                        </b:EventTrigger>
+                    </b:Interaction.Triggers>-->
+                </ListBox>
             </DockPanel>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -182,13 +165,13 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                           TextWrapping="Wrap"
+                           TextWrapping="NoWrap"
                            HorizontalAlignment="Left"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis"
                            DataContext="{Binding SelectedModel,Mode=OneWay}">
                     <TextBlock.Text>
-                        <MultiBinding StringFormat="服务：{0},模型：{1}">
+                        <MultiBinding StringFormat="{}{0} —— {1}">
                             <Binding Path="Endpoint.DisplayName" TargetNullValue="无" />
                             <Binding Path="Name" TargetNullValue="无" />
                         </MultiBinding>
@@ -198,26 +181,32 @@
                             Margin="10,0,0,0"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right">
-                    <Button Style="{StaticResource MaterialDesignFlatLightButton}"
+                    <!--<Button Style="{StaticResource MaterialDesignOutlinedButton}"
                             Command="{x:Static materialDesign:PopupBox.ClosePopupCommand}"
-                            Content="取消" />
+                            Content="取消" />-->
                     <materialDesign:SplitButton Command="{Binding  CreateDefaultCommand}"
                                                 Content="确认"
+                                                Margin="10,0,0,0"
+                                                PopupUniformCornerRadius="6"
+                                                PopupElevation="Dp3"
+                                                PopupContent="{Binding}"
                                                 CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                        <materialDesign:SplitButton.SplitContent>
-                            <ListBox
-                                ItemsSource="{Binding Source={extension:Service {x:Type abstraction:IResearchModelService}},Path=AvailableResearchModels,Mode=OneTime}"
-                                SelectionMode="Single">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type sys:String}">
-                                        <Button Style="{StaticResource MaterialDesignFlatLightButton}"
-                                                Content="{Binding Mode=OneTime}"
-                                                Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.CreateResearchCommand}"
-                                                CommandParameter="{Binding Mode=OneTime}" />
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </materialDesign:SplitButton.SplitContent>
+                        <materialDesign:SplitButton.PopupContentTemplate>
+                            <DataTemplate>
+                                <ListBox
+                                    ItemsSource="{Binding Source={extension:Service {x:Type abstraction:IResearchModelService}},Path=AvailableResearchModels,Mode=OneTime}"
+                                    SelectionMode="Single">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type sys:String}">
+                                            <Button Style="{StaticResource MaterialDesignFlatLightButton}"
+                                                    Content="{Binding Mode=OneTime}"
+                                                    Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.CreateResearchCommand}"
+                                                    CommandParameter="{Binding Mode=OneTime}" />
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </DataTemplate>
+                        </materialDesign:SplitButton.PopupContentTemplate>
                     </materialDesign:SplitButton>
                 </StackPanel>
             </Grid>

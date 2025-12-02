@@ -38,7 +38,7 @@ public class NullLlmModelClient : ILLMChatClient
                 InfoUrl = "https://example.com/fake-model",
                 Description = "This is a fake model for testing purposes.",
                 MaxContextSize = 0,
-                Endpoint = new NullLLMEndpoint(),
+                Endpoint = new EmptyLLMEndpoint(),
                 SupportSystemPrompt = true,
                 TopPEnable = true,
                 TopKEnable = true,

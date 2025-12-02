@@ -248,20 +248,120 @@
                                              Height="20"
                                              RenderOptions.BitmapScalingMode="HighQuality" />
                 </Button>
-                <TextBlock VerticalAlignment="Center" Text="Light"
-                           Margin="16,0,0,0" />
-                <ToggleButton Margin="6,0" IsChecked="{Binding IsDarkTheme,Mode=TwoWay}"
-                              WindowChrome.IsHitTestVisibleInChrome="True" />
-                <TextBlock VerticalAlignment="Center" Text="Dark" />
+                <ToggleButton Margin="10,0,0,0"
+                              IsChecked="{Binding IsDarkTheme, Mode=TwoWay}"
+                              WindowChrome.IsHitTestVisibleInChrome="True">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Width" Value="90" />
+                            <Setter Property="Height" Value="36" />
+                            <Setter Property="Cursor" Value="Hand" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Grid>
+                                            <!-- 背景容器 -->
+                                            <Border x:Name="BackgroundBorder"
+                                                    CornerRadius="18"
+                                                    Background="#E0E0E0"
+                                                    BorderBrush="#D1D1D1"
+                                                    BorderThickness="1">
+                                                <Border.Effect>
+                                                    <DropShadowEffect ShadowDepth="1" Direction="270" Color="Black"
+                                                                      Opacity="0.1" BlurRadius="2" />
+                                                </Border.Effect>
+                                                <Grid>
+                                                    <!-- 文字显示 -->
+                                                    <TextBlock x:Name="ThemeText"
+                                                               Text="NIGHT"
+                                                               Foreground="White"
+                                                               FontSize="11"
+                                                               FontWeight="Bold"
+                                                               HorizontalAlignment="Right"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,15,0" />
+                                                    <!-- 滑动圆形指示器 -->
+                                                    <Ellipse x:Name="ToggleCircle"
+                                                             Width="28"
+                                                             Height="28"
+                                                             Fill="White"
+                                                             HorizontalAlignment="Left"
+                                                             Margin="4,0,0,0">
+                                                        <Ellipse.RenderTransform>
+                                                            <TranslateTransform x:Name="CircleTransform" X="0" />
+                                                        </Ellipse.RenderTransform>
+                                                        <Ellipse.Effect>
+                                                            <DropShadowEffect ShadowDepth="2" Direction="270" Color="Black" Opacity="0.3" BlurRadius="4"/>
+                                                        </Ellipse.Effect>
+                                                    </Ellipse>
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+
+                                        <ControlTemplate.Triggers>
+                                            <!-- 选中状态 (Dark Mode / IsDarkTheme = true) -->
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="BackgroundBorder" Property="Background"
+                                                        Value="#CCCCCC" />
+                                                <Setter TargetName="ThemeText" Property="Text" Value="DAY" />
+                                                <Setter TargetName="ThemeText" Property="Foreground" Value="#2D2D2D" />
+                                                <Setter TargetName="ThemeText" Property="HorizontalAlignment"
+                                                        Value="Left" />
+                                                <Setter TargetName="ThemeText" Property="Margin" Value="15,0,0,0" />
+                                                <Setter TargetName="ToggleCircle" Property="Fill" Value="#2D2D2D" />
+                                                <!-- 动画效果 -->
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="ToggleCircle"
+                                                                             Storyboard.TargetProperty="(Ellipse.RenderTransform).(TranslateTransform.X)"
+                                                                             To="54"
+                                                                             Duration="0:0:0.3">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="ToggleCircle"
+                                                                             Storyboard.TargetProperty="(Ellipse.RenderTransform).(TranslateTransform.X)"
+                                                                             To="0"
+                                                                             Duration="0:0:0.3">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
+                                            </Trigger>
+
+                                            <!-- 鼠标悬停效果 -->
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="BackgroundBorder" Property="Opacity" Value="0.9" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
                 <TextBlock Text="Code Highlight:"
                            VerticalAlignment="Center"
-                           Margin="16,0,8,0" />
+                           Margin="10,0,8,0" />
                 <ComboBox ItemsSource="{Binding Source={StaticResource DataFromEnum}}"
                           WindowChrome.IsHitTestVisibleInChrome="True"
                           SelectedItem="{Binding ThemeName,Mode=TwoWay}" />
             </StackPanel>
             <ScrollViewer Grid.Column="1"
                           VerticalAlignment="Center"
+                          HorizontalAlignment="Left"
                           WindowChrome.IsHitTestVisibleInChrome="True"
                           Margin="16,0,0,0"
                           Style="{StaticResource HorizontalArrowScrollViewer}">

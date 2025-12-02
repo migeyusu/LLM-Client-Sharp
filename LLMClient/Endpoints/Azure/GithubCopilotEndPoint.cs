@@ -16,7 +16,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
 
     public const string GithubCopilotName = "Github Copilot";
 
-    private readonly Dictionary<string, Action<AzureModelInfo>> _predefinedModels;
+    private readonly Dictionary<string, Action<IModelParams>> _predefinedModels;
 
     /// <summary>
     /// key: model-id
@@ -54,76 +54,28 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         get { return _loadedModelInfos.Values; }
     }
 
-    public override ILLMChatClient? NewChatClient(string modelName)
-    {
-        if (_predefinedModels.TryGetValue(modelName, out var action) &&
-            _loadedModelInfos.TryGetValue(modelName, out var availableModelInfo))
-        {
-            action(availableModelInfo);
-            return new AzureClientBase(this, availableModelInfo);
-        }
-
-        return null;
-    }
-
-    public override ILLMChatClient? NewChatClient(ILLMChatModel model)
-    {
-        if (model is AzureModelInfo azureModelInfo)
-        {
-            return new AzureClientBase(this, azureModelInfo);
-        }
-
-        return null;
-    }
-
-    public override ILLMChatModel? GetModel(string modelName)
-    {
-        return _loadedModelInfos.GetValueOrDefault(modelName);
-    }
-
-    public void UpdateConfig(JsonNode document)
-    {
-        var config = JsonSerializer.SerializeToNode(this.Option, Extension.DefaultJsonSerializerOptions);
-        document[Name] = config;
-    }
-
-    public static GithubCopilotEndPoint TryLoad(JsonObject document)
-    {
-        var githubCopilotEndPoint = new GithubCopilotEndPoint();
-        if (document.TryGetPropertyValue(GithubCopilotName, out var jsonNode))
-        {
-            var azureOption = jsonNode?.Deserialize<AzureOption>(Extension.DefaultJsonSerializerOptions);
-            if (azureOption != null)
-            {
-                githubCopilotEndPoint.Option = azureOption;
-            }
-        }
-
-        return githubCopilotEndPoint;
-    }
-
     public GithubCopilotEndPoint()
     {
-        Action<AzureModelInfo> full = (info) =>
+        Action<IModelParams> full = (info) =>
         {
             info.TopP = 1;
             info.Temperature = 1;
             info.FrequencyPenalty = 0;
             info.PresencePenalty = 0;
         };
-        Action<AzureModelInfo> mistral = (info) =>
+        Action<IModelParams> mistral = (info) =>
         {
             info.MaxTokens = 2048;
             info.Temperature = 0.8f;
             info.TopP = 0.1f;
         };
-        Action<AzureModelInfo> baseModel = (info) =>
+        Action<IModelParams> baseModel = (info) =>
         {
             info.TopP = 1;
             info.Temperature = 1;
         };
 
-        Action<AzureModelInfo> llama3 = (info) =>
+        Action<IModelParams> llama3 = (info) =>
         {
             info.TopP = 0.1f;
             info.Temperature = 0.8f;
@@ -131,9 +83,9 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             info.PresencePenalty = 0;
             info.FrequencyPenalty = 0;
         };
-        Action<AzureModelInfo> empty = (info) => { };
-        Action<AzureModelInfo> deepSeek_R1 = (info) => { info.MaxTokens = 2048; };
-        Action<AzureModelInfo> deepSeek_V3 = (info) =>
+        Action<IModelParams> empty = (info) => { };
+        Action<IModelParams> deepSeek_R1 = (info) => { info.MaxTokens = 2048; };
+        Action<IModelParams> deepSeek_V3 = (info) =>
         {
             info.TopP = 0.1f;
             info.Temperature = 0.8f;
@@ -141,7 +93,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             info.FrequencyPenalty = 0;
             info.PresencePenalty = 0;
         };
-        Action<AzureModelInfo> phi4 = (info) =>
+        Action<IModelParams> phi4 = (info) =>
         {
             info.MaxTokens = 2048;
             info.Temperature = 0.8f;
@@ -149,9 +101,9 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             info.PresencePenalty = 0;
             info.PresencePenalty = 0;
         };
-        Action<AzureModelInfo> gpt_5 = (info) => { info.MaxTokens = 16384; };
+        Action<IModelParams> gpt_5 = (info) => { info.MaxTokens = 16384; };
 
-        _predefinedModels = new Dictionary<string, Action<AzureModelInfo>>()
+        _predefinedModels = new Dictionary<string, Action<IModelParams>>()
         {
             { "OpenAI gpt-5", gpt_5 },
             {
@@ -205,6 +157,47 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             { "Phi-4-multimodal-instruct", phi4 },
             { "Phi-4-reasoning", phi4 }
         };
+    }
+
+    public override ILLMChatClient? NewChatClient(ILLMChatModel model)
+    {
+        if (model is AzureModelInfo azureModelInfo)
+        {
+            var azureClientBase = new AzureClientBase(this, azureModelInfo);
+            if (_predefinedModels.TryGetValue(model.Name, out var action))
+            {
+                action(azureClientBase.Parameters);
+                return azureClientBase;
+            }
+        }
+
+        return null;
+    }
+
+    public override ILLMChatModel? GetModel(string modelName)
+    {
+        return _loadedModelInfos.GetValueOrDefault(modelName);
+    }
+
+    public void UpdateConfig(JsonNode document)
+    {
+        var config = JsonSerializer.SerializeToNode(this.Option, Extension.DefaultJsonSerializerOptions);
+        document[Name] = config;
+    }
+
+    public static GithubCopilotEndPoint TryLoad(JsonObject document)
+    {
+        var githubCopilotEndPoint = new GithubCopilotEndPoint();
+        if (document.TryGetPropertyValue(GithubCopilotName, out var jsonNode))
+        {
+            var azureOption = jsonNode?.Deserialize<AzureOption>(Extension.DefaultJsonSerializerOptions);
+            if (azureOption != null)
+            {
+                githubCopilotEndPoint.Option = azureOption;
+            }
+        }
+
+        return githubCopilotEndPoint;
     }
 
     private async Task FetchModelsFromHttp()

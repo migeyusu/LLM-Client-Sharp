@@ -17,15 +17,7 @@ public interface ILLMEndpoint
 
     ImageSource Icon { get; }
     
-
     IReadOnlyCollection<ILLMChatModel> AvailableModels { get; }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="modelName">chat model name</param>
-    /// <returns></returns>
-    ILLMChatClient? NewChatClient(string modelName);
 
     ILLMChatClient? NewChatClient(ILLMChatModel model);
 

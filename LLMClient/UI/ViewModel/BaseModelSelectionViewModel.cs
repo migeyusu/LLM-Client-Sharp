@@ -42,6 +42,7 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel
             return;
         }
 
+        ServiceLocator.GetService<IEndpointService>()?.AddModelFrequency(this.SelectedModel);
         SubmitClient(chatClient);
     });
 

@@ -169,14 +169,6 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
         get { return this.Option.Models; }
     }
 
-    public ILLMChatClient? NewChatClient(string modelName)
-    {
-        var apiModelInfo = Option.Models.FirstOrDefault(x => x.Name == modelName);
-        if (apiModelInfo == null)
-            return null;
-        return new APIClient(this, apiModelInfo, Option.ConfigOption, _loggerFactory);
-    }
-
     public ILLMChatClient? NewChatClient(ILLMChatModel model)
     {
         if (model is APIModelInfo apiModelInfo)

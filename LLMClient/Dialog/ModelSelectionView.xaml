@@ -32,7 +32,7 @@
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Width="300"
-                      ItemsSource="{Binding Source={StaticResource EndpointService},Path=AvailableEndpoints,Mode=OneWay}"
+                      ItemsSource="{Binding Source={StaticResource EndpointService},Path=CandidateEndpoints,Mode=OneWay}"
                       ItemTemplateSelector="{StaticResource ModelsDataTemplateSelector}" />
             <Separator Grid.Column="0"
                        VerticalAlignment="Stretch"

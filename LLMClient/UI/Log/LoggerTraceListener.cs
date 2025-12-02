@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
-namespace LLMClient;
+namespace LLMClient.UI.Log;
 
 /// <summary>
 /// 将 System.Diagnostics.Trace 输出重定向到 Microsoft.Extensions.Logging 的 TraceListener

@@ -205,7 +205,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
         }
     }
 
-    [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = new NullLLMEndpoint();
+    [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = new EmptyLLMEndpoint();
 
 
     public bool SupportSystemPrompt

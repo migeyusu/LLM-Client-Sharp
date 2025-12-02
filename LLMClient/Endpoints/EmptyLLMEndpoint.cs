@@ -4,9 +4,9 @@ using LLMClient.Data;
 
 namespace LLMClient.Endpoints
 {
-    public class NullLLMEndpoint : ILLMEndpoint
+    public class EmptyLLMEndpoint : ILLMEndpoint
     {
-        public static NullLLMEndpoint Instance { get; } = new NullLLMEndpoint();
+        public static EmptyLLMEndpoint Instance { get; } = new EmptyLLMEndpoint();
         public string DisplayName => "Null Endpoint";
         public bool IsInbuilt => false;
         public bool IsEnabled => true;
@@ -14,11 +14,6 @@ namespace LLMClient.Endpoints
         public ImageSource Icon => ImageExtensions.EndpointIcon;
 
         public IReadOnlyCollection<ILLMChatModel> AvailableModels => [];
-
-        public ILLMChatClient? NewChatClient(string modelName)
-        {
-            return NullLlmModelClient.Instance;
-        }
 
         public ILLMChatClient? NewChatClient(ILLMChatModel model)
         {

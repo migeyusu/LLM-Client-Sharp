@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
@@ -24,8 +25,7 @@ namespace LLMClient.Endpoints;
 /// </summary>
 public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 {
-    private ILoggerFactory _loggerFactory;
-    private readonly IMapper _mapper;
+    private readonly ILoggerFactory _loggerFactory;
 
     public ILLMEndpoint? SelectedEndpoint
     {
@@ -58,7 +58,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
     }));
 
-    public ICommand SaveAllCommand => new ActionCommand(async o =>
+    public ICommand SaveAllCommand => new ActionCommand(async void (_) =>
     {
         try
         {
@@ -82,7 +82,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             {
                 if (!ep.Validate(out var msg))
                 {
-                    MessageBox.Show(msg);
+                    MessageBox.Show("保存失败: " + msg, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
             }
@@ -94,9 +94,15 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                 ModelName = model.Name,
                 EndPointName = model.Endpoint.Name,
             })).ToArray();
-            // .Select(model => new KeyValuePair<string, string>(model.LlmModel.Endpoint.Name, model.LlmModel.Name)
             var serializeToNode = JsonSerializer.SerializeToNode(keyValuePairs, options);
             endPointsNode[SuggestedModelKey] = serializeToNode;
+            var historyKeyValuePairs = this.HistoryModels.Select((model => new LLMModelPersistModel()
+            {
+                ModelName = model.Name,
+                EndPointName = model.Endpoint.Name,
+            })).ToArray();
+            var historySerializeToNode = JsonSerializer.SerializeToNode(historyKeyValuePairs, options);
+            endPointsNode[HistoryModelKey] = historySerializeToNode;
             await EndPointsConfig.SaveDoc(root);
             MessageEventBus.Publish("已保存！");
         }
@@ -104,32 +110,70 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         {
             MessageBox.Show("保存失败: " + e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-        /*var endPointsObject = new JsonObject();
-        foreach (var endpoint in Endpoints)
-        {
-            endpoint.UpdateConfig(endPointsObject);
-        }
-
-        doc[EndPointsConfiguration.EndpointsNodeName] = endPointsObject;
-        await EndPointsConfiguration.SaveDoc(doc);*/
     });
 
-    public ICommand ReloadCommand => new ActionCommand((async o =>
+    public ICommand ReloadCommand => new ActionCommand((async void (o) =>
     {
         Endpoints.Clear();
         await this.Initialize();
     }));
 
-    public ObservableCollection<ILLMEndpoint> Endpoints { get; set; } = new ObservableCollection<ILLMEndpoint>();
+    public ObservableCollection<ILLMEndpoint> Endpoints { get; set; } = new();
+
+    private readonly ReadOnlyObservableCollection<ILLMEndpoint> _availableEndpoints;
 
     public IReadOnlyList<ILLMEndpoint> AvailableEndpoints
     {
-        get { return Endpoints.ToArray(); }
+        get { return _availableEndpoints; }
     }
+
+    public IReadOnlyList<ILLMEndpoint> CandidateEndpoints
+    {
+        get
+        {
+            var list = new List<ILLMEndpoint>(Endpoints.Count + 2);
+            list.Add(_historyEndPoint);
+            list.Add(_suggestedEndPoint);
+            list.AddRange(Endpoints);
+            return list;
+        }
+    }
+
+    private readonly StubEndPoint _historyEndPoint;
+
+    private readonly StubEndPoint _suggestedEndPoint;
+
+    private readonly ObservableCollection<ILLMChatModel> _historyChatModelsOb = [];
+
+    private readonly ReadOnlyObservableCollection<ILLMChatModel> _historyChatModels;
+
+    public IReadOnlyList<ILLMChatModel> HistoryModels
+    {
+        get { return _historyChatModels; }
+    }
+
+    private readonly ReadOnlyObservableCollection<ILLMChatModel> _suggestedModels;
 
     public IReadOnlyList<ILLMChatModel> SuggestedModels
     {
-        get { return SuggestedModelsOb.ToArray(); }
+        get { return _suggestedModels; }
+    }
+
+    public void AddModelFrequency(ILLMChatModel model)
+    {
+        var indexOf = _historyChatModelsOb.IndexOf(model);
+        if (indexOf >= 0)
+        {
+            _historyChatModelsOb.Move(indexOf, 0);
+        }
+        else
+        {
+            _historyChatModelsOb.Insert(0, model);
+            if (_historyChatModelsOb.Count > 20)
+            {
+                _historyChatModelsOb.RemoveAt(_historyChatModelsOb.Count - 1);
+            }
+        }
     }
 
     public ObservableCollection<ILLMChatModel> SuggestedModelsOb { get; } =
@@ -142,7 +186,6 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         if (o is ILLMChatModel suggestedModel)
         {
             this.SuggestedModelsOb.Remove(suggestedModel);
-            OnPropertyChanged(nameof(SuggestedModels));
         }
     }));
 
@@ -151,15 +194,28 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
     public EndpointConfigureViewModel(ILoggerFactory loggerFactory, IMapper mapper)
     {
         this._loggerFactory = loggerFactory;
-        this._mapper = mapper;
         PopupSelectViewModel = new ModelSelectionPopupViewModel(OnModelSelected)
             { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
-        Endpoints.CollectionChanged += EndpointsOnCollectionChanged;
-    }
-
-    private void EndpointsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        this.OnPropertyChanged(nameof(AvailableEndpoints));
+        _suggestedModels = new ReadOnlyObservableCollection<ILLMChatModel>(SuggestedModelsOb);
+        _availableEndpoints = new ReadOnlyObservableCollection<ILLMEndpoint>(Endpoints);
+        _historyChatModels = new ReadOnlyObservableCollection<ILLMChatModel>(_historyChatModelsOb);
+        _historyEndPoint = new StubEndPoint(_historyChatModelsOb)
+        {
+            DisplayName = "History Models",
+            Name = "HistoryEndPoint",
+            Icon = PackIconKind.History.ToImageSource(),
+        };
+        _suggestedEndPoint = new StubEndPoint(SuggestedModelsOb)
+        {
+            DisplayName = "Suggested Models",
+            Name = "SuggestedEndPoint",
+            Icon = PackIconKind.StarOutline.ToImageSource(),
+        };
+        /*var collection = new CompositeCollection();
+        var collectionContainer = new CollectionContainer() { Collection = Endpoints };
+        collection.Add(collectionContainer);
+        collection.Add(historyEndPoint);
+        collection.Add(suggestedEndPoint);*/
     }
 
     private void OnModelSelected(ILLMChatClient obj)
@@ -171,12 +227,13 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
 
         this.SuggestedModelsOb.Add(obj.Model);
-        OnPropertyChanged(nameof(SuggestedModels));
     }
 
     private GithubCopilotEndPoint? _githubCopilotEndPoint;
 
     private const string SuggestedModelKey = "SuggestedModels";
+
+    private const string HistoryModelKey = "HistoryModels";
 
     public async Task Initialize()
     {
@@ -225,6 +282,29 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             }
 
             OnPropertyChangedAsync(nameof(SuggestedModels));
+        }
+
+        if (endPoints.TryGetPropertyValue(HistoryModelKey, out var historyModels))
+        {
+            var modelPersistModels = historyModels.Deserialize<LLMModelPersistModel[]>();
+            if (modelPersistModels != null)
+            {
+                foreach (var modelPersistModel in modelPersistModels)
+                {
+                    var endPointName = modelPersistModel.EndPointName;
+                    var llmEndpoint = ((IEndpointService)this).GetEndpoint(endPointName);
+                    if (llmEndpoint != null)
+                    {
+                        var llmModel = llmEndpoint.GetModel(modelPersistModel.ModelName);
+                        if (llmModel != null)
+                        {
+                            _historyChatModelsOb.Add(llmModel);
+                        }
+                    }
+                }
+            }
+
+            OnPropertyChangedAsync(nameof(HistoryModels));
         }
     }
 }

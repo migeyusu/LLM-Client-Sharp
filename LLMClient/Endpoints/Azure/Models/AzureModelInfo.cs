@@ -87,7 +87,7 @@ public class AzureModelInfo : ILLMChatModel
 
     [JsonPropertyName("description")] public string? DescriptionRaw { get; set; }
 
-    [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = NullLLMEndpoint.Instance;
+    [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = EmptyLLMEndpoint.Instance;
 
     [JsonIgnore] public bool SupportSystemPrompt => true;
 

@@ -59,7 +59,17 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public List<Attachment>? Attachments { get; set; }
 
+    public bool HasAttachments
+    {
+        get => Attachments != null && Attachments.Count > 0;
+    }
+
     public IList<IRagSource>? RagSources { get; set; }
+
+    public bool HasRagSources
+    {
+        get => RagSources != null && RagSources.Count > 0;
+    }
 
     public IThinkingConfig? ThinkingConfig { get; set; }
 

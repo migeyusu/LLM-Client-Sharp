@@ -372,7 +372,18 @@ public static class Extension
     public static ILLMChatClient? CreateChatClient(this ILLMChatModel llmModel)
     {
         var endpoint = llmModel.Endpoint;
-        return !endpoint.IsEnabled ? null : endpoint.NewChatClient(llmModel);
+        if (!endpoint.IsEnabled)
+        {
+            return null;
+        }
+
+        //prevent recursive call
+        if (endpoint is EmptyLLMEndpoint or StubEndPoint)
+        {
+            return null;
+        }
+
+        return endpoint.NewChatClient(llmModel);
     }
 
     public static void AddLine(this IList<string> list, string? msg = null)

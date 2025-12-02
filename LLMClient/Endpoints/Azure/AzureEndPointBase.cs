@@ -46,8 +46,7 @@ public abstract class AzureEndPointBase : BaseViewModel, ILLMEndpoint
     }
 
     public abstract IReadOnlyCollection<ILLMChatModel> AvailableModels { get; }
-
-    public abstract ILLMChatClient? NewChatClient(string modelName);
+    
     public abstract ILLMChatClient? NewChatClient(ILLMChatModel model);
 
     public abstract ILLMChatModel? GetModel(string modelName);

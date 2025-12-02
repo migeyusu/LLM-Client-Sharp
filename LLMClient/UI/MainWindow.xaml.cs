@@ -198,7 +198,7 @@ public partial class MainWindow : ExtendedWindow
         }
     }
 
-    public void DialogListsSwitchButton_OnClick(object sender, RoutedEventArgs e)
+    private void DialogListsSwitchButton_OnClick(object sender, RoutedEventArgs e)
     {
         if (sender is ToggleButton toggleButton)
         {
