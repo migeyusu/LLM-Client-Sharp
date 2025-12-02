@@ -237,13 +237,13 @@
                 Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
     </Style>
 
-    <Style TargetType="{x:Type HeaderedContentControl}"
-           x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockGroupBoxStyleKey}">
+    <Style TargetType="{x:Type ContentControl}"
+           x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockHeaderStyleKey}">
         <Setter Property="HorizontalAlignment"
                 Value="Stretch" />
-        <Setter Property="HeaderTemplate">
+        <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type render:CodeContext}">
+                <DataTemplate DataType="{x:Type render:CodeViewModel}">
                     <Grid Height="40">
                         <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.Background}"
                                    HorizontalAlignment="Stretch"
@@ -295,64 +295,25 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ContentControl}"
+           x:Key="{x:Static render:HtmlViewContext.HtmlViewContextKey}">
+        <Setter Property="HorizontalAlignment"
+                Value="Stretch" />
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type render:CodeContext}">
-                    <Grid ClipToBounds="True">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition x:Name="CodeColumn" Width="*" />
-                            <ColumnDefinition x:Name="PreviewColumn" Width="0" />
-                        </Grid.ColumnDefinitions>
-                        <!--code-->
-                        <RichTextBox x:Name="CodeView" Grid.Column="0"
-                                     BorderThickness="0"
-                                     Background="{DynamicResource MaterialDesign.Brush.Background}"
-                                     HorizontalAlignment="Stretch"
-                                     IsReadOnly="True"
-                                     Padding="0"
-                                     Style="{x:Null}">
-                            <b:Interaction.Behaviors>
-                                <render:RichTextBoxBehaviour Document="{Binding CodeDocument,Mode=OneTime}" />
-                            </b:Interaction.Behaviors>
-                        </RichTextBox>
-                        <!--view-->
-                        <wpf:ChromiumWebBrowser Grid.Column="1"
-                                                x:Name="PreviewView">
-                            <b:Interaction.Behaviors>
-                                <component:WebBrowserHtmlBehavior HtmlContent="{Binding HtmlContent,Mode=OneWay}" />
-                            </b:Interaction.Behaviors>
-                        </wpf:ChromiumWebBrowser>
-                        <!--<component:WebViewContainer Grid.Column="1"
-                                                    HtmlContent="{Binding HtmlContent,Mode=OneWay}"
-                                                    x:Name="PreviewView" />-->
-                    </Grid>
-                    <DataTemplate.Triggers>
-                        <!--Code Only-->
-                        <DataTrigger Binding="{Binding SelectedViewMode}" Value="0">
-                            <Setter TargetName="CodeColumn"
-                                    Property="Width"
-                                    Value="*" />
-                            <Setter TargetName="PreviewColumn" Property="Width" Value="0" />
-                            <Setter TargetName="PreviewView" Property="Visibility" Value="Collapsed" />
-                        </DataTrigger>
-                        <!-- Code & Preview -->
-                        <DataTrigger Binding="{Binding SelectedViewMode}" Value="1">
-                            <Setter TargetName="CodeColumn" Property="Width" Value="*" />
-                            <Setter TargetName="PreviewColumn" Property="Width" Value="*" />
-                            <Setter TargetName="PreviewView" Property="Visibility" Value="Visible" />
-                        </DataTrigger>
-                        <!-- Preview Only -->
-                        <DataTrigger Binding="{Binding SelectedViewMode}" Value="2">
-                            <Setter TargetName="CodeColumn" Property="Width" Value="0" />
-                            <Setter TargetName="PreviewColumn" Property="Width" Value="*" />
-                            <Setter TargetName="CodeView" Property="Visibility" Value="Collapsed" />
-                            <Setter TargetName="PreviewView" Property="Visibility" Value="Visible" />
-                        </DataTrigger>
-                    </DataTemplate.Triggers>
+                <DataTemplate DataType="{x:Type render:HtmlViewContext}">
+                    <wpf:ChromiumWebBrowser x:Name="PreviewView">
+                        <b:Interaction.Behaviors>
+                            <component:WebBrowserHtmlBehavior HtmlContent="{Binding HtmlContent,Mode=OneWay}" />
+                        </b:Interaction.Behaviors>
+                    </wpf:ChromiumWebBrowser>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
     </Style>
+
     <Style TargetType="{x:Type render:TextmateColoredRun}"
            x:Key="{x:Static render:TextMateCodeRenderer.TokenStyleKey}">
         <Setter Property="ThemeColors"

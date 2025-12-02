@@ -1,7 +1,9 @@
-﻿using System.IO;
+﻿using System.Collections.Concurrent;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Input;
+using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
@@ -97,6 +99,69 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     protected FileInfo GetAssociateFile()
     {
         return new FileInfo(FileFullPath);
+    }
+
+    public static async Task<IEnumerable<T>> LoadFromLocal<T>(IMapper mapper, string folderPath)
+        where T : class, ILLMSession, ILLMSessionFactory<T>
+    {
+        var directoryInfo = new DirectoryInfo(folderPath);
+        if (!directoryInfo.Exists)
+        {
+            directoryInfo.Create();
+        }
+
+        var concurrentBag = new ConcurrentBag<T>();
+        await Parallel.ForEachAsync(directoryInfo.GetFiles("*.json"), (async (info, token) =>
+        {
+            var model = await T.LoadFromFile(info, mapper);
+            if (model != null)
+            {
+                concurrentBag.Add(model);
+            }
+        }));
+        return concurrentBag;
+    }
+
+    public static async IAsyncEnumerable<T> ImportFiles<T>(string targetFolderPath,
+        IEnumerable<FileInfo> fileInfos, IMapper mapper)
+        where T : class, ILLMSessionFactory<T>, ILLMSession
+    {
+        var targetDirectoryInfo = new DirectoryInfo(targetFolderPath);
+        if (!targetDirectoryInfo.Exists)
+        {
+            targetDirectoryInfo.Create();
+        }
+
+        foreach (var fileInfo in fileInfos)
+        {
+            if (fileInfo.DirectoryName?.Equals(targetDirectoryInfo.FullName, StringComparison.OrdinalIgnoreCase) ==
+                false)
+            {
+                T? session = null;
+                try
+                {
+                    var newFilePath = Path.Combine(targetDirectoryInfo.FullName, fileInfo.Name);
+                    if (File.Exists(newFilePath))
+                    {
+                        MessageEventBus.Publish($"会话文件 {fileInfo.Name} 已存在，未进行复制。");
+                    }
+                    else
+                    {
+                        File.Copy(fileInfo.FullName, newFilePath, true);
+                        var info = new FileInfo(newFilePath);
+                        session = await T.LoadFromFile(info, mapper);
+                    }
+                }
+                catch (Exception e)
+                {
+                    MessageEventBus.Publish("导入出现问题" + e.Message);
+                    continue;
+                }
+
+                if (session == null) continue;
+                yield return session;
+            }
+        }
     }
 
     protected abstract Task SaveToStream(Stream stream);

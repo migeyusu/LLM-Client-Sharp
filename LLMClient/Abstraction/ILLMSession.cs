@@ -1,4 +1,7 @@
-﻿namespace LLMClient.Abstraction
+﻿using System.IO;
+using AutoMapper;
+
+namespace LLMClient.Abstraction
 {
     public interface ILLMSession : ICloneable
     {
@@ -9,5 +12,11 @@
         Task Backup();
 
         void Delete();
+    }
+
+    public interface ILLMSessionFactory<T>
+        where T : class, ILLMSession
+    {
+        static abstract Task<T?> LoadFromFile(FileInfo fileInfo, IMapper mapper);
     }
 }

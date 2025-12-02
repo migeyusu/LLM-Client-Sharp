@@ -14,6 +14,7 @@ using LLMClient.ToolCall.Servers;
 using LLMClient.UI;
 using LLMClient.UI.ViewModel;
 using LLMClient.UI.ViewModel.Base;
+using LLMClient.UI.Log;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;

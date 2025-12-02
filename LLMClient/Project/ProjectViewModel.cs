@@ -23,7 +23,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Project;
 
-public class ProjectViewModel : FileBasedSessionBase
+public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<ProjectViewModel>
 {
     public const string SaveDir = "Projects";
 
@@ -66,8 +66,7 @@ public class ProjectViewModel : FileBasedSessionBase
 
     #region file
 
-    public static async Task<ProjectViewModel?> LoadFromFile(FileInfo fileInfo, IMapper mapper,
-        int version = ProjectPersistModel.CurrentVersion)
+    public static async Task<ProjectViewModel?> LoadFromFile(FileInfo fileInfo, IMapper mapper)
     {
         if (!fileInfo.Exists)
         {
@@ -86,7 +85,7 @@ public class ProjectViewModel : FileBasedSessionBase
                     return null;
                 }
 
-                if (persistModel.Version != version)
+                if (persistModel.Version != ProjectPersistModel.CurrentVersion)
                 {
                     Trace.TraceError($"加载会话{fileInfo.FullName}失败：版本不匹配");
                     return null;
@@ -102,68 +101,6 @@ public class ProjectViewModel : FileBasedSessionBase
         {
             Trace.TraceError(e.ToString());
             return null;
-        }
-    }
-
-    public static async IAsyncEnumerable<ProjectViewModel> LoadFromLocal(IMapper mapper)
-    {
-        string fullPath = SaveFolderPathLazy.Value;
-        var directoryInfo = new DirectoryInfo(fullPath);
-        if (!directoryInfo.Exists)
-        {
-            directoryInfo.Create();
-        }
-
-        foreach (var fileInfo in directoryInfo.GetFiles("*.json"))
-        {
-            var dialogViewModel = await LoadFromFile(fileInfo, mapper);
-            if (dialogViewModel == null)
-            {
-                continue;
-            }
-
-            yield return dialogViewModel;
-        }
-    }
-
-    public static async IAsyncEnumerable<ProjectViewModel> ImportFiles(IEnumerable<FileInfo> fileInfos, IMapper mapper)
-    {
-        var targetFolderPath = SaveFolderPathLazy.Value;
-        var targetDirectoryInfo = new DirectoryInfo(targetFolderPath);
-        if (!targetDirectoryInfo.Exists)
-        {
-            targetDirectoryInfo.Create();
-        }
-
-        foreach (var fileInfo in fileInfos)
-        {
-            if (fileInfo.DirectoryName?.Equals(targetDirectoryInfo.FullName, StringComparison.OrdinalIgnoreCase)
-                == false)
-            {
-                ProjectViewModel? projectViewModel = null;
-                try
-                {
-                    var newFilePath = Path.Combine(targetDirectoryInfo.FullName, fileInfo.Name);
-                    if (File.Exists(newFilePath))
-                    {
-                        MessageEventBus.Publish($"会话文件 {fileInfo.Name} 已存在，未进行复制。");
-                    }
-                    else
-                    {
-                        File.Copy(fileInfo.FullName, newFilePath, true);
-                        var info = new FileInfo(newFilePath);
-                        projectViewModel = await LoadFromFile(info, mapper);
-                    }
-                }
-                catch (Exception e)
-                {
-                    MessageEventBus.Publish("导入出现问题" + e.Message);
-                    continue;
-                }
-
-                if (projectViewModel == null) continue;
-                yield return projectViewModel;
-            }
         }
     }
 

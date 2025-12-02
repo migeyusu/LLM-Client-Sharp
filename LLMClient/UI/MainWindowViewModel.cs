@@ -12,6 +12,7 @@ using LLMClient.Endpoints;
 using LLMClient.Project;
 using LLMClient.UI.Component.Utility;
 using LLMClient.UI.Render;
+using LLMClient.UI.ViewModel;
 using LLMClient.UI.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
@@ -151,10 +152,12 @@ public class MainWindowViewModel : BaseViewModel
             switch (type)
             {
                 case "dialog":
-                    sessions = DialogFileViewModel.ImportFiles(fileInfos, _mapper);
+                    sessions = FileBasedSessionBase.ImportFiles<DialogFileViewModel>(DialogFileViewModel.SaveFolderPath,
+                        fileInfos, _mapper);
                     break;
                 case "project":
-                    sessions = ProjectViewModel.ImportFiles(fileInfos, _mapper);
+                    sessions = FileBasedSessionBase.ImportFiles<ProjectViewModel>(ProjectViewModel.SaveFolderPath,
+                        fileInfos, _mapper);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -309,16 +312,11 @@ public class MainWindowViewModel : BaseViewModel
     private async Task InitialSessionsFromLocal()
     {
         var sessions = new List<ILLMSession>();
-        await foreach (var llmSession in DialogFileViewModel.LoadFromLocal(_mapper))
-        {
-            sessions.Add(llmSession);
-        }
-
-        await foreach (var projectViewModel in ProjectViewModel.LoadFromLocal(_mapper))
-        {
-            sessions.Add(projectViewModel);
-        }
-
+        sessions.AddRange(
+            await FileBasedSessionBase.LoadFromLocal<DialogFileViewModel>(_mapper,
+                DialogFileViewModel.SaveFolderPath));
+        sessions.AddRange(
+            await FileBasedSessionBase.LoadFromLocal<ProjectViewModel>(_mapper, ProjectViewModel.SaveFolderPath));
         foreach (var llmSession in sessions.OrderByDescending((session => session.EditTime)))
         {
             ((INotifyPropertyChanged)llmSession).PropertyChanged += SessionOnEditTimeChanged;

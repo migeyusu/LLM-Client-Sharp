@@ -9,6 +9,7 @@ using Markdig.Wpf;
 using TextMateSharp.Grammars;
 using TextMateSharp.Registry;
 using TextMateSharp.Themes;
+using Block = System.Windows.Documents.Block;
 using CodeBlockRenderer = Markdig.Renderers.Wpf.CodeBlockRenderer;
 using Path = System.IO.Path;
 
@@ -19,8 +20,8 @@ public class TextMateCodeRenderer : CodeBlockRenderer
     public static ComponentResourceKey TokenStyleKey { get; } =
         new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(TokenStyleKey));
 
-    public static ComponentResourceKey CodeBlockGroupBoxStyleKey { get; } =
-        new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(CodeBlockGroupBoxStyleKey));
+    public static ComponentResourceKey CodeBlockHeaderStyleKey { get; } =
+        new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(CodeBlockHeaderStyleKey));
 
     private class TextMateCodeRendererSettings
     {
@@ -77,20 +78,28 @@ public class TextMateCodeRenderer : CodeBlockRenderer
         return Task.Run(() => { _settings = new TextMateCodeRendererSettings(); });
     }
 
-    protected override void Write(WpfRenderer renderer, CodeBlock obj)
+    protected override void Write(WpfRenderer renderer, CodeBlock codeBlock)
     {
+        #region header
+
         var blockUiContainer = new BlockUIContainer();
-        var codeBlockContainer = new HeaderedContentControl();
-        codeBlockContainer.SetResourceReference(FrameworkElement.StyleProperty, CodeBlockGroupBoxStyleKey);
-        ((IAddChild)blockUiContainer).AddChild(codeBlockContainer);
+        var contentControl = new ContentControl();
+        contentControl.SetResourceReference(FrameworkElement.StyleProperty, CodeBlockHeaderStyleKey);
+        ((IAddChild)blockUiContainer).AddChild(contentControl);
         renderer.Push(blockUiContainer);
         renderer.Pop();
-        var codeContext = CreateCodeContext(obj);
-        codeBlockContainer.Header = codeContext;
-        codeBlockContainer.Content = codeContext;
+
+        #endregion
+
+        var root = new Section();
+        renderer.Push(root);
+        var codeContext = CreateCodeContext(codeBlock, root, renderer);
+        contentControl.Content = codeContext;
+        renderer.Pop();
+        renderer.Pop();
     }
 
-    private CodeContext CreateCodeContext(LeafBlock block)
+    private CodeViewModel CreateCodeContext(LeafBlock block, Section root, WpfRenderer renderer)
     {
         string? extension = null;
         IGrammar? grammar = null;
@@ -112,67 +121,37 @@ public class TextMateCodeRenderer : CodeBlockRenderer
             }
         }
 
-        return new CodeContext(block.Lines, extension, name, grammar);
+        return new CodeViewModel(root, renderer, block.Lines, extension, name, grammar);
     }
 
-    public static FlowDocument Render(CodeContext codeContext)
+    public static Table CreateTable(Block left, Block right)
     {
-        var flowDocument = new FlowDocument();
-        var wpfRenderer = new WpfRenderer(flowDocument);
-        var paragraph = new Paragraph();
-        paragraph.BeginInit();
-        paragraph.SetResourceReference(FrameworkContentElement.StyleProperty, Styles.CodeBlockStyleKey);
-        wpfRenderer.Push(paragraph);
-        var grammar = codeContext.Grammar;
-        if (grammar != null)
-        {
-            Tokenize(paragraph, codeContext.CodeGroup, grammar);
-        }
-        else
-        {
-            wpfRenderer.WriteRawLines(codeContext.CodeGroup);
-        }
-
-        paragraph.EndInit();
-        wpfRenderer.Pop();
-        return flowDocument;
+        // 构造表格
+        var table = new Table { CellSpacing = 4 };
+        // 两列
+        table.Columns.Add(new TableColumn() { Width = new GridLength(1, GridUnitType.Star) });
+        table.Columns.Add(new TableColumn() { Width = new GridLength(1, GridUnitType.Star) });
+        // 一行
+        var rowGroup = new TableRowGroup();
+        var row = new TableRow();
+        rowGroup.Rows.Add(row);
+        table.RowGroups.Add(rowGroup);
+        // 单元格 1：图片
+        var cell1 = new TableCell(right);
+        var cell2 = new TableCell(left);
+        row.Cells.Add(cell1);
+        row.Cells.Add(cell2);
+        return table;
     }
 
-
-    private static void Tokenize(IAddChild addChild, StringLineGroup stringLineGroup, IGrammar grammar)
+    public static BlockUIContainer CreateHtmlView(string codeString)
     {
-        IStateStack? ruleStack = null;
-        if (stringLineGroup.Lines == null)
-        {
-            return;
-        }
-
-        for (var index = 0; index < stringLineGroup.Count; index++)
-        {
-            var blockLine = stringLineGroup.Lines[index];
-            var line = blockLine.Slice.ToString();
-            if (blockLine.Slice.Length == 0 || string.IsNullOrEmpty(line))
-            {
-                addChild.AddChild(new LineBreak());
-                continue;
-            }
-
-            var result = grammar.TokenizeLine(line, ruleStack, TimeSpan.MaxValue);
-            ruleStack = result.RuleStack;
-            foreach (var token in result.Tokens)
-            {
-                var lineLength = line.Length;
-                var tokenStartIndex = token.StartIndex;
-                var startIndex = (tokenStartIndex > lineLength) ? lineLength : tokenStartIndex;
-                var endIndex = (token.EndIndex > lineLength) ? lineLength : token.EndIndex;
-                var text = line.SubstringAtIndexes(startIndex, endIndex);
-                var coloredRun = new TextmateColoredRun(text, token);
-                coloredRun.SetResourceReference(FrameworkContentElement.StyleProperty,
-                    TextMateCodeRenderer.TokenStyleKey);
-                addChild.AddChild(coloredRun);
-            }
-
-            addChild.AddChild(new LineBreak());
-        }
+        var htmlViewContext = new HtmlViewContext() { HtmlContent = codeString };
+        var blockUiContainer = new BlockUIContainer();
+        var contentControl = new ContentControl();
+        contentControl.SetResourceReference(FrameworkElement.StyleProperty, HtmlViewContext.HtmlViewContextKey);
+        ((IAddChild)blockUiContainer).AddChild(contentControl);
+        contentControl.Content = htmlViewContext;
+        return blockUiContainer;
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Specialized;
+﻿using System.Collections.Concurrent;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -11,7 +12,7 @@ using LLMClient.UI.ViewModel;
 
 namespace LLMClient.Dialog;
 
-public class DialogFileViewModel : FileBasedSessionBase
+public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionFactory<DialogFileViewModel>
 {
     public DialogViewModel Dialog { get; }
 
@@ -48,30 +49,9 @@ public class DialogFileViewModel : FileBasedSessionBase
         cloneSession.IsDataChanged = true;
         return cloneSession;
     }
+    
 
-    public static async IAsyncEnumerable<DialogFileViewModel> LoadFromLocal(IMapper mapper)
-    {
-        string fullPath = SaveFolderPathLazy.Value;
-        var directoryInfo = new DirectoryInfo(fullPath);
-        if (!directoryInfo.Exists)
-        {
-            directoryInfo.Create();
-        }
-
-        foreach (var fileInfo in directoryInfo.GetFiles("*.json"))
-        {
-            var dialogSession = await LoadFromFile(fileInfo, mapper);
-            if (dialogSession == null)
-            {
-                continue;
-            }
-
-            yield return dialogSession;
-        }
-    }
-
-    public static async Task<DialogFileViewModel?> LoadFromFile(FileInfo fileInfo, IMapper mapper,
-        int version = DialogFilePersistModel.DialogPersistVersion)
+    public static async Task<DialogFileViewModel?> LoadFromFile(FileInfo fileInfo, IMapper mapper)
     {
         if (!fileInfo.Exists)
         {
@@ -90,7 +70,7 @@ public class DialogFileViewModel : FileBasedSessionBase
                     return null;
                 }
 
-                if (dialogSession.Version != version)
+                if (dialogSession.Version != DialogFilePersistModel.DialogPersistVersion)
                 {
                     Trace.TraceError($"加载会话{fileInfo.FullName}失败：版本不匹配");
                     return null;
@@ -116,52 +96,12 @@ public class DialogFileViewModel : FileBasedSessionBase
         var dialogSessionClone = _mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
         dialogSessionClone.DialogItems = dialogSessionClone.DialogItems?.Take(of + 1).ToArray();
         var cloneSession =
-            _mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => {}));
+            _mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => { }));
         cloneSession.IsDataChanged = true;
         return cloneSession;
     }
 
-    public static async IAsyncEnumerable<DialogFileViewModel> ImportFiles(IEnumerable<FileInfo> fileInfos,
-        IMapper mapper)
-    {
-        var targetFolderPath = SaveFolderPathLazy.Value;
-        var targetDirectoryInfo = new DirectoryInfo(targetFolderPath);
-        if (!targetDirectoryInfo.Exists)
-        {
-            targetDirectoryInfo.Create();
-        }
-
-        foreach (var fileInfo in fileInfos)
-        {
-            if (fileInfo.DirectoryName?.Equals(targetDirectoryInfo.FullName, StringComparison.OrdinalIgnoreCase) ==
-                false)
-            {
-                DialogFileViewModel? dialogSession = null;
-                try
-                {
-                    var newFilePath = Path.Combine(targetDirectoryInfo.FullName, fileInfo.Name);
-                    if (File.Exists(newFilePath))
-                    {
-                        MessageEventBus.Publish($"会话文件 {fileInfo.Name} 已存在，未进行复制。");
-                    }
-                    else
-                    {
-                        File.Copy(fileInfo.FullName, newFilePath, true);
-                        var info = new FileInfo(newFilePath);
-                        dialogSession = await LoadFromFile(info, mapper);
-                    }
-                }
-                catch (Exception e)
-                {
-                    MessageEventBus.Publish("导入出现问题" + e.Message);
-                    continue;
-                }
-
-                if (dialogSession == null) continue;
-                yield return dialogSession;
-            }
-        }
-    }
+   
 
     private IMapper _mapper;
 
