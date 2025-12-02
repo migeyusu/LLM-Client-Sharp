@@ -255,18 +255,6 @@
                                    VerticalAlignment="Center" />
                         <StackPanel HorizontalAlignment="Right"
                                     Orientation="Horizontal">
-                            <ListBox Margin="10,0,0,0"
-                                     materialDesign:ElevationAssist.Elevation="Dp0"
-                                     Visibility="{Binding CanView,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                     SelectedIndex="{Binding  SelectedViewMode,Mode=TwoWay}"
-                                     Style="{StaticResource MaterialDesignToolToggleListBox}">
-                                <ListBoxItem
-                                    Content="{materialDesign:PackIcon Kind=Text}" />
-                                <ListBoxItem
-                                    Content="{materialDesign:PackIcon Kind=ImageText}" />
-                                <ListBoxItem
-                                    Content="{materialDesign:PackIcon Kind=Image}" />
-                            </ListBox>
                             <Button Style="{StaticResource MaterialDesignFlatLightButton}"
                                     Command="{Binding RunCommand}"
                                     Margin="10,0,0,0"

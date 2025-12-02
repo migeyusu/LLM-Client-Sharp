@@ -92,15 +92,12 @@ public class TextMateCodeRenderer : CodeBlockRenderer
 
         #endregion
 
-        var root = new Section();
-        renderer.Push(root);
-        var codeContext = CreateCodeContext(codeBlock, root, renderer);
+        var codeContext = CreateCodeContext(codeBlock, renderer);
         contentControl.Content = codeContext;
-        renderer.Pop();
         renderer.Pop();
     }
 
-    private CodeViewModel CreateCodeContext(LeafBlock block, Section root, WpfRenderer renderer)
+    private CodeViewModel CreateCodeContext(LeafBlock block, WpfRenderer renderer)
     {
         string? extension = null;
         IGrammar? grammar = null;
@@ -122,39 +119,6 @@ public class TextMateCodeRenderer : CodeBlockRenderer
             }
         }
 
-        return new CodeViewModel(root, renderer, block.Lines, extension, name, grammar);
-    }
-
-    public static Table CreateTable(Block left, Block right)
-    {
-        var table = new Table { CellSpacing = 4 };
-        // 两列
-        table.Columns.Add(new TableColumn() { Width = new GridLength(1, GridUnitType.Star) });
-        table.Columns.Add(new TableColumn() { Width = new GridLength(1, GridUnitType.Star) });
-        // 一行
-        var rowGroup = new TableRowGroup();
-        var row = new TableRow();
-        rowGroup.Rows.Add(row);
-        table.RowGroups.Add(rowGroup);
-        var cell1 = new TableCell(left);
-        var cell2 = new TableCell(right);
-        row.Cells.Add(cell1);
-        row.Cells.Add(cell2);
-        return table;
-    }
-
-    public static Block CreateHtmlView(string codeString)
-    {
-        var htmlViewContext = new HtmlViewContext() { HtmlContent = codeString };
-        var blockUiContainer = new BlockUIContainer(){Margin = new Thickness(5)};
-        var contentControl = new ContentControl();
-        contentControl.SetResourceReference(FrameworkElement.StyleProperty, HtmlViewContext.HtmlViewContextKey);
-        ((IAddChild)blockUiContainer).AddChild(contentControl);
-        contentControl.Content = htmlViewContext;
-        blockUiContainer.Loaded+= (s, e) =>
-        {
-            Debugger.Break();
-        };
-        return blockUiContainer;
+        return new CodeViewModel(renderer, block.Lines, extension, name, grammar);
     }
 }

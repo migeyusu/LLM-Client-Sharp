@@ -2,13 +2,6 @@
 
 namespace LLMClient.UI.Render;
 
-public class HtmlViewContext
-{
-    public required string HtmlContent { get; set; }
-
-    public static ComponentResourceKey HtmlViewContextKey { get; } =
-        new ComponentResourceKey(typeof(HtmlViewContext), nameof(HtmlViewContextKey));
-}
 
 /*var code = content.TrimStart("cpp".ToCharArray()).TrimStart('\n');
         // 创建 ANTLR 输入流

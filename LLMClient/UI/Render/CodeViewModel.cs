@@ -16,22 +16,17 @@ namespace LLMClient.UI.Render;
 
 public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
 {
-    private readonly Paragraph _codeBlock;
-
-    private readonly Section _viewSection;
-
-    public CodeViewModel(Section viewSection, WpfRenderer renderer,
+    public CodeViewModel(WpfRenderer renderer,
         StringLineGroup codeGroup, string? extension, string? name,
         IGrammar? grammar = null)
     {
         Extension = extension;
-        _viewSection = viewSection;
         Name = name ?? string.Empty;
         _nameLower = Name.ToLower().Trim();
         CodeGroup = codeGroup;
         Grammar = grammar;
         _codeStringLazy = new Lazy<string>(codeGroup.ToString);
-        _codeBlock = RenderCode(renderer, grammar, codeGroup);
+        RenderCode(renderer, grammar, codeGroup);
     }
 
     public IGrammar? Grammar { get; }
@@ -44,50 +39,10 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
     public string CodeString => _codeStringLazy.Value;
 
     public StringLineGroup CodeGroup { get; }
-
-    private Block? _viewBlock;
-
-    /// <summary>
-    /// 0: text, 1:imagetext 2:image
-    /// </summary>
-    public int SelectedViewMode
-    {
-        get => _selectedViewMode;
-        set
-        {
-            if (value == _selectedViewMode) return;
-            _selectedViewMode = value;
-            OnPropertyChanged();
-            if (value != 0)
-            {
-                _viewBlock = _nameLower switch
-                {
-                    "html" => TextMateCodeRenderer.CreateHtmlView(CodeString),
-                    _ => _viewBlock
-                };
-
-                if (_viewBlock != null)
-                {
-                    _viewSection.Blocks.Clear();
-                    var view = TextMateCodeRenderer.CreateTable(_codeBlock!, _viewBlock);
-                    _viewSection.Blocks.Add(view);
-                }
-            }
-        }
-    }
-
-    private readonly string[] _supportedViewExtensions = new[] { "html" };
-
-    private readonly string[] _supportedRunExtensions = new[] { "bash", "powershell", };
     
-    private int _selectedViewMode = 0;
+    private readonly string[] _supportedRunExtensions = new[] { "bash", "powershell", "html" };
 
     private string _nameLower;
-
-    public bool CanView
-    {
-        get { return !string.IsNullOrEmpty(Name) && _supportedViewExtensions.Contains(_nameLower); }
-    }
 
     public bool CanRun
     {
@@ -148,7 +103,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
         }
     });
 
-    private Paragraph RenderCode(WpfRenderer wpfRenderer, IGrammar? grammar, StringLineGroup codeGroup)
+    private void RenderCode(WpfRenderer wpfRenderer, IGrammar? grammar, StringLineGroup codeGroup)
     {
         var paragraph = new Paragraph();
         paragraph.BeginInit();
@@ -164,7 +119,6 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
         }
 
         paragraph.EndInit();
-        return paragraph;
     }
 
     private static void Tokenize(IAddChild addChild, StringLineGroup stringLineGroup, IGrammar grammar)
