@@ -82,6 +82,7 @@
                         <converters:ModelSource>GeekAI</converters:ModelSource>
                         <converters:ModelSource>XiaoAI</converters:ModelSource>
                         <converters:ModelSource>O3Fan</converters:ModelSource>
+                        <converters:ModelSource>XiaoHuMini</converters:ModelSource>
                     </ComboBox.Items>
                 </ComboBox>
                 <Button Style="{StaticResource MaterialDesignPaperButton}"
@@ -160,9 +161,9 @@
                                 <MenuItem Command="{Binding CopyCommand}"
                                           Icon="{materialDesign:PackIcon Kind=ContentCopy}"
                                           Header="复制" />
-                                <MenuItem
-                                    Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.PastCommand}"
-                                    Header="黏贴到之后" />
+                                <MenuItem Command="Paste"
+                                          Icon="{materialDesign:PackIcon Kind=ContentPaste}"
+                                          Header="黏贴到之后" />
                             </ContextMenu>
                         </Setter.Value>
                     </Setter>
@@ -211,6 +212,8 @@
             <ListBox.CommandBindings>
                 <CommandBinding Command="MoveUp"
                                 Executed="MoveUp_OnExecuted" />
+                <CommandBinding Command="Paste"
+                                Executed="PastModels_OnExecuted"/>
             </ListBox.CommandBindings>
         </ListBox>
         <Separator Grid.Row="1" Grid.Column="0"

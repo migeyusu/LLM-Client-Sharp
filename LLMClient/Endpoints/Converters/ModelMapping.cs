@@ -8,7 +8,8 @@ public enum ModelSource
     OpenRouter,
     O3Fan,
     GeekAI,
-    XiaoAI
+    XiaoAI,
+    XiaoHuMini
 }
 
 public abstract class ModelMapping
@@ -21,6 +22,7 @@ public abstract class ModelMapping
             ModelSource.O3Fan => new O3FanModelMapping(),
             ModelSource.GeekAI => new GeekAIModelMapping(),
             ModelSource.XiaoAI => new XiaoAIModelMapping(),
+            ModelSource.XiaoHuMini => new XiaoHuMiniModelMapping(),
             _ => null
         };
     }

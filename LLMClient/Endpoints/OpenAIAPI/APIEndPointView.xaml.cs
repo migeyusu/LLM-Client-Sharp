@@ -15,4 +15,10 @@ public partial class APIEndPointView : UserControl
         var apiEndPoint = this.DataContext as APIEndPoint;
         apiEndPoint?.MoveUp(e.Parameter as APIModelInfo ?? throw new InvalidOperationException());
     }
+
+    private void PastModels_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        var apiEndPoint = (APIEndPoint?)DataContext;
+        apiEndPoint?.PastFromClipboard();
+    }
 }

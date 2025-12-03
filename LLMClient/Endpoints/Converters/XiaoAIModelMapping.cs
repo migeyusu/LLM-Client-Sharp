@@ -10,16 +10,22 @@ namespace LLMClient.Endpoints.Converters;
 
 public class XiaoAIModelMapping : ModelMapping
 {
-    public XiaoAIModelMapping() : base("XiaoAI")
+    public virtual string Url { get; set; } = "https://xiaoai.plus/api/pricing";
+
+    public XiaoAIModelMapping() : this("XiaoAI")
+    {
+    }
+
+    public XiaoAIModelMapping(string name) : base(name)
     {
     }
 
     public override IList<string> AvailableModels
     {
-        get { return _priceInfos.Keys.ToArray(); }
+        get { return _modelInfos.Keys.ToArray(); }
     }
 
-    private Dictionary<string, ModelDetails> _priceInfos = new Dictionary<string, ModelDetails>();
+    private Dictionary<string, ModelDetails> _modelInfos = new();
 
     private const string EnabledGroup = "default";
 
@@ -33,7 +39,7 @@ public class XiaoAIModelMapping : ModelMapping
                 using (var httpClient = new HttpClient(handler))
                 {
                     using (var httpRequestMessage =
-                           new HttpRequestMessage(HttpMethod.Get, "https://xiaoai.plus/api/pricing"))
+                           new HttpRequestMessage(HttpMethod.Get, Url))
                     {
                         httpRequestMessage.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
                         using (var message = await httpClient.SendAsync(httpRequestMessage))
@@ -46,18 +52,13 @@ public class XiaoAIModelMapping : ModelMapping
                                 return false;
                             }
 
-                            if (listNode == null)
-                            {
-                                return false;
-                            }
-
-                            var modelDetails = listNode.Deserialize<ModelDetails[]>();
+                            var modelDetails = listNode?.Deserialize<ModelDetails[]>();
                             if (modelDetails == null)
                             {
                                 return false;
                             }
 
-                            this._priceInfos = modelDetails
+                            this._modelInfos = modelDetails
                                 .Where(modelDetail => modelDetail.EnableGroups?.Contains(EnabledGroup) == true)
                                 .ToDictionary(modelDetail => modelDetail.ModelName);
                             return true;
@@ -87,13 +88,67 @@ public class XiaoAIModelMapping : ModelMapping
     public override bool MapInfo(APIModelInfo modelInfo)
     {
         var modelInfoId = modelInfo.Id;
-        if (_priceInfos.TryGetValue(modelInfoId, out var modelDetails))
+        if (_modelInfos.TryGetValue(modelInfoId, out var modelDetails))
         {
             if (modelInfo.PriceCalculator is TokenBasedPriceCalculator calculator)
             {
                 calculator.DiscountFactor = 1;
                 calculator.InputPrice = modelDetails.ModelRatio * 2;
                 calculator.OutputPrice = modelDetails.ModelRatio * 2 * modelDetails.CompletionRatio;
+            }
+
+            if (!string.IsNullOrEmpty(modelDetails.Description))
+            {
+                modelInfo.Description = modelDetails.Description;
+            }
+
+            var tags = modelDetails.Tags;
+            if (tags != null)
+            {
+                if (tags.Contains("绘画"))
+                {
+                    modelInfo.SupportImageGeneration = true;
+                }
+
+                if (tags.Contains("音频"))
+                {
+                    modelInfo.SupportAudioGeneration = true;
+                }
+
+                if (tags.Contains("对话"))
+                {
+                    modelInfo.SupportTextGeneration = true;
+                }
+
+                if (tags.Contains("识图"))
+                {
+                    modelInfo.SupportImageInput = true;
+                }
+
+                if (tags.Contains("思考"))
+                {
+                    modelInfo.Reasonable = true;
+                }
+
+                if (tags.Contains("视频生成"))
+                {
+                    modelInfo.SupportVideoGeneration = true;
+                }
+
+                if (tags.Contains("联网"))
+                {
+                    modelInfo.SupportSearch = true;
+                }
+
+                if (tags.Contains("工具"))
+                {
+                    modelInfo.SupportFunctionCall = true;
+                }
+
+                if (tags.Contains("文本转语音"))
+                {
+                    modelInfo.SupportAudioGeneration = true;
+                }
             }
 
             return true;
@@ -140,10 +195,31 @@ public class XiaoAIModelMapping : ModelMapping
         [JsonPropertyName("completion_ratio")]
         public float CompletionRatio { get; set; }
 
+        [JsonPropertyName("description")] public string? Description { get; set; }
+
+        [JsonPropertyName("tags")] public string? TagsRaw { get; set; }
+
+        [JsonIgnore]
+        public string[]? Tags => string.IsNullOrEmpty(TagsRaw)
+            ? null
+            : TagsRaw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        [JsonPropertyName("supported_endpoint_types")]
+        public string[]? SupportedEndpointTypes { get; set; }
+
         /// <summary>
         /// 启用的分组集合
         /// </summary>
         [JsonPropertyName("enable_groups")]
         public List<string>? EnableGroups { get; set; }
+    }
+}
+
+public class XiaoHuMiniModelMapping : XiaoAIModelMapping
+{
+    public override string Url { get; set; } = "https://xiaohumini.site/api/pricing_new";
+
+    public XiaoHuMiniModelMapping() : base("XiaoHuMini")
+    {
     }
 }

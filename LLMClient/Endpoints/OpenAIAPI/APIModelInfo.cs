@@ -186,7 +186,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
     private bool _supportAudioInput;
     private bool _supportFunctionCall;
     private bool _supportSearch;
-    private bool _supportImageOutput;
+    private bool _supportImageGeneration;
     private bool _reasonable = false;
     private bool _supportImageInput;
     private bool _supportVideoGeneration;
@@ -415,11 +415,11 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
 
     public bool SupportImageGeneration
     {
-        get => _supportImageOutput;
+        get => _supportImageGeneration;
         set
         {
-            if (value == _supportImageOutput) return;
-            _supportImageOutput = value;
+            if (value == _supportImageGeneration) return;
+            _supportImageGeneration = value;
             OnPropertyChanged();
         }
     }
