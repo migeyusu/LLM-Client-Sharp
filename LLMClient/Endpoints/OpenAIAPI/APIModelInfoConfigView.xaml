@@ -164,7 +164,7 @@
                                    Description="限制模型回复的最大输出tokens数量。"
                                    MaximumEditable="True"
                                    Minimum="1"
-                                   Maximum="{Binding MaxTokenLimit,Mode=OneWay,Converter={StaticResource KUnitConverter}}" />
+                                   Maximum="{Binding MaxTokenLimit,Mode=TwoWay,Converter={StaticResource KUnitConverter}}" />
         <endpoints:ParamConfigView PropertyName="Presence Penalty  Enable"
                                    Available="{Binding PresencePenaltyEnable,Mode=TwoWay}"
                                    Value="{Binding PresencePenalty,Mode=TwoWay}"

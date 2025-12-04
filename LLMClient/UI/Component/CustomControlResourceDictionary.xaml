@@ -130,7 +130,7 @@
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center">
-                            <TextBlock Text="Range："
+                            <TextBlock Text="Range: "
                                        Margin="0,0,6,0" />
                             <TextBox materialDesign:HintAssist.Hint="Min"
                                      materialDesign:TextFieldAssist.SuffixText="{TemplateBinding Unit}"
