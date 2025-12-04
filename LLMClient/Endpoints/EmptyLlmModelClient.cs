@@ -1,16 +1,14 @@
 ﻿using System.IO;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LLMClient.Endpoints;
 
-public class NullLlmModelClient : ILLMChatClient
+public class EmptyLlmModelClient : ILLMChatClient
 {
-    public static NullLlmModelClient Instance => new NullLlmModelClient();
+    public static EmptyLlmModelClient Instance => new EmptyLlmModelClient();
 
     public string Name { get; } = "NullLlmModelClient";
 
@@ -91,7 +89,7 @@ public class NullLlmModelClient : ILLMChatClient
 
     private readonly string? _fakeFilePath;
 
-    public NullLlmModelClient(string? fakeFilePath = null)
+    public EmptyLlmModelClient(string? fakeFilePath = null)
     {
         this._fakeFilePath = fakeFilePath;
     }

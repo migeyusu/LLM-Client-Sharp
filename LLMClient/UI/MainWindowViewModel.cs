@@ -113,7 +113,7 @@ public class MainWindowViewModel : BaseViewModel
         try
         {
             var selectionViewModel =
-                new ProjectConfigViewModel(new ProjectViewModel(NullLlmModelClient.Instance, _mapper,
+                new ProjectConfigViewModel(new ProjectViewModel(EmptyLlmModelClient.Instance, _mapper,
                     _globalOptions, RagSourceCollection));
             if (await DialogHost.Show(selectionViewModel) is true)
             {

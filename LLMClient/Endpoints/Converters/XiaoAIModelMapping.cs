@@ -59,7 +59,7 @@ public class XiaoAIModelMapping : ModelMapping
                             }
 
                             this._modelInfos = modelDetails
-                                .Where(modelDetail => modelDetail.EnableGroups?.Contains(EnabledGroup) == true)
+                                // .Where(modelDetail => modelDetail.EnableGroups?.Contains(EnabledGroup) == true)
                                 .ToDictionary(modelDetail => modelDetail.ModelName);
                             return true;
                         }

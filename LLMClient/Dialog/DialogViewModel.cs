@@ -182,7 +182,6 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         GlobalOptions options, IRagSourceCollection ragSourceCollection,
         IList<IDialogItem>? items = null) : base(mapper, items)
     {
-        // ActivatorUtilities.CreateInstance<>()
         _topic = topic;
         Requester = new RequesterViewModel(modelClient, NewRequest, options, ragSourceCollection, mapper)
         {

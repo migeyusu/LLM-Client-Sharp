@@ -12,7 +12,8 @@
                     xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension"
                     xmlns:configuration="clr-namespace:LLMClient.Configuration"
                     xmlns:viewModel="clr-namespace:LLMClient.UI.ViewModel"
-                    xmlns:toolCall="clr-namespace:LLMClient.ToolCall">
+                    xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
+                    xmlns:b="http://schemas.microsoft.com/xaml/behaviors">
     <ItemsPanelTemplate x:Key="HorizontalItemsPanelTemplate">
         <StackPanel Orientation="Horizontal"
                     IsItemsHost="True" />
@@ -138,7 +139,7 @@
     <DataTemplate x:Key="PopupSelectModelDataTemplate"
                   DataType="{x:Type viewModel:BaseModelSelectionViewModel}">
         <StackPanel Margin="10"
-                    Width="350">
+                    Width="370">
             <DockPanel Height="200">
                 <ListBox DisplayMemberPath="DisplayName"
                          Width="150"
@@ -151,20 +152,31 @@
                          materialDesign:RippleAssist.IsDisabled="True"
                          SelectedItem="{Binding SelectedModel,Mode=TwoWay}"
                          ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}">
-                    <!--<b:Interaction.Triggers>
+                    <b:Interaction.Triggers>
                         <b:EventTrigger EventName="MouseDoubleClick">
-                            <b:InvokeCommandAction 
-                                Command="{Binding CreateDefaultCommand}"/>
+                            <b:InvokeCommandAction
+                                Command="{Binding CreateDefaultCommand}" />
                         </b:EventTrigger>
-                    </b:Interaction.Triggers>-->
+                    </b:Interaction.Triggers>
                 </ListBox>
             </DockPanel>
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                <ToggleButton Style="{StaticResource MaterialDesignFlatToggleButton}"
+                              ToolTip="Show Model Parameters"
+                              x:Name="ModelParamToggleButton"
+                              Visibility="{Binding SelectedModel,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                              IsChecked="{Binding ShowModelParams,Mode=TwoWay}">
+                    <materialDesign:PackIcon Width="21"
+                                             Height="21"
+                                             Kind="Paperclip" />
+                </ToggleButton>
+                <TextBlock Grid.Column="1"
+                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
                            TextWrapping="NoWrap"
                            HorizontalAlignment="Left"
                            VerticalAlignment="Center"
@@ -172,12 +184,12 @@
                            DataContext="{Binding SelectedModel,Mode=OneWay}">
                     <TextBlock.Text>
                         <MultiBinding StringFormat="{}{0} —— {1}">
-                            <Binding Path="Endpoint.DisplayName" TargetNullValue="无" />
                             <Binding Path="Name" TargetNullValue="无" />
+                            <Binding Path="Endpoint.DisplayName" TargetNullValue="无" />
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-                <StackPanel Grid.Column="1"
+                <StackPanel Grid.Column="2"
                             Margin="10,0,0,0"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right">
@@ -210,6 +222,12 @@
                     </materialDesign:SplitButton>
                 </StackPanel>
             </Grid>
+            <ScrollViewer MaxHeight="300"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Visibility="{Binding ShowModelParams,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                <openAiapi:LlmClientBaseView DataContext="{Binding ModelParams,Mode=OneTime}" />
+            </ScrollViewer>
         </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="PriceCalculatorDataTemplate" DataType="{x:Type endpoints:TokenBasedPriceCalculator}">

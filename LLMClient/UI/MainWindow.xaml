@@ -108,7 +108,7 @@
                                                                    Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
-                                <DataTemplate DataType="{x:Type endpoints:NullLlmModelClient}">
+                                <DataTemplate DataType="{x:Type endpoints:EmptyLlmModelClient}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="未定义的模型" />
                                 </DataTemplate>

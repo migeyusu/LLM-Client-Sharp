@@ -514,6 +514,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
 
     #endregion
 
+    //todo: 计算当前上下文的token数量
     public long CurrentContextTokens
     {
         get
@@ -523,8 +524,15 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
                 return 0;
             }
 
-            return FilterHistory(DialogItems)
-                .Sum(item => item.Tokens);
+            try
+            {
+                return FilterHistory(DialogItems)
+                    .Sum(item => item.Tokens);
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
         }
     }
 
@@ -596,6 +604,11 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
 
             if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
             {
+                if (multiResponseViewItem.IsResponding)
+                {
+                    throw new InvalidOperationException("无法生成包含正在响应的记录的历史");
+                }
+
                 if (multiResponseViewItem.IsAvailableInContext)
                 {
                     interactionId = multiResponseViewItem.InteractionId;

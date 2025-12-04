@@ -149,7 +149,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     {
         var mapper = context.Mapper;
         var llmClient = source.Client == null
-            ? NullLlmModelClient.Instance
+            ? EmptyLlmModelClient.Instance
             : mapper.Map<LLMClientPersistModel, ILLMChatClient>(source.Client);
         if (destination != null)
         {
@@ -205,7 +205,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     {
         var mapper = context.Mapper;
         var defaultClient = source.Client == null
-            ? NullLlmModelClient.Instance
+            ? EmptyLlmModelClient.Instance
             : context.Mapper.Map<LLMClientPersistModel, ILLMChatClient>(source.Client);
         if (destination != null)
         {
@@ -408,7 +408,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             ? null
             : _endpointService.GetEndpoint(source.EndPointName);
         var llmModelClient = llmEndpoint?.GetModel(source.ModelName)?
-            .CreateChatClient() ?? NullLlmModelClient.Instance;
+            .CreateChatClient() ?? EmptyLlmModelClient.Instance;
         var sourceJsonModel = source.Params;
         if (sourceJsonModel != null)
         {

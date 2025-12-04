@@ -429,6 +429,7 @@
                                     Content="安全黏贴"
                                     Click="TestPaste_OnClick"/>-->
                             <Button Command="{Binding NewRequestCommand}"
+                                    IsEnabled="{Binding DefaultClient.IsResponding,Converter={StaticResource InvertBooleanConverter}}"
                                     Width="80"
                                     Height="30"
                                     Margin="16,0,0,0"

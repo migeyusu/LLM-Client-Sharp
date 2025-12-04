@@ -262,7 +262,7 @@ public class UnitTest1
         var mapper = serviceProvider.GetService<IMapper>()!;
         var dialogSession =
             new DialogFileViewModel(
-                new DialogViewModel("sadg", new NullLlmModelClient(), mapper, new GlobalOptions(),
+                new DialogViewModel("sadg", new EmptyLlmModelClient(), mapper, new GlobalOptions(),
                     new RagSourceCollection()), mapper);
         var dialogSessionPersistModel =
             mapper?.Map(dialogSession, new DialogFilePersistModel());
@@ -273,7 +273,7 @@ public class UnitTest1
     public void CircularMapping()
     {
         var mapper = serviceProvider.GetService<IMapper>()!;
-        var client = new NullLlmModelClient();
+        var client = new EmptyLlmModelClient();
         var dialogViewModel =
             new DialogViewModel("test", client, mapper, new GlobalOptions(), new RagSourceCollection());
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
@@ -295,7 +295,7 @@ public class UnitTest1
     public void CircularSerialize()
     {
         var mapper = serviceProvider.GetService<IMapper>()!;
-        var client = new NullLlmModelClient();
+        var client = new EmptyLlmModelClient();
         var dialogViewModel =
             new DialogViewModel("test", client, mapper, new GlobalOptions(), new RagSourceCollection());
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);

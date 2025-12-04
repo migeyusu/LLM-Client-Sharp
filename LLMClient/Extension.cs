@@ -134,7 +134,7 @@ public static class Extension
                 .PreserveReferences()
                 .ConstructUsing((source, context) =>
                 {
-                    ILLMChatClient llmClient = NullLlmModelClient.Instance;
+                    ILLMChatClient llmClient = EmptyLlmModelClient.Instance;
                     var client = source.Client;
                     if (client != null)
                     {

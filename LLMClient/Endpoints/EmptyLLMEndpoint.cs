@@ -7,22 +7,22 @@ namespace LLMClient.Endpoints
     public class EmptyLLMEndpoint : ILLMEndpoint
     {
         public static EmptyLLMEndpoint Instance { get; } = new EmptyLLMEndpoint();
-        public string DisplayName => "Null Endpoint";
+        public string DisplayName => "Empty Endpoint";
         public bool IsInbuilt => false;
         public bool IsEnabled => true;
-        public string Name => "NullEndpoint";
+        public string Name => "EmptyEndpoint";
         public ImageSource Icon => ImageExtensions.EndpointIcon;
 
         public IReadOnlyCollection<ILLMChatModel> AvailableModels => [];
 
         public ILLMChatClient? NewChatClient(ILLMChatModel model)
         {
-            return NullLlmModelClient.Instance;
+            return null;
         }
 
         public ILLMChatModel? GetModel(string modelName)
         {
-            return NullLlmModelClient.Instance.Model;
+            return null;
         }
 
         public Task InitializeAsync()

@@ -38,6 +38,11 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
     {
         get { return AcceptedResponse?.IsAvailableInContext == true; }
     }
+    
+    public bool IsResponding
+    {
+        get { return Items.Any(item => item.IsResponding); }
+    }
 
     public bool HasAvailableMessage
     {
