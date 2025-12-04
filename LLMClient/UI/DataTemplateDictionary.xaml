@@ -226,7 +226,7 @@
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           Visibility="{Binding ShowModelParams,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
-                <openAiapi:LlmClientBaseView DataContext="{Binding ModelParams,Mode=OneTime}" />
+                <openAiapi:LlmClientBaseView DataContext="{Binding Mode=OneTime}" />
             </ScrollViewer>
         </StackPanel>
     </DataTemplate>
