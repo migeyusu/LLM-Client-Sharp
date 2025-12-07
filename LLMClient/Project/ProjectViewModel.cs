@@ -49,7 +49,10 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<Project
         }
     }
 
-    public override bool IsBusy { get; }
+    public override bool IsBusy
+    {
+        get { return Tasks.Any(task => task.IsBusy); }
+    }
 
     private static readonly Lazy<string> SaveFolderPathLazy = new(() => Path.GetFullPath(SaveDir));
 
@@ -367,9 +370,14 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<Project
     private void OnTaskPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         var propertyName = e.PropertyName;
-        if (propertyName == nameof(ProjectTaskViewModel.EnableInContext))
+        switch (propertyName)
         {
-            OnPropertyChanged(nameof(Context));
+            case nameof(ProjectTaskViewModel.EnableInContext):
+                OnPropertyChanged(nameof(Context));
+                break;
+            case nameof(DialogSessionViewModel.IsBusy):
+                OnPropertyChanged(nameof(IsBusy));
+                break;
         }
     }
 
@@ -385,7 +393,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<Project
             if (Equals(value, _selectedTask)) return;
             _selectedTask = value;
             OnPropertyChanged();
-            Requester.Source = value;
+            Requester.FunctionGroupSource = value;
             Requester.FunctionTreeSelector.Reset();
         }
     }

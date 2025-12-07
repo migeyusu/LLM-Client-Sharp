@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using Google.Apis.Util;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
 using LLMClient.UI.Component.CustomControl;
@@ -215,5 +214,10 @@ public partial class MainWindow : ExtendedWindow
                 _mainWindowViewModel.IsLeftDrawerOpen = false;
             }
         }
+    }
+
+    private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+    {
+        Application.Current.MainWindow = this;
     }
 }

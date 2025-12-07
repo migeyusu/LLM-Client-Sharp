@@ -1,9 +1,12 @@
 ﻿// #define TESTMODE
 
+using System.Collections.Specialized;
 using System.Windows;
+using System.Windows.Forms.VisualStyles;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Configuration;
+using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;
 using MaterialDesignThemes.Wpf;
@@ -40,6 +43,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
     }
 
     private string _topic;
+    private readonly GlobalOptions _options;
 
     public string Topic
     {
@@ -183,9 +187,10 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         IList<IDialogItem>? items = null) : base(mapper, items)
     {
         _topic = topic;
+        _options = options;
         Requester = new RequesterViewModel(modelClient, NewRequest, options, ragSourceCollection, mapper)
         {
-            Source = this
+            FunctionGroupSource = this
         };
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
@@ -201,6 +206,38 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
 
             IsDataChanged = true;
         };
+    }
+
+    protected override void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        base.DialogOnCollectionChanged(sender, e);
+        if (_options.EnableAutoSubjectGeneration &&
+            e.Action is NotifyCollectionChangedAction.Remove or NotifyCollectionChangedAction.Reset
+            && this.DialogItems.Count == 0)
+        {
+            this.Topic = "新建会话";
+        }
+    }
+
+    public override async Task<CompletedResult> RequestOn(Func<Task<CompletedResult>> invoke)
+    {
+        //判断是否需要进行主题总结
+        var needSummarize = this.DialogItems is [IRequestItem, MultiResponseViewItem]
+                            && this.Topic == "新建会话";
+
+        var completedResult = await base.RequestOn(invoke);
+        if (needSummarize && !completedResult.IsInterrupt
+                          && _options.EnableAutoSubjectGeneration)
+        {
+            var summarizer = new Summarizer(_options);
+            var newTopic = await summarizer.SummarizeTopicAsync(this);
+            if (!string.IsNullOrEmpty(newTopic))
+            {
+                this.Topic = newTopic;
+            }
+        }
+
+        return completedResult;
     }
 
     private void FunctionTreeSelectorOnAfterSelect()

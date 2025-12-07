@@ -16,12 +16,15 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Configuration;
 
+//do not separate persistence and view model, because global option is simple enough.
 public class GlobalOptions : NotifyDataErrorInfoViewModelBase
 {
     public GlobalOptions()
     {
-        PopupSelectViewModel = PopupSelectViewModel =
-            new ModelSelectionPopupViewModel(client => { this.SummarizeClient = client; })
+        ContextSummaryPopupSelectViewModel = new ModelSelectionPopupViewModel(this.ApplyContextSummarizeClient)
+            { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
+        SubjectSummaryPopupViewModel =
+            new ModelSelectionPopupViewModel(this.ApplySubjectSummarizeClient)
                 { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
     }
 
@@ -36,67 +39,71 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
 
     public const string DEFAULT_GLOBAL_CONFIG_FILE = "globalconfig.json";
 
-    private const string DefaultSummarizePrompt =
+    private static IMapper Mapper => _mapperLazy.Value;
+
+    private static Lazy<IMapper> _mapperLazy = new(() => ServiceLocator.GetService<IMapper>()!);
+
+    #region context summarize
+
+    private const string DefaultContextSummarizePrompt =
         "Provide a concise and complete summarization of the entire dialog that does not exceed {0} words. \n\nThis summary must always:\n- Consider both user and assistant interactions\n- Maintain continuity for the purpose of further dialog\n- Include details from any existing summary\n- Focus on the most significant aspects of the dialog\n\nThis summary must never:\n- Critique, correct, interpret, presume, or assume\n- Identify faults, mistakes, misunderstanding, or correctness\n- Analyze what has not occurred\n- Exclude details from any existing summary";
 
     [JsonPropertyName("TokenSummarizePrompt")]
-    public string TokenSummarizePromptString { get; set; } = DefaultSummarizePrompt;
+    public string ContextSummarizePromptString { get; set; } = DefaultContextSummarizePrompt;
 
     [JsonIgnore]
-    public string TokenSummarizePrompt
+    public string ContextSummarizePrompt
     {
-        get { return string.Format(TokenSummarizePromptString, SummarizeWordsCount); }
+        get { return string.Format(ContextSummarizePromptString, ContextSummarizeWordsCount); }
     }
 
-    private int _summarizeWordsCount = 1000;
+    private int _contextSummarizeWordsCount = 1000;
 
-    public int SummarizeWordsCount
+    [JsonPropertyName("SummarizeWordsCount")]
+    public int ContextSummarizeWordsCount
     {
-        get => _summarizeWordsCount;
+        get => _contextSummarizeWordsCount;
         set
         {
             this.ClearError();
-            if (value == _summarizeWordsCount) return;
+            if (value == _contextSummarizeWordsCount) return;
             if (value < 100)
             {
                 this.AddError("Summarize words count must be greater than 100.");
-                return;
             }
 
-            _summarizeWordsCount = value;
+            _contextSummarizeWordsCount = value;
             OnPropertyChanged();
         }
     }
 
-    [JsonIgnore]
-    public ILLMChatClient? SummarizeClient
+    public ILLMChatClient? CreateContextSummarizeClient()
     {
-        get
+        if (ContextSummarizeClientPersist == null)
         {
-            if (SummarizeModelPersistModel == null)
-            {
-                return null;
-            }
-
-            return ServiceLocator.GetService<IMapper>()?
-                .Map<LLMClientPersistModel, ILLMChatClient>(SummarizeModelPersistModel, (options => { }));
+            return null;
         }
-        set
-        {
-            if (value == null)
-            {
-                SummarizeModelPersistModel = null;
-                return;
-            }
 
-            SummarizeModelPersistModel = ServiceLocator.GetService<IMapper>()?
-                .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
-        }
+        return Mapper?
+            .Map<LLMClientPersistModel, ILLMChatClient>(ContextSummarizeClientPersist, (options => { }));
     }
 
+    public void ApplyContextSummarizeClient(ILLMChatClient? value)
+    {
+        if (value == null)
+        {
+            ContextSummarizeClientPersist = null;
+            return;
+        }
+
+        ContextSummarizeClientPersist = Mapper?
+            .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
+    }
+    
     private LLMClientPersistModel? _summarizeModelPersistModel;
 
-    public LLMClientPersistModel? SummarizeModelPersistModel
+    [JsonPropertyName("SummarizeModelPersistModel")]
+    public LLMClientPersistModel? ContextSummarizeClientPersist
     {
         get => _summarizeModelPersistModel;
         set
@@ -104,11 +111,74 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             if (Equals(value, _summarizeModelPersistModel)) return;
             _summarizeModelPersistModel = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(SummarizeClient));
         }
     }
 
-    [JsonIgnore] public ModelSelectionPopupViewModel PopupSelectViewModel { get; }
+    #endregion
+
+    #region subject summary
+
+    public bool EnableAutoSubjectGeneration { get; set; } = true;
+
+    private const string DefaultSubjectSummarizePrompt =
+        "Give a title of the dialog that does not exceed {0} words.";
+
+    [JsonPropertyName("SubjectSummarizePrompt")]
+    public string SubjectPromptString { get; set; } = DefaultSubjectSummarizePrompt;
+
+    [JsonIgnore]
+    public string SubjectSummarizePrompt
+    {
+        get { return string.Format(SubjectPromptString, 10); }
+    }
+
+    public ILLMChatClient? CreateSubjectSummarizeClient()
+    {
+        if (!EnableAutoSubjectGeneration)
+        {
+            return null;
+        }
+
+        if (SubjectSummarizeClientPersist == null)
+        {
+            return null;
+        }
+
+        return Mapper?
+            .Map<LLMClientPersistModel, ILLMChatClient>(SubjectSummarizeClientPersist, (options => { }));
+    }
+
+    public void ApplySubjectSummarizeClient(ILLMChatClient? value)
+    {
+        if (value == null)
+        {
+            SubjectSummarizeClientPersist = null;
+            return;
+        }
+
+        SubjectSummarizeClientPersist = Mapper?
+            .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
+    }
+
+    private LLMClientPersistModel? _subjectSummarizeClientPersist;
+
+    [JsonPropertyName("SubjectSummarizeClient")]
+    public LLMClientPersistModel? SubjectSummarizeClientPersist
+    {
+        get => _subjectSummarizeClientPersist;
+        set
+        {
+            if (Equals(value, _subjectSummarizeClientPersist)) return;
+            _subjectSummarizeClientPersist = value;
+            OnPropertyChanged();
+        }
+    }
+
+    #endregion
+
+    [JsonIgnore] public ModelSelectionPopupViewModel ContextSummaryPopupSelectViewModel { get; }
+
+    public ModelSelectionPopupViewModel SubjectSummaryPopupViewModel { get; }
 
     public GoogleSearchOption GoogleSearchOption { get; set; } = new GoogleSearchOption();
 
@@ -125,6 +195,12 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     [JsonIgnore]
     public ICommand SaveCommand => new ActionCommand(async (param) =>
     {
+        if (HasErrors)
+        {
+            MessageEventBus.Publish("Cannot save global configuration due to validation errors.");
+            return;
+        }
+
         var currentDirectory = Directory.GetCurrentDirectory();
         var configFilePath = Path.GetFullPath(DefaultConfigFile, currentDirectory);
         var fileInfo = new FileInfo(configFilePath);

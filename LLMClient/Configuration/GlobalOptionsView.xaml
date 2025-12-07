@@ -4,14 +4,13 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:ui="clr-namespace:LLMClient.UI"
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
              xmlns:project="clr-namespace:LLMClient.Project"
              xmlns:configuration="clr-namespace:LLMClient.Configuration"
              xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance configuration:GlobalOptions}"
-             d:DesignHeight="500" d:DesignWidth="800">
+             d:DesignHeight="600" d:DesignWidth="800">
     <UserControl.Resources>
 
     </UserControl.Resources>
@@ -21,52 +20,125 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TabControl Padding="8">
-            <TabItem Header="总结">
-                <StackPanel>
-                    <TextBlock Text="上下文总结Prompt：" />
-                    <TextBox Text="{Binding TokenSummarizePromptString}"
-                             Margin="0,10,0,0"
-                             MaxHeight="200"
-                             AcceptsReturn="True"
-                             AcceptsTab="True"
-                             Style="{StaticResource MaterialDesignFilledTextBox}" />
-                    <DockPanel HorizontalAlignment="Left"
-                               Margin="0,10,0,0">
-                        <TextBlock Text="上下文总结大小："
-                                   VerticalAlignment="Center" />
-                        <TextBox materialDesign:TextFieldAssist.SuffixText="词"
-                                 Width="60"
-                                 Margin="5,0,0,0"
-                                 Text="{Binding SummarizeWordsCount,Mode=TwoWay}" />
-                    </DockPanel>
-                    <StackPanel Orientation="Horizontal"
-                                Margin="0,10,0,0">
-                        <TextBlock Text="上下文总结Model："
-                                   VerticalAlignment="Center" />
-                        <materialDesign:PopupBox Padding="0"
-                                                 StaysOpen="True"
-                                                 Margin="10,0"
-                                                 VerticalAlignment="Center"
-                                                 ToolTip="添加suggestion"
-                                                 Style="{StaticResource MaterialDesignToolPopupBox}"
-                                                 PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}"
-                                                 PopupContent="{Binding   PopupSelectViewModel,Mode=OneTime}">
-                            <materialDesign:PopupBox.ToggleContent>
-                                <Border Width="23"
-                                        Height="23"
-                                        Background="{DynamicResource MaterialDesign.Brush.Primary}"
-                                        CornerRadius="11">
-                                    <materialDesign:PackIcon Kind="Edit"
+            <TabItem Header="Summary">
+                <ScrollViewer>
+                    <StackPanel>
+                        <GroupBox Header="Context Summary">
+                            <StackPanel>
+                                <TextBlock Text="Prompt：" />
+                                <TextBox Text="{Binding ContextSummarizePromptString}"
+                                         Margin="0,10,0,0"
+                                         MaxHeight="200"
+                                         AcceptsReturn="True"
+                                         AcceptsTab="True"
+                                         Style="{StaticResource MaterialDesignFilledTextBox}" />
+                                <StackPanel HorizontalAlignment="Left"
+                                            Orientation="Horizontal"
+                                            Margin="0,10,0,0">
+                                    <TextBlock Text="Output Size:"
+                                               VerticalAlignment="Center" />
+                                    <TextBox materialDesign:TextFieldAssist.SuffixText="Letters/Words"
+                                             Width="160"
+                                             Margin="6,0,0,0"
+                                             Text="{Binding ContextSummarizeWordsCount,Mode=TwoWay}" />
+                                    <TextBlock Text="Model:"
+                                               Margin="16,0,0,0"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock MaxWidth="350"
+                                               VerticalAlignment="Center"
+                                               Margin="6,0,0,0"
+                                               Text="{Binding Mode=OneWay, TargetNullValue='Not Set', Path=ContextSummarizeClientPersist.ModelName}" />
+                                    <materialDesign:PopupBox Padding="0"
+                                                             StaysOpen="True"
+                                                             Margin="6,0"
                                                              VerticalAlignment="Center"
-                                                             HorizontalAlignment="Center"
-                                                             Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}" />
-                                </Border>
-                            </materialDesign:PopupBox.ToggleContent>
-                        </materialDesign:PopupBox>
-                        <TextBlock Text="{Binding SummarizeModelPersistModel,Mode=OneWay}"
-                                   VerticalAlignment="Center" />
+                                                             ToolTip="select model"
+                                                             ToolTipService.InitialShowDelay="0"
+                                                             Style="{StaticResource MaterialDesignToolPopupBox}"
+                                                             PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}"
+                                                             PopupContent="{Binding   ContextSummaryPopupSelectViewModel,Mode=OneTime}">
+                                        <materialDesign:PopupBox.ToggleContent>
+                                            <Border Width="23"
+                                                    Height="23"
+                                                    Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                                                    CornerRadius="11">
+                                                <materialDesign:PackIcon Kind="Edit"
+                                                                         VerticalAlignment="Center"
+                                                                         HorizontalAlignment="Center"
+                                                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}" />
+                                            </Border>
+                                        </materialDesign:PopupBox.ToggleContent>
+                                    </materialDesign:PopupBox>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="0,10,0,0">
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Margin="0,16,0,0"
+                                  materialDesign:GroupBoxAssist.HeaderPadding="16,6">
+                            <GroupBox.Header>
+                                <DockPanel>
+                                    <TextBlock Foreground="{DynamicResource MaterialDesign.Brush.Background}"
+                                               VerticalAlignment="Center">
+                                        Subject Summary
+                                    </TextBlock>
+                                    <CheckBox Foreground="{DynamicResource MaterialDesign.Brush.Background}"
+                                              Style="{StaticResource MaterialDesignSecondaryCheckBox}"
+                                              Margin="10,0,0,0"
+                                              IsChecked="{Binding EnableAutoSubjectGeneration,Mode=TwoWay}"
+                                              Padding="0">
+                                        Auto Summarize
+                                    </CheckBox>
+                                </DockPanel>
+                            </GroupBox.Header>
+                            <StackPanel>
+                                <TextBlock Text="Prompt：" />
+                                <TextBox Text="{Binding SubjectPromptString}"
+                                         Margin="0,10,0,0"
+                                         MaxHeight="100"
+                                         AcceptsReturn="True"
+                                         AcceptsTab="True"
+                                         Style="{StaticResource MaterialDesignFilledTextBox}" />
+                                <StackPanel HorizontalAlignment="Left"
+                                            Orientation="Horizontal"
+                                            Margin="0,10,0,0">
+                                    <TextBlock Text="Model:"
+                                               Margin="16,0,0,0"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock MaxWidth="350"
+                                               VerticalAlignment="Center"
+                                               Margin="6,0,0,0"
+                                               Text="{Binding Mode=OneWay, TargetNullValue='Not Set', Path=SubjectSummarizeClientPersist.ModelName}"/>
+                                    <materialDesign:PopupBox Padding="0"
+                                                             StaysOpen="True"
+                                                             Margin="6,0"
+                                                             VerticalAlignment="Center"
+                                                             ToolTip="select model"
+                                                             ToolTipService.InitialShowDelay="0"
+                                                             Style="{StaticResource MaterialDesignToolPopupBox}"
+                                                             PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}"
+                                                             PopupContent="{Binding   SubjectSummaryPopupViewModel,Mode=OneTime}">
+                                        <materialDesign:PopupBox.ToggleContent>
+                                            <Border Width="23"
+                                                    Height="23"
+                                                    Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                                                    CornerRadius="11">
+                                                <materialDesign:PackIcon Kind="Edit"
+                                                                         VerticalAlignment="Center"
+                                                                         HorizontalAlignment="Center"
+                                                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}" />
+                                            </Border>
+                                        </materialDesign:PopupBox.ToggleContent>
+                                    </materialDesign:PopupBox>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="0,10,0,0">
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
                     </StackPanel>
-                </StackPanel>
+                </ScrollViewer>
             </TabItem>
             <TabItem Header="Settings">
                 <Grid>

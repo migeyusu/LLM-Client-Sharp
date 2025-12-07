@@ -1,8 +1,10 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Configuration;
@@ -17,6 +19,7 @@ using LLMClient.UI.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
+using PInvoke;
 using TextMateSharp.Grammars;
 
 namespace LLMClient.UI;
@@ -44,13 +47,13 @@ public class MainWindowViewModel : BaseViewModel
 
     public bool IsInitialized { get; private set; }
 
-    public bool IsProcessing
+    public bool IsInitializing
     {
-        get => _isProcessing;
+        get => _isInitializing;
         set
         {
-            if (value == _isProcessing) return;
-            _isProcessing = value;
+            if (value == _isInitializing) return;
+            _isInitializing = value;
             OnPropertyChanged();
         }
     }
@@ -253,7 +256,7 @@ public class MainWindowViewModel : BaseViewModel
     {
         try
         {
-            IsProcessing = true;
+            IsInitializing = true;
             await SaveSessionsToLocal();
         }
         catch (Exception e)
@@ -262,11 +265,11 @@ public class MainWindowViewModel : BaseViewModel
         }
         finally
         {
-            IsProcessing = false;
+            IsInitializing = false;
         }
     }));
 
-    private bool _isProcessing;
+    private bool _isInitializing;
     private string _loadingMessage = "Loading...";
     private bool _isLeftDrawerOpen = true;
 
@@ -304,7 +307,7 @@ public class MainWindowViewModel : BaseViewModel
 
     public void AddSession(ILLMSession projectViewModel)
     {
-        ((INotifyPropertyChanged)projectViewModel).PropertyChanged += SessionOnEditTimeChanged;
+        ((INotifyPropertyChanged)projectViewModel).PropertyChanged += SessionOnPropertyChanged;
         this.SessionViewModels.Insert(0, projectViewModel);
         PreSession = projectViewModel;
     }
@@ -319,7 +322,7 @@ public class MainWindowViewModel : BaseViewModel
             await FileBasedSessionBase.LoadFromLocal<ProjectViewModel>(_mapper, ProjectViewModel.SaveFolderPath));
         foreach (var llmSession in sessions.OrderByDescending((session => session.EditTime)))
         {
-            ((INotifyPropertyChanged)llmSession).PropertyChanged += SessionOnEditTimeChanged;
+            ((INotifyPropertyChanged)llmSession).PropertyChanged += SessionOnPropertyChanged;
             this.SessionViewModels.Add(llmSession);
         }
     }
@@ -328,7 +331,7 @@ public class MainWindowViewModel : BaseViewModel
     {
         foreach (var session in sessions.OrderByDescending(model => model.EditTime))
         {
-            ((INotifyPropertyChanged)session).PropertyChanged += SessionOnEditTimeChanged;
+            ((INotifyPropertyChanged)session).PropertyChanged += SessionOnPropertyChanged;
             //默认将最新的会话放在最前面，也就是从大到小排序
             var sessionEditTime = session.EditTime;
             var firstOrDefault =
@@ -346,7 +349,7 @@ public class MainWindowViewModel : BaseViewModel
         }
     }
 
-    private void SessionOnEditTimeChanged(object? sender, PropertyChangedEventArgs e)
+    private void SessionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         var session = ((ILLMSession?)sender)!;
         switch (e.PropertyName)
@@ -356,6 +359,36 @@ public class MainWindowViewModel : BaseViewModel
                 if (indexOf != 0)
                 {
                     this.SessionViewModels.Move(indexOf, 0);
+                }
+
+                break;
+            case nameof(ILLMSession.IsBusy):
+                OnPropertyChanged(nameof(IsBusy));
+                if (!IsBusy)
+                {
+                    var mainWindow = Application.Current.MainWindow;
+                    if (mainWindow == null)
+                    {
+                        return;
+                    }
+
+                    if (mainWindow.IsFocused || mainWindow.IsActive)
+                    {
+                        return;
+                    }
+
+                    var wih = new WindowInteropHelper(mainWindow);
+                    var hwnd = wih.Handle;
+                    // 创建并填充FLASHWINFO结构体
+                    var finfo = new User32.FLASHWINFO();
+                    finfo.cbSize = Convert.ToInt32(Marshal.SizeOf(finfo));
+                    finfo.hwnd = hwnd;
+                    // FLASHW_ALL: 闪烁标题栏和任务栏图标
+                    // FLASHW_TIMERNOFG: 持续闪烁，直到窗口被用户点击激活，然后自动停止
+                    finfo.dwFlags = User32.FlashWindowFlags.FLASHW_TIMERNOFG;
+                    finfo.uCount = int.MaxValue; // 闪烁次数，对于持续闪烁设为最大值
+                    finfo.dwTimeout = 0; // 使用系统默认的光标闪烁频率
+                    User32.FlashWindowEx(ref finfo);
                 }
 
                 break;
@@ -381,7 +414,7 @@ public class MainWindowViewModel : BaseViewModel
 
     public void DeleteSession(ILLMSession session)
     {
-        ((INotifyPropertyChanged)session).PropertyChanged -= SessionOnEditTimeChanged;
+        ((INotifyPropertyChanged)session).PropertyChanged -= SessionOnPropertyChanged;
         this.SessionViewModels.Remove(session);
         this.PreSession = this.SessionViewModels.FirstOrDefault();
         session.Delete();
@@ -390,7 +423,7 @@ public class MainWindowViewModel : BaseViewModel
     public async Task SaveSessions()
     {
         this.LoadingMessage = "Saving sessions...";
-        this.IsProcessing = true;
+        this.IsInitializing = true;
         await this.SaveSessionsToLocal();
         await HttpContentCache.Instance.PersistIndexAsync();
     }
@@ -402,7 +435,7 @@ public class MainWindowViewModel : BaseViewModel
     {
         try
         {
-            IsProcessing = true;
+            IsInitializing = true;
             await TextMateCodeRenderer.InitializeAsync();
             await McpServiceCollection.LoadAsync();
             await RagSourceCollection.LoadAsync();
@@ -424,7 +457,7 @@ public class MainWindowViewModel : BaseViewModel
         }
         finally
         {
-            IsProcessing = false;
+            IsInitializing = false;
         }
     }
 

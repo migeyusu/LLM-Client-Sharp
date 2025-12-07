@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Shell;
 using LambdaConverters;
 using LLMClient.Data;
 using LLMClient.Rag;
@@ -33,6 +34,10 @@ internal static class SnapConverters
                     return Brushes.Transparent;
             }
         });
+
+    public static readonly IValueConverter BooleanToProgressStateConverter =
+        ValueConverter.Create<bool, TaskbarItemProgressState>(e =>
+            e.Value ? TaskbarItemProgressState.Indeterminate : TaskbarItemProgressState.None);
 
     public static readonly IValueConverter StringArrayToStringConverter =
         ValueConverter.Create<string[], string>(e => string.Join(", ", e.Value));

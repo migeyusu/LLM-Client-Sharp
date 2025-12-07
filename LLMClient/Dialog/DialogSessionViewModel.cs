@@ -22,7 +22,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
 
-public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
+public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase, ITextDialogSession
 {
     /// <summary>
     /// indicate whether data is changed after loading.
@@ -671,7 +671,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         return new DialogContext(dialogItems, this.SystemPrompt);
     }
 
-    public async Task<CompletedResult> InvokeOn(Func<Task<CompletedResult>> invoke)
+    public virtual async Task<CompletedResult> RequestOn(Func<Task<CompletedResult>> invoke)
     {
         RespondingCount++;
         CompletedResult completedResult;
@@ -714,7 +714,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         return completedResult;
     }
 
-    public async Task<CompletedResult> NewRequest(ILLMChatClient client, IRequestItem requestViewItem,
+    public virtual async Task<CompletedResult> NewRequest(ILLMChatClient client, IRequestItem requestViewItem,
         int? insertIndex = null)
     {
         var multiResponseViewItem = new MultiResponseViewItem(this)
@@ -889,7 +889,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase
         this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
     }
 
-    private void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    protected virtual void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         this.IsDataChanged = true;
     }

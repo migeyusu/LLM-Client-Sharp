@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Agent;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
@@ -264,7 +265,7 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
     public const int SummarySize = 1024; // 摘要长度
 
     private const int SummaryTrigger = 3072; // 摘要触发长度
-    
+
     /// <summary>
     /// 
     /// </summary>
@@ -351,20 +352,13 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
                 }
 
                 stringBuilder.Append(raw);
-                var dialogContext = new DialogContext([
-                    new RequestViewItem() { TextMessage = stringBuilder.ToString(), }
-                ]);
-                int tryCount = 0;
-                while (tryCount < retryCount)
+                var promptAgent = new PromptAgent(client, null);
+                var textResponse =
+                    await promptAgent.GetMessageAsync(stringBuilder.ToString(), cancellationToken: token);
+                if (!string.IsNullOrEmpty(textResponse) && !response.IsInterrupt)
                 {
-                    response = await client.SendRequest(dialogContext, cancellationToken: token);
-                    tryCount++;
-                    var textResponse = response.FirstTextResponse;
-                    if (!string.IsNullOrEmpty(textResponse) && !response.IsInterrupt)
-                    {
-                        cache.TryAdd(raw, textResponse);
-                        return textResponse;
-                    }
+                    cache.TryAdd(raw, textResponse);
+                    return textResponse;
                 }
             }
             catch (Exception ex)

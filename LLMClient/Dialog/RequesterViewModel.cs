@@ -240,7 +240,7 @@ public class RequesterViewModel : BaseViewModel
         {
             newParameters.PropertyChanged += TagDataChanged;
         }
-        
+
         this.SearchConfig.ResetSearch(client);
         this.ThinkingConfig.ResetConfig(client);
         this.FunctionTreeSelector.SelectableCallEngineTypes = DefaultClient.Model.SupportFunctionCall
@@ -261,7 +261,7 @@ public class RequesterViewModel : BaseViewModel
         this.PromptString = null;
     }
 
-    public IFunctionGroupSource? Source { get; set; }
+    public IFunctionGroupSource? FunctionGroupSource { get; set; }
 
     public async void Summarize(int? index = null)
     {
@@ -269,10 +269,10 @@ public class RequesterViewModel : BaseViewModel
         {
             var summaryRequest = new SummaryRequestViewItem()
             {
-                SummaryPrompt = _options.TokenSummarizePrompt,
-                OutputLength = _options.SummarizeWordsCount,
+                SummaryPrompt = _options.ContextSummarizePrompt,
+                OutputLength = _options.ContextSummarizeWordsCount,
             };
-            var summarizeModel = _options.SummarizeClient ?? this.DefaultClient;
+            var summarizeModel = _options.CreateContextSummarizeClient() ?? this.DefaultClient;
             await _getResponse.Invoke(summarizeModel, summaryRequest, index);
         }
         catch (Exception e)
@@ -298,7 +298,7 @@ public class RequesterViewModel : BaseViewModel
         IList<CheckableFunctionGroupTree>? tools = null;
         if (this.FunctionTreeSelector.FunctionSelected)
         {
-            tools = this.Source?.GetFunctionGroups().OfType<CheckableFunctionGroupTree>().ToArray();
+            tools = this.FunctionGroupSource?.GetFunctionGroups().OfType<CheckableFunctionGroupTree>().ToArray();
         }
 
         var thinkingConfig = this.ThinkingConfig.Enable ? this.ThinkingConfig.Config : null;

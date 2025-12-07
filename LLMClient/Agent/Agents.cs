@@ -32,15 +32,16 @@ public class PromptAgent : IAgent
 
     public int RetryCount { get; set; } = 3;
 
-    public async Task<string> GetMessageAsync(string prompt, string? systemPrompt = null,
+    public Task<CompletedResult> SendRequestAsync(ITextDialogSession session,
         CancellationToken cancellationToken = default)
     {
-        var context = new DialogContext([
-            new RequestViewItem()
-            {
-                TextMessage = prompt
-            }
-        ], systemPrompt);
+        var context = new DialogContext(session.DialogItems, session.SystemPrompt);
+        return SendRequestAsync(context, cancellationToken);
+    }
+
+    public async Task<CompletedResult> SendRequestAsync(DialogContext context,
+        CancellationToken cancellationToken = default)
+    {
         var tryCount = 0;
         while (tryCount < RetryCount)
         {
@@ -64,20 +65,33 @@ public class PromptAgent : IAgent
                 Price += completedResult.Price;
             }
 
-            var contentAsString = completedResult.GetContentAsString();
-            if (string.IsNullOrEmpty(contentAsString))
+            if (completedResult.IsInterrupt || string.IsNullOrEmpty(completedResult.GetContentAsString()))
             {
                 _interactor?.Warning(
-                    string.Format("The LLM returned an empty response. Retrying... (Attempt {0}/{1})",
-                    tryCount, RetryCount));
+                    string.Format("The LLM returned an empty or interrupt response. Retrying... (Attempt {0}/{1})",
+                        tryCount, RetryCount));
             }
             else
             {
-                return contentAsString;
+                return completedResult;
             }
         }
 
-        _interactor?.Error(string.Format("Failed to get a valid response from the LLM after {0} attempts.", RetryCount));
-        throw new Exception("Failed to get a valid response from the LLM.");
+        _interactor?.Error($"Failed to get a valid rsesponse from the LLM after {RetryCount} attempts.");
+                                                              throw new Exception("Failed to get a valid reponse from the LLM.");
+    }
+
+    public async Task<string> GetMessageAsync(string prompt, string? systemPrompt = null,
+        CancellationToken cancellationToken = default)
+    {
+        var context = new DialogContext([
+            new RequestViewItem()
+            {
+                TextMessage = prompt
+            }
+        ], systemPrompt);
+
+        var sendRequestAsync = await SendRequestAsync(context, cancellationToken);
+        return sendRequestAsync.GetContentAsString()!;
     }
 }

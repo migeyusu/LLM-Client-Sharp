@@ -49,7 +49,7 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionFactory<Dial
         cloneSession.IsDataChanged = true;
         return cloneSession;
     }
-    
+
 
     public static async Task<DialogFileViewModel?> LoadFromFile(FileInfo fileInfo, IMapper mapper)
     {
@@ -101,8 +101,6 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionFactory<Dial
         return cloneSession;
     }
 
-   
-
     private IMapper _mapper;
 
     public DialogFileViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
@@ -114,6 +112,15 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionFactory<Dial
     public DialogFileViewModel(DialogViewModel dialogModel, IMapper mapper)
     {
         this.Dialog = dialogModel;
+        dialogModel.PropertyChanged += (sender, args) =>
+        {
+            switch (args.PropertyName)
+            {
+                case nameof(DialogViewModel.IsBusy):
+                    OnPropertyChanged(nameof(IsBusy));
+                    break;
+            }
+        };
         _mapper = mapper;
         this.Dialog.DialogItems.CollectionChanged += DialogItemsOnCollectionChanged;
     }
