@@ -7,7 +7,8 @@
                     xmlns:component="clr-namespace:LLMClient.UI.Component"
                     xmlns:dialog="clr-namespace:LLMClient.Dialog"
                     xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
-                    xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility">
+                    xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
                   DataType="{x:Type dialog:RequestViewItem}">
         <Grid HorizontalAlignment="Right"
@@ -103,9 +104,6 @@
                     <materialDesign:PackIcon Kind="Web"
                                              Visibility="{Binding SearchOption,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                              Margin="8,0,0,0" />
-                    <materialDesign:PackIcon Kind="HeadDotsHorizontalOutline"
-                                             Visibility="{Binding ThinkingConfig,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
-                                             Margin="8,0,0,0" />
                     <materialDesign:PackIcon Kind="DataMatrix"
                                              Visibility="{Binding HasRagSources,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
                                              Margin="8,0,0,0" />
@@ -173,9 +171,9 @@
                 </customControl:FlowDocumentScrollViewerEx.ContextMenu>
             </customControl:FlowDocumentScrollViewerEx>
             <customControl:MarkdownTextBlock TextWrapping="Wrap"
-                                         VerticalAlignment="Top"
-                                         Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                         Source="{Binding  TempResponseText,Mode=OneTime}" />
+                                             VerticalAlignment="Top"
+                                             Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                             Source="{Binding  TempResponseText,Mode=OneTime}" />
             <TextBox IsReadOnly="True"
                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                      BorderThickness="0"
@@ -238,7 +236,8 @@
             </Trigger>
         </Style.Triggers>
     </Style>
-    <DataTemplate x:Key="MultiResponseViewItemDataTemplate" DataType="{x:Type dialog:MultiResponseViewItem}">
+    <DataTemplate x:Key="MultiResponseViewItemDataTemplate"
+                  DataType="{x:Type dialog:MultiResponseViewItem}">
         <StackPanel>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -492,4 +491,89 @@
         <Setter Property="ItemTemplateSelector"
                 Value="{StaticResource DialogTemplateSelector}" />
     </Style>
+    <DataTemplate x:Key="ThinkingConfigDataTemplate" 
+                  DataType="{x:Type dialog:ThinkingConfigViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <ListBox Grid.Column="1"
+                     ItemsSource="{Binding EffortLevels,Mode=OneTime}"
+                     SelectedIndex="0"
+                     SelectedItem="{Binding EffortLevel,Mode=TwoWay}"
+                     SelectionMode="Single">
+                <ListBox.Style>
+                    <Style TargetType="ListBox"
+                           BasedOn="{StaticResource MaterialDesignToolToggleFlatListBox}">
+                        <Setter Property="ItemContainerStyle">
+                            <Setter.Value>
+                                <Style TargetType="ListBoxItem"
+                                       BasedOn="{StaticResource MaterialDesignToolToggleListBoxItem}">
+                                    <Setter
+                                        Property="HorizontalContentAlignment"
+                                        Value="Center" />
+                                    <Setter Property="VerticalContentAlignment"
+                                            Value="Center" />
+                                    <Setter Property="MinWidth" Value="54" />
+                                    <Setter Property="Height"
+                                            Value="30" />
+                                    <Setter Property="Padding" Value="6,3" />
+                                    <Setter Property="TextBlock.FontSize"
+                                            Value="16" />
+                                    <Setter Property="TextBlock.FontWeight"
+                                            Value="Black" />
+                                </Style>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.Style>
+            </ListBox>
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Effort Level:"
+                       Margin="0,0,8,0"
+                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                       VerticalAlignment="Center" />
+            <CheckBox Grid.Row="1" Grid.Column="0"
+                      Grid.ColumnSpan="2"
+                      HorizontalAlignment="Left"
+                      materialDesign:CheckBoxAssist.CheckBoxSize="26"
+                      Margin="0,6,0,0"
+                      IsChecked="{Binding EnableBudgetTokens,Mode=TwoWay}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Budget Tokens:"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                    <TextBox
+                        Margin="6,0,0,0"
+                        Padding="8,6"
+                        Width="80"
+                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                        VerticalAlignment="Center">
+                        <TextBox.Text>
+                            <Binding Path="BudgetTokens" Mode="TwoWay">
+                                <Binding.ValidationRules>
+                                    <component:TypeValidateRule
+                                        TargetType="{x:Type sys:Int32}" />
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </TextBox.Text>
+                    </TextBox>
+                </StackPanel>
+            </CheckBox>
+            <CheckBox Grid.Row="2" Grid.Column="0"
+                      Grid.ColumnSpan="2"
+                      HorizontalAlignment="Left"
+                      Margin="0,6,0,0"
+                      FontSize="14"
+                      Content="Show thinking details."
+                      materialDesign:CheckBoxAssist.CheckBoxSize="26"
+                      IsChecked="{Binding ShowThinking,Mode=TwoWay}" />
+        </Grid>
+    </DataTemplate>
 </ResourceDictionary>

@@ -10,8 +10,14 @@
              d:DesignHeight="600" d:DesignWidth="500"
              d:DataContext="{d:DesignInstance abstraction:ILLMChatClient}">
     <StackPanel>
+        <CheckBox IsChecked="{Binding Parameters.ThinkingEnabled,Mode=TwoWay}"
+                  Content="Reasoning Enable"
+                  materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                  Visibility="{Binding Model.Reasonable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+        <ContentControl Content="{Binding Parameters.ThinkingConfig,Mode=OneWay}"
+                        ContentTemplate="{StaticResource ThinkingConfigDataTemplate}"
+                        Visibility="{Binding  Parameters.ThinkingEnabled,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
         <CheckBox Content="Streaming"
-                  Margin="0,10,0,0"
                   materialDesign:CheckBoxAssist.CheckBoxSize="30"
                   IsEnabled="{Binding Model.SupportStreaming,Mode=OneWay}"
                   IsChecked="{Binding Parameters.Streaming,Mode=TwoWay}" />

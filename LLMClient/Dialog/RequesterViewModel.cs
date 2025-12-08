@@ -80,7 +80,6 @@ public class RequesterViewModel : BaseViewModel
             _defaultClient = value;
             BindClient(value);
             OnPropertyChanged();
-            OnPropertyChanged(nameof(ThinkingAvailable));
         }
     }
 
@@ -174,22 +173,7 @@ public class RequesterViewModel : BaseViewModel
     #endregion
 
     public SearchConfigViewModel SearchConfig { get; }
-
-    public ThinkingConfigViewModel ThinkingConfig { get; }
-
-    public bool ThinkingAvailable
-    {
-        get
-        {
-            if (!this.DefaultClient.Model.Reasonable)
-            {
-                return false;
-            }
-
-            return this.ThinkingConfig.Config != null;
-        }
-    }
-
+    
     #region input
 
     private string? _promptString;
@@ -216,7 +200,6 @@ public class RequesterViewModel : BaseViewModel
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
-        ThinkingConfig = new ThinkingConfigViewModel();
         QueryViewModel = new FileQueryViewModel(this);
         this._defaultClient = modelClient;
         this._getResponse = getResponse;
@@ -242,7 +225,6 @@ public class RequesterViewModel : BaseViewModel
         }
 
         this.SearchConfig.ResetSearch(client);
-        this.ThinkingConfig.ResetConfig(client);
         this.FunctionTreeSelector.SelectableCallEngineTypes = DefaultClient.Model.SupportFunctionCall
             ?
             [
@@ -300,14 +282,7 @@ public class RequesterViewModel : BaseViewModel
         {
             tools = this.FunctionGroupSource?.GetFunctionGroups().OfType<CheckableFunctionGroupTree>().ToArray();
         }
-
-        var thinkingConfig = this.ThinkingConfig.Enable ? this.ThinkingConfig.Config : null;
-        if (thinkingConfig != null)
-        {
-            _mapper.Map<IThinkingConfig, IThinkingConfig>(this.ThinkingConfig,
-                thinkingConfig);
-        }
-
+        
         var ragSources = RagSources.Where(model => model is { IsSelected: true, Data.IsAvailable: true })
             .Select(model => model.Data)
             .ToArray();
@@ -318,7 +293,6 @@ public class RequesterViewModel : BaseViewModel
             Attachments = Attachments.ToList(),
             FunctionGroups = tools == null ? [] : [..tools],
             SearchOption = SearchConfig.GetUserSearchOption(),
-            ThinkingConfig = thinkingConfig,
             RagSources = ragSources.Length > 0 ? ragSources : null,
             CallEngine = this.FunctionTreeSelector.EngineType ??
                          this.FunctionTreeSelector.SelectableCallEngineTypes.FirstOrDefault(),

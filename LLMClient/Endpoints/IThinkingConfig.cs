@@ -10,7 +10,9 @@ namespace LLMClient.Endpoints;
 [JsonDerivedType(typeof(OpenRouterReasoningConfig), "openrouter")]
 [JsonDerivedType(typeof(GeekAIThinkingConfig), "geekai")]
 [JsonDerivedType(typeof(NVDAAPIThinkingConfig), "nvda")]
-public interface IThinkingConfig : ICloneable
+[JsonDerivedType(typeof(DefaultThinkingConfig), "default")]
+[JsonDerivedType(typeof(ThinkingConfigViewModel), "vm")]
+public interface IThinkingConfig
 {
     public string? Effort { get; set; }
 
@@ -18,9 +20,32 @@ public interface IThinkingConfig : ICloneable
 
     public bool ShowThinking { get; set; }
 
-    public static IThinkingConfig? Get(ILLMChatModel model)
+    public static IThinkingConfig? CreateFrom(ILLMEndpoint endpoint, ThinkingConfigViewModel? configViewModel)
     {
-        if (model.Endpoint is APIEndPoint apiEndPoint)
+        if (configViewModel == null)
+        {
+            return null;
+        }
+
+        var baseConfig = Create(endpoint);
+        if (baseConfig == null)
+        {
+            return null;
+        }
+
+        baseConfig.Effort = configViewModel.Effort;
+        if (configViewModel.EnableBudgetTokens)
+        {
+            baseConfig.BudgetTokens = configViewModel.BudgetTokens;
+        }
+
+        baseConfig.ShowThinking = configViewModel.ShowThinking;
+        return baseConfig;
+    }
+
+    private static IThinkingConfig? Create(ILLMEndpoint endpoint)
+    {
+        if (endpoint is APIEndPoint apiEndPoint)
         {
             switch (apiEndPoint.Option.ModelsSource)
             {
@@ -34,14 +59,16 @@ public interface IThinkingConfig : ICloneable
             {
                 return new NVDAAPIThinkingConfig();
             }
+
             if (apiEndPoint.Option.ConfigOption.IsOpenAICompatible)
             {
                 return new DefaultThinkingConfig();
             }
         }
+
         return null;
     }
 
 
-    public void EnableThinking(ChatOptions options);
+    public void ApplyThinking(ChatOptions options);
 }

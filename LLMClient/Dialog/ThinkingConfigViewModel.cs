@@ -1,4 +1,4 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Text.Json.Serialization;
 using LLMClient.Endpoints;
 using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.AI;
@@ -8,22 +8,10 @@ namespace LLMClient.Dialog;
 
 public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinkingConfig
 {
-    private bool _enable = false;
-
-    public bool Enable
-    {
-        get => _enable;
-        set
-        {
-            if (value == _enable) return;
-            _enable = value;
-            OnPropertyChanged();
-        }
-    }
-
     public const string DefaultEffortLevel = "Default";
 
 #pragma warning disable OPENAI001
+    [JsonIgnore]
     public IList<ChatReasoningEffortLevel> EffortLevels { get; } =
 
     [
@@ -96,7 +84,6 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
     }
 
     private bool _showThinking = true;
-    private IThinkingConfig? _config;
 
     public bool ShowThinking
     {
@@ -109,27 +96,10 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
         }
     }
 
-    public void EnableThinking(ChatOptions options)
+    public void ApplyThinking(ChatOptions options)
     {
         throw new NotImplementedException();
     }
-
-    public IThinkingConfig? Config
-    {
-        get => _config;
-        set
-        {
-            if (Equals(value, _config)) return;
-            _config = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public void ResetConfig(ILLMChatClient client)
-    {
-        this.Config = IThinkingConfig.Get(client.Model);
-    }
-
     public bool Validate()
     {
         if (HasErrors)
@@ -143,10 +113,5 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
         }
 
         return HasErrors;
-    }
-
-    public object Clone()
-    {
-        throw new NotSupportedException();
     }
 }

@@ -63,4 +63,7 @@ public class EmptyLLMChatModel : ILLMChatModel
     public float FrequencyPenalty { get; set; }
     public float PresencePenalty { get; set; }
     public long? Seed { get; set; }
+
+    public IThinkingConfig? ThinkingConfig { get; set; }
+    public bool ThinkingEnabled { get; set; }
 }

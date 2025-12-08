@@ -36,7 +36,7 @@ public partial class TestWindow : Window, INotifyPropertyChanged
         }
     }
 
-    public ObservableCollection<Exception> Exceptions { get; set; }
+    public ObservableCollection<Exception> Exceptions { get; set; } = new();
 
     public ImageSource? LatexSource
     {
@@ -55,10 +55,10 @@ public partial class TestWindow : Window, INotifyPropertyChanged
 
     public CancellationTokenSource? RequestTokenSource { get; set; }
 
-    private MathJaxLatexRenderService? latexRenderService;
+    private MathJaxLatexRenderService? _latexRenderService = null;
 
     private ImageSource? _latexSource;
-    private string _formula;
+    private string _formula = string.Empty;
 
     public void Stop()
     {
@@ -67,16 +67,16 @@ public partial class TestWindow : Window, INotifyPropertyChanged
 
     public async void Start()
     {
-        if (latexRenderService == null)
+        if (_latexRenderService == null)
         {
-            latexRenderService = await MathJaxLatexRenderService.CreateAsync(WebView2);
+            _latexRenderService = await MathJaxLatexRenderService.CreateAsync(WebView2);
         }
 
         var imageSource =
-            await latexRenderService.RenderAsync(
+            await _latexRenderService.RenderAsync(
                 "R(f)(\\theta, s) = \\iint_{-\\infty}^{\\infty} f(x, y) \\, \\delta(x \\cos \\theta + y \\sin \\theta - s) \\, dx \\, dy");
         this.LatexSource = imageSource;
-        
+
         RequestTokenSource?.Cancel();
         RequestTokenSource = new CancellationTokenSource();
         try

@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 
 namespace LLMClient.Abstraction;
@@ -7,7 +8,7 @@ namespace LLMClient.Abstraction;
 public interface IModelParams
 {
     bool Streaming { get; set; }
-    
+
     string? SystemPrompt { get; set; }
 
     float TopP { get; set; }
@@ -23,4 +24,8 @@ public interface IModelParams
     float PresencePenalty { get; set; }
 
     long? Seed { get; set; }
+
+    IThinkingConfig? ThinkingConfig { get; set; }
+
+    bool ThinkingEnabled { get; set; }
 }

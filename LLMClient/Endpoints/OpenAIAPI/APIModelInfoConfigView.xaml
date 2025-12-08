@@ -5,7 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
              xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension"
              mc:Ignorable="d"
@@ -17,6 +16,13 @@
                    BasedOn="{StaticResource MaterialDesignSubtitle2TextBlock}">
                 <Setter Property="VerticalAlignment"
                         Value="Center" />
+            </Style>
+            <Style TargetType="{x:Type CheckBox}"
+                   BasedOn="{StaticResource {x:Type CheckBox}}">
+                <Setter Property="Margin"
+                        Value="0,0,10,0" />
+                <Setter Property="materialDesign:CheckBoxAssist.CheckBoxSize"
+                        Value="30" />
             </Style>
         </StackPanel.Resources>
         <Grid Margin="0,0,0,10">
@@ -100,21 +106,6 @@
         </Grid>
         <WrapPanel Margin="0,10,0,0"
                    Orientation="Horizontal">
-            <WrapPanel.Resources>
-                <Style TargetType="{x:Type CheckBox}"
-                       BasedOn="{StaticResource {x:Type CheckBox}}">
-                    <Setter Property="Margin"
-                            Value="0,0,10,0" />
-                    <Setter Property="materialDesign:CheckBoxAssist.CheckBoxSize"
-                            Value="30" />
-                </Style>
-            </WrapPanel.Resources>
-            <CheckBox IsChecked="{Binding Reasonable,Mode=TwoWay}"
-                      Content="Support Reasoning"
-                      HorizontalAlignment="Left"
-                      VerticalAlignment="Center" />
-            <CheckBox IsChecked="{Binding SupportStreaming,Mode=TwoWay}"
-                      Content="Support Streaming" />
             <CheckBox IsChecked="{Binding SupportImageInput,Mode=TwoWay}"
                       Content="Support Image Input" />
             <CheckBox IsChecked="{Binding  SupportAudioInput,Mode=TwoWay}"
@@ -127,17 +118,33 @@
                       Content="Support Image Output" />
             <CheckBox IsChecked="{Binding SupportSearch,Mode=TwoWay}"
                       Content="Support Search" />
-            <CheckBox IsChecked="{Binding SupportFunctionCall,Mode=TwoWay}"
-                      Content="Support Function Call" />
             <CheckBox IsChecked="{Binding SupportSystemPrompt,Mode=TwoWay}"
                       Content="Support System Prompt" />
         </WrapPanel>
+        <CheckBox IsChecked="{Binding SupportStreaming,Mode=TwoWay}"
+                  Content="Support Streaming" />
+        <CheckBox IsChecked="{Binding Streaming,Mode=TwoWay}"
+                  Visibility="{Binding SupportStreaming,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                  Content="Streaming" />
+        <DockPanel>
+            <CheckBox IsChecked="{Binding Reasonable,Mode=TwoWay}"
+                      Content="Support Reasoning" />
+            <CheckBox IsChecked="{Binding ThinkingEnabled,Mode=TwoWay}"
+                      Content="Reasoning Enable"
+                      Visibility="{Binding Reasonable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+        </DockPanel>
+        <ContentControl Content="{Binding ThinkingConfig,Mode=OneWay}"
+                        ContentTemplate="{StaticResource ThinkingConfigDataTemplate}"
+                        Margin="0,10,0,0"
+                        Visibility="{Binding  ThinkingEnabled,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+        <CheckBox IsChecked="{Binding SupportFunctionCall,Mode=TwoWay}"
+                  Content="Support Function Call" />
         <CheckBox IsChecked="{Binding FunctionCallOnStreaming,Mode=TwoWay}"
-                  Content="Support Function Call when Streaming (Many models don't support this feature)"
+                  Content="Support Function Call when Streaming (Many Endpoints don't support)"
+                  Visibility="{Binding SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                   materialDesign:CheckBoxAssist.CheckBoxSize="30"
                   HorizontalAlignment="Left"
-                  VerticalAlignment="Center"
-                  Margin="0,10,0,0" />
+                  VerticalAlignment="Center" />
         <endpoints:ParamConfigView PropertyName="Top P Enable"
                                    Value="{Binding TopP,Mode=TwoWay}"
                                    Description="通过选择最可能的词直到达到设定概率，控制文本多样性。"

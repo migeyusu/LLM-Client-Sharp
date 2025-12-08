@@ -71,8 +71,6 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
         get => RagSources != null && RagSources.Count > 0;
     }
 
-    public IThinkingConfig? ThinkingConfig { get; set; }
-
     public FunctionCallEngineType CallEngine { get; set; }
 
     public long Tokens

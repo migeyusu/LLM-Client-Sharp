@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Data;
+using LLMClient.Dialog;
 using LLMClient.UI.Component.CustomControl;
 using LLMClient.UI.ViewModel.Base;
 using Microsoft.Xaml.Behaviors.Core;
@@ -193,6 +194,8 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
     private bool _supportAudioGeneration;
     private bool _supportStreaming = true;
     private bool _functionCallOnStreaming = false;
+    private bool _thinkingEnabled;
+    private IThinkingConfig? _thinkingConfig;
 
     public int MaxContextSize
     {
@@ -383,6 +386,36 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
             if (value == _reasonable) return;
             _reasonable = value;
             OnPropertyChanged();
+            if (!Reasonable)
+            {
+                ThinkingEnabled = false;
+            }
+        }
+    }
+
+    public IThinkingConfig? ThinkingConfig
+    {
+        get => _thinkingConfig;
+        set
+        {
+            if (Equals(value, _thinkingConfig)) return;
+            _thinkingConfig = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool ThinkingEnabled
+    {
+        get => _thinkingEnabled;
+        set
+        {
+            if (value == _thinkingEnabled) return;
+            _thinkingEnabled = value;
+            OnPropertyChanged();
+            if (ThinkingConfig == null && value)
+            {
+                ThinkingConfig = new ThinkingConfigViewModel();
+            }
         }
     }
 
@@ -546,7 +579,6 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
             OnPropertyChanged();
         }
     }
-
 
     public ICommand CopyCommand => new ActionCommand(o =>
     {

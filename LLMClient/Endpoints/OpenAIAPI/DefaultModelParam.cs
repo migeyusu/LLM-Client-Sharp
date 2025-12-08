@@ -1,4 +1,5 @@
 ﻿using LLMClient.Abstraction;
+using LLMClient.Dialog;
 using LLMClient.UI.ViewModel.Base;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
@@ -14,6 +15,8 @@ public class DefaultModelParam : BaseViewModel, IModelParams
     private float _presencePenalty;
     private long? _seed;
     private bool _streaming = true;
+    private IThinkingConfig? _thinkingConfig;
+    private bool _thinkingEnabled;
 
     public bool Streaming
     {
@@ -112,6 +115,32 @@ public class DefaultModelParam : BaseViewModel, IModelParams
             if (value == _seed) return;
             _seed = value;
             OnPropertyChanged();
+        }
+    }
+
+    public IThinkingConfig? ThinkingConfig
+    {
+        get => _thinkingConfig;
+        set
+        {
+            if (Equals(value, _thinkingConfig)) return;
+            _thinkingConfig = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool ThinkingEnabled
+    {
+        get => _thinkingEnabled;
+        set
+        {
+            if (value == _thinkingEnabled) return;
+            _thinkingEnabled = value;
+            OnPropertyChanged();
+            if (value && ThinkingConfig == null)
+            {
+                ThinkingConfig = new ThinkingConfigViewModel();
+            }
         }
     }
 }

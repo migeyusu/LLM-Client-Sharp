@@ -24,7 +24,7 @@ public class OpenRouterReasoningConfig : IThinkingConfig
         set => Exclude = !value;
     }
 
-    public void EnableThinking(ChatOptions options)
+    public void ApplyThinking(ChatOptions options)
     {
         object clone = this.Clone();
         options.AdditionalProperties ??= new AdditionalPropertiesDictionary();
@@ -50,7 +50,7 @@ public class DefaultThinkingConfig : IThinkingConfig
 
     [JsonIgnore] public bool ShowThinking { get; set; }
 
-    public void EnableThinking(ChatOptions options)
+    public void ApplyThinking(ChatOptions options)
     {
         options.RawRepresentationFactory = _ => new ResponseCreationOptions
         {
@@ -84,7 +84,7 @@ public class GeekAIThinkingConfig : IThinkingConfig
 
     [JsonPropertyName("include_thoughts")] public bool ShowThinking { get; set; } = true;
 
-    public void EnableThinking(ChatOptions options)
+    public void ApplyThinking(ChatOptions options)
     {
         object clone = this.Clone();
         options.AdditionalProperties ??= new AdditionalPropertiesDictionary();
@@ -120,7 +120,7 @@ public class NVDAAPIThinkingConfig : IThinkingConfig
 
     [JsonIgnore] public bool ShowThinking { get; set; }
 
-    public void EnableThinking(ChatOptions options)
+    public void ApplyThinking(ChatOptions options)
     {
         options.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         options.AdditionalProperties["chat_template_kwargs"] = new Dictionary<string, object>

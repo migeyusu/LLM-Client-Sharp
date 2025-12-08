@@ -250,6 +250,18 @@ public class AzureModelInfo : ILLMChatModel
 
     [JsonIgnore] public long? Seed { get; set; }
 
+    public IThinkingConfig? ThinkingConfig
+    {
+        get => throw new NotSupportedException();
+        set => throw new NotSupportedException();
+    }
+
+    public bool ThinkingEnabled
+    {
+        get => throw new NotSupportedException();
+        set => throw new NotSupportedException();
+    }
+
     private FlowDocument? _document;
 
     [JsonIgnore]
@@ -265,7 +277,7 @@ public class AzureModelInfo : ILLMChatModel
             {
                 _document = stringBuilder.ToString().RenderOnFlowDocument();
             }
-            
+
             return _document;
         }
     }
@@ -277,7 +289,7 @@ public class AzureModelInfo : ILLMChatModel
     [JsonPropertyName("notes")] public string? NotesRaw { get; set; }
 
     [JsonPropertyName("evaluation")] public string? EvaluationRaw { get; set; }
-    
+
     [JsonPropertyName("dark_mode_icon")] public string? DarkModeIconString { get; set; }
 
     [JsonPropertyName("light_mode_icon")] public string? LightModeIconString { get; set; }

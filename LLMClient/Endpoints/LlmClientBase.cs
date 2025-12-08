@@ -1,20 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
+using LLMClient.Dialog;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Rag;
-using LLMClient.ToolCall;
 using LLMClient.UI.Component;
 using LLMClient.UI.Component.Utility;
 using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using OpenAI.Chat;
-using OpenAI.Responses;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
@@ -96,6 +93,13 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         if (modelInfo.SeedEnable && modelParams.Seed.HasValue)
         {
             chatOptions.Seed = modelParams.Seed.Value;
+        }
+
+        if (modelParams.ThinkingEnabled)
+        {
+            var thinkingConfig =
+                IThinkingConfig.CreateFrom(this.Endpoint, modelParams.ThinkingConfig as ThinkingConfigViewModel);
+            thinkingConfig?.ApplyThinking(chatOptions);
         }
 
         return chatOptions;
@@ -276,9 +280,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     streaming = false;
                 }
             }
-
-            var thinkingConfig = requestViewItem?.ThinkingConfig;
-            thinkingConfig?.EnableThinking(requestOptions);
 
             var chatContext = new ChatContext(interactor, requestViewItem?.TempAdditionalProperties)
                 { Streaming = streaming };
