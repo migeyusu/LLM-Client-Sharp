@@ -1,9 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using MaterialDesignThemes.Wpf;
+
+namespace LLMClient.UI.Render;
 
 public class BashEnvironment
 {

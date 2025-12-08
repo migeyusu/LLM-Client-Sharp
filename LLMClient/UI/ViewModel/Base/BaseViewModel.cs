@@ -93,8 +93,9 @@ public class BaseViewModel<T> : BaseViewModel where T : class
 {
     private PropertyInfo[]? _publicProperties;
 
-    public bool PublicEquals(T other)
+    public bool PublicEquals(T? other)
     {
+        if (other == null) return false;
         if (ReferenceEquals(this, other)) return true;
         if (GetType() != other.GetType()) return false;
 

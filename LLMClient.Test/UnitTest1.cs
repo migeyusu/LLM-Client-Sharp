@@ -433,4 +433,16 @@ public class UnitTest1
             }
         }
     }
+
+    [Fact]
+    public void TestFormatFunc()
+    {
+        FormatFunction("{0:N2}", 12345.6789);
+    }
+
+    private void FormatFunction(string template, params object[] args)
+    {
+        var format = string.Format(template, args);
+        output.WriteLine(format);
+    }
 }

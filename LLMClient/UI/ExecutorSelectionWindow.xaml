@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:global="clr-namespace:"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:render="clr-namespace:LLMClient.UI.Render"
         mc:Ignorable="d"
         Title="选择 Bash 执行环境"
         Width="400"
@@ -23,7 +24,7 @@
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  SelectionChanged="LvExecutors_SelectionChanged">
             <ListBox.ItemTemplate>
-                <DataTemplate DataType="{x:Type global:BashEnvironment}">
+                <DataTemplate DataType="{x:Type render:BashEnvironment}">
                     <StackPanel Orientation="Horizontal">
                         <!-- 如果没有安装字体图标，可以去掉 TextBlock -->
                         <materialDesign:PackIcon Kind="{Binding Icon}"

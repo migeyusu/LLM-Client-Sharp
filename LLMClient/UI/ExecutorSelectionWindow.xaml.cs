@@ -1,4 +1,5 @@
 using System.Windows;
+using LLMClient.UI.Render;
 
 namespace LLMClient.UI
 {

@@ -18,6 +18,8 @@ namespace LLMClient.ToolCall.Servers;
 
 public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
 {
+    #region plugin
+
     private IReadOnlyList<AIFunction>? _availableTools;
 
     private const string KernelPluginName = "GoogleTextSearch";
@@ -52,26 +54,29 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
         return $"{this.GetType().FullName}";
     }
 
+    #endregion
+
+    public bool IsInitialized => _textSearch != null;
+
     private GoogleSearchOption? _config;
 
 #pragma warning disable SKEXP0050
     private GoogleTextSearch? _textSearch;
-#pragma warning restore SKEXP0050
+
 
     public Task EnsureAsync(CancellationToken token)
     {
         var config = ServiceLocator.GetService<GlobalOptions>()?.GoogleSearchOption;
-        if (_config != null && config?.IsValid() == true && !config.PublicEquals(_config))
+        if (config?.IsValid() == true && !config.PublicEquals(_config))
         {
-            var proxyOption = _config.ProxySetting.GetRealProxy();
-#pragma warning disable SKEXP0050
+            var proxyOption = config.ProxySetting.GetRealProxy();
             _textSearch = new GoogleTextSearch(
                 initializer: new BaseClientService.Initializer
                 {
                     ApiKey = config.ApiKey,
                     HttpClientFactory = proxyOption.CreateFactory(),
                 }, config.SearchEngineId);
-#pragma warning restore SKEXP0050
+
 #pragma warning disable SKEXP0001
             this.AvailableTools = [CreateGetSearchResults(_textSearch)];
 #pragma warning restore SKEXP0001
@@ -250,7 +255,7 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
             textSearchOptions = ConvertDynamicToTextSearchOptions(options);
         }
 
-#pragma warning disable SKEXP0050
+
         var results = await _textSearch.GetTextSearchResultsAsync(query, textSearchOptions, cancellationToken);
         return new SKTextSearchResult(results.Results);
 #pragma warning restore SKEXP0050

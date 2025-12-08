@@ -33,6 +33,16 @@ public class NvidiaResearchClient : ResearchClient
     {
         try
         {
+            if (_searchService is GoogleSearchPlugin googleSearchPlugin)
+            {
+                await googleSearchPlugin.EnsureAsync(cancellationToken);
+                if (!googleSearchPlugin.IsInitialized)
+                {
+                    throw new Exception(
+                        "The search service is not properly initialized. Please check the configuration.");
+                }
+            }
+
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             var prompt = context.Request?.TextMessage;
@@ -44,9 +54,9 @@ public class NvidiaResearchClient : ResearchClient
             var agent = new PromptAgent(this.ProxyClient, interactor);
 
             // ====================================================================
-            // 阶段 1: 研究 
+            // 阶段 1: 研究
             // ====================================================================
-            Information("Received research request: '{0}'", prompt);
+            Information($"Received research request: '{prompt}'");
 
             var isPromptValid = await CheckIfPromptIsValidAsync(agent, prompt);
             if (!isPromptValid)
@@ -56,10 +66,10 @@ public class NvidiaResearchClient : ResearchClient
 
             Information("Analyzing the research request...");
             (var taskPrompt, var formatPrompt) = await PerformPromptDecompositionAsync(agent, prompt, interactor);
-            Information("Prompt analysis completed. Task: '{0}'", taskPrompt);
+            Information($"Prompt analysis completed. Task: '{taskPrompt}'");
 
             var topics = await GenerateTopicsAsync(agent, taskPrompt);
-            Information("Task analysis completed. Will be researching {0} topics.", topics.Count);
+            Information($"Task analysis completed. Will be researching {topics.Count} topics.");
 
             var topicRelevantSegments = new Dictionary<string, List<string>>();
             var searchResultUrls = new List<string>();
@@ -68,18 +78,17 @@ public class NvidiaResearchClient : ResearchClient
             foreach (var topic in topics)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                Information("Researching '{0}'", topic);
+                Information($"Researching '{topic}'");
 
                 var searchPhrases = await ProduceSearchPhrasesAsync(agent, taskPrompt, topic);
-                Information("Will invoke {0} search phrases to research '{Topic}'.",
-                    searchPhrases.Count, topic);
+                Information($"Will invoke {searchPhrases.Count} search phrases to research '{topic}'.");
 
                 topicRelevantSegments[topic] = [];
 
                 foreach (var searchPhrase in searchPhrases)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    Information("Searching for '{0}'", searchPhrase);
+                    Information($"Searching for '{searchPhrase}'");
                     List<InternalSearchResult> originalSearchResults;
                     if (_searchService is GoogleSearchPlugin)
                     {
@@ -107,7 +116,7 @@ public class NvidiaResearchClient : ResearchClient
                     searchResultUrls.AddRange(originalSearchResults.Select(r => r.Url));
                     allResults.AddRange(originalSearchResults);
 
-                    Information("Processing {0} new search results.", originalSearchResults.Count);
+                    Information($"Processing {originalSearchResults.Count} new search results.");
 
                     foreach (var searchResult in originalSearchResults)
                     {
@@ -174,10 +183,9 @@ public class NvidiaResearchClient : ResearchClient
                 ResponseMessages = [new ChatMessage(ChatRole.Assistant, finalReport)]
             };
 
-            void Information(string chunk, params object[] args)
+            void Information(string message)
             {
-                var formattedChunk = args.Length != 0 ? string.Format(chunk, args) : chunk;
-                interactor?.WriteLine(formattedChunk);
+                interactor?.Info(message);
             }
         }
         catch (Exception e)
@@ -196,7 +204,12 @@ public class NvidiaResearchClient : ResearchClient
     {
         var response = await promptAgent.GetMessageAsync(
             $"Is the following prompt a valid information research prompt? Respond with 'yes' or 'no'. Do not output any other text.\n\n{prompt}\n\n Reminders: Find out if the above-given prompt is a valid information research prompt. Do not output any other text.",
-            "You are a helpful assistant that checks if a prompt is a valid deep information research prompt. A valid prompt gives a task to research one or more topics and produce a report. Invalid prompts are general language model prompts that ask simple (perhaps even yes or no) questions, ask for explanations, or attempt to have a conversation. Examples of valid prompts: 'What was the capital of France in 1338?', 'Write a report on stock market situation on during this morning', 'Produce a thorough report on the major event happened in the Christian world on the 21st of April 2025.', 'Produce a report on the differences between the US and European economy health in 2024.', 'What is the short history of the internet?'. Examples of invalid prompts: 'Is the weather in Tokyo good?', 'ppdafsfgr hdafdf', 'Hello, how are you?', 'The following is a code. Can you please explain it to me and then simulate it?'");
+            "You are a helpful assistant that checks if a prompt is a valid deep information research prompt. A valid prompt gives a task to research one or more topics and produce a report. " +
+            "Invalid prompts are general language model prompts that ask simple (perhaps even yes or no) questions, ask for explanations, or attempt to have a conversation. " +
+            "Examples of valid prompts: 'What was the capital of France in 1338?', 'Write a report on stock market situation on during this morning', " +
+            "'Produce a thorough report on the major event happened in the Christian world on the 21st of April 2025.', 'Produce a report on the differences between the US and European economy health in 2024.', " +
+            "'What is the short history of the internet?'. " +
+            "Examples of invalid prompts: 'Is the weather in Tokyo good?', 'ppdafsfgr hdafdf', 'Hello, how are you?', 'The following is a code. Can you please explain it to me and then simulate it?'");
         return response.Trim().Equals("yes", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -205,8 +218,14 @@ public class NvidiaResearchClient : ResearchClient
         string prompt, IInvokeInteractor? logger)
     {
         var response = await promptAgent.GetMessageAsync(
-            $"Decompose the PROMPT into a task to be performed and a format in which the report should be produced. If there is no formatting constraint, output 'No formatting constraint' in the second prompt. Do not output any other text.\n\nEXAMPLE PROMPT:\nWrite a three-chapter report on the differences between the US and European economy health in 2024. The first chapter should be about the US economy health, the second chapter should be about the European economy health, and the third chapter should be about the differences between the two.\n\nEXAMPLE OUTPUT:\nWrite a report on the differences between the US and European economy health in 2024.\n\nThe report should be in the form of a three-chapter report. The first chapter should be about the US economy health, the second chapter should be about the European economy health, and the third chapter should be about the differences between the two.\n\nPROMPT: {prompt}\n\nReminders: The output should be two prompts separated by a double-newline. The first prompt is the task to be performed, and the second prompt is the format in which the report should be produced. If there is no formatting constraint, output 'No formatting constraint' in the second prompt. Do not output any other text.",
-            "You are a helpful assistant that decomposes a prompt into a task to be performed and a format in which the report should be produced. The output should be two prompts separated by a double-newline. The first prompt is the task to be performed, and the second prompt is the format in which the report should be produced. If there is no formatting constraint, output 'No formatting constraint' in the second prompt. Do not output any other text.");
+            $"Decompose the PROMPT into a task to be performed and a format in which the report should be produced. If there is no formatting constraint, output 'No formatting constraint' in the second prompt. Do not output any other text.\n\n" +
+            $"EXAMPLE PROMPT:\nWrite a three-chapter report on the differences between the US and European economy health in 2024. The first chapter should be about the US economy health, the second chapter should be about the European economy health, and the third chapter should be about the differences between the two.\n\n" +
+            $"EXAMPLE OUTPUT:\nWrite a report on the differences between the US and European economy health in 2024.\n\n" +
+            $"The report should be in the form of a three-chapter report. The first chapter should be about the US economy health, the second chapter should be about the European economy health, and the third chapter should be about the differences between the two.\n\n" +
+            $"PROMPT: {prompt}\n\nReminders: The output should be two prompts separated by a double-newline. The first prompt is the task to be performed, and the second prompt is the format in which the report should be produced. " +
+            $"If there is no formatting constraint, output 'No formatting constraint' in the second prompt. Do not output any other text.",
+            "You are a helpful assistant that decomposes a prompt into a task to be performed and a format in which the report should be produced. The output should be two prompts separated by a double-newline. " +
+            "The first prompt is the task to be performed, and the second prompt is the format in which the report should be produced. If there is no formatting constraint, output 'No formatting constraint' in the second prompt. Do not output any other text.");
         var parts = response.Split(["\n\n"], 2, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 2)
         {
