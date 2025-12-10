@@ -1,14 +1,12 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Data;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel;
 
 namespace LLMClient.Dialog;
 

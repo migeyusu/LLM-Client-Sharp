@@ -36,7 +36,7 @@ public class APIClient : LlmClientBase
         get { return ModelInfo.Name; }
     }
 
-    public override ILLMEndpoint Endpoint { get; }
+    public override ILLMAPIEndpoint Endpoint { get; }
 
     private readonly APIDefaultOption _option;
 

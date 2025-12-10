@@ -4,13 +4,11 @@ using System.Windows;
 using LLMClient.Data;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
-using LLMClient.UI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.SqliteVec;
-using OpenAI;
 using Xunit.Abstractions;
 
 namespace LLMClient.Test;

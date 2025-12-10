@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
-             xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension"
+             xmlns:extension="clr-namespace:LLMClient.Component.Extension"
              mc:Ignorable="d"
              d:DesignHeight="1000" d:DesignWidth="600"
              d:DataContext="{d:DesignInstance local:APIModelInfo}">

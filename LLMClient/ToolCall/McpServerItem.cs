@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel.Base;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;
 

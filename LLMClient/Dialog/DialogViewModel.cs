@@ -2,7 +2,6 @@
 
 using System.Collections.Specialized;
 using System.Windows;
-using System.Windows.Forms.VisualStyles;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Configuration;

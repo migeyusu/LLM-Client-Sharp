@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using LLMClient.Component.Utility;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using LLMClient.UI.Component.Utility;
 using Microsoft.Win32;
 
 namespace LLMClient.Configuration;

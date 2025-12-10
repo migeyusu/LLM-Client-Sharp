@@ -12,7 +12,7 @@ public class EmptyLlmModelClient : ILLMChatClient
 
     public string Name { get; } = "NullLlmModelClient";
 
-    public ILLMEndpoint Endpoint
+    public ILLMAPIEndpoint Endpoint
     {
         get
         {

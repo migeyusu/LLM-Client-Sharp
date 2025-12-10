@@ -2,10 +2,10 @@
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Dialog;
-using LLMClient.UI.Component.CustomControl;
-using LLMClient.UI.ViewModel.Base;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
@@ -208,7 +208,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
         }
     }
 
-    [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = new EmptyLLMEndpoint();
+    [JsonIgnore] public ILLMAPIEndpoint Endpoint { get; set; } = new EmptyLLMEndpoint();
 
 
     public bool SupportSystemPrompt

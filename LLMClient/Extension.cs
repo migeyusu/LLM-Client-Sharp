@@ -9,9 +9,10 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using LLMClient.Abstraction;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
@@ -20,9 +21,6 @@ using LLMClient.Project;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
 using LLMClient.ToolCall;
-using LLMClient.UI;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -441,6 +439,22 @@ public static class Extension
         var json = JsonSerializer.Serialize(source, DefaultJsonSerializerOptions);
         return JsonSerializer.Deserialize<T>(json, DefaultJsonSerializerOptions) ??
                throw new InvalidOperationException("Deserialization failed.");
+    }
+
+    public static string HierarchicalMessage(this Exception exception)
+    {
+        var stringBuilder = new StringBuilder();
+        var currentException = exception;
+        int level = 0;
+        while (currentException != null)
+        {
+            string indent = new string(' ', level * 2);
+            stringBuilder.AppendLine($"{indent}{currentException.Message}");
+            currentException = currentException.InnerException;
+            level++;
+        }
+
+        return stringBuilder.ToString();
     }
 
     public static string GetStructure(this IEnumerable<ChunkNode> nodes)

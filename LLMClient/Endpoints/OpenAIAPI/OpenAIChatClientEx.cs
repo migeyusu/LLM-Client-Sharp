@@ -3,7 +3,7 @@ using System.ClientModel.Primitives;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using LLMClient.UI.Component.Utility;
+using LLMClient.Component.Utility;
 using OpenAI;
 using OpenAI.Chat;
 
@@ -85,7 +85,7 @@ public class OpenAIChatClientEx : ChatClient
 
 
     public override AsyncCollectionResult<StreamingChatCompletionUpdate> CompleteChatStreamingAsync(
-        IEnumerable<ChatMessage> messages, ChatCompletionOptions options = null,
+        IEnumerable<ChatMessage> messages, ChatCompletionOptions? options = null,
         CancellationToken cancellationToken = new CancellationToken())
     {
         return base.CompleteChatStreamingAsync(messages, options, cancellationToken);

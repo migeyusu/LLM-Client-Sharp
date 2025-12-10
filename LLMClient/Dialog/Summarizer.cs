@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
+using LLMClient.Component;
 using LLMClient.Configuration;
-using LLMClient.UI.Component;
 
 namespace LLMClient.Dialog;
 

@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
-using LLMClient.UI.Render;
+using LLMClient.Component.Render;
 
 namespace LLMClient.Test;
 

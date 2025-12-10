@@ -2,13 +2,12 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
-                    xmlns:ui="clr-namespace:LLMClient.UI"
-                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
-                    xmlns:component="clr-namespace:LLMClient.UI.Component"
                     xmlns:dialog="clr-namespace:LLMClient.Dialog"
-                    xmlns:customControl="clr-namespace:LLMClient.UI.Component.CustomControl"
-                    xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility"
-                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:utility="clr-namespace:LLMClient.Component.Utility"
+                    xmlns:converters="clr-namespace:LLMClient.Component.Converters"
+                    xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
+                    xmlns:component="clr-namespace:LLMClient.Component">
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
                   DataType="{x:Type dialog:RequestViewItem}">
         <Grid HorizontalAlignment="Right"

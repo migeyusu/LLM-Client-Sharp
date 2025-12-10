@@ -1,5 +1,4 @@
-﻿using LLMClient.UI.Render;
-using Markdig;
+﻿using Markdig;
 using Markdig.Extensions.JiraLinks;
 using Markdig.Syntax;
 using Xunit.Abstractions;

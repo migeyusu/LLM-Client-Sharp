@@ -3,8 +3,8 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using LLMClient.Component.Utility;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.UI.Component.Utility;
 
 namespace LLMClient.Endpoints.Converters;
 

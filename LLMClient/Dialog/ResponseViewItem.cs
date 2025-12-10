@@ -7,22 +7,18 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
 using AutoMapper;
-using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
+using LLMClient.Component.Render;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
-using LLMClient.ToolCall;
-using LLMClient.UI.Component.CustomControl;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.Render;
-using LLMClient.UI.ViewModel;
-using LLMClient.UI.ViewModel.Base;
-using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
-using OpenAI.Responses;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
@@ -530,39 +526,4 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             _blockingCollection.Dispose();
         }
     }
-}
-
-public class PermissionViewModel : BaseViewModel
-{
-    public string? Title { get; set; }
-
-    public required object Content { get; set; }
-
-    public bool IsCompleted
-    {
-        get => _isCompleted;
-        set
-        {
-            if (value == _isCompleted) return;
-            _isCompleted = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private readonly TaskCompletionSource<bool> _tcs = new TaskCompletionSource<bool>();
-    private bool _isCompleted;
-
-    public Task<bool> Task => _tcs.Task;
-
-    public ICommand PermitCommand => new RelayCommand(() =>
-    {
-        _tcs.TrySetResult(true);
-        IsCompleted = true;
-    });
-
-    public ICommand RejectCommand => new RelayCommand(() =>
-    {
-        _tcs.TrySetResult(false);
-        IsCompleted = true;
-    });
 }

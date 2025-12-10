@@ -2,9 +2,9 @@
 using System.Diagnostics;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall.Servers;
-using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 

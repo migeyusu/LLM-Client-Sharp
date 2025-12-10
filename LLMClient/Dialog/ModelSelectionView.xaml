@@ -3,13 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:component="clr-namespace:LLMClient.UI.Component"
              xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
-             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
-             xmlns:extension="clr-namespace:LLMClient.UI.Component.Extension"
+             xmlns:component="clr-namespace:LLMClient.Component"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:ModelSelectionPopupViewModel}"
              d:DesignHeight="400" d:DesignWidth="600">
@@ -67,31 +63,10 @@
                     Text="{Binding SelectedModel.Endpoint.DisplayName, StringFormat=选择的服务：{0},TargetNullValue=未选择服务,Mode=OneWay}" />
                 <Run Text="{Binding SelectedModel.Name,StringFormat=选择的模型：{0},TargetNullValue=未选择模型,Mode=OneWay}" />
             </TextBlock>
-            <materialDesign:SplitButton Grid.Column="1"
-                                        Command="{Binding  CreateDefaultCommand}"
-                                        Content="确认"
-                                        Width="120"
-                                        PopupUniformCornerRadius="6"
-                                        PopupElevation="Dp3"
-                                        PopupContent="{Binding}"
-                                        CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                <materialDesign:SplitButton.PopupContentTemplate>
-                    <DataTemplate>
-                        <ListBox
-                            ItemsSource="{Binding Source={extension:Service {x:Type abstraction:IResearchModelService}},Path=AvailableResearchModels,Mode=OneTime}"
-                            SelectionMode="Single">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate DataType="{x:Type sys:String}">
-                                    <Button Style="{StaticResource MaterialDesignFlatLightButton}"
-                                            Content="{Binding Mode=OneTime}"
-                                            Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.CreateResearchCommand}"
-                                            CommandParameter="{Binding Mode=OneTime}" />
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </DataTemplate>
-                </materialDesign:SplitButton.PopupContentTemplate>
-            </materialDesign:SplitButton>
+            <Button Grid.Column="1"
+                    Content="确认"
+                    Width="90"
+                    Command="{Binding  CreateDefaultCommand}"/>
         </Grid>
     </Grid>
 </UserControl>

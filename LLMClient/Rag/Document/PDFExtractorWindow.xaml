@@ -5,9 +5,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:LLMClient.Rag.Document"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:log="clr-namespace:LLMClient.UI.Log"
         xmlns:content="clr-namespace:UglyToad.PdfPig.Content;assembly=UglyToad.PdfPig"
-        xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters"
+        xmlns:log1="clr-namespace:LLMClient.Log"
+        xmlns:converters="clr-namespace:LLMClient.Component.Converters"
         mc:Ignorable="d"
         Loaded="PDFExtractorWindow_OnLoaded"
         d:DataContext="{d:DesignInstance local:PDFExtractorViewModel}"
@@ -312,7 +312,7 @@
                                                  VerticalAlignment="Center"
                                                  PopupContent="{Binding  Logs,Mode=OneTime}">
                             <materialDesign:PopupBox.PopupContentTemplate>
-                                <DataTemplate DataType="{x:Type log:LogsViewModel}">
+                                <DataTemplate DataType="{x:Type log1:LogsViewModel}">
                                     <HeaderedContentControl>
                                         <HeaderedContentControl.Header>
                                             <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
@@ -320,7 +320,7 @@
                                                 构建日志
                                             </TextBlock>
                                         </HeaderedContentControl.Header>
-                                        <log:LogView Width="550"
+                                        <log1:LogView Width="550"
                                                      Height="300" />
                                     </HeaderedContentControl>
                                 </DataTemplate>

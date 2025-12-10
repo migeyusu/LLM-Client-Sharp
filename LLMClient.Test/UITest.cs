@@ -1,11 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using LLMClient.Data;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
-using LLMClient.UI;
 
 namespace LLMClient.Test;
 

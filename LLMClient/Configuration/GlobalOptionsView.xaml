@@ -7,7 +7,7 @@
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
              xmlns:project="clr-namespace:LLMClient.Project"
              xmlns:configuration="clr-namespace:LLMClient.Configuration"
-             xmlns:utility="clr-namespace:LLMClient.UI.Component.Utility"
+             xmlns:utility="clr-namespace:LLMClient.Component.Utility"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance configuration:GlobalOptions}"
              d:DesignHeight="600" d:DesignWidth="800">

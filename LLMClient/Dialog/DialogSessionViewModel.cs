@@ -9,16 +9,16 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using LLMClient.UI;
-using LLMClient.UI.Component.CustomControl;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel;
-using LLMClient.UI.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
+using ConfirmView = LLMClient.Component.UserControl.ConfirmView;
 
 namespace LLMClient.Dialog;
 

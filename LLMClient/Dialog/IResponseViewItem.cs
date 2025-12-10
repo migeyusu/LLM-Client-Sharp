@@ -1,5 +1,5 @@
 ﻿using LLMClient.Abstraction;
-using LLMClient.UI.Component.CustomControl;
+using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Dialog;
 

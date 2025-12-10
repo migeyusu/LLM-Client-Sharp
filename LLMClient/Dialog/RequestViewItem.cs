@@ -2,11 +2,11 @@
 using System.IO;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.AI;
 using MimeTypes;
 

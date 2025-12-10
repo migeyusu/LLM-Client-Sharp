@@ -1,13 +1,12 @@
 ﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
+using LLMClient.Component.Render;
 using LLMClient.Data;
-using LLMClient.UI.Component.CustomControl;
-using LLMClient.UI.Render;
 
 namespace LLMClient.Endpoints.Azure.Models;
 
@@ -87,7 +86,7 @@ public class AzureModelInfo : ILLMChatModel
 
     [JsonPropertyName("description")] public string? DescriptionRaw { get; set; }
 
-    [JsonIgnore] public ILLMEndpoint Endpoint { get; set; } = EmptyLLMEndpoint.Instance;
+    [JsonIgnore] public ILLMAPIEndpoint Endpoint { get; set; } = EmptyLLMEndpoint.Instance;
 
     [JsonIgnore] public bool SupportSystemPrompt => true;
 

@@ -1,11 +1,11 @@
 ﻿using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LLMClient.Abstraction;
-using LLMClient.UI.ViewModel.Base;
+using LLMClient.Component.ViewModel.Base;
 
 namespace LLMClient.Endpoints.Azure;
 
-public abstract class AzureEndPointBase : BaseViewModel, ILLMEndpoint
+public abstract class AzureEndPointBase : BaseViewModel, ILLMAPIEndpoint
 {
     private AzureOption _option = new AzureOption();
 

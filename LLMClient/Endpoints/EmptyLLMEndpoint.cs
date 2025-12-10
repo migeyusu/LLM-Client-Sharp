@@ -4,7 +4,7 @@ using LLMClient.Data;
 
 namespace LLMClient.Endpoints
 {
-    public class EmptyLLMEndpoint : ILLMEndpoint
+    public class EmptyLLMEndpoint : ILLMAPIEndpoint
     {
         public static EmptyLLMEndpoint Instance { get; } = new EmptyLLMEndpoint();
         public string DisplayName => "Empty Endpoint";

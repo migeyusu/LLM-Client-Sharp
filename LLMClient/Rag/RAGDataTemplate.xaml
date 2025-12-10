@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:rag="clr-namespace:LLMClient.Rag"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-                    xmlns:converters="clr-namespace:LLMClient.UI.Component.Converters">
+                    xmlns:converters="clr-namespace:LLMClient.Component.Converters">
     <HierarchicalDataTemplate x:Key="ChunkNodeDataTemplate"
                               DataType="{x:Type rag:ChunkNode}"
                               ItemsSource="{Binding Children,Mode=OneTime}">

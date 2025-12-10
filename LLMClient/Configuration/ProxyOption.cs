@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http;
 using Google.Apis.Http;
-using LLMClient.UI.ViewModel.Base;
+using LLMClient.Component.ViewModel.Base;
 using IHttpClientFactory = Google.Apis.Http.IHttpClientFactory;
 
 namespace LLMClient.Configuration;

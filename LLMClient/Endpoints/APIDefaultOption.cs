@@ -1,5 +1,5 @@
-﻿using LLMClient.Configuration;
-using LLMClient.UI.ViewModel.Base;
+﻿using LLMClient.Component.ViewModel.Base;
+using LLMClient.Configuration;
 
 namespace LLMClient.Endpoints;
 

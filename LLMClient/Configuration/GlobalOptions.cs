@@ -5,13 +5,14 @@ using System.Text.Json.Serialization;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Rag;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.SemanticKernel.Data;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Configuration;
@@ -47,6 +48,8 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
 
     private const string DefaultContextSummarizePrompt =
         "Provide a concise and complete summarization of the entire dialog that does not exceed {0} words. \n\nThis summary must always:\n- Consider both user and assistant interactions\n- Maintain continuity for the purpose of further dialog\n- Include details from any existing summary\n- Focus on the most significant aspects of the dialog\n\nThis summary must never:\n- Critique, correct, interpret, presume, or assume\n- Identify faults, mistakes, misunderstanding, or correctness\n- Analyze what has not occurred\n- Exclude details from any existing summary";
+
+    [JsonIgnore] public ModelSelectionPopupViewModel ContextSummaryPopupSelectViewModel { get; }
 
     [JsonPropertyName("TokenSummarizePrompt")]
     public string ContextSummarizePromptString { get; set; } = DefaultContextSummarizePrompt;
@@ -99,7 +102,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         ContextSummarizeClientPersist = Mapper?
             .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
     }
-    
+
     private LLMClientPersistModel? _summarizeModelPersistModel;
 
     [JsonPropertyName("SummarizeModelPersistModel")]
@@ -119,6 +122,8 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
     #region subject summary
 
     public bool EnableAutoSubjectGeneration { get; set; } = true;
+
+    [JsonIgnore] public ModelSelectionPopupViewModel SubjectSummaryPopupViewModel { get; }
 
     private const string DefaultSubjectSummarizePrompt =
         "Give a title of the dialog that does not exceed {0} words.";
@@ -176,16 +181,23 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
 
     #endregion
 
-    [JsonIgnore] public ModelSelectionPopupViewModel ContextSummaryPopupSelectViewModel { get; }
+    #region search
 
-    public ModelSelectionPopupViewModel SubjectSummaryPopupViewModel { get; }
+    public GoogleSearchOption GoogleSearchOption { get; set; } = new();
 
-    public GoogleSearchOption GoogleSearchOption { get; set; } = new GoogleSearchOption();
+    private ITextSearch? _textSearch;
+
+    public ITextSearch? GetTextSearch()
+    {
+        return GoogleSearchOption.GetTextSearch();
+    }
 
     /// <summary>
     /// as global option
     /// </summary>
     public ProxyOption ProxyOption { get; set; } = new ProxyOption();
+
+    #endregion
 
     public RagOption RagOption { get; set; } = new RagOption();
 

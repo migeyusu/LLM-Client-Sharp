@@ -1,4 +1,4 @@
-﻿using LLMClient.UI.Component.CustomControl;
+﻿using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Abstraction;
 
@@ -15,7 +15,7 @@ public interface ILLMChatModel : IModelParams
 
     int MaxContextSize { get; }
 
-    ILLMEndpoint Endpoint { get; }
+    ILLMAPIEndpoint Endpoint { get; }
 
     #region switch
 

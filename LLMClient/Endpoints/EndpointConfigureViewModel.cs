@@ -1,19 +1,17 @@
 ﻿using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
@@ -27,7 +25,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 {
     private readonly ILoggerFactory _loggerFactory;
 
-    public ILLMEndpoint? SelectedEndpoint
+    public ILLMAPIEndpoint? SelectedEndpoint
     {
         get => _selectedEndpoint;
         set
@@ -43,7 +41,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         Endpoints.Add(new APIEndPoint(new APIEndPointOption(), _loggerFactory));
     }));
 
-    public ICommand RemoveEndPointCommand => new RelayCommand<ILLMEndpoint?>((o =>
+    public ICommand RemoveEndPointCommand => new RelayCommand<ILLMAPIEndpoint?>((o =>
     {
         if (o is APIEndPoint endpoint)
         {
@@ -118,20 +116,20 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         await this.Initialize();
     }));
 
-    public ObservableCollection<ILLMEndpoint> Endpoints { get; set; } = new();
+    public ObservableCollection<ILLMAPIEndpoint> Endpoints { get; set; } = new();
 
-    private readonly ReadOnlyObservableCollection<ILLMEndpoint> _availableEndpoints;
+    private readonly ReadOnlyObservableCollection<ILLMAPIEndpoint> _availableEndpoints;
 
-    public IReadOnlyList<ILLMEndpoint> AvailableEndpoints
+    public IReadOnlyList<ILLMAPIEndpoint> AvailableEndpoints
     {
         get { return _availableEndpoints; }
     }
 
-    public IReadOnlyList<ILLMEndpoint> CandidateEndpoints
+    public IReadOnlyList<ILLMAPIEndpoint> CandidateEndpoints
     {
         get
         {
-            var list = new List<ILLMEndpoint>(Endpoints.Count + 2);
+            var list = new List<ILLMAPIEndpoint>(Endpoints.Count + 2);
             list.Add(_historyEndPoint);
             list.Add(_suggestedEndPoint);
             list.AddRange(Endpoints);
@@ -189,7 +187,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
     }));
 
-    private ILLMEndpoint? _selectedEndpoint;
+    private ILLMAPIEndpoint? _selectedEndpoint;
 
     public EndpointConfigureViewModel(ILoggerFactory loggerFactory, IMapper mapper)
     {
@@ -197,7 +195,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         PopupSelectViewModel = new ModelSelectionPopupViewModel(OnModelSelected)
             { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
         _suggestedModels = new ReadOnlyObservableCollection<ILLMChatModel>(SuggestedModelsOb);
-        _availableEndpoints = new ReadOnlyObservableCollection<ILLMEndpoint>(Endpoints);
+        _availableEndpoints = new ReadOnlyObservableCollection<ILLMAPIEndpoint>(Endpoints);
         _historyChatModels = new ReadOnlyObservableCollection<ILLMChatModel>(_historyChatModelsOb);
         _historyEndPoint = new StubEndPoint(_historyChatModelsOb)
         {

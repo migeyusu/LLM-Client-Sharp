@@ -1,0 +1,40 @@
+<Window x:Class="LLMClient.Component.UserControl.ExecutorSelectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:render1="clr-namespace:LLMClient.Component.Render"
+        mc:Ignorable="d"
+        Title="选择 Bash 执行环境"
+        Width="400"
+        d:DesignHeight="300"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterScreen" 
+        ResizeMode="NoResize"
+        WindowStyle="ToolWindow" Background="#F0F0F0">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock Text="请选择用于执行脚本的环境：" FontSize="14" Margin="0,0,0,10" FontWeight="SemiBold" />
+        <ListBox Grid.Row="1" x:Name="LvExecutors"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 SelectionChanged="LvExecutors_SelectionChanged">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type render1:BashEnvironment}">
+                    <StackPanel Orientation="Horizontal">
+                        <!-- 如果没有安装字体图标，可以去掉 TextBlock -->
+                        <materialDesign:PackIcon Kind="{Binding Icon}"
+                                                 VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="Medium" />
+                            <TextBlock Text="{Binding ExecutablePath}" FontSize="10" Opacity="0.6" />
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</Window>

@@ -1,4 +1,4 @@
-﻿using LLMClient.UI.ViewModel.Base;
+﻿using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.ToolCall;

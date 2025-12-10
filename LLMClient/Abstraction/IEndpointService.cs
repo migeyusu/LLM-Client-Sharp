@@ -2,12 +2,12 @@
 
 public interface IEndpointService
 {
-    IReadOnlyList<ILLMEndpoint> AvailableEndpoints { get; }
+    IReadOnlyList<ILLMAPIEndpoint> AvailableEndpoints { get; }
 
     /// <summary>
     /// all available endpoint candidates, including history models and suggested endpoints
     /// </summary>
-    IReadOnlyList<ILLMEndpoint> CandidateEndpoints { get; }
+    IReadOnlyList<ILLMAPIEndpoint> CandidateEndpoints { get; }
 
     /// <summary>
     /// models used in history
@@ -20,7 +20,7 @@ public interface IEndpointService
     
     Task Initialize();
 
-    ILLMEndpoint? GetEndpoint(string name)
+    ILLMAPIEndpoint? GetEndpoint(string name)
     {
         return AvailableEndpoints.FirstOrDefault((endpoint) => endpoint.Name == name);
     }

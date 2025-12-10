@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
-using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
 

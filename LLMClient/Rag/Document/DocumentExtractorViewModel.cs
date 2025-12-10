@@ -3,11 +3,10 @@ using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
-using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using LLMClient.UI.Log;
-using LLMClient.UI.ViewModel.Base;
+using LLMClient.Log;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
 

@@ -1,18 +1,16 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Text.Json.Serialization;
-using Google.Apis.Services;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.Rag;
-using LLMClient.UI.Component.CustomControl;
-using LLMClient.UI.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Data;
-using Microsoft.SemanticKernel.Plugins.Web.Google;
 
 namespace LLMClient.ToolCall.Servers;
 
@@ -58,33 +56,30 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
 
     public bool IsInitialized => _textSearch != null;
 
-    private GoogleSearchOption? _config;
 
 #pragma warning disable SKEXP0050
-    private GoogleTextSearch? _textSearch;
-
+    private ITextSearch? _textSearch;
 
     public Task EnsureAsync(CancellationToken token)
     {
-        var config = ServiceLocator.GetService<GlobalOptions>()?.GoogleSearchOption;
-        if (config?.IsValid() == true && !config.PublicEquals(_config))
+        var textSearch = ServiceLocator.GetService<GlobalOptions>()?.GetTextSearch();
+        if (textSearch != null)
         {
-            var proxyOption = config.ProxySetting.GetRealProxy();
-            _textSearch = new GoogleTextSearch(
-                initializer: new BaseClientService.Initializer
-                {
-                    ApiKey = config.ApiKey,
-                    HttpClientFactory = proxyOption.CreateFactory(),
-                }, config.SearchEngineId);
-
 #pragma warning disable SKEXP0001
-            this.AvailableTools = [CreateGetSearchResults(_textSearch)];
+            this.AvailableTools = [CreateGetSearchResults(textSearch)];
 #pragma warning restore SKEXP0001
-            _config = config;
         }
+        else
+        {
+            this.AvailableTools = Array.Empty<AIFunction>();
+        }
+
+        _textSearch = textSearch;
 
         return Task.CompletedTask;
     }
+
+    #region kernel function
 
     [Experimental("SKEXP0001")]
     private static KernelFunction CreateGetSearchResults(ITextSearch textSearch,
@@ -227,6 +222,8 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
         requestViewItem.FunctionGroups.Add(functionGroupTree);
     }
 
+    #endregion
+
     public async Task<ISearchResult> QueryAsync(string query, dynamic options,
         CancellationToken cancellationToken = default)
     {
@@ -254,7 +251,6 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
             // 对于其他 dynamic 类型，尝试通过反射获取属性
             textSearchOptions = ConvertDynamicToTextSearchOptions(options);
         }
-
 
         var results = await _textSearch.GetTextSearchResultsAsync(query, textSearchOptions, cancellationToken);
         return new SKTextSearchResult(results.Results);

@@ -20,10 +20,10 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using LLMClient;
+using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;
-using LLMClient.UI.Component.Utility;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.SemanticKernel;
 

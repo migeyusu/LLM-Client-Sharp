@@ -1,6 +1,6 @@
 ﻿using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog;
-using LLMClient.UI.ViewModel.Base;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 

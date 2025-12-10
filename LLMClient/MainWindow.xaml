@@ -1,0 +1,813 @@
+﻿<customControl:ExtendedWindow x:Class="LLMClient.MainWindow"
+                              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+                              xmlns:system="clr-namespace:System;assembly=System.Runtime"
+                              xmlns:grammars="clr-namespace:TextMateSharp.Grammars;assembly=TextMateSharp.Grammars"
+                              xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
+                              xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
+                              xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+                              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                              xmlns:rag="clr-namespace:LLMClient.Rag"
+                              xmlns:dialog="clr-namespace:LLMClient.Dialog"
+                              xmlns:project="clr-namespace:LLMClient.Project"
+                              xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
+                              xmlns:research="clr-namespace:LLMClient.Research"
+                              xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+                              xmlns:configuration="clr-namespace:LLMClient.Configuration"
+                              xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
+                              xmlns:llmClient="clr-namespace:LLMClient"
+                              xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
+                              xmlns:converters="clr-namespace:LLMClient.Component.Converters"
+                              xmlns:component="clr-namespace:LLMClient.Component"
+                              xmlns:utility="clr-namespace:LLMClient.Component.Utility"
+                              mc:Ignorable="d"
+                              FontFamily="Microsoft YaHei UI"
+                              Title="LLM Client"
+                              WindowStartupLocation="CenterScreen"
+                              Height="950"
+                              Width="1600"
+                              AllowDrop="True"
+                              Closing="MainWindow_OnClosing"
+                              Loaded="MainWindow_OnLoaded"
+                              d:DataContext="{d:DesignInstance llmClient:MainWindowViewModel}">
+    <Window.Style>
+        <Style TargetType="{x:Type llmClient:MainWindow}"
+               BasedOn="{StaticResource MaterialDesignWindow}">
+            <Setter Property="WindowChrome.WindowChrome">
+                <Setter.Value>
+                    <WindowChrome ResizeBorderThickness="5"
+                                  CaptionHeight="52"
+                                  CornerRadius="16"
+                                  GlassFrameThickness="17,53,17,17" />
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type llmClient:MainWindow}">
+                        <materialDesign:DialogHost DialogContentUniformCornerRadius="10"
+                                                   x:Name="MainDialogHost"
+                                                   DialogTheme="Inherit">
+                            <materialDesign:DialogHost.Resources>
+                                <DataTemplate DataType="{x:Type dialog:ModelSelectionPopupViewModel}">
+                                    <dialog:ModelSelectionView Width="900"
+                                                               Height="600" />
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type endpoints:EndpointConfigureViewModel}">
+                                    <endpoints:EndpointConfigureView Width="900"
+                                                                     Height="710" />
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type endpoints:LlmClientBase}">
+                                    <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"
+                                                            Width="600"
+                                                            Style="{StaticResource DialogContentControlStyle}">
+                                        <openAiapi:LlmClientBaseView />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type models:AzureModelInfo}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="Model Info"
+                                                            Width="800">
+                                        <models:AzureModelInfoView Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type configuration:GlobalOptions}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="软件配置">
+                                        <configuration:GlobalOptionsView Width="800"
+                                                                         Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type configuration:PromptsResourceViewModel}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="Prompts">
+                                        <configuration:PromptsResourceView Width="800"
+                                                                           Height="500" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type openAiapi:APIModelInfo}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="Model Description"
+                                                            Content="{Binding}"
+                                                            Width="800"
+                                                            Height="600"
+                                                            ContentTemplate="{StaticResource ApiModelInfoDataTemplate}" />
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type toolCall:McpServiceCollection}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="MCP Server">
+                                        <toolCall:MCPServiceCollectionView Width="800"
+                                                                           Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type project:ProjectConfigViewModel}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="Standard Project">
+                                        <project:ProjectConfigView Width="900"
+                                                                   Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type endpoints:EmptyLlmModelClient}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="未定义的模型" />
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type dialog:EditableResponseViewItem}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="响应内容编辑">
+                                        <dialog:ResponseViewItemEditView Width="900"
+                                                                         Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type rag:RagSourceCollection}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="Rag Sources">
+                                        <rag:RagSourceCollectionView Width="900"
+                                                                     Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type dialog:FileQueryViewModel}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="File Query">
+                                        <dialog:FileQueryView Width="900"
+                                                              Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type project:ProjectPromptTemplateViewModel}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="Prompt Template">
+                                        <project:ProjectPromptTemplateView Width="900"
+                                                                           Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type research:ResearchClient}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="Prompt Template">
+                                        <research:ResearchClientView Width="900"
+                                                                     Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                            </materialDesign:DialogHost.Resources>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="52" />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Grid Background="{DynamicResource MaterialDesign.Brush.Background}"
+                                      Margin="{TemplateBinding BannerMargin}"
+                                      VerticalAlignment="Stretch">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <materialDesign:PackIcon Kind="RobotHappyOutline"
+                                                             Width="35"
+                                                             Height="35"
+                                                             Margin="16,0,16,0"
+                                                             Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                                             VerticalAlignment="Center" />
+                                    <!--<Image Source="{TemplateBinding Icon}"
+                                       Width="35"
+                                       Height="35"
+                                       Margin="16,0"
+                                       VerticalAlignment="Center"
+                                       WindowChrome.IsHitTestVisibleInChrome="True" />-->
+                                    <TextBlock Grid.Column="1"
+                                               Text="{TemplateBinding Title}"
+                                               Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                               VerticalAlignment="Center" />
+                                    <ContentControl Grid.Column="2"
+                                                    Content="{TemplateBinding Banner}"
+                                                    Margin="0,0,16,0" />
+                                </Grid>
+                                <Border Grid.Row="1"
+                                        Background="{TemplateBinding Background}">
+                                    <ContentPresenter Content="{TemplateBinding Content}" />
+                                </Border>
+                            </Grid>
+                        </materialDesign:DialogHost>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Style>
+    <customControl:ExtendedWindow.Banner>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center">
+                <StackPanel.Resources>
+                    <ObjectDataProvider x:Key="DataFromEnum" MethodName="GetValues"
+                                        ObjectType="{x:Type system:Enum}">
+                        <ObjectDataProvider.MethodParameters>
+                            <x:Type TypeName="grammars:ThemeName" />
+                        </ObjectDataProvider.MethodParameters>
+                    </ObjectDataProvider>
+                </StackPanel.Resources>
+                <ToggleButton VerticalAlignment="Center"
+                              Margin="20,0,0,0"
+                              Width="32"
+                              Height="32"
+                              IsChecked="True"
+                              Click="DialogListsSwitchButton_OnClick"
+                              WindowChrome.IsHitTestVisibleInChrome="True"
+                              Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}">
+                    <materialDesign:PackIcon Kind="ListBox" />
+                </ToggleButton>
+                <Button VerticalAlignment="Center"
+                        Width="32"
+                        Height="32"
+                        Margin="8,0,0,0"
+                        ToolTip="打开配置"
+                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                        CommandParameter="{Binding GlobalOptions,Mode=OneTime}"
+                        WindowChrome.IsHitTestVisibleInChrome="True"
+                        Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                        Style="{StaticResource MaterialDesignIconButton}">
+                    <materialDesign:PackIcon Kind="CogOutline"
+                                             Width="20"
+                                             Height="20"
+                                             RenderOptions.BitmapScalingMode="HighQuality" />
+                </Button>
+                <Button VerticalAlignment="Center"
+                        Width="32"
+                        Height="32"
+                        Margin="8,0,0,0"
+                        ToolTip="打开日志"
+                        Click="OpenLogger_OnClick"
+                        WindowChrome.IsHitTestVisibleInChrome="True"
+                        Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                        Style="{StaticResource MaterialDesignIconButton}">
+                    <materialDesign:PackIcon Kind="MathLog"
+                                             Width="20"
+                                             Height="20"
+                                             RenderOptions.BitmapScalingMode="HighQuality" />
+                </Button>
+                <ToggleButton Margin="10,0,0,0"
+                              IsChecked="{Binding IsDarkTheme, Mode=TwoWay}"
+                              WindowChrome.IsHitTestVisibleInChrome="True">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Width" Value="90" />
+                            <Setter Property="Height" Value="36" />
+                            <Setter Property="Cursor" Value="Hand" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Grid>
+                                            <!-- 背景容器 -->
+                                            <Border x:Name="BackgroundBorder"
+                                                    CornerRadius="18"
+                                                    Background="#E0E0E0"
+                                                    BorderBrush="#D1D1D1"
+                                                    BorderThickness="1">
+                                                <Border.Effect>
+                                                    <DropShadowEffect ShadowDepth="1" Direction="270" Color="Black"
+                                                                      Opacity="0.1" BlurRadius="2" />
+                                                </Border.Effect>
+                                                <Grid>
+                                                    <!-- 文字显示 -->
+                                                    <TextBlock x:Name="ThemeText"
+                                                               Text="NIGHT"
+                                                               Foreground="White"
+                                                               FontSize="11"
+                                                               FontWeight="Bold"
+                                                               HorizontalAlignment="Right"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,15,0" />
+                                                    <!-- 滑动圆形指示器 -->
+                                                    <Ellipse x:Name="ToggleCircle"
+                                                             Width="28"
+                                                             Height="28"
+                                                             Fill="White"
+                                                             HorizontalAlignment="Left"
+                                                             Margin="4,0,0,0">
+                                                        <Ellipse.RenderTransform>
+                                                            <TranslateTransform x:Name="CircleTransform" X="0" />
+                                                        </Ellipse.RenderTransform>
+                                                        <Ellipse.Effect>
+                                                            <DropShadowEffect ShadowDepth="2" Direction="270"
+                                                                              Color="Black" Opacity="0.3"
+                                                                              BlurRadius="4" />
+                                                        </Ellipse.Effect>
+                                                    </Ellipse>
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+
+                                        <ControlTemplate.Triggers>
+                                            <!-- 选中状态 (Dark Mode / IsDarkTheme = true) -->
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="BackgroundBorder" Property="Background"
+                                                        Value="#CCCCCC" />
+                                                <Setter TargetName="ThemeText" Property="Text" Value="DAY" />
+                                                <Setter TargetName="ThemeText" Property="Foreground" Value="#2D2D2D" />
+                                                <Setter TargetName="ThemeText" Property="HorizontalAlignment"
+                                                        Value="Left" />
+                                                <Setter TargetName="ThemeText" Property="Margin" Value="15,0,0,0" />
+                                                <Setter TargetName="ToggleCircle" Property="Fill" Value="#2D2D2D" />
+                                                <!-- 动画效果 -->
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="ToggleCircle"
+                                                                             Storyboard.TargetProperty="(Ellipse.RenderTransform).(TranslateTransform.X)"
+                                                                             To="54"
+                                                                             Duration="0:0:0.3">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="ToggleCircle"
+                                                                             Storyboard.TargetProperty="(Ellipse.RenderTransform).(TranslateTransform.X)"
+                                                                             To="0"
+                                                                             Duration="0:0:0.3">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
+                                            </Trigger>
+
+                                            <!-- 鼠标悬停效果 -->
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="BackgroundBorder" Property="Opacity" Value="0.9" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+                <TextBlock Text="Code Highlight:"
+                           VerticalAlignment="Center"
+                           Margin="10,0,8,0" />
+                <ComboBox ItemsSource="{Binding Source={StaticResource DataFromEnum}}"
+                          WindowChrome.IsHitTestVisibleInChrome="True"
+                          SelectedItem="{Binding ThemeName,Mode=TwoWay}" />
+            </StackPanel>
+            <ScrollViewer Grid.Column="1"
+                          VerticalAlignment="Center"
+                          HorizontalAlignment="Left"
+                          WindowChrome.IsHitTestVisibleInChrome="True"
+                          Margin="16,0,0,0"
+                          Style="{StaticResource HorizontalArrowScrollViewer}">
+                <StackPanel Orientation="Horizontal">
+                    <StackPanel.Resources>
+                        <Style TargetType="{x:Type Button}"
+                               BasedOn="{StaticResource MaterialDesignOutlinedLightButton}">
+                            <Setter Property="Padding"
+                                    Value="8,2" />
+                        </Style>
+                    </StackPanel.Resources>
+                    <Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
+                            Padding="8,2"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding EndpointsViewModel,Mode=OneTime}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Connection" />
+                            <TextBlock Text="Endpoints"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Margin="10,0,0,0"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding PromptsResource,Mode=OneTime}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CodeString" />
+                            <TextBlock Text="System Prompts"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Margin="10,0,0,0"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding McpServiceCollection,Mode=OneTime}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ServerNetwork" />
+                            <TextBlock Text="MCP"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Margin="10,0,0,0"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding RagSourceCollection,Mode=OneTime}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FileDocumentOutline" />
+                            <TextBlock Text="Document"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <!--<Button Content="测试"
+                            Click="ButtonBase_OnClick"/>-->
+                    <!--<Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
+                        Padding="8,2"
+                        Margin="10,0,0,0"
+                        Command="{Binding SaveCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ContentSave" />
+                        <TextBlock Text="保存"
+                                   Margin="5,0,0,0"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
+                        Padding="8,2"
+                        Margin="10,0,0,0"
+                        Command="{Binding LoadCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Reload" />
+                        <TextBlock Text="重载"
+                                   Margin="5,0,0,0"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>-->
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </customControl:ExtendedWindow.Banner>
+    <customControl:ExtendedWindow.TaskbarItemInfo>
+        <shell:TaskbarItemInfo ProgressState="{Binding IsBusy,Mode=OneWay,Converter={x:Static converters:SnapConverters.BooleanToProgressStateConverter}}" />
+    </customControl:ExtendedWindow.TaskbarItemInfo>
+    <b:Interaction.Triggers>
+        <b:EventTrigger EventName="Loaded">
+            <b:CallMethodAction TargetObject="{Binding}" MethodName="Initialize" />
+        </b:EventTrigger>
+    </b:Interaction.Triggers>
+    <Grid>
+        <Grid Margin="10,0,10,10"
+              IsEnabled="{Binding IsInitializing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260"
+                                  MaxWidth="600"
+                                  MinWidth="230"
+                                  x:Name="LeftColumnDefinition" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid Visibility="{Binding IsLeftDrawerOpen,Mode=OneWay}">
+                <ListBox SelectedItem="{Binding PreSession,Mode=TwoWay}"
+                         BorderThickness="0"
+                         Margin="0,0,6,0"
+                         ItemsSource="{Binding SessionViewModels,Mode=OneWay}">
+                    <ListBox.Resources>
+                        <converters:ListToStringConverter x:Key="StringToListConverter" Separator="," />
+                    </ListBox.Resources>
+                    <ListBox.CommandBindings>
+                        <CommandBinding Command="Delete" Executed="Delete_OnExecuted" />
+                    </ListBox.CommandBindings>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="{x:Type ListBoxItem}"
+                               BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                            <Setter Property="Height"
+                                    Value="80" />
+                            <Setter Property="BorderThickness"
+                                    Value="0,0,0,1" />
+                            <Setter Property="Padding"
+                                    Value="4" />
+                            <Setter Property="BorderBrush"
+                                    Value="DimGray" />
+                            <Setter Property="VerticalContentAlignment"
+                                    Value="Stretch" />
+                            <Setter Property="HorizontalContentAlignment"
+                                    Value="Stretch" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplateSelector>
+                        <component:TypeBasedDataTemplateSelector>
+                            <component:DataTemplateTypePair>
+                                <component:DataTemplateTypePair.Template>
+                                    <DataTemplate DataType="{x:Type dialog:DialogFileViewModel}">
+                                        <Grid DataContext="{Binding Dialog,Mode=OneTime}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition />
+                                            </Grid.RowDefinitions>
+                                            <Image Grid.RowSpan="3"
+                                                   Width="30"
+                                                   Height="30"
+                                                   Margin="10"
+                                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                                   VerticalAlignment="Center"
+                                                   Source="{Binding Requester.DefaultClient.Model.Icon.CurrentSource,Mode=OneWay}" />
+                                            <Grid Grid.Row="0" Grid.Column="1"
+                                                  VerticalAlignment="Top"
+                                                  DataContext="{Binding Requester.DefaultClient,Mode=OneWay}"
+                                                  HorizontalAlignment="Stretch">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition />
+                                                    <ColumnDefinition Width="Auto"
+                                                                      MaxWidth="120" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}"
+                                                           Foreground="DimGray"
+                                                           TextWrapping="NoWrap"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center"
+                                                           Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                                <TextBlock Grid.Column="1"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Right"
+                                                           Text="{Binding Endpoint.DisplayName,Mode=OneWay}"
+                                                           Margin="6,0,0,0" />
+                                            </Grid>
+                                            <TextBlock VerticalAlignment="Center"
+                                                       HorizontalAlignment="Left"
+                                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                       Grid.Row="1"
+                                                       Grid.Column="1"
+                                                       Text="{Binding Topic,Mode=OneWay}" />
+                                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                                       Text="{Binding Shortcut,Mode=OneWay}"
+                                                       Foreground="DimGray"
+                                                       VerticalAlignment="Bottom"
+                                                       TextWrapping="NoWrap"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                            <Button Grid.Row="0"
+                                                    Grid.Column="1"
+                                                    Grid.RowSpan="3"
+                                                    CommandParameter="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBoxItem}, Path=DataContext}"
+                                                    x:Name="DeleteButton"
+                                                    Style="{StaticResource HoverDeleteItemButtonStyle}">
+                                                <materialDesign:PackIcon Kind="DeleteOutline"
+                                                                         Width="18"
+                                                                         Height="18"
+                                                                         Foreground="DodgerBlue" />
+                                            </Button>
+                                            <ProgressBar Grid.Row="2"
+                                                         Grid.Column="0"
+                                                         Grid.ColumnSpan="2"
+                                                         VerticalAlignment="Bottom"
+                                                         HorizontalAlignment="Stretch"
+                                                         Margin="-4,0,-4,-4"
+                                                         Background="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                         BorderBrush="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                         Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Dark}"
+                                                         Minimum="0"
+                                                         Maximum="{Binding ChainStepCount,Mode=OneWay}"
+                                                         Value="{Binding ChainingStep,Mode=OneWay}"
+                                                         IsIndeterminate="{Binding IsChaining,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}"
+                                                         Visibility="{Binding IsBusy,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </component:DataTemplateTypePair.Template>
+                            </component:DataTemplateTypePair>
+                            <component:DataTemplateTypePair>
+                                <DataTemplate DataType="{x:Type project:ProjectViewModel}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition />
+                                        </Grid.RowDefinitions>
+                                        <iconPacks:PackIconMaterialDesign Kind="Workspaces" Grid.RowSpan="3"
+                                                                          Width="30"
+                                                                          Height="30"
+                                                                          Margin="10"
+                                                                          VerticalAlignment="Center" />
+                                        <Grid Grid.Row="0" Grid.Column="1"
+                                              VerticalAlignment="Top"
+                                              HorizontalAlignment="Stretch">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition />
+                                                <ColumnDefinition Width="Auto"
+                                                                  MaxWidth="120" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock
+                                                Text="{Binding LanguageNames,Mode=OneWay,Converter={StaticResource StringToListConverter}}"
+                                                Foreground="DimGray"
+                                                TextWrapping="NoWrap"
+                                                TextTrimming="CharacterEllipsis"
+                                                VerticalAlignment="Center"
+                                                Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                            <TextBlock Grid.Column="1"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Right"
+                                                       Text="{Binding Type,Mode=OneTime}"
+                                                       Margin="6,0,0,0" />
+                                        </Grid>
+                                        <TextBlock VerticalAlignment="Center"
+                                                   HorizontalAlignment="Left"
+                                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                   Grid.Row="1"
+                                                   Grid.Column="1"
+                                                   Text="{Binding Name,Mode=OneWay}" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1"
+                                                   Text="{Binding Description,Mode=OneWay}"
+                                                   Foreground="DimGray"
+                                                   VerticalAlignment="Bottom"
+                                                   TextWrapping="NoWrap"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                        <Button Grid.Row="0"
+                                                Grid.Column="1"
+                                                Grid.RowSpan="3"
+                                                CommandParameter="{Binding}"
+                                                x:Name="DeleteButton"
+                                                Style="{StaticResource HoverDeleteItemButtonStyle}">
+                                            <materialDesign:PackIcon Kind="DeleteOutline"
+                                                                     Width="18"
+                                                                     Height="18"
+                                                                     Foreground="DodgerBlue" />
+                                        </Button>
+                                        <ProgressBar Grid.Row="2"
+                                                     Grid.Column="0"
+                                                     Grid.ColumnSpan="2"
+                                                     VerticalAlignment="Bottom"
+                                                     HorizontalAlignment="Stretch"
+                                                     Margin="-4,0,-4,-4"
+                                                     Background="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                     BorderBrush="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                     Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Dark}"
+                                                     IsIndeterminate="True"
+                                                     Visibility="{Binding IsBusy,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </component:DataTemplateTypePair>
+                        </component:TypeBasedDataTemplateSelector>
+                    </ListBox.ItemTemplateSelector>
+                </ListBox>
+                <StackPanel Grid.Column="0"
+                            VerticalAlignment="Bottom"
+                            HorizontalAlignment="Left"
+                            Orientation="Horizontal"
+                            Margin="10">
+                    <materialDesign:PopupBox PlacementMode="TopAndAlignCentres"
+                                             Width="40"
+                                             Height="40"
+                                             Style="{StaticResource MaterialDesignMultiFloatingActionPopupBox}">
+                        <materialDesign:PopupBox.ToggleCheckedContent>
+                            <materialDesign:PackIcon Width="24"
+                                                     Height="24"
+                                                     Kind="Pencil" />
+                        </materialDesign:PopupBox.ToggleCheckedContent>
+                        <StackPanel Margin="10,0">
+                            <Button ToolTip="新建对话"
+                                    Margin="0,10,0,0"
+                                    Content="{materialDesign:PackIcon Kind=Forum,Size=18}"
+                                    Command="{Binding NewDialogCommand}" />
+                            <Button ToolTip="新建工程"
+                                    Margin="0,10,0,10"
+                                    Command="{Binding NewProjectCommand}">
+                                <iconPacks:PackIconMaterialDesign Kind="Workspaces"
+                                                                  Width="18"
+                                                                  Height="18" />
+                            </Button>
+                        </StackPanel>
+                    </materialDesign:PopupBox>
+                    <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                            Margin="10,0,0,0"
+                            ToolTip="导入对话"
+                            CommandParameter="dialog"
+                            Command="{Binding ImportDialogCommand}">
+                        <materialDesign:PackIcon Kind="ForumPlus"
+                                                 Width="18"
+                                                 Height="18" />
+                    </Button>
+                    <materialDesign:PopupBox PlacementMode="TopAndAlignLeftEdges"
+                                             Style="{StaticResource MaterialDesignMultiFloatingActionPopupBox}"
+                                             ToolTip="Snap create dialog"
+                                             Margin="10,0,0,0"
+                                             Width="40"
+                                             Height="40">
+                        <materialDesign:PopupBox.CommandBindings>
+                            <CommandBinding Command="Select"
+                                            Executed="SnapNewDialog_OnExecuted" />
+                        </materialDesign:PopupBox.CommandBindings>
+                        <materialDesign:PopupBox.ToggleContent>
+                            <materialDesign:PackIcon Width="20"
+                                                     Height="20"
+                                                     Kind="Thunder" />
+                        </materialDesign:PopupBox.ToggleContent>
+                        <materialDesign:PopupBox.ToggleCheckedContent>
+                            <materialDesign:PackIcon Width="20"
+                                                     Height="20"
+                                                     Kind="Pencil" />
+                        </materialDesign:PopupBox.ToggleCheckedContent>
+                        <ItemsControl ItemsSource="{Binding  EndpointsViewModel.SuggestedModels,Mode=OneWay}"
+                                      Margin="10">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type abstraction:ILLMChatModel}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Command="Select"
+                                                CommandParameter="{Binding}"
+                                                Background="{DynamicResource MaterialDesign.Brush.Background}">
+                                            <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}" />
+                                        </Button>
+                                        <Border VerticalAlignment="Center"
+                                                Margin="10,0,0,0"
+                                                Background="{DynamicResource MaterialDesign.Brush.ToolTip.Background}"
+                                                CornerRadius="2">
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                Foreground="{DynamicResource MaterialDesign.Brush.Background}"
+                                                Margin="8">
+                                                <TextBlock.Text>
+                                                    <MultiBinding StringFormat="{}{0}-{1}">
+                                                        <Binding Path="Endpoint.DisplayName" Mode="OneWay" />
+                                                        <Binding Path="Name" Mode="OneWay" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                        </Border>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </materialDesign:PopupBox>
+                </StackPanel>
+            </Grid>
+            <ContentControl Grid.Column="1"
+                            Margin="0,10,0,0"
+                            Content="{Binding  PreSession,Mode=OneWay}">
+                <ContentControl.ContentTemplateSelector>
+                    <component:TypeBasedDataTemplateSelector>
+                        <component:DataTemplateTypePair>
+                            <component:DataTemplateTypePair.Template>
+                                <DataTemplate DataType="{x:Type dialog:DialogFileViewModel}">
+                                    <dialog:DialogView DataContext="{Binding Dialog,Mode=OneTime}">
+                                        <dialog:DialogView.CommandBindings>
+                                            <CommandBinding Command="{x:Static utility:CommonCommands.Fork}"
+                                                            Executed="DialogBranch_OnExecuted" />
+                                            <CommandBinding
+                                                Command="{x:Static utility:CommonCommands.ReprocessDialog}"
+                                                Executed="DialogReprocess_OnExecuted" />
+                                            <CommandBinding Command="{x:Static utility:CommonCommands.Clone}"
+                                                            Executed="CloneCommand_OnExecuted" />
+                                        </dialog:DialogView.CommandBindings>
+                                    </dialog:DialogView>
+                                </DataTemplate>
+                            </component:DataTemplateTypePair.Template>
+                        </component:DataTemplateTypePair>
+                        <component:DataTemplateTypePair>
+                            <component:DataTemplateTypePair.Template>
+                                <DataTemplate DataType="{x:Type project:ProjectViewModel}">
+                                    <project:ProjectView />
+                                </DataTemplate>
+                            </component:DataTemplateTypePair.Template>
+                        </component:DataTemplateTypePair>
+                    </component:TypeBasedDataTemplateSelector>
+                </ContentControl.ContentTemplateSelector>
+                <ContentControl.CommandBindings>
+                    <!--session 级别command-->
+                    <CommandBinding Command="{x:Static utility:CommonCommands.Backup}"
+                                    Executed="BackupCommand_OnExecuted" />
+                    <CommandBinding Command="{x:Static utility:CommonCommands.OpenSource}"
+                                    Executed="OpenSessionFile_OnExecuted" />
+                </ContentControl.CommandBindings>
+            </ContentControl>
+            <materialDesign:Card Grid.Row="0" Grid.Column="0"
+                                 Grid.ColumnSpan="2"
+                                 Visibility="{Binding IsInitializing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                 VerticalAlignment="Center"
+                                 HorizontalAlignment="Center">
+                <StackPanel Margin="30">
+                    <ProgressBar IsIndeterminate="True"
+                                 Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                 Value="50" />
+                    <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                               TextWrapping="Wrap"
+                               Margin="0,15,0,0"
+                               Text="{Binding LoadingMessage,Mode=OneWay}" />
+                </StackPanel>
+            </materialDesign:Card>
+            <GridSplitter Grid.Column="0"
+                          Visibility="{Binding IsLeftDrawerOpen}"
+                          VerticalAlignment="Stretch"
+                          HorizontalAlignment="Right"
+                          Style="{StaticResource MaterialDesignGridSplitter}"
+                          Margin="0,40,0,20"
+                          Width="3" />
+        </Grid>
+        <materialDesign:Snackbar MessageQueue="{Binding MessageQueue,Mode=OneWay}" />
+    </Grid>
+</customControl:ExtendedWindow>

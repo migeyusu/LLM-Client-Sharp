@@ -9,15 +9,14 @@ using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;
-using LLMClient.UI;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
 

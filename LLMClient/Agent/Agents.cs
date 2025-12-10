@@ -2,7 +2,6 @@
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Agent;
 

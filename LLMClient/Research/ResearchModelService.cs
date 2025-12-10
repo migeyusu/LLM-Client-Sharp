@@ -1,5 +1,4 @@
 ﻿using LLMClient.Abstraction;
-using LLMClient.ToolCall.Servers;
 
 namespace LLMClient.Research;
 
@@ -12,8 +11,8 @@ public class ResearchModelService : IResearchModelService
 
     public IReadOnlyList<string> AvailableResearchModels { get; }
 
-    public ILLMChatClient CreateResearchClient(string modelName, ILLMChatClient client)
+    /*public ILLMChatClient CreateResearchClient(string modelName, ILLMChatClient client)
     {
-        return new NvidiaResearchClient(client, new GoogleSearchPlugin());
-    }
+        return new NvidiaResearchClient();
+    }*/
 }

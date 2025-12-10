@@ -3,12 +3,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
+using LLMClient.Component;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Rag;
-using LLMClient.UI.Component;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel.Base;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using OpenAI.Chat;
@@ -25,7 +25,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 {
     public abstract string Name { get; }
 
-    public abstract ILLMEndpoint Endpoint { get; }
+    public abstract ILLMAPIEndpoint Endpoint { get; }
 
     [JsonIgnore] public abstract ILLMChatModel Model { get; }
 
@@ -470,14 +470,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 }
                                 catch (Exception e)
                                 {
-                                    interactor?.Error("Function call failed: " + e.Message);
+                                    interactor?.Error("Function call failed: " + e.HierarchicalMessage());
                                     functionResultContents.Add(
                                         new FunctionResultContent(functionCallContent.CallId, null)
                                             { Exception = e });
                                     if (IsQuitWhenFunctionCallFailed)
                                     {
                                         errorMessage =
-                                            $"Function '{functionCallContent.Name}' invocation failed: {e.Message}";
+                                            $"Function '{functionCallContent.Name}' invocation failed: {e.HierarchicalMessage()}";
                                         break;
                                     }
                                 }
@@ -510,14 +510,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
                         }
 
-                        errorMessage = ex.Message;
+                        errorMessage = ex.HierarchicalMessage();
                         if (ex is HttpOperationException { ResponseContent: not null } exception)
                         {
                             errorMessage += $"\nResponse Content: {exception.ResponseContent}";
                         }
 
-                        interactor?.Error(string.Format("Error during response: {0}", ex));
-                        if (ex.Message.Contains("context_length_exceeded"))
+                        interactor?.Error($"Error during response: {ex}");
+                        if (ex.HierarchicalMessage().Contains("context_length_exceeded"))
                         {
                             throw new OutOfContextWindowException();
                         }

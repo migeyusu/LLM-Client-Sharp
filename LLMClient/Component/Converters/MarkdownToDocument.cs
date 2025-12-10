@@ -1,0 +1,25 @@
+﻿using System.Globalization;
+using System.Windows.Data;
+using LLMClient.Component.Render;
+
+namespace LLMClient.Component.Converters;
+
+public class MarkdownToDocumentConverter : IValueConverter
+{
+    public static MarkdownToDocumentConverter Instance { get; } = new MarkdownToDocumentConverter();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is string str)
+        {
+            return str.RenderOnFlowDocument();
+        }
+
+        return null;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotSupportedException();
+    }
+}

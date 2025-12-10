@@ -1,0 +1,291 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+                    xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                    xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl">
+    <Style TargetType="{x:Type customControl:PopupBoxEx}"
+           BasedOn="{StaticResource MaterialDesignToolPopupBox}" />
+    <Style x:Key="ArrowButtonStyle" TargetType="RepeatButton">
+        <Setter Property="Width" Value="30" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="2" />
+        <Setter Property="HorizontalContentAlignment"
+                Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="{x:Type customControl:FlowDocumentScrollViewerEx}"
+           x:Key="ExFlowDocumentScrollViewerStyle">
+        <Setter Property="FontFamily"
+                Value="Microsoft YaHei" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource RegionBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="KeyboardNavigation.TabNavigation" Value="Local" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type customControl:FlowDocumentScrollViewerEx}">
+                    <Border BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Background="{TemplateBinding Background}"
+                            Margin="{TemplateBinding Padding}">
+                        <customControl:ScrollViewerEx x:Name="PART_ContentHost" CanContentScroll="True"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="{x:Type endpoints:ParamView}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type endpoints:ParamView}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{TemplateBinding PropertyName}"
+                                   VerticalAlignment="Bottom"
+                                   FontWeight="Black"
+                                   Grid.ColumnSpan="2"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="1"
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Bottom"
+                                   Margin="10,0,0,0"
+                                   Style="{StaticResource MaterialDesignOverlineTextBlock}"
+                                   Text="{TemplateBinding Description}" />
+                        <TextBox Grid.Row="1" Grid.Column="0"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 materialDesign:TextFieldAssist.SuffixText="{TemplateBinding Unit}"
+                                 Padding="4"
+                                 Margin="0,10"
+                                 BorderBrush="Gainsboro"
+                                 Width="130"
+                                 Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Value, Mode=TwoWay,Converter={StaticResource RoundFloatConverter}}"
+                                 TextWrapping="NoWrap"
+                                 FontSize="16" />
+                        <Slider Grid.Row="1" Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Margin="20,0,0,0"
+                                SmallChange="{TemplateBinding TickFrequency}"
+                                LargeChange="{TemplateBinding TickFrequency}"
+                                Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path= Value,Mode=TwoWay}"
+                                TickFrequency="{TemplateBinding TickFrequency}"
+                                IsSnapToTickEnabled="True"
+                                Maximum="{TemplateBinding Maximum}"
+                                Minimum="{TemplateBinding Minimum}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Margin"
+                Value="0,10,0,0" />
+    </Style>
+    <Style TargetType="{x:Type endpoints:ParamConfigView}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type endpoints:ParamConfigView}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <CheckBox Grid.Row="0"
+                                  Grid.ColumnSpan="2"
+                                  IsChecked="{Binding RelativeSource={RelativeSource TemplatedParent},Path=Available,Mode=TwoWay}"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  Content="{TemplateBinding PropertyName}"
+                                  materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                                  Margin="0,0,0,6" />
+                        <StackPanel Grid.Row="0" Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="Range: "
+                                       Margin="0,0,6,0" />
+                            <TextBox materialDesign:HintAssist.Hint="Min"
+                                     materialDesign:TextFieldAssist.SuffixText="{TemplateBinding Unit}"
+                                     IsReadOnly="True"
+                                     Margin="0"
+                                     VerticalAlignment="Center"
+                                     Text="{Binding RelativeSource={RelativeSource TemplatedParent},Path=Minimum,Mode=TwoWay}" />
+                            <TextBlock Text="-"
+                                       VerticalAlignment="Center"
+                                       Margin="6,0" />
+                            <TextBox materialDesign:HintAssist.Hint="Max"
+                                     Margin="0"
+                                     VerticalAlignment="Center"
+                                     materialDesign:TextFieldAssist.SuffixText="{TemplateBinding Unit}"
+                                     IsReadOnly="{TemplateBinding MaximumEditable,Converter={StaticResource InvertBooleanConverter}}"
+                                     Text="{Binding RelativeSource={RelativeSource TemplatedParent},Path=Maximum,Mode=TwoWay}" />
+                        </StackPanel>
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   TextWrapping="Wrap"
+                                   Padding="10,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource MaterialDesignOverlineTextBlock}"
+                                   Text="{TemplateBinding Description}" />
+                        <TextBox Grid.Row="1" Grid.Column="0"
+                                 IsEnabled="{TemplateBinding Available}"
+                                 HorizontalAlignment="Left"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 Padding="4"
+                                 Margin="0,10"
+                                 BorderBrush="Gainsboro"
+                                 Width="100"
+                                 materialDesign:TextFieldAssist.SuffixText="{TemplateBinding Unit}"
+                                 TextWrapping="NoWrap"
+                                 FontSize="16">
+                            <TextBox.Text>
+                                <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Value"
+                                         Mode="TwoWay" />
+                            </TextBox.Text>
+                        </TextBox>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Margin"
+                Value="0,10,0,0" />
+    </Style>
+
+    <Style TargetType="{x:Type customControl:SearchBox}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type customControl:SearchBox}">
+                    <materialDesign:ColorZone Padding="8,4,8,4"
+                                              Panel.ZIndex="1"
+                                              materialDesign:ElevationAssist.Elevation="Dp2"
+                                              CornerRadius="6"
+                                              Mode="Standard">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Button Style="{StaticResource MaterialDesignToolButton}"
+                                    Command="{TemplateBinding SearchCommand}">
+                                <materialDesign:PackIcon
+                                    Kind="Search"
+                                    Opacity=".56" />
+                            </Button>
+                            <TextBox Grid.Column="1"
+                                     Width="120"
+                                     Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Text,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True"
+                                     Margin="8,0,0,0"
+                                     VerticalAlignment="Center"
+                                     materialDesign:HintAssist.Hint="Search"
+                                     materialDesign:TextFieldAssist.DecorationVisibility="Hidden"
+                                     BorderThickness="0">
+                                <TextBox.InputBindings>
+                                    <KeyBinding Key="Enter"
+                                                Command="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=SearchCommand}" />
+                                </TextBox.InputBindings>
+                            </TextBox>
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource MaterialDesignToolButton}"
+                                    Command="{TemplateBinding GoToPreviousCommand}">
+                                <materialDesign:PackIcon Kind="ArrowLeftThin" />
+                            </Button>
+                            <Button Grid.Column="3"
+                                    Style="{StaticResource MaterialDesignToolButton}"
+                                    Command="{TemplateBinding GoToNextCommand}">
+                                <materialDesign:PackIcon Kind="ArrowRightThin" />
+                            </Button>
+                        </Grid>
+                    </materialDesign:ColorZone>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="{x:Type customControl:ModelButton}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type customControl:ModelButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <Button ToolTip="模型信息"
+                                Width="30"
+                                Height="30"
+                                Margin="0,0,4,0"
+                                Content="{materialDesign:PackIcon Kind=InformationOutline,Size=20}"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                Visibility="{TemplateBinding Model,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                Command="{TemplateBinding   ModelDetailCommand}"
+                                CommandParameter="{TemplateBinding Model}" />
+                        <Button Command="{TemplateBinding Command}"
+                                CommandParameter="{TemplateBinding CommandParameter}"
+                                CommandTarget="{TemplateBinding CommandTarget}"
+                                Style="{StaticResource MaterialDesignPaperDarkButton}"
+                                materialDesign:ButtonAssist.CornerRadius="15"
+                                Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
+                                BorderThickness="0"
+                                Padding="10,5"
+                                ToolTip="配置模型">
+                            <StackPanel Orientation="Horizontal">
+                                <Image
+                                    Source="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Model.Icon.CurrentSource}"
+                                    Width="20"
+                                    Height="20" />
+                                <TextBlock
+                                    Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path= Model.Name}"
+                                    VerticalAlignment="Center"
+                                    TextTrimming="CharacterEllipsis"
+                                    MaxWidth="120"
+                                    Margin="10,0,0,0" />
+                                <Button ToolTip="更改模型"
+                                        Visibility="{TemplateBinding ChangeModelEnable,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
+                                        Margin="10,0,0,0"
+                                        Width="22"
+                                        Height="22"
+                                        Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Command="{TemplateBinding ChangeModelCommand}">
+                                    <iconPacks:PackIconMaterialDesign Kind="ChangeCircle"
+                                                                      Width="22"
+                                                                      Height="22"
+                                                                      Foreground="White"
+                                                                      Background="{DynamicResource MaterialDesign.Brush.Primary}" />
+                                    <!--<materialDesign:PackIcon Kind="SwapHorizontalBold"
+                                                             Width="15"
+                                                             Height="15" />-->
+                                </Button>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

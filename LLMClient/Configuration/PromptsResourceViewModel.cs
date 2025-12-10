@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows.Input;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel.Base;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Configuration;

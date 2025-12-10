@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
-using LLMClient.UI.ViewModel.Base;
+using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 

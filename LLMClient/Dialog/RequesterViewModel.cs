@@ -1,19 +1,17 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text;
-using System.Windows.Forms;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel;
-using LLMClient.UI.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
-using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 

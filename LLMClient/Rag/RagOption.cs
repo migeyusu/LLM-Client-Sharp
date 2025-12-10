@@ -4,11 +4,11 @@ using System.Text.Json.Serialization;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Dialog;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel;
-using LLMClient.UI.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
@@ -19,7 +19,7 @@ namespace LLMClient.Rag;
 public class RagOption : BaseViewModel
 {
     [JsonIgnore]
-    public ILLMEndpoint? EmbeddingEndpoint
+    public ILLMAPIEndpoint? EmbeddingEndpoint
     {
         get
         {

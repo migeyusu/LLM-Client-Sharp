@@ -1,5 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using LLMClient.UI.ViewModel.Base;
+using Google.Apis.Services;
+using LLMClient.Component.ViewModel.Base;
+using Microsoft.SemanticKernel.Data;
+using Microsoft.SemanticKernel.Plugins.Web.Google;
 
 namespace LLMClient.Configuration;
 
@@ -30,13 +33,39 @@ public class GoogleSearchOption : BaseViewModel<GoogleSearchOption>, ICloneable
         }
     }
 
-    public ProxySetting ProxySetting { get; set; } = new ProxySetting();
+    public ProxySetting ProxySetting { get; set; } = new();
 
     [MemberNotNullWhen(true, nameof(ApiKey), nameof(SearchEngineId))]
     public bool IsValid()
     {
         return !string.IsNullOrEmpty(ApiKey) && !string.IsNullOrEmpty(SearchEngineId);
     }
+    
+    
+    private GoogleSearchOption? _optionSnap;
+
+#pragma warning disable SKEXP0050
+    private GoogleTextSearch? _textSearch;
+#pragma warning restore SKEXP0050
+
+    public ITextSearch? GetTextSearch()
+    {
+        if (this.IsValid() && !this.PublicEquals(_optionSnap))
+        {
+            var proxyOption = this.ProxySetting.GetRealProxy();
+#pragma warning disable SKEXP0050
+            _textSearch = new GoogleTextSearch(initializer: new BaseClientService.Initializer()
+#pragma warning restore SKEXP0050
+            {
+                ApiKey = this.ApiKey,
+                HttpClientFactory = proxyOption.CreateFactory(),
+            }, this.SearchEngineId);
+            _optionSnap = (GoogleSearchOption)this.Clone();
+        }
+
+        return _textSearch;
+    }
+
 
     protected bool Equals(GoogleSearchOption other)
     {

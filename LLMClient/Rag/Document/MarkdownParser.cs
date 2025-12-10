@@ -1,6 +1,6 @@
 using System.IO;
 using System.Text;
-using LLMClient.UI.Render;
+using LLMClient.Component.Render;
 using Markdig.Extensions.JiraLinks;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;

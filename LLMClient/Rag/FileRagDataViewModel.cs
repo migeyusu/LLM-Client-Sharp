@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel.Base;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel.Base;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Rag;

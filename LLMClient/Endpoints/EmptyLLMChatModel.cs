@@ -1,5 +1,5 @@
 ﻿using LLMClient.Abstraction;
-using LLMClient.UI.Component.CustomControl;
+using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Endpoints;
 
@@ -25,7 +25,7 @@ public class EmptyLLMChatModel : ILLMChatModel
         set => throw new NotImplementedException();
     }
 
-    public ILLMEndpoint Endpoint
+    public ILLMAPIEndpoint Endpoint
     {
         get => EmptyLLMEndpoint.Instance;
         set => throw new NotImplementedException();

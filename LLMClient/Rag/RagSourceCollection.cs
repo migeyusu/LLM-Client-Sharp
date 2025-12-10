@@ -6,8 +6,8 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel.Base;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel.Base;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 

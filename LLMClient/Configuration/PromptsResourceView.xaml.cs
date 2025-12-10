@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using LLMClient.UI.Component.Utility;
+using LLMClient.Component.Utility;
 
 namespace LLMClient.Configuration;
 

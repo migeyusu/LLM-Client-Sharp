@@ -5,13 +5,13 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using LLMClient.Abstraction;
-using LLMClient.UI.ViewModel.Base;
+using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
-public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMEndpoint
+public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
 {
     public const string KeyName = "OpenAIAPICompatible";
 

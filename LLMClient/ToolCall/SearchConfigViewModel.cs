@@ -1,7 +1,7 @@
 ﻿using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.ToolCall.Servers;
-using LLMClient.UI.ViewModel.Base;
 
 namespace LLMClient.ToolCall;
 

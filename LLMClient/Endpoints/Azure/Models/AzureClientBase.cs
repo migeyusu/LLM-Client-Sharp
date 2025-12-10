@@ -24,7 +24,7 @@ public class AzureClientBase : LlmClientBase, ILLMChatClient
         get { return ModelInfo.FriendlyName; }
     }
 
-    public override ILLMEndpoint Endpoint { get; }
+    public override ILLMAPIEndpoint Endpoint { get; }
 
     [JsonIgnore]
     public string Id

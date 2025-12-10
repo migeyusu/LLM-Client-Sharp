@@ -3,7 +3,7 @@ using LLMClient.Abstraction;
 
 namespace LLMClient.Endpoints;
 
-public class StubEndPoint : ILLMEndpoint
+public class StubEndPoint : ILLMAPIEndpoint
 {
     public StubEndPoint(IReadOnlyCollection<ILLMChatModel> availableModels)
     {

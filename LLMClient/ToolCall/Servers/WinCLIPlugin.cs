@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
-using LLMClient.UI.Component.Utility;
 using Microsoft.SemanticKernel;
 
 namespace LLMClient.ToolCall.Servers;

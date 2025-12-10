@@ -6,7 +6,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using LLMClient.Abstraction;
-using LLMClient.UI.Render;
+using LLMClient.Component.Render;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;

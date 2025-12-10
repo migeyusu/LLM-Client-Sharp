@@ -1,11 +1,11 @@
 ﻿using System.Text;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Rag;
-using LLMClient.UI.Component.Utility;
-using LLMClient.UI.ViewModel;
-using LLMClient.UI.ViewModel.Base;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
