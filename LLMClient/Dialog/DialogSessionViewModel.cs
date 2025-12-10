@@ -18,7 +18,7 @@ using LLMClient.Endpoints;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
-using ConfirmView = LLMClient.Component.UserControl.ConfirmView;
+using ConfirmView = LLMClient.Component.UserControls.ConfirmView;
 
 namespace LLMClient.Dialog;
 

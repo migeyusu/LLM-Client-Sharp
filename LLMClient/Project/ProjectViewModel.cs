@@ -62,8 +62,6 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<Project
         get { return SaveFolderPathLazy.Value; }
     }
 
-    public ProjectConfigViewModel ConfigViewModel { get; }
-
     public RequesterViewModel Requester { get; }
 
     #region file
@@ -107,7 +105,6 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<Project
     }
 
     private string? _description = string.Empty;
-    private IList<string>? _languageNames;
     private string? _folderPath;
     private string? _name;
 
@@ -181,25 +178,6 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<Project
         }
     }
 
-    public IList<string>? LanguageNames
-    {
-        get => _languageNames;
-        set
-        {
-            if (Equals(value, _languageNames)) return;
-            this.ClearError();
-            if (value == null)
-            {
-                AddError("LanguageNames cannot be null.");
-                return;
-            }
-
-            _languageNames = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(Context));
-        }
-    }
-
     private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
 
     /// <summary>
@@ -215,9 +193,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<Project
             }
 
             _systemPromptBuilder.Clear();
-            Debug.Assert(LanguageNames != null, nameof(LanguageNames) + " != null");
-            _systemPromptBuilder.AppendFormat("我正在Windows上使用语言{0}上开发位于{1}的一个软件项目。",
-                string.Join(",", LanguageNames), FolderPath);
+            _systemPromptBuilder.AppendFormat("我正在开发一个名为{0}的软件项目，项目代码位于文件夹{1}。", Name, FolderPath);
             _systemPromptBuilder.AppendLine();
             _systemPromptBuilder.AppendLine("项目背景/描述如下：");
             _systemPromptBuilder.AppendLine(Description);
@@ -425,7 +401,6 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<Project
             this.TokensConsumption += response.Tokens;
             this.TotalPrice += (response.Price ?? 0);
         };
-        this.ConfigViewModel = new ProjectConfigViewModel(this);
         this.Tasks = [];
         if (tasks != null)
         {
@@ -508,11 +483,6 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<Project
         if (string.IsNullOrEmpty(Description))
         {
             this.AddError("Description cannot be null or empty.", nameof(Description));
-        }
-
-        if (LanguageNames == null || LanguageNames.Count == 0)
-        {
-            this.AddError("LanguageNames cannot be null or empty.", nameof(LanguageNames));
         }
 
         if (!AllowedFolderPaths.Any())

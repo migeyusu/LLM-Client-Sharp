@@ -3,9 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
-             xmlns:component="clr-namespace:LLMClient.Component"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:ModelSelectionPopupViewModel}"
              d:DesignHeight="400" d:DesignWidth="600">
@@ -18,39 +16,9 @@
         <Button Grid.Row="0"
                 HorizontalAlignment="Right"
                 Style="{StaticResource CloseButtonStyle}" />
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-            <TreeView x:Name="EndpointsTreeView"
-                      SelectedItemChanged="TreeView_OnSelectedItemChanged"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Stretch"
-                      Width="300"
-                      ItemsSource="{Binding Source={StaticResource EndpointService},Path=CandidateEndpoints,Mode=OneWay}"
-                      ItemTemplateSelector="{StaticResource ModelsDataTemplateSelector}" />
-            <Separator Grid.Column="0"
-                       VerticalAlignment="Stretch"
-                       Background="DarkGray"
-                       Margin="0,20"
-                       Width="1"
-                       Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
-                       HorizontalAlignment="Right" />
-            <ContentControl Grid.Column="1"
-                            Content="{Binding ElementName=EndpointsTreeView,Path=SelectedItem}">
-                <ContentControl.ContentTemplateSelector>
-                    <component:TypeBasedDataTemplateSelector>
-                        <component:DataTemplateTypePair>
-                            <DataTemplate DataType="{x:Type models:AzureModelInfo}">
-                                <models:AzureModelInfoView Margin="10" />
-                            </DataTemplate>
-                        </component:DataTemplateTypePair>
-                        <component:DataTemplateTypePair Template="{StaticResource ApiModelInfoDataTemplate}" />
-                    </component:TypeBasedDataTemplateSelector>
-                </ContentControl.ContentTemplateSelector>
-            </ContentControl>
-        </Grid>
+        <ContentPresenter Grid.Row="1"
+                          Content="{Binding}"
+                          ContentTemplate="{StaticResource FullModelSelectionDataTemplate}" />
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
@@ -66,7 +34,7 @@
             <Button Grid.Column="1"
                     Content="确认"
                     Width="90"
-                    Command="{Binding  CreateDefaultCommand}"/>
+                    Command="{Binding  CreateDefaultCommand}" />
         </Grid>
     </Grid>
 </UserControl>

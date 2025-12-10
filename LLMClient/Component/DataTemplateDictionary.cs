@@ -2,6 +2,8 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
+using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel;
 
 namespace LLMClient.Component;
 
@@ -19,5 +21,14 @@ public partial class DataTemplateDictionary : ResourceDictionary
     private void ResearchClientsSelector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         // BaseViewModel.ServiceLocator.GetService<>()
+    }
+
+    private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        var newValue = e.NewValue;
+        if (newValue is ILLMChatModel modelInfo)
+        {
+            ((BaseModelSelectionViewModel)((TreeView)sender).DataContext).SelectedModel = modelInfo;
+        }
     }
 }

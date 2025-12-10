@@ -11,9 +11,7 @@ public class ProjectPersistModel
     public string? Name { get; set; }
 
     public string? Description { get; set; }
-
-    public string[]? LanguageNames { get; set; }
-
+    
     public string[]? AllowedFolderPaths { get; set; }
 
     public string? FolderPath { get; set; }

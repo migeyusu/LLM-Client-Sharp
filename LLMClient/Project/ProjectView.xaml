@@ -6,11 +6,11 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:LLMClient.Project"
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
-             xmlns:userControl="clr-namespace:LLMClient.Component.UserControl"
              xmlns:utility="clr-namespace:LLMClient.Component.Utility"
              xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
              xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              xmlns:extension="clr-namespace:LLMClient.Component.Extension"
+             xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:ProjectViewModel}"
              d:DesignHeight="800" d:DesignWidth="1200">
@@ -42,7 +42,7 @@
                          MinWidth="100"
                          MaxWidth="300"
                          TextWrapping="Wrap" />
-                <userControl:PromptEditor Grid.Column="1"
+                <userControls:PromptEditor Grid.Column="1"
                                         VerticalAlignment="Stretch"
                                         Margin="0,0,10,0"
                                         Header="Project Description"
@@ -77,7 +77,7 @@
                     <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
                             ToolTip="Config Project"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                            CommandParameter="{Binding ConfigViewModel,Mode=OneTime}" />
+                            CommandParameter="{Binding Mode=OneTime}" />
                     <Button ToolTip="备份"
                             Content="{materialDesign:PackIcon Kind=ArchiveArrowUpOutline,Size=20}"
                             Command="{x:Static utility:CommonCommands.Backup}" />

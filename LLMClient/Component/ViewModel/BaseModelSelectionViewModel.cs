@@ -53,30 +53,36 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, ILLMChatClien
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 
-    public ILLMChatClient? GetClient()
-    {
-        return this.SelectedModel?.CreateChatClient();
-    }
-
     public ICommand CreateDefaultCommand => new ActionCommand(o =>
+    {
+        try
+        {
+            var chatClient = CreateClient();
+            SubmitClient(chatClient);
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    });
+
+    public ILLMChatClient CreateClient()
     {
         if (SelectedModel == null)
         {
-            MessageBox.Show("Please select model.");
-            return;
+            throw new Exception("Please select model.");
         }
 
         var chatClient = this.SelectedModel.CreateChatClient();
         if (chatClient == null)
         {
-            MessageBox.Show("Create chat client failed.");
-            return;
+            throw new Exception("Create chat client failed.");
         }
 
         Mapper.Map(Parameters, chatClient.Parameters);
         ServiceLocator.GetService<IEndpointService>()?.AddModelFrequency(this.SelectedModel);
-        SubmitClient(chatClient);
-    });
+        return chatClient;
+    }
 
     protected abstract void SubmitClient(ILLMChatClient client);
     public string Name { get; } = "Fake Client";

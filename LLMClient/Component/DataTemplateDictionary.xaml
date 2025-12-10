@@ -11,7 +11,10 @@
                     xmlns:component="clr-namespace:LLMClient.Component"
                     xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
                     xmlns:extension="clr-namespace:LLMClient.Component.Extension"
-                    xmlns:converters="clr-namespace:LLMClient.Component.Converters">
+                    xmlns:converters="clr-namespace:LLMClient.Component.Converters"
+                    xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
+                    xmlns:project="clr-namespace:LLMClient.Project"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
     <ItemsPanelTemplate x:Key="HorizontalItemsPanelTemplate">
         <StackPanel Orientation="Horizontal"
                     IsItemsHost="True" />
@@ -308,6 +311,8 @@
                                     Value="30" />
                             <Setter Property="IsHitTestVisible"
                                     Value="False" />
+                            <Setter Property="Height"
+                                    Value="40" />
                         </Style>
                     </WrapPanel.Resources>
                     <CheckBox IsChecked="{Binding Reasonable,Mode=OneWay}"
@@ -334,6 +339,43 @@
             </StackPanel>
             <FlowDocumentScrollViewer Grid.Row="1"
                                       Document="{Binding Description,Mode=OneWay, Converter={x:Static converters:MarkdownToDocumentConverter.Instance}}" />
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="FullModelSelectionDataTemplate"
+                  DataType="{x:Type viewModel:BaseModelSelectionViewModel}">
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <TreeView x:Name="EndpointsTreeView"
+                      SelectedItemChanged="TreeView_OnSelectedItemChanged"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Width="300"
+                      ItemsSource="{Binding Source={StaticResource EndpointService},Path=CandidateEndpoints,Mode=OneWay}"
+                      ItemTemplateSelector="{StaticResource ModelsDataTemplateSelector}" />
+            <Separator Grid.Column="0"
+                       VerticalAlignment="Stretch"
+                       Background="DarkGray"
+                       Margin="0,20"
+                       Width="1"
+                       Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
+                       HorizontalAlignment="Right" />
+            <ContentControl Grid.Column="1"
+                            Content="{Binding ElementName=EndpointsTreeView,Path=SelectedItem}">
+                <ContentControl.ContentTemplateSelector>
+                    <component:TypeBasedDataTemplateSelector>
+                        <component:DataTemplateTypePair>
+                            <DataTemplate DataType="{x:Type models:AzureModelInfo}">
+                                <models:AzureModelInfoView Margin="10" />
+                            </DataTemplate>
+                        </component:DataTemplateTypePair>
+                        <component:DataTemplateTypePair Template="{StaticResource ApiModelInfoDataTemplate}" />
+                    </component:TypeBasedDataTemplateSelector>
+                </ContentControl.ContentTemplateSelector>
+            </ContentControl>
         </Grid>
     </DataTemplate>
     <DataTemplate x:Key="ProxyOptionDataTemplate" DataType="{x:Type configuration:ProxyOption}">
@@ -380,5 +422,95 @@
                 </Grid>
             </RadioButton>
         </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="ProjectConfigDataTemplate"
+                  DataType="{x:Type project:ProjectViewModel}">
+        <Grid Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBox Margin="0"
+                     materialDesign:HintAssist.Hint="输入项目名称"
+                     TextWrapping="NoWrap"
+                     Text="{Binding Name, Mode=TwoWay}" />
+            <TextBox Grid.Row="0" Grid.Column="1"
+                     TextWrapping="NoWrap"
+                     Margin="5,0"
+                     materialDesign:HintAssist.Hint="输入项目文件夹路径"
+                     Text="{Binding FolderPath,Mode=TwoWay}"
+                     TextAlignment="Left" />
+            <Button Grid.Row="0" Grid.Column="1"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Margin="0,0,5,0"
+                    Width="30"
+                    Height="30"
+                    Command="{Binding SelectProjectFolderCommand}"
+                    Content="{materialDesign:PackIcon Kind=FolderSettings,Size=16}"
+                    Style="{StaticResource MaterialDesignIconForegroundButton}" />
+            <TextBox Grid.Row="1" Grid.Column="0"
+                     Grid.ColumnSpan="2"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     materialDesign:HintAssist.Hint="输入项目描述"
+                     Margin="0,5"
+                     MaxHeight="180"
+                     Text="{Binding Description,Mode=TwoWay}" />
+            <TextBlock Grid.Row="2" Grid.Column="0"
+                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                       Text="项目可访问路径：" />
+            <ListBox Grid.Row="2"
+                     Grid.Column="1"
+                     MaxHeight="60"
+                     Margin="0,5,0,0"
+                     ItemsSource="{Binding AllowedFolderPaths,Mode=OneWay}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}"
+                           BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                        <Setter Property="HorizontalContentAlignment"
+                                Value="Stretch" />
+                        <Setter Property="Padding"
+                                Value="0,4,26,4" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type sys:String}">
+                        <Grid>
+                            <TextBlock Text="{Binding}"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                            <Button Width="20"
+                                    Height="20"
+                                    Template="{StaticResource ItemDeleteButtonTemplate}"
+                                    ToolTip="删除当前"
+                                    Margin="0,0,10,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding DataContext.RemoveAllowedFolderPathCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <Button Grid.Row="2"
+                    Grid.Column="1"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Right"
+                    Margin="6"
+                    Width="30"
+                    Height="30"
+                    Content="{materialDesign:PackIcon Kind=Plus,Size=21}"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
+                    Command="{Binding AddAllowedFolderPathsCommand}" />
+        </Grid>
     </DataTemplate>
 </ResourceDictionary>

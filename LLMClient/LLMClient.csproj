@@ -160,9 +160,6 @@
         <Page Update="Dialog\ResponseViewItemEditView.xaml">
             <Generator>MSBuild:Compile</Generator>
         </Page>
-        <Page Update="Project\ProjectConfigView.xaml">
-            <Generator>MSBuild:Compile</Generator>
-        </Page>
         <Page Update="Project\ProjectView.xaml">
             <Generator>MSBuild:Compile</Generator>
         </Page>

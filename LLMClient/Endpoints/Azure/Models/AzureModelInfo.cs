@@ -251,14 +251,14 @@ public class AzureModelInfo : ILLMChatModel
 
     public IThinkingConfig? ThinkingConfig
     {
-        get => throw new NotSupportedException();
-        set => throw new NotSupportedException();
+        get => null;
+        set { }
     }
 
     public bool ThinkingEnabled
     {
-        get => throw new NotSupportedException();
-        set => throw new NotSupportedException();
+        get => false;
+        set { }
     }
 
     private FlowDocument? _document;

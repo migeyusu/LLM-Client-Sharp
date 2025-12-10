@@ -2,9 +2,9 @@
 using System.Windows;
 using MaterialDesignThemes.Wpf;
 
-namespace LLMClient.Component.UserControl;
+namespace LLMClient.Component.UserControls;
 
-public partial class PromptEditor : System.Windows.Controls.UserControl
+public partial class PromptEditor
 {
     public PromptEditor()
     {

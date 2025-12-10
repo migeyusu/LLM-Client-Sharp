@@ -111,7 +111,9 @@ public static class Extension
             expression.CreateMap<IResponse, ResponseViewItem>();
             expression.CreateMap<IModelParams, IModelParams>();
             expression.CreateMap<IModelParams, DefaultModelParam>();
+            expression.CreateMap<DefaultModelParam, DefaultModelParam>();
             expression.CreateMap<IModelParams, ILLMChatModel>();
+            expression.CreateMap<ILLMChatModel, IModelParams>();
             expression.CreateMap<IModelParams, APIModelInfo>();
             expression.CreateMap<APIDefaultOption, APIDefaultOption>();
             expression.CreateMap<ILLMChatClient, LLMClientPersistModel>()

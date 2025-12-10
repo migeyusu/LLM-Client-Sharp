@@ -32,9 +32,9 @@
                    Text="{Binding Publisher,Mode=OneTime}" />
         <TextBlock Grid.Row="1"
                    Margin="0,16,0,0"
-                   Text="{Binding Summary,Mode=OneTime}" 
+                   Text="{Binding Summary,Mode=OneTime}"
                    Style="{StaticResource MaterialDesignBody1TextBlock}"
-                   TextWrapping="Wrap"/>
+                   TextWrapping="Wrap" />
         <TextBlock Grid.Row="2"
                    Style="{StaticResource MaterialDesignBody1TextBlock}"
                    TextWrapping="Wrap">
@@ -62,6 +62,8 @@
                             Value="0,0,10,0" />
                     <Setter Property="materialDesign:CheckBoxAssist.CheckBoxSize"
                             Value="30" />
+                    <Setter Property="Height"
+                            Value="40" />
                     <Setter Property="IsHitTestVisible"
                             Value="False" />
                 </Style>

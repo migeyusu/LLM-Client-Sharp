@@ -234,7 +234,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
             destination.Name = source.Name;
             destination.Description = source.Description;
-            destination.LanguageNames = source.LanguageNames;
             destination.FolderPath = source.FolderPath;
             destination.AllowedFolderPaths = source.AllowedFolderPaths == null
                 ? []
@@ -261,7 +260,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.Name = source.Name;
         destination.EditTime = source.EditTime;
         destination.Description = source.Description;
-        destination.LanguageNames = source.LanguageNames?.ToArray();
         destination.FolderPath = source.FolderPath;
         destination.AllowedFolderPaths = source.AllowedFolderPaths?.ToArray();
         destination.TokensConsumption = source.TokensConsumption;

@@ -1,14 +1,14 @@
-﻿<UserControl x:Class="LLMClient.Component.UserControl.PromptEditor"
+﻿<UserControl x:Class="LLMClient.Component.UserControls.PromptEditor"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:system="clr-namespace:System;assembly=System.Runtime"
-             xmlns:userControl="clr-namespace:LLMClient.Component.UserControl"
+             xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
-             d:DataContext="{d:DesignInstance userControl:PromptEditor}"
+             d:DataContext="{d:DesignInstance userControls:PromptEditor}"
              x:Name="Root">
     <UserControl.Resources>
         <HeaderedContentControl x:Key="HeaderedContentControl"

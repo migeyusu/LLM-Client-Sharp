@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Component;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
@@ -110,28 +111,6 @@ public class MainWindowViewModel : BaseViewModel
 
     public IRagSourceCollection RagSourceCollection { get; }
 
-    #region project
-
-    public ICommand NewProjectCommand => new ActionCommand((async void (_) =>
-    {
-        try
-        {
-            var selectionViewModel =
-                new ProjectConfigViewModel(new ProjectViewModel(EmptyLlmModelClient.Instance, _mapper,
-                    _globalOptions, RagSourceCollection));
-            if (await DialogHost.Show(selectionViewModel) is true)
-            {
-                AddSession(selectionViewModel.Project);
-            }
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show(e.Message);
-        }
-    }));
-
-    #endregion
-
     #region dialog
 
     public ICommand ImportDialogCommand => new ActionCommand((async o =>
@@ -181,18 +160,9 @@ public class MainWindowViewModel : BaseViewModel
         }
     }));
 
-    public ICommand NewDialogCommand => new ActionCommand(async _ =>
-    {
-        try
-        {
-            var selectionViewModel = new ModelSelectionPopupViewModel((client => { AddNewDialog(client); }));
-            await DialogHost.Show(selectionViewModel);
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show(e.Message);
-        }
-    });
+    public CreateSessionViewModel CreateSession { get; }
+
+    public IMapper Mapper => _mapper;
 
     private readonly IMapper _mapper;
 
@@ -200,7 +170,7 @@ public class MainWindowViewModel : BaseViewModel
 
     public DialogFileViewModel AddNewDialog(ILLMChatClient client, string dialogName = "新建会话")
     {
-        var dialogSession = new DialogFileViewModel(dialogName, client, _mapper, _globalOptions, RagSourceCollection);
+        var dialogSession = NewDialogViewModel(client, dialogName);
         AddSession(dialogSession);
         return dialogSession;
     }
@@ -278,16 +248,17 @@ public class MainWindowViewModel : BaseViewModel
         IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection, IMapper mapper,
         GlobalOptions globalOptions)
     {
-        MessageEventBus.MessageReceived += s => this.MessageQueue.Enqueue(s);
+        MessageEventBus.MessageReceived += s => MessageQueue.Enqueue(s);
         PromptsResource = promptsResource;
         McpServiceCollection = mcpServiceCollection;
         RagSourceCollection = ragSourceCollection;
-        this._mapper = mapper;
-        this._globalOptions = globalOptions;
+        _mapper = mapper;
+        _globalOptions = globalOptions;
         EndpointsViewModel = configureViewModel;
         var paletteHelper = new PaletteHelper();
         var theme = paletteHelper.GetTheme();
         IsDarkTheme = theme.GetBaseTheme() == BaseTheme.Dark;
+        CreateSession = new CreateSessionViewModel(this);
         /*if (theme is Theme internalTheme)
         {
             _isColorAdjusted = internalTheme.ColorAdjustment is not null;
@@ -305,6 +276,16 @@ public class MainWindowViewModel : BaseViewModel
     }
 
     #region item management
+
+    public ProjectViewModel NewProjectViewModel()
+    {
+        return new ProjectViewModel(EmptyLlmModelClient.Instance, Mapper, GlobalOptions, RagSourceCollection);
+    }
+
+    public DialogFileViewModel NewDialogViewModel(ILLMChatClient client, string dialogName = "新建会话")
+    {
+        return new DialogFileViewModel(dialogName, client, _mapper, _globalOptions, RagSourceCollection);
+    }
 
     public void AddSession(ILLMSession projectViewModel)
     {
@@ -440,6 +421,7 @@ public class MainWindowViewModel : BaseViewModel
             {
                 return;
             }
+
             IsInitializing = true;
             await TextMateCodeRenderer.InitializeAsync();
             await McpServiceCollection.LoadAsync();

@@ -1,6 +1,6 @@
-﻿namespace LLMClient.Component.UserControl;
+﻿namespace LLMClient.Component.UserControls;
 
-public partial class ConfirmView : System.Windows.Controls.UserControl
+public partial class ConfirmView
 {
     public ConfirmView()
     {

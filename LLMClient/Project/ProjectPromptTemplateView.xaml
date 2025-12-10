@@ -36,13 +36,14 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel DataContext="{Binding Project,Mode=OneTime}">
                     <TextBlock>
-                        <Run>我正在Windows上使用语言</Run>
-                        <Run Style="{StaticResource GenerateRunStyle}"
-                             Text="{Binding LanguageNames,Mode=OneWay,Converter={x:Static converters:SnapConverters.StringArrayToStringConverter}}" />
-                        <Run>上开发位于</Run>
-                        <Run Text="{Binding FolderPath,Mode=OneWay}"
-                             Style="{StaticResource GenerateRunStyle}" />
-                        <Run>的一个软件项目。</Run>
+                        <Run>
+                            <Run.Text>
+                                <MultiBinding StringFormat="我正在开发一个名为{0}的软件项目，项目代码位于文件夹{1}。">
+                                    <Binding Path="Name" Mode="OneWay" />
+                                    <Binding Path="FolderPath" Mode="OneWay" />
+                                </MultiBinding>
+                            </Run.Text>
+                        </Run>
                         <LineBreak />
                         <Run>项目背景/描述如下：</Run>
                         <LineBreak />

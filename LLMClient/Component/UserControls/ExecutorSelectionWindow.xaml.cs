@@ -1,7 +1,7 @@
 using System.Windows;
 using LLMClient.Component.Render;
 
-namespace LLMClient.Component.UserControl
+namespace LLMClient.Component.UserControls
 {
     public partial class ExecutorSelectionWindow : Window
     {

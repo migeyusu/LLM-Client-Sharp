@@ -17,10 +17,10 @@
                 <ResourceDictionary Source="Component/CustomControl/CustomControlResourceDictionary.xaml" />
                 <ResourceDictionary Source="Component/StyleResourceDictionary.xaml" />
                 <ResourceDictionary Source="Component/Render/MarkdownResource.xaml" />
+                <ResourceDictionary Source="Component/ContainerResouce.xaml" />
                 <ResourceDictionary Source="Component/DataTemplateDictionary.xaml" />
                 <ResourceDictionary Source="Rag/RAGDataTemplate.xaml" />
                 <ResourceDictionary Source="Dialog/DialogTemplateDictionary.xaml" />
-                <ResourceDictionary Source="Component/ContainerResouce.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <Style TargetType="{x:Type ScrollBar}"
                    BasedOn="{StaticResource DefaultScrollBarStyle}" />
