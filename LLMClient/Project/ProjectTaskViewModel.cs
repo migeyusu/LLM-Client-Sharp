@@ -41,7 +41,7 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
-    public string? Name
+    public override string? Name
     {
         get => _name;
         set

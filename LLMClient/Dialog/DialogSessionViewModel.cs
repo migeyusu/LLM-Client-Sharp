@@ -536,14 +536,19 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
     }
 
+    public virtual string? Name { get; set; }
+
     public ICommand ExportCommand => new ActionCommand((async _ =>
     {
         try
         {
             var saveFileDialog = new SaveFileDialog()
             {
+                FileName = this.Name ?? string.Empty,
+                CheckFileExists = true,
                 AddExtension = true,
-                DefaultExt = ".md", CheckPathExists = true,
+                DefaultExt = ".md",
+                CheckPathExists = true,
                 Filter = "markdown files (*.md)|*.md"
             };
             if (saveFileDialog.ShowDialog() != true)
@@ -556,11 +561,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         stringBuilder.AppendLine($"### {this.DefaultClient.Name}");*/
             foreach (var viewItem in DialogItems.Where((item => item.IsAvailableInContext)))
             {
-                if (viewItem is MultiResponseViewItem multiResponseView &&
-                    multiResponseView.AcceptedResponse is ResponseViewItem responseViewItem)
+                if (viewItem is MultiResponseViewItem { AcceptedResponse: { } responseViewItem })
                 {
                     var textContent = responseViewItem.TextContent;
-                    stringBuilder.AppendLine("## **Assistant:**");
+                    stringBuilder.AppendLine("# **Assistant:**");
                     stringBuilder.Append(textContent ?? string.Empty);
                     stringBuilder.AppendLine();
                     stringBuilder.AppendLine();
@@ -569,7 +573,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 }
                 else if (viewItem is RequestViewItem reqViewItem)
                 {
-                    stringBuilder.AppendLine("## **User:**");
+                    stringBuilder.AppendLine("# **User:**");
                     stringBuilder.Append(reqViewItem.TextMessage);
                     stringBuilder.AppendLine();
                     stringBuilder.AppendLine();

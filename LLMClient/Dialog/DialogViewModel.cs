@@ -28,6 +28,12 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
+    public override string? Name
+    {
+        get { return this.Topic; }
+        set { this.Topic = value ?? "新建会话"; }
+    }
+
     private string? _systemPrompt;
 
     public override string? SystemPrompt
