@@ -118,7 +118,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0"
                                     Orientation="Horizontal">
-                            <materialDesign:Card Padding="8,0"
+                            <materialDesign:Card Padding="4,0"
                                                  UniformCornerRadius="12"
                                                  Height="32"
                                                  materialDesign:ElevationAssist.Elevation="Dp3">
@@ -195,11 +195,11 @@
                                     <ToggleButton IsChecked="{Binding SearchConfig.SearchEnable,Mode=TwoWay}" />
                                 </StackPanel>
                             </materialDesign:Card>
-                            <materialDesign:Card Padding="6,0"
+                            <materialDesign:Card Padding="4,0"
                                                  Margin="6,0,0,0"
                                                  UniformCornerRadius="12"
                                                  Height="32"
-                                                 Visibility="{Binding SearchConfig.IsSearchAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 Visibility="{Binding DefaultClient.Model.SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                                  materialDesign:ElevationAssist.Elevation="Dp3">
                                 <StackPanel Orientation="Horizontal"
                                             Margin="10,0,0,0">

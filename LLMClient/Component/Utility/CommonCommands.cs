@@ -121,7 +121,9 @@ public static class CommonCommands
                     var fileDialog = new SaveFileDialog()
                     {
                         AddExtension = true,
-                        OverwritePrompt = true, DefaultExt = ".md", Filter = "Markdown files (*.md)|*.md"
+                        OverwritePrompt = true, 
+                        DefaultExt = ".md", 
+                        Filter = "Markdown files (*.md)|*.md"
                     };
                     if (fileDialog.ShowDialog() == true)
                     {
