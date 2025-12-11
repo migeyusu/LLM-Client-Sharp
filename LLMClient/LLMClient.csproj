@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0-windows</TargetFramework>
-        <!--<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>-->
+<!--        <TargetFramework>net8.0-windows</TargetFramework>-->
+        <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
         <UseWindowsAppSDK>true</UseWindowsAppSDK>
         <WindowsPackageType>None</WindowsPackageType> <!-- For unpackaged apps -->
         <Nullable>enable</Nullable>

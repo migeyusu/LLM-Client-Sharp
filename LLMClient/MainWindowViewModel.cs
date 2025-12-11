@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using Windows.UI.ViewManagement;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component;
@@ -244,6 +245,8 @@ public class MainWindowViewModel : BaseViewModel
     private string _loadingMessage = "Loading...";
     private bool _isLeftDrawerOpen = true;
 
+    private UISettings _uiSettings;
+
     public MainWindowViewModel(IEndpointService configureViewModel, IPromptsResource promptsResource,
         IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection, IMapper mapper,
         GlobalOptions globalOptions)
@@ -255,9 +258,8 @@ public class MainWindowViewModel : BaseViewModel
         _mapper = mapper;
         _globalOptions = globalOptions;
         EndpointsViewModel = configureViewModel;
-        var paletteHelper = new PaletteHelper();
-        var theme = paletteHelper.GetTheme();
-        IsDarkTheme = theme.GetBaseTheme() == BaseTheme.Dark;
+        _uiSettings = new UISettings();
+        IsDarkTheme = !IsColorLight(_uiSettings.GetColorValue(UIColorType.Background));
         CreateSession = new CreateSessionViewModel(this);
         /*if (theme is Theme internalTheme)
         {
@@ -268,11 +270,24 @@ public class MainWindowViewModel : BaseViewModel
             _contrastValue = colorAdjustment.Contrast;
             _colorSelectionValue = colorAdjustment.Colors;
         }*/
-
+        var paletteHelper = new PaletteHelper();
         if (paletteHelper.GetThemeManager() is { } themeManager)
         {
             themeManager.ThemeChanged += (_, e) => { IsDarkTheme = e.NewTheme.GetBaseTheme() == BaseTheme.Dark; };
         }
+
+        _uiSettings.ColorValuesChanged += UiSettingsOnColorValuesChanged;
+    }
+
+    private void UiSettingsOnColorValuesChanged(UISettings sender, object args)
+    {
+        var colorValue = sender.GetColorValue(UIColorType.Background);
+        IsDarkTheme = !IsColorLight(colorValue);
+    }
+
+    bool IsColorLight(Windows.UI.Color clr)
+    {
+        return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
     }
 
     #region item management
@@ -421,12 +436,12 @@ public class MainWindowViewModel : BaseViewModel
             {
                 return;
             }
-
             IsInitializing = true;
             await TextMateCodeRenderer.InitializeAsync();
             await McpServiceCollection.LoadAsync();
             await RagSourceCollection.LoadAsync();
             await EndpointsViewModel.Initialize();
+
             await InitialSessionsFromLocal();
             if (SessionViewModels.Any())
             {
