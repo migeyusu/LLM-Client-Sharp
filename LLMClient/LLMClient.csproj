@@ -4,7 +4,7 @@
         <OutputType>WinExe</OutputType>
 <!--        <TargetFramework>net8.0-windows</TargetFramework>-->
         <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
-        <UseWindowsAppSDK>true</UseWindowsAppSDK>
+        <UseWindowsAppSDK>false</UseWindowsAppSDK>
         <WindowsPackageType>None</WindowsPackageType> <!-- For unpackaged apps -->
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -24,6 +24,7 @@
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <PlatformTarget>x64</PlatformTarget>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="15.0.1"/>
@@ -381,6 +382,42 @@
         </Resource>
         <None Remove="Resources\Pages\tex-svg.js" />
         <None Remove="Resources\Pages\html2canvas.js" />
+        <None Remove="Resources\Images\llm\alibabacloud.png" />
+        <Resource Include="Resources\Images\llm\alibabacloud.png" />
+        <None Remove="Resources\Images\llm\azure.png" />
+        <Resource Include="Resources\Images\llm\azure.png" />
+        <None Remove="Resources\Images\llm\bailian.png" />
+        <Resource Include="Resources\Images\llm\bailian.png" />
+        <None Remove="Resources\Images\llm\bedrock.png" />
+        <Resource Include="Resources\Images\llm\bedrock.png" />
+        <None Remove="Resources\Images\llm\gemma.png" />
+        <Resource Include="Resources\Images\llm\gemma.png" />
+        <None Remove="Resources\Images\llm\githubcopilot-dark.png" />
+        <Resource Include="Resources\Images\llm\githubcopilot-dark.png" />
+        <None Remove="Resources\Images\llm\githubcopilot-light.png" />
+        <Resource Include="Resources\Images\llm\githubcopilot-light.png" />
+        <None Remove="Resources\Images\llm\google.png" />
+        <Resource Include="Resources\Images\llm\google.png" />
+        <None Remove="Resources\Images\llm\googlecloud.png" />
+        <Resource Include="Resources\Images\llm\googlecloud.png" />
+        <None Remove="Resources\Images\llm\huaweicloud.png" />
+        <Resource Include="Resources\Images\llm\huaweicloud.png" />
+        <None Remove="Resources\Images\llm\huggingface.png" />
+        <Resource Include="Resources\Images\llm\huggingface.png" />
+        <None Remove="Resources\Images\llm\kling.png" />
+        <Resource Include="Resources\Images\llm\kling.png" />
+        <None Remove="Resources\Images\llm\longcat-dark.png" />
+        <Resource Include="Resources\Images\llm\longcat-dark.png" />
+        <None Remove="Resources\Images\llm\longcat-light.png" />
+        <Resource Include="Resources\Images\llm\longcat-light.png" />
+        <None Remove="Resources\Images\llm\minimax.png" />
+        <Resource Include="Resources\Images\llm\minimax.png" />
+        <None Remove="Resources\Images\llm\openrouter-dark.png" />
+        <Resource Include="Resources\Images\llm\openrouter-dark.png" />
+        <None Remove="Resources\Images\llm\openrouter-light.png" />
+        <Resource Include="Resources\Images\llm\openrouter-light.png" />
+        <None Remove="Resources\Images\llm\perplexity.png" />
+        <Resource Include="Resources\Images\llm\perplexity.png" />
     </ItemGroup>
 
 </Project>

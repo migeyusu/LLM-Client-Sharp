@@ -22,18 +22,17 @@ public class NvidiaResearchClient : ResearchClient
 
     private readonly GlobalOptions _options;
 
-    private UrlFetcherPlugin _urlFetcherPlugin;
+    private readonly UrlFetcherPlugin _urlFetcherPlugin = new();
 
     private ITextSearch? SearchService
     {
         get { return _options.GetTextSearch(); }
     }
 
-    public NvidiaResearchClient(GlobalOptions options,
-        UrlFetcherPlugin urlFetcherPlugin)
+    public NvidiaResearchClient(IParameterizedLLMModel promptModel, IParameterizedLLMModel reportModel,
+        GlobalOptions options)
     {
         _options = options;
-        _urlFetcherPlugin = urlFetcherPlugin;
     }
 
     [Experimental("SKEXP0110")]

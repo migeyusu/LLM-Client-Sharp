@@ -22,7 +22,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Project;
 
-public class ProjectViewModel : FileBasedSessionBase, ILLMSessionFactory<ProjectViewModel>
+public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectViewModel>
 {
     public const string SaveDir = "Projects";
 

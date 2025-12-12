@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
@@ -24,7 +25,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
 
     public string Name => Option.Name;
 
-    public ImageSource Icon => Option.Icon;
+    public ThemedIcon Icon => Option.Icon;
 
     private int _selectedModelIndex = -1;
 
@@ -158,18 +159,14 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
         {
             OnPropertyChanged(nameof(DisplayName));
         }
-        else if (e.PropertyName == nameof(Option.Icon))
-        {
-            OnPropertyChanged(nameof(Icon));
-        }
     }
 
-    public IReadOnlyCollection<ILLMChatModel> AvailableModels
+    public IReadOnlyCollection<ILLMModel> AvailableModels
     {
         get { return this.Option.Models; }
     }
 
-    public ILLMChatClient? NewChatClient(ILLMChatModel model)
+    public ILLMChatClient? NewChatClient(ILLMModel model)
     {
         if (model is APIModelInfo apiModelInfo)
         {
@@ -179,7 +176,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
         return null;
     }
 
-    public ILLMChatModel? GetModel(string modelName)
+    public ILLMModel? GetModel(string modelName)
     {
         return Option.Models.FirstOrDefault(x => x.Name == modelName);
     }
@@ -191,7 +188,6 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
             model.Endpoint = this;
         }
 
-        Option.UpdateIcon();
         return Task.CompletedTask;
         /*var path = Path.GetFullPath(Path.Combine("EndPoints", "Compatible", "Models", "models.json"));
 

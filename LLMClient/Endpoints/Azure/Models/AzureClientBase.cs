@@ -35,7 +35,7 @@ public class AzureClientBase : LlmClientBase, ILLMChatClient
     protected readonly AzureOption Option;
 
     [JsonIgnore]
-    public override ILLMChatModel Model
+    public override ILLMModel Model
     {
         get { return ModelInfo; }
     }

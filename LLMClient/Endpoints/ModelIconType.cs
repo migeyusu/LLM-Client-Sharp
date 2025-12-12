@@ -22,7 +22,22 @@ public enum ModelIconType : int
     Qingyan,
     Wenxin,
     [DarkMode] Yi,
-    Zhipu
+    Zhipu,
+    MiniMax,
+    [DarkMode] LongCat,
+    Gemma,
+    Google,
+    Perplexity,
+    [DarkMode]OpenRouter,
+    [DarkMode]GithubCopilot,
+    Kling,
+    Bedrock,
+    HuggingFace,
+    Azure,
+    Bailian,
+    GoogleCloud,
+    HuaweiCloud,
+    AlibabaCloud,
 }
 
 public class DarkModeAttribute : Attribute

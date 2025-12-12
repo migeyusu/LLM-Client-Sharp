@@ -28,7 +28,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 {
     public ThemedIcon Icon
     {
-        get { return Model?.Icon ?? ImageExtensions.APIIcon; }
+        get { return Model?.Icon ?? ImageExtensions.APIThemedIcon; }
     }
 
     public string EndPointName
@@ -41,7 +41,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         get { return Model?.Name ?? string.Empty; }
     }
 
-    public ILLMChatModel? Model
+    public ILLMModel? Model
     {
         get { return Client?.Model; }
     }

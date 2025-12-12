@@ -10,6 +10,7 @@ using System.Text.Json.Serialization.Metadata;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
@@ -112,13 +113,13 @@ public static class Extension
             expression.CreateMap<IModelParams, IModelParams>();
             expression.CreateMap<IModelParams, DefaultModelParam>();
             expression.CreateMap<DefaultModelParam, DefaultModelParam>();
-            expression.CreateMap<IModelParams, ILLMChatModel>();
-            expression.CreateMap<ILLMChatModel, IModelParams>();
+            expression.CreateMap<IModelParams, ILLMModel>();
+            expression.CreateMap<ILLMModel, IModelParams>();
             expression.CreateMap<IModelParams, APIModelInfo>();
             expression.CreateMap<APIDefaultOption, APIDefaultOption>();
-            expression.CreateMap<ILLMChatClient, LLMClientPersistModel>()
+            expression.CreateMap<ILLMChatClient, ParameterizedLLMModelPO>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<LLMClientPersistModel, ILLMChatClient>()
+            expression.CreateMap<ParameterizedLLMModelPO, ILLMChatClient>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
             expression.CreateMap<DialogFilePersistModel, DialogFileViewModel>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
@@ -138,7 +139,7 @@ public static class Extension
                     var client = source.Client;
                     if (client != null)
                     {
-                        llmClient = context.Mapper.Map<LLMClientPersistModel, ILLMChatClient>(client);
+                        llmClient = context.Mapper.Map<ParameterizedLLMModelPO, ILLMChatClient>(client);
                     }
 
                     return new ResponseViewItem(llmClient);
@@ -369,7 +370,20 @@ public static class Extension
 
     #endregion
 
-    public static ILLMChatClient? CreateChatClient(this ILLMChatModel llmModel)
+    public static ILLMChatClient? CreateChatClient(this IParameterizedLLMModel parameterizedLlmModel,
+        IMapper mapper)
+    {
+        var client = parameterizedLlmModel.Model.CreateChatClient();
+        if (client == null)
+        {
+            return null;
+        }
+
+        mapper.Map(parameterizedLlmModel.Parameters, client.Parameters);
+        return client;
+    }
+
+    public static ILLMChatClient? CreateChatClient(this ILLMModel llmModel)
     {
         var endpoint = llmModel.Endpoint;
         if (!endpoint.IsEnabled)

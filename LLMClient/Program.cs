@@ -4,6 +4,7 @@ using System.Windows;
 using CefSharp;
 using CefSharp.Wpf;
 using LLMClient.Abstraction;
+using LLMClient.Component;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
@@ -59,9 +60,10 @@ public class Program
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
                 .AddSingleton<IRagSourceCollection, RagSourceCollection>()
-                .AddSingleton<IResearchModelService, ResearchModelService>()
+                .AddTransient<NvidiaResearchClientOption>()
                 .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
                 .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()
+                .AddSingleton<CreateSessionViewModel>()
                 .AddMap();
 #if DEBUG
             var resourceBuilder = ResourceBuilder
@@ -133,12 +135,12 @@ public class Program
             {
                 if (mainWindow?.DataContext is MainWindowViewModel { IsInitialized: true } mainWindowViewModel)
                 {
-                    mainWindowViewModel.SaveSessions().Wait(TimeSpan.FromSeconds(30));
+                    mainWindowViewModel.SaveData().Wait(TimeSpan.FromSeconds(30));
                 }
             }
             catch (Exception exception)
             {
-                logger?.LogError(exception, "保存会话数据失败");
+                logger?.LogError(exception, "保存数据失败");
             }
         }
         finally

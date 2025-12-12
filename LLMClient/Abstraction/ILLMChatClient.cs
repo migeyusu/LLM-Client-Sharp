@@ -8,7 +8,7 @@ public interface IChatEndpoint
     /// 唯一名称
     /// </summary>
     string Name { get; }
-    
+
     bool IsResponding { get; set; }
 
     Task<CompletedResult> SendRequest(DialogContext context,
@@ -16,11 +16,14 @@ public interface IChatEndpoint
         CancellationToken cancellationToken = default);
 }
 
-public interface ILLMChatClient : IChatEndpoint
+public interface IParameterizedLLMModel
 {
-    ILLMAPIEndpoint Endpoint { get; }
-
-    ILLMChatModel Model { get; }
+    ILLMModel Model { get; }
 
     IModelParams Parameters { get; set; }
+}
+
+public interface ILLMChatClient : IParameterizedLLMModel, IChatEndpoint
+{
+    ILLMAPIEndpoint Endpoint { get; }
 }

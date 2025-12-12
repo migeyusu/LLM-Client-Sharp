@@ -13,7 +13,7 @@ public class DialogFilePersistModel : DialogSessionPersistModel
     
     public string Topic { get; set; } = string.Empty;
 
-    public LLMClientPersistModel? Client { get; set; }
+    public ParameterizedLLMModelPO? Client { get; set; }
     
     public string? PromptString { get; set; }
 }

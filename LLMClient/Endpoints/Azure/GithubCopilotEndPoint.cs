@@ -6,6 +6,8 @@ using System.Text.Json.Nodes;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
+using LLMClient.Data;
 using LLMClient.Endpoints.Azure.Models;
 
 namespace LLMClient.Endpoints.Azure;
@@ -21,26 +23,19 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
     /// <summary>
     /// key: model-id
     /// </summary>
-    private readonly Dictionary<string, AzureModelInfo> _loadedModelInfos = new Dictionary<string, AzureModelInfo>();
+    private readonly Dictionary<string, AzureModelInfo> _loadedModelInfos = new();
 
     public override bool IsInbuilt => true;
     public override string Name { get; } = GithubCopilotName;
 
-    private static readonly Lazy<ImageSource> Source = new Lazy<ImageSource>((() =>
-    {
-        var bitmapImage = new BitmapImage(new Uri(
-            @"pack://application:,,,/LLMClient;component/Resources/Images/github-copilot-icon.png",
-            UriKind.Absolute));
-        bitmapImage.Freeze();
-        return bitmapImage;
-    }));
+    private static readonly Lazy<ThemedIcon> Source = new(() => { return ModelIconType.GithubCopilot.GetIcon(); });
 
-    public override ImageSource Icon
+    public override ThemedIcon Icon
     {
         get { return Source.Value; }
     }
 
-    public override IReadOnlyCollection<ILLMChatModel> AvailableModels
+    public override IReadOnlyCollection<ILLMModel> AvailableModels
     {
         get
         {
@@ -159,7 +154,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         };
     }
 
-    public override ILLMChatClient? NewChatClient(ILLMChatModel model)
+    public override ILLMChatClient? NewChatClient(ILLMModel model)
     {
         if (model is AzureModelInfo azureModelInfo)
         {
@@ -174,7 +169,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         return null;
     }
 
-    public override ILLMChatModel? GetModel(string modelName)
+    public override ILLMModel? GetModel(string modelName)
     {
         return _loadedModelInfos.GetValueOrDefault(modelName);
     }

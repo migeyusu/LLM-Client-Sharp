@@ -28,7 +28,7 @@
             <HierarchicalDataTemplate DataType="{x:Type abstraction:ILLMAPIEndpoint}"
                                       ItemsSource="{Binding AvailableModels,Mode=OneWay}">
                 <StackPanel Orientation="Horizontal">
-                    <Image Source="{Binding Icon,Mode=OneWay}"
+                    <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
                            Width="26"
                            Height="26" />
                     <TextBlock Margin="10,0"
@@ -38,7 +38,7 @@
             </HierarchicalDataTemplate>
         </component:DataTemplateTypePair>
         <component:DataTemplateTypePair>
-            <DataTemplate DataType="{x:Type abstraction:ILLMChatModel}">
+            <DataTemplate DataType="{x:Type abstraction:ILLMModel}">
                 <StackPanel Orientation="Horizontal">
                     <Image Width="23"
                            Height="23"

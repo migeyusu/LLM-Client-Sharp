@@ -10,12 +10,12 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Component.ViewModel;
 
-public abstract class BaseModelSelectionViewModel : BaseViewModel, ILLMChatClient
+public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterizedLLMModel
 {
-    private ILLMChatModel? _selectedModel;
+    private ILLMModel? _selectedModel;
     private bool _showModelParams;
 
-    public ILLMChatModel? SelectedModel
+    public ILLMModel? SelectedModel
     {
         get => _selectedModel;
         set
@@ -73,28 +73,19 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, ILLMChatClien
             throw new Exception("Please select model.");
         }
 
-        var chatClient = this.SelectedModel.CreateChatClient();
+        var chatClient = this.CreateChatClient(Mapper);
         if (chatClient == null)
         {
             throw new Exception("Create chat client failed.");
         }
 
-        Mapper.Map(Parameters, chatClient.Parameters);
         ServiceLocator.GetService<IEndpointService>()?.AddModelFrequency(this.SelectedModel);
         return chatClient;
     }
 
     protected abstract void SubmitClient(ILLMChatClient client);
+    
     public string Name { get; } = "Fake Client";
-    public ILLMAPIEndpoint Endpoint { get; } = EmptyLLMEndpoint.Instance;
 
-    public ILLMChatModel Model => SelectedModel ?? EmptyLLMChatModel.Instance;
-
-    public bool IsResponding { get; set; } = false;
-
-    public Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
-        CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException();
-    }
+    public ILLMModel Model => SelectedModel ?? EmptyLLMChatModel.Instance;
 }

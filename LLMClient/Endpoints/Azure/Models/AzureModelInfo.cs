@@ -12,7 +12,7 @@ namespace LLMClient.Endpoints.Azure.Models;
 
 //https://github.com/models/available
 
-public class AzureModelInfo : ILLMChatModel
+public class AzureModelInfo : ILLMModel
 {
     [JsonIgnore] public bool IsEnabled { get; set; }
 
@@ -63,7 +63,7 @@ public class AzureModelInfo : ILLMChatModel
                             lightModeIconBrush = requestUri.GetImageSourceAsync().Result;
                         }
 
-                        return lightModeIconBrush ?? ImageExtensions.APIIcon.CurrentSource;
+                        return lightModeIconBrush ?? ImageExtensions.APIThemedIcon.CurrentSource;
                     }));
                 }),
                 string.IsNullOrEmpty(DarkModeIconString)

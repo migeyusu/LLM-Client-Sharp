@@ -29,9 +29,23 @@ public static class ImageExtensions
         return ToImageSource(PackIconKind.Web);
     });
 
-    public static ThemedIcon APIIcon => APIIconImageLazy.Value;
+    private static readonly Lazy<ThemedIcon> EndpointThemedIconLazy = new Lazy<ThemedIcon>(() =>
+    {
+        return new LocalThemedIcon(EndpointIcon);
+    });
 
-    private static readonly Lazy<ThemedIcon> APIIconImageLazy = new Lazy<ThemedIcon>(() =>
+    public static ThemedIcon EndpointThemedIcon => EndpointThemedIconLazy.Value;
+
+    public static ImageSource APIIconImage => APIIconImageLazy.Value;
+
+    private static readonly Lazy<ImageSource> APIIconImageLazy = new Lazy<ImageSource>(() =>
+    {
+        return ToImageSource(PackIconKind.Api);
+    });
+
+    public static ThemedIcon APIThemedIcon => APIThemedIconImageLazy.Value;
+
+    private static readonly Lazy<ThemedIcon> APIThemedIconImageLazy = new Lazy<ThemedIcon>(() =>
     {
         return new LocalThemedIcon(ToImageSource(PackIconKind.Api));
     });
@@ -54,10 +68,10 @@ public static class ImageExtensions
         });
     }
 
-    public static ThemedIcon GetIcon(ModelIconType iconType)
+    public static ThemedIcon GetIcon(this ModelIconType iconType)
     {
         if (iconType == ModelIconType.None)
-            return ImageExtensions.APIIcon;
+            return ImageExtensions.APIThemedIcon;
         //获取icontype的Attribute
         var darkModeAttribute =
             typeof(ModelIconType).GetField(iconType.ToString())?.GetCustomAttribute<DarkModeAttribute>();
@@ -79,8 +93,13 @@ public static class ImageExtensions
                 , UriKind.Absolute);
         }
 
-        return new AsyncThemedIcon(async () => await GetImageSourceAsync(lightUri) ?? APIIcon.CurrentSource,
-            darkUri != null ? (async () => (await GetImageSourceAsync(darkUri)) ?? APIIcon.CurrentSource) : null);
+        return new AsyncThemedIcon(async () => await GetImageSourceAsync(lightUri) ?? APIThemedIcon.CurrentSource,
+            darkUri != null ? (async () => (await GetImageSourceAsync(darkUri)) ?? APIThemedIcon.CurrentSource) : null);
+    }
+
+    public static LocalThemedIcon GetThemedIcon(this PackIconKind kind)
+    {
+        return LocalThemedIcon.FromPackIcon(kind);
     }
 
     private static readonly Lazy<string[]> LocalSupportedImageExtensionsLazy = new Lazy<string[]>(() =>
@@ -364,8 +383,7 @@ public static class ImageExtensions
         var base64 = Convert.ToBase64String(buffer);
         return $"{Base64ImagePrefix}{extension.ToLower()};base64,{base64}";
     }
-    
-    
+
 
     /// <summary>
     /// 从字符串生成一个包含指定文本的 ImageSource。

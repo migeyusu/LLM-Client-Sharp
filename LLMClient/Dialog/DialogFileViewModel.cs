@@ -10,7 +10,7 @@ using LLMClient.Data;
 
 namespace LLMClient.Dialog;
 
-public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionFactory<DialogFileViewModel>
+public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<DialogFileViewModel>
 {
     public DialogViewModel Dialog { get; }
 

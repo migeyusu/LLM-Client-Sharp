@@ -102,7 +102,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     }
 
     public static async Task<IEnumerable<T>> LoadFromLocal<T>(IMapper mapper, string folderPath)
-        where T : class, ILLMSession, ILLMSessionFactory<T>
+        where T : class, ILLMSession, ILLMSessionLoader<T>
     {
         var directoryInfo = new DirectoryInfo(folderPath);
         if (!directoryInfo.Exists)
@@ -124,7 +124,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
 
     public static async IAsyncEnumerable<T> ImportFiles<T>(string targetFolderPath,
         IEnumerable<FileInfo> fileInfos, IMapper mapper)
-        where T : class, ILLMSessionFactory<T>, ILLMSession
+        where T : class, ILLMSessionLoader<T>, ILLMSession
     {
         var targetDirectoryInfo = new DirectoryInfo(targetFolderPath);
         if (!targetDirectoryInfo.Exists)

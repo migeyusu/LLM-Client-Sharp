@@ -6,7 +6,7 @@ namespace LLMClient.Data;
 
 public class ResponsePersistItem
 {
-    public LLMClientPersistModel? Client { get; set; }
+    public ParameterizedLLMModelPO? Client { get; set; }
 
     public bool IsInterrupt { get; set; }
 

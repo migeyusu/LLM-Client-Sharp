@@ -10,7 +10,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
-public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
+public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
 {
     public string Id
     {
@@ -74,7 +74,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMChatModel
                 }
             }
 
-            return _icon ?? ImageExtensions.APIIcon;
+            return _icon ?? ImageExtensions.APIThemedIcon;
         }
         private set
         {

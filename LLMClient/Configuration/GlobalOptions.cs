@@ -88,7 +88,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         }
 
         return Mapper?
-            .Map<LLMClientPersistModel, ILLMChatClient>(ContextSummarizeClientPersist, (options => { }));
+            .Map<ParameterizedLLMModelPO, ILLMChatClient>(ContextSummarizeClientPersist, (options => { }));
     }
 
     public void ApplyContextSummarizeClient(ILLMChatClient? value)
@@ -100,13 +100,13 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         }
 
         ContextSummarizeClientPersist = Mapper?
-            .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
+            .Map<ILLMChatClient, ParameterizedLLMModelPO>(value, (options => { }));
     }
 
-    private LLMClientPersistModel? _summarizeModelPersistModel;
+    private ParameterizedLLMModelPO? _summarizeModelPersistModel;
 
     [JsonPropertyName("SummarizeModelPersistModel")]
-    public LLMClientPersistModel? ContextSummarizeClientPersist
+    public ParameterizedLLMModelPO? ContextSummarizeClientPersist
     {
         get => _summarizeModelPersistModel;
         set
@@ -150,7 +150,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         }
 
         return Mapper?
-            .Map<LLMClientPersistModel, ILLMChatClient>(SubjectSummarizeClientPersist, (options => { }));
+            .Map<ParameterizedLLMModelPO, ILLMChatClient>(SubjectSummarizeClientPersist, (options => { }));
     }
 
     public void ApplySubjectSummarizeClient(ILLMChatClient? value)
@@ -162,13 +162,13 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         }
 
         SubjectSummarizeClientPersist = Mapper?
-            .Map<ILLMChatClient, LLMClientPersistModel>(value, (options => { }));
+            .Map<ILLMChatClient, ParameterizedLLMModelPO>(value, (options => { }));
     }
 
-    private LLMClientPersistModel? _subjectSummarizeClientPersist;
+    private ParameterizedLLMModelPO? _subjectSummarizeClientPersist;
 
     [JsonPropertyName("SubjectSummarizeClient")]
-    public LLMClientPersistModel? SubjectSummarizeClientPersist
+    public ParameterizedLLMModelPO? SubjectSummarizeClientPersist
     {
         get => _subjectSummarizeClientPersist;
         set

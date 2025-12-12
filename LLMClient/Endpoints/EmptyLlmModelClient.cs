@@ -20,7 +20,7 @@ public class EmptyLlmModelClient : ILLMChatClient
         }
     }
 
-    public ILLMChatModel Model
+    public ILLMModel Model
     {
         get
         {

@@ -3,7 +3,7 @@ using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Endpoints;
 
-public class EmptyLLMChatModel : ILLMChatModel
+public class EmptyLLMChatModel : ILLMModel
 {
     public static EmptyLLMChatModel Instance { get; } = new EmptyLLMChatModel();
 

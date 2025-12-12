@@ -58,9 +58,9 @@ public class RagOption : BaseViewModel
         }
     }
 
-    private LLMClientPersistModel? _digestClientPersist;
+    private ParameterizedLLMModelPO? _digestClientPersist;
 
-    public LLMClientPersistModel? DigestClientPersist
+    public ParameterizedLLMModelPO? DigestClientPersist
     {
         get => _digestClientPersist;
         set
@@ -82,7 +82,7 @@ public class RagOption : BaseViewModel
             }
 
             return ServiceLocator.GetService<IMapper>()?
-                .Map<LLMClientPersistModel, ILLMChatClient>(this.DigestClientPersist, (_) => { });
+                .Map<ParameterizedLLMModelPO, ILLMChatClient>(this.DigestClientPersist, (_) => { });
         }
         private set
         {
@@ -93,7 +93,7 @@ public class RagOption : BaseViewModel
             }
 
             this.DigestClientPersist = ServiceLocator.GetService<IMapper>()?
-                .Map<ILLMChatClient, LLMClientPersistModel>(value, (_ => { }));
+                .Map<ILLMChatClient, ParameterizedLLMModelPO>(value, (_ => { }));
         }
     }
 

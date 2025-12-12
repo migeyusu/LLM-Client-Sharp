@@ -20,6 +20,7 @@ using LLMClient.Endpoints;
 using LLMClient.Project;
 using LLMClient.Test;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 using PInvoke;
@@ -76,7 +77,7 @@ public class MainWindowViewModel : BaseViewModel
             }
 
             _isDarkTheme = value;
-            OnPropertyChanged();
+            OnPropertyChangedAsync();
             ModifyTheme(theme => theme.SetBaseTheme(value ? BaseTheme.Dark : BaseTheme.Light));
             UITheme.IsDarkMode = value;
             this.ThemeName = value ? ThemeName.DarkPlus : ThemeName.LightPlus;
@@ -161,7 +162,12 @@ public class MainWindowViewModel : BaseViewModel
         }
     }));
 
-    public CreateSessionViewModel CreateSession { get; }
+    public CreateSessionViewModel CreateSession
+    {
+        get { return _createSessionLazy.Value; }
+    }
+
+    private readonly Lazy<CreateSessionViewModel> _createSessionLazy;
 
     public IMapper Mapper => _mapper;
 
@@ -249,7 +255,7 @@ public class MainWindowViewModel : BaseViewModel
 
     public MainWindowViewModel(IEndpointService configureViewModel, IPromptsResource promptsResource,
         IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection, IMapper mapper,
-        GlobalOptions globalOptions)
+        GlobalOptions globalOptions, IServiceProvider serviceProvider)
     {
         MessageEventBus.MessageReceived += s => MessageQueue.Enqueue(s);
         PromptsResource = promptsResource;
@@ -260,7 +266,15 @@ public class MainWindowViewModel : BaseViewModel
         EndpointsViewModel = configureViewModel;
         _uiSettings = new UISettings();
         IsDarkTheme = !IsColorLight(_uiSettings.GetColorValue(UIColorType.Background));
-        CreateSession = new CreateSessionViewModel(this);
+        _createSessionLazy =
+            new Lazy<CreateSessionViewModel>((() => serviceProvider.GetService<CreateSessionViewModel>()!));
+        /*SystemEvents.UserPreferenceChanged += (_, e) =>
+        {
+            if (e.Category == UserPreferenceCategory.Color)
+            {
+
+            }
+        };*/
         /*if (theme is Theme internalTheme)
         {
             _isColorAdjusted = internalTheme.ColorAdjustment is not null;
@@ -417,11 +431,12 @@ public class MainWindowViewModel : BaseViewModel
         session.Delete();
     }
 
-    public async Task SaveSessions()
+    public async Task SaveData()
     {
-        this.LoadingMessage = "Saving sessions...";
+        this.LoadingMessage = "Saving data...";
         this.IsInitializing = true;
         await this.SaveSessionsToLocal();
+        await this.EndpointsViewModel.SaveHistory();
         await HttpContentCache.Instance.PersistIndexAsync();
     }
 
@@ -436,6 +451,7 @@ public class MainWindowViewModel : BaseViewModel
             {
                 return;
             }
+
             IsInitializing = true;
             await TextMateCodeRenderer.InitializeAsync();
             await McpServiceCollection.LoadAsync();
@@ -468,7 +484,7 @@ public class MainWindowViewModel : BaseViewModel
     private static void ModifyTheme(Action<Theme> modificationAction)
     {
         var paletteHelper = new PaletteHelper();
-        Theme theme = paletteHelper.GetTheme();
+        var theme = paletteHelper.GetTheme();
         modificationAction.Invoke(theme);
         paletteHelper.SetTheme(theme);
     }

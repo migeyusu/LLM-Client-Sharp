@@ -9,6 +9,7 @@ using LLMClient.Configuration;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Project;
+using LLMClient.Research;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Component;
@@ -28,7 +29,7 @@ public partial class CreateSessionView
     private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
         var newValue = e.NewValue;
-        if (newValue is ILLMChatModel modelInfo)
+        if (newValue is ILLMModel modelInfo)
         {
             ViewModel.ModelSelection.SelectedModel = modelInfo;
         }
@@ -42,6 +43,7 @@ public class CreateSessionViewModel : BaseViewModel
     private string _dialogTitle = "新建会话";
     private bool _modelSelectionEnable = true;
     private ProjectViewModel _project;
+    private IResearchCreationOption? _selectedCreationOption;
 
     public int SelectedIndex
     {
@@ -107,6 +109,14 @@ public class CreateSessionViewModel : BaseViewModel
                     Project = _mainWindowViewModel.NewProjectViewModel();
                     break;
                 case 2:
+                    var researchClient = SelectedCreationOption?.CreateResearchClient();
+                    if (researchClient == null)
+                    {
+                        return;
+                    }
+
+                    session = new ResearchSession(researchClient);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -120,9 +130,27 @@ public class CreateSessionViewModel : BaseViewModel
         }
     });
 
-    public CreateSessionViewModel(MainWindowViewModel mainWindowViewModel)
+    public IReadOnlyList<IResearchCreationOption> ResearchCreationOptions { get; set; }
+
+    public IResearchCreationOption? SelectedCreationOption
+    {
+        get => _selectedCreationOption;
+        set
+        {
+            if (Equals(value, _selectedCreationOption)) return;
+            _selectedCreationOption = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public CreateSessionViewModel(MainWindowViewModel mainWindowViewModel,
+        NvidiaResearchClientOption nvidiaResearchClientOption)
     {
         _mainWindowViewModel = mainWindowViewModel;
-        Project = mainWindowViewModel.NewProjectViewModel();
+        _project = mainWindowViewModel.NewProjectViewModel();
+        ResearchCreationOptions = new List<IResearchCreationOption>
+        {
+            nvidiaResearchClientOption
+        };
     }
 }

@@ -1,6 +1,8 @@
 ﻿using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 using System.Windows.Input;
 using System.Windows.Media;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
@@ -41,10 +43,16 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         set
         {
             if (value == _iconUrl) return;
-            ClearError();
             _iconUrl = value;
             OnPropertyChanged();
-            UpdateIcon();
+            if (!string.IsNullOrEmpty(value) && Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri))
+            {
+                this.Icon.LightModeUri = uri;
+            }
+            else
+            {
+                this.Icon.LightModeUri = null;
+            }
         }
     }
 
@@ -73,8 +81,8 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
             OnPropertyChanged();
         }
     }
-    
-    public APIDefaultOption ConfigOption { get; set; } = new APIDefaultOption();
+
+    public APIDefaultOption ConfigOption { get; set; } = new();
 
     private ModelMapping? ModelMapping => ModelMapping.Create(this.ModelsSource);
 
@@ -88,7 +96,7 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
 
         if (await modelMapping.Refresh())
         {
-            foreach (var apiModelInfo in this.Models)
+            foreach (var apiModelInfo in Models)
             {
                 apiModelInfo.IsNotMatchFromSource = !modelMapping.MapInfo(apiModelInfo);
             }
@@ -97,7 +105,7 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         MessageEventBus.Publish("已刷新模型列表");
     }));
 
-    private ObservableCollection<APIModelInfo> _models = new ObservableCollection<APIModelInfo>();
+    private ObservableCollection<APIModelInfo> _models = [];
 
     public ObservableCollection<APIModelInfo> Models
     {
@@ -110,19 +118,7 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         }
     }
 
-    private ImageSource? _icon = null;
-
-
-    public virtual ImageSource Icon
-    {
-        get { return _icon ?? ImageExtensions.EndpointIcon; }
-        private set
-        {
-            if (Equals(value, _icon)) return;
-            _icon = value;
-            OnPropertyChangedAsync();
-        }
-    }
+    [JsonIgnore] public virtual UriThemedIcon Icon { get; } = new(null, ImageExtensions.APIIconImage);
 
     /// <summary>
     /// 验证
@@ -151,18 +147,5 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
 
         errorMessage = string.Empty;
         return true;
-    }
-
-    public async void UpdateIcon()
-    {
-        if (!string.IsNullOrEmpty(IconUrl) && Uri.TryCreate(this.IconUrl, UriKind.RelativeOrAbsolute, out var uri))
-        {
-            this._icon = await uri.GetImageSourceAsync();
-            OnPropertyChangedAsync(nameof(Icon));
-        }
-        else
-        {
-            this._icon = null;
-        }
     }
 }

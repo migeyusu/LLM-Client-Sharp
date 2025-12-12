@@ -18,7 +18,7 @@ public class ProjectPersistModel
 
     #region requester
 
-    public LLMClientPersistModel? Client { get; set; }
+    public ParameterizedLLMModelPO? Client { get; set; }
 
     public string? UserPrompt { get; set; }
 

@@ -5,9 +5,9 @@ namespace LLMClient.Agent;
 
 public class AgentOption: BaseViewModel
 {
-    private LLMClientPersistModel? _searchClient;
+    private ParameterizedLLMModelPO? _searchClient;
 
-    public LLMClientPersistModel? SearchClient
+    public ParameterizedLLMModelPO? SearchClient
     {
         get => _searchClient;
         set

@@ -1,11 +1,12 @@
 ﻿using System.Windows.Media;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Endpoints;
 
 public class StubEndPoint : ILLMAPIEndpoint
 {
-    public StubEndPoint(IReadOnlyCollection<ILLMChatModel> availableModels)
+    public StubEndPoint(IReadOnlyCollection<ILLMModel> availableModels)
     {
         AvailableModels = availableModels;
     }
@@ -14,16 +15,16 @@ public class StubEndPoint : ILLMAPIEndpoint
     public bool IsInbuilt { get; } = true;
     public bool IsEnabled { get; } = true;
     public required string Name { get; set; }
-    public required ImageSource Icon { get; set; }
+    public required ThemedIcon Icon { get; set; }
 
-    public IReadOnlyCollection<ILLMChatModel> AvailableModels { get; }
+    public IReadOnlyCollection<ILLMModel> AvailableModels { get; }
 
-    public ILLMChatClient? NewChatClient(ILLMChatModel model)
+    public ILLMChatClient? NewChatClient(ILLMModel model)
     {
         return model.CreateChatClient();
     }
 
-    public ILLMChatModel? GetModel(string modelName)
+    public ILLMModel? GetModel(string modelName)
     {
         return AvailableModels.FirstOrDefault(model => model.Name == modelName);
     }

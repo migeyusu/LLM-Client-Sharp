@@ -52,6 +52,10 @@
                                                    x:Name="MainDialogHost"
                                                    DialogTheme="Inherit">
                             <materialDesign:DialogHost.Resources>
+                                <DataTemplate DataType="{x:Type dialog:ModelSelectionPopupViewModel}">
+                                    <dialog:ModelSelectionView Width="800"
+                                                               Height="600" />
+                                </DataTemplate>
                                 <DataTemplate DataType="{x:Type component:CreateSessionViewModel}">
                                     <HeaderedContentControl Header="创建新会话"
                                                             Style="{StaticResource DialogContentControlStyle}">
@@ -678,7 +682,7 @@
                         <ItemsControl ItemsSource="{Binding  EndpointsViewModel.SuggestedModels,Mode=OneWay}"
                                       Margin="10">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type abstraction:ILLMChatModel}">
+                                <DataTemplate DataType="{x:Type abstraction:ILLMModel}">
                                     <StackPanel Orientation="Horizontal">
                                         <Button Command="Select"
                                                 CommandParameter="{Binding}"

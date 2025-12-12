@@ -1,7 +1,9 @@
 ﻿using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Data;
 
 namespace LLMClient.Endpoints.Azure;
 
@@ -26,30 +28,23 @@ public abstract class AzureEndPointBase : BaseViewModel, ILLMAPIEndpoint
     }
 
     public abstract bool IsInbuilt { get; }
-    
+
     public bool IsEnabled { get; } = true;
 
     public abstract string Name { get; }
 
-    private static readonly Lazy<ImageSource> Source = new Lazy<ImageSource>((() =>
-    {
-        var bitmapImage = new BitmapImage(new Uri(
-            @"pack://application:,,,/LLMClient;component/Resources/Images/azure-icon.png"
-            , UriKind.Absolute));
-        bitmapImage.Freeze();
-        return bitmapImage;
-    }));
+    private static readonly Lazy<ThemedIcon> Source = new((() => { return ModelIconType.Azure.GetIcon(); }));
 
-    public virtual ImageSource Icon
+    public virtual ThemedIcon Icon
     {
         get { return Source.Value; }
     }
 
-    public abstract IReadOnlyCollection<ILLMChatModel> AvailableModels { get; }
-    
-    public abstract ILLMChatClient? NewChatClient(ILLMChatModel model);
+    public abstract IReadOnlyCollection<ILLMModel> AvailableModels { get; }
 
-    public abstract ILLMChatModel? GetModel(string modelName);
+    public abstract ILLMChatClient? NewChatClient(ILLMModel model);
+
+    public abstract ILLMModel? GetModel(string modelName);
 
     public abstract Task InitializeAsync();
 }

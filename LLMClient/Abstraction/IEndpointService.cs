@@ -12,11 +12,11 @@ public interface IEndpointService
     /// <summary>
     /// models used in history
     /// </summary>
-    IReadOnlyList<ILLMChatModel> HistoryModels { get; }
+    IReadOnlyList<ILLMModel> HistoryModels { get; }
 
-    IReadOnlyList<ILLMChatModel> SuggestedModels { get; }
+    IReadOnlyList<ILLMModel> SuggestedModels { get; }
     
-    void AddModelFrequency(ILLMChatModel model);
+    void AddModelFrequency(ILLMModel model);
     
     Task Initialize();
 
@@ -24,4 +24,6 @@ public interface IEndpointService
     {
         return AvailableEndpoints.FirstOrDefault((endpoint) => endpoint.Name == name);
     }
+    
+    Task SaveHistory();
 }

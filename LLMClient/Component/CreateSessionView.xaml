@@ -5,9 +5,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:LLMClient.Component"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:research="clr-namespace:LLMClient.Research"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="700"
              d:DataContext="{d:DesignInstance local:CreateSessionViewModel}">
@@ -74,6 +74,38 @@
                         <TextBlock Margin="10,0,0,0">Research</TextBlock>
                     </DockPanel>
                 </TabItem.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <ListBox ItemsSource="{Binding ResearchCreationOptions,Mode=OneTime}"
+                             SelectedItem="{Binding SelectedCreationOption,Mode=TwoWay}"
+                             Style="{StaticResource MaterialDesignChoiceChipPrimaryOutlineListBox}"
+                             MaxHeight="120"
+                             BorderBrush="DarkGray"
+                             BorderThickness="0,0,0,1"
+                             Margin="10">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type research:IResearchCreationOption}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
+                                           Width="20"
+                                           Height="20" />
+                                    <TextBlock Text="{Binding DisplayName,Mode=OneTime}"
+                                               MaxWidth="120"
+                                               Margin="6,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel IsItemsHost="True" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                    </ListBox>
+                </Grid>
             </TabItem>
         </TabControl>
         <Button Grid.Row="1"

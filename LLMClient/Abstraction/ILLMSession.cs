@@ -14,7 +14,7 @@ namespace LLMClient.Abstraction
         void Delete();
     }
 
-    public interface ILLMSessionFactory<T>
+    public interface ILLMSessionLoader<T>
         where T : class, ILLMSession
     {
         static abstract Task<T?> LoadFromFile(FileInfo fileInfo, IMapper mapper);

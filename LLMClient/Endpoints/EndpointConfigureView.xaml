@@ -71,7 +71,7 @@
                         <StackPanel Orientation="Horizontal">
                             <Image Width="20"
                                    Height="20"
-                                   Source="{Binding Icon,Mode=OneWay}" />
+                                   Source="{Binding Icon.CurrentSource,Mode=OneWay}" />
                             <TextBlock Text="{Binding DisplayName,Mode=OneWay}"
                                        MaxWidth="120"
                                        Margin="6,0,0,0"
@@ -95,7 +95,7 @@
                 </ListBox.ItemsPanel>
             </ListBox>
             <Button Grid.Column="2"
-                    Style="{StaticResource CloseButtonStyle}"
+                    Style="{StaticResource PopupCloseButtonStyle}"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
                     Margin="5" />
@@ -163,7 +163,7 @@
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type abstraction:ILLMChatModel}">
+                        <DataTemplate DataType="{x:Type abstraction:ILLMModel}">
                             <materialDesign:Chip IsDeletable="True"
                                                  MaxWidth="180"
                                                  Height="30"

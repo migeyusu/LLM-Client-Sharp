@@ -141,23 +141,23 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     private readonly StubEndPoint _suggestedEndPoint;
 
-    private readonly ObservableCollection<ILLMChatModel> _historyChatModelsOb = [];
+    private readonly ObservableCollection<ILLMModel> _historyChatModelsOb = [];
 
-    private readonly ReadOnlyObservableCollection<ILLMChatModel> _historyChatModels;
+    private readonly ReadOnlyObservableCollection<ILLMModel> _historyChatModels;
 
-    public IReadOnlyList<ILLMChatModel> HistoryModels
+    public IReadOnlyList<ILLMModel> HistoryModels
     {
         get { return _historyChatModels; }
     }
 
-    private readonly ReadOnlyObservableCollection<ILLMChatModel> _suggestedModels;
+    private readonly ReadOnlyObservableCollection<ILLMModel> _suggestedModels;
 
-    public IReadOnlyList<ILLMChatModel> SuggestedModels
+    public IReadOnlyList<ILLMModel> SuggestedModels
     {
         get { return _suggestedModels; }
     }
 
-    public void AddModelFrequency(ILLMChatModel model)
+    public void AddModelFrequency(ILLMModel model)
     {
         var indexOf = _historyChatModelsOb.IndexOf(model);
         if (indexOf >= 0)
@@ -174,14 +174,14 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
     }
 
-    public ObservableCollection<ILLMChatModel> SuggestedModelsOb { get; } =
-        new ObservableCollection<ILLMChatModel>();
+    public ObservableCollection<ILLMModel> SuggestedModelsOb { get; } =
+        new ObservableCollection<ILLMModel>();
 
     public ModelSelectionPopupViewModel PopupSelectViewModel { get; }
 
     public ICommand RemoveSuggestedModelCommand => new ActionCommand((o =>
     {
-        if (o is ILLMChatModel suggestedModel)
+        if (o is ILLMModel suggestedModel)
         {
             this.SuggestedModelsOb.Remove(suggestedModel);
         }
@@ -194,20 +194,20 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         this._loggerFactory = loggerFactory;
         PopupSelectViewModel = new ModelSelectionPopupViewModel(OnModelSelected)
             { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
-        _suggestedModels = new ReadOnlyObservableCollection<ILLMChatModel>(SuggestedModelsOb);
+        _suggestedModels = new ReadOnlyObservableCollection<ILLMModel>(SuggestedModelsOb);
         _availableEndpoints = new ReadOnlyObservableCollection<ILLMAPIEndpoint>(Endpoints);
-        _historyChatModels = new ReadOnlyObservableCollection<ILLMChatModel>(_historyChatModelsOb);
+        _historyChatModels = new ReadOnlyObservableCollection<ILLMModel>(_historyChatModelsOb);
         _historyEndPoint = new StubEndPoint(_historyChatModelsOb)
         {
             DisplayName = "History Models",
             Name = "HistoryEndPoint",
-            Icon = PackIconKind.History.ToImageSource(),
+            Icon = PackIconKind.History.GetThemedIcon(),
         };
         _suggestedEndPoint = new StubEndPoint(SuggestedModelsOb)
         {
             DisplayName = "Suggested Models",
             Name = "SuggestedEndPoint",
-            Icon = PackIconKind.StarOutline.ToImageSource(),
+            Icon = PackIconKind.StarOutline.GetThemedIcon(),
         };
         /*var collection = new CompositeCollection();
         var collectionContainer = new CollectionContainer() { Collection = Endpoints };
@@ -303,6 +303,28 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             }
 
             OnPropertyChangedAsync(nameof(HistoryModels));
+        }
+    }
+
+    public async Task SaveHistory()
+    {
+        // load then change history only
+        var options = Extension.DefaultJsonSerializerOptions;
+        var root = await EndPointsConfig.LoadDoc();
+        var endPointsNode = root.GetOrCreate(EndPointsConfig.EndpointsNodeName);
+        var historyKeyValuePairs = this.HistoryModels.Select((model => new LLMModelPersistModel()
+        {
+            ModelName = model.Name,
+            EndPointName = model.Endpoint.Name,
+        })).ToArray();
+        var historySerializeToNode = JsonSerializer.SerializeToNode(historyKeyValuePairs, options);
+        var newContent = JsonSerializer.Serialize(historySerializeToNode, options);
+        var oldNode = endPointsNode.GetOrCreate(HistoryModelKey);
+        var oldContent = JsonSerializer.Serialize(oldNode, options);
+        if (newContent != oldContent)
+        {
+            endPointsNode[HistoryModelKey] = historySerializeToNode;
+            await EndPointsConfig.SaveDoc(root);
         }
     }
 }

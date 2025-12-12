@@ -79,7 +79,7 @@ public partial class MainWindow : ExtendedWindow
                 _closing = true;
                 try
                 {
-                    await _mainWindowViewModel.SaveSessions();
+                    await _mainWindowViewModel.SaveData();
                 }
                 catch (Exception exception)
                 {
@@ -97,7 +97,7 @@ public partial class MainWindow : ExtendedWindow
 
     private void SnapNewDialog_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is ILLMChatModel suggested)
+        if (e.Parameter is ILLMModel suggested)
         {
             var llmModelClient = suggested.CreateChatClient();
             if (llmModelClient != null)

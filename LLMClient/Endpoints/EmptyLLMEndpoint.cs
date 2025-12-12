@@ -1,5 +1,6 @@
 ﻿using System.Windows.Media;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Data;
 
 namespace LLMClient.Endpoints
@@ -11,16 +12,16 @@ namespace LLMClient.Endpoints
         public bool IsInbuilt => false;
         public bool IsEnabled => true;
         public string Name => "EmptyEndpoint";
-        public ImageSource Icon => ImageExtensions.EndpointIcon;
+        public ThemedIcon Icon => ImageExtensions.EndpointThemedIcon;
 
-        public IReadOnlyCollection<ILLMChatModel> AvailableModels => [];
+        public IReadOnlyCollection<ILLMModel> AvailableModels => [];
 
-        public ILLMChatClient? NewChatClient(ILLMChatModel model)
+        public ILLMChatClient? NewChatClient(ILLMModel model)
         {
             return null;
         }
 
-        public ILLMChatModel? GetModel(string modelName)
+        public ILLMModel? GetModel(string modelName)
         {
             return null;
         }

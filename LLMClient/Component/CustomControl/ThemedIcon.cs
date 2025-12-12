@@ -113,3 +113,63 @@ public class AsyncThemedIcon : ThemedIcon
             darkModeUri != null ? async () => await darkModeUri.GetImageSourceAsync() ?? emptyIcon : null);
     }
 }
+
+public class UriThemedIcon : ThemedIcon
+{
+    private readonly ImageSource _lightModeFallbackValue;
+    private Uri? _lightModeUri;
+    private Uri? _darkModeUri;
+
+    public Uri? LightModeUri
+    {
+        get => _lightModeUri;
+        set
+        {
+            if (_lightModeUri != null && _lightModeUri.Equals(value))
+            {
+                return;
+            }
+
+            _lightModeUri = value;
+            UpdateSource(value, DarkModeUri);
+        }
+    }
+
+    public Uri? DarkModeUri
+    {
+        get => _darkModeUri;
+        set
+        {
+            if (_darkModeUri != null && _darkModeUri.Equals(value))
+            {
+                return;
+            }
+
+            _darkModeUri = value;
+            UpdateSource(LightModeUri, value);
+        }
+    }
+
+    public UriThemedIcon(Uri? lightModeUri, ImageSource lightModeFallbackValue, Uri? darkModeUri = null)
+        : base(lightModeFallbackValue, darkModeUri != null, EmptyIcon)
+    {
+        _lightModeFallbackValue = lightModeFallbackValue;
+        LightModeUri = lightModeUri;
+        UpdateSource(lightModeUri, darkModeUri);
+    }
+
+    private async void UpdateSource(Uri? lightModeUri, Uri? darkModeUri)
+    {
+        if (lightModeUri != null)
+        {
+            this.LightModeSource = await lightModeUri.GetImageSourceAsync() ?? EmptyIcon.CurrentSource;
+        }
+
+        if (darkModeUri != null)
+        {
+            this.DarkModeSource = await darkModeUri.GetImageSourceAsync() ?? EmptyIcon.CurrentSource;
+        }
+
+        OnPropertyChangedAsync(nameof(CurrentSource));
+    }
+}

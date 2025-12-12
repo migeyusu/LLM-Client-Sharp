@@ -504,7 +504,7 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <Style x:Key="CloseButtonStyle"
+    <Style x:Key="PopupCloseButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignIconButton}">
         <Setter Property="Height"
@@ -547,7 +547,7 @@
                                    Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
                                    FontWeight="Black"
                                    VerticalAlignment="Center" />
-                        <Button Style="{StaticResource CloseButtonStyle}"
+                        <Button Style="{StaticResource PopupCloseButtonStyle}"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Top" />
                     </Grid>

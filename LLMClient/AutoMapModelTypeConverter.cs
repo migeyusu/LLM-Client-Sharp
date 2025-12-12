@@ -20,8 +20,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     ITypeConverter<ProjectViewModel, ProjectPersistModel>,
     ITypeConverter<ProjectTaskPersistModel, ProjectTaskViewModel>,
     ITypeConverter<ProjectTaskViewModel, ProjectTaskPersistModel>,
-    ITypeConverter<ILLMChatClient, LLMClientPersistModel>,
-    ITypeConverter<LLMClientPersistModel, ILLMChatClient>,
+    ITypeConverter<ILLMChatClient, ParameterizedLLMModelPO>,
+    ITypeConverter<ParameterizedLLMModelPO, ILLMChatClient>,
     ITypeConverter<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>,
     ITypeConverter<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>
 {
@@ -136,7 +136,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.PromptString = requester.PromptString;
         destination.AllowedFunctions = source.SelectedFunctionGroups
             ?.Select((tree => mapper.Map<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>(tree))).ToArray();
-        destination.Client = mapper.Map<ILLMChatClient, LLMClientPersistModel>(requester.DefaultClient);
+        destination.Client = mapper.Map<ILLMChatClient, ParameterizedLLMModelPO>(requester.DefaultClient);
         return destination;
     }
 
@@ -150,7 +150,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         var mapper = context.Mapper;
         var llmClient = source.Client == null
             ? EmptyLlmModelClient.Instance
-            : mapper.Map<LLMClientPersistModel, ILLMChatClient>(source.Client);
+            : mapper.Map<ParameterizedLLMModelPO, ILLMChatClient>(source.Client);
         if (destination != null)
         {
             destination.Topic = source.Topic;
@@ -206,7 +206,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         var mapper = context.Mapper;
         var defaultClient = source.Client == null
             ? EmptyLlmModelClient.Instance
-            : context.Mapper.Map<LLMClientPersistModel, ILLMChatClient>(source.Client);
+            : context.Mapper.Map<ParameterizedLLMModelPO, ILLMChatClient>(source.Client);
         if (destination != null)
         {
             destination.Requester.DefaultClient = defaultClient;
@@ -264,7 +264,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.AllowedFolderPaths = source.AllowedFolderPaths?.ToArray();
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
-        destination.Client = context.Mapper.Map<ILLMChatClient, LLMClientPersistModel>(source.Requester.DefaultClient);
+        destination.Client = context.Mapper.Map<ILLMChatClient, ParameterizedLLMModelPO>(source.Requester.DefaultClient);
         destination.UserPrompt = source.Requester.PromptString;
         destination.Tasks = projectTaskPersistModels;
         return destination;
@@ -370,17 +370,17 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    public LLMClientPersistModel Convert(ILLMChatClient source, LLMClientPersistModel? destination,
+    public ParameterizedLLMModelPO Convert(ILLMChatClient source, ParameterizedLLMModelPO? destination,
         ResolutionContext context)
     {
-        var key = new ContextCacheKey(source, typeof(LLMClientPersistModel));
+        var key = new ContextCacheKey(source, typeof(ParameterizedLLMModelPO));
         if (context.InstanceCache?.TryGetValue(key,
-                out var cachedValue) == true && cachedValue is LLMClientPersistModel cachedModel)
+                out var cachedValue) == true && cachedValue is ParameterizedLLMModelPO cachedModel)
         {
             return cachedModel;
         }
 
-        destination ??= new LLMClientPersistModel();
+        destination ??= new ParameterizedLLMModelPO();
         destination.EndPointName = source.Endpoint.Name;
         destination.ModelName = source.Model.Name;
         destination.Params = source.Parameters;
@@ -388,7 +388,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    public ILLMChatClient Convert(LLMClientPersistModel source, ILLMChatClient? destination, ResolutionContext context)
+    public ILLMChatClient Convert(ParameterizedLLMModelPO source, ILLMChatClient? destination, ResolutionContext context)
     {
         if (destination != null)
         {

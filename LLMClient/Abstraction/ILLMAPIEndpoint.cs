@@ -1,4 +1,5 @@
 ﻿using System.Windows.Media;
+using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Abstraction;
 
@@ -15,13 +16,13 @@ public interface ILLMAPIEndpoint
     /// </summary>
     string Name { get; }
 
-    ImageSource Icon { get; }
+    ThemedIcon Icon { get; }
     
-    IReadOnlyCollection<ILLMChatModel> AvailableModels { get; }
+    IReadOnlyCollection<ILLMModel> AvailableModels { get; }
 
-    ILLMChatClient? NewChatClient(ILLMChatModel model);
+    ILLMChatClient? NewChatClient(ILLMModel model);
 
-    ILLMChatModel? GetModel(string modelName);
+    ILLMModel? GetModel(string modelName);
 
     Task InitializeAsync();
 }
