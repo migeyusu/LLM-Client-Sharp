@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Windows;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Component;
@@ -15,7 +16,7 @@ public readonly struct Summarizer
         _options = options;
     }
 
-    public async Task<string?> SummarizeTopicAsync(DialogSessionViewModel dialog, int retryCount = 3)
+    public async Task<string?> SummarizeTopicAsync(DialogSessionViewModel dialog, Duration duration)
     {
         var client = _options.CreateSubjectSummarizeClient();
         if (client == null)
@@ -27,9 +28,13 @@ public readonly struct Summarizer
         {
             var dialogItems = new List<IDialogItem>(3);
             dialogItems.AddRange(dialog.DialogItems);
-            dialogItems.Add(new RequestViewItem(){TextMessage = _options.SubjectSummarizePrompt});
+            dialogItems.Add(new RequestViewItem() { TextMessage = _options.SubjectSummarizePrompt });
             var dialogContext = new DialogContext(dialogItems);
-            var sendRequestAsync = await new PromptAgent(client, new TraceInvokeInteractor()).SendRequestAsync(dialogContext);
+            var sendRequestAsync = await new PromptAgent(client, new TraceInvokeInteractor())
+                {
+                    Timeout = duration,
+                }
+                .SendRequestAsync(dialogContext);
             return sendRequestAsync.FirstTextResponse;
         }
         catch (Exception e)

@@ -108,14 +108,14 @@ public class CreateSessionViewModel : BaseViewModel
                     session = Project;
                     Project = _mainWindowViewModel.NewProjectViewModel();
                     break;
-                case 2:
+                /*case 2:
                     var researchClient = SelectedCreationOption?.CreateResearchClient();
                     if (researchClient == null)
                     {
                         return;
                     }
 
-                    session = new ResearchSession(researchClient);
+                    session = new ResearchSession(researchClient);*/
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

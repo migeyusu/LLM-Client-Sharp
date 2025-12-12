@@ -57,7 +57,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         {
             if (value == _topic) return;
             _topic = value;
-            OnPropertyChanged();
+            OnPropertyChangedAsync();
         }
     }
 
@@ -224,6 +224,8 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
+    private static readonly TimeSpan TopicTimeOut = TimeSpan.FromSeconds(30);
+
     public override async Task<CompletedResult> RequestOn(Func<Task<CompletedResult>> invoke)
     {
         //判断是否需要进行主题总结
@@ -234,12 +236,16 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         if (needSummarize && !completedResult.IsInterrupt
                           && _options.EnableAutoSubjectGeneration)
         {
-            var summarizer = new Summarizer(_options);
-            var newTopic = await summarizer.SummarizeTopicAsync(this);
-            if (!string.IsNullOrEmpty(newTopic))
+            //不要wait
+            Task.Run(async () =>
             {
-                this.Topic = newTopic;
-            }
+                var summarizer = new Summarizer(_options);
+                var newTopic = await summarizer.SummarizeTopicAsync(this, TopicTimeOut);
+                if (!string.IsNullOrEmpty(newTopic))
+                {
+                    this.Topic = newTopic;
+                }
+            });
         }
 
         return completedResult;

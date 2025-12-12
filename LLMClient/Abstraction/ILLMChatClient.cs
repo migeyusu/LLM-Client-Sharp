@@ -11,6 +11,14 @@ public interface IChatEndpoint
 
     bool IsResponding { get; set; }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <exception cref="OutOfContextWindowException">超过LLM窗口大小，不需要重试</exception>
+    /// <param name="context"></param>
+    /// <param name="interactor"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     Task<CompletedResult> SendRequest(DialogContext context,
         IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default);

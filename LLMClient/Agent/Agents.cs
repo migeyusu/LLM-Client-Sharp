@@ -1,4 +1,5 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Windows;
+using LLMClient.Abstraction;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
@@ -31,6 +32,8 @@ public class PromptAgent : IAgent
 
     public int RetryCount { get; set; } = 3;
 
+    public Duration Timeout { get; set; } = Duration.Forever;
+
     public Task<CompletedResult> SendRequestAsync(ITextDialogSession session,
         CancellationToken cancellationToken = default)
     {
@@ -42,10 +45,35 @@ public class PromptAgent : IAgent
         CancellationToken cancellationToken = default)
     {
         var tryCount = 0;
-        while (tryCount < RetryCount)
+        while (tryCount < RetryCount && !cancellationToken.IsCancellationRequested)
         {
-            var completedResult = await _chatClient.SendRequest(context, _interactor, cancellationToken)
-                .ConfigureAwait(false);
+            CompletedResult completedResult;
+            if (Timeout.HasTimeSpan)
+            {
+                using (var timeoutTokenSource = new CancellationTokenSource(Timeout.TimeSpan))
+                {
+                    using (var linkedTokenSource =
+                           CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token, cancellationToken))
+                    {
+                        try
+                        {
+                            completedResult = await _chatClient
+                                .SendRequest(context, _interactor, linkedTokenSource.Token)
+                                .ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                completedResult = await _chatClient.SendRequest(context, _interactor, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
             tryCount++;
             if (completedResult.IsInterrupt)
             {
@@ -77,7 +105,7 @@ public class PromptAgent : IAgent
         }
 
         _interactor?.Error($"Failed to get a valid rsesponse from the LLM after {RetryCount} attempts.");
-                                                              throw new Exception("Failed to get a valid reponse from the LLM.");
+        throw new Exception("Failed to get a valid reponse from the LLM.");
     }
 
     public async Task<string> GetMessageAsync(string prompt, string? systemPrompt = null,
