@@ -15,7 +15,8 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
     private ObservableCollection<string> _prompts = new ObservableCollection<string>();
     private int _selectedIndex = -1;
     private string? _selectedPrompt;
-    private const string PromptsFileName = "system_prompts.json";
+    
+    public const string PromptsFileName = "system_prompts.json";
 
     public ObservableCollection<string> Prompts
     {

@@ -109,7 +109,7 @@
                                     <TextBlock MaxWidth="350"
                                                VerticalAlignment="Center"
                                                Margin="6,0,0,0"
-                                               Text="{Binding Mode=OneWay, TargetNullValue='Not Set', Path=SubjectSummarizeClientPersist.ModelName}"/>
+                                               Text="{Binding Mode=OneWay, TargetNullValue='Not Set', Path=SubjectSummarizeClientPersist.ModelName}" />
                                     <materialDesign:PopupBox Padding="0"
                                                              StaysOpen="True"
                                                              Margin="6,0"
@@ -147,22 +147,34 @@
                         <RowDefinition />
                     </Grid.RowDefinitions>
                     <StackPanel>
-                        <TextBlock Margin="0,0,0,10">共享代理设置：</TextBlock>
+                        <TextBlock Margin="0,0,0,10">Global Shared Proxy Settings：</TextBlock>
                         <ContentControl Content="{Binding ProxyOption,Mode=OneTime}"
                                         ContentTemplate="{StaticResource ProxyOptionDataTemplate}" />
                     </StackPanel>
                     <WrapPanel Grid.Row="1"
                                Margin="0,10,0,0">
                         <Button Click="ImportEndpoints_OnClick"
-                                Content="导入Endpoints"
+                                Content="Import Endpoints Data"
                                 Style="{StaticResource MaterialDesignOutlinedButton}"
                                 Margin="0,0,0,0" />
-                        <Button Content="打开对话存储"
+                        <Button Click="SaveWorkspace_OnClick"
+                                Margin="20,0,0,0"
+                                Style="{StaticResource MaterialDesignOutlinedButton}">
+                            <DockPanel>
+                                <materialDesign:PackIcon Kind="ContentSave"
+                                                         Width="18"
+                                                         Height="18"
+                                                         VerticalAlignment="Center" />
+                                <TextBlock Text="Save WorkSpace"
+                                           Margin="10,0,0,0" />
+                            </DockPanel>
+                        </Button>
+                        <Button Content="Open Dialog Storage"
                                 Command="{x:Static utility:CommonCommands.OpenFolderCommand}"
                                 CommandParameter="{x:Static dialog:DialogFileViewModel.SaveFolderPath}"
                                 Margin="20,0,0,0"
                                 Style="{StaticResource MaterialDesignOutlinedButton}" />
-                        <Button Content="打开工程存储"
+                        <Button Content="Open Project Storage"
                                 Command="{x:Static utility:CommonCommands.OpenFolderCommand}"
                                 CommandParameter="{x:Static project:ProjectViewModel.SaveFolderPath}"
                                 Margin="20,0,0,0"

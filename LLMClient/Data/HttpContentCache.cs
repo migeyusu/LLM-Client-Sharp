@@ -10,10 +10,11 @@ namespace LLMClient.Data;
 
 public class HttpContentCache
 {
-    private static readonly string CacheFolderName = "Cache" + Path.DirectorySeparatorChar + "HttpContentCache";
+    private static readonly string CacheFolderRelative =
+        Extension.CacheFolderName + Path.DirectorySeparatorChar + nameof(HttpContentCache);
 
     const string CacheConfigFileName = "cache_index.json";
-    private static string CacheFolderPath => Path.GetFullPath(CacheFolderName);
+    private static string CacheFolderPath => Path.GetFullPath(CacheFolderRelative);
 
     private readonly string _cacheDirectory;
 

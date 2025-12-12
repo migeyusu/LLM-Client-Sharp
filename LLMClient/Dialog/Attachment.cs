@@ -49,7 +49,7 @@ public class Attachment
     public AttachmentType Type { get; set; }
 
     [JsonIgnore]
-    public string ImageAttachmentCacheFolder
+    public static string ImageAttachmentCacheFolder
     {
         get { return Path.GetFullPath(Path.Combine("Attachment", "Images")); }
     }
