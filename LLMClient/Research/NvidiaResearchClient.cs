@@ -12,6 +12,9 @@ using Microsoft.SemanticKernel.Data;
 
 namespace LLMClient.Research;
 
+
+
+
 public class NvidiaResearchClient : ResearchClient
 {
     public override string Name => "Nvidia Deep Research";
@@ -23,12 +26,8 @@ public class NvidiaResearchClient : ResearchClient
     private readonly GlobalOptions _options;
 
     private readonly UrlFetcherPlugin _urlFetcherPlugin = new();
-
-    private ITextSearch? SearchService
-    {
-        get { return _options.GetTextSearch(); }
-    }
-
+    
+    
     public NvidiaResearchClient(IParameterizedLLMModel promptModel, IParameterizedLLMModel reportModel,
         GlobalOptions options)
     {
@@ -45,12 +44,17 @@ public class NvidiaResearchClient : ResearchClient
             throw new ArgumentException("The dialog context must contain a non-empty request.");
         }
 
+        var textSearch = _options.GetTextSearch();
+        if (textSearch == null)
+        {
+            throw new Exception("Text search service is not configured. Please configure it in the global options.");
+        }
+
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         PromptAgent? agent = null;
         try
         {
-            //todo:
             agent = new PromptAgent(new EmptyLlmModelClient(), interactor);
             // ====================================================================
             // 阶段 1: 研究
@@ -90,7 +94,7 @@ public class NvidiaResearchClient : ResearchClient
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     Information($"Searching for '{searchPhrase}'");
-                    var skTextSearchResult = await SearchService.GetTextSearchResultsAsync(searchPhrase,
+                    var skTextSearchResult = await textSearch.GetTextSearchResultsAsync(searchPhrase,
                         new TextSearchOptions()
                         {
                             Skip = 0,

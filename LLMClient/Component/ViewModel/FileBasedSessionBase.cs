@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -9,6 +10,7 @@ using LLMClient.Abstraction;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
+using LLMClient.Dialog;
 using Microsoft.Win32;
 
 namespace LLMClient.Component.ViewModel;
@@ -102,7 +104,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     }
 
     public static async Task<IEnumerable<T>> LoadFromLocal<T>(IMapper mapper, string folderPath)
-        where T : class, ILLMSession, ILLMSessionLoader<T>
+        where T : FileBasedSessionBase, ILLMSessionLoader<T>
     {
         var directoryInfo = new DirectoryInfo(folderPath);
         if (!directoryInfo.Exists)
@@ -113,10 +115,22 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
         var concurrentBag = new ConcurrentBag<T>();
         await Parallel.ForEachAsync(directoryInfo.GetFiles("*.json"), (async (info, token) =>
         {
-            var model = await T.LoadFromFile(info, mapper);
-            if (model != null)
+            if (info.Exists)
             {
-                concurrentBag.Add(model);
+                await using (var fileStream = info.OpenRead())
+                {
+                    var model = await T.LoadFromStream(fileStream, mapper);
+                    if (model != null)
+                    {
+                        model.FileFullPath = info.FullName;
+                        model.IsDataChanged = false;
+                        concurrentBag.Add(model);
+                    }
+                    else
+                    {
+                        Trace.TraceWarning($"Load session from {info.FullName} returned null.");
+                    }
+                }
             }
         }));
         return concurrentBag;
@@ -124,7 +138,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
 
     public static async IAsyncEnumerable<T> ImportFiles<T>(string targetFolderPath,
         IEnumerable<FileInfo> fileInfos, IMapper mapper)
-        where T : class, ILLMSessionLoader<T>, ILLMSession
+        where T : FileBasedSessionBase, ILLMSessionLoader<T>
     {
         var targetDirectoryInfo = new DirectoryInfo(targetFolderPath);
         if (!targetDirectoryInfo.Exists)
@@ -149,7 +163,22 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
                     {
                         File.Copy(fileInfo.FullName, newFilePath, true);
                         var info = new FileInfo(newFilePath);
-                        session = await T.LoadFromFile(info, mapper);
+                        if (info.Exists)
+                        {
+                            await using (var fileStream = info.OpenRead())
+                            {
+                                session = await T.LoadFromStream(fileStream, mapper);
+                                if (session != null)
+                                {
+                                    session.FileFullPath = info.FullName;
+                                    session.IsDataChanged = false;
+                                }
+                                else
+                                {
+                                    MessageEventBus.Publish($"Load session from {info.FullName} returned null.");
+                                }
+                            }
+                        }
                     }
                 }
                 catch (Exception e)

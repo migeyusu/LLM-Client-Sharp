@@ -65,7 +65,7 @@
                                   ContentTemplate="{StaticResource ProjectConfigDataTemplate}"
                                   Margin="10" />
             </TabItem>
-            <TabItem>
+            <TabItem IsEnabled="False">
                 <TabItem.Header>
                     <DockPanel>
                         <materialDesign:PackIcon Kind="CloudSearch"

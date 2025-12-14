@@ -17,6 +17,6 @@ namespace LLMClient.Abstraction
     public interface ILLMSessionLoader<T>
         where T : class, ILLMSession
     {
-        static abstract Task<T?> LoadFromFile(FileInfo fileInfo, IMapper mapper);
+        static abstract Task<T?> LoadFromStream(Stream stream, IMapper mapper);
     }
 }

@@ -14,8 +14,6 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
 {
     public DialogViewModel Dialog { get; }
 
-    public const string SaveFolder = "Dialogs";
-
     public override bool IsDataChanged
     {
         get => this.Dialog.IsDataChanged;
@@ -23,6 +21,8 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
     }
 
     public override bool IsBusy => Dialog.IsBusy;
+    
+    public const string SaveFolder = "Dialogs";
 
     private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveFolder)));
 
@@ -49,37 +49,26 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
     }
 
 
-    public static async Task<DialogFileViewModel?> LoadFromFile(FileInfo fileInfo, IMapper mapper)
+    public static async Task<DialogFileViewModel?> LoadFromStream(Stream fileStream, IMapper mapper)
     {
-        if (!fileInfo.Exists)
-        {
-            return null;
-        }
-
         try
         {
-            await using (var fileStream = fileInfo.OpenRead())
+            var dialogSession =
+                await JsonSerializer.DeserializeAsync<DialogFilePersistModel>(fileStream, SerializerOption);
+            if (dialogSession == null)
             {
-                var dialogSession =
-                    await JsonSerializer.DeserializeAsync<DialogFilePersistModel>(fileStream, SerializerOption);
-                if (dialogSession == null)
-                {
-                    Trace.TraceError($"加载会话{fileInfo.FullName}失败：文件内容为空");
-                    return null;
-                }
-
-                if (dialogSession.Version != DialogFilePersistModel.DialogPersistVersion)
-                {
-                    Trace.TraceError($"加载会话{fileInfo.FullName}失败：版本不匹配");
-                    return null;
-                }
-
-                var viewModel =
-                    mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSession, (options => { }));
-                viewModel.FileFullPath = fileInfo.FullName;
-                viewModel.IsDataChanged = false;
-                return viewModel;
+                return null;
             }
+
+            if (dialogSession.Version != DialogFilePersistModel.DialogPersistVersion)
+            {
+                return null;
+            }
+
+            var viewModel =
+                mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSession, (options => { }));
+            viewModel.IsDataChanged = false;
+            return viewModel;
         }
         catch (Exception e)
         {

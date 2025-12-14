@@ -66,36 +66,25 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
 
     #region file
 
-    public static async Task<ProjectViewModel?> LoadFromFile(FileInfo fileInfo, IMapper mapper)
+    public static async Task<ProjectViewModel?> LoadFromStream(Stream fileStream, IMapper mapper)
     {
-        if (!fileInfo.Exists)
-        {
-            return null;
-        }
-
         try
         {
-            await using (var fileStream = fileInfo.OpenRead())
+            var persistModel =
+                await JsonSerializer.DeserializeAsync<ProjectPersistModel>(fileStream, SerializerOption);
+            if (persistModel == null)
             {
-                var persistModel =
-                    await JsonSerializer.DeserializeAsync<ProjectPersistModel>(fileStream, SerializerOption);
-                if (persistModel == null)
-                {
-                    Trace.TraceError($"加载会话{fileInfo.FullName}失败：文件内容为空");
-                    return null;
-                }
-
-                if (persistModel.Version != ProjectPersistModel.CurrentVersion)
-                {
-                    Trace.TraceError($"加载会话{fileInfo.FullName}失败：版本不匹配");
-                    return null;
-                }
-
-                var viewModel = mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, _ => { });
-                viewModel.FileFullPath = fileInfo.FullName;
-                viewModel.IsDataChanged = false;
-                return viewModel;
+                return null;
             }
+
+            if (persistModel.Version != ProjectPersistModel.CurrentVersion)
+            {
+                return null;
+            }
+
+            var viewModel = mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, _ => { });
+            viewModel.IsDataChanged = false;
+            return viewModel;
         }
         catch (Exception e)
         {
