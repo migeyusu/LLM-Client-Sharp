@@ -12,13 +12,13 @@ namespace LLMClient.Configuration;
 
 public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
 {
-    private ObservableCollection<string> _prompts = new ObservableCollection<string>();
+    private ObservableCollection<PromptEntry> _prompts = [];
     private int _selectedIndex = -1;
-    private string? _selectedPrompt;
-    
+    private PromptEntry? _selectedPrompt;
+
     public const string PromptsFileName = "system_prompts.json";
 
-    public ObservableCollection<string> Prompts
+    public ObservableCollection<PromptEntry> Prompts
     {
         get => _prompts;
         set
@@ -30,11 +30,10 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
             OnPropertyChanged(nameof(RemoveCommand));
             OnPropertyChanged(nameof(SaveCommand));
             OnPropertyChanged(nameof(SystemPrompts));
-            OnPropertyChanged(nameof(UpdateCommand));
         }
     }
 
-    public string? SelectedPrompt
+    public PromptEntry? SelectedPrompt
     {
         get => _selectedPrompt;
         set
@@ -45,53 +44,16 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
         }
     }
 
-    public int SelectedIndex
+    public ICommand NewPromptCommand => new ActionCommand(o =>
     {
-        get => _selectedIndex;
-        set
-        {
-            if (value == _selectedIndex) return;
-            _selectedIndex = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(UpdateCommand));
-            SelectedPrompt = value >= 0 && value < Prompts.Count
-                ? Prompts[value]
-                : string.Empty;
-        }
-    }
-
-    public ICommand UpdateCommand => new ActionCommand((o =>
-    {
-        var selectedIndex = SelectedIndex;
-        if (selectedIndex < 0)
-        {
-            return;
-        }
-
-        Prompts[selectedIndex] = SelectedPrompt ?? string.Empty;
-        SelectedIndex = selectedIndex;
-    }));
-
-    public ICommand NewPromptCommand => new ActionCommand((o =>
-    {
-        Prompts.Add("您是一个AI助手，帮助用户解决问题。");
-        SelectedIndex = Prompts.Count - 1;
-    }));
-
-    public ICommand AddToCommand => new ActionCommand((o =>
-    {
-        if (!string.IsNullOrEmpty(SelectedPrompt))
-        {
-            Prompts.Add(SelectedPrompt);
-            SelectedIndex = Prompts.Count - 1;
-        }
-    }));
+        Prompts.Add(new PromptEntry() { Prompt = "您是一个AI助手，帮助用户解决问题。" });
+    });
 
     public ICommand RemoveCommand => new ActionCommand((o =>
     {
-        if (SelectedIndex >= 0)
+        if (SelectedPrompt != null)
         {
-            this.Prompts.RemoveAt(SelectedIndex);
+            this.Prompts.Remove(SelectedPrompt);
         }
     }));
 
@@ -110,7 +72,7 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
         {
             using (var fileStream = fileInfo.Open(FileMode.Create, FileAccess.Write))
             {
-                await JsonSerializer.SerializeAsync<IList<string>>(fileStream, this.Prompts,
+                await JsonSerializer.SerializeAsync<IList<PromptEntry>>(fileStream, this.Prompts,
                     Extension.DefaultJsonSerializerOptions);
             }
         }
@@ -130,11 +92,11 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
         {
             await using (var fileStream = fileInfo.OpenRead())
             {
-                var deserialize = JsonSerializer.Deserialize<IList<string>>(fileStream,
+                var deserialize = JsonSerializer.Deserialize<IList<PromptEntry>>(fileStream,
                     Extension.DefaultJsonSerializerOptions);
                 if (deserialize != null)
                 {
-                    Prompts = new ObservableCollection<string>(deserialize);
+                    Prompts = new ObservableCollection<PromptEntry>(deserialize);
                 }
             }
         }
@@ -143,14 +105,9 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
             Trace.TraceError(e.ToString());
         }
     }
-
-    public IReadOnlyList<string> SystemPrompts
+    
+    public IReadOnlyList<PromptEntry> SystemPrompts
     {
         get { return Prompts; }
-    }
-
-    public IReadOnlyList<string> UserPrompts
-    {
-        get { return ArraySegment<string>.Empty; }
     }
 }

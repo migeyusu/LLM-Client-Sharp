@@ -79,7 +79,8 @@
                                 CommandParameter="{Binding}">
                             <materialDesign:PackIcon Kind="MinusThick"
                                                      Width="17"
-                                                     Height="17" />
+                                                     Height="17"
+                                                     Foreground="{DynamicResource MaterialDesign.Brush.Secondary}" />
                             <Button.Style>
                                 <Style TargetType="Button"
                                        BasedOn="{StaticResource MaterialDesignIconButton}">
@@ -265,7 +266,7 @@
                                     Height="30"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center"
-                                    Content="{materialDesign:PackIcon Kind=ReceiptText,Size=15}"
+                                    Content="{materialDesign:PackIcon Kind=ReceiptTextEdit,Size=15}"
                                     Style="{StaticResource MaterialDesignIconForegroundButton}"
                                     Command="{Binding  ConfigHeadersCommand}" />
                             <TextBlock Grid.Row="4" Grid.Column="0" Text="Transport Mode:" />
@@ -363,13 +364,13 @@
                     Height="36"
                     Content="{materialDesign:PackIcon Kind=ContentSave}"
                     Command="{Binding  SaveCommand}"
-                    Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}" />
+                    Style="{StaticResource MaterialDesignFloatingActionMiniButton}" />
             <materialDesign:PopupBox VerticalAlignment="Bottom"
                                      HorizontalAlignment="Right"
                                      Width="36"
                                      Height="36"
                                      Margin="8"
-                                     Style="{StaticResource MaterialDesignMultiFloatingActionSecondaryPopupBox}">
+                                     Style="{StaticResource MaterialDesignMultiFloatingActionPopupBox}">
                 <StackPanel>
                     <Button Width="36"
                             Height="36"
@@ -412,7 +413,8 @@
                     HorizontalAlignment="Right"
                     DataContext="{Binding SelectedServerItem}">
             <ToggleButton materialDesign:ElevationAssist.Elevation="Dp4"
-                          Content="{materialDesign:PackIcon Kind=ServerNetworkOff}"
+                          Content="{materialDesign:PackIcon Kind=ServerOff}"
+                          materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=Server}"
                           Style="{StaticResource MaterialDesignActionToggleButton}"
                           ToolTip="启用/禁用服务"
                           IsChecked="{Binding IsEnabled,Mode=OneWay}"
@@ -420,10 +422,9 @@
                           Width="38"
                           Height="38"
                           Margin="0,0,0,10" />
-            <!-- materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=EmoticonHappy}"-->
-            <Button Content="{materialDesign:PackIcon Kind=Refresh}"
+            <Button Content="{materialDesign:PackIcon Kind=Refresh,Size=20}"
                     Command="{Binding  ResetToolsCommand}"
-                    Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                     ToolTip="重置工具" />
         </StackPanel>
     </Grid>

@@ -13,6 +13,7 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using MaterialDesignThemes.Wpf;
@@ -390,7 +391,39 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     /// <summary>
     /// dialog level prompt
     /// </summary>
-    public abstract string? SystemPrompt { get; set; }
+    public abstract string? UserSystemPrompt { get; set; }
+
+    public ObservableCollection<PromptEntry> ExtendedSystemPrompts
+    {
+        get => _extendedSystemPrompts;
+        set
+        {
+            if (Equals(value, _extendedSystemPrompts)) return;
+            _extendedSystemPrompts = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SystemPrompt));
+        }
+    }
+
+    public virtual string? SystemPrompt
+    {
+        get
+        {
+            if (!ExtendedSystemPrompts.Any() && string.IsNullOrEmpty(UserSystemPrompt))
+            {
+                return null;
+            }
+
+            var stringBuilder = new StringBuilder();
+            foreach (var promptEntry in ExtendedSystemPrompts)
+            {
+                stringBuilder.AppendLine(promptEntry.Prompt);
+            }
+
+            stringBuilder.AppendLine(UserSystemPrompt);
+            return stringBuilder.ToString();
+        }
+    }
 
     public ObservableCollection<IDialogItem> DialogItems { get; }
 
@@ -672,7 +705,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
 
         var dialogItems = GenerateHistoryFromSelf(endIndex);
-        return new DialogContext(dialogItems, this.SystemPrompt);
+        return new DialogContext(dialogItems, this.UserSystemPrompt);
     }
 
     public virtual async Task<CompletedResult> RequestOn(Func<Task<CompletedResult>> invoke)
@@ -694,6 +727,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     }
 
     private readonly IMapper _mapper;
+    private ObservableCollection<PromptEntry> _extendedSystemPrompts = [];
 
     public async Task<CompletedResult> AddNewResponse(ILLMChatClient client,
         IList<IDialogItem> history,

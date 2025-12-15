@@ -13,8 +13,6 @@ using Microsoft.SemanticKernel.Data;
 namespace LLMClient.Research;
 
 
-
-
 public class NvidiaResearchClient : ResearchClient
 {
     public override string Name => "Nvidia Deep Research";

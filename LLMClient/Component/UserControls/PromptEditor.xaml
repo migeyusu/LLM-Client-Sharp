@@ -7,9 +7,11 @@
              xmlns:system="clr-namespace:System;assembly=System.Runtime"
              xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
              mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="300"
+             d:DesignHeight="100"
+             d:DesignWidth="300"
              d:DataContext="{d:DesignInstance userControls:PromptEditor}"
              x:Name="Root">
+    <!--Source="{Binding  Source={StaticResource PromptsResource},Path=SystemPrompts, Mode=OneWay}"-->
     <UserControl.Resources>
         <HeaderedContentControl x:Key="HeaderedContentControl"
                                 Style="{StaticResource DialogContentControlStyle}"
@@ -21,6 +23,20 @@
                          Height="200"
                          SpellCheck.IsEnabled="True"
                          Style="{StaticResource InputBoxStyle}" />
+                <ListBox MaxWidth="800"
+                         MaxHeight="400"
+                         Margin="6"
+                         SelectionMode="Single"
+                         SelectedItem="{Binding ElementName=Root,Path= PromptString,Mode=TwoWay}"
+                         ItemsSource="{Binding ElementName=Root,Path=Source,Mode=OneWay}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type system:String}">
+                            <TextBlock TextWrapping="Wrap"
+                                       TextTrimming="WordEllipsis"
+                                       Text="{Binding}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
                 <!--<Button Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
                         Content="{materialDesign:PackIcon Kind=Add,Size=16}"
                         VerticalAlignment="Bottom"
@@ -38,27 +54,14 @@
                                 Height="50"
                                 Padding="10,4"
                                 PopupUniformCornerRadius="6"
-                                Click="PromptEditorButton_OnClick"
+                                Command="{Binding }"
                                 Style="{StaticResource MaterialDesignFlatSplitButton}">
         <materialDesign:SplitButton.Content>
             <TextBlock TextWrapping="Wrap"
-                       Text="{Binding  ElementName=Root,Path=PromptString,Mode=TwoWay}" />
+                       Text="{Binding  ElementName=Root,Path=PromptString,Mode=OneWay}" />
         </materialDesign:SplitButton.Content>
         <materialDesign:SplitButton.PopupContent>
-            <ListBox MaxWidth="800"
-                     MaxHeight="400"
-                     Margin="6"
-                     SelectionMode="Single"
-                     SelectedItem="{Binding ElementName=Root,Path= PromptString,Mode=TwoWay}"
-                     ItemsSource="{Binding ElementName=Root,Path=Source,Mode=OneWay}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type system:String}">
-                        <TextBlock TextWrapping="Wrap"
-                                   TextTrimming="WordEllipsis"
-                                   Text="{Binding}" />
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <TextBlock Text="{Binding ElementName=Root,Path=PromptString,Mode=OneWay}" />
         </materialDesign:SplitButton.PopupContent>
     </materialDesign:SplitButton>
 </UserControl>

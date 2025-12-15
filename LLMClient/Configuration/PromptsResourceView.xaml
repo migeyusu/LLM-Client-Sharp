@@ -14,14 +14,13 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ListBox x:Name="ListBox"
-                 Margin="10"
+        <ListBox Margin="10"
                  SelectionMode="Single"
                  VirtualizingPanel.IsVirtualizing="False"
                  ScrollViewer.CanContentScroll="False"
                  HorizontalAlignment="Stretch"
                  HorizontalContentAlignment="Left"
-                 SelectedIndex="{Binding SelectedIndex,Mode=TwoWay}"
+                 SelectedItem="{Binding SelectedPrompt,Mode=TwoWay}"
                  ItemsSource="{Binding Prompts,Mode=OneWay}"
                  MouseDoubleClick="ListBox_OnMouseDoubleClick" />
         <TextBox Grid.Row="1"
@@ -38,16 +37,10 @@
                     HorizontalAlignment="Right"
                     Margin="10">
             <Button Content="移除"
-                    Command="{Binding RemoveCommand}"/>
+                    Command="{Binding RemoveCommand}" />
             <Button Content="新建"
                     Margin="10,0,0,0"
                     Command="{Binding NewPromptCommand}" />
-            <Button Content="添加到列表"
-                    Margin="10,0,0,0"
-                    Command="{Binding AddToCommand}" />
-            <Button Content="更新"
-                    Margin="10,0,0,0"
-                    Command="{Binding UpdateCommand}" />
             <Button Content="保存"
                     Margin="10,0,0,0"
                     Command="{Binding SaveCommand}" />

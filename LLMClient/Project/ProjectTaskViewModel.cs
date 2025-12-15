@@ -74,6 +74,7 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
 
             _description = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(UserSystemPrompt));
             OnPropertyChanged(nameof(SystemPrompt));
         }
     }
@@ -87,7 +88,7 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
     /// <summary>
     /// Task内的上下文
     /// </summary>
-    public override string? SystemPrompt
+    public override string? UserSystemPrompt
     {
         get
         {

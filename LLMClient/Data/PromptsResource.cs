@@ -1,10 +1,10 @@
-﻿namespace LLMClient.Data;
+﻿using LLMClient.Configuration;
+
+namespace LLMClient.Data;
 
 public interface IPromptsResource
 {
-    IReadOnlyList<string> SystemPrompts { get; }
-
-    IReadOnlyList<string> UserPrompts { get; }
+    IReadOnlyList<PromptEntry> SystemPrompts { get; }
 
     Task Initialize();
 }

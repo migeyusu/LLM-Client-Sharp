@@ -40,10 +40,9 @@
                          MaxWidth="300"
                          TextWrapping="Wrap" />
                 <userControls:PromptEditor Grid.Column="1"
-                                 VerticalAlignment="Stretch"
-                                 Margin="0,0,10,0"
-                                 Source="{Binding  Source={StaticResource PromptsResource},Path=SystemPrompts, Mode=OneWay}"
-                                 PromptString="{Binding SystemPrompt,Mode=TwoWay}" />
+                                           VerticalAlignment="Stretch"
+                                           Margin="0,0,10,0"
+                                           PromptString="{Binding SystemPrompt,Mode=OneWay}" />
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"

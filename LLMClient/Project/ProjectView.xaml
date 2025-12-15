@@ -46,8 +46,7 @@
                                         VerticalAlignment="Stretch"
                                         Margin="0,0,10,0"
                                         Header="Project Description"
-                                        Source="{Binding Source={StaticResource PromptsResource}, Path=SystemPrompts,Mode=OneWay}"
-                                        PromptString="{Binding Description,Mode=TwoWay,UpdateSourceTrigger=LostFocus}" />
+                                        PromptString="{Binding Description,Mode=OneWay}" />
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
@@ -128,7 +127,7 @@
                                 ToolTip="Add Tasks" />
                     </StackPanel>
                     <TextBox Grid.Column="1"
-                             Text="{Binding SelectedTask.SystemPrompt,Mode=OneWay,StringFormat=上下文：{0}}"
+                             Text="{Binding SelectedTask.UserSystemPrompt,Mode=OneWay,StringFormat=上下文：{0}}"
                              materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                              BorderThickness="0"
                              HorizontalAlignment="Stretch"

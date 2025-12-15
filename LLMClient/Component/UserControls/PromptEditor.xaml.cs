@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Windows;
+using LLMClient.Component.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Component.UserControls;
@@ -21,15 +22,6 @@ public partial class PromptEditor
         get { return (string)GetValue(PromptStringProperty); }
     }
 
-    public static readonly DependencyProperty SourceProperty = DependencyProperty.Register(
-        nameof(Source), typeof(IList), typeof(PromptEditor), new PropertyMetadata(default(IList)));
-
-    public IList Source
-    {
-        get { return (IList)GetValue(SourceProperty); }
-        set { SetValue(SourceProperty, value); }
-    }
-
     public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(
         nameof(Header), typeof(string), typeof(PromptEditor), new PropertyMetadata("System Prompt"));
 
@@ -49,4 +41,16 @@ public partial class PromptEditor
             DialogHost.Show(frameworkElement);
         }
     }
+}
+
+public class PromptEditorViewModel : BaseViewModel
+{
+    
+    
+    public string GetPromptString()
+    {
+        
+    }
+
+
 }

@@ -2,6 +2,7 @@
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
+using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
@@ -29,14 +30,17 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
     private readonly IMcpServiceCollection _mcpServiceCollection;
 
-    public readonly IViewModelFactory _viewModelFactory;
+    private readonly IViewModelFactory _viewModelFactory;
+
+    private IPromptsResource _promptsResource;
 
     public AutoMapModelTypeConverter(IEndpointService service, IMcpServiceCollection mcpServiceCollection,
-        IViewModelFactory factory)
+        IViewModelFactory factory, IPromptsResource promptsResource)
     {
         this._endpointService = service;
         this._mcpServiceCollection = mcpServiceCollection;
         this._viewModelFactory = factory;
+        _promptsResource = promptsResource;
     }
 
     public DialogFilePersistModel Convert(DialogFileViewModel from, DialogFilePersistModel? destination,
@@ -131,7 +135,16 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.DialogItems = dialogItems;
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
-        destination.SystemPrompt = source.SystemPrompt;
+        destination.UserSystemPrompt = source.UserSystemPrompt;
+        var sourceExtendedSystemPrompts = source.ExtendedSystemPrompts;
+        if (sourceExtendedSystemPrompts.Any())
+        {
+            destination.ExtendedPrompts = new PromptsPersistModel()
+            {
+                PromptReference = sourceExtendedSystemPrompts.Select(entry => entry.Id).ToArray(),
+            };
+        }
+
         var requester = source.Requester;
         destination.PromptString = requester.PromptString;
         destination.AllowedFunctions = source.SelectedFunctionGroups
@@ -186,7 +199,23 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
             destination.TokensConsumption = source.TokensConsumption;
             destination.TotalPrice = source.TotalPrice;
-            destination.SystemPrompt = source.SystemPrompt;
+            destination.UserSystemPrompt = source.UserSystemPrompt;
+            var sourceExtendedPrompts = source.ExtendedPrompts;
+            if (sourceExtendedPrompts != null)
+            {
+                var promptReference = sourceExtendedPrompts.PromptReference;
+                var systemPrompts = _promptsResource.SystemPrompts;
+                if (promptReference != null && systemPrompts.Any())
+                {
+                    var promptEntries = promptReference
+                        .Select(id => systemPrompts.FirstOrDefault(p => p.Id == id))
+                        .Where(p => p != null)
+                        .OfType<PromptEntry>()
+                        .ToArray();
+                    destination.ExtendedSystemPrompts = new ObservableCollection<PromptEntry>(promptEntries);
+                }
+            }
+
             var requester = destination.Requester;
             requester.PromptString = source.PromptString;
             destination.SelectedFunctionGroups = source.AllowedFunctions?.Select((o =>
@@ -264,7 +293,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.AllowedFolderPaths = source.AllowedFolderPaths?.ToArray();
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
-        destination.Client = context.Mapper.Map<ILLMChatClient, ParameterizedLLMModelPO>(source.Requester.DefaultClient);
+        destination.Client =
+            context.Mapper.Map<ILLMChatClient, ParameterizedLLMModelPO>(source.Requester.DefaultClient);
         destination.UserPrompt = source.Requester.PromptString;
         destination.Tasks = projectTaskPersistModels;
         return destination;
@@ -388,7 +418,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    public ILLMChatClient Convert(ParameterizedLLMModelPO source, ILLMChatClient? destination, ResolutionContext context)
+    public ILLMChatClient Convert(ParameterizedLLMModelPO source, ILLMChatClient? destination,
+        ResolutionContext context)
     {
         if (destination != null)
         {

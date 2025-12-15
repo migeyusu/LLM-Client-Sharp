@@ -34,18 +34,18 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
         set { this.Topic = value ?? "新建会话"; }
     }
 
-    private string? _systemPrompt;
+    private string? _userSystemPrompt;
 
-    public override string? SystemPrompt
+    public override string? UserSystemPrompt
     {
-        get => _systemPrompt;
+        get => _userSystemPrompt;
         set
         {
-            if (value == _systemPrompt) return;
-            _systemPrompt = value;
+            if (value == _userSystemPrompt) return;
+            _userSystemPrompt = value;
             OnPropertyChanged();
         }
-    }
+    
 
     private string _topic;
     private readonly GlobalOptions _options;
@@ -122,7 +122,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
                         var multiResponseViewItem = new MultiResponseViewItem(this) { InteractionId = newGuid };
                         DialogItems.Add(multiResponseViewItem);
                         var completedResult =
-                            await AddNewResponse(client, copy, multiResponseViewItem, this.SystemPrompt);
+                            await AddNewResponse(client, copy, multiResponseViewItem, this.UserSystemPrompt);
                         if (!completedResult.IsInterrupt)
                         {
                             break;
