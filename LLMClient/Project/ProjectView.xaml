@@ -11,6 +11,7 @@
              xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              xmlns:extension="clr-namespace:LLMClient.Component.Extension"
              xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
+             xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:ProjectViewModel}"
              d:DesignHeight="800" d:DesignWidth="1200">
@@ -42,11 +43,19 @@
                          MinWidth="100"
                          MaxWidth="300"
                          TextWrapping="Wrap" />
-                <userControls:PromptEditor Grid.Column="1"
-                                        VerticalAlignment="Stretch"
-                                        Margin="0,0,10,0"
-                                        Header="Project Description"
-                                        PromptString="{Binding Description,Mode=OneWay}" />
+                <materialDesign:SplitButton Grid.Column="1"
+                                            VerticalAlignment="Stretch"
+                                            Margin="0,0,10,0"
+                                            PopupElevation="Dp6"
+                                            Height="50"
+                                            Command="{x:Static utility:CommonCommands.CreatePromptEditViewModel}"
+                                            CommandParameter="{Binding Mode=OneTime}"
+                                            Padding="10,4"
+                                            PopupUniformCornerRadius="6"
+                                            PopupContent="{Binding Context,Mode=OneWay}"
+                                            Style="{StaticResource MaterialDesignFlatSplitButton}"
+                                            Content="{Binding Context,Mode=OneWay}">
+                </materialDesign:SplitButton>
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
@@ -174,13 +183,13 @@
                             <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                         </TextBlock>
                         <customControl:SearchBox Margin="10,0"
-                                             Padding="8,4,8,4"
-                                             Panel.ZIndex="1"
-                                             VerticalAlignment="Center"
-                                             Text="{Binding SearchText,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
-                                             SearchCommand="{Binding SearchCommand}"
-                                             GoToNextCommand="{Binding GoToNextHighlightCommand}"
-                                             GoToPreviousCommand="{Binding GoToPreviousHighlightCommand}" />
+                                                 Padding="8,4,8,4"
+                                                 Panel.ZIndex="1"
+                                                 VerticalAlignment="Center"
+                                                 Text="{Binding SearchText,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                                 SearchCommand="{Binding SearchCommand}"
+                                                 GoToNextCommand="{Binding GoToNextHighlightCommand}"
+                                                 GoToPreviousCommand="{Binding GoToPreviousHighlightCommand}" />
                         <Button ToolTip="清空对话"
                                 Command="{Binding ClearDialogCommand}">
                             <materialDesign:PackIcon Kind="Delete"
@@ -350,9 +359,9 @@
               DataContext="{Binding SelectedTask,Mode=OneWay}"
               Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
             <customControl:ListBoxEx Grid.Row="0"
-                                 Style="{StaticResource DialogListBoxStyle}"
-                                 CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"
-                                 ItemsSource="{Binding DialogItems,Mode=OneWay}">
+                                     Style="{StaticResource DialogListBoxStyle}"
+                                     CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"
+                                     ItemsSource="{Binding DialogItems,Mode=OneWay}">
                 <customControl:ListBoxEx.ContextMenu>
                     <ContextMenu>
                         <MenuItem Icon="{materialDesign:PackIcon Kind=ClipboardArrowDown}"

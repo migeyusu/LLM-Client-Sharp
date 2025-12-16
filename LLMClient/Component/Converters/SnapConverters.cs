@@ -48,9 +48,6 @@ internal static class SnapConverters
     public static readonly IValueConverter EnumToDescriptionConverter =
         ValueConverter.Create<Enum, string>(e => e.Value.GetEnumDescription());
 
-    private static readonly JsonSerializerOptions ObjectSerializeOptions =
-        new JsonSerializerOptions() { WriteIndented = true };
-
     public static readonly IValueConverter ObjectToJsonConverter =
         ValueConverter.Create<object?, string>(e => e.Value != null
             ? JsonSerializer.Serialize(e.Value, LLMClient.Extension.DefaultJsonSerializerOptions)
@@ -58,6 +55,9 @@ internal static class SnapConverters
 
     public static readonly IValueConverter CountToVisibilityConverter =
         ValueConverter.Create<int, Visibility>(e => e.Value > 0 ? Visibility.Visible : Visibility.Collapsed);
+
+    public static readonly IValueConverter NullToBooleanConverter =
+        ValueConverter.Create<object?, bool>(e => e.Value != null);
 
     public static readonly IValueConverter EnumerableToVisibilityConverter =
         ValueConverter.Create<IEnumerable<object>?, Visibility>(e =>

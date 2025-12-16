@@ -24,6 +24,8 @@
                               xmlns:converters="clr-namespace:LLMClient.Component.Converters"
                               xmlns:component="clr-namespace:LLMClient.Component"
                               xmlns:utility="clr-namespace:LLMClient.Component.Utility"
+                              xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
+                              xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
                               mc:Ignorable="d"
                               FontFamily="Microsoft YaHei UI"
                               Title="LLM Client"
@@ -55,6 +57,13 @@
                                 <DataTemplate DataType="{x:Type dialog:ModelSelectionPopupViewModel}">
                                     <dialog:ModelSelectionView Width="800"
                                                                Height="600" />
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type viewModel:PromptEditorViewModel}">
+                                    <HeaderedContentControl Header="更改系统Prompt"
+                                                            Style="{StaticResource DialogContentControlStyle}">
+                                        <component:PromptEditorView Width="600"
+                                                                    Height="600" />
+                                    </HeaderedContentControl>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type component:CreateSessionViewModel}">
                                     <HeaderedContentControl Header="创建新会话"

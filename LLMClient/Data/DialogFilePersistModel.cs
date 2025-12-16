@@ -1,4 +1,6 @@
-﻿namespace LLMClient.Data;
+﻿using System.Text.Json.Serialization;
+
+namespace LLMClient.Data;
 
 /// <summary>
 /// 用于持久化
@@ -14,6 +16,11 @@ public class DialogFilePersistModel : DialogSessionPersistModel
     public string Topic { get; set; } = string.Empty;
 
     public ParameterizedLLMModelPO? Client { get; set; }
+    
+    [JsonPropertyName("SystemPrompt")]
+    public string? UserSystemPrompt { get; set; }
+
+    public PromptsPersistModel? ExtendedPrompts { get; set; }
     
     public string? PromptString { get; set; }
 }

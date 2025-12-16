@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Data;
@@ -157,6 +158,26 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
     public const string ParentProjectViewModelKey = "ParentProjectViewModel";
 
+    private ObservableCollection<PromptEntry>? MapPrompts(PromptsPersistModel? sourceExtendedPrompts)
+    {
+        if (sourceExtendedPrompts != null)
+        {
+            var promptReference = sourceExtendedPrompts.PromptReference;
+            var systemPrompts = _promptsResource.SystemPrompts;
+            if (promptReference != null && systemPrompts.Any())
+            {
+                var promptEntries = promptReference
+                    .Select(id => systemPrompts.FirstOrDefault(p => p.Id == id))
+                    .Where(p => p != null)
+                    .OfType<PromptEntry>()
+                    .ToArray();
+                return new ObservableCollection<PromptEntry>(promptEntries);
+            }
+        }
+
+        return null;
+    }
+
     public DialogViewModel Convert(DialogFilePersistModel source, DialogViewModel? destination,
         ResolutionContext context)
     {
@@ -200,20 +221,10 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination.TokensConsumption = source.TokensConsumption;
             destination.TotalPrice = source.TotalPrice;
             destination.UserSystemPrompt = source.UserSystemPrompt;
-            var sourceExtendedPrompts = source.ExtendedPrompts;
-            if (sourceExtendedPrompts != null)
+            var mapPrompts = MapPrompts(source.ExtendedPrompts);
+            if (mapPrompts != null)
             {
-                var promptReference = sourceExtendedPrompts.PromptReference;
-                var systemPrompts = _promptsResource.SystemPrompts;
-                if (promptReference != null && systemPrompts.Any())
-                {
-                    var promptEntries = promptReference
-                        .Select(id => systemPrompts.FirstOrDefault(p => p.Id == id))
-                        .Where(p => p != null)
-                        .OfType<PromptEntry>()
-                        .ToArray();
-                    destination.ExtendedSystemPrompts = new ObservableCollection<PromptEntry>(promptEntries);
-                }
+                destination.ExtendedSystemPrompts = mapPrompts;
             }
 
             var requester = destination.Requester;
@@ -246,6 +257,12 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
 
         destination.Requester.PromptString = source.UserPrompt;
+        var mapPrompts = MapPrompts(source.ExtendedPrompts);
+        if (mapPrompts != null)
+        {
+            destination.ExtendedSystemPrompts = mapPrompts;
+        }
+
         context.Items.Add(ParentProjectViewModelKey, destination);
         try
         {
@@ -289,6 +306,12 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination.Name = source.Name;
         destination.EditTime = source.EditTime;
         destination.Description = source.Description;
+        destination.ExtendedPrompts = source.ExtendedSystemPrompts.Any()
+            ? new PromptsPersistModel()
+            {
+                PromptReference = source.ExtendedSystemPrompts.Select(entry => entry.Id).ToArray(),
+            }
+            : null;
         destination.FolderPath = source.FolderPath;
         destination.AllowedFolderPaths = source.AllowedFolderPaths?.ToArray();
         destination.TokensConsumption = source.TokensConsumption;

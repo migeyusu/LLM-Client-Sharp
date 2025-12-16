@@ -74,13 +74,13 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
 
             _description = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(UserSystemPrompt));
             OnPropertyChanged(nameof(SystemPrompt));
         }
     }
 
 
-    private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
+    private readonly StringBuilder _systemPromptBuilder = new(1024);
+    
     private IList<CheckableFunctionGroupTree>? _selectedFunctionGroups;
 
     public ProjectPromptTemplateViewModel PromptTemplate { get; }
@@ -88,7 +88,7 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
     /// <summary>
     /// Task内的上下文
     /// </summary>
-    public override string? UserSystemPrompt
+    public override string? SystemPrompt
     {
         get
         {
@@ -105,7 +105,6 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
             _systemPromptBuilder.AppendLine(Description);
             return _systemPromptBuilder.ToString();
         }
-        set => throw new NotSupportedException();
     }
 
     public ProjectViewModel ParentProject { get; }

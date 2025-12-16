@@ -13,7 +13,7 @@ namespace LLMClient.Configuration;
 public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
 {
     private ObservableCollection<PromptEntry> _prompts = [];
-    private int _selectedIndex = -1;
+
     private PromptEntry? _selectedPrompt;
 
     public const string PromptsFileName = "system_prompts.json";
@@ -80,6 +80,13 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
         MessageEventBus.Publish("已保存系统提示词");
     }));
 
+    private ReadOnlyObservableCollection<PromptEntry> _readOnlyPrompts;
+
+    public PromptsResourceViewModel()
+    {
+        _readOnlyPrompts = new ReadOnlyObservableCollection<PromptEntry>(Prompts);
+    }
+
     public async Task Initialize()
     {
         var fileInfo = new FileInfo(PromptsFileName);
@@ -90,13 +97,17 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
 
         try
         {
+            Prompts.Clear();
             await using (var fileStream = fileInfo.OpenRead())
             {
                 var deserialize = JsonSerializer.Deserialize<IList<PromptEntry>>(fileStream,
                     Extension.DefaultJsonSerializerOptions);
                 if (deserialize != null)
                 {
-                    Prompts = new ObservableCollection<PromptEntry>(deserialize);
+                    foreach (var promptEntry in deserialize)
+                    {
+                        Prompts.Add(promptEntry);
+                    }
                 }
             }
         }
@@ -105,9 +116,9 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
             Trace.TraceError(e.ToString());
         }
     }
-    
+
     public IReadOnlyList<PromptEntry> SystemPrompts
     {
-        get { return Prompts; }
+        get { return _readOnlyPrompts; }
     }
 }

@@ -1,5 +1,7 @@
-﻿using System.Windows.Controls;
+﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using LLMClient.Component.ViewModel;
 using LLMClient.Dialog;
 
 namespace LLMClient.Project;

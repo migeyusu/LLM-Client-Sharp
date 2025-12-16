@@ -457,7 +457,7 @@ public class MainWindowViewModel : BaseViewModel
             await McpServiceCollection.LoadAsync();
             await RagSourceCollection.LoadAsync();
             await EndpointsViewModel.Initialize();
-
+            await PromptsResource.Initialize();
             await InitialSessionsFromLocal();
             if (SessionViewModels.Any())
             {
@@ -465,7 +465,6 @@ public class MainWindowViewModel : BaseViewModel
             }
 
             TextMateCodeRenderer.UpdateResource(_themeName);
-            await PromptsResource.Initialize();
             IsInitialized = true;
             // SemanticKernelStore.Test();
             //test point

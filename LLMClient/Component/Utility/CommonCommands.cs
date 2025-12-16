@@ -1,6 +1,10 @@
 ﻿using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
+using LLMClient.Component.ViewModel;
+using LLMClient.Dialog;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -71,6 +75,14 @@ public static class CommonCommands
         }
     }
 
+    public static ICommand CreatePromptEditViewModel = new RelayCommand<IPromptableSession>(((o) =>
+    {
+        if (o != null)
+        {
+            DialogHost.Show(new PromptEditorViewModel(o));
+        }
+    }));
+
     private static ICommand? _copyCommand;
 
     public static ICommand CopyCommand
@@ -121,8 +133,8 @@ public static class CommonCommands
                     var fileDialog = new SaveFileDialog()
                     {
                         AddExtension = true,
-                        OverwritePrompt = true, 
-                        DefaultExt = ".md", 
+                        OverwritePrompt = true,
+                        DefaultExt = ".md",
                         Filter = "Markdown files (*.md)|*.md"
                     };
                     if (fileDialog.ShowDialog() == true)

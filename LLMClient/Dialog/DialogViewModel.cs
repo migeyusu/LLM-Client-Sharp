@@ -1,6 +1,8 @@
 ﻿// #define TESTMODE
 
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Text;
 using System.Windows;
 using AutoMapper;
 using LLMClient.Abstraction;
@@ -13,7 +15,7 @@ using MessageBox = System.Windows.MessageBox;
 
 namespace LLMClient.Dialog;
 
-public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
+public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPromptableSession
 {
     //创建新实例后默认为changed
     private bool _isDataChanged = true;
@@ -36,7 +38,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
 
     private string? _userSystemPrompt;
 
-    public override string? UserSystemPrompt
+    public string? UserSystemPrompt
     {
         get => _userSystemPrompt;
         set
@@ -44,8 +46,43 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
             if (value == _userSystemPrompt) return;
             _userSystemPrompt = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(SystemPrompt));
         }
-    
+    }
+
+    private ObservableCollection<PromptEntry> _extendedSystemPrompts = [];
+
+    public ObservableCollection<PromptEntry> ExtendedSystemPrompts
+    {
+        get => _extendedSystemPrompts;
+        set
+        {
+            if (Equals(value, _extendedSystemPrompts)) return;
+            _extendedSystemPrompts = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SystemPrompt));
+        }
+    }
+
+    public override string? SystemPrompt
+    {
+        get
+        {
+            if (!ExtendedSystemPrompts.Any() && string.IsNullOrEmpty(UserSystemPrompt))
+            {
+                return null;
+            }
+
+            var stringBuilder = new StringBuilder();
+            foreach (var promptEntry in ExtendedSystemPrompts)
+            {
+                stringBuilder.AppendLine(promptEntry.Prompt);
+            }
+
+            stringBuilder.AppendLine(UserSystemPrompt);
+            return stringBuilder.ToString();
+        }
+    }
 
     private string _topic;
     private readonly GlobalOptions _options;
@@ -211,6 +248,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource
 
             IsDataChanged = true;
         };
+        _extendedSystemPrompts.CollectionChanged += ((sender, args) => { this.IsDataChanged = true; });
     }
 
     protected override void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

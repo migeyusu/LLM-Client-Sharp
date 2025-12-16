@@ -22,7 +22,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Project;
 
-public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectViewModel>
+public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectViewModel>, IPromptableSession
 {
     public const string SaveDir = "Projects";
 
@@ -167,6 +167,34 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         }
     }
 
+    private string _userSystemPrompt;
+
+    public string UserSystemPrompt
+    {
+        get => _userSystemPrompt;
+        set
+        {
+            if (value == _userSystemPrompt) return;
+            _userSystemPrompt = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private ObservableCollection<PromptEntry> _extendedSystemPrompts = [];
+
+    public ObservableCollection<PromptEntry> ExtendedSystemPrompts
+    {
+        get => _extendedSystemPrompts;
+        set
+        {
+            if (Equals(value, _extendedSystemPrompts)) return;
+            _extendedSystemPrompts = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
+        }
+    }
+
+
     private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
 
     /// <summary>
@@ -182,6 +210,11 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             }
 
             _systemPromptBuilder.Clear();
+            foreach (var promptEntry in ExtendedSystemPrompts)
+            {
+                _systemPromptBuilder.AppendLine(promptEntry.Prompt);
+            }
+
             _systemPromptBuilder.AppendFormat("我正在开发一个名为{0}的软件项目，项目代码位于文件夹{1}。", Name, FolderPath);
             _systemPromptBuilder.AppendLine();
             _systemPromptBuilder.AppendLine("项目背景/描述如下：");
@@ -411,6 +444,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             IsDataChanged = true;
         };
         Tasks.CollectionChanged += OnCollectionChanged;
+        _extendedSystemPrompts.CollectionChanged += ((sender, args) => { this.IsDataChanged = true; });
     }
 
     private void FunctionTreeSelectorOnAfterSelect()

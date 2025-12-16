@@ -513,4 +513,19 @@
                     Command="{Binding AddAllowedFolderPathsCommand}" />
         </Grid>
     </DataTemplate>
+    <DataTemplate x:Key="PromptDataTemplate"
+                  DataType="{x:Type configuration:PromptEntry}">
+        <DockPanel>
+            <TextBlock Text="{Binding Title,Mode=OneWay}"
+                       FontWeight="Black"
+                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                       TextWrapping="NoWrap"
+                       TextTrimming="WordEllipsis"
+                       DockPanel.Dock="Top" />
+            <TextBlock Text="{Binding Prompt,Mode=OneWay}"
+                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                       Margin="0,10,0,0"
+                       MaxHeight="40" />
+        </DockPanel>
+    </DataTemplate>
 </ResourceDictionary>

@@ -1,0 +1,86 @@
+﻿<UserControl x:Class="LLMClient.Component.PromptEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
+             xmlns:configuration="clr-namespace:LLMClient.Configuration"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="400"
+             d:DataContext="{d:DesignInstance viewModel:PromptEditorViewModel}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <ListBox Grid.Row="0"
+                 Grid.Column="0"
+                 ItemsSource="{Binding Session.ExtendedSystemPrompts,Mode=OneWay}">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type configuration:PromptEntry}">
+                    <Grid>
+                        <ContentPresenter ContentTemplate="{StaticResource PromptDataTemplate}" />
+                        <Button Margin="0,0,5,0"
+                                Width="22"
+                                Height="22"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                                Background="White"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.RemoveCommand}"
+                                CommandParameter="{Binding Mode=OneTime}"
+                                Content="{materialDesign:PackIcon Kind=MinusThick,Size=17}"
+                                Style="{StaticResource ListBoxHoverButtonStyle}" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <Separator Grid.Row="0" Grid.Column="0"
+                   Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Stretch"
+                   Width="1" />
+        <ListBox Grid.Row="0"
+                 Grid.Column="1"
+                 ItemsSource="{Binding SelectablePrompts,Mode=OneTime}">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type viewModel:SelectableViewModel`1[]}">
+                    <Grid>
+                        <ContentPresenter ContentTemplate="{StaticResource PromptDataTemplate}"
+                                          Content="{Binding Data,Mode=OneTime}" />
+                        <CheckBox VerticalAlignment="Top"
+                                  HorizontalAlignment="Right"
+                                  IsHitTestVisible="False"
+                                  Padding="0"
+                                  Height="20"
+                                  Width="20"
+                                  IsChecked="{Binding IsSelected,Mode=OneWay}" />
+                        <Button HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Width="22"
+                                Height="22"
+                                Background="White"
+                                Command="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBox},Path=DataContext.AddCommand}"
+                                CommandParameter="{Binding Mode=OneTime}"
+                                Style="{StaticResource ListBoxHoverButtonStyle}">
+                            <materialDesign:PackIcon Kind="ArrowLeftBold"
+                                                     Width="17"
+                                                     Height="17" />
+                        </Button>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBox Grid.Row="1"
+                 Grid.Column="0"
+                 Grid.ColumnSpan="2"
+                 materialDesign:HintAssist.Hint="Custom System Prompt"
+                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                 Text="{Binding Session.UserSystemPrompt,Mode=TwoWay}" />
+    </Grid>
+</UserControl>

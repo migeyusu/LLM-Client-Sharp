@@ -200,7 +200,6 @@
                                 Background="White"
                                 Command="MoveUp"
                                 CommandParameter="{Binding}"
-                                x:Name="MoveUpButton"
                                 Style="{StaticResource ListBoxHoverButtonStyle}">
                             <materialDesign:PackIcon Kind="ArrowUpBold"
                                                      Width="17"

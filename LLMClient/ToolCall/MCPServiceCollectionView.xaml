@@ -76,25 +76,10 @@
                                 Height="22"
                                 Background="White"
                                 Command="Delete"
-                                CommandParameter="{Binding}">
-                            <materialDesign:PackIcon Kind="MinusThick"
-                                                     Width="17"
-                                                     Height="17"
-                                                     Foreground="{DynamicResource MaterialDesign.Brush.Secondary}" />
-                            <Button.Style>
-                                <Style TargetType="Button"
-                                       BasedOn="{StaticResource MaterialDesignIconButton}">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger
-                                            Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
-                                            Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
+                                Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                                CommandParameter="{Binding}"
+                                Content="{materialDesign:PackIcon Kind=MinusThick,Size=17}"
+                                Style="{StaticResource ListBoxHoverButtonStyle}" />
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
