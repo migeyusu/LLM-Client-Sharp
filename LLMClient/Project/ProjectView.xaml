@@ -12,6 +12,7 @@
              xmlns:extension="clr-namespace:LLMClient.Component.Extension"
              xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
              xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:ProjectViewModel}"
              d:DesignHeight="800" d:DesignWidth="1200">
@@ -55,6 +56,19 @@
                                             PopupContent="{Binding Context,Mode=OneWay}"
                                             Style="{StaticResource MaterialDesignFlatSplitButton}"
                                             Content="{Binding Context,Mode=OneWay}">
+                    <materialDesign:SplitButton.PopupContentTemplate>
+                        <DataTemplate DataType="{x:Type sys:String}">
+                            <ScrollViewer Width="800"
+                                          MaxHeight="300"
+                                          Padding="10"
+                                          Margin="10"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          VerticalScrollBarVisibility="Auto">
+                                <TextBlock Text="{Binding}"
+                                           TextWrapping="Wrap" />
+                            </ScrollViewer>
+                        </DataTemplate>
+                    </materialDesign:SplitButton.PopupContentTemplate>
                 </materialDesign:SplitButton>
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"

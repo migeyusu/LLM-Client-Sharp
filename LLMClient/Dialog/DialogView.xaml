@@ -10,6 +10,7 @@
              xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
              xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
              xmlns:extension="clr-namespace:LLMClient.Component.Extension"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:DialogViewModel}"
              d:DesignHeight="600"
@@ -52,7 +53,21 @@
                                             Style="{StaticResource MaterialDesignFlatSplitButton}"
                                             Content="{Binding SystemPrompt,Mode=OneWay}"
                                             Command="{x:Static utility:CommonCommands.CreatePromptEditViewModel}"
-                                            CommandParameter="{Binding Mode=OneTime}"/>
+                                            CommandParameter="{Binding Mode=OneTime}">
+                    <materialDesign:SplitButton.PopupContentTemplate>
+                        <DataTemplate DataType="{x:Type sys:String}">
+                            <ScrollViewer Width="800"
+                                          MaxHeight="300"
+                                          Padding="10"
+                                          Margin="10"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          VerticalScrollBarVisibility="Auto">
+                                <TextBlock Text="{Binding}"
+                                           TextWrapping="Wrap" />
+                            </ScrollViewer>
+                        </DataTemplate>
+                    </materialDesign:SplitButton.PopupContentTemplate>
+                </materialDesign:SplitButton>
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
