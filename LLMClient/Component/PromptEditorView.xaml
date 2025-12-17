@@ -48,6 +48,14 @@
         <ListBox Grid.Row="0"
                  Grid.Column="1"
                  ItemsSource="{Binding SelectablePrompts,Mode=OneTime}">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem"
+                       BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                    <!--<Setter Property="Padding" Value="0" />
+                    <Setter Property="Margin" Value="0" />-->
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="{x:Type viewModel:SelectableViewModel`1[]}">
                     <Grid>
@@ -58,7 +66,7 @@
                                   IsHitTestVisible="False"
                                   Padding="0"
                                   Height="20"
-                                  Width="20"
+                                  Width="26"
                                   IsChecked="{Binding IsSelected,Mode=OneWay}" />
                         <Button HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
@@ -79,8 +87,13 @@
         <TextBox Grid.Row="1"
                  Grid.Column="0"
                  Grid.ColumnSpan="2"
+                 MaxHeight="100"
                  materialDesign:HintAssist.Hint="Custom System Prompt"
                  Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                 TextWrapping="Wrap"
+                 AcceptsReturn="True"
+                 AcceptsTab="True"
+                 VerticalScrollBarVisibility="Auto"
                  Text="{Binding Session.UserSystemPrompt,Mode=TwoWay}" />
     </Grid>
 </UserControl>

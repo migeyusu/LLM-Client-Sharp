@@ -58,7 +58,9 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         set
         {
             if (Equals(value, _extendedSystemPrompts)) return;
+            _extendedSystemPrompts.CollectionChanged -= ExtendedSystemPromptsOnCollectionChanged;
             _extendedSystemPrompts = value;
+            value.CollectionChanged += ExtendedSystemPromptsOnCollectionChanged;
             OnPropertyChanged();
             OnPropertyChanged(nameof(SystemPrompt));
         }
@@ -248,7 +250,13 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
 
             IsDataChanged = true;
         };
-        _extendedSystemPrompts.CollectionChanged += ((sender, args) => { this.IsDataChanged = true; });
+        _extendedSystemPrompts.CollectionChanged += ExtendedSystemPromptsOnCollectionChanged;
+    }
+
+    private void ExtendedSystemPromptsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        this.IsDataChanged = true;
+        OnPropertyChanged(nameof(SystemPrompt));
     }
 
     protected override void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

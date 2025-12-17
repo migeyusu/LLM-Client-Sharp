@@ -26,7 +26,7 @@ public class PromptEntry : BaseViewModel
         {
             if (string.IsNullOrEmpty(_title))
             {
-                return string.IsNullOrEmpty(Prompt) ? null : Prompt;
+                return string.IsNullOrEmpty(Prompt) ? null : Prompt.Substring(0, int.Min(Prompt.Length, 20));
             }
 
             return _title;

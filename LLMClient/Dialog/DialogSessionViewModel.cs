@@ -542,7 +542,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             var saveFileDialog = new SaveFileDialog()
             {
                 FileName = this.Name ?? string.Empty,
-                CheckFileExists = true,
+                CheckFileExists = false,
                 AddExtension = true,
                 DefaultExt = ".md",
                 CheckPathExists = true,

@@ -164,20 +164,15 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             _description = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(Context));
+            OnPropertyChanged(nameof(UserSystemPrompt));
         }
     }
 
-    private string _userSystemPrompt;
 
-    public string UserSystemPrompt
+    public string? UserSystemPrompt
     {
-        get => _userSystemPrompt;
-        set
-        {
-            if (value == _userSystemPrompt) return;
-            _userSystemPrompt = value;
-            OnPropertyChanged();
-        }
+        get => Description;
+        set => Description = value;
     }
 
     private ObservableCollection<PromptEntry> _extendedSystemPrompts = [];
@@ -188,7 +183,9 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         set
         {
             if (Equals(value, _extendedSystemPrompts)) return;
+            _extendedSystemPrompts.CollectionChanged -= ExtendedSystemPromptsOnCollectionChanged;
             _extendedSystemPrompts = value;
+            value.CollectionChanged += ExtendedSystemPromptsOnCollectionChanged;
             OnPropertyChanged();
             OnPropertyChanged(nameof(Context));
         }
@@ -444,7 +441,13 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             IsDataChanged = true;
         };
         Tasks.CollectionChanged += OnCollectionChanged;
-        _extendedSystemPrompts.CollectionChanged += ((sender, args) => { this.IsDataChanged = true; });
+        _extendedSystemPrompts.CollectionChanged += ExtendedSystemPromptsOnCollectionChanged;
+    }
+
+    private void ExtendedSystemPromptsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        this.IsDataChanged = true;
+        OnPropertyChanged(nameof(Context));
     }
 
     private void FunctionTreeSelectorOnAfterSelect()
