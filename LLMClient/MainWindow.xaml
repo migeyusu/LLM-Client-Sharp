@@ -123,9 +123,12 @@
                                 <DataTemplate DataType="{x:Type project:ProjectViewModel}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="Standard Project"
+                                                            Width="600"
+                                                            Height="400"
+                                                            VerticalContentAlignment="Stretch"
+                                                            HorizontalContentAlignment="Stretch"
                                                             ContentTemplate="{StaticResource ProjectConfigDataTemplate}"
-                                                            Content="{Binding }">
-                                    </HeaderedContentControl>
+                                                            Content="{Binding }"/>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type endpoints:EmptyLlmModelClient}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"

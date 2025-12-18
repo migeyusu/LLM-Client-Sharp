@@ -99,20 +99,21 @@ public class StdIOServerItem : McpServerItem
     public ICommand SelectEnvironmentCommand => new RelayCommand(() =>
     {
         var envWindow = new EnvironmentVariablesWindow();
-        if (envWindow.ShowDialog() == true)
+        if (envWindow.DataContext is EnvironmentVariablesViewModel viewModel)
         {
-            if (envWindow.DataContext is EnvironmentVariablesViewModel viewModel)
+            viewModel.IsSystemVariablesEnable = false;
+            var environmentVariable = this.EnvironmentVariable;
+            if (environmentVariable != null)
             {
-                if (viewModel.IsSystemVariablesIncluded)
+                foreach (var variableItem in environmentVariable)
                 {
-                    this.EnvironmentVariable = viewModel.SystemVariables != null
-                        ? viewModel.SystemVariables.Concat(viewModel.UserVariables).ToArray()
-                        : viewModel.UserVariables;
+                    viewModel.UserVariables.Add(variableItem);
                 }
-                else
-                {
-                    this.EnvironmentVariable = viewModel.UserVariables;
-                }
+            }
+
+            if (envWindow.ShowDialog() == true)
+            {
+                this.EnvironmentVariable = viewModel.UserVariables.ToArray();
             }
         }
     });

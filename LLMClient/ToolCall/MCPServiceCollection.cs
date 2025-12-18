@@ -109,6 +109,23 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
                             {
                                 Url = server["url"]?.ToString(),
                             };
+                            if (server.ContainsKey("headers"))
+                            {
+                                var o = server["headers"]?.AsObject();
+                                if (o != null)
+                                {
+                                    var dictionary = new Dictionary<string, string>();
+                                    foreach (var (key, value) in o)
+                                    {
+                                        if (value != null)
+                                        {
+                                            dictionary[key] = value.ToString();
+                                        }
+                                    }
+
+                                    ((SseServerItem)item).AdditionalHeaders = dictionary;
+                                }
+                            }
                         }
                         else
                         {

@@ -1,5 +1,10 @@
-﻿using System.Text.Json;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
@@ -166,8 +171,8 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
                 _client = await McpClient.CreateAsync(transport, cancellationToken: cancellationToken);
             }
 
-            this.AvailableTools =
-                (await _client.ListToolsAsync(cancellationToken: cancellationToken)).ToArray<AIFunction>();
+            this.AvailableTools = (await _client.ListToolsAsync(cancellationToken: cancellationToken))
+                .ToArray<AIFunction>();
             this.IsAvailable = AvailableTools?.Count > 0;
             return true;
         }

@@ -17,6 +17,7 @@ public class EnvironmentVariablesViewModel : BaseViewModel
     public ObservableCollection<VariableItem> UserVariables { get; }
 
     private IList<VariableItem>? _systemVariables;
+
     // 系统环境变量列表 (加载一次后不变)
     public IList<VariableItem>? SystemVariables
     {
@@ -30,6 +31,7 @@ public class EnvironmentVariablesViewModel : BaseViewModel
     }
 
     private VariableItem? _selectedUserVariable;
+
     // 当前选中的用户变量
     public VariableItem? SelectedUserVariable
     {
@@ -40,6 +42,23 @@ public class EnvironmentVariablesViewModel : BaseViewModel
             {
                 _selectedUserVariable = value;
                 OnPropertyChanged();
+            }
+        }
+    }
+
+    private bool _isSystemVariablesEnable = true;
+
+    public bool IsSystemVariablesEnable
+    {
+        get => _isSystemVariablesEnable;
+        set
+        {
+            if (value == _isSystemVariablesEnable) return;
+            _isSystemVariablesEnable = value;
+            OnPropertyChanged();
+            if (!value)
+            {
+                IsSystemVariablesIncluded = false;
             }
         }
     }

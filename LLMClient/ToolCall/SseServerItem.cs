@@ -1,4 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -12,6 +15,8 @@ public class SseServerItem : McpServerItem
     private string? _url;
     private HttpTransportMode _transportMode = HttpTransportMode.AutoDetect;
     private IDictionary<string, string>? _additionalHeaders;
+    private bool _bufferedRequest;
+    private bool _removeCharSet;
     public override string Type => "sse";
 
     public override bool Validate()
@@ -48,6 +53,28 @@ public class SseServerItem : McpServerItem
         {
             if (value == _transportMode) return;
             _transportMode = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool BufferedRequest
+    {
+        get => _bufferedRequest;
+        set
+        {
+            if (value == _bufferedRequest) return;
+            _bufferedRequest = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool RemoveCharSet
+    {
+        get => _removeCharSet;
+        set
+        {
+            if (value == _removeCharSet) return;
+            _removeCharSet = value;
             OnPropertyChanged();
         }
     }
@@ -106,8 +133,6 @@ public class SseServerItem : McpServerItem
             throw new NotSupportedException("Url cannot be null or empty.");
         }
 
-        var proxyOption = this.ProxySetting.GetRealProxy();
- 
         var sseClientTransportOptions = new HttpClientTransportOptions()
         {
             Name = this.Name,
@@ -115,6 +140,17 @@ public class SseServerItem : McpServerItem
             TransportMode = TransportMode,
             AdditionalHeaders = this.AdditionalHeaders,
         };
-        return new HttpClientTransport(sseClientTransportOptions, new HttpClient(proxyOption.CreateHandler()));
+        HttpMessageHandler clientHandler = this.ProxySetting.GetRealProxy().CreateHandler();
+        if (BufferedRequest || RemoveCharSet)
+        {
+            clientHandler = new CustomHttpHandler(clientHandler)
+            {
+                BufferedRequest = this.BufferedRequest,
+                RemoveCharSet = this.RemoveCharSet,
+            };
+        }
+
+        return new HttpClientTransport(sseClientTransportOptions, new HttpClient(clientHandler),
+            ownsHttpClient: true);
     }
 }

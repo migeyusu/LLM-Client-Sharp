@@ -301,6 +301,16 @@
                                      VerticalContentAlignment="Top"
                                      materialDesign:HintAssist.Hint="为MCP附加额外的Prompt"
                                      Text="{Binding UserPrompt,Mode=TwoWay}" />
+                            <StackPanel Grid.Row="7" Grid.Column="0"
+                                        Grid.ColumnSpan="2"
+                                        Orientation="Horizontal">
+                                <CheckBox IsChecked="{Binding RemoveCharSet,Mode=TwoWay}"
+                                          Content="Remove CharSet"
+                                          ToolTip="remove ‘charset=utf-8' in Content-Type" />
+                                <CheckBox IsChecked="{Binding BufferedRequest,Mode=TwoWay}"
+                                          Content="Buffered Request"
+                                          ToolTip="use content-length instead of chucked" />
+                            </StackPanel>
                         </Grid>
                     </DataTemplate>
                 </ContentControl.Resources>
@@ -314,10 +324,11 @@
                     <DataTemplate DataType="{x:Type ai:AIFunction}">
                         <StackPanel>
                             <TextBlock Text="{Binding Name,Mode=OneTime}"
+                                       FontWeight="Black"
                                        Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
                             <TextBlock Text="{Binding Description,Mode=OneWay}"
                                        TextWrapping="Wrap"
-                                       Margin="0,5,0,0"
+                                       Margin="16,0,0,0"
                                        Style="{StaticResource MaterialDesignCaptionTextBlock}" />
                         </StackPanel>
                     </DataTemplate>

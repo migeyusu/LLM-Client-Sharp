@@ -557,10 +557,18 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type HeaderedContentControl}">
-                    <StackPanel>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
                         <ContentPresenter ContentSource="Header" />
-                        <ContentPresenter Margin="{TemplateBinding Padding}" />
-                    </StackPanel>
+                        <ContentPresenter Grid.Row="1"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          Margin="{TemplateBinding Padding}"
+                                          ContentSource="Content" />
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
