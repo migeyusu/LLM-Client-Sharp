@@ -2,6 +2,7 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -201,17 +202,12 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
     {
         get
         {
-            if (!Check())
-            {
-                return null;
-            }
-
             _systemPromptBuilder.Clear();
             foreach (var promptEntry in ExtendedSystemPrompts)
             {
                 _systemPromptBuilder.AppendLine(promptEntry.Prompt);
             }
-
+            
             _systemPromptBuilder.AppendFormat("我正在开发一个名为{0}的软件项目，项目代码位于文件夹{1}。", Name, FolderPath);
             _systemPromptBuilder.AppendLine();
             _systemPromptBuilder.AppendLine("项目背景/描述如下：");
@@ -489,6 +485,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         this.IsDataChanged = true;
     }
 
+    [MemberNotNullWhen(true, nameof(Name), nameof(FolderPath), nameof(Description))]
     public bool Check()
     {
         if (this.HasErrors)
