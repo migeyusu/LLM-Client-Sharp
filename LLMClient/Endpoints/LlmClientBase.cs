@@ -1,12 +1,15 @@
-﻿using System.Diagnostics;
+﻿using System.ClientModel.Primitives;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Component;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog;
+using LLMClient.Endpoints.Messages;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Rag;
 using Microsoft.Extensions.AI;
@@ -299,6 +302,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                                    cancellationToken))
                             {
                                 latency ??= (int)_stopwatch.ElapsedMilliseconds;
+                                TryAddExtendedData(update);
                                 preUpdates.Add(update);
                                 chatContext.CompleteStreamResponse(result, update);
                                 //只收集文本内容
@@ -328,9 +332,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                         (loopUsageDetails ??= new UsageDetails()).Add(usageContent.Details);
                                         break;
                                     case TextContent:
-                                    //do nothing, textContent is already added to RespondingText
                                     case TextReasoningContent:
-                                        //do nothing, reasoningContent is already added to RespondingText
+                                        //do nothing, textContent & reasoningContent is already added to RespondingText
                                         break;
                                     case FunctionCallContent functionCallContent:
                                         interactor?.WriteLine("Function call requested: " +
@@ -532,7 +535,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            var duration = (int)(_stopwatch.ElapsedMilliseconds / 1000);
+            var duration = (int)Math.Ceiling(_stopwatch.ElapsedMilliseconds / 1000f);
             var price = this.Model.PriceCalculator?.Calculate(totalUsageDetails);
             result.Usage = totalUsageDetails;
             result.ResponseMessages = responseMessages;
@@ -541,6 +544,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             result.Duration = duration;
             result.FinishReason = finishReason;
             result.Price = price;
+            if (this.Model.Telemetry == null)
+            {
+                this.Model.Telemetry = new UsageCount(result);
+            }
+            else
+            {
+                this.Model.Telemetry.Add(result);
+            }
+
             return result;
         }
         finally
@@ -630,64 +642,86 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         return chatResponse;
     }
 
-    private static UsageDetails? GetUsageDetailsFromAdditional(ChatResponse? response)
+    public static UsageDetails? GetUsageDetailsFromAdditional(ChatResponse? response)
     {
         UsageDetails? usageDetails = null;
+
+        void TryGetUsage(AdditionalPropertiesDictionary? additionalProperties)
+        {
+            if (additionalProperties != null)
+            {
+                // 方法1: 检查 Metadata 中的 Usage 信息
+                if (additionalProperties.TryGetValue("Usage", out var usageObj))
+                {
+                    if (usageObj is ChatTokenUsage chatTokenUsage)
+                    {
+                        var details = new UsageDetails()
+                        {
+                            InputTokenCount = chatTokenUsage.InputTokenCount,
+                            OutputTokenCount = chatTokenUsage.OutputTokenCount,
+                            TotalTokenCount = chatTokenUsage.TotalTokenCount,
+                        };
+                        if (usageDetails == null)
+                        {
+                            usageDetails = details;
+                        }
+                        else
+                        {
+                            usageDetails.Add(details);
+                        }
+                    }
+
+                    /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
+                    {
+                        // tokenCount = Convert.ToInt32(totalTokensObj);
+                    }*/
+                }
+                // 方法2: 部分 AI 服务可能使用不同的元数据键
+                /*if (usageDetails == null &&
+                    dictionary.TryGetValue("CompletionTokenCount", out var completionTokensObj))
+                {
+                    // tokenCount = Convert.ToInt32(completionTokensObj);
+                }
+
+                // 方法3: 有些版本可能在 ModelResult 中提供 usage
+                if (usageDetails == null &&
+                    dictionary.TryGetValue("ModelResults", out var modelResultsObj))
+                {
+                    //do what?
+                }*/
+            }
+        }
+
         if (response != null)
         {
+            TryGetUsage(response.AdditionalProperties);
             var messages = response.Messages;
             foreach (var message in messages)
             {
                 var additionalProperties = message.AdditionalProperties;
-                if (additionalProperties != null)
-                {
-                    // 方法1: 检查 Metadata 中的 Usage 信息
-                    if (additionalProperties.TryGetValue("Usage", out var usageObj))
-                    {
-                        if (usageObj is ChatTokenUsage chatTokenUsage)
-                        {
-                            var details = new UsageDetails()
-                            {
-                                InputTokenCount = chatTokenUsage.InputTokenCount,
-                                OutputTokenCount = chatTokenUsage.OutputTokenCount,
-                                TotalTokenCount = chatTokenUsage.TotalTokenCount,
-                            };
-                            if (usageDetails == null)
-                            {
-                                usageDetails = details;
-                            }
-                            else
-                            {
-                                usageDetails.Add(details);
-                            }
-                        }
-
-                        /*if (usage.TryGetValue("TotalTokens", out var totalTokensObj))
-                        {
-                            // tokenCount = Convert.ToInt32(totalTokensObj);
-                        }*/
-                    }
-                    else
-                    {
-                        Debugger.Break();
-                    }
-                    // 方法2: 部分 AI 服务可能使用不同的元数据键
-                    /*if (usageDetails == null &&
-                        dictionary.TryGetValue("CompletionTokenCount", out var completionTokensObj))
-                    {
-                        // tokenCount = Convert.ToInt32(completionTokensObj);
-                    }
-
-                    // 方法3: 有些版本可能在 ModelResult 中提供 usage
-                    if (usageDetails == null &&
-                        dictionary.TryGetValue("ModelResults", out var modelResultsObj))
-                    {
-                        //do what?
-                    }*/
-                }
+                TryGetUsage(additionalProperties);
             }
         }
 
         return usageDetails;
+    }
+
+    public static void TryAddExtendedData(ChatResponseUpdate update)
+    {
+        if (update.RawRepresentation is StreamingChatCompletionUpdate streamingChatCompletionUpdate)
+        {
+            var s = streamingChatCompletionUpdate.Patch.ToString("J");
+            if (string.IsNullOrEmpty(s))
+            {
+                return;
+            }
+
+            var chatChunk = JsonSerializer.Deserialize<Extended.ChatChunk>(s);
+            var reasoningContent = chatChunk?.Choices?.FirstOrDefault()?.Delta?.ReasoningContent;
+            if (reasoningContent != null && !update.Contents.Any((content => content is TextReasoningContent)))
+            {
+                update.Contents.Insert(0, new TextReasoningContent(reasoningContent));
+            }
+        }
     }
 }

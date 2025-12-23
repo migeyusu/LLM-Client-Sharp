@@ -82,7 +82,9 @@ public static class EndPointsConfig
     public static async Task SaveDoc(JsonNode node)
     {
         var fullPath = Path.GetFullPath(EndPointsJsonFileName);
-        var fileInfo = new FileInfo(fullPath);
+        //先写入临时文件，写入成功后再替换，防止写入过程中程序崩溃导致文件损坏
+        var tempFilePath = fullPath + ".tmp";
+        var fileInfo = new FileInfo(tempFilePath);
         fileInfo.Directory?.Create();
         if (fileInfo.Exists)
         {
@@ -91,11 +93,15 @@ public static class EndPointsConfig
 
         await using (var fileStream = fileInfo.OpenWrite())
         {
-            await using (var utf8JsonWriter = new Utf8JsonWriter(fileStream, new JsonWriterOptions()))
+            await using (var utf8JsonWriter = new Utf8JsonWriter(fileStream))
             {
                 node.WriteTo(utf8JsonWriter);
                 await utf8JsonWriter.FlushAsync();
             }
         }
+
+        //替换文件
+        File.Copy(tempFilePath, fullPath, true);
+        File.Delete(tempFilePath);
     }
 }

@@ -545,7 +545,9 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         }
     }
 
-    public IPriceCalculator? PriceCalculator { get; set; } = new TokenBasedPriceCalculator();
+    public IPriceCalculator? PriceCalculator { get; init; } = new TokenBasedPriceCalculator();
+
+    [JsonIgnore] public UsageCount? Telemetry { get; set; }
 
     public float FrequencyPenalty
     {

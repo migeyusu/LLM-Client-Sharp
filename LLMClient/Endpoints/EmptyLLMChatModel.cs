@@ -53,7 +53,9 @@ public class EmptyLLMChatModel : ILLMModel
     public bool SupportSearch { get; set; }
     public bool SupportFunctionCall { get; set; }
     public bool FunctionCallOnStreaming { get; set; }
-    public IPriceCalculator? PriceCalculator { get; set; }
+    public IPriceCalculator? PriceCalculator { get; init; }
+    
+    public UsageCount? Telemetry { get; set; }
     public bool Streaming { get; set; }
     public string? SystemPrompt { get; set; }
     public float TopP { get; set; }

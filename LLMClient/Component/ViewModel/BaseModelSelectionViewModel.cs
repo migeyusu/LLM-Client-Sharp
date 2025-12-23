@@ -79,7 +79,7 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
             throw new Exception("Create chat client failed.");
         }
 
-        ServiceLocator.GetService<IEndpointService>()?.AddModelFrequency(this.SelectedModel);
+        ServiceLocator.GetService<IEndpointService>()?.SetModelHistory(this.SelectedModel);
         return chatClient;
     }
 

@@ -306,9 +306,9 @@ public class MainWindowViewModel : BaseViewModel
 
     #region item management
 
-    public ProjectViewModel NewProjectViewModel()
+    public ProjectViewModel NewProjectViewModel(ILLMChatClient chatClient, ProjectOption option)
     {
-        return new ProjectViewModel(EmptyLlmModelClient.Instance, Mapper, GlobalOptions, RagSourceCollection);
+        return new ProjectViewModel(option, chatClient, Mapper, GlobalOptions, RagSourceCollection);
     }
 
     public DialogFileViewModel NewDialogViewModel(ILLMChatClient client, string dialogName = "新建会话")
@@ -436,7 +436,7 @@ public class MainWindowViewModel : BaseViewModel
         this.LoadingMessage = "Saving data...";
         this.IsInitializing = true;
         await this.SaveSessionsToLocal();
-        await this.EndpointsViewModel.SaveHistory();
+        await this.EndpointsViewModel.SaveActivities();
         await HttpContentCache.Instance.PersistIndexAsync();
     }
 

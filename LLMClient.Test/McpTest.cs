@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Text;
+using LLMClient.ToolCall;
 using ModelContextProtocol.Client;
 using Xunit.Abstractions;
 
@@ -16,55 +18,42 @@ public class McpTest
     [Fact]
     public async Task ConnectRider()
     {
-        var httpClient = new HttpClient();
+        var httpClient = new HttpClient(new CustomHttpHandler(new HttpClientHandler())
+        {
+            BufferedRequest = true,
+            RemoveCharSet = true,
+        });
         var client = await McpClient.CreateAsync(new HttpClientTransport(new HttpClientTransportOptions()
         {
             Name = "Rider MCP",
             Endpoint = new Uri("http://localhost:64342/sse"),
             TransportMode = HttpTransportMode.Sse,
-            /*AdditionalHeaders = new Dictionary<string, string>
+            AdditionalHeaders = new Dictionary<string, string>
             {
-                ["IJ_MCP_SERVER_PROJECT_PATH"] = "/e/OpenSource/LLM-Client-Sharp/LLM-Client-Sharp/",
-            }*/
-        }, httpClient));
-        /*string riderBasePath = @"D:\Program Files\JetBrains Rider 2025.2.3";
-
-        // 构建 JAR 列表
-        var jars = new[]
-        {
-            $@"{riderBasePath}\plugins\mcpserver\lib\mcpserver-frontend.jar",
-            $@"{riderBasePath}\lib\util-8.jar",
-            $@"{riderBasePath}\lib\module-intellij.libraries.ktor.client.cio.jar",
-            $@"{riderBasePath}\lib\module-intellij.libraries.ktor.client.jar",
-            $@"{riderBasePath}\lib\module-intellij.libraries.ktor.network.tls.jar",
-            $@"{riderBasePath}\lib\module-intellij.libraries.ktor.io.jar",
-            $@"{riderBasePath}\lib\module-intellij.libraries.ktor.utils.jar",
-            $@"{riderBasePath}\lib\module-intellij.libraries.kotlinx.io.jar",
-            $@"{riderBasePath}\lib\module-intellij.libraries.kotlinx.serialization.core.jar",
-            $@"{riderBasePath}\lib\module-intellij.libraries.kotlinx.serialization.json.jar"
-        };
-
-        // 每个路径加引号，然后用分号连接
-        string classpath = string.Join(";", jars.Select(j => $"\"{j}\""));
-
-        var client = await McpClient.CreateAsync(new StdioClientTransport(new StdioClientTransportOptions()
-        {
-            Command = @"D:\Program Files\JetBrains Rider 2025.2.3\jbr\bin\java.exe",
-
-            Arguments = new[]
-            {
-                "-classpath",
-                classpath,
-                "com.intellij.mcpserver.stdio.McpStdioRunnerKt"
-            },
-            EnvironmentVariables = new Dictionary<string, string?>()
-            {
-                {
-                    "IJ_MCP_SERVER_PORT", "64342"
-                }
+                ["IJ_MCP_SERVER_PROJECT_PATH"] = @"E:/OpenSource/LLM-Client-Sharp/LLM-Client-Sharp/",
             }
-        }));*/
+        }, httpClient));
         var clientTools = await client.ListToolsAsync();
+        var stringBuilder = new StringBuilder();
+        foreach (var mcpClientTool in clientTools)
+        {
+            stringBuilder.AppendLine("Name: " + mcpClientTool.Name);
+            stringBuilder.AppendLine("Description: " + mcpClientTool.Description);
+            stringBuilder.AppendLine("Parameters: " + mcpClientTool.JsonSchema);
+            stringBuilder.AppendLine("Returns: " + mcpClientTool.ReturnJsonSchema);
+        }
+        _output.WriteLine(stringBuilder.ToString());
+        /*
+
+        ValueKind = Object : "{"properties":{"directoryPath":{"type":"string","description":"Path relative to the project root"},"maxDepth":{"type":"integer","description":"Maximum recursion depth"},"timeout":{"type":"integer","description":"Timeout in milliseconds"},"projectPath":{"type":"string","description":" The project path. Pass this value ALWAYS if you are aware of it. It reduces numbers of ambiguous calls. \n In the case you know only the current working directory you can use it as the project path.\n If you\u0027re not aware about the project path you can ask user about it."}},"required":["directoryPath"],"type":"object"}"
+         */
+        var toolResult = await clientTools.First((tool => tool.Name == "list_directory_tree"))
+            .CallAsync(new Dictionary<string, object?>()
+            {
+                ["directoryPath"] = ".",
+                ["timeout"] = 5000,
+                ["projectPath"] = @"E:/OpenSource/LLM-Client-Sharp/LLM-Client-Sharp/"
+            });
         _output.WriteLine(clientTools.Count.ToString());
     }
 

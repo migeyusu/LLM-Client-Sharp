@@ -226,6 +226,9 @@ public class AzureModelInfo : ILLMModel
     public IPriceCalculator? PriceCalculator { get; } = null;
 
     [JsonIgnore]
+    public UsageCount? Telemetry { get; set; }
+
+    [JsonIgnore]
     public float FrequencyPenalty
     {
         get => _frequencyPenalty;

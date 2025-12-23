@@ -108,6 +108,14 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         }
     }
 
+    /// <summary>
+    /// tokens per second
+    /// </summary>
+    public float TpS
+    {
+        get { return this.CalculateTps(); }
+    }
+
     public string? ErrorMessage
     {
         get => _errorMessage;
@@ -390,6 +398,8 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                     completedResult = await Client.SendRequest(context, interactor,
                         cancellationToken: RequestTokenSource.Token);
                     ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItem>(completedResult, this);
+                    //刷新tps
+                    OnPropertyChangedAsync(nameof(TpS));
                 }
             }
         }

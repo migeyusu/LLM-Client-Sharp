@@ -116,7 +116,6 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
             _acceptedResponse = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsAvailableInContext));
-            OnPropertyChanged(nameof(Tokens));
             OnPropertyChanged(nameof(MarkValid));
             OnPropertyChanged(nameof(EditCommand));
         }

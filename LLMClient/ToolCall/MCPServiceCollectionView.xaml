@@ -320,6 +320,14 @@
             <ItemsControl ItemsSource="{Binding SelectedServerItem.AvailableTools,Mode=TwoWay}"
                           IsEnabled="{Binding SelectedServerItem.IsEnabled,Mode=OneWay,TargetNullValue=False}"
                           Margin="10,10,10,0">
+                <ItemsControl.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Icon="{materialDesign:PackIcon Kind=ContentCopy}"
+                                  Header="Copy"
+                                  Command="{Binding CopySelectedItemCommand}"
+                                  CommandParameter="{Binding SelectedServerItem,Mode=OneWay}" />
+                    </ContextMenu>
+                </ItemsControl.ContextMenu>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type ai:AIFunction}">
                         <StackPanel>

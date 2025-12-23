@@ -38,16 +38,18 @@
                     <TextBlock>
                         <Run>
                             <Run.Text>
-                                <MultiBinding StringFormat="我正在开发一个名为{0}的软件项目，项目代码位于文件夹{1}。">
-                                    <Binding Path="Name" Mode="OneWay" />
-                                    <Binding Path="FolderPath" Mode="OneWay" />
+                                <MultiBinding StringFormat="这是一个名为{0}的{1}项目，项目代码位于文件夹{2}。">
+                                    <Binding Path="Option.Name" Mode="OneWay" />
+                                    <Binding Path="Option.Type" Mode="OneWay"
+                                             Converter="{x:Static converters:SnapConverters.EnumToDescriptionConverter}" />
+                                    <Binding Path="Option.FolderPath" Mode="OneWay" />
                                 </MultiBinding>
                             </Run.Text>
                         </Run>
                         <LineBreak />
                         <Run>项目背景/描述如下：</Run>
                         <LineBreak />
-                        <Run Text="{Binding Description,Mode=OneWay}"
+                        <Run Text="{Binding Option.Description,Mode=OneWay}"
                              Style="{StaticResource GenerateRunStyle}" />
                         <LineBreak />
                     </TextBlock>

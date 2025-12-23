@@ -221,4 +221,10 @@ public partial class MainWindow : ExtendedWindow
     {
         Application.Current.MainWindow = this;
     }
+
+    private void OpenStatistics_OnClick(object sender, RoutedEventArgs e)
+    {
+        var statsViewModel = new UsageStatisticsViewModel(_mainWindowViewModel.EndpointsViewModel);
+        DialogHost.OpenDialogCommand.Execute(statsViewModel, null);
+    }
 }

@@ -420,8 +420,7 @@
                         <Binding Path="Price" Mode="OneWay" TargetNullValue="None" />
                         <Binding Path="Latency" Mode="OneWay" TargetNullValue="None" />
                         <Binding Path="Duration" Mode="OneWay" TargetNullValue="None" />
-                        <Binding Path="." Mode="OneWay"
-                                 Converter="{x:Static converters:TpsConverter.Instance}" />
+                        <Binding Path="TpS" Mode="OneWay" TargetNullValue="None" />
                     </MultiBinding>
                 </TextBlock.Text>
             </TextBlock>
@@ -490,7 +489,7 @@
         <Setter Property="ItemTemplateSelector"
                 Value="{StaticResource DialogTemplateSelector}" />
     </Style>
-    <DataTemplate x:Key="ThinkingConfigDataTemplate" 
+    <DataTemplate x:Key="ThinkingConfigDataTemplate"
                   DataType="{x:Type dialog:ThinkingConfigViewModel}">
         <Grid>
             <Grid.RowDefinitions>

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Dialog;
 using LLMClient.Project;
 using LLMClient.Research;
 using MaterialDesignThemes.Wpf;
@@ -16,7 +17,6 @@ public class CreateSessionViewModel : BaseViewModel
     private int _selectedIndex;
     private string _dialogTitle = "新建会话";
     private bool _modelSelectionEnable = true;
-    private ProjectViewModel _project;
     private IResearchCreationOption? _selectedCreationOption;
 
     public int SelectedIndex
@@ -55,7 +55,9 @@ public class CreateSessionViewModel : BaseViewModel
 
     public ModelSelectionViewModel ModelSelection { get; set; } = new();
 
-    public ProjectViewModel Project
+    private ProjectOption _project = new ProjectOption();
+
+    public ProjectOption Project
     {
         get => _project;
         set
@@ -67,42 +69,7 @@ public class CreateSessionViewModel : BaseViewModel
         }
     }
 
-    public ICommand CreateSessionCommand => new RelayCommand(() =>
-    {
-        try
-        {
-            ILLMSession session;
-            switch (SelectedIndex)
-            {
-                case 0:
-                    var chatClient = ModelSelection.CreateClient();
-                    session = _mainWindowViewModel.NewDialogViewModel(chatClient, this.DialogTitle);
-                    break;
-                case 1:
-                    session = Project;
-                    Project = _mainWindowViewModel.NewProjectViewModel();
-                    break;
-                case 2:
-                    var researchClient = SelectedCreationOption?.CreateResearchClient();
-                    if (researchClient == null)
-                    {
-                        return;
-                    }
-
-                    session = new ResearchSession(researchClient);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            _mainWindowViewModel.AddSession(session);
-            DialogHost.CloseDialogCommand.Execute(null, null);
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show("Failed to create session: " + e.Message);
-        }
-    });
+    public ICommand CreateSessionCommand { get; }
 
     public IReadOnlyList<IResearchCreationOption> ResearchCreationOptions { get; set; }
 
@@ -117,11 +84,62 @@ public class CreateSessionViewModel : BaseViewModel
         }
     }
 
-    public CreateSessionViewModel(MainWindowViewModel mainWindowViewModel,
+    public CreateSessionViewModel(IViewModelFactory factory, MainWindowViewModel mainWindowViewModel,
         NvidiaResearchClientOption nvidiaResearchClientOption)
     {
         _mainWindowViewModel = mainWindowViewModel;
-        _project = mainWindowViewModel.NewProjectViewModel();
+        CreateSessionCommand = new RelayCommand(() =>
+        {
+            try
+            {
+                ILLMSession session;
+                switch (SelectedIndex)
+                {
+                    case 0:
+                        var chatClient = ModelSelection.CreateClient();
+                        session = factory.CreateViewModel<DialogFileViewModel>(this.DialogTitle, chatClient);
+                        break;
+                    case 1:
+                        var client = ModelSelection.CreateClient();
+                        var projectOption = (ProjectOption)Project.Clone();
+                        if (!projectOption.Check())
+                        {
+                            throw new NotSupportedException("Project option is not valid");
+                        }
+                        switch (projectOption.Type)
+                        {
+                            case ProjectType.CSharp:
+                                session = factory.CreateViewModel<CSharpProjectViewModel>(projectOption, client);
+                                break;
+                            case ProjectType.Standard:
+                            case ProjectType.Cpp:
+                            default:
+                                session = factory.CreateViewModel<ProjectViewModel>(projectOption, client);
+                                break;
+                                // _mainWindowViewModel.NewProjectViewModel(client, projectOption);
+                        }
+                        break;
+                    case 2:
+                        var researchClient = SelectedCreationOption?.CreateResearchClient();
+                        if (researchClient == null)
+                        {
+                            return;
+                        }
+
+                        session = new ResearchSession(researchClient);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                _mainWindowViewModel.AddSession(session);
+                DialogHost.CloseDialogCommand.Execute(null, null);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Failed to create session: " + e.Message);
+            }
+        });
         ResearchCreationOptions = new List<IResearchCreationOption>
         {
             nvidiaResearchClientOption

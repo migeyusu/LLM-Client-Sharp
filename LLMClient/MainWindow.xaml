@@ -61,9 +61,13 @@
                                 <DataTemplate DataType="{x:Type viewModel:PromptEditorViewModel}">
                                     <HeaderedContentControl Header="更改系统Prompt"
                                                             Style="{StaticResource DialogContentControlStyle}">
-                                        <component:PromptEditorView Width="600"
+                                        <component:PromptEditorView Width="800"
                                                                     Height="600" />
                                     </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type viewModel:UsageStatisticsViewModel}">
+                                    <component:UsageStatisticsView Width="1200"
+                                                                   Height="800" />
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type component:CreateSessionViewModel}">
                                     <HeaderedContentControl Header="创建新会话"
@@ -128,7 +132,7 @@
                                                             VerticalContentAlignment="Stretch"
                                                             HorizontalContentAlignment="Stretch"
                                                             ContentTemplate="{StaticResource ProjectConfigDataTemplate}"
-                                                            Content="{Binding }"/>
+                                                            Content="{Binding }" />
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type endpoints:EmptyLlmModelClient}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
@@ -252,6 +256,20 @@
                         Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
                         Style="{StaticResource MaterialDesignIconButton}">
                     <materialDesign:PackIcon Kind="CogOutline"
+                                             Width="20"
+                                             Height="20"
+                                             RenderOptions.BitmapScalingMode="HighQuality" />
+                </Button>
+                <Button VerticalAlignment="Center"
+                        Width="32"
+                        Height="32"
+                        Margin="8,0,0,0"
+                        ToolTip="打开统计"
+                        Click="OpenStatistics_OnClick"
+                        WindowChrome.IsHitTestVisibleInChrome="True"
+                        Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                        Style="{StaticResource MaterialDesignIconButton}">
+                    <materialDesign:PackIcon Kind="ChartDonut"
                                              Width="20"
                                              Height="20"
                                              RenderOptions.BitmapScalingMode="HighQuality" />

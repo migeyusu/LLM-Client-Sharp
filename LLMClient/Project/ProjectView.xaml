@@ -150,7 +150,7 @@
                                 ToolTip="Add Tasks" />
                     </StackPanel>
                     <TextBox Grid.Column="1"
-                             Text="{Binding SelectedTask.UserSystemPrompt,Mode=OneWay,StringFormat=上下文：{0}}"
+                             Text="{Binding SelectedTask.SystemPrompt,Mode=OneWay,StringFormat=上下文：{0}}"
                              materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                              BorderThickness="0"
                              HorizontalAlignment="Stretch"

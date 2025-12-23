@@ -37,6 +37,7 @@ public static class Extension
         },
         IgnoreReadOnlyProperties = true,
         WriteIndented = true,
+        NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
     };
 
     public static async Task<JsonNode?> ToJsonNode(this ClientResult result)
@@ -588,7 +589,7 @@ public static class Extension
     /// use temp path in current directory. so it can be deleted when exited.
     /// </summary>
     public static string TempPath => Path.GetFullPath("Temp");
-    
+
     public const string CacheFolderName = "Cache";
 
     public static string GetTempFilePath(string prefix = "")
@@ -617,27 +618,40 @@ public static class Extension
             throw new ArgumentException("Source directory is null or empty.", nameof(sourceDir));
         if (string.IsNullOrWhiteSpace(destinationDir))
             throw new ArgumentException("Destination directory is null or empty.", nameof(destinationDir));
-    
+
         var srcInfo = new DirectoryInfo(sourceDir);
         if (!srcInfo.Exists)
             throw new DirectoryNotFoundException($"Source directory not found: {sourceDir}");
-        
+
         Directory.CreateDirectory(destinationDir);
-    
+
         // 复制文件（当前目录）
         foreach (var filePath in Directory.EnumerateFiles(sourceDir))
         {
             var destFilePath = Path.Combine(destinationDir, Path.GetFileName(filePath)!);
-            using var sourceStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
-            using var destStream = new FileStream(destFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
+            using var sourceStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920,
+                useAsync: true);
+            using var destStream = new FileStream(destFilePath, FileMode.Create, FileAccess.Write, FileShare.None,
+                81920, useAsync: true);
             await sourceStream.CopyToAsync(destStream).ConfigureAwait(false);
         }
-    
+
         // 递归复制子目录
         foreach (var dirPath in Directory.EnumerateDirectories(sourceDir))
         {
             var destSubDir = Path.Combine(destinationDir, Path.GetFileName(dirPath)!);
             await CopyDirectoryAsync(dirPath, destSubDir).ConfigureAwait(false);
         }
+    }
+
+    public static float CalculateTps(this IResponse response)
+    {
+        var duration = response.Duration - response.Latency / 1000.0;
+        if (duration <= 0 || response.Tokens == 0)
+        {
+            return float.NaN;
+        }
+
+        return (float)(response.Tokens / duration);
     }
 }

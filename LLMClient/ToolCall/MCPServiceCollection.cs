@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -161,6 +162,26 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
             }
         }
     });
+
+    public ICommand CopySelectedItemCommand => new ActionCommand((o =>
+    {
+        if (o is McpServerItem item && item.AvailableTools != null)
+        {
+            var stringBuilder = new StringBuilder();
+            foreach (var aiFunction in item.AvailableTools)
+            {
+                stringBuilder.Append("Name: ").AppendLine(aiFunction.Name);
+                stringBuilder.Append("Description: ").AppendLine(aiFunction.Description);
+                stringBuilder.Append("Parameters: ").AppendLine(aiFunction.JsonSchema.ToString());
+                if (aiFunction.ReturnJsonSchema != null)
+                {
+                    stringBuilder.Append("Returns: ").AppendLine(aiFunction.ReturnJsonSchema.ToString());
+                }
+            }
+
+            CommonCommands.CopyCommand.Execute(item);
+        }
+    }));
 
     public ICommand AddNewCommand => new ActionCommand((o =>
     {

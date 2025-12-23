@@ -6,6 +6,8 @@ public class ProjectPersistModel
 
     public int Version { get; set; } = CurrentVersion;
 
+    public string? Type { get; set; }
+
     public DateTime EditTime { get; set; }
 
     public string? Name { get; set; }

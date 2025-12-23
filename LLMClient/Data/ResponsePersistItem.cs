@@ -11,6 +11,10 @@ public class ResponsePersistItem
     public bool IsInterrupt { get; set; }
 
     public long Tokens { get; set; }
+    
+    public int Latency { get; set; }
+
+    public int Duration { get; set; }
 
     public string? ErrorMessage { get; set; }
 
@@ -21,10 +25,6 @@ public class ResponsePersistItem
     public IList<ChatAnnotation>? Annotations { get; set; }
 
     public ChatFinishReason? FinishReason { get; set; }
-
-    public int Latency { get; set; }
-
-    public int Duration { get; set; }
 
     public bool IsManualValid { get; set; } = false;
 

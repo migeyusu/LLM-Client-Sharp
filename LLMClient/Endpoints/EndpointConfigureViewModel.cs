@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
@@ -15,6 +16,7 @@ using LLMClient.Endpoints.OpenAIAPI;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
+using MessageBox = System.Windows.MessageBox;
 
 namespace LLMClient.Endpoints;
 
@@ -157,7 +159,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         get { return _suggestedModels; }
     }
 
-    public void AddModelFrequency(ILLMModel model)
+    public void SetModelHistory(ILLMModel model)
     {
         var indexOf = _historyChatModelsOb.IndexOf(model);
         if (indexOf >= 0)
@@ -233,9 +235,12 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     private const string HistoryModelKey = "HistoryModels";
 
+    private const string TelemetryKey = "Telemetry";
+
     public async Task Initialize()
     {
-        var endPoints = (await EndPointsConfig.LoadEndpointsNode()).AsObject();
+        var root = await EndPointsConfig.LoadDoc();
+        var endPoints = root.GetOrCreate(EndPointsConfig.EndpointsNodeName).AsObject();
         _githubCopilotEndPoint = GithubCopilotEndPoint.TryLoad(endPoints);
         Endpoints.Add(_githubCopilotEndPoint);
         if (endPoints.TryGetPropertyValue(APIEndPoint.KeyName, out var apisNode))
@@ -304,13 +309,76 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
             OnPropertyChangedAsync(nameof(HistoryModels));
         }
+
+        if (root.AsObject().TryGetPropertyValue(TelemetryKey, out var telemetry))
+        {
+            if (telemetry != null)
+            {
+                var telemetryArray = telemetry.AsArray();
+                foreach (var endpointNode in telemetryArray.OfType<JsonObject>())
+                {
+                    if (!endpointNode.TryGetPropertyValue("Name", out var nameNode))
+                    {
+                        continue;
+                    }
+
+                    var endpointName = nameNode?.GetValue<string>();
+                    if (string.IsNullOrWhiteSpace(endpointName))
+                    {
+                        continue;
+                    }
+
+                    var llmEndpoint = ((IEndpointService)this).GetEndpoint(endpointName);
+                    if (llmEndpoint == null)
+                    {
+                        continue;
+                    }
+
+                    if (!endpointNode.TryGetPropertyValue("Models", out var modelsNode))
+                    {
+                        continue;
+                    }
+
+                    if (modelsNode == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var modelNode in modelsNode.AsArray().OfType<JsonObject>())
+                    {
+                        if (!modelNode.TryGetPropertyValue("ModelName", out var modelNameNode))
+                        {
+                            continue;
+                        }
+
+                        var modelName = modelNameNode?.GetValue<string>();
+                        if (string.IsNullOrWhiteSpace(modelName))
+                        {
+                            continue;
+                        }
+
+                        var model = llmEndpoint.GetModel(modelName);
+                        if (model == null)
+                        {
+                            continue;
+                        }
+
+                        if (modelNode.TryGetPropertyValue("Telemetry", out var modelTelemetry))
+                        {
+                            model.Telemetry =
+                                modelTelemetry.Deserialize<UsageCount>(Extension.DefaultJsonSerializerOptions);
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    public async Task SaveHistory()
+    public async Task SaveActivities()
     {
-        // load then change history only
         var options = Extension.DefaultJsonSerializerOptions;
         var root = await EndPointsConfig.LoadDoc();
+        // load then change history only
         var endPointsNode = root.GetOrCreate(EndPointsConfig.EndpointsNodeName);
         var historyKeyValuePairs = this.HistoryModels.Select((model => new LLMModelPersistModel()
         {
@@ -324,7 +392,39 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         if (newContent != oldContent)
         {
             endPointsNode[HistoryModelKey] = historySerializeToNode;
-            await EndPointsConfig.SaveDoc(root);
         }
+
+        //save telemetry 
+        //get all telemetry enabled endpoints
+        var jsonArray = new JsonArray();
+        foreach (var endpoint in this.Endpoints)
+        {
+            var models = new JsonArray();
+            foreach (var availableModel in endpoint.AvailableModels)
+            {
+                if (availableModel.Telemetry != null)
+                {
+                    models.Add(new JsonObject()
+                    {
+                        ["ModelName"] = availableModel.Name,
+                        ["Telemetry"] = JsonSerializer.SerializeToNode(availableModel.Telemetry,
+                            Extension.DefaultJsonSerializerOptions)
+                    });
+                }
+            }
+
+            if (models.Count > 0)
+            {
+                var jsonObject = new JsonObject
+                {
+                    ["Name"] = endpoint.Name,
+                    ["Models"] = models
+                };
+                jsonArray.Add(jsonObject);
+            }
+        }
+
+        root[TelemetryKey] = jsonArray;
+        await EndPointsConfig.SaveDoc(root);
     }
 }

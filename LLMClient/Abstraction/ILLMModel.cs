@@ -51,10 +51,12 @@ public interface ILLMModel : IModelParams
     bool SupportSearch { get; }
 
     bool SupportFunctionCall { get; }
-    
+
     bool FunctionCallOnStreaming { get; }
 
     #endregion
 
     IPriceCalculator? PriceCalculator { get; }
+
+    UsageCount? Telemetry { get; set; }
 }

@@ -51,7 +51,7 @@ public class DefaultThinkingConfig : IThinkingConfig
 
     public void ApplyThinking(ChatOptions options)
     {
-        options.RawRepresentationFactory = _ => new ResponseCreationOptions
+        options.RawRepresentationFactory = client => new CreateResponseOptions
         {
             ReasoningOptions = new()
             {

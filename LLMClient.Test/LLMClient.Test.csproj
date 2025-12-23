@@ -12,10 +12,19 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Betalgo.Ranul.OpenAI" Version="9.2.6" />
         <PackageReference Include="coverlet.collector" Version="6.0.4">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="ClangSharp" Version="20.1.2.4" />
+        <PackageReference Include="libClangSharp" Version="20.1.2" />
+        <PackageReference Include="libClangSharp.runtime.win-x64" Version="20.1.2" />
+        <PackageReference Include="Microsoft.Build" Version="17.14.28" ExcludeAssets="runtime"/>
+        <PackageReference Include="Microsoft.Build.Locator" Version="1.10.2"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Features" Version="5.0.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.0.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
         <PackageReference Include="Moq" Version="4.20.72" />
         <PackageReference Include="xunit" Version="2.9.3" />
@@ -35,6 +44,9 @@
 
     <ItemGroup>
       <None Update="svgmath.xml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="StreamingResponse.txt">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>

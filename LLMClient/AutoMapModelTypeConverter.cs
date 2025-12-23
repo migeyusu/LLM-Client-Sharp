@@ -247,13 +247,33 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         var defaultClient = source.Client == null
             ? EmptyLlmModelClient.Instance
             : context.Mapper.Map<ParameterizedLLMModelPO, ILLMChatClient>(source.Client);
+        var sourceType = source.Type;
+        var projectOption = new ProjectOption
+        {
+            Name = source.Name,
+            Description = source.Description,
+            FolderPath = source.FolderPath,
+            AllowedFolderPaths = source.AllowedFolderPaths == null
+                ? []
+                : new ObservableCollection<string>(source.AllowedFolderPaths),
+            Type = string.IsNullOrEmpty(sourceType)
+                ? ProjectType.Standard
+                : (Enum.TryParse(sourceType, true, out ProjectType projectType) ? projectType : ProjectType.Standard),
+        };
         if (destination != null)
         {
-            destination.Requester.DefaultClient = defaultClient;
+            throw new NotSupportedException();
         }
-        else
+
+        switch (projectOption.Type)
         {
-            destination = _viewModelFactory.CreateViewModel<ProjectViewModel>(defaultClient);
+            case ProjectType.CSharp:
+                destination =
+                    _viewModelFactory.CreateViewModel<CSharpProjectViewModel>(projectOption, defaultClient);
+                break;
+            default:
+                destination = _viewModelFactory.CreateViewModel<ProjectViewModel>(projectOption, defaultClient);
+                break;
         }
 
         destination.Requester.PromptString = source.UserPrompt;
@@ -278,12 +298,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                 }
             }
 
-            destination.Name = source.Name;
-            destination.Description = source.Description;
-            destination.FolderPath = source.FolderPath;
-            destination.AllowedFolderPaths = source.AllowedFolderPaths == null
-                ? []
-                : new ObservableCollection<string>(source.AllowedFolderPaths);
             destination.TokensConsumption = source.TokensConsumption;
             destination.TotalPrice = source.TotalPrice;
             destination.EditTime = source.EditTime;
@@ -303,17 +317,19 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         var projectTaskPersistModels = source.Tasks
             ?.Select(task => mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(task)).ToArray();
         destination ??= new ProjectPersistModel();
-        destination.Name = source.Name;
+        var projectOption = source.Option;
+        destination.Name = projectOption.Name;
         destination.EditTime = source.EditTime;
-        destination.Description = source.Description;
+        destination.Description = projectOption.Description;
+        destination.Type = projectOption.Type.ToString();
         destination.ExtendedPrompts = source.ExtendedSystemPrompts.Any()
             ? new PromptsPersistModel()
             {
                 PromptReference = source.ExtendedSystemPrompts.Select(entry => entry.Id).ToArray(),
             }
             : null;
-        destination.FolderPath = source.FolderPath;
-        destination.AllowedFolderPaths = source.AllowedFolderPaths?.ToArray();
+        destination.FolderPath = projectOption.FolderPath;
+        destination.AllowedFolderPaths = projectOption.AllowedFolderPaths?.ToArray();
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
         destination.Client =

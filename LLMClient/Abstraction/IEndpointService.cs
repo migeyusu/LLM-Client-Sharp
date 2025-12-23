@@ -15,15 +15,19 @@ public interface IEndpointService
     IReadOnlyList<ILLMModel> HistoryModels { get; }
 
     IReadOnlyList<ILLMModel> SuggestedModels { get; }
-    
-    void AddModelFrequency(ILLMModel model);
-    
+
+    void SetModelHistory(ILLMModel model);
+
     Task Initialize();
 
     ILLMAPIEndpoint? GetEndpoint(string name)
     {
         return AvailableEndpoints.FirstOrDefault((endpoint) => endpoint.Name == name);
     }
-    
-    Task SaveHistory();
+
+    /// <summary>
+    /// Save usage activities
+    /// </summary>
+    /// <returns></returns>
+    Task SaveActivities();
 }

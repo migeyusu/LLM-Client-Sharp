@@ -210,7 +210,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
     private async Task FetchModelsFromLocal()
     {
         //load models
-        var path = Path.GetFullPath(Path.Combine("EndPoints", "Azure", "Models", "models.json"));
+        var path = Path.GetFullPath(Path.Combine("Resources", "Test", "github_copilot.json"));
         var fileInfo = new FileInfo(path);
         if (!fileInfo.Exists)
         {

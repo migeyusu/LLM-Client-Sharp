@@ -7,6 +7,7 @@ using LLMClient.Data;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
 using Page = UglyToad.PdfPig.Content.Page;
+using Path = System.Windows.Shapes.Path;
 
 namespace LLMClient.Rag.Document;
 
