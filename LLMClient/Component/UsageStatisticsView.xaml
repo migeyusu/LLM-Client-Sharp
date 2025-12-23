@@ -73,7 +73,8 @@
                             <Style TargetType="ContentControl">
                                 <Setter Property="Content">
                                     <Setter.Value>
-                                        <lvc:CartesianChart Series="{Binding CompletionTokensSeries}">
+                                        <lvc:CartesianChart Series="{Binding CompletionTokensSeries}"
+                                                            Background="Transparent">
                                             <lvc:CartesianChart.XAxes>
                                                 <lvc:AxesCollection>
                                                     <lvc:XamlAxis SeparatorsPaint="#dcdcdc" />
@@ -91,7 +92,8 @@
                                     <DataTrigger Binding="{Binding IsPieChart}" Value="True">
                                         <Setter Property="Content">
                                             <Setter.Value>
-                                                <lvc:PieChart Series="{Binding CompletionTokensSeries}" />
+                                                <lvc:PieChart Series="{Binding CompletionTokensSeries}" 
+                                                              Background="Transparent"/>
                                             </Setter.Value>
                                         </Setter>
                                     </DataTrigger>
@@ -117,7 +119,8 @@
                             <Style TargetType="ContentControl">
                                 <Setter Property="Content">
                                     <Setter.Value>
-                                        <lvc:CartesianChart Series="{Binding CallTimesSeries}">
+                                        <lvc:CartesianChart Series="{Binding CallTimesSeries}"
+                                                            Background="Transparent">
                                             <lvc:CartesianChart.XAxes>
                                                 <lvc:AxesCollection>
                                                     <lvc:XamlAxis SeparatorsPaint="#dcdcdc" />
@@ -135,7 +138,8 @@
                                     <DataTrigger Binding="{Binding IsPieChart}" Value="True">
                                         <Setter Property="Content">
                                             <Setter.Value>
-                                                <lvc:PieChart Series="{Binding CallTimesSeries}" />
+                                                <lvc:PieChart Series="{Binding CallTimesSeries}" 
+                                                              Background="Transparent"/>
                                             </Setter.Value>
                                         </Setter>
                                     </DataTrigger>
@@ -160,7 +164,8 @@
                             <Style TargetType="ContentControl">
                                 <Setter Property="Content">
                                     <Setter.Value>
-                                        <lvc:CartesianChart Series="{Binding PriceSeries}">
+                                        <lvc:CartesianChart Series="{Binding PriceSeries}"
+                                                            Background="Transparent">
                                             <lvc:CartesianChart.XAxes>
                                                 <lvc:AxesCollection>
                                                     <lvc:XamlAxis SeparatorsPaint="#dcdcdc" />
@@ -178,7 +183,8 @@
                                     <DataTrigger Binding="{Binding IsPieChart}" Value="True">
                                         <Setter Property="Content">
                                             <Setter.Value>
-                                                <lvc:PieChart Series="{Binding PriceSeries}" />
+                                                <lvc:PieChart Series="{Binding PriceSeries}"
+                                                              Background="Transparent"/>
                                             </Setter.Value>
                                         </Setter>
                                     </DataTrigger>
@@ -206,7 +212,8 @@
                             <Style TargetType="ContentControl">
                                 <Setter Property="Content">
                                     <Setter.Value>
-                                        <lvc:CartesianChart Series="{Binding AverageTpsSeries}">
+                                        <lvc:CartesianChart Series="{Binding AverageTpsSeries}"
+                                                            Background="Transparent">
                                             <lvc:CartesianChart.XAxes>
                                                 <lvc:AxesCollection>
                                                     <lvc:XamlAxis SeparatorsPaint="#dcdcdc" />
