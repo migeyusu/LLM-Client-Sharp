@@ -1,62 +1,97 @@
 ﻿<UserControl x:Class="LLMClient.Component.UsageStatisticsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800"
              d:DataContext="{d:DesignInstance viewModel:UsageStatisticsViewModel}">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
 
-        <StackPanel Orientation="Horizontal" Margin="10">
-            <TextBlock Text="Usage Statistics" Style="{StaticResource MaterialDesignHeadline5TextBlock}" VerticalAlignment="Center" Margin="0,0,20,0"/>
-            <Button Command="{Binding RefreshCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,10,0" ToolTip="Refresh Data">
-                <materialDesign:PackIcon Kind="Refresh"/>
+        <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" Margin="10">
+            <TextBlock Text="Usage Statistics" Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                       VerticalAlignment="Center" Margin="0,0,20,0" />
+            <Button Command="{Binding RefreshCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,10,0" ToolTip="Refresh Data">
+                <materialDesign:PackIcon Kind="Refresh" />
             </Button>
-            <ToggleButton IsChecked="{Binding IsPieChart}" Style="{StaticResource MaterialDesignSwitchToggleButton}" ToolTip="Toggle Chart Type (Bar/Pie)">
-                <materialDesign:PackIcon Kind="ChartPie"/>
+            <ToggleButton IsChecked="{Binding IsPieChart}" Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                          ToolTip="Toggle Chart Type (Bar/Pie)">
+                <materialDesign:PackIcon Kind="ChartPie" />
             </ToggleButton>
-            <TextBlock Text="Pie Chart Mode" VerticalAlignment="Center" Margin="10,0,0,0"/>
-        </StackPanel>
+            <TextBlock Text="Pie Chart Mode" VerticalAlignment="Center" Margin="10,0,0,0" />
 
-        <Grid Grid.Row="1" Margin="10">
+            <TextBlock Text="{Binding MaxItemsCount,Mode=OneWay,StringFormat=Show Top {0} Items By CallTimes}"
+                       VerticalAlignment="Center" Margin="10,0,0,0" />
+            <Slider Maximum="20"
+                    Minimum="5"
+                    Width="150"
+                    Margin="5,0,0,0"
+                    VerticalAlignment="Center"
+                    AutoToolTipPlacement="BottomRight"
+                    TickFrequency="1"
+                    TickPlacement="BottomRight"
+                    Value="{Binding MaxItemsCount,Mode=TwoWay}" />
+        </StackPanel>
+        <Button Grid.Row="0" Grid.Column="1"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Style="{StaticResource PopupCloseButtonStyle}" />
+        <Grid Grid.Row="1" Grid.Column="0" Margin="10">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <!-- Completion Tokens -->
-            <Border Grid.Row="0" Grid.Column="0" Margin="5" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="5">
+            <Border Grid.Row="0" Grid.Column="0" Margin="5" BorderBrush="{DynamicResource MaterialDesignDivider}"
+                    BorderThickness="1" CornerRadius="5">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Completion Tokens" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="10,5"/>
+                    <TextBlock Text="Completion Tokens" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                               Margin="10,5" />
                     <ContentControl Grid.Row="1">
                         <ContentControl.Style>
                             <Style TargetType="ContentControl">
                                 <Setter Property="Content">
                                     <Setter.Value>
-                                        <lvc:CartesianChart Series="{Binding CompletionTokensSeries}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}"/>
+                                        <lvc:CartesianChart Series="{Binding CompletionTokensSeries}">
+                                            <lvc:CartesianChart.XAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis SeparatorsPaint="#dcdcdc" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.XAxes>
+                                            <lvc:CartesianChart.YAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis IsVisible="False" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.YAxes>
+                                        </lvc:CartesianChart>
                                     </Setter.Value>
                                 </Setter>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsPieChart}" Value="True">
                                         <Setter Property="Content">
                                             <Setter.Value>
-                                                <lvc:PieChart Series="{Binding CompletionTokensSeries}" LegendPosition="Right"/>
+                                                <lvc:PieChart Series="{Binding CompletionTokensSeries}" />
                                             </Setter.Value>
                                         </Setter>
                                     </DataTrigger>
@@ -68,26 +103,39 @@
             </Border>
 
             <!-- Call Times -->
-            <Border Grid.Row="0" Grid.Column="1" Margin="5" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="5">
+            <Border Grid.Row="0" Grid.Column="1" Margin="5" BorderBrush="{DynamicResource MaterialDesignDivider}"
+                    BorderThickness="1" CornerRadius="5">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Call Times" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="10,5"/>
+                    <TextBlock Text="Call Times" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                               Margin="10,5" />
                     <ContentControl Grid.Row="1">
                         <ContentControl.Style>
                             <Style TargetType="ContentControl">
                                 <Setter Property="Content">
                                     <Setter.Value>
-                                        <lvc:CartesianChart Series="{Binding CallTimesSeries}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}"/>
+                                        <lvc:CartesianChart Series="{Binding CallTimesSeries}">
+                                            <lvc:CartesianChart.XAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis SeparatorsPaint="#dcdcdc" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.XAxes>
+                                            <lvc:CartesianChart.YAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis IsVisible="False" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.YAxes>
+                                        </lvc:CartesianChart>
                                     </Setter.Value>
                                 </Setter>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsPieChart}" Value="True">
                                         <Setter Property="Content">
                                             <Setter.Value>
-                                                <lvc:PieChart Series="{Binding CallTimesSeries}" LegendPosition="Right"/>
+                                                <lvc:PieChart Series="{Binding CallTimesSeries}" />
                                             </Setter.Value>
                                         </Setter>
                                     </DataTrigger>
@@ -99,26 +147,38 @@
             </Border>
 
             <!-- Price -->
-            <Border Grid.Row="1" Grid.Column="0" Margin="5" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="5">
+            <Border Grid.Row="1" Grid.Column="0" Margin="5" BorderBrush="{DynamicResource MaterialDesignDivider}"
+                    BorderThickness="1" CornerRadius="5">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Price ($)" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="10,5"/>
+                    <TextBlock Text="Price ($)" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="10,5" />
                     <ContentControl Grid.Row="1">
                         <ContentControl.Style>
                             <Style TargetType="ContentControl">
                                 <Setter Property="Content">
                                     <Setter.Value>
-                                        <lvc:CartesianChart Series="{Binding PriceSeries}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}"/>
+                                        <lvc:CartesianChart Series="{Binding PriceSeries}">
+                                            <lvc:CartesianChart.XAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis SeparatorsPaint="#dcdcdc" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.XAxes>
+                                            <lvc:CartesianChart.YAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis IsVisible="False" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.YAxes>
+                                        </lvc:CartesianChart>
                                     </Setter.Value>
                                 </Setter>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsPieChart}" Value="True">
                                         <Setter Property="Content">
                                             <Setter.Value>
-                                                <lvc:PieChart Series="{Binding PriceSeries}" LegendPosition="Right"/>
+                                                <lvc:PieChart Series="{Binding PriceSeries}" />
                                             </Setter.Value>
                                         </Setter>
                                     </DataTrigger>
@@ -130,19 +190,34 @@
             </Border>
 
             <!-- Average TPS -->
-            <Border Grid.Row="1" Grid.Column="1" Margin="5" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="5">
+            <Border Grid.Row="1" Grid.Column="1" Margin="5"
+                    BorderBrush="{DynamicResource MaterialDesignDivider}"
+                    BorderThickness="1" CornerRadius="5">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Average TPS" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="10,5"/>
+                    <TextBlock Text="Average TPS"
+                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                               Margin="10,5" />
                     <ContentControl Grid.Row="1">
                         <ContentControl.Style>
                             <Style TargetType="ContentControl">
                                 <Setter Property="Content">
                                     <Setter.Value>
-                                        <lvc:CartesianChart Series="{Binding AverageTpsSeries}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}"/>
+                                        <lvc:CartesianChart Series="{Binding AverageTpsSeries}">
+                                            <lvc:CartesianChart.XAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis SeparatorsPaint="#dcdcdc" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.XAxes>
+                                            <lvc:CartesianChart.YAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis IsVisible="False" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.YAxes>
+                                        </lvc:CartesianChart>
                                     </Setter.Value>
                                 </Setter>
                             </Style>
@@ -151,6 +226,21 @@
                 </Grid>
             </Border>
         </Grid>
+        <Border Grid.Row="1" Grid.Column="1" Margin="0,10,10,10" Padding="10"
+                BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="5">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Legend}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Border Width="12" Height="12" CornerRadius="2" Margin="0,0,8,0"
+                                        Background="{Binding HexColor}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>
-
