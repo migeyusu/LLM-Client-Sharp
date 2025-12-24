@@ -7,14 +7,14 @@ namespace LLMClient.Dialog;
 
 public class ModelSelectionPopupViewModel : ModelSelectionViewModel
 {
-    public ModelSelectionPopupViewModel(Action<ILLMChatClient> successAction)
+    public ModelSelectionPopupViewModel(Action<BaseModelSelectionViewModel> successAction)
         : base(successAction)
     {
     }
 
     public RoutedCommand? SuccessRoutedCommand { get; set; } = DialogHost.CloseDialogCommand;
 
-    protected override void SubmitClient(ILLMChatClient client)
+    protected override void SelectModel(BaseModelSelectionViewModel client)
     {
         SuccessAction?.Invoke(client);
         SuccessRoutedCommand?.Execute(true, null);

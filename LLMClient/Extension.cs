@@ -120,6 +120,10 @@ public static class Extension
             expression.CreateMap<APIDefaultOption, APIDefaultOption>();
             expression.CreateMap<ILLMChatClient, ParameterizedLLMModelPO>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<IParameterizedLLMModel, ParameterizedLLMModelPO>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
+            expression.CreateMap<ParameterizedLLMModelPO,IParameterizedLLMModel>()
+                .ConvertUsing<AutoMapModelTypeConverter>();
             expression.CreateMap<ParameterizedLLMModelPO, ILLMChatClient>()
                 .ConvertUsing<AutoMapModelTypeConverter>();
             expression.CreateMap<DialogFilePersistModel, DialogFileViewModel>()

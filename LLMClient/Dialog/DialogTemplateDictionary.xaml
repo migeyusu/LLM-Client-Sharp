@@ -16,58 +16,117 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <materialDesign:PopupBox StaysOpen="True"
-                                     Width="30"
-                                     Height="30"
-                                     VerticalAlignment="Top"
-                                     Margin="0,4,0,0">
-                <Menu Padding="0"
-                      ItemsPanel="{StaticResource VerticalItemsPanelTemplate}">
-                    <MenuItem Header="复制"
-                              Command="{x:Static utility:CommonCommands.CopyCommand}"
-                              CommandParameter="{Binding Mode=OneTime}"
-                              Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
-                    <MenuItem Header="总结之前对话"
-                              Command="{x:Static utility:CommonCommands.Conclusion}"
-                              CommandParameter="{Binding}"
-                              Icon="{materialDesign:PackIcon Kind=TagText}" />
-                    <MenuItem Header="排除之前对话"
-                              ToolTip="将之前的对话清出上下文"
-                              Command="{x:Static utility:CommonCommands.Exclude}"
-                              CommandParameter="{Binding}"
-                              Icon="{materialDesign:PackIcon Kind=FormatAlignTop}" />
-                    <MenuItem Header="清空之前对话"
-                              ToolTip="删除之前的对话内容"
-                              Command="{x:Static utility:CommonCommands.Clear}"
-                              CommandParameter="{Binding}"
-                              Icon="{materialDesign:PackIcon Kind=WaveArrowUp}" />
-                    <MenuItem Header="删除"
-                              Command="Delete"
-                              CommandParameter="{Binding}"
-                              Icon="{materialDesign:PackIcon Kind=DeleteOutline}" />
-                </Menu>
-            </materialDesign:PopupBox>
+            <StackPanel>
+                <materialDesign:PopupBox StaysOpen="True"
+                                         Width="30"
+                                         Height="30"
+                                         VerticalAlignment="Top"
+                                         Margin="0,4,0,0">
+                    <Menu Padding="0"
+                          ItemsPanel="{StaticResource VerticalItemsPanelTemplate}">
+                        <MenuItem Header="复制"
+                                  Command="{x:Static utility:CommonCommands.CopyCommand}"
+                                  CommandParameter="{Binding Mode=OneTime}"
+                                  Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
+                        <MenuItem Header="总结之前对话"
+                                  Command="{x:Static utility:CommonCommands.Conclusion}"
+                                  CommandParameter="{Binding}"
+                                  Icon="{materialDesign:PackIcon Kind=TagText}" />
+                        <MenuItem Header="排除之前对话"
+                                  ToolTip="将之前的对话清出上下文"
+                                  Command="{x:Static utility:CommonCommands.Exclude}"
+                                  CommandParameter="{Binding}"
+                                  Icon="{materialDesign:PackIcon Kind=FormatAlignTop}" />
+                        <MenuItem Header="清空之前对话"
+                                  ToolTip="删除之前的对话内容"
+                                  Command="{x:Static utility:CommonCommands.Clear}"
+                                  CommandParameter="{Binding}"
+                                  Icon="{materialDesign:PackIcon Kind=WaveArrowUp}" />
+                        <MenuItem Header="格式化请求"
+                                  Command="{Binding FormatTextCommand}"
+                                  Icon="{materialDesign:PackIcon Kind=FormatText}" />
+                        <MenuItem Header="删除"
+                                  Command="Delete"
+                                  CommandParameter="{Binding}"
+                                  Icon="{materialDesign:PackIcon Kind=DeleteOutline}" />
+                    </Menu>
+                </materialDesign:PopupBox>
+                <ProgressBar IsIndeterminate="True"
+                             Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             Value="0"
+                             Margin="5"
+                             Width="30"
+                             Height="30"
+                             Visibility="{Binding IsFormatting,Mode=TwoWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+            </StackPanel>
 
             <StackPanel Grid.Column="1">
-                <materialDesign:Card Padding="8"
+                <materialDesign:Card Padding="0"
                                      UniformCornerRadius="8"
                                      BorderThickness="0"
-                                     Background="{DynamicResource MaterialDesign.Brush.Primary.Dark}"
-                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary.Dark.Foreground}">
-                    <TextBox TextWrapping="Wrap"
-                             IsReadOnly="True"
-                             Margin="0"
-                             BorderThickness="0"
-                             materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                             Text="{Binding TextMessage,Mode=OneTime}" />
+                                     Background="{DynamicResource MaterialDesign.Brush.Primary.Light}"
+                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light.Foreground}">
+                    <customControl:FlowDocumentScrollViewerEx
+                        FontFamily="Segoe UI Emoji"
+                        BorderThickness="0"
+                        Padding="0"
+                        HighlightableRanges="{Binding SearchableDocument.FoundTextRanges,Mode=OneWay}"
+                        CleanDocument="{Binding SearchableDocument.Document,Mode=OneWay}"
+                        Style="{StaticResource ExFlowDocumentScrollViewerStyle}">
+                        <customControl:FlowDocumentScrollViewerEx.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Command="Copy"
+                                          Header="复制选定">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon
+                                            Kind="ContentCopy" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Command="SelectAll"
+                                          Header="全选">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon
+                                            Kind="SelectAll" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <Separator />
+                                <MenuItem Header="复制原始文本"
+                                          Command="{x:Static utility:CommonCommands.CopyCommand}"
+                                          CommandParameter="{Binding Mode=OneTime}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon
+                                            Kind="ContentCopy" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="导出"
+                                          ToolTip="导出为Markdown"
+                                          Command="{x:Static utility:CommonCommands.ExportCommand}"
+                                          CommandParameter="{Binding TextMessage,Mode=OneWay}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon
+                                            Kind="Export" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </customControl:FlowDocumentScrollViewerEx.ContextMenu>
+                    </customControl:FlowDocumentScrollViewerEx>
+                    <!--<TextBox TextWrapping="Wrap"
+                                  IsReadOnly="True"
+                                  Margin="0"
+                                  BorderThickness="0"
+                                  materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                  Text="{Binding TextMessage,Mode=OneWay}" />-->
                 </materialDesign:Card>
                 <ItemsControl ItemsSource="{Binding Attachments,Mode=OneTime}"
                               Margin="0,8,0,0"
                               HorizontalAlignment="Right"
                               Visibility="Visible">
                     <b:Interaction.Triggers>
-                        <b:DataTrigger Binding="{Binding Attachments.Count}"
-                                       Value="0">
+                        <b:DataTrigger
+                            Value="0">
+                            <b:DataTrigger.Binding>
+                                <Binding Path="Attachments.Count" />
+                            </b:DataTrigger.Binding>
                             <b:ChangePropertyAction PropertyName="Visibility"
                                                     Value="Collapsed" />
                         </b:DataTrigger>
@@ -334,6 +393,9 @@
                                       Width="18"
                                       Height="45"
                                       Padding="0">
+                                <MenuItem Header="删除其他回复"
+                                          Icon="{materialDesign:PackIcon Kind=Clear}"
+                                          Command="{Binding ClearOthersCommand}" />
                                 <MenuItem Header="由此创建新会话"
                                           Command="{x:Static utility:CommonCommands.Fork}"
                                           CommandParameter="{Binding}"

@@ -186,7 +186,7 @@ public class UnitTest1
                     {
                         new RequestViewItem()
                         {
-                            TextMessage = "test",
+                            RawTextMessage = "test",
                             /*FunctionGroups = new List<IAIFunctionGroup>()
                             {
                                 new FileSystemPlugin()
@@ -430,7 +430,12 @@ public class UnitTest1
     [Fact]
     public void TestFormatFunc()
     {
-        FormatFunction("{0:N2}", 12345.6789);
+        var format = string.Format("{0},jean", new
+        {
+            textinput = "hello world"
+        });
+        Assert.Equal("hello world,jean", format);
+        //FormatFunction("{0:N2}", 12345.6789);
     }
 
     private void FormatFunction(string template, params object[] args)

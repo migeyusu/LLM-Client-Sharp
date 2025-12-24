@@ -1,13 +1,22 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Windows;
+using System.Windows.Documents;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Xaml.Behaviors.Core;
 using MimeTypes;
 
 namespace LLMClient.Dialog;
@@ -19,7 +28,60 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     /// </summary>
     public Guid InteractionId { get; set; }
 
-    public string TextMessage { get; set; } = string.Empty;
+    public string RawTextMessage { get; set; } = string.Empty;
+
+    public bool IsFormatting
+    {
+        get => _isFormatting;
+        set
+        {
+            if (value == _isFormatting) return;
+            _isFormatting = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? FormattedTextMessage
+    {
+        get => _formattedTextMessage;
+        set
+        {
+            if (value == _formattedTextMessage) return;
+            _formattedTextMessage = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(TextMessage));
+            OnPropertyChanged(nameof(SearchableDocument));
+            var dialogSessionViewModel = this.ParentSession;
+            if (dialogSessionViewModel != null) dialogSessionViewModel.IsDataChanged = true;
+        }
+    }
+
+    public string? TextMessage
+    {
+        get => FormattedTextMessage ?? RawTextMessage;
+    }
+
+    public ICommand FormatTextCommand { get; }
+
+    private SearchableDocument? _searchableDocument = null;
+
+    public SearchableDocument? SearchableDocument
+    {
+        get
+        {
+            var textMessage = TextMessage;
+            if (!string.IsNullOrEmpty(textMessage) && _searchableDocument == null)
+            {
+                var flowDocument = new FlowDocument();
+                var renderer = CustomRenderer.NewRenderer(flowDocument);
+                renderer.RenderRaw(textMessage);
+                _searchableDocument = new SearchableDocument(flowDocument);
+            }
+
+            return _searchableDocument;
+        }
+    }
+
 
     public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
 
@@ -54,6 +116,8 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     public AdditionalPropertiesDictionary TempAdditionalProperties { get; set; } = new AdditionalPropertiesDictionary();
 
     private ChatMessage? _message = null;
+    private string? _formattedTextMessage;
+    private bool _isFormatting;
 
     public bool IsAvailableInContext { get; } = true;
 
@@ -76,12 +140,45 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     public long Tokens
     {
         //估计tokens
-        get => (long)(TextMessage.Length / 2.5);
+        get => (long)(RawTextMessage.Length / 2.5);
     }
 
-    public RequestViewItem() : base()
+    public DialogSessionViewModel? ParentSession { get; }
+
+    public RequestViewItem(DialogSessionViewModel? parentSession = null)
     {
+        ParentSession = parentSession;
         InteractionId = Guid.NewGuid();
+        FormatTextCommand = new RelayCommand(async () =>
+        {
+            IsFormatting = true;
+            try
+            {
+                var llmChatClient = ServiceLocator.GetService<GlobalOptions>()?.CreateTextFormatterClient();
+                if (llmChatClient == null)
+                {
+                    throw new Exception("No available LLM endpoint for text formatting.");
+                }
+
+                var userPrompt =
+                    await UserInputFormatter.FormatUserPromptAsync(llmChatClient, this,
+                        this.ParentSession?.SystemPrompt, CancellationToken.None);
+                if (!string.IsNullOrEmpty(userPrompt))
+                {
+                    _searchableDocument = null;
+                    this.FormattedTextMessage = userPrompt;
+                }
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError("Failed to format text: " + e.Message, "Error", MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsFormatting = false;
+            }
+        });
     }
 
     public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
@@ -90,7 +187,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
         if (_message == null)
         {
             //一旦被创建，就不再改变，所以使用lazy模式
-            _message = new ChatMessage(ChatRole.User, TextMessage);
+            _message = new ChatMessage(ChatRole.User, RawTextMessage);
             if (Attachments != null)
             {
                 foreach (var attachment in Attachments)
@@ -123,6 +220,6 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public string GetCopyText()
     {
-        return TextMessage;
+        return RawTextMessage;
     }
 }

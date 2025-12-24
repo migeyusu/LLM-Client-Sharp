@@ -240,7 +240,7 @@
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type render1:CodeViewModel}">
-                    <Grid Height="40">
+                    <Grid Height="40" Background="{DynamicResource MaterialDesign.Brush.Background}">
                         <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.Background}"
                                    HorizontalAlignment="Stretch"
                                    VerticalAlignment="Stretch" />

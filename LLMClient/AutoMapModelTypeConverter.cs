@@ -1,7 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using AutoMapper;
 using LLMClient.Abstraction;
-using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Data;
@@ -25,7 +24,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     ITypeConverter<ILLMChatClient, ParameterizedLLMModelPO>,
     ITypeConverter<ParameterizedLLMModelPO, ILLMChatClient>,
     ITypeConverter<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>,
-    ITypeConverter<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>
+    ITypeConverter<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>,
+    ITypeConverter<IParameterizedLLMModel, ParameterizedLLMModelPO>,
+    ITypeConverter<ParameterizedLLMModelPO, IParameterizedLLMModel>
 {
     private readonly IEndpointService _endpointService;
 
@@ -206,7 +207,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                     MultiResponsePersistItem multiResponsePersistItem => mapper
                         .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem),
                     RequestPersistItem requestPersistItem => mapper
-                        .Map<RequestPersistItem, RequestViewItem>(requestPersistItem),
+                        .Map<RequestPersistItem, RequestViewItem>(requestPersistItem, new RequestViewItem(destination)),
                     _ => (IDialogItem)item
                 };
             })).ToArray();
@@ -363,7 +364,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
                 if (item is RequestPersistItem requestViewItem)
                 {
-                    return mapper.Map<RequestPersistItem, RequestViewItem>(requestViewItem);
+                    return mapper.Map<RequestPersistItem, RequestViewItem>(requestViewItem,
+                        new RequestViewItem(destination));
                 }
 
                 if (item is EraseViewItem eraseViewItem)
@@ -519,5 +521,53 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             .ToArray();
         destination.Functions.ResetWith(virtualFunctionViewModels ?? []);
         return destination;
+    }
+
+    public ParameterizedLLMModelPO Convert(IParameterizedLLMModel source, ParameterizedLLMModelPO destination,
+        ResolutionContext context)
+    {
+        var key = new ContextCacheKey(source, typeof(ParameterizedLLMModelPO));
+        if (context.InstanceCache?.TryGetValue(key,
+                out var cachedValue) == true && cachedValue is ParameterizedLLMModelPO cachedModel)
+        {
+            return cachedModel;
+        }
+
+        destination ??= new ParameterizedLLMModelPO();
+        destination.EndPointName = source.Model.Endpoint.Name;
+        destination.ModelName = source.Model.Name;
+        destination.Params = source.Parameters;
+        context.InstanceCache?.TryAdd(key, destination);
+        return destination;
+    }
+
+    public IParameterizedLLMModel Convert(ParameterizedLLMModelPO source, IParameterizedLLMModel destination,
+        ResolutionContext context)
+    {
+        if (destination != null)
+        {
+            throw new NotSupportedException("only create new IParameterizedLLMModel");
+        }
+
+        var contextCacheKey = new ContextCacheKey(source, typeof(ILLMChatClient));
+        if (context.InstanceCache?.TryGetValue(contextCacheKey, out var cachedValue) == true &&
+            cachedValue is ILLMChatClient cachedClient)
+        {
+            return cachedClient;
+        }
+
+        var llmEndpoint = string.IsNullOrEmpty(source.EndPointName)
+            ? null
+            : _endpointService.GetEndpoint(source.EndPointName);
+        var llmModelClient = llmEndpoint?.GetModel(source.ModelName)?
+            .CreateChatClient() ?? EmptyLlmModelClient.Instance;
+        var sourceJsonModel = source.Params;
+        if (sourceJsonModel != null)
+        {
+            context.Mapper.Map(sourceJsonModel, llmModelClient.Parameters);
+        }
+
+        context.InstanceCache?.TryAdd(contextCacheKey, llmModelClient);
+        return llmModelClient;
     }
 }

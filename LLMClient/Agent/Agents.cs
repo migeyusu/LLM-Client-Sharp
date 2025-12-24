@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Text;
+using System.Windows;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
@@ -44,10 +45,10 @@ public class PromptAgent : IAgent
     public async Task<CompletedResult> SendRequestAsync(DialogContext context,
         CancellationToken cancellationToken = default)
     {
+        CompletedResult? completedResult = null;
         var tryCount = 0;
         while (tryCount < RetryCount && !cancellationToken.IsCancellationRequested)
         {
-            CompletedResult completedResult;
             if (Timeout.HasTimeSpan)
             {
                 using (var timeoutTokenSource = new CancellationTokenSource(Timeout.TimeSpan))
@@ -58,7 +59,7 @@ public class PromptAgent : IAgent
                         try
                         {
                             completedResult = await _chatClient
-                                .SendRequest(context, _interactor, linkedTokenSource.Token)
+                                .SendRequest(context, null, linkedTokenSource.Token)
                                 .ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
@@ -70,7 +71,7 @@ public class PromptAgent : IAgent
             }
             else
             {
-                completedResult = await _chatClient.SendRequest(context, _interactor, cancellationToken)
+                completedResult = await _chatClient.SendRequest(context, null, cancellationToken)
                     .ConfigureAwait(false);
             }
 
@@ -104,8 +105,18 @@ public class PromptAgent : IAgent
             }
         }
 
-        _interactor?.Error($"Failed to get a valid rsesponse from the LLM after {RetryCount} attempts.");
-        throw new Exception("Failed to get a valid reponse from the LLM.");
+        var stringBuilder =
+            new StringBuilder($"Failed to get a valid rsesponse from the LLM after {RetryCount} attempts.");
+        if (completedResult?.ErrorMessage != null)
+        {
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine("Error Message:");
+            stringBuilder.AppendLine(completedResult.ErrorMessage);
+        }
+
+        var s = stringBuilder.ToString();
+        _interactor?.Error(s);
+        throw new Exception(s);
     }
 
     public async Task<string> GetMessageAsync(string prompt, string? systemPrompt = null,
@@ -114,7 +125,7 @@ public class PromptAgent : IAgent
         var context = new DialogContext([
             new RequestViewItem()
             {
-                TextMessage = prompt
+                RawTextMessage = prompt
             }
         ], systemPrompt);
 

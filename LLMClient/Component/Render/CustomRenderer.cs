@@ -4,6 +4,7 @@ using System.Windows.Documents;
 using System.Windows.Markup;
 using Markdig;
 using Markdig.Renderers;
+using Markdig.Renderers.Wpf;
 using Markdig.Syntax;
 using Markdig.Wpf;
 using Markdown = Markdig.Markdown;
@@ -124,9 +125,10 @@ public class CustomRenderer : WpfRenderer
             return;
         }
 
+        ObjectRenderers.RemoveAll((renderer => renderer is ListRenderer));
+        ObjectRenderers.Add(new SafeListRender());
         ObjectRenderers.Add(new TextMateCodeRenderer());
         ObjectRenderers.Add(new LinkInlineRendererEx());
-
         base.LoadRenderers();
         _isRendererLoaded = true;
     }

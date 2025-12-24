@@ -33,10 +33,8 @@ public class PilotInfo<T>
 public class UsageStatisticsViewModel : BaseViewModel
 {
     private readonly IEndpointService _endpointService;
+
     private bool _isPieChart;
-    private ISeries[]? _averageTpsSeries;
-    private List<LegendItem> _legend = [];
-    private int _maxItemsCount = 10;
 
     public bool IsPieChart
     {
@@ -54,6 +52,8 @@ public class UsageStatisticsViewModel : BaseViewModel
     public ISeries[] CallTimesSeries { get; private set; } = [];
     public ISeries[] PriceSeries { get; private set; } = [];
 
+    private ISeries[]? _averageTpsSeries;
+
     public ISeries[]? AverageTpsSeries
     {
         get => _averageTpsSeries;
@@ -67,6 +67,8 @@ public class UsageStatisticsViewModel : BaseViewModel
 
     public record LegendItem(string Name, string HexColor);
 
+    private List<LegendItem> _legend = [];
+
     public List<LegendItem> Legend
     {
         get => _legend;
@@ -78,6 +80,8 @@ public class UsageStatisticsViewModel : BaseViewModel
         }
     }
 
+    private int _maxItemsCount = 10;
+
     public int MaxItemsCount
     {
         get => _maxItemsCount;
@@ -86,7 +90,7 @@ public class UsageStatisticsViewModel : BaseViewModel
             if (value == _maxItemsCount) return;
             _maxItemsCount = value;
             OnPropertyChanged();
-            if (value < _existingItemsCount)
+            if (value <= _existingItemsCount)
             {
                 UpdateCharts();
             }
@@ -119,7 +123,7 @@ public class UsageStatisticsViewModel : BaseViewModel
         }
 
         _existingItemsCount = models.Count;
-        models = models.OrderBy((tuple => tuple.Usage.CallTimes))
+        models = models.OrderByDescending(tuple => tuple.Usage.CallTimes)
             .Take(MaxItemsCount)
             .ToArray();
         Legend = models.Select(m =>

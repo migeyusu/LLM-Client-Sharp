@@ -54,6 +54,15 @@
                                             Content="{Binding SystemPrompt,Mode=OneWay}"
                                             Command="{x:Static utility:CommonCommands.CreatePromptEditViewModel}"
                                             CommandParameter="{Binding Mode=OneTime}">
+                    <materialDesign:SplitButton.ContentTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       Foreground="{DynamicResource MaterialDesignBody}"
+                                       TextWrapping="Wrap"
+                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                       TextTrimming="CharacterEllipsis" />
+                        </DataTemplate>
+                    </materialDesign:SplitButton.ContentTemplate>
                     <materialDesign:SplitButton.PopupContentTemplate>
                         <DataTemplate DataType="{x:Type sys:String}">
                             <ScrollViewer Width="800"

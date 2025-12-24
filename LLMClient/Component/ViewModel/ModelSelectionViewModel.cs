@@ -4,14 +4,14 @@ namespace LLMClient.Component.ViewModel;
 
 public class ModelSelectionViewModel : BaseModelSelectionViewModel
 {
-    public Action<ILLMChatClient>? SuccessAction { get; }
+    public Action<BaseModelSelectionViewModel>? SuccessAction { get; }
 
-    public ModelSelectionViewModel(Action<ILLMChatClient>? successAction = null)
+    public ModelSelectionViewModel(Action<BaseModelSelectionViewModel>? successAction = null)
     {
         SuccessAction = successAction;
     }
 
-    protected override void SubmitClient(ILLMChatClient client)
+    protected override void SelectModel(BaseModelSelectionViewModel client)
     {
         SuccessAction?.Invoke(client);
     }

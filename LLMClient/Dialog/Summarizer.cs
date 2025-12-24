@@ -28,7 +28,7 @@ public readonly struct Summarizer
         {
             var dialogItems = new List<IDialogItem>(3);
             dialogItems.AddRange(dialog.DialogItems);
-            dialogItems.Add(new RequestViewItem() { TextMessage = _options.SubjectSummarizePrompt });
+            dialogItems.Add(new RequestViewItem() { RawTextMessage = _options.SubjectSummarizePrompt });
             var dialogContext = new DialogContext(dialogItems);
             var sendRequestAsync = await new PromptAgent(client, new TraceInvokeInteractor())
                 {

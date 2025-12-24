@@ -57,12 +57,11 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
     {
         try
         {
-            var chatClient = CreateClient();
-            SubmitClient(chatClient);
+            SelectModel(this);
         }
         catch (Exception e)
         {
-            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Error Create Client:{e.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     });
 
@@ -79,12 +78,13 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
             throw new Exception("Create chat client failed.");
         }
 
+        //只有通过这里创建的客户端，才会设置模型历史记录
         ServiceLocator.GetService<IEndpointService>()?.SetModelHistory(this.SelectedModel);
         return chatClient;
     }
 
-    protected abstract void SubmitClient(ILLMChatClient client);
-    
+    protected abstract void SelectModel(BaseModelSelectionViewModel model);
+
     public string Name { get; } = "Fake Client";
 
     public ILLMModel Model => SelectedModel ?? EmptyLLMChatModel.Instance;

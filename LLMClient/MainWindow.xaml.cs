@@ -125,7 +125,7 @@ public partial class MainWindow : ExtendedWindow
         {
             var selectionViewModel = new ModelSelectionPopupViewModel((client =>
             {
-                var newDialog = _mainWindowViewModel.AddNewDialog(client, oldDialog.Topic);
+                var newDialog = _mainWindowViewModel.AddNewDialog(client.CreateClient(), oldDialog.Topic);
                 newDialog.Dialog.SequentialChain(oldDialog.DialogItems);
             }));
             await DialogHost.Show(selectionViewModel);

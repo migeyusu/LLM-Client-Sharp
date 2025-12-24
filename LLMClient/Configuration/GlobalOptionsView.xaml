@@ -179,6 +179,37 @@
                                 CommandParameter="{x:Static project:ProjectViewModel.SaveFolderPath}"
                                 Margin="20,0,0,0"
                                 Style="{StaticResource MaterialDesignOutlinedButton}" />
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="10">
+                            <TextBlock Text="TextFormatter Model:"
+                                       Margin="16,0,0,0"
+                                       VerticalAlignment="Center" />
+                            <TextBlock MaxWidth="350"
+                                       VerticalAlignment="Center"
+                                       Margin="6,0,0,0"
+                                       Text="{Binding Mode=OneWay, TargetNullValue='Not Set', Path=TextFormatterClientPersist.ModelName}" />
+                            <materialDesign:PopupBox Padding="0"
+                                                     StaysOpen="True"
+                                                     Margin="6,0"
+                                                     VerticalAlignment="Center"
+                                                     ToolTip="select model"
+                                                     ToolTipService.InitialShowDelay="0"
+                                                     Style="{StaticResource MaterialDesignToolPopupBox}"
+                                                     PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}"
+                                                     PopupContent="{Binding   TextFormatterPopupViewModel,Mode=OneTime}">
+                                <materialDesign:PopupBox.ToggleContent>
+                                    <Border Width="23"
+                                            Height="23"
+                                            Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                                            CornerRadius="11">
+                                        <materialDesign:PackIcon Kind="Edit"
+                                                                 VerticalAlignment="Center"
+                                                                 HorizontalAlignment="Center"
+                                                                 Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}" />
+                                    </Border>
+                                </materialDesign:PopupBox.ToggleContent>
+                            </materialDesign:PopupBox>
+                        </StackPanel>
                     </WrapPanel>
                 </Grid>
 

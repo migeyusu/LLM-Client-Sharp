@@ -8,6 +8,7 @@ using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Dialog;
@@ -218,7 +219,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         collection.Add(suggestedEndPoint);*/
     }
 
-    private void OnModelSelected(ILLMChatClient obj)
+    private void OnModelSelected(BaseModelSelectionViewModel obj)
     {
         if (SuggestedModelsOb.Count > 6)
         {

@@ -5,6 +5,8 @@ namespace LLMClient.Component;
 
 public class TraceInvokeInteractor : IInvokeInteractor
 {
+    public static TraceInvokeInteractor Instance { get; } = new();
+    
     public void Info(string message)
     {
         Trace.Write(message);

@@ -363,6 +363,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
     public ResponseViewItem(ILLMChatClient client)
     {
         Client = client;
+        
     }
 
     #region responding

@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
@@ -38,7 +39,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
     {
         get { return AcceptedResponse?.IsAvailableInContext == true; }
     }
-    
+
     public bool IsResponding
     {
         get { return Items.Any(item => item.IsResponding); }
@@ -87,6 +88,8 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
     public ModelSelectionPopupViewModel SelectionPopup { get; }
 
     public ICommand RebaseCommand => new ActionCommand(o => { ParentSession.RemoveAfter(this); });
+
+    public ICommand ClearOthersCommand { get; }
 
     //标记为有效结果
     public ICommand MarkValid => new ActionCommand((o =>
@@ -143,7 +146,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         }
     });
 
-    public ICommand CopyInteractionCommand => new ActionCommand(o => { this.ParentSession.CopyInteraction(this); });
+    public ICommand CopyInteractionCommand { get; }
 
     public ICommand PasteInteractionCommand => new ActionCommand(o =>
     {
@@ -155,11 +158,24 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
     {
         ParentSession = parentSession;
         _items = new ObservableCollection<ResponseViewItem>(items);
+        _items.CollectionChanged += (sender, args) => { this.ParentSession.IsDataChanged = true; };
         IsMultiResponse = Items.Count > 1;
-        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.New(client); })
+        SelectionPopup = new ModelSelectionPopupViewModel(client =>
+        {
+            this.New(client.CreateClient());
+        })
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
+        CopyInteractionCommand = new ActionCommand(o => { this.ParentSession.CopyInteraction(this); });
+        ClearOthersCommand = new RelayCommand(() =>
+        {
+            var toRemove = Items.Where(item => item != AcceptedResponse).ToList();
+            foreach (var item in toRemove)
+            {
+                this.Remove(item);
+            }
+        });
     }
 
     public MultiResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)

@@ -260,12 +260,20 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                     responseViewItem.SearchableDocument?.ApplySearch(_searchText);
                 }
             }
+            else if (dialogViewItem is RequestViewItem requestViewItem)
+            {
+                requestViewItem.SearchableDocument?.ApplySearch(_searchText);
+            }
         }
 
         this.FocusedResponse = null;
         if (this.ScrollViewItem is MultiResponseViewItem viewItem)
         {
             viewItem.AcceptedResponse?.SearchableDocument?.EnsureSearch();
+        }
+        else if (this.ScrollViewItem is RequestViewItem requestViewItem)
+        {
+            requestViewItem.SearchableDocument?.EnsureSearch();
         }
     }));
 
@@ -313,6 +321,21 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     private void GoToHighlight()
     {
         ScrollViewItem = this.FocusedResponse;
+        var count = FocusedDocument?.FoundTextRanges.Count;
+        if (count == null || count == 0)
+        {
+            return;
+        }
+
+        if (_currentHighlightIndex < 0)
+        {
+            _currentHighlightIndex = 0;
+        }
+        else if (_currentHighlightIndex >= count)
+        {
+            _currentHighlightIndex = 0;
+        }
+
         var foundTextRange = FocusedDocument?.FoundTextRanges[_currentHighlightIndex];
         if (foundTextRange == null)
             return;
@@ -571,7 +594,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 else if (viewItem is RequestViewItem reqViewItem)
                 {
                     stringBuilder.AppendLine("# **User:**");
-                    stringBuilder.Append(reqViewItem.TextMessage);
+                    stringBuilder.Append(reqViewItem.RawTextMessage);
                     stringBuilder.AppendLine();
                     stringBuilder.AppendLine();
                     stringBuilder.AppendLine("***");
@@ -821,7 +844,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 if (requestPersistItem != null)
                 {
                     var requestViewItem =
-                        _mapper.Map<RequestPersistItem, RequestViewItem>(requestPersistItem, (_ => { }));
+                        _mapper.Map<RequestPersistItem, RequestViewItem>(requestPersistItem, new RequestViewItem(this),
+                            (_ => { }));
                     if (this.DialogItems.Contains(requestViewItem, DialogItemEqualityComparer.Instance))
                     {
                         return;

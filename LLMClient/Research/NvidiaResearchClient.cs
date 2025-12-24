@@ -36,7 +36,7 @@ public class NvidiaResearchClient : ResearchClient
     public override async Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
-        var prompt = context.Request?.TextMessage;
+        var prompt = context.Request?.RawTextMessage;
         if (prompt == null || string.IsNullOrWhiteSpace(prompt))
         {
             throw new ArgumentException("The dialog context must contain a non-empty request.");

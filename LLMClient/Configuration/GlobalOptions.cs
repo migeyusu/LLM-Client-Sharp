@@ -27,6 +27,9 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         SubjectSummaryPopupViewModel =
             new ModelSelectionPopupViewModel(this.ApplySubjectSummarizeClient)
                 { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
+        TextFormatterPopupViewModel =
+            new ModelSelectionPopupViewModel(this.ApplyTextFormatterClient)
+                { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
     }
 
     public static string DefaultConfigFile
@@ -91,7 +94,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             .Map<ParameterizedLLMModelPO, ILLMChatClient>(ContextSummarizeClientPersist, (options => { }));
     }
 
-    public void ApplyContextSummarizeClient(ILLMChatClient? value)
+    public void ApplyContextSummarizeClient(IParameterizedLLMModel? value)
     {
         if (value == null)
         {
@@ -100,7 +103,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         }
 
         ContextSummarizeClientPersist = Mapper?
-            .Map<ILLMChatClient, ParameterizedLLMModelPO>(value, (options => { }));
+            .Map<IParameterizedLLMModel, ParameterizedLLMModelPO>(value, (options => { }));
     }
 
     private ParameterizedLLMModelPO? _summarizeModelPersistModel;
@@ -153,7 +156,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             .Map<ParameterizedLLMModelPO, ILLMChatClient>(SubjectSummarizeClientPersist, (options => { }));
     }
 
-    public void ApplySubjectSummarizeClient(ILLMChatClient? value)
+    public void ApplySubjectSummarizeClient(IParameterizedLLMModel? value)
     {
         if (value == null)
         {
@@ -162,7 +165,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         }
 
         SubjectSummarizeClientPersist = Mapper?
-            .Map<ILLMChatClient, ParameterizedLLMModelPO>(value, (options => { }));
+            .Map<IParameterizedLLMModel, ParameterizedLLMModelPO>(value, (options => { }));
     }
 
     private ParameterizedLLMModelPO? _subjectSummarizeClientPersist;
@@ -181,11 +184,52 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
 
     #endregion
 
+    #region text formatter
+
+    [JsonIgnore] public ModelSelectionPopupViewModel TextFormatterPopupViewModel { get; }
+
+    public ILLMChatClient? CreateTextFormatterClient()
+    {
+        if (TextFormatterClientPersist == null)
+        {
+            return null;
+        }
+
+        return Mapper?
+            .Map<ParameterizedLLMModelPO, ILLMChatClient>(TextFormatterClientPersist, (options => { }));
+    }
+
+    public void ApplyTextFormatterClient(IParameterizedLLMModel? value)
+    {
+        if (value == null)
+        {
+            TextFormatterClientPersist = null;
+            return;
+        }
+
+        TextFormatterClientPersist = Mapper?
+            .Map<IParameterizedLLMModel, ParameterizedLLMModelPO>(value, (options => { }));
+    }
+
+    private ParameterizedLLMModelPO? _textFormatterClientPersist;
+
+    [JsonPropertyName("TextFormatterClientPersist")]
+    public ParameterizedLLMModelPO? TextFormatterClientPersist
+    {
+        get => _textFormatterClientPersist;
+        set
+        {
+            if (Equals(value, _textFormatterClientPersist)) return;
+            _textFormatterClientPersist = value;
+            OnPropertyChanged();
+        }
+    }
+
+    #endregion
+
     #region search
 
     public GoogleSearchOption GoogleSearchOption { get; set; } = new();
-
-    private ITextSearch? _textSearch;
 
     public ITextSearch? GetTextSearch()
     {

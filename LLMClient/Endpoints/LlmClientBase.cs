@@ -1,4 +1,5 @@
-﻿using System.ClientModel.Primitives;
+﻿using System.ClientModel;
+using System.ClientModel.Primitives;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
@@ -501,9 +502,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                         break;
                     }
-                    catch (OutOfContextWindowException)
+                    catch (LLMBadRequestException)
                     {
-                        //对于上下文窗口异常，直接抛出，因为此时输入已经错误
+                        //对于错误请求，直接抛出，因为此时输入已经错误
                         throw;
                     }
                     catch (Exception ex)
@@ -514,13 +515,27 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         }
 
                         errorMessage = ex.HierarchicalMessage();
-                        if (ex is HttpOperationException { ResponseContent: not null } exception)
+                        if (ex is HttpOperationException { ResponseContent: not null } httpOperationException)
                         {
-                            errorMessage += $"\nResponse Content: {exception.ResponseContent}";
+                            errorMessage += $"\nResponse Content: {httpOperationException.ResponseContent}";
+                        }
+                        else if (ex is ClientResultException clientResultException)
+                        {
+                            var pipelineResponse = clientResultException.GetRawResponse();
+                            var s = pipelineResponse?.Content.ToString();
+                            if (!string.IsNullOrEmpty(s))
+                            {
+                                errorMessage += $"\nResponse Content: {s}";
+                            }
+
+                            if (clientResultException.Status == 400)
+                            {
+                                throw new LLMBadRequestException(errorMessage);
+                            }
                         }
 
                         interactor?.Error($"Error during response: {ex}");
-                        if (ex.HierarchicalMessage().Contains("context_length_exceeded"))
+                        if (errorMessage.Contains("context_length_exceeded"))
                         {
                             throw new OutOfContextWindowException();
                         }

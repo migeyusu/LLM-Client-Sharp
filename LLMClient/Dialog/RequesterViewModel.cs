@@ -53,7 +53,10 @@ public class RequesterViewModel : BaseViewModel
 
     public ICommand ChangeModelCommand => new ActionCommand(async o =>
     {
-        var selectionViewModel = new ModelSelectionPopupViewModel((model => { this.DefaultClient = model; }));
+        var selectionViewModel = new ModelSelectionPopupViewModel((model =>
+        {
+            this.DefaultClient = model.CreateClient();
+        }));
         await DialogHost.Show(selectionViewModel);
     });
 
@@ -287,7 +290,7 @@ public class RequesterViewModel : BaseViewModel
         //每次搜索的条件可能不同，所以传递的是副本
         return new RequestViewItem()
         {
-            TextMessage = promptBuilder.ToString().Trim(),
+            RawTextMessage = promptBuilder.ToString().Trim(),
             Attachments = Attachments.ToList(),
             FunctionGroups = tools == null ? [] : [..tools],
             SearchOption = SearchConfig.GetUserSearchOption(),

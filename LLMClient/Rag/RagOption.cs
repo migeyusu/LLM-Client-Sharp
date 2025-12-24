@@ -112,7 +112,7 @@ public class RagOption : BaseViewModel
 
     [JsonIgnore]
     public ModelSelectionViewModel SelectionViewModel =>
-        new ModelSelectionPopupViewModel(client => { this.DigestClient = client; })
+        new ModelSelectionPopupViewModel(client => { this.DigestClient = client.CreateClient(); })
             { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
 
 

@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Text;
 using System.Windows;
 using AutoMapper;
+using DocumentFormat.OpenXml.InkML;
 using LLMClient.Abstraction;
 using LLMClient.Configuration;
 using LLMClient.Endpoints;
@@ -12,6 +13,7 @@ using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;
 using MaterialDesignThemes.Wpf;
 using MessageBox = System.Windows.MessageBox;
+using Trace = System.Diagnostics.Trace;
 
 namespace LLMClient.Dialog;
 
