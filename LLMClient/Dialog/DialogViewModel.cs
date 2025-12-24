@@ -234,7 +234,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
     {
         _topic = topic;
         _options = options;
-        Requester = new RequesterViewModel(modelClient, NewRequest, options, ragSourceCollection, mapper)
+        Requester = new RequesterViewModel(modelClient, NewRequest, options, ragSourceCollection)
         {
             FunctionGroupSource = this
         };

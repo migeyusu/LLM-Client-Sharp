@@ -269,7 +269,7 @@
                         WindowChrome.IsHitTestVisibleInChrome="True"
                         Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
                         Style="{StaticResource MaterialDesignIconButton}">
-                    <materialDesign:PackIcon Kind="ChartDonut"
+                    <materialDesign:PackIcon Kind="ChartBar"
                                              Width="20"
                                              Height="20"
                                              RenderOptions.BitmapScalingMode="HighQuality" />

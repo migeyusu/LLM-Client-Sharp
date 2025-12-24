@@ -471,7 +471,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         _mapper = mapper;
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
-        Requester = new RequesterViewModel(modelClient, GetResponse, options, ragSourceCollection, mapper)
+        Requester = new RequesterViewModel(modelClient, GetResponse, options, ragSourceCollection)
         {
             FunctionTreeSelector =
             {

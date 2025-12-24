@@ -137,7 +137,7 @@ public class RequesterViewModel : BaseViewModel
     /// 这里的Attachment不会持久化，只有发出之后的请求中附带的attchment会被持久化（缓存）。
     /// </summary>
     public ObservableCollection<Attachment> Attachments { get; set; } =
-        new ObservableCollection<Attachment>();
+        new();
 
     public ICommand AddImageCommand => new ActionCommand(o =>
     {
@@ -174,7 +174,7 @@ public class RequesterViewModel : BaseViewModel
     #endregion
 
     public SearchConfigViewModel SearchConfig { get; }
-    
+
     #region input
 
     private string? _promptString;
@@ -197,7 +197,7 @@ public class RequesterViewModel : BaseViewModel
 
     public RequesterViewModel(ILLMChatClient modelClient,
         Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> getResponse, GlobalOptions options,
-        IRagSourceCollection ragSourceCollection, IMapper mapper)
+        IRagSourceCollection ragSourceCollection)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
@@ -206,12 +206,9 @@ public class RequesterViewModel : BaseViewModel
         this._getResponse = getResponse;
         _options = options;
         _ragSourceCollection = ragSourceCollection;
-        _mapper = mapper;
         this.BindClient(modelClient);
         this.PropertyChanged += (sender, args) => { this.IsDataChanged = true; };
     }
-
-    private readonly IMapper _mapper;
 
     private void BindClient(ILLMChatClient client)
     {
@@ -283,15 +280,15 @@ public class RequesterViewModel : BaseViewModel
         {
             tools = this.FunctionGroupSource?.GetFunctionGroups().OfType<CheckableFunctionGroupTree>().ToArray();
         }
-        
+
         var ragSources = RagSources.Where(model => model is { IsSelected: true, Data.IsAvailable: true })
             .Select(model => model.Data)
             .ToArray();
         //每次搜索的条件可能不同，所以传递的是副本
         return new RequestViewItem()
         {
-            RawTextMessage = promptBuilder.ToString().Trim(),
-            Attachments = Attachments.ToList(),
+            RawTextMessage = promptBuilder.ToString(),
+            Attachments = Attachments.Count == 0 ? null : Attachments.ToList(),
             FunctionGroups = tools == null ? [] : [..tools],
             SearchOption = SearchConfig.GetUserSearchOption(),
             RagSources = ragSources.Length > 0 ? ragSources : null,
