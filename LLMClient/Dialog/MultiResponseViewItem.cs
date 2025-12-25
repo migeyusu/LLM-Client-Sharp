@@ -193,7 +193,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         }
 
         var dialogContext = ParentSession.CreateDialogContextBefore(this);
-        await ParentSession.RequestOn(() => responseViewItem.SendRequest(dialogContext));
+        await ParentSession.InvokeRequest(() => responseViewItem.SendRequest(dialogContext));
     }
 
     public Task<CompletedResult> New(ILLMChatClient chatClient)
@@ -201,7 +201,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         var responseViewItem = new ResponseViewItem(chatClient);
         this.Append(responseViewItem);
         var dialogContext = ParentSession.CreateDialogContextBefore(this);
-        return ParentSession.RequestOn(() => responseViewItem.SendRequest(dialogContext));
+        return ParentSession.InvokeRequest(() => responseViewItem.SendRequest(dialogContext));
     }
 
     public void Append(ResponseViewItem viewItem)

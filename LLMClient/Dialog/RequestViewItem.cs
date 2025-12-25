@@ -16,6 +16,7 @@ using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.KernelMemory.AI;
 using Microsoft.Xaml.Behaviors.Core;
 using MimeTypes;
 
@@ -28,7 +29,18 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     /// </summary>
     public Guid InteractionId { get; set; }
 
-    public string RawTextMessage { get; set; } = string.Empty;
+    public string RawTextMessage
+    {
+        get => _rawTextMessage;
+        set
+        {
+            if (value == _rawTextMessage) return;
+            _rawTextMessage = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(TextMessage));
+            this.Tokens = 0;
+        }
+    }
 
     public bool IsFormatting
     {
@@ -117,7 +129,12 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     private ChatMessage? _message = null;
     private string? _formattedTextMessage;
+
     private bool _isFormatting;
+
+    //使用0表示未计算，因为空字符串不能创建RequestViewItem本身
+    private long _tokens = 0;
+    private string _rawTextMessage = string.Empty;
 
     public bool IsAvailableInContext { get; } = true;
 
@@ -137,10 +154,18 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public FunctionCallEngineType CallEngine { get; set; }
 
+    /// <summary>
+    /// 预估
+    /// </summary>
     public long Tokens
     {
-        //估计tokens
-        get => (long)(RawTextMessage.Length / 2.5);
+        get { return _tokens; }
+        set
+        {
+            if (value == _tokens) return;
+            _tokens = value;
+            OnPropertyChanged();
+        }
     }
 
     public DialogSessionViewModel? ParentSession { get; }
@@ -179,6 +204,16 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
                 IsFormatting = false;
             }
         });
+    }
+
+    /// <summary>
+    /// 发送请求前，计算Tokens数量
+    /// </summary>
+    public async void CalculateTokensAsync(ITokensCounter counter)
+    {
+        if (this.Tokens != 0) return;
+        if (this.RawTextMessage.Length == 0) return;
+        this.Tokens = await counter.CountTokens(this.RawTextMessage);
     }
 
     public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(

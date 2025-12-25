@@ -1,4 +1,5 @@
 ﻿using LLMClient.Endpoints.Messages;
+using Microsoft.Extensions.AI;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
@@ -21,6 +22,8 @@ public interface IResponse : ITokenizable
     string? ErrorMessage { get; }
 
     double? Price { get; }
+    
+    UsageDetails? Usage { get; }
 
     IList<ChatMessage>? ResponseMessages { get; }
 

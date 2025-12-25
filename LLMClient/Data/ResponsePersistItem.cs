@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Endpoints.Messages;
+using Microsoft.Extensions.AI;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 
 namespace LLMClient.Data;
@@ -11,7 +12,9 @@ public class ResponsePersistItem
     public bool IsInterrupt { get; set; }
 
     public long Tokens { get; set; }
-    
+
+    public UsageDetails? Usage { get; set; }
+
     public int Latency { get; set; }
 
     public int Duration { get; set; }

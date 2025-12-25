@@ -66,6 +66,7 @@ public class Program
                 .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
                 .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()
                 .AddSingleton<CreateSessionViewModel>()
+                .AddSingleton<ITokensCounter, DefaultTokensCounter>()
                 .AddMap();
 #if DEBUG
             var resourceBuilder = ResourceBuilder

@@ -101,9 +101,13 @@
                                Margin="0,0,10,0"
                                VerticalAlignment="Center"
                                Style="{StaticResource MaterialDesignOverlineTextBlock}">
-                        <Run Text="{Binding TokensConsumption, Mode=OneWay,StringFormat=Total Tokens:{0}}" />
+                        <Run
+                            Text="{Binding TokensConsumption, Mode=OneWay,StringFormat=Total Tokens:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                         <LineBreak />
                         <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
+                        <LineBreak />
+                        <Run
+                            Text="{Binding SelectedTask.PredictedContextLength,Mode=OneWay,StringFormat=Current Context:{0}Tokens,Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                     </TextBlock>
                     <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
                             ToolTip="Config Project"
@@ -201,9 +205,12 @@
                                    Margin="0,0,10,0"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource MaterialDesignOverlineTextBlock}">
-                            <Run Text="{Binding TokensConsumption, Mode=OneWay,StringFormat=Total Tokens:{0}}" />
+                            <Run
+                                Text="{Binding TokensConsumption, Mode=OneWay,StringFormat=Total Tokens:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                             <LineBreak />
                             <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
+                            <Run
+                                Text="{Binding PredictedContextLength,Mode=OneWay,StringFormat=Current Context:{0}Tokens,Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                         </TextBlock>
                         <customControl:SearchBox Margin="10,0"
                                                  Padding="8,4,8,4"

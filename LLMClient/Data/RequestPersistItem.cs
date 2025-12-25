@@ -23,6 +23,8 @@ public class RequestPersistItem : IDialogPersistItem
     public ChatResponseFormat? ResponseFormat { get; set; }
 
     public FunctionCallEngineType CallEngine { get; set; }
+    
+    public long Tokens { get; set; }
 
     /// <summary>
     /// 对Request附加的额外属性

@@ -11,6 +11,7 @@
              xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
              xmlns:extension="clr-namespace:LLMClient.Component.Extension"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:DialogViewModel}"
              d:DesignHeight="600"
@@ -97,9 +98,13 @@
                                Margin="0,0,10,0"
                                VerticalAlignment="Center"
                                Style="{StaticResource MaterialDesignOverlineTextBlock}">
-                        <Run Text="{Binding TokensConsumption, Mode=OneWay,StringFormat=Total Tokens:{0}}" />
+                        <Run
+                            Text="{Binding TokensConsumption, Mode=OneWay,StringFormat=Total Tokens:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                         <LineBreak />
                         <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
+                        <LineBreak />
+                        <Run
+                            Text="{Binding PredictedContextLength,Mode=OneWay,StringFormat=Current Context:{0}Tokens,Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                     </TextBlock>
                     <customControl:SearchBox Margin="10,0"
                                              Padding="8,4,8,4"

@@ -1,6 +1,5 @@
 ﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -13,7 +12,6 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
-using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using MaterialDesignThemes.Wpf;
@@ -74,6 +72,20 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         {
             if (value == _tokensConsumption) return;
             _tokensConsumption = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// 预测的上下文长度
+    /// </summary>
+    public long PredictedContextLength
+    {
+        get => _predictedContextLength;
+        set
+        {
+            if (value == _predictedContextLength) return;
+            _predictedContextLength = value;
             OnPropertyChanged();
         }
     }
@@ -695,7 +707,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         return new DialogContext(dialogItems, this.SystemPrompt);
     }
 
-    public virtual async Task<CompletedResult> RequestOn(Func<Task<CompletedResult>> invoke)
+    /// <summary>
+    /// 核心请求方法，负责统计请求数据以及插入上下文操作
+    /// </summary>
+    /// <param name="invoke"></param>
+    /// <returns></returns>
+    public virtual async Task<CompletedResult> InvokeRequest(Func<Task<CompletedResult>> invoke)
     {
         RespondingCount++;
         CompletedResult completedResult;
@@ -714,6 +731,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     }
 
     private readonly IMapper _mapper;
+    private long _predictedContextLength;
 
     public async Task<CompletedResult> AddNewResponse(ILLMChatClient client,
         IList<IDialogItem> history,
@@ -906,10 +924,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         DialogItems = dialogItems == null
             ? []
             : new ObservableCollection<IDialogItem>(dialogItems);
+        this.PredictedContextLength = this.DialogItems.Sum(item => item.Tokens);
         DialogItems.CollectionChanged += (sender, args) =>
         {
             OnPropertyChangedAsync(nameof(Shortcut));
             OnPropertyChanged(nameof(CurrentContextTokens));
+            this.PredictedContextLength = this.DialogItems.Sum(item => item.Tokens);
         };
         this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
     }

@@ -20,5 +20,15 @@ public class DialogContext
     public IList<IDialogItem> DialogItems { get; }
 
     public RequestViewItem? Request { get; }
-    
+
+    public void Initialize(ITokensCounter counter)
+    {
+        foreach (var dialogItem in DialogItems)
+        {
+            if (dialogItem is RequestViewItem request)
+            {
+                request.CalculateTokensAsync(counter);
+            }
+        }
+    }
 }

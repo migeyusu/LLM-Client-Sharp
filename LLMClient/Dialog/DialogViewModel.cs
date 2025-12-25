@@ -274,13 +274,13 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
 
     private static readonly TimeSpan TopicTimeOut = TimeSpan.FromSeconds(30);
 
-    public override async Task<CompletedResult> RequestOn(Func<Task<CompletedResult>> invoke)
+    public override async Task<CompletedResult> InvokeRequest(Func<Task<CompletedResult>> invoke)
     {
         //判断是否需要进行主题总结
         var needSummarize = this.DialogItems is [IRequestItem, MultiResponseViewItem]
                             && this.Topic == "新建会话";
 
-        var completedResult = await base.RequestOn(invoke);
+        var completedResult = await base.InvokeRequest(invoke);
         if (needSummarize && !completedResult.IsInterrupt
                           && _options.EnableAutoSubjectGeneration)
         {

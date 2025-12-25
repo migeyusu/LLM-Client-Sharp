@@ -2,7 +2,7 @@
 
 namespace LLMClient.ContextEngineering;
 
-internal class DocumentAnalysisResult
+public class DocumentAnalysisResult
 {
     public required string FilePath { get; set; }
     public List<NamespaceInfo> Namespaces { get; set; } = new();

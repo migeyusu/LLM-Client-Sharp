@@ -77,13 +77,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
     public long Tokens
     {
-        get => _tokens;
-        set
-        {
-            if (value == _tokens) return;
-            _tokens = value;
-            OnPropertyChanged();
-        }
+        get => Usage?.OutputTokenCount ?? 0;
     }
 
     public int Latency
@@ -134,6 +128,17 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         {
             if (Nullable.Equals(value, _price)) return;
             _price = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public UsageDetails? Usage
+    {
+        get => _usage;
+        set
+        {
+            if (Equals(value, _usage)) return;
+            _usage = value;
             OnPropertyChanged();
         }
     }
@@ -312,7 +317,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
     private bool _isManualValid = false;
     private bool _isInterrupt;
-    private long _tokens;
     private int _latency;
     private int _duration;
     private string? _errorMessage;
@@ -320,6 +324,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
     private IList<ChatMessage>? _responseMessages;
     private ChatFinishReason? _finishReason;
     private bool _isResponding;
+    private UsageDetails? _usage;
 
     /// <summary>
     /// 手动标记为有效 
@@ -363,7 +368,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
     public ResponseViewItem(ILLMChatClient client)
     {
         Client = client;
-        
     }
 
     #region responding

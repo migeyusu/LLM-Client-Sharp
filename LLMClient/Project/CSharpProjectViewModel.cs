@@ -53,13 +53,14 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         });
     }
 
-    private async Task<string> GetProjectSummary()
+    /// <summary>
+    /// 由于project/solution生成有明显延迟，所以不绑定到Context属性，使用特殊方法获取，UI也需要特殊触发
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
+    private async Task<string> GetProjectContext()
     {
-        var markdownSummaryFormatter = new MarkdownSummaryFormatter(new FormatterOptions()
-        {
-            IncludeMembers = true,
-            IncludePackages = true
-        });
+        var contextPromptBuilder = new ContextPromptBuilder();
         if (IsSolutionMode)
         {
             if (string.IsNullOrEmpty(SolutionFilePath))
@@ -68,7 +69,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
             }
 
             var solutionInfo = await _analyzer.AnalyzeSolutionAsync(SolutionFilePath);
-            return markdownSummaryFormatter.Format(solutionInfo);
+            contextPromptBuilder.WithSolutionInfo(solutionInfo);
         }
         else
         {
@@ -78,15 +79,16 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
             }
 
             var projectInfo = await _analyzer.AnalyzeProjectAsync(ProjectFilePath);
-            return markdownSummaryFormatter.Format(projectInfo);
+            contextPromptBuilder.WithProjectInfo(projectInfo);
         }
+
+        return await contextPromptBuilder.BuildAsync();
     }
 
     protected override async Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
         int? index = null)
     {
-        var projectSummary = await GetProjectSummary();
-        
+        this.ProjectContext = await GetProjectContext();
         return await base.GetResponse(arg1, arg2, index);
     }
 

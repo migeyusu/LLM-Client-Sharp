@@ -123,7 +123,7 @@ public class UsageStatisticsViewModel : BaseViewModel
         }
 
         _existingItemsCount = models.Count;
-        models = models.OrderByDescending(tuple => tuple.Usage.CallTimes)
+        models = models.OrderByDescending(tuple => tuple.Usage.CompletionTokens)
             .Take(MaxItemsCount)
             .ToArray();
         Legend = models.Select(m =>

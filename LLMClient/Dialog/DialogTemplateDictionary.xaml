@@ -7,7 +7,8 @@
                     xmlns:utility="clr-namespace:LLMClient.Component.Utility"
                     xmlns:converters="clr-namespace:LLMClient.Component.Converters"
                     xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
-                    xmlns:component="clr-namespace:LLMClient.Component">
+                    xmlns:component="clr-namespace:LLMClient.Component"
+                    xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions">
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
                   DataType="{x:Type dialog:RequestViewItem}">
         <Grid HorizontalAlignment="Right"
@@ -294,6 +295,43 @@
             </Trigger>
         </Style.Triggers>
     </Style>
+    <DataTemplate x:Key="UsageDetailDataTemplate"
+                  DataType="{x:Type ai:UsageDetails}">
+        <StackPanel Margin="10">
+            <TextBlock Text="用量详情"
+                       Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                       Margin="0,0,0,6" />
+            <UniformGrid Columns="2"
+                         Rows="3"
+                         Margin="0,4,0,0">
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <materialDesign:PackIcon Kind="ArrowRightBoldBox" Width="18" Height="18" Margin="0,0,6,0" />
+                    <TextBlock
+                        Text="{Binding InputTokenCount,Mode=OneWay,StringFormat=输入 Tokens：{0},TargetNullValue=--}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <materialDesign:PackIcon Kind="ArrowLeftBoldBox" Width="18" Height="18" Margin="0,0,6,0" />
+                    <TextBlock
+                        Text="{Binding OutputTokenCount,Mode=OneWay,StringFormat=输出 Tokens：{0},TargetNullValue=--}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <materialDesign:PackIcon Kind="DatabasePlus" Width="18" Height="18" Margin="0,0,6,0" />
+                    <TextBlock
+                        Text="{Binding CachedInputTokenCount,Mode=OneWay,StringFormat=缓存 Tokens：{0},TargetNullValue=--}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <materialDesign:PackIcon Kind="Thinking" Width="18" Height="18" Margin="0,0,6,0" />
+                    <TextBlock
+                        Text="{Binding TotalTokenCount,Mode=OneWay,StringFormat=推理 Tokens：{0},TargetNullValue=--}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <materialDesign:PackIcon Kind="Sigma" Width="18" Height="18" Margin="0,0,6,0" />
+                    <TextBlock
+                        Text="{Binding TotalTokenCount,Mode=OneWay,StringFormat=总 Tokens：{0},TargetNullValue=--}" />
+                </StackPanel>
+            </UniformGrid>
+        </StackPanel>
+    </DataTemplate>
     <DataTemplate x:Key="MultiResponseViewItemDataTemplate"
                   DataType="{x:Type dialog:MultiResponseViewItem}">
         <StackPanel>
@@ -472,20 +510,34 @@
                 <ContentControl Content="{Binding AcceptedResponse,Mode=OneWay}"
                                 ContentTemplate="{StaticResource ResponseContentTemplate}" />
             </materialDesign:Card>
-            <TextBlock DataContext="{Binding AcceptedResponse,Mode=OneWay}"
-                       HorizontalAlignment="Left"
-                       Margin="0,6,0,0">
-                <TextBlock.Text>
-                    <MultiBinding
-                        StringFormat="Tokens: {0}, Price：{1:F4}$，Latency: {2}ms, Duration:{3}s, Speed:{4:F1}tps">
-                        <Binding Path="Tokens" Mode="OneWay" TargetNullValue="None" />
-                        <Binding Path="Price" Mode="OneWay" TargetNullValue="None" />
-                        <Binding Path="Latency" Mode="OneWay" TargetNullValue="None" />
-                        <Binding Path="Duration" Mode="OneWay" TargetNullValue="None" />
-                        <Binding Path="TpS" Mode="OneWay" TargetNullValue="None" />
-                    </MultiBinding>
-                </TextBlock.Text>
-            </TextBlock>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock DataContext="{Binding AcceptedResponse,Mode=OneWay}"
+                           HorizontalAlignment="Left"
+                           Margin="0,6,0,0">
+                    <TextBlock.Text>
+                        <MultiBinding
+                            StringFormat="Completion Tokens: {0}, Price：{1:F4}$，Latency: {2}ms, Duration:{3}s, Speed:{4:F1}tps">
+                            <Binding Path="Tokens" Mode="OneWay" TargetNullValue="None" />
+                            <Binding Path="Price" Mode="OneWay" TargetNullValue="None" />
+                            <Binding Path="Latency" Mode="OneWay" TargetNullValue="None" />
+                            <Binding Path="Duration" Mode="OneWay" TargetNullValue="None" />
+                            <Binding Path="TpS" Mode="OneWay" TargetNullValue="None" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <materialDesign:PopupBox ToolTip="模型信息"
+                                         Margin="10,0,0,0"
+                                         Width="30"
+                                         Height="30"
+                                         Visibility="{Binding AcceptedResponse.Usage,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                         ToggleContent="{materialDesign:PackIcon Kind=InfoOutline}"
+                                         PopupAnimation="Slide"
+                                         PopupUniformCornerRadius="8"
+                                         Padding="4,0"
+                                         VerticalAlignment="Center"
+                                         PopupContent="{Binding AcceptedResponse.Usage,Mode=OneWay}"
+                                         PopupContentTemplate="{StaticResource UsageDetailDataTemplate}" />
+            </StackPanel>
         </StackPanel>
     </DataTemplate>
     <component:TypeBasedDataTemplateSelector x:Key="DialogTemplateSelector">

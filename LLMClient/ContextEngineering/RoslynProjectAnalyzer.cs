@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Printing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -56,7 +57,6 @@ public partial class RoslynProjectAnalyzer : IDisposable
             var projects = solution.Projects
                 .Where(ShouldIncludeProject)
                 .ToList();
-
             _logger.LogInformation($"Found {projects.Count} projects to analyze");
 
             var projectTasks = projects
@@ -257,6 +257,9 @@ public partial class RoslynProjectAnalyzer : IDisposable
                 frameworks.Add("net" + ExtractFrameworkVersion(reference.FilePath));
         }
 
+        info.Language = project.Language;
+        info.LanguageVersion =
+            (project.ParseOptions as CSharpParseOptions)?.LanguageVersion.ToDisplayString() ?? "latest";
         info.TargetFrameworks = frameworks.ToList();
     }
 

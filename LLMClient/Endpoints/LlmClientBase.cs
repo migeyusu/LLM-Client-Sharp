@@ -14,6 +14,7 @@ using LLMClient.Endpoints.Messages;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Rag;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using OpenAI.Chat;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
@@ -50,6 +51,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             OnPropertyChanged();
         }
     }
+
+    private Lazy<ITokensCounter> _tokensCounterLazy =
+        new Lazy<ITokensCounter>(() => ServiceLocator.GetService<ITokensCounter>()!);
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 
@@ -143,6 +147,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     private readonly Stopwatch _stopwatch = new Stopwatch();
 
+
     const string ToolCalls = "ToolCalls";
 
     [Experimental("SKEXP0001")]
@@ -150,6 +155,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
+        context.Initialize(_tokensCounterLazy.Value);
 #if DEBUG
         interactor ??= new DebugInvokeInteractor();
 #endif
@@ -559,13 +565,17 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             result.Duration = duration;
             result.FinishReason = finishReason;
             result.Price = price;
-            if (this.Model.Telemetry == null)
+            if (!result.IsInterrupt)
             {
-                this.Model.Telemetry = new UsageCount(result);
-            }
-            else
-            {
-                this.Model.Telemetry.Add(result);
+                var modelTelemetry = this.Model.Telemetry;
+                if (modelTelemetry == null)
+                {
+                    this.Model.Telemetry = new UsageCount(result);
+                }
+                else
+                {
+                    modelTelemetry.Add(result);
+                }
             }
 
             return result;

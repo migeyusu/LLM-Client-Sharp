@@ -2,17 +2,13 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using System.Windows.Input;
 using AutoMapper;
-using CommunityToolkit.Mvvm.Input;
 using DocumentFormat.OpenXml.Wordprocessing;
 using LLMClient.Abstraction;
-using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
-using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Dialog;
@@ -29,182 +25,6 @@ public enum ProjectType
     [Description("软件")] Standard,
     [Description("C#")] CSharp,
     [Description("c++")] Cpp
-}
-
-public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
-{
-    private string? _name;
-
-    public string? Name
-    {
-        get => _name;
-        set
-        {
-            if (value == _name) return;
-            _name = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private string? _description = string.Empty;
-
-    /// <summary>
-    /// sample:this is a *** project
-    /// </summary>
-    public string? Description
-    {
-        get => _description;
-        set
-        {
-            if (value == _description) return;
-            this.ClearError();
-            if (string.IsNullOrEmpty(value))
-            {
-                this.AddError("Description cannot be null or empty.");
-                return;
-            }
-
-            _description = value;
-            OnPropertyChanged();
-        }
-    }
-
-
-    public ICommand SelectProjectFolderCommand => new RelayCommand(() =>
-    {
-        var dialog = new System.Windows.Forms.FolderBrowserDialog
-        {
-            Description = "请选择项目文件夹",
-            SelectedPath = string.IsNullOrEmpty(FolderPath)
-                ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                : FolderPath
-        };
-
-        if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-        {
-            FolderPath = dialog.SelectedPath;
-        }
-    });
-
-    public ICommand AddAllowedFolderPathsCommand => new RelayCommand(() =>
-    {
-        var dialog = new System.Windows.Forms.FolderBrowserDialog
-        {
-            Description = "请选择允许的文件夹路径",
-            SelectedPath = string.IsNullOrEmpty(FolderPath)
-                ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                : FolderPath
-        };
-
-        if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-        {
-            var selectedPath = dialog.SelectedPath;
-            if (!AllowedFolderPaths.Contains(selectedPath))
-            {
-                AllowedFolderPaths.Add(selectedPath);
-            }
-        }
-    });
-
-    public ICommand RemoveAllowedFolderPathCommand => new ActionCommand((o) =>
-    {
-        if (o is string s)
-        {
-            AllowedFolderPaths.Remove(s);
-        }
-    });
-
-    public ObservableCollection<string> AllowedFolderPaths { get; set; } = new ObservableCollection<string>();
-
-    private string? _folderPath;
-
-    /// <summary>
-    /// 项目路径，项目所在文件夹路径
-    /// </summary>
-    public string? FolderPath
-    {
-        get => _folderPath;
-        set
-        {
-            if (value == _folderPath) return;
-            this.ClearError();
-            if (string.IsNullOrEmpty(value))
-            {
-                this.AddError("FolderPath cannot be null or empty.");
-                return;
-            }
-
-            if (!Directory.Exists(value))
-            {
-                this.AddError("FolderPath does not exist.");
-            }
-
-            if (!string.IsNullOrEmpty(_folderPath))
-            {
-                AllowedFolderPaths.Remove(_folderPath);
-            }
-
-            _folderPath = value;
-            AllowedFolderPaths.Add(value);
-            OnPropertyChanged();
-        }
-    }
-
-    [MemberNotNullWhen(true, nameof(Name), nameof(FolderPath), nameof(Description))]
-    public bool Check()
-    {
-        if (this.HasErrors)
-        {
-            return false;
-        }
-
-        if (string.IsNullOrEmpty(Name))
-        {
-            this.AddError("Name cannot be null or empty.", nameof(Name));
-        }
-
-        if (string.IsNullOrEmpty(FolderPath))
-        {
-            this.AddError("FolderPath cannot be null or empty.", nameof(FolderPath));
-        }
-
-        if (string.IsNullOrEmpty(Description))
-        {
-            this.AddError("Description cannot be null or empty.", nameof(Description));
-        }
-
-        if (!AllowedFolderPaths.Any())
-        {
-            MessageEventBus.Publish("AllowedFolderPaths cannot be empty.");
-            return false;
-        }
-
-        return !this.HasErrors;
-    }
-
-    public object Clone()
-    {
-        return new ProjectOption()
-        {
-            Description = this.Description,
-            FolderPath = this.FolderPath,
-            AllowedFolderPaths = new ObservableCollection<string>(this.AllowedFolderPaths.ToArray()),
-            Name = this.Name,
-        };
-    }
-
-    private ProjectType _type;
-
-    public ProjectType Type
-    {
-        get => _type;
-        set
-        {
-            if (value == _type) return;
-            _type = value;
-            OnPropertyChanged();
-        }
-    }
 }
 
 public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectViewModel>, IPromptableSession
@@ -246,6 +66,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
     {
         get { return SaveFolderPathLazy.Value; }
     }
+
 
     public RequesterViewModel Requester { get; }
 
@@ -340,6 +161,20 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         }
     }
 
+    /// <summary>
+    /// 项目上下文信息，一般用于存储从RAG等方式获取的额外信息
+    /// </summary>
+    public string? ProjectContext
+    {
+        get => _projectContext;
+        set
+        {
+            if (value == _projectContext) return;
+            _projectContext = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
+        }
+    }
 
     private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
 
@@ -361,12 +196,18 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             _systemPromptBuilder.AppendLine();
             _systemPromptBuilder.AppendLine("项目背景/描述如下：");
             _systemPromptBuilder.AppendLine(Option.Description);
+            if (ProjectContext != null)
+            {
+                _systemPromptBuilder.AppendLine("项目信息：");
+                _systemPromptBuilder.AppendLine(ProjectContext);
+            }
+
             var contextTasks = this.Tasks
                 .Where(model => model.EnableInContext && string.IsNullOrEmpty(model.Summary))
                 .ToArray();
             if (contextTasks.Any())
             {
-                _systemPromptBuilder.AppendLine("以下是与任务相关的信息：");
+                _systemPromptBuilder.AppendLine("以下是与当前任务相关的信息：");
                 foreach (var projectTaskViewModel in contextTasks)
                 {
                     _systemPromptBuilder.Append("#");
@@ -463,6 +304,8 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         nameof(EditTime),
         nameof(SelectedTask)
     ];
+
+    private string? _projectContext;
 
     public ProjectViewModel(ProjectOption projectOption, ILLMChatClient modelClient, IMapper mapper,
         GlobalOptions options,

@@ -305,13 +305,13 @@
                                                        ChangeModelCommand="{Binding ChangeModelCommand}"
                                                        ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                                        Model="{Binding DefaultClient.Model,Mode=OneWay}" />
-                            <CheckBox Content="回车发送"
+                            <!--<CheckBox Content="回车发送"
                                       Margin="10,0,0,0"
                                       Checked="EnterKeyInputBinding_OnChecked"
                                       Padding="0,0,0,0"
                                       Height="36"
                                       Unchecked="EnterKeyInputBinding_OnUnchecked"
-                                      materialDesign:CheckBoxAssist.CheckBoxSize="30" />
+                                      materialDesign:CheckBoxAssist.CheckBoxSize="30" />-->
                             <!--<Button Width="120"
                                     Height="30"
                                     Content="安全黏贴"

@@ -96,6 +96,8 @@ public class MarkdownSummaryFormatter
             sb.AppendLine($"- **Frameworks**: {string.Join(", ", project.TargetFrameworks)}");
         }
 
+        sb.AppendLine($"- **Language**: {project.Language ?? "C#"}");
+        sb.AppendLine($"- **Language Version**: {project.LanguageVersion ?? "latest"}");
         sb.AppendLine(
             $"- **Statistics**: {project.Statistics.TypesCount} types, {project.Statistics.MethodsCount} methods");
         sb.AppendLine();

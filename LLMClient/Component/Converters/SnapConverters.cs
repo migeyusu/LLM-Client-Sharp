@@ -207,4 +207,11 @@ internal static class SnapConverters
             return rawJson;
         }
     });
+
+    public static readonly IValueConverter FluentTokensToStringConverter =
+        ValueConverter.Create<long, string>(e => e.Value >= 1_000_000
+            ? $"{(e.Value / 1_000_000.0):0.##}M"
+            : e.Value >= 1_000
+                ? $"{(e.Value / 1_000.0):0.##}K"
+                : e.Value.ToString());
 }
