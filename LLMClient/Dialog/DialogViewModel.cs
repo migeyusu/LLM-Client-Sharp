@@ -285,7 +285,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
                           && _options.EnableAutoSubjectGeneration)
         {
             //不要wait
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 var summarizer = new Summarizer(_options);
                 var newTopic = await summarizer.SummarizeTopicAsync(this, TopicTimeOut);

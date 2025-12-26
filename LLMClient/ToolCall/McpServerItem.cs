@@ -150,6 +150,17 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
 
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
+    public bool IsRefreshingTools
+    {
+        get => _isRefreshingTools;
+        set
+        {
+            if (value == _isRefreshingTools) return;
+            _isRefreshingTools = value;
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>
     /// 列举支持的操作
     /// </summary>
@@ -164,6 +175,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         try
         {
             await _refreshLock.WaitAsync(cancellationToken);
+            IsRefreshingTools = true;
             ErrorMessage = null;
             if (_client == null)
             {
@@ -192,6 +204,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         finally
         {
             _refreshLock.Release();
+            IsRefreshingTools = false;
         }
     }
 
@@ -217,6 +230,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
     private string? _userPrompt;
     private bool _isAvailable;
     private bool _isEnabled = true;
+    private bool _isRefreshingTools;
 
 
     protected McpServerItem()

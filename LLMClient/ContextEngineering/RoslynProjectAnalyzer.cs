@@ -592,7 +592,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
             Name = symbol.Name,
             Kind = "Method",
             Accessibility = symbol.DeclaredAccessibility.ToString(),
-            Signature = BuildMethodSignature(symbol),
+            Signature = BuildSymbolSignature(symbol),
             IsStatic = symbol.IsStatic,
             IsAsync = symbol.IsAsync,
             IsVirtual = symbol.IsVirtual,
@@ -621,7 +621,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
             Name = symbol.Name,
             Kind = "Property",
             Accessibility = symbol.DeclaredAccessibility.ToString(),
-            Signature = $"{FormatTypeName(symbol.Type)} {symbol.Name}",
+            Signature = BuildSymbolSignature(symbol),
             IsStatic = symbol.IsStatic,
             IsVirtual = symbol.IsVirtual,
             IsOverride = symbol.IsOverride,
@@ -644,7 +644,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
             Name = symbol.Name,
             Kind = symbol.IsConst ? "Constant" : "Field",
             Accessibility = symbol.DeclaredAccessibility.ToString(),
-            Signature = $"{FormatTypeName(symbol.Type)} {symbol.Name}",
+            Signature = BuildSymbolSignature(symbol),
             IsStatic = symbol.IsStatic,
             ReturnType = FormatTypeName(symbol.Type),
             Comment = GetXmlComment(field),
@@ -662,7 +662,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
             Name = symbol.ContainingType.Name,
             Kind = "Constructor",
             Accessibility = symbol.DeclaredAccessibility.ToString(),
-            Signature = BuildMethodSignature(symbol),
+            Signature = BuildSymbolSignature(symbol),
             IsStatic = symbol.IsStatic,
             Parameters = symbol.Parameters.Select(p => new ParameterInfo
                 {
@@ -691,19 +691,19 @@ public partial class RoslynProjectAnalyzer : IDisposable
             Name = symbol.Name,
             Kind = "Event",
             Accessibility = symbol.DeclaredAccessibility.ToString(),
-            Signature = $"{FormatTypeName(symbol.Type)} {symbol.Name}",
+            Signature = BuildSymbolSignature(symbol),
             IsStatic = symbol.IsStatic,
             ReturnType = FormatTypeName(symbol.Type),
             Comment = GetXmlComment(evt)
         };
     }
 
-    private static string BuildMethodSignature(IMethodSymbol symbol)
+    private static string BuildSymbolSignature(ISymbol symbol)
     {
         // 定义显示格式：这是关键
         var format = new SymbolDisplayFormat(
             globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
-            typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+            typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypes,
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
             memberOptions: SymbolDisplayMemberOptions.IncludeParameters |
                            SymbolDisplayMemberOptions.IncludeType |

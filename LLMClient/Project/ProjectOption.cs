@@ -2,8 +2,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Project;
@@ -22,6 +24,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
             OnPropertyChanged();
         }
     }
+
 
     private string? _description = string.Empty;
 
@@ -91,7 +94,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         }
     });
 
-    public ObservableCollection<string> AllowedFolderPaths { get; set; } = new ObservableCollection<string>();
+    public ObservableCollection<string> AllowedFolderPaths { get; set; } = new();
 
     private string? _folderPath;
 
@@ -125,6 +128,38 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
             AllowedFolderPaths.Add(value);
             OnPropertyChanged();
         }
+    }
+
+    public bool TypeEditable { get; set; } = false;
+
+    private ProjectType _type;
+
+    public ProjectType Type
+    {
+        get => _type;
+        set
+        {
+            if (value == _type) return;
+            _type = value;
+            OnPropertyChanged();
+        }
+    }
+
+
+    private static ThemedIcon CSharpIcon => LocalThemedIcon.FromPackIcon(PackIconKind.LanguageCsharp);
+
+    private static ThemedIcon CppIcon => LocalThemedIcon.FromPackIcon(PackIconKind.LanguageCpp);
+
+    private static ThemedIcon DefaultIcon => LocalThemedIcon.FromPackIcon(PackIconKind.CodeTags);
+
+    public ThemedIcon Icon
+    {
+        get => _type switch
+        {
+            ProjectType.CSharp => CSharpIcon,
+            ProjectType.Cpp => CppIcon,
+            _ => DefaultIcon,
+        };
     }
 
     [MemberNotNullWhen(true, nameof(Name), nameof(FolderPath), nameof(Description))]
@@ -167,19 +202,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
             FolderPath = this.FolderPath,
             AllowedFolderPaths = new ObservableCollection<string>(this.AllowedFolderPaths.ToArray()),
             Name = this.Name,
+            Type = this.Type,
         };
-    }
-
-    private ProjectType _type;
-
-    public ProjectType Type
-    {
-        get => _type;
-        set
-        {
-            if (value == _type) return;
-            _type = value;
-            OnPropertyChanged();
-        }
     }
 }

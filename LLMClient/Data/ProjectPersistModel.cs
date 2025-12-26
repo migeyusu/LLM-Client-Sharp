@@ -1,8 +1,10 @@
-﻿namespace LLMClient.Data;
+﻿using System.Text.Json.Serialization;
+
+namespace LLMClient.Data;
 
 public class ProjectPersistModel
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     public int Version { get; set; } = CurrentVersion;
 
@@ -19,6 +21,9 @@ public class ProjectPersistModel
     public string[]? AllowedFolderPaths { get; set; }
 
     public string? FolderPath { get; set; }
+    
+    [JsonPropertyName("SystemPrompt")]
+    public string? UserSystemPrompt { get; set; }
 
     #region requester
 
@@ -33,4 +38,17 @@ public class ProjectPersistModel
     public double TotalPrice { get; set; }
 
     public ProjectTaskPersistModel[]? Tasks { get; set; }
+}
+
+public class CSharpProjectPersistModel : ProjectPersistModel
+{
+    public bool IsSolutionMode { get; set; }
+
+    public string? SolutionFilePath { get; set; }
+
+    public string? ProjectFilePath { get; set; }
+}
+
+public class CppProjectPersistModel : ProjectPersistModel
+{
 }

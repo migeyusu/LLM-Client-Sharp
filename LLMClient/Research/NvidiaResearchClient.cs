@@ -12,7 +12,6 @@ using Microsoft.SemanticKernel.Data;
 
 namespace LLMClient.Research;
 
-
 public class NvidiaResearchClient : ResearchClient
 {
     public override string Name => "Nvidia Deep Research";
@@ -24,8 +23,8 @@ public class NvidiaResearchClient : ResearchClient
     private readonly GlobalOptions _options;
 
     private readonly UrlFetcherPlugin _urlFetcherPlugin = new();
-    
-    
+
+
     public NvidiaResearchClient(IParameterizedLLMModel promptModel, IParameterizedLLMModel reportModel,
         GlobalOptions options)
     {
@@ -99,10 +98,11 @@ public class NvidiaResearchClient : ResearchClient
                             Top = 10,
                         }, cancellationToken);
                     var originalSearchResults = new ConcurrentBag<InternalSearchResult>();
-                    await skTextSearchResult.Results.ForEachAsync((async r =>
+                    await foreach (var textSearchResult in skTextSearchResult.Results.WithCancellation(
+                                       cancellationToken))
                     {
-                        var objLink = r.Link;
-                        if (!string.IsNullOrWhiteSpace(objLink) && !string.IsNullOrWhiteSpace(r.Value) &&
+                        var objLink = textSearchResult.Link;
+                        if (!string.IsNullOrWhiteSpace(objLink) && !string.IsNullOrWhiteSpace(textSearchResult.Value) &&
                             !searchResultUrls.Contains(objLink))
                         {
                             //重试3次
@@ -127,7 +127,8 @@ public class NvidiaResearchClient : ResearchClient
                                             if (!string.IsNullOrWhiteSpace(text))
                                             {
                                                 originalSearchResults.Add(
-                                                    new InternalSearchResult(objLink, r.Name ?? "", text));
+                                                    new InternalSearchResult(objLink, textSearchResult.Name ?? "",
+                                                        text));
                                                 break;
                                             }
                                         }
@@ -143,7 +144,8 @@ public class NvidiaResearchClient : ResearchClient
                             interactor?.Warning(
                                 $"Failed to fetch content from URL '{objLink}'. {exception?.HierarchicalMessage()}");
                         }
-                    }), cancellationToken: cancellationToken);
+                    }
+
                     if (!originalSearchResults.Any()) continue;
 
                     searchResultUrls.AddRange(originalSearchResults.Select(r => r.Url));

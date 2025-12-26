@@ -3,10 +3,12 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Shell;
 using LambdaConverters;
 using LLMClient.Component.CustomControl;
+using LLMClient.Component.Render;
 using LLMClient.Data;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
@@ -214,4 +216,15 @@ internal static class SnapConverters
             : e.Value >= 1_000
                 ? $"{(e.Value / 1_000.0):0.##}K"
                 : e.Value.ToString());
+
+    public static readonly IValueConverter StringToDocumentConverter =
+        ValueConverter.Create<string?, FlowDocument?>(e =>
+        {
+            if (string.IsNullOrEmpty(e.Value))
+            {
+                return null;
+            }
+
+            return e.Value.RenderOnFlowDocument();
+        });
 }

@@ -118,7 +118,9 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         }
     }
 
-    [JsonIgnore] public virtual UriThemedIcon Icon { get; } = new(null, ImageExtensions.APIIconImage);
+    [JsonIgnore]
+    public virtual UriThemedIcon Icon { get; } =
+        new(null, ImageExtensions.APIIconImageLight, null, ImageExtensions.APIIconImageDark);
 
     /// <summary>
     /// 验证

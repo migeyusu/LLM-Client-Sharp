@@ -22,38 +22,43 @@ namespace LLMClient.Data;
 
 public static class ImageExtensions
 {
-    public static ImageSource EndpointIcon => EndpointIconImageLazy.Value;
+    #region endpoint icon
 
-    private static readonly Lazy<ImageSource> EndpointIconImageLazy = new Lazy<ImageSource>(() =>
+    public static ImageSource EndpointIconImageLight => EndpointThemedIcon.LightModeSource;
+
+    public static ImageSource EndpointIconImageDark => EndpointThemedIcon.DarkModeSource!;
+
+    private static readonly Lazy<LocalThemedIcon> EndpointThemedIconLazy = new Lazy<LocalThemedIcon>(() =>
     {
-        return ToImageSource(PackIconKind.Web);
+        return LocalThemedIcon.FromPackIcon(PackIconKind.Web);
     });
 
-    private static readonly Lazy<ThemedIcon> EndpointThemedIconLazy = new Lazy<ThemedIcon>(() =>
+    public static LocalThemedIcon EndpointThemedIcon => EndpointThemedIconLazy.Value;
+
+    #endregion
+
+    public static ImageSource APIIconImageLight => APIThemedIcon.LightModeSource;
+
+    public static ImageSource APIIconImageDark => APIThemedIcon.DarkModeSource!;
+
+    private static readonly Lazy<ThemedIcon> APIThemedIconLazy = new Lazy<ThemedIcon>(() =>
     {
-        return new LocalThemedIcon(EndpointIcon);
+        return  LocalThemedIcon.FromPackIcon(PackIconKind.Api);
     });
 
-    public static ThemedIcon EndpointThemedIcon => EndpointThemedIconLazy.Value;
+    public static ThemedIcon APIThemedIcon => APIThemedIconLazy.Value;
 
-    public static ImageSource APIIconImage => APIIconImageLazy.Value;
-
-    private static readonly Lazy<ImageSource> APIIconImageLazy = new Lazy<ImageSource>(() =>
-    {
-        return ToImageSource(PackIconKind.Api);
-    });
-
-    public static ThemedIcon APIThemedIcon => APIThemedIconImageLazy.Value;
-
-    private static readonly Lazy<ThemedIcon> APIThemedIconImageLazy = new Lazy<ThemedIcon>(() =>
-    {
-        return new LocalThemedIcon(ToImageSource(PackIconKind.Api));
-    });
-
-    private static ConcurrentDictionary<PackIconKind, ImageSource> _packIconCache
+    private static readonly ConcurrentDictionary<PackIconKind, ImageSource> _packIconCache
         = new ConcurrentDictionary<PackIconKind, ImageSource>();
 
-    public static ImageSource ToImageSource(this PackIconKind kind, Brush? foreground = null)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="kind"></param>
+    /// <param name="foreground">default is black</param>
+    /// <param name="background">default is white</param>
+    /// <returns></returns>
+    public static ImageSource ToImageSource(this PackIconKind kind, Brush? foreground = null, Brush? background = null)
     {
         return _packIconCache.GetOrAdd(kind, k =>
         {
@@ -61,8 +66,9 @@ public static class ImageExtensions
             var packIconData = packIcon.Data;
             var geometry = Geometry.Parse(packIconData);
             foreground ??= Brushes.Black;
+            background ??= Brushes.White;
             var drawingImage =
-                new DrawingImage(new GeometryDrawing(foreground, new Pen(Brushes.White, 0), geometry));
+                new DrawingImage(new GeometryDrawing(foreground, new Pen(background, 0), geometry));
             drawingImage.Freeze();
             return drawingImage;
         });

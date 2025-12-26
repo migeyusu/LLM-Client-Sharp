@@ -10,6 +10,7 @@ using LLMClient.Component;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
+using LLMClient.ContextEngineering;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Log;
@@ -123,6 +124,7 @@ public class Program
             Trace.Listeners.Add(traceListener);
 #endif
             CefInitialize();
+            ContextExtension.RegisterMSBuild();
             App app = new App();
             app.InitializeComponent();
             // app.Run(new TestWindow());

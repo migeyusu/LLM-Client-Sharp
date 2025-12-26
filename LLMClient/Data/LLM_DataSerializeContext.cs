@@ -11,6 +11,8 @@ namespace LLMClient.Data;
 [JsonSourceGenerationOptions(WriteIndented = true, GenerationMode = JsonSourceGenerationMode.Metadata)]
 [JsonSerializable(typeof(DialogFilePersistModel))]
 [JsonSerializable(typeof(ProjectPersistModel))]
+[JsonSerializable(typeof(CSharpProjectPersistModel))]
+[JsonSerializable(typeof(CppProjectPersistModel))]
 [JsonSerializable(typeof(DateTimeOffset))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(int))]

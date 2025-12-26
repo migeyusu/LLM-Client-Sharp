@@ -1,4 +1,7 @@
-﻿using AutoMapper;
+﻿using System.Windows.Input;
+using AutoMapper;
+using CommunityToolkit.Mvvm.Input;
+using ICSharpCode.AvalonEdit.CodeCompletion;
 using LLMClient.Abstraction;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering;
@@ -7,6 +10,16 @@ using LLMClient.Endpoints;
 using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Project;
+
+public class CppProjectViewModel : ProjectViewModel
+{
+    public CppProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
+        GlobalOptions options, IRagSourceCollection ragSourceCollection,
+        IEnumerable<ProjectTaskViewModel>? tasks = null)
+        : base(option, modelClient, mapper, options, ragSourceCollection, tasks)
+    {
+    }
+}
 
 public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 {
@@ -36,7 +49,20 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         }
     }
 
-    public bool IsSolutionMode { get; set; } = false;
+    private bool _isSolutionMode = false;
+
+    public bool IsSolutionMode
+    {
+        get => _isSolutionMode;
+        set
+        {
+            if (value == _isSolutionMode) return;
+            _isSolutionMode = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ICommand SelectPathCommand { get; }
 
     private readonly RoslynProjectAnalyzer _analyzer;
 
@@ -45,6 +71,25 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         IRagSourceCollection ragSourceCollection, IEnumerable<ProjectTaskViewModel>? tasks = null)
         : base(option, modelClient, mapper, options, ragSourceCollection, tasks)
     {
+        SelectPathCommand = new RelayCommand(() =>
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = IsSolutionMode ? "Solution Files|*.sln" : "C# Project Files|*.csproj"
+            };
+            var result = dialog.ShowDialog();
+            if (result == true)
+            {
+                if (IsSolutionMode)
+                {
+                    SolutionFilePath = dialog.FileName;
+                }
+                else
+                {
+                    ProjectFilePath = dialog.FileName;
+                }
+            }
+        });
         _analyzer = new RoslynProjectAnalyzer(logger, new AnalyzerConfig()
         {
             IncludeTestProjects = true,
@@ -58,7 +103,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
     /// </summary>
     /// <returns></returns>
     /// <exception cref="NotSupportedException"></exception>
-    private async Task<string> GetProjectContext()
+    protected override async Task<string> GetProjectContext()
     {
         var contextPromptBuilder = new ContextPromptBuilder();
         if (IsSolutionMode)

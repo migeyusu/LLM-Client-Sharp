@@ -2,15 +2,13 @@
 
 namespace LLMClient.Endpoints;
 
-public class LLMBadRequestException : Exception
+public class LlmBadRequestException : Exception
 {
-    public ChatResponse? ChatResponse { get; set; }
-
-    public LLMBadRequestException() : base("The request was invalid or cannot be served by the LLM endpoint.")
+    public LlmBadRequestException() : base("The request was invalid or cannot be served by the LLM endpoint.")
     {
     }
 
-    public LLMBadRequestException(string message) : base(message)
+    public LlmBadRequestException(string message) : base(message)
     {
     }
 }
@@ -18,7 +16,7 @@ public class LLMBadRequestException : Exception
 /// <summary>
 /// 指示过程超过上下文
 /// </summary>
-public class OutOfContextWindowException : LLMBadRequestException
+public class OutOfContextWindowException : LlmBadRequestException
 {
     public ChatResponse? ChatResponse { get; set; }
 

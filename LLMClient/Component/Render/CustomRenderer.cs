@@ -35,7 +35,7 @@ public class CustomRenderer : WpfRenderer
         DefaultPipeline.Setup(Renderer);
     }
 
-    public static ComponentResourceKey PermissionRequestStyleKey=>
+    public static ComponentResourceKey PermissionRequestStyleKey =>
         new(typeof(CustomRenderer), nameof(PermissionRequestStyleKey));
 
     public static CustomRenderer NewRenderer(FlowDocument flowDocument)
@@ -93,15 +93,15 @@ public class CustomRenderer : WpfRenderer
     }
 
 
-    public void RenderRaw(string raw)
+    public FlowDocument? RenderRaw(string raw)
     {
         if (string.IsNullOrEmpty(raw.Trim()))
         {
-            return;
+            return this.Document;
         }
 
         var markdown = Markdown.Parse(raw, DefaultPipeline);
-        this.Render(markdown);
+        return (FlowDocument?)this.Render(markdown);
     }
 
     public override void LoadDocument(FlowDocument document)

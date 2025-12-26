@@ -180,9 +180,7 @@ public class MarkdownSummaryFormatter
         }
 
         stringBuilder.AppendLine();
-        stringBuilder.Append(type.Summary, 0, Math.Min(type.Summary.Length, 100));
-
-        stringBuilder.AppendLine();
+        stringBuilder.AppendLine(type.Summary[..Math.Min(type.Summary.Length, 100)]);
 
         if (_options.IncludeMembers && type.Members.Any())
         {

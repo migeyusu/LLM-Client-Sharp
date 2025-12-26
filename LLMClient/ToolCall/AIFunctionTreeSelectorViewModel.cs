@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall.Servers;
@@ -275,6 +276,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
             catch (Exception e)
             {
                 Trace.TraceError("Failed to refresh function groups: " + e);
+                MessageEventBus.Publish("刷新函数列表失败：" + e.Message);
             }
 
             foreach (var functionGroup in this.FunctionGroups)

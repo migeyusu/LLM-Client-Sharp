@@ -55,7 +55,7 @@ public class CreateSessionViewModel : BaseViewModel
 
     public ModelSelectionViewModel ModelSelection { get; set; } = new();
 
-    private ProjectOption _project = new ProjectOption();
+    private ProjectOption _project = new() { TypeEditable = true };
 
     public ProjectOption Project
     {
@@ -100,12 +100,13 @@ public class CreateSessionViewModel : BaseViewModel
                         session = factory.CreateViewModel<DialogFileViewModel>(this.DialogTitle, chatClient);
                         break;
                     case 1:
-                        var client = ModelSelection.CreateClient();
-                        var projectOption = (ProjectOption)Project.Clone();
-                        if (!projectOption.Check())
+                        if (!Project.Check())
                         {
                             throw new NotSupportedException("Project option is not valid");
                         }
+                        var client = ModelSelection.CreateClient();
+                        var projectOption = (ProjectOption)Project.Clone();
+
                         switch (projectOption.Type)
                         {
                             case ProjectType.CSharp:
@@ -116,8 +117,9 @@ public class CreateSessionViewModel : BaseViewModel
                             default:
                                 session = factory.CreateViewModel<ProjectViewModel>(projectOption, client);
                                 break;
-                                // _mainWindowViewModel.NewProjectViewModel(client, projectOption);
+                            // _mainWindowViewModel.NewProjectViewModel(client, projectOption);
                         }
+
                         break;
                     case 2:
                         var researchClient = SelectedCreationOption?.CreateResearchClient();

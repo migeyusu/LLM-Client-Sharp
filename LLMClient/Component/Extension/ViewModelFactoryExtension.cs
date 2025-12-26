@@ -11,7 +11,7 @@ namespace LLMClient.Component.Extension
     public class ViewModelFactoryExtension : MarkupExtension, IValueConverter
     {
         // 您要在XAML中传入的目标ViewModel类型
-        public Type TargetType { get; set; }
+        public Type? TargetType { get; set; }
 
         public ViewModelFactoryExtension() { }
 
@@ -26,7 +26,7 @@ namespace LLMClient.Component.Extension
             return this;
         }
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value == null || TargetType == null) return null;
 
@@ -44,7 +44,7 @@ namespace LLMClient.Component.Extension
             }
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

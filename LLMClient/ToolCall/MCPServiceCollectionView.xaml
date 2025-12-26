@@ -353,6 +353,17 @@
             <LineBreak />
             <Run Text="{Binding SelectedServerItem.ErrorMessage,Mode=OneWay}" />
         </TextBlock>
+        <materialDesign:Card Grid.Row="1"
+                             Grid.Column="1"
+                             Padding="4"
+                             UniformCornerRadius="14"
+                             VerticalAlignment="Center"
+                             HorizontalAlignment="Center"
+                             Visibility="{Binding SelectedServerItem.IsRefreshingTools,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+            <ProgressBar IsIndeterminate="True"
+                         Style="{StaticResource MaterialDesignCircularProgressBar}"
+                         Value="50" />
+        </materialDesign:Card>
         <Separator Grid.Row="0" Grid.Column="1"
                    VerticalAlignment="Bottom"
                    HorizontalAlignment="Stretch"

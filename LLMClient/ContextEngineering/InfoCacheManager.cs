@@ -67,14 +67,17 @@ public class InfoCacheManager
 
         // 检查相关项目文件是否有更新
         var projectDir = Path.GetDirectoryName(projectFilePath);
-        var projectFiles = Directory.GetFiles(projectDir, "*.csproj", SearchOption.AllDirectories)
-            .Concat(Directory.GetFiles(projectDir, "*.cs", SearchOption.AllDirectories))
-            .Where(f => !f.Contains("\\obj\\") && !f.Contains("\\bin\\"));
-
-        foreach (var file in projectFiles.Take(100)) // 只检查前100个文件以提高性能
+        if (projectDir != null)
         {
-            if (File.GetLastWriteTimeUtc(file) > cacheInfo.LastWriteTimeUtc)
-                return false;
+            var projectFiles = Directory.GetFiles(projectDir, "*.csproj", SearchOption.AllDirectories)
+                .Concat(Directory.GetFiles(projectDir, "*.cs", SearchOption.AllDirectories))
+                .Where(f => !f.Contains("\\obj\\") && !f.Contains("\\bin\\"));
+
+            foreach (var file in projectFiles.Take(100)) // 只检查前100个文件以提高性能
+            {
+                if (File.GetLastWriteTimeUtc(file) > cacheInfo.LastWriteTimeUtc)
+                    return false;
+            }
         }
 
         return true;

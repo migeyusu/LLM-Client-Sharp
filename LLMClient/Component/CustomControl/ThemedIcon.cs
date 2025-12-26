@@ -40,9 +40,9 @@ public abstract class ThemedIcon : BaseViewModel
     // 当前应该显示的图标资源
     public ImageSource CurrentSource => GetCurrentSource();
 
-    protected ImageSource LightModeSource;
+    public ImageSource LightModeSource { get; protected set; }
 
-    protected ImageSource? DarkModeSource;
+    public ImageSource? DarkModeSource { get; protected set; }
 
     public ThemedIcon(ImageSource lightModeSource, bool isDarkModeSupported, ImageSource? darkModeSource)
     {
@@ -76,7 +76,8 @@ public class LocalThemedIcon : ThemedIcon
     public static LocalThemedIcon FromPackIcon(PackIconKind kind)
     {
         var imageSource = kind.ToImageSource();
-        return new LocalThemedIcon(imageSource);
+        var darkSource = kind.ToImageSource(foreground: Brushes.White, background: Brushes.Black);
+        return new LocalThemedIcon(imageSource, darkSource);
     }
 }
 
@@ -117,6 +118,7 @@ public class AsyncThemedIcon : ThemedIcon
 public class UriThemedIcon : ThemedIcon
 {
     private readonly ImageSource _lightModeFallbackValue;
+    private readonly ImageSource? _darkModeFallbackValue;
     private Uri? _lightModeUri;
     private Uri? _darkModeUri;
 
@@ -150,10 +152,12 @@ public class UriThemedIcon : ThemedIcon
         }
     }
 
-    public UriThemedIcon(Uri? lightModeUri, ImageSource lightModeFallbackValue, Uri? darkModeUri = null)
+    public UriThemedIcon(Uri? lightModeUri, ImageSource lightModeFallbackValue, Uri? darkModeUri = null,
+        ImageSource? darkModeFallbackValue = null)
         : base(lightModeFallbackValue, darkModeUri != null, EmptyIcon)
     {
         _lightModeFallbackValue = lightModeFallbackValue;
+        _darkModeFallbackValue = darkModeFallbackValue;
         LightModeUri = lightModeUri;
         UpdateSource(lightModeUri, darkModeUri);
     }
@@ -162,12 +166,12 @@ public class UriThemedIcon : ThemedIcon
     {
         if (lightModeUri != null)
         {
-            this.LightModeSource = await lightModeUri.GetImageSourceAsync() ?? EmptyIcon.CurrentSource;
+            this.LightModeSource = await lightModeUri.GetImageSourceAsync() ?? _lightModeFallbackValue;
         }
 
         if (darkModeUri != null)
         {
-            this.DarkModeSource = await darkModeUri.GetImageSourceAsync() ?? EmptyIcon.CurrentSource;
+            this.DarkModeSource = await darkModeUri.GetImageSourceAsync() ?? _darkModeFallbackValue;
         }
 
         OnPropertyChangedAsync(nameof(CurrentSource));

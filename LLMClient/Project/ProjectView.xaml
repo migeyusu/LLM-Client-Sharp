@@ -10,8 +10,6 @@
              xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
              xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              xmlns:extension="clr-namespace:LLMClient.Component.Extension"
-             xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
-             xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:ProjectViewModel}"
@@ -34,7 +32,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBox Text="{Binding  Name,Mode=TwoWay}"
+                <TextBox Text="{Binding  Option.Name,Mode=TwoWay}"
                          Style="{StaticResource MaterialDesignFilledTextBox}"
                          materialDesign:HintAssist.Hint="名称"
                          HorizontalAlignment="Left"
@@ -107,8 +105,40 @@
                         <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                         <LineBreak />
                         <Run
-                            Text="{Binding SelectedTask.PredictedContextLength,Mode=OneWay,StringFormat=Current Context:{0}Tokens,Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
+                            Text="{Binding SelectedTask.PredictedContextLength,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                     </TextBlock>
+                    <Button Content="{materialDesign:PackIcon Kind=TableOfContents,Size=20}"
+                            ToolTip="View Summary"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
+                        <Button.CommandParameter>
+                            <HeaderedContentControl Header="Project Summary"
+                                                    Style="{StaticResource DialogContentControlStyle}">
+                                <Grid MaxWidth="800"
+                                      MaxHeight="600"
+                                      MinWidth="400"
+                                      MinHeight="300">
+                                    <FlowDocumentScrollViewer
+                                        Document="{Binding ProjectContext,Converter={x:Static converters:SnapConverters.StringToDocumentConverter}}" />
+                                    <materialDesign:Card Padding="4"
+                                                         UniformCornerRadius="14"
+                                                         VerticalAlignment="Center"
+                                                         HorizontalAlignment="Center"
+                                                         Visibility="{Binding IsRefreshingContext,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <ProgressBar IsIndeterminate="True"
+                                                     Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                                     Value="50" />
+                                    </materialDesign:Card>
+                                    <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                            Content="{materialDesign:PackIcon Kind=Refresh}"
+                                            ToolTip="Refresh Summary"
+                                            Command="{Binding RefreshProjectContextCommand}"
+                                            VerticalAlignment="Bottom"
+                                            HorizontalAlignment="Right"
+                                            Margin="10" />
+                                </Grid>
+                            </HeaderedContentControl>
+                        </Button.CommandParameter>
+                    </Button>
                     <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
                             ToolTip="Config Project"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
@@ -120,7 +150,7 @@
                         <StackPanel MaxWidth="200"
                                     MaxHeight="200">
                             <Button Content="打开项目文件夹"
-                                    CommandParameter="{Binding FolderPath,Mode=OneWay}"
+                                    CommandParameter="{Binding Option.FolderPath,Mode=OneWay}"
                                     Command="{x:Static utility:CommonCommands.OpenFolderCommand}" />
                             <Button Content="打开文件"
                                     Command="{x:Static utility:CommonCommands.OpenSource}" />
@@ -210,7 +240,7 @@
                             <LineBreak />
                             <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                             <Run
-                                Text="{Binding PredictedContextLength,Mode=OneWay,StringFormat=Current Context:{0}Tokens,Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
+                                Text="{Binding PredictedContextLength,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                         </TextBlock>
                         <customControl:SearchBox Margin="10,0"
                                                  Padding="8,4,8,4"

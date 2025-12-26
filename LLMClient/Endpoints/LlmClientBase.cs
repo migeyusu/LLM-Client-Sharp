@@ -508,7 +508,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                         break;
                     }
-                    catch (LLMBadRequestException)
+                    catch (LlmBadRequestException)
                     {
                         //对于错误请求，直接抛出，因为此时输入已经错误
                         throw;
@@ -536,7 +536,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                             if (clientResultException.Status == 400)
                             {
-                                throw new LLMBadRequestException(errorMessage);
+                                throw new LlmBadRequestException(errorMessage);
                             }
                         }
 

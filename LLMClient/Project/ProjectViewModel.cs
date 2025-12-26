@@ -4,9 +4,13 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
+using CommunityToolkit.Mvvm.Input;
 using DocumentFormat.OpenXml.Wordprocessing;
+using Google.Apis.Util;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
@@ -22,16 +26,16 @@ namespace LLMClient.Project;
 
 public enum ProjectType
 {
-    [Description("软件")] Standard,
+    [Description("代码")] Standard,
     [Description("C#")] CSharp,
-    [Description("c++")] Cpp
+    [Description("C++")] Cpp
 }
 
 public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectViewModel>, IPromptableSession
 {
     public const string SaveDir = "Projects";
 
-    private IMapper _mapper;
+    private readonly IMapper _mapper;
 
     private bool _isDataChanged = true;
 
@@ -43,6 +47,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             _isDataChanged = value;
             if (!value)
             {
+                //用于重置子项的变更状态
                 foreach (var projectTask in this.Tasks)
                 {
                     projectTask.IsDataChanged = value;
@@ -76,60 +81,85 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
     {
         try
         {
-            var persistModel =
-                await JsonSerializer.DeserializeAsync<ProjectPersistModel>(fileStream, SerializerOption);
+            var root = await JsonNode.ParseAsync(fileStream);
+            if (root == null)
+            {
+                return null;
+            }
+
+            var version = root[nameof(ProjectPersistModel.Version)]?.GetValue<int?>();
+            if (version != ProjectPersistModel.CurrentVersion)
+            {
+                throw new Exception($"Project version mismatch: {version} != {ProjectPersistModel.CurrentVersion}");
+            }
+
+            var typeText = root[nameof(ProjectPersistModel.Type)]?.GetValue<string>();
+            var (poType, viewmodelType) = ResolveTypePair(typeText);
+            var persistModel = (ProjectPersistModel?)root.Deserialize(poType, SerializerOption);
             if (persistModel == null)
             {
-                return null;
+                throw new Exception($"Project type mismatch: {typeText} != {poType}");
             }
 
-            if (persistModel.Version != ProjectPersistModel.CurrentVersion)
+            var viewModel = mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, (_ => { }));
+            if (viewModel.GetType() != viewmodelType)
             {
-                return null;
+                throw new Exception($"Project mapping failed: {typeText} != {viewmodelType}");
             }
 
-            var viewModel = mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, _ => { });
             viewModel.IsDataChanged = false;
             return viewModel;
         }
         catch (Exception e)
         {
-            Trace.TraceError(e.ToString());
+            Trace.TraceError("Failed to load project: " + e.Message);
             return null;
         }
+    }
+
+    private static Tuple<Type, Type> ResolveTypePair(string? typeText)
+    {
+        if (string.IsNullOrWhiteSpace(typeText))
+        {
+            return new Tuple<Type, Type>(typeof(ProjectPersistModel), typeof(ProjectViewModel));
+        }
+
+        if (Enum.TryParse(typeText, true, out ProjectType projectType))
+        {
+            switch (projectType)
+            {
+                case ProjectType.Standard:
+                    return new Tuple<Type, Type>(typeof(ProjectPersistModel), typeof(ProjectViewModel));
+                case ProjectType.CSharp:
+                    return new Tuple<Type, Type>(typeof(CSharpProjectPersistModel), typeof(CSharpProjectViewModel));
+                case ProjectType.Cpp:
+                    return new Tuple<Type, Type>(typeof(CppProjectPersistModel), typeof(CppProjectViewModel));
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        throw new Exception($"Unknown project type: {typeText}");
     }
 
 
     protected override async Task SaveToStream(Stream stream)
     {
-        var dialogModel = _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, _ => { });
-        await JsonSerializer.SerializeAsync(stream, dialogModel, SerializerOption);
+        var (po, vmo) = ResolveTypePair(this.Option.Type.ToString());
+        var dialogModel =
+            _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, _ => { });
+        await JsonSerializer.SerializeAsync(stream, dialogModel, po, SerializerOption);
     }
 
     public override object Clone()
     {
-        var projectPersistModel = _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, _ => { });
-        var cloneProject = _mapper.Map<ProjectPersistModel, ProjectViewModel>(projectPersistModel, _ => { });
-        cloneProject.IsDataChanged = true;
-        return cloneProject;
-    }
-
-
-    private void TagDataChangedOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        IsDataChanged = true;
-    }
-
-    private void TrackClientChanged(ILLMChatClient client)
-    {
-        if (client is INotifyPropertyChanged newValue)
+        using (var memoryStream = new MemoryStream())
         {
-            newValue.PropertyChanged += TagDataChangedOnPropertyChanged;
-        }
-
-        if (client.Parameters is INotifyPropertyChanged newParameters)
-        {
-            newParameters.PropertyChanged += TagDataChangedOnPropertyChanged;
+            this.SaveToStream(memoryStream).Wait();
+            memoryStream.Seek(0, SeekOrigin.Begin);
+            var cloneProject = LoadFromStream(memoryStream, _mapper).Result!;
+            cloneProject.IsDataChanged = true;
+            return cloneProject;
         }
     }
 
@@ -141,8 +171,14 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
 
     public string? UserSystemPrompt
     {
-        get => this.Option.Description;
-        set => this.Option.Description = value;
+        get => _userSystemPrompt;
+        set
+        {
+            if (value == _userSystemPrompt) return;
+            _userSystemPrompt = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Context));
+        }
     }
 
     private ObservableCollection<PromptEntry> _extendedSystemPrompts = [];
@@ -176,6 +212,19 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         }
     }
 
+    public bool IsRefreshingContext
+    {
+        get => _isRefreshingContext;
+        set
+        {
+            if (value == _isRefreshingContext) return;
+            _isRefreshingContext = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ICommand RefreshProjectContextCommand { get; }
+
     private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
 
     /// <summary>
@@ -189,6 +238,11 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             foreach (var promptEntry in ExtendedSystemPrompts)
             {
                 _systemPromptBuilder.AppendLine(promptEntry.Prompt);
+            }
+
+            if (!string.IsNullOrEmpty(UserSystemPrompt))
+            {
+                _systemPromptBuilder.AppendLine(UserSystemPrompt);
             }
 
             _systemPromptBuilder.AppendFormat("这是一个名为{0}的{1}项目，项目代码位于文件夹{2}。", Option.Name,
@@ -245,8 +299,6 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             OnPropertyChanged();
         }
     }
-
-    private IAIFunctionGroup[] _allowedFunctions = [new FileSystemPlugin(), new WinCLIPlugin()];
 
     #endregion
 
@@ -306,6 +358,8 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
     ];
 
     private string? _projectContext;
+    private string? _userSystemPrompt;
+    private bool _isRefreshingContext;
 
     public ProjectViewModel(ProjectOption projectOption, ILLMChatClient modelClient, IMapper mapper,
         GlobalOptions options,
@@ -321,6 +375,22 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
                 FunctionSelected = true,
             }
         };
+        RefreshProjectContextCommand = new RelayCommand((async void () =>
+        {
+            IsRefreshingContext = true;
+            try
+            {
+                this.ProjectContext = await GetProjectContext();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsRefreshingContext = false;
+            }
+        }));
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedTask?.SelectedFunctionGroups));
@@ -354,6 +424,11 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         _extendedSystemPrompts.CollectionChanged += ExtendedSystemPromptsOnCollectionChanged;
     }
 
+    protected virtual Task<string> GetProjectContext()
+    {
+        return Task.FromResult(string.Empty);
+    }
+
     private void ProjectOptionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
@@ -366,6 +441,8 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
                 OnPropertyChanged(nameof(Context));
                 break;
         }
+
+        this.IsDataChanged = true;
     }
 
     private void ExtendedSystemPromptsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

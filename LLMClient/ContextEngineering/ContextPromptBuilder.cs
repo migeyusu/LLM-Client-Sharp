@@ -53,32 +53,15 @@ public class ContextPromptBuilder
 
     public async Task<string> BuildAsync()
     {
-        // 1. 构建代码上下文段落
-        string codeContextSection = await BuildCodeContextSectionAsync();
-
-        // 2. 渲染主模板
-        var variables = new Dictionary<string, object?>
-        {
-            ["originalSystemPrompt"] = _originalSystemPrompt,
-            ["codeContextSection"] = codeContextSection
-        };
-
-        return await PromptTemplateRenderer.RenderAsync(
-            ContextPromptTemplates.MainSystemPromptTemplate,
-            variables);
-    }
-
-    private async Task<string> BuildCodeContextSectionAsync()
-    {
         // 如果没有任何上下文，返回空
-        if (_solutionInfo is null && _focusedContext is null && _relevantSnippets.Count == 0)
+        if ((_solutionInfo is null && _projectInfo is null) && _focusedContext is null && _relevantSnippets.Count == 0)
         {
             return string.Empty;
         }
 
         var variables = new Dictionary<string, object?>
         {
-            ["projectContext"] = await BuildProjectSummaryAsync(),
+            ["projectContext"] = BuildProjectSummaryAsync(),
             ["focusedContext"] = await BuildFocusedContextAsync(),
             ["relevantSnippets"] = await BuildRelevantSnippetsAsync()
         };
@@ -88,9 +71,8 @@ public class ContextPromptBuilder
             variables);
     }
 
-    private async Task<string> BuildProjectSummaryAsync()
+    private string BuildProjectSummaryAsync()
     {
-        if (_solutionInfo is null) return string.Empty;
         var markdownSummaryFormatter = new MarkdownSummaryFormatter(new FormatterOptions()
         {
             IncludeMembers = true,
@@ -101,7 +83,8 @@ public class ContextPromptBuilder
             return markdownSummaryFormatter.Format(_projectInfo);
         }
 
-        return markdownSummaryFormatter.Format(_solutionInfo);
+        if (_solutionInfo != null) return markdownSummaryFormatter.Format(_solutionInfo);
+        return string.Empty;
     }
 
 

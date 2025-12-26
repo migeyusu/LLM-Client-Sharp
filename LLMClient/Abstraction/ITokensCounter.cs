@@ -1,4 +1,5 @@
-﻿using Microsoft.KernelMemory.AI;
+﻿using System.Diagnostics;
+using Microsoft.KernelMemory.AI;
 
 namespace LLMClient.Abstraction;
 
@@ -29,6 +30,7 @@ public class DefaultTokensCounter : ITokensCounter
         }
         catch (Exception e)
         {
+            Trace.TraceWarning("计算Tokens数量失败，使用估算方法：" + e);
             return (long)(text.Length / 2.8f);
         }
     }

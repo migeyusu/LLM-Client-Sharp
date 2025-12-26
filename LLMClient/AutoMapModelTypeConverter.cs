@@ -34,7 +34,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
     private readonly IViewModelFactory _viewModelFactory;
 
-    private IPromptsResource _promptsResource;
+    private readonly IPromptsResource _promptsResource;
 
     public AutoMapModelTypeConverter(IEndpointService service, IMcpServiceCollection mcpServiceCollection,
         IViewModelFactory factory, IPromptsResource promptsResource)
@@ -42,7 +42,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         this._endpointService = service;
         this._mcpServiceCollection = mcpServiceCollection;
         this._viewModelFactory = factory;
-        _promptsResource = promptsResource;
+        this._promptsResource = promptsResource;
     }
 
     public DialogFilePersistModel Convert(DialogFileViewModel from, DialogFilePersistModel? destination,
@@ -263,14 +263,31 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         };
         if (destination != null)
         {
-            throw new NotSupportedException();
+            throw new NotSupportedException("不允许直接创建ProjectViewModel!");
         }
 
         switch (projectOption.Type)
         {
             case ProjectType.CSharp:
-                destination =
+                if (source is not CSharpProjectPersistModel projectCSharpPersistModel)
+                {
+                    throw new NotSupportedException("源项目不是CSharpProjectPersistModel类型.");
+                }
+
+                var cSharpProjectViewModel =
                     _viewModelFactory.CreateViewModel<CSharpProjectViewModel>(projectOption, defaultClient);
+                cSharpProjectViewModel.ProjectFilePath = projectCSharpPersistModel.ProjectFilePath;
+                cSharpProjectViewModel.SolutionFilePath = projectCSharpPersistModel.SolutionFilePath;
+                cSharpProjectViewModel.IsSolutionMode = projectCSharpPersistModel.IsSolutionMode;
+                destination = cSharpProjectViewModel;
+                break;
+            case ProjectType.Cpp:
+                if (source is not CppProjectPersistModel projectCppPersistModel)
+                {
+                    throw new NotSupportedException("源项目不是CppProjectPersistModel类型.");
+                }
+
+                destination = _viewModelFactory.CreateViewModel<CppProjectViewModel>(projectOption, defaultClient);
                 break;
             default:
                 destination = _viewModelFactory.CreateViewModel<ProjectViewModel>(projectOption, defaultClient);
@@ -284,6 +301,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination.ExtendedSystemPrompts = mapPrompts;
         }
 
+        destination.UserSystemPrompt = source.UserSystemPrompt;
         context.Items.Add(ParentProjectViewModelKey, destination);
         try
         {
@@ -314,10 +332,39 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     public ProjectPersistModel Convert(ProjectViewModel source, ProjectPersistModel? destination,
         ResolutionContext context)
     {
+        if (source is CSharpProjectViewModel cSharpProjectViewModel)
+        {
+            destination ??= new CSharpProjectPersistModel();
+            if (destination is not CSharpProjectPersistModel cSharpProjectPersistModel)
+            {
+                throw new InvalidOperationException("Destination is not CSharpProjectPersistModel.");
+            }
+
+            cSharpProjectPersistModel.IsSolutionMode = cSharpProjectViewModel.IsSolutionMode;
+            cSharpProjectPersistModel.ProjectFilePath = cSharpProjectViewModel.ProjectFilePath;
+            cSharpProjectPersistModel.SolutionFilePath = cSharpProjectViewModel.SolutionFilePath;
+        }
+        else if (source is CppProjectViewModel cppProjectViewModel)
+        {
+            destination ??= new CppProjectPersistModel();
+            if (destination is not CppProjectPersistModel cppProjectPersistModel)
+            {
+                throw new InvalidOperationException("Destination is not CppProjectPersistModel.");
+            }
+        }
+        else
+        {
+            destination ??= new ProjectPersistModel();
+        }
+
+        MapProjectViewModelBase(source, destination, context);
+        return destination;
+    }
+
+    private void MapProjectViewModelBase(ProjectViewModel source, ProjectPersistModel destination,
+        ResolutionContext context)
+    {
         var mapper = context.Mapper;
-        var projectTaskPersistModels = source.Tasks
-            ?.Select(task => mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(task)).ToArray();
-        destination ??= new ProjectPersistModel();
         var projectOption = source.Option;
         destination.Name = projectOption.Name;
         destination.EditTime = source.EditTime;
@@ -330,14 +377,16 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             }
             : null;
         destination.FolderPath = projectOption.FolderPath;
+        destination.UserSystemPrompt = source.UserSystemPrompt;
         destination.AllowedFolderPaths = projectOption.AllowedFolderPaths?.ToArray();
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
         destination.Client =
             context.Mapper.Map<ILLMChatClient, ParameterizedLLMModelPO>(source.Requester.DefaultClient);
         destination.UserPrompt = source.Requester.PromptString;
+        var projectTaskPersistModels = source.Tasks
+            ?.Select(task => mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(task)).ToArray();
         destination.Tasks = projectTaskPersistModels;
-        return destination;
     }
 
     public ProjectTaskViewModel Convert(ProjectTaskPersistModel source, ProjectTaskViewModel? destination,
@@ -401,7 +450,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
         return destination;
     }
-
 
     public ProjectTaskPersistModel Convert(ProjectTaskViewModel source, ProjectTaskPersistModel? destination,
         ResolutionContext context)

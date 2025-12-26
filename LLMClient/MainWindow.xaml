@@ -124,6 +124,16 @@
                                                                            Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
+                                <DataTemplate DataType="{x:Type project:CSharpProjectViewModel}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="C# Project"
+                                                            Width="600"
+                                                            Height="500"
+                                                            VerticalContentAlignment="Stretch"
+                                                            HorizontalContentAlignment="Stretch"
+                                                            ContentTemplate="{StaticResource CSharpProjectViewModelDataTemplate}"
+                                                            Content="{Binding }" />
+                                </DataTemplate>
                                 <DataTemplate DataType="{x:Type project:ProjectViewModel}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="Standard Project"
@@ -132,7 +142,7 @@
                                                             VerticalContentAlignment="Stretch"
                                                             HorizontalContentAlignment="Stretch"
                                                             ContentTemplate="{StaticResource ProjectConfigDataTemplate}"
-                                                            Content="{Binding }" />
+                                                            Content="{Binding Option}" />
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type endpoints:EmptyLlmModelClient}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
@@ -628,26 +638,36 @@
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition />
                                         </Grid.RowDefinitions>
-                                        <iconPacks:PackIconMaterialDesign Kind="Workspaces" Grid.RowSpan="3"
-                                                                          Width="30"
-                                                                          Height="30"
-                                                                          Margin="10"
-                                                                          VerticalAlignment="Center" />
+                                        <Image Source="{Binding Option.Icon.CurrentSource,Mode=OneWay}"
+                                               Grid.RowSpan="3"
+                                               Width="30"
+                                               Height="30"
+                                               Margin="10"
+                                               VerticalAlignment="Center" />
+                                        <TextBlock Grid.Row="0" 
+                                                   Grid.Column="1"
+                                                   Text="{Binding Requester.DefaultClient.Name}"
+                                                   Foreground="DimGray"
+                                                   TextWrapping="NoWrap"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Left"
+                                                   Style="{StaticResource MaterialDesignCaptionTextBlock}" />
                                         <TextBlock Grid.Row="0"
                                                    Grid.Column="1"
                                                    MaxWidth="120"
                                                    HorizontalAlignment="Right"
                                                    VerticalAlignment="Top"
-                                                   Text="{Binding Type,Mode=OneTime}"
+                                                   Text="{Binding Option.Type,Mode=OneTime,Converter={x:Static converters:SnapConverters.EnumToDescriptionConverter}}"
                                                    Margin="6,0,0,0" />
                                         <TextBlock VerticalAlignment="Center"
                                                    HorizontalAlignment="Left"
                                                    Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
                                                    Grid.Row="1"
                                                    Grid.Column="1"
-                                                   Text="{Binding Name,Mode=OneWay}" />
+                                                   Text="{Binding Option.Name,Mode=OneWay}" />
                                         <TextBlock Grid.Row="2" Grid.Column="1"
-                                                   Text="{Binding Description,Mode=OneWay}"
+                                                   Text="{Binding Option.Description,Mode=OneWay}"
                                                    Foreground="DimGray"
                                                    VerticalAlignment="Bottom"
                                                    TextWrapping="NoWrap"
