@@ -103,19 +103,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
     }
 
-    private bool _isNewResponding;
-
-    public bool IsNewResponding
-    {
-        get => _isNewResponding;
-        private set
-        {
-            if (value == _isNewResponding) return;
-            _isNewResponding = value;
-            OnPropertyChanged();
-        }
-    }
-
     #region scroll
 
     private IDialogItem? _scrollViewItem;
@@ -683,12 +670,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         return FilterHistory(DialogItems, index - 1).Reverse().Append(lastRequest).ToArray();
     }
 
-    public ICommand CancelLastCommand => new ActionCommand(_ =>
-    {
-        var multiResponseViewItem = DialogItems.LastOrDefault() as MultiResponseViewItem;
-        multiResponseViewItem?.AcceptedResponse?.CancelCommand?.Execute(null);
-    });
-
     public DialogContext CreateDialogContextBefore(MultiResponseViewItem? responseViewItem = null)
     {
         int? endIndex = null;
@@ -757,7 +738,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     }
 
     public virtual async Task<CompletedResult> NewRequest(ILLMChatClient client, IRequestItem requestViewItem,
-        int? insertIndex = null)
+        int? insertIndex = null, CancellationToken token = default)
     {
         var multiResponseViewItem = new MultiResponseViewItem(this)
             { InteractionId = requestViewItem.InteractionId };
@@ -776,18 +757,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
 
         this.ScrollViewItem = multiResponseViewItem;
-        this.IsNewResponding = true;
-        CompletedResult completedResult;
-        try
-        {
-            completedResult = await multiResponseViewItem.New(client);
-        }
-        finally
-        {
-            IsNewResponding = false;
-        }
-
-        return completedResult;
+        return await multiResponseViewItem.NewRequest(client, token);
     }
 
     #endregion

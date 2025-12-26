@@ -160,10 +160,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         _items = new ObservableCollection<ResponseViewItem>(items);
         _items.CollectionChanged += (sender, args) => { this.ParentSession.IsDataChanged = true; };
         IsMultiResponse = Items.Count > 1;
-        SelectionPopup = new ModelSelectionPopupViewModel(client =>
-        {
-            this.New(client.CreateClient());
-        })
+        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.NewRequest(client.CreateClient()); })
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
@@ -196,12 +193,12 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         await ParentSession.InvokeRequest(() => responseViewItem.SendRequest(dialogContext));
     }
 
-    public Task<CompletedResult> New(ILLMChatClient chatClient)
+    public Task<CompletedResult> NewRequest(ILLMChatClient chatClient, CancellationToken token = default)
     {
         var responseViewItem = new ResponseViewItem(chatClient);
         this.Append(responseViewItem);
         var dialogContext = ParentSession.CreateDialogContextBefore(this);
-        return ParentSession.InvokeRequest(() => responseViewItem.SendRequest(dialogContext));
+        return ParentSession.InvokeRequest(() => responseViewItem.SendRequest(dialogContext, token));
     }
 
     public void Append(ResponseViewItem viewItem)

@@ -36,6 +36,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
     public const string SaveDir = "Projects";
 
     private readonly IMapper _mapper;
+    private readonly ITokensCounter _tokensCounter;
 
     private bool _isDataChanged = true;
 
@@ -197,6 +198,8 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         }
     }
 
+    public bool IncludeProjectContext { get; set; }
+    
     /// <summary>
     /// 项目上下文信息，一般用于存储从RAG等方式获取的额外信息
     /// </summary>
@@ -209,6 +212,22 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             _projectContext = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(Context));
+            if (!string.IsNullOrEmpty(value))
+            {
+                CalculateProjectContextTokens(value);    
+            }
+            
+        }
+    }
+
+    public int ProjectContextTokensCount
+    {
+        get => _projectContextTokens;
+        set
+        {
+            if (value == _projectContextTokens) return;
+            _projectContextTokens = value;
+            OnPropertyChanged();
         }
     }
 
@@ -360,12 +379,14 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
     private string? _projectContext;
     private string? _userSystemPrompt;
     private bool _isRefreshingContext;
+    private int _projectContextTokens;
 
     public ProjectViewModel(ProjectOption projectOption, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options,
+        GlobalOptions options, ITokensCounter tokensCounter,
         IRagSourceCollection ragSourceCollection, IEnumerable<ProjectTaskViewModel>? tasks = null)
     {
         _mapper = mapper;
+        _tokensCounter = tokensCounter;
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
         Requester = new RequesterViewModel(modelClient, GetResponse, options, ragSourceCollection)
@@ -429,6 +450,12 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         return Task.FromResult(string.Empty);
     }
 
+    private async void CalculateProjectContextTokens(string context)
+    {
+        var countTokens = await _tokensCounter.CountTokens(context);
+        this.ProjectContextTokensCount = (int)countTokens;
+    }
+
     private void ProjectOptionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
@@ -464,7 +491,8 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
-    protected virtual Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2, int? index = null)
+    protected virtual Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2, int? index = null,
+        CancellationToken token = default)
     {
         if (SelectedTask == null)
         {
@@ -482,7 +510,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         }
 
         this.Ready();
-        return SelectedTask.NewRequest(arg1, arg2, index);
+        return SelectedTask.NewRequest(arg1, arg2, index, token);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

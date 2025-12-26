@@ -27,6 +27,8 @@ using LLMClient.ToolCall.Servers;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.SemanticKernel;
 
+namespace LLMClient.ToolCall.Servers;
+
 /// <summary>
 /// A Kernel Plugin for interacting with the local file system in a secure manner.
 /// It provides functions for reading, writing, editing, and managing files and directories

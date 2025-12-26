@@ -317,7 +317,7 @@
                                     Content="安全黏贴"
                                     Click="TestPaste_OnClick"/>-->
                             <Button Command="{Binding NewRequestCommand}"
-                                    IsEnabled="{Binding DefaultClient.IsResponding,Converter={StaticResource InvertBooleanConverter}}"
+                                    Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
                                     Width="80"
                                     Height="30"
                                     Margin="16,0,0,0"
@@ -332,9 +332,14 @@
                                                              VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
+                            <Button Command="{Binding CancelLastCommand}"
+                                    Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Style="{StaticResource StopButtonStyle}"
+                                    Margin="16,0,0,0" />
                             <Button Command="{Binding SummarizeCommand}"
                                     Margin="16,0,0,0"
                                     Width="80"
+                                    Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
                                     Style="{StaticResource MaterialDesignPaperLightButton}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="总结"

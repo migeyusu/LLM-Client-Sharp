@@ -36,16 +36,25 @@ public class RequesterViewModel : BaseViewModel
                 return;
             }
 
-            var completedResult = await _getResponse.Invoke(this.DefaultClient, requestViewItem, null);
-            OnRequestCompleted(completedResult);
-            if (!completedResult.IsInterrupt)
+            IsNewResponding = true;
+            using (_tokenSource = new CancellationTokenSource())
             {
-                ClearRequest();
+                var completedResult =
+                    await _getResponse.Invoke(this.DefaultClient, requestViewItem, null, _tokenSource.Token);
+                OnRequestCompleted(completedResult);
+                if (!completedResult.IsInterrupt)
+                {
+                    ClearRequest();
+                }
             }
         }
         catch (Exception e)
         {
             MessageEventBus.Publish(e.Message);
+        }
+        finally
+        {
+            IsNewResponding = false;
         }
     });
 
@@ -190,14 +199,19 @@ public class RequesterViewModel : BaseViewModel
         }
     }
 
+    public ICommand CancelLastCommand => new ActionCommand(_ =>
+    {
+        _tokenSource?.Cancel();
+    });
+
     #endregion
 
-    private readonly Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> _getResponse;
+    private readonly Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>> _getResponse;
     private readonly GlobalOptions _options;
 
     public RequesterViewModel(ILLMChatClient modelClient,
-        Func<ILLMChatClient, IRequestItem, int?, Task<CompletedResult>> getResponse, GlobalOptions options,
-        IRagSourceCollection ragSourceCollection)
+        Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>> getResponse,
+        GlobalOptions options, IRagSourceCollection ragSourceCollection)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
@@ -241,10 +255,26 @@ public class RequesterViewModel : BaseViewModel
         this.PromptString = null;
     }
 
+    private bool _isNewResponding;
+
+    public bool IsNewResponding
+    {
+        get => _isNewResponding;
+        private set
+        {
+            if (value == _isNewResponding) return;
+            _isNewResponding = value;
+            OnPropertyChanged();
+        }
+    }
+
     public IFunctionGroupSource? FunctionGroupSource { get; set; }
+
+    private CancellationTokenSource? _tokenSource;
 
     public async void Summarize(int? index = null)
     {
+        IsNewResponding = true;
         try
         {
             var summaryRequest = new SummaryRequestViewItem()
@@ -252,12 +282,20 @@ public class RequesterViewModel : BaseViewModel
                 SummaryPrompt = _options.ContextSummarizePrompt,
                 OutputLength = _options.ContextSummarizeWordsCount,
             };
+
             var summarizeModel = _options.CreateContextSummarizeClient() ?? this.DefaultClient;
-            await _getResponse.Invoke(summarizeModel, summaryRequest, index);
+            using (_tokenSource = new CancellationTokenSource())
+            {
+                await _getResponse.Invoke(summarizeModel, summaryRequest, index, _tokenSource.Token);
+            }
         }
         catch (Exception e)
         {
             MessageEventBus.Publish(e.Message);
+        }
+        finally
+        {
+            IsNewResponding = false;
         }
     }
 

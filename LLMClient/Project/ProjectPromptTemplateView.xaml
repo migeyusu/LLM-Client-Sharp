@@ -102,7 +102,7 @@
                   materialDesign:ColorZoneAssist.Background="Black"
                   materialDesign:ColorZoneAssist.Foreground="White"
                   materialDesign:ColorZoneAssist.Mode="Custom"
-                  Header="Custom Header"
+                  Header="Task Context"
                   Height="200"
                   Style="{StaticResource MaterialDesignGroupBox}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">

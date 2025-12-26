@@ -306,11 +306,6 @@ public class MainWindowViewModel : BaseViewModel
 
     #region item management
 
-    public ProjectViewModel NewProjectViewModel(ILLMChatClient chatClient, ProjectOption option)
-    {
-        return new ProjectViewModel(option, chatClient, Mapper, GlobalOptions, RagSourceCollection);
-    }
-
     public DialogFileViewModel NewDialogViewModel(ILLMChatClient client, string dialogName = "新建会话")
     {
         return new DialogFileViewModel(dialogName, client, _mapper, _globalOptions, RagSourceCollection);

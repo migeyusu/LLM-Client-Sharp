@@ -709,9 +709,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
                            SymbolDisplayMemberOptions.IncludeType |
                            SymbolDisplayMemberOptions.IncludeModifiers |
                            SymbolDisplayMemberOptions.IncludeRef,
-            parameterOptions: SymbolDisplayParameterOptions.IncludeName |
-                              SymbolDisplayParameterOptions.IncludeType |
-                              SymbolDisplayParameterOptions.IncludeDefaultValue);
+            parameterOptions: SymbolDisplayParameterOptions.IncludeType);
 
         // 示例输出: "public async Task<int> MyMethod(string name, int count = 0)"
         return symbol.ToDisplayString(format);

@@ -14,9 +14,9 @@ namespace LLMClient.Project;
 public class CppProjectViewModel : ProjectViewModel
 {
     public CppProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, IRagSourceCollection ragSourceCollection,
+        GlobalOptions options, ITokensCounter tokensCounter, IRagSourceCollection ragSourceCollection,
         IEnumerable<ProjectTaskViewModel>? tasks = null)
-        : base(option, modelClient, mapper, options, ragSourceCollection, tasks)
+        : base(option, modelClient, mapper, options, tokensCounter, ragSourceCollection, tasks)
     {
     }
 }
@@ -67,9 +67,9 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
     private readonly RoslynProjectAnalyzer _analyzer;
 
     public CSharpProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, ILogger<RoslynProjectAnalyzer> logger,
+        GlobalOptions options, ILogger<RoslynProjectAnalyzer> logger, ITokensCounter tokensCounter,
         IRagSourceCollection ragSourceCollection, IEnumerable<ProjectTaskViewModel>? tasks = null)
-        : base(option, modelClient, mapper, options, ragSourceCollection, tasks)
+        : base(option, modelClient, mapper, options, tokensCounter, ragSourceCollection, tasks)
     {
         SelectPathCommand = new RelayCommand(() =>
         {
@@ -131,10 +131,14 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
     }
 
     protected override async Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
-        int? index = null)
+        int? index = null, CancellationToken token = default)
     {
-        this.ProjectContext = await GetProjectContext();
-        return await base.GetResponse(arg1, arg2, index);
+        if (IncludeProjectContext)
+        {
+            this.ProjectContext = await GetProjectContext();
+        }
+
+        return await base.GetResponse(arg1, arg2, index, token);
     }
 
     public void Dispose()

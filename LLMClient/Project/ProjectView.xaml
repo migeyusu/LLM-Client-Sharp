@@ -107,38 +107,56 @@
                         <Run
                             Text="{Binding SelectedTask.PredictedContextLength,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                     </TextBlock>
-                    <Button Content="{materialDesign:PackIcon Kind=TableOfContents,Size=20}"
-                            ToolTip="View Summary"
-                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
-                        <Button.CommandParameter>
-                            <HeaderedContentControl Header="Project Summary"
-                                                    Style="{StaticResource DialogContentControlStyle}">
-                                <Grid MaxWidth="800"
-                                      MaxHeight="600"
-                                      MinWidth="400"
-                                      MinHeight="300">
-                                    <FlowDocumentScrollViewer
-                                        Document="{Binding ProjectContext,Converter={x:Static converters:SnapConverters.StringToDocumentConverter}}" />
-                                    <materialDesign:Card Padding="4"
-                                                         UniformCornerRadius="14"
-                                                         VerticalAlignment="Center"
-                                                         HorizontalAlignment="Center"
-                                                         Visibility="{Binding IsRefreshingContext,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <ProgressBar IsIndeterminate="True"
-                                                     Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                                     Value="50" />
-                                    </materialDesign:Card>
-                                    <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                            Content="{materialDesign:PackIcon Kind=Refresh}"
-                                            ToolTip="Refresh Summary"
-                                            Command="{Binding RefreshProjectContextCommand}"
-                                            VerticalAlignment="Bottom"
-                                            HorizontalAlignment="Right"
-                                            Margin="10" />
-                                </Grid>
-                            </HeaderedContentControl>
-                        </Button.CommandParameter>
-                    </Button>
+                    <materialDesign:Card Padding="4,0"
+                                         UniformCornerRadius="12"
+                                         Style="{StaticResource MaterialDesignOutlinedCard}"
+                                         materialDesign:ElevationAssist.Elevation="Dp3">
+                        <CheckBox IsChecked="{Binding IncludeProjectContext,Mode=TwoWay}">
+                            <StackPanel VerticalAlignment="Center"
+                                        Orientation="Horizontal">
+                                <TextBlock Text="Include Summary"
+                                           VerticalAlignment="Center" />
+                                <Button Content="{materialDesign:PackIcon Kind=TableOfContents,Size=20}"
+                                        ToolTip="View Summary"
+                                        Margin="6,0,0,0"
+                                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
+                                    <Button.CommandParameter>
+                                        <HeaderedContentControl Header="Project Summary"
+                                                                Style="{StaticResource DialogContentControlStyle}">
+                                            <Grid MaxWidth="800"
+                                                  MaxHeight="600"
+                                                  MinWidth="400"
+                                                  MinHeight="300">
+                                                <FlowDocumentScrollViewer
+                                                    Document="{Binding ProjectContext,Converter={x:Static converters:SnapConverters.StringToDocumentConverter}}" />
+                                                <materialDesign:Card Padding="4"
+                                                                     UniformCornerRadius="14"
+                                                                     VerticalAlignment="Center"
+                                                                     HorizontalAlignment="Center"
+                                                                     Visibility="{Binding IsRefreshingContext,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <ProgressBar IsIndeterminate="True"
+                                                                 Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                                                 Value="50" />
+                                                </materialDesign:Card>
+                                                <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                                        Content="{materialDesign:PackIcon Kind=Refresh}"
+                                                        ToolTip="Refresh Summary"
+                                                        Command="{Binding RefreshProjectContextCommand}"
+                                                        VerticalAlignment="Bottom"
+                                                        HorizontalAlignment="Right"
+                                                        Margin="10" />
+                                                <TextBlock HorizontalAlignment="Left"
+                                                           VerticalAlignment="Bottom"
+                                                           Margin="10"
+                                                           Style="{StaticResource MaterialDesignOverlineTextBlock}"
+                                                           Text="{Binding ProjectContextTokensCount,Mode=OneWay,StringFormat=Tokens:{0}}" />
+                                            </Grid>
+                                        </HeaderedContentControl>
+                                    </Button.CommandParameter>
+                                </Button>
+                            </StackPanel>
+                        </CheckBox>
+                    </materialDesign:Card>
                     <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
                             ToolTip="Config Project"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
@@ -470,23 +488,8 @@
         <Border Grid.Row="3"
                 BorderThickness="0"
                 Visibility="{Binding SelectedTask,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
-                IsEnabled="{Binding  IsBusy,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}"
                 Margin="0,4,0,0">
             <dialog:RequesterView DataContext="{Binding Requester,Mode=OneTime}" />
         </Border>
-        <Button Grid.Row="3"
-                Command="{Binding SelectedTask.CancelLastCommand}">
-            <Button.Style>
-                <Style TargetType="Button"
-                       BasedOn="{StaticResource StopButtonStyle}">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding SelectedTask.IsNewResponding}" Value="True">
-                            <Setter Property="Visibility" Value="Visible" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Button.Style>
-        </Button>
     </Grid>
 </UserControl>

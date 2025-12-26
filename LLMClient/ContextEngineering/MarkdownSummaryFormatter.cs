@@ -65,9 +65,6 @@ public class MarkdownSummaryFormatter
         // 头部信息
         sb.AppendLine($"# Project Summary: {summary.Name}");
         sb.AppendLine();
-        sb.AppendLine($"Generated: {summary.GeneratedAt:yyyy-MM-dd HH:mm:ss UTC}");
-        sb.AppendLine($"Generation Time: {summary.GenerationTime.TotalSeconds:F2}s");
-        sb.AppendLine();
 
         // 统计概览
         sb.AppendLine("## Overview");

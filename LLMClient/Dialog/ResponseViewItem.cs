@@ -376,7 +376,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
     public CancellationTokenSource? RequestTokenSource { get; private set; }
 
-    public async Task<CompletedResult> SendRequest(DialogContext context)
+    public async Task<CompletedResult> SendRequest(DialogContext context, CancellationToken token = default)
     {
         var completedResult = CompletedResult.Empty;
         try
@@ -396,7 +396,10 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             _tempDocument = new FlowDocument();
             IsResponding = true;
             TempResponseText.Clear();
-            using (RequestTokenSource = new CancellationTokenSource())
+            RequestTokenSource = token != CancellationToken.None
+                ? CancellationTokenSource.CreateLinkedTokenSource(token)
+                : new CancellationTokenSource();
+            using (RequestTokenSource)
             {
                 await using (var interactor = new ResponseViewItemInteractor(_tempDocument, this))
                 {

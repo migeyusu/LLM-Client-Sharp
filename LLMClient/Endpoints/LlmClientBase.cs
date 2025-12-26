@@ -267,7 +267,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             string? errorMessage = null;
             int? latency = null;
             var chatClient = GetChatClient();
-            _stopwatch.Restart();
             //本次响应的消息列表
             var responseMessages = new List<ChatMessage>();
             var preUpdates = new List<ChatResponseUpdate>();
@@ -295,12 +294,17 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 { Streaming = streaming };
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
+                _stopwatch.Reset();
                 while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     UsageDetails? loopUsageDetails = null;
                     try
                     {
+                        if (!_stopwatch.IsRunning)
+                        {
+                            _stopwatch.Start();
+                        }
                         ChatResponse? preResponse;
                         if (streaming)
                         {
@@ -327,7 +331,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             interactor?.WriteLine(preResponse.Text);
                             await chatContext.CompleteResponse(preResponse, result);
                         }
-
+                        _stopwatch.Stop();
                         var preResponseMessages = preResponse.Messages;
                         foreach (var preResponseMessage in preResponseMessages)
                         {
