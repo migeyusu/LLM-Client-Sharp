@@ -14,6 +14,7 @@ using Google.Apis.Util;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
+using LLMClient.ContextEngineering;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
@@ -36,7 +37,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
     public const string SaveDir = "Projects";
 
     private readonly IMapper _mapper;
-    private readonly ITokensCounter _tokensCounter;
+
 
     private bool _isDataChanged = true;
 
@@ -72,7 +73,6 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
     {
         get { return SaveFolderPathLazy.Value; }
     }
-
 
     public RequesterViewModel Requester { get; }
 
@@ -198,52 +198,6 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         }
     }
 
-    public bool IncludeProjectContext { get; set; }
-    
-    /// <summary>
-    /// 项目上下文信息，一般用于存储从RAG等方式获取的额外信息
-    /// </summary>
-    public string? ProjectContext
-    {
-        get => _projectContext;
-        set
-        {
-            if (value == _projectContext) return;
-            _projectContext = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(Context));
-            if (!string.IsNullOrEmpty(value))
-            {
-                CalculateProjectContextTokens(value);    
-            }
-            
-        }
-    }
-
-    public int ProjectContextTokensCount
-    {
-        get => _projectContextTokens;
-        set
-        {
-            if (value == _projectContextTokens) return;
-            _projectContextTokens = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsRefreshingContext
-    {
-        get => _isRefreshingContext;
-        set
-        {
-            if (value == _isRefreshingContext) return;
-            _isRefreshingContext = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public ICommand RefreshProjectContextCommand { get; }
-
     private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
 
     /// <summary>
@@ -269,10 +223,11 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             _systemPromptBuilder.AppendLine();
             _systemPromptBuilder.AppendLine("项目背景/描述如下：");
             _systemPromptBuilder.AppendLine(Option.Description);
-            if (ProjectContext != null)
+            if (this.ProjectContextPrompt is { IncludeProjectContext: true })
             {
-                _systemPromptBuilder.AppendLine("项目信息：");
-                _systemPromptBuilder.AppendLine(ProjectContext);
+                //todo: 当前只支持项目上下文
+                _systemPromptBuilder.AppendLine("项目上下文：");
+                _systemPromptBuilder.AppendLine(ProjectContextPrompt.ProjectContext);
             }
 
             var contextTasks = this.Tasks
@@ -292,6 +247,11 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             return _systemPromptBuilder.ToString();
         }
     }
+
+    /// <summary>
+    /// 默认不提供项目上下文，派生类可重写以提供特定上下文
+    /// </summary>
+    public virtual ContextPromptViewModel? ProjectContextPrompt { get; }
 
     private long _tokensConsumption;
 
@@ -376,17 +336,15 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         nameof(SelectedTask)
     ];
 
-    private string? _projectContext;
+
     private string? _userSystemPrompt;
-    private bool _isRefreshingContext;
-    private int _projectContextTokens;
+
 
     public ProjectViewModel(ProjectOption projectOption, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, ITokensCounter tokensCounter,
+        GlobalOptions options,
         IRagSourceCollection ragSourceCollection, IEnumerable<ProjectTaskViewModel>? tasks = null)
     {
-        _mapper = mapper;
-        _tokensCounter = tokensCounter;
+        this._mapper = mapper;
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
         Requester = new RequesterViewModel(modelClient, GetResponse, options, ragSourceCollection)
@@ -396,22 +354,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
                 FunctionSelected = true,
             }
         };
-        RefreshProjectContextCommand = new RelayCommand((async void () =>
-        {
-            IsRefreshingContext = true;
-            try
-            {
-                this.ProjectContext = await GetProjectContext();
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsRefreshingContext = false;
-            }
-        }));
+
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedTask?.SelectedFunctionGroups));
@@ -443,17 +386,6 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         };
         Tasks.CollectionChanged += OnCollectionChanged;
         _extendedSystemPrompts.CollectionChanged += ExtendedSystemPromptsOnCollectionChanged;
-    }
-
-    protected virtual Task<string> GetProjectContext()
-    {
-        return Task.FromResult(string.Empty);
-    }
-
-    private async void CalculateProjectContextTokens(string context)
-    {
-        var countTokens = await _tokensCounter.CountTokens(context);
-        this.ProjectContextTokensCount = (int)countTokens;
     }
 
     private void ProjectOptionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -510,6 +442,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         }
 
         this.Ready();
+        this.ProjectContextPrompt?.BuildAsync();
         return SelectedTask.NewRequest(arg1, arg2, index, token);
     }
 

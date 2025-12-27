@@ -218,16 +218,3 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 }
-
-public class ProjectPromptTemplateViewModel
-{
-    public ProjectPromptTemplateViewModel(ProjectTaskViewModel projectTask)
-    {
-        Task = projectTask;
-        Project = projectTask.ParentProject;
-    }
-
-    public ProjectTaskViewModel Task { get; }
-
-    public ProjectViewModel Project { get; }
-}

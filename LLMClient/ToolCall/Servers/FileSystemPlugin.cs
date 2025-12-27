@@ -152,7 +152,7 @@ public class FileSystemPlugin : KernelFunctionGroup
         stringBuilder.AppendLine(fullPath);
         stringBuilder.AppendLine("Content:");
         stringBuilder.AppendLine(content);
-        if (!await RequestPermission("fullPath",stringBuilder.ToString() , checkParentOnly: true))
+        if (!await RequestPermission(fullPath,stringBuilder.ToString() , checkParentOnly: true))
         {
             throw new UnauthorizedAccessException();
         }
@@ -253,7 +253,7 @@ public class FileSystemPlugin : KernelFunctionGroup
         [Description("The path of the directory to create.")] string path)
     {
         var fullPath = await ValidateAndResolvePathAsync(path);
-        if (!await RequestPermission("fullPath", $"Creating directory at {fullPath}", checkParentOnly: true))
+        if (!await RequestPermission(fullPath, $"Creating directory at {fullPath}", checkParentOnly: true))
         {
             throw new UnauthorizedAccessException("Permission denied to create the specified directory.");
         }

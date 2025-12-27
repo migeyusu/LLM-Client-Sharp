@@ -14,9 +14,9 @@ namespace LLMClient.Project;
 public class CppProjectViewModel : ProjectViewModel
 {
     public CppProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, ITokensCounter tokensCounter, IRagSourceCollection ragSourceCollection,
+        GlobalOptions options, IRagSourceCollection ragSourceCollection,
         IEnumerable<ProjectTaskViewModel>? tasks = null)
-        : base(option, modelClient, mapper, options, tokensCounter, ragSourceCollection, tasks)
+        : base(option, modelClient, mapper, options, ragSourceCollection, tasks)
     {
     }
 }
@@ -64,13 +64,19 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     public ICommand SelectPathCommand { get; }
 
-    private readonly RoslynProjectAnalyzer _analyzer;
+    private readonly CSharpContextPromptViewModel _projectContextPrompt;
+
+    public override ContextPromptViewModel? ProjectContextPrompt
+    {
+        get { return _projectContextPrompt; }
+    }
 
     public CSharpProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, ILogger<RoslynProjectAnalyzer> logger, ITokensCounter tokensCounter,
+        GlobalOptions options, ITokensCounter tokensCounter,
         IRagSourceCollection ragSourceCollection, IEnumerable<ProjectTaskViewModel>? tasks = null)
-        : base(option, modelClient, mapper, options, tokensCounter, ragSourceCollection, tasks)
+        : base(option, modelClient, mapper, options, ragSourceCollection, tasks)
     {
+        _projectContextPrompt = new CSharpContextPromptViewModel(this, tokensCounter);
         SelectPathCommand = new RelayCommand(() =>
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
@@ -90,59 +96,17 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
                 }
             }
         });
-        _analyzer = new RoslynProjectAnalyzer(logger, new AnalyzerConfig()
-        {
-            IncludeTestProjects = true,
-            IncludePrivateMembers = true,
-            MaxConcurrency = 4
-        });
-    }
 
-    /// <summary>
-    /// 由于project/solution生成有明显延迟，所以不绑定到Context属性，使用特殊方法获取，UI也需要特殊触发
-    /// </summary>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
-    protected override async Task<string> GetProjectContext()
-    {
-        var contextPromptBuilder = new ContextPromptBuilder();
-        if (IsSolutionMode)
-        {
-            if (string.IsNullOrEmpty(SolutionFilePath))
-            {
-                throw new NotSupportedException("Solution file path cannot be null or empty.");
-            }
-
-            var solutionInfo = await _analyzer.AnalyzeSolutionAsync(SolutionFilePath);
-            contextPromptBuilder.WithSolutionInfo(solutionInfo);
-        }
-        else
-        {
-            if (string.IsNullOrEmpty(ProjectFilePath))
-            {
-                throw new NotSupportedException("Project file path cannot be null or empty.");
-            }
-
-            var projectInfo = await _analyzer.AnalyzeProjectAsync(ProjectFilePath);
-            contextPromptBuilder.WithProjectInfo(projectInfo);
-        }
-
-        return await contextPromptBuilder.BuildAsync();
     }
 
     protected override async Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
         int? index = null, CancellationToken token = default)
     {
-        if (IncludeProjectContext)
-        {
-            this.ProjectContext = await GetProjectContext();
-        }
-
         return await base.GetResponse(arg1, arg2, index, token);
     }
 
     public void Dispose()
     {
-        _analyzer.Dispose();
+        _projectContextPrompt.Dispose();
     }
 }

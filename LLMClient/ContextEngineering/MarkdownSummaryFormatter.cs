@@ -81,12 +81,20 @@ public class MarkdownSummaryFormatter
         return sb.ToString();
     }
 
-    private void FormatProject(StringBuilder sb, ProjectInfo project)
+    private void FormatProject(StringBuilder sb, ProjectInfo project, bool isTopLevel = true)
     {
         sb.AppendLine($"### {project.Name}");
         sb.AppendLine();
         sb.AppendLine($"- **Type**: {project.OutputType}");
-        sb.AppendLine($"- **Relative Path**: `{project.RelativePath}`");
+        sb.AppendLine($"- **Project File Path**:{project.ProjectFilePath}");
+        if (isTopLevel)
+        {
+            sb.AppendLine($"- **Root**: `{project.FullRootDir}`");
+        }
+        else
+        {
+            sb.AppendLine($"- **Root(Relative to Solution Dir)**: `{project.RelativeRootDir}`");
+        }
 
         if (project.TargetFrameworks.Any())
         {
@@ -162,26 +170,21 @@ public class MarkdownSummaryFormatter
     {
         var indentStr = new string(' ', indent);
 
-        // 基本类型信息
-        stringBuilder.Append($"{indentStr}- `{type.Name}` ({type.Kind})");
-
-        // 摘要（截断）
-        if (!string.IsNullOrEmpty(type.Summary) && _options.IncludeSummaries)
-        {
-            stringBuilder
-                .Append("   ")
-                //斜体
-                .Append("*")
-                .Append($"@{type.RelativePath}:{type.LineNumber}")
-                .Append("*");
-        }
-
+        // 基本类型信息+相对路径
+        stringBuilder.Append($"{indentStr}- `{type.Name}` ({type.Kind})")
+            .Append("*")
+            .Append($"@{type.RelativePath}:{type.LineNumber}")
+            .Append("*");
         stringBuilder.AppendLine();
-        stringBuilder.AppendLine(type.Summary[..Math.Min(type.Summary.Length, 100)]);
+        // 摘要
+        if (!string.IsNullOrEmpty(type.Summary) && _options.IncludeSummaries)
+            stringBuilder.AppendLine($"{indentStr} Summary: {type.Summary}");
+        stringBuilder.AppendLine();
 
-        if (_options.IncludeMembers && type.Members.Any())
+        var typeMembers = type.Members;
+        if (_options.IncludeMembers && typeMembers.Any())
         {
-            var importantMembers = type.Members
+            var importantMembers = typeMembers
                 .Where(IsImportantMember)
                 .Take(_options.MaxMembersPerType);
 

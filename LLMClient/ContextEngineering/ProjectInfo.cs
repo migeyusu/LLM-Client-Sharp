@@ -6,13 +6,17 @@ public class ProjectInfo
 {
     public required string Name { get; set; }
     public required string ProjectFilePath { get; set; }
-    public required string RelativePath { get; set; }
+    
+    public required string RelativeRootDir { get; set; }
+
+    public required string FullRootDir { get; set; }
+
     public required string OutputType { get; set; }
     public List<string> TargetFrameworks { get; set; } = new();
 
     public string? Language { get; set; }
     public string? LanguageVersion { get; set; }
-    
+
     public List<PackageReference> PackageReferences { get; set; } = new();
     public List<ProjectReference> ProjectReferences { get; set; } = new();
     public List<NamespaceInfo> Namespaces { get; set; } = new();

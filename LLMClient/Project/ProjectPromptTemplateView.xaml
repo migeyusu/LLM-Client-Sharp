@@ -30,7 +30,7 @@
             <GroupBox.Header>
                 <TextBlock Foreground="White"
                            FontWeight="Black">
-                    Project Context
+                    Project Prompt
                 </TextBlock>
             </GroupBox.Header>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -102,7 +102,7 @@
                   materialDesign:ColorZoneAssist.Background="Black"
                   materialDesign:ColorZoneAssist.Foreground="White"
                   materialDesign:ColorZoneAssist.Mode="Custom"
-                  Header="Task Context"
+                  Header="Task Prompt"
                   Height="200"
                   Style="{StaticResource MaterialDesignGroupBox}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">

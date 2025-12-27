@@ -16,6 +16,7 @@ using LLMClient.Endpoints;
 using LLMClient.Log;
 using LLMClient.Rag;
 using LLMClient.Research;
+using LLMClient.Test;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;
 using Microsoft.Extensions.DependencyInjection;
@@ -128,6 +129,7 @@ public class Program
             App app = new App();
             app.InitializeComponent();
             // app.Run(new TestWindow());
+            //app.Run(new AsyncTestWindow());
             mainWindow = serviceProvider.GetService<MainWindow>();
             app.Run(mainWindow);
         }

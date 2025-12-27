@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Printing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -13,11 +12,11 @@ public partial class RoslynProjectAnalyzer : IDisposable
 {
     private readonly MSBuildWorkspace _workspace;
     private readonly AnalyzerConfig _config;
-    private readonly ILogger _logger;
+    private readonly ILogger? _logger;
     private readonly ConcurrentDictionary<string, string> _xmlDocCache = new();
     private readonly ConcurrentDictionary<string, IList<DocumentAnalysisResult>> _docCache = new();
 
-    public RoslynProjectAnalyzer(ILogger logger, AnalyzerConfig? config = null)
+    public RoslynProjectAnalyzer(ILogger? logger, AnalyzerConfig? config = null)
     {
         _config = config ?? new AnalyzerConfig();
         _logger = logger;
@@ -26,9 +25,9 @@ public partial class RoslynProjectAnalyzer : IDisposable
         {
             var e = args.Diagnostic;
             if (e.Kind == WorkspaceDiagnosticKind.Warning)
-                _logger.LogWarning($"MSBuild warning: {e.Message}");
+                _logger?.LogWarning($"MSBuild warning: {e.Message}");
             else
-                _logger.LogError($"MSBuild error: {e.Message}");
+                _logger?.LogError($"MSBuild error: {e.Message}");
         });
     }
 
@@ -41,7 +40,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
             throw new FileNotFoundException($"Solution file not found: {solutionPath}");
 
         var stopwatch = Stopwatch.StartNew();
-        _logger.LogInformation($"Starting analysis of {Path.GetFileName(solutionPath)}...");
+        _logger?.LogInformation($"Starting analysis of {Path.GetFileName(solutionPath)}...");
 
         var summary = new SolutionInfo
         {
@@ -57,7 +56,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
             var projects = solution.Projects
                 .Where(ShouldIncludeProject)
                 .ToList();
-            _logger.LogInformation($"Found {projects.Count} projects to analyze");
+            _logger?.LogInformation($"Found {projects.Count} projects to analyze");
 
             var projectTasks = projects
                 .Select(async p =>
@@ -68,7 +67,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"Failed to analyze project {p.Name}: {ex.Message}");
+                        _logger?.LogError($"Failed to analyze project {p.Name}: {ex.Message}");
                         return null;
                     }
                 })
@@ -82,13 +81,13 @@ public partial class RoslynProjectAnalyzer : IDisposable
 
             stopwatch.Stop();
             summary.GenerationTime = stopwatch.Elapsed;
-            _logger.LogInformation($"Analysis completed in {stopwatch.ElapsedMilliseconds}ms");
+            _logger?.LogInformation($"Analysis completed in {stopwatch.ElapsedMilliseconds}ms");
 
             return summary;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Solution analysis failed: {ex}");
+            _logger?.LogError($"Solution analysis failed: {ex}");
             throw;
         }
         finally
@@ -126,7 +125,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
         // 检查测试项目
         if (!_config.IncludeTestProjects && IsTestProject(project))
         {
-            _logger.LogDebug($"Excluding test project: {projectName}");
+            _logger?.LogDebug($"Excluding test project: {projectName}");
             return false;
         }
 
@@ -135,7 +134,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
             (projectName.Contains("Sample", StringComparison.OrdinalIgnoreCase) ||
              projectName.Contains("Example", StringComparison.OrdinalIgnoreCase)))
         {
-            _logger.LogDebug($"Excluding sample project: {projectName}");
+            _logger?.LogDebug($"Excluding sample project: {projectName}");
             return false;
         }
 
@@ -144,7 +143,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
         {
             if (projectPath.Contains(pattern, StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogDebug($"Excluding project by pattern '{pattern}': {projectName}");
+                _logger?.LogDebug($"Excluding project by pattern '{pattern}': {projectName}");
                 return false;
             }
         }
@@ -168,7 +167,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
         Microsoft.CodeAnalysis.Project project,
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation($"Analyzing project: {project.Name}");
+        _logger?.LogInformation($"Analyzing project: {project.Name}");
         var stopwatch = Stopwatch.StartNew();
         var compilation = await project.GetCompilationAsync(cancellationToken);
         if (compilation == null) return null;
@@ -184,7 +183,8 @@ public partial class RoslynProjectAnalyzer : IDisposable
         {
             Name = project.Name,
             ProjectFilePath = projectFilePath,
-            RelativePath = solutionDir == null ? "." : Path.GetRelativePath(solutionDir, projectFilePath),
+            RelativeRootDir = solutionDir == null ? "." : Path.GetRelativePath(solutionDir, projectFilePath),
+            FullRootDir = Path.GetDirectoryName(projectFilePath) ?? string.Empty,
             OutputType = compilation.Options.OutputKind.ToString(),
             GeneratedAt = DateTime.UtcNow
         };
@@ -203,7 +203,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
             .Where(d => d.SupportsSyntaxTree && ShouldIncludeFile(d))
             .ToList();
 
-        _logger.LogDebug($"Analyzing {documents.Count} documents in {project.Name}");
+        _logger?.LogDebug($"Analyzing {documents.Count} documents in {project.Name}");
 
         var semaphore = new SemaphoreSlim(_config.MaxConcurrency);
         _docCache.TryGetValue(projectFilePath, out var docCache);
@@ -478,7 +478,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error analyzing document {documentFilePath}: {ex.Message}");
+            _logger?.LogError($"Error analyzing document {documentFilePath}: {ex.Message}");
             return null;
         }
     }
@@ -515,7 +515,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
 
         // 提取接口
         info.ImplementedInterfaces = symbol.Interfaces
-            .Select(i => FormatTypeName(i))
+            .Select(FormatTypeName)
             .ToList();
 
         // 提取成员（只提取重要成员）
@@ -856,16 +856,23 @@ public partial class RoslynProjectAnalyzer : IDisposable
 
     private static void MergeDocumentResult(ProjectInfo projectInfo, DocumentAnalysisResult result)
     {
-        foreach (var ns in result.Namespaces)
+        foreach (var namespaceInfo in result.Namespaces)
         {
-            var existingNs = projectInfo.Namespaces.FirstOrDefault(n => n.Name == ns.Name);
+            var existingNs = projectInfo.Namespaces.FirstOrDefault(n => n.Name == namespaceInfo.Name);
             if (existingNs != null)
             {
-                existingNs.Types.AddRange(ns.Types);
+                existingNs.Types.AddRange(namespaceInfo.Types);
             }
             else
             {
-                projectInfo.Namespaces.Add(ns);
+                //浅拷贝
+                var info = new NamespaceInfo()
+                {
+                    Name = namespaceInfo.Name,
+                    FilePath = namespaceInfo.FilePath,
+                    Types = namespaceInfo.Types.ToList(),
+                };
+                projectInfo.Namespaces.Add(info);
             }
         }
 
