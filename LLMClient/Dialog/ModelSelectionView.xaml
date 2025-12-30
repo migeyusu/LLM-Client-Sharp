@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
+             xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance dialog:ModelSelectionPopupViewModel}"
              d:DesignHeight="400" d:DesignWidth="600">
@@ -34,7 +35,8 @@
             <Button Grid.Column="1"
                     Content="确认"
                     Width="90"
-                    Command="{Binding  CreateDefaultCommand}" />
+                    Command="{x:Static viewModel:BaseModelSelectionViewModel.CreateDefaultCommand}"
+                    CommandParameter="{Binding}" />
         </Grid>
     </Grid>
 </UserControl>

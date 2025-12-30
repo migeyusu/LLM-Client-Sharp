@@ -71,7 +71,8 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                 return;
             }
 
-            var root = new JsonObject();
+            var doc = await EndPointsConfig.LoadOrCreateRoot();
+            var root = doc.AsObject();
             var endPointsNode = root.GetOrCreate(EndPointsConfig.EndpointsNodeName);
             _githubCopilotEndPoint?.UpdateConfig(endPointsNode);
             // 1. 拿到所有的 APIEndPoint
@@ -97,13 +98,14 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             })).ToArray();
             var serializeToNode = JsonSerializer.SerializeToNode(keyValuePairs, options);
             endPointsNode[SuggestedModelKey] = serializeToNode;
-            var historyKeyValuePairs = this.HistoryModels.Select((model => new LLMModelPersistModel()
+            /*var historyKeyValuePairs = this.HistoryModels.Select((model => new LLMModelPersistModel()
             {
                 ModelName = model.Name,
                 EndPointName = model.Endpoint.Name,
             })).ToArray();
             var historySerializeToNode = JsonSerializer.SerializeToNode(historyKeyValuePairs, options);
             endPointsNode[HistoryModelKey] = historySerializeToNode;
+            */
             await EndPointsConfig.SaveDoc(root);
             MessageEventBus.Publish("已保存！");
         }
@@ -119,7 +121,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         await this.Initialize();
     }));
 
-    public ObservableCollection<ILLMAPIEndpoint> Endpoints { get; set; } = new();
+    public ObservableCollection<ILLMAPIEndpoint> Endpoints { get; set; } = [];
 
     private readonly ReadOnlyObservableCollection<ILLMAPIEndpoint> _availableEndpoints;
 
@@ -132,9 +134,11 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
     {
         get
         {
-            var list = new List<ILLMAPIEndpoint>(Endpoints.Count + 2);
-            list.Add(_historyEndPoint);
-            list.Add(_suggestedEndPoint);
+            var list = new List<ILLMAPIEndpoint>(Endpoints.Count + 2)
+            {
+                _historyEndPoint,
+                _suggestedEndPoint
+            };
             list.AddRange(Endpoints);
             return list;
         }
@@ -240,7 +244,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public async Task Initialize()
     {
-        var root = await EndPointsConfig.LoadDoc();
+        var root = await EndPointsConfig.LoadOrCreateRoot();
         var endPoints = root.GetOrCreate(EndPointsConfig.EndpointsNodeName).AsObject();
         _githubCopilotEndPoint = GithubCopilotEndPoint.TryLoad(endPoints);
         Endpoints.Add(_githubCopilotEndPoint);
@@ -378,7 +382,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
     public async Task SaveActivities()
     {
         var options = Extension.DefaultJsonSerializerOptions;
-        var root = await EndPointsConfig.LoadDoc();
+        var root = await EndPointsConfig.LoadOrCreateRoot();
         // load then change history only
         var endPointsNode = root.GetOrCreate(EndPointsConfig.EndpointsNodeName);
         var historyKeyValuePairs = this.HistoryModels.Select((model => new LLMModelPersistModel()

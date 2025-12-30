@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.Dialog;
 
-public interface IRequestItem : IDialogItem
+public interface IRequestItem : IEditableDialogItem
 {
     /// <summary>
     /// 标记一次请求-响应过程，和响应对应

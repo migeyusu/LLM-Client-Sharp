@@ -58,9 +58,10 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
 
     protected FileBasedSessionBase()
     {
+        BackupCommand = new AsyncRelayCommand(Backup);
     }
 
-    public ICommand BackupCommand => new AsyncRelayCommand(Backup);
+    public ICommand BackupCommand { get; }
 
     public virtual async Task Backup()
     {

@@ -46,13 +46,13 @@ public abstract class ContextPromptViewModel : BaseViewModel, IDisposable
 
     private int _projectContextTokens;
 
-    public bool IncludeProjectContext
+    public bool IncludeContext
     {
-        get => _includeProjectContext;
+        get => _includeContext;
         set
         {
-            if (value == _includeProjectContext) return;
-            _includeProjectContext = value;
+            if (value == _includeContext) return;
+            _includeContext = value;
             OnPropertyChanged();
         }
     }
@@ -85,7 +85,7 @@ public abstract class ContextPromptViewModel : BaseViewModel, IDisposable
 
     private readonly ITokensCounter _tokensCounter;
     private string? _totalContext;
-    private bool _includeProjectContext;
+    private bool _includeContext = true;
 
     protected ContextPromptViewModel(ITokensCounter tokensCounter)
     {
@@ -114,9 +114,9 @@ public abstract class ContextPromptViewModel : BaseViewModel, IDisposable
         callBack.Invoke(countTokens);
     }
 
-    public async void BuildAsync()
+    public async Task BuildAsync()
     {
-        this.ProjectContext = IncludeProjectContext ? await BuildProjectContextAsync() : string.Empty;
+        this.ProjectContext = await BuildProjectContextAsync();
         var variables = new Dictionary<string, object?>
         {
             ["projectContext"] = ProjectContext,

@@ -139,8 +139,9 @@
                                                  Margin="0"
                                                  ToolTipService.InitialShowDelay="0"
                                                  ToolTip="{Binding OriUri,Mode=OneTime}"
-                                                 Content="{Binding Name,Mode=OneTime}"
-                                                 Command="{Binding OpenFileCommand}">
+                                                 Content="{Binding  Name,Mode=OneTime}"
+                                                 Command="{x:Static dialog:Attachment.OpenFileCommand}"
+                                                 CommandParameter="{Binding}">
                                 <materialDesign:Chip.Icon>
                                     <materialDesign:PackIcon
                                         Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
@@ -190,7 +191,7 @@
                 FontFamily="Segoe UI Emoji"
                 BorderThickness="0"
                 HighlightableRanges="{Binding SearchableDocument.FoundTextRanges,Mode=OneWay}"
-                CleanDocument="{Binding Document,Mode=OneWay}"
+                CleanDocument="{Binding SearchableDocument.Document,Mode=OneWay}"
                 Style="{StaticResource ExFlowDocumentScrollViewerStyle}">
                 <customControl:FlowDocumentScrollViewerEx.ContextMenu>
                     <ContextMenu>

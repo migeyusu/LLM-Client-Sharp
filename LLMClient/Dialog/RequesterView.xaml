@@ -94,7 +94,7 @@
                                                          IconForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
                                                          ToolTipService.InitialShowDelay="0"
                                                          ToolTip="{Binding OriUri,Mode=OneTime}"
-                                                         Command="{Binding OpenFileCommand}"
+                                                         Command="{x:Static local:Attachment.OpenFileCommand}"
                                                          CommandParameter="{Binding}"
                                                          Content="{Binding Name,Mode=OneTime}"
                                                          DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"

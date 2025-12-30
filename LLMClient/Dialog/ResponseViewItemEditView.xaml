@@ -6,7 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:LLMClient.Dialog"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance local:EditableResponseViewItem}"
+             d:DataContext="{d:DesignInstance local:DialogItemEditViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
         <Grid.RowDefinitions>

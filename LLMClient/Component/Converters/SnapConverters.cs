@@ -227,4 +227,44 @@ internal static class SnapConverters
 
             return e.Value.RenderOnFlowDocument();
         });
+
+    public static readonly IValueConverter LanguageExtensionToPackIcon =
+        ValueConverter.Create<string, PackIconKind>((args =>
+        {
+            var extension = args.Value;
+            if (string.IsNullOrEmpty(extension))
+            {
+                return PackIconKind.CodeBrackets;
+            }
+
+            extension = Path.GetExtension(extension.ToLower()).TrimStart('.');
+            return extension switch
+            {
+                "xml" => PackIconKind.Xml,
+                "json" => PackIconKind.CodeJson,
+                "c" => PackIconKind.LanguageC,
+                "cpp" or "cxx" or "h" or "hpp" => PackIconKind.LanguageCpp,
+                "cs" => PackIconKind.LanguageCsharp,
+                "js" => PackIconKind.LanguageJavascript,
+                "ts" => PackIconKind.LanguageTypescript,
+                "html" or "htm" => PackIconKind.LanguageHtml5,
+                "css" => PackIconKind.LanguageCss3,
+                "java" => PackIconKind.LanguageJava,
+                "py" or "python" => PackIconKind.LanguagePython,
+                "rb" => PackIconKind.LanguageRuby,
+                "php" => PackIconKind.LanguagePhp,
+                "go" => PackIconKind.LanguageGo,
+                "rs" => PackIconKind.LanguageRust,
+                "swift" => PackIconKind.LanguageSwift,
+                "kt" or "kts" => PackIconKind.LanguageKotlin,
+                "sql" => PackIconKind.Database,
+                "sh" or "bash" => PackIconKind.Console,
+                "fortran" or "f90" => PackIconKind.LanguageFortran,
+                "r" => PackIconKind.LanguageR,
+                "haskell" or "hs" => PackIconKind.LanguageHaskell,
+                "lua" => PackIconKind.LanguageLua,
+                "xaml" => PackIconKind.LanguageXaml,
+                _ => PackIconKind.CodeBrackets
+            };
+        }));
 }

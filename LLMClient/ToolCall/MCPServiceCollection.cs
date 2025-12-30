@@ -68,139 +68,11 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
         }
     }
 
-    public ICommand ImportFromJsonCommand => new RelayCommand(async () =>
-    {
-        var jsonContent =
-            "{\n \"code-analysis\": {\n      \"command\": \"uv\",\n      \"args\": [\n        \"--directory\",\n        \"/PATH/TO/YOUR/REPO\",\n        \"run\",\n        \"code_analysis.py\"\n      ]\n    } \n}";
-        while (true)
-        {
-            //只适配claude/jetbrains的mcp.json
-            var jsonPreviewWindow = new JsonEditorWindow()
-            {
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                JsonContent = jsonContent,
-            };
-            if (jsonPreviewWindow.ShowDialog() != true) return;
-            try
-            {
-                jsonContent = jsonPreviewWindow.JsonContent;
-                var jsonDocument = JsonNode.Parse(jsonContent);
-                if (jsonDocument != null)
-                {
-                    var name = Extension.GetRootPropertyName(jsonContent);
-                    McpServerItem item;
-                    var server = JsonNode.Parse(jsonContent)?[name]?.AsObject();
-                    if (server != null)
-                    {
-                        if (server.ContainsKey("command"))
-                        {
-                            item = new StdIOServerItem()
-                            {
-                                Command = server["command"]?.ToString(),
-                                Argument = server["args"]?.AsArray()?.Select(a =>
-                                {
-                                    if (a != null) return a.ToString();
-                                    return string.Empty;
-                                }).Where(s => !string.IsNullOrEmpty(s.Trim())).ToList(),
-                            };
-                        }
-                        else if (server.ContainsKey("url"))
-                        {
-                            item = new SseServerItem()
-                            {
-                                Url = server["url"]?.ToString(),
-                            };
-                            if (server.ContainsKey("headers"))
-                            {
-                                var o = server["headers"]?.AsObject();
-                                if (o != null)
-                                {
-                                    var dictionary = new Dictionary<string, string>();
-                                    foreach (var (key, value) in o)
-                                    {
-                                        if (value != null)
-                                        {
-                                            dictionary[key] = value.ToString();
-                                        }
-                                    }
+    public ICommand ImportFromJsonCommand { get; }
 
-                                    ((SseServerItem)item).AdditionalHeaders = dictionary;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            MessageEventBus.Publish("Unsupported MCP server format!");
-                            continue;
-                        }
+    public ICommand CopySelectedItemCommand { get; }
 
-                        item.Name = name;
-                        Items.Add(item);
-                        SelectedServerItem = item;
-                        if (await item.RefreshToolsAsync())
-                        {
-                            MessageEventBus.Publish($"已导入MCP服务器: {item.Name},工具数量: {item.AvailableTools?.Count ?? 0}");
-                        }
-                        else
-                        {
-                            MessageEventBus.Publish($"导入MCP服务器发生异常：{item.ErrorMessage}，请检查服务或配置是否正确！");
-                        }
-                    }
-                    else
-                    {
-                        MessageEventBus.Publish("Invalid MCP server format!");
-                    }
-                }
-                else
-                {
-                    MessageEventBus.Publish("Invalid JSON format!");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageEventBus.Publish($"Error importing MCP servers: {ex.Message}");
-            }
-        }
-    });
-
-    public ICommand CopySelectedItemCommand => new ActionCommand((o =>
-    {
-        if (o is McpServerItem item && item.AvailableTools != null)
-        {
-            var stringBuilder = new StringBuilder();
-            foreach (var aiFunction in item.AvailableTools)
-            {
-                stringBuilder.Append("Name: ").AppendLine(aiFunction.Name);
-                stringBuilder.Append("Description: ").AppendLine(aiFunction.Description);
-                stringBuilder.Append("Parameters: ").AppendLine(aiFunction.JsonSchema.ToString());
-                if (aiFunction.ReturnJsonSchema != null)
-                {
-                    stringBuilder.Append("Returns: ").AppendLine(aiFunction.ReturnJsonSchema.ToString());
-                }
-            }
-
-            CommonCommands.CopyCommand.Execute(item);
-        }
-    }));
-
-    public ICommand AddNewCommand => new ActionCommand((o =>
-    {
-        if (o is string type)
-        {
-            McpServerItem? item = type switch
-            {
-                "stdio" => new StdIOServerItem(),
-                "sse" => new SseServerItem(),
-                _ => null
-            };
-            if (item != null)
-            {
-                item.Name = "New Server";
-                Items.Add(item);
-                SelectedServerItem = item;
-            }
-        }
-    }));
+    public ICommand AddNewCommand { get; }
 
     [JsonIgnore]
     public McpServerItem? SelectedServerItem
@@ -214,66 +86,206 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
         }
     }
 
-    public ICommand SaveCommand => new RelayCommand(async () =>
+    public ICommand SaveCommand { get; }
+
+    public ICommand RefreshToolsCommand { get; }
+
+    public ICommand ReloadCommand { get; }
+
+    public McpServiceCollection()
     {
-        foreach (var item in Items)
+        ImportFromJsonCommand = new RelayCommand(async () =>
         {
-            if (!item.Validate())
+            var jsonContent =
+                "{\n \"code-analysis\": {\n      \"command\": \"uv\",\n      \"args\": [\n        \"--directory\",\n        \"/PATH/TO/YOUR/REPO\",\n        \"run\",\n        \"code_analysis.py\"\n      ]\n    } \n}";
+            while (true)
             {
-                MessageEventBus.Publish($"服务{item.Name}配置有误，请检查！");
+                //只适配claude/jetbrains的mcp.json
+                var jsonPreviewWindow = new JsonEditorWindow()
+                {
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    JsonContent = jsonContent,
+                };
+                if (jsonPreviewWindow.ShowDialog() != true) return;
+                try
+                {
+                    jsonContent = jsonPreviewWindow.JsonContent;
+                    var jsonDocument = JsonNode.Parse(jsonContent);
+                    if (jsonDocument != null)
+                    {
+                        var name = Extension.GetRootPropertyName(jsonContent);
+                        McpServerItem item;
+                        var server = JsonNode.Parse(jsonContent)?[name]?.AsObject();
+                        if (server != null)
+                        {
+                            if (server.ContainsKey("command"))
+                            {
+                                item = new StdIOServerItem()
+                                {
+                                    Command = server["command"]?.ToString(),
+                                    Argument = server["args"]?.AsArray()?.Select(a =>
+                                    {
+                                        if (a != null) return a.ToString();
+                                        return string.Empty;
+                                    }).Where(s => !string.IsNullOrEmpty(s.Trim())).ToList(),
+                                };
+                            }
+                            else if (server.ContainsKey("url"))
+                            {
+                                item = new SseServerItem()
+                                {
+                                    Url = server["url"]?.ToString(),
+                                };
+                                if (server.ContainsKey("headers"))
+                                {
+                                    var o = server["headers"]?.AsObject();
+                                    if (o != null)
+                                    {
+                                        var dictionary = new Dictionary<string, string>();
+                                        foreach (var (key, value) in o)
+                                        {
+                                            if (value != null)
+                                            {
+                                                dictionary[key] = value.ToString();
+                                            }
+                                        }
+
+                                        ((SseServerItem)item).AdditionalHeaders = dictionary;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                MessageEventBus.Publish("Unsupported MCP server format!");
+                                continue;
+                            }
+
+                            item.Name = name;
+                            Items.Add(item);
+                            SelectedServerItem = item;
+                            if (await item.RefreshToolsAsync())
+                            {
+                                MessageEventBus.Publish(
+                                    $"已导入MCP服务器: {item.Name},工具数量: {item.AvailableTools?.Count ?? 0}");
+                            }
+                            else
+                            {
+                                MessageEventBus.Publish($"导入MCP服务器发生异常：{item.ErrorMessage}，请检查服务或配置是否正确！");
+                            }
+                        }
+                        else
+                        {
+                            MessageEventBus.Publish("Invalid MCP server format!");
+                        }
+                    }
+                    else
+                    {
+                        MessageEventBus.Publish("Invalid JSON format!");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageEventBus.Publish($"Error importing MCP servers: {ex.Message}");
+                }
+            }
+        });
+        CopySelectedItemCommand = new ActionCommand((o =>
+        {
+            if (o is McpServerItem item && item.AvailableTools != null)
+            {
+                var stringBuilder = new StringBuilder();
+                foreach (var aiFunction in item.AvailableTools)
+                {
+                    stringBuilder.Append("Name: ").AppendLine(aiFunction.Name);
+                    stringBuilder.Append("Description: ").AppendLine(aiFunction.Description);
+                    stringBuilder.Append("Parameters: ").AppendLine(aiFunction.JsonSchema.ToString());
+                    if (aiFunction.ReturnJsonSchema != null)
+                    {
+                        stringBuilder.Append("Returns: ").AppendLine(aiFunction.ReturnJsonSchema.ToString());
+                    }
+                }
+
+                CommonCommands.CopyCommand.Execute(item);
+            }
+        }));
+        AddNewCommand = new ActionCommand((o =>
+        {
+            if (o is string type)
+            {
+                McpServerItem? item = type switch
+                {
+                    "stdio" => new StdIOServerItem(),
+                    "sse" => new SseServerItem(),
+                    _ => null
+                };
+                if (item != null)
+                {
+                    item.Name = "New Server";
+                    Items.Add(item);
+                    SelectedServerItem = item;
+                }
+            }
+        }));
+        ReloadCommand = new RelayCommand(async () =>
+        {
+            try
+            {
+                this.IsLoaded = false;
+                this.IsInitialized = false;
+                await this.EnsureAsync();
+            }
+            catch (Exception e)
+            {
+                MessageEventBus.Publish($"重载MCP服务器配置失败: {e.Message}");
+            }
+        });
+        RefreshToolsCommand = new RelayCommand(async () =>
+        {
+            try
+            {
+                await InitializeToolsAsync();
+                MessageEventBus.Publish("已刷新MCP服务器工具列表");
+            }
+            catch (Exception e)
+            {
+                MessageEventBus.Publish($"刷新MCP服务器工具列表失败: {e.Message}");
+            }
+        });
+        SaveCommand = new RelayCommand(async () =>
+        {
+            foreach (var item in Items)
+            {
+                if (!item.Validate())
+                {
+                    MessageEventBus.Publish($"服务{item.Name}配置有误，请检查！");
+                    return;
+                }
+            }
+
+            if (Items.DistinctBy(item => item.Name).Count() != Items.Count)
+            {
+                MessageEventBus.Publish("服务名称不能重复，请检查！");
                 return;
             }
-        }
 
-        if (Items.DistinctBy(item => item.Name).Count() != Items.Count)
-        {
-            MessageEventBus.Publish("服务名称不能重复，请检查！");
-            return;
-        }
-
-        var builtinPluginNames = ServiceLocator.GetService<IBuiltInFunctionsCollection>()!.Select((group => group.Name))
-            .ToArray();
-        foreach (var item in Items)
-        {
-            if (builtinPluginNames.Contains(item.Name))
+            var builtinPluginNames = ServiceLocator.GetService<IBuiltInFunctionsCollection>()!
+                .Select((group => group.Name))
+                .ToArray();
+            foreach (var item in Items)
             {
-                MessageEventBus.Publish($"服务名称 {item.Name} 已被系统保留，请更换名称！");
-                return;
+                if (builtinPluginNames.Contains(item.Name))
+                {
+                    MessageEventBus.Publish($"服务名称 {item.Name} 已被系统保留，请更换名称！");
+                    return;
+                }
             }
-        }
 
-        var fullPath = Path.GetFullPath(FileName);
-        var json = JsonSerializer.Serialize(this.Items, Extension.DefaultJsonSerializerOptions);
-        await File.WriteAllTextAsync(fullPath, json);
-        MessageEventBus.Publish("已保存MCP服务器配置");
-    });
-
-    public ICommand RefreshToolsCommand => new RelayCommand(async () =>
-    {
-        try
-        {
-            await InitializeToolsAsync();
-            MessageEventBus.Publish("已刷新MCP服务器工具列表");
-        }
-        catch (Exception e)
-        {
-            MessageEventBus.Publish($"刷新MCP服务器工具列表失败: {e.Message}");
-        }
-    });
-
-    public ICommand ReloadCommand => new RelayCommand(async () =>
-    {
-        try
-        {
-            this.IsLoaded = false;
-            this.IsInitialized = false;
-            await this.EnsureAsync();
-        }
-        catch (Exception e)
-        {
-            MessageEventBus.Publish($"重载MCP服务器配置失败: {e.Message}");
-        }
-    });
+            var fullPath = Path.GetFullPath(FileName);
+            var json = JsonSerializer.Serialize(this.Items, Extension.DefaultJsonSerializerOptions);
+            await File.WriteAllTextAsync(fullPath, json);
+            MessageEventBus.Publish("已保存MCP服务器配置");
+        });
+    }
 
     public async Task LoadAsync()
     {

@@ -123,10 +123,7 @@ public class PromptAgent : IAgent
         CancellationToken cancellationToken = default)
     {
         var context = new DialogContext([
-            new RequestViewItem()
-            {
-                RawTextMessage = prompt
-            }
+            new RequestViewItem(prompt)
         ], systemPrompt);
 
         var sendRequestAsync = await SendRequestAsync(context, cancellationToken);

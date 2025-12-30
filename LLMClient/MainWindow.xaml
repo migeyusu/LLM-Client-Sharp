@@ -10,7 +10,6 @@
                               xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                               xmlns:openAiapi="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
                               xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
-                              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
                               xmlns:rag="clr-namespace:LLMClient.Rag"
                               xmlns:dialog="clr-namespace:LLMClient.Dialog"
                               xmlns:project="clr-namespace:LLMClient.Project"
@@ -26,6 +25,8 @@
                               xmlns:utility="clr-namespace:LLMClient.Component.Utility"
                               xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
                               xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
+                              xmlns:render="clr-namespace:LLMClient.Component.Render"
+                              xmlns:controls="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf"
                               mc:Ignorable="d"
                               FontFamily="Microsoft YaHei UI"
                               Title="LLM Client"
@@ -33,6 +34,8 @@
                               Height="950"
                               Width="1600"
                               AllowDrop="True"
+                              Background="{DynamicResource MaterialDesign.Brush.Background}"
+                              AllowsTransparency="False"
                               Closing="MainWindow_OnClosing"
                               Loaded="MainWindow_OnLoaded"
                               d:DataContext="{d:DesignInstance llmClient:MainWindowViewModel}">
@@ -42,7 +45,7 @@
             <Setter Property="WindowChrome.WindowChrome">
                 <Setter.Value>
                     <WindowChrome ResizeBorderThickness="5"
-                                  CaptionHeight="52"
+                                  CaptionHeight="42"
                                   CornerRadius="16"
                                   GlassFrameThickness="17,53,17,17" />
                 </Setter.Value>
@@ -54,6 +57,15 @@
                                                    x:Name="MainDialogHost"
                                                    DialogTheme="Inherit">
                             <materialDesign:DialogHost.Resources>
+                                <DataTemplate DataType="{x:Type render:CodeCompareViewModel}">
+                                    <HeaderedContentControl Header="比较代码"
+                                                            Style="{StaticResource DialogContentControlStyle}">
+                                        <controls:DiffViewer OldText="{Binding  ComparedLeft}"
+                                                             NewText="{Binding ComparedRight}"
+                                                             MaxHeight="750"
+                                                             MaxWidth="1000" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
                                 <DataTemplate DataType="{x:Type dialog:ModelSelectionPopupViewModel}">
                                     <dialog:ModelSelectionView Width="800"
                                                                Height="600" />
@@ -148,7 +160,7 @@
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="未定义的模型" />
                                 </DataTemplate>
-                                <DataTemplate DataType="{x:Type dialog:EditableResponseViewItem}">
+                                <DataTemplate DataType="{x:Type dialog:DialogItemEditViewModel}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="响应内容编辑">
                                         <dialog:ResponseViewItemEditView Width="900"
@@ -186,12 +198,14 @@
                             </materialDesign:DialogHost.Resources>
                             <Grid>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="52" />
+                                    <RowDefinition Height="42" />
                                     <RowDefinition />
                                 </Grid.RowDefinitions>
-                                <Grid Background="{DynamicResource MaterialDesign.Brush.Background}"
+                                <Rectangle Fill="{TemplateBinding Background}"
+                                           Margin="{TemplateBinding BannerMargin}" />
+                                <Grid Grid.Row="0"
                                       Margin="{TemplateBinding BannerMargin}"
-                                      VerticalAlignment="Stretch">
+                                      VerticalAlignment="Bottom">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
@@ -217,8 +231,7 @@
                                                     Content="{TemplateBinding Banner}"
                                                     Margin="0,0,16,0" />
                                 </Grid>
-                                <Border Grid.Row="1"
-                                        Background="{TemplateBinding Background}">
+                                <Border Grid.Row="1" Background="{TemplateBinding Background}">
                                     <ContentPresenter Content="{TemplateBinding Content}" />
                                 </Border>
                             </Grid>
@@ -233,6 +246,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0"
                         Orientation="Horizontal"
@@ -492,6 +506,50 @@
                 </Button>-->
                 </StackPanel>
             </ScrollViewer>
+            <!--code compare-->
+            <materialDesign:Card Grid.Column="2"
+                                 materialDesign:ElevationAssist.Elevation="Dp2"
+                                 UniformCornerRadius="16"
+                                 WindowChrome.IsHitTestVisibleInChrome="True"
+                                 DataContext="{x:Static render:CodeCompareViewModel.Instance}"
+                                 Visibility="{Binding HasMember,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                 VerticalAlignment="Bottom"
+                                 Margin="0,0,0,4">
+                <StackPanel Orientation="Horizontal">
+                    <ItemsControl ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}"
+                                  ItemsSource="{Binding PendingList,Mode=OneTime}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type render:CodeViewModel}">
+                                <materialDesign:Chip IsDeletable="True"
+                                                     MaxWidth="180"
+                                                     Height="32"
+                                                     Margin="0"
+                                                     Padding="4,0,10,0"
+                                                     ToolTipService.InitialShowDelay="0"
+                                                     ToolTip="{Binding CodeString,Mode=OneTime}"
+                                                     DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveFromCompareCommand}"
+                                                     DeleteCommandParameter="{Binding}"
+                                                     Content="{Binding Name,Mode=OneTime}">
+                                    <materialDesign:Chip.Icon>
+                                        <materialDesign:PackIcon
+                                            Kind="{Binding Extension,Mode=OneWay,Converter={x:Static converters:SnapConverters.LanguageExtensionToPackIcon}}"
+                                            Width="23"
+                                            Height="23" />
+                                    </materialDesign:Chip.Icon>
+                                </materialDesign:Chip>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="{materialDesign:PackIcon Kind=Compare}"
+                            Margin="6,0,0,0"
+                            Width="32"
+                            Height="32"
+                            ToolTip="比较代码文件"
+                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            CommandParameter="{Binding Mode=OneTime}"
+                            Style="{StaticResource MaterialDesignIconForegroundButton}" />
+                </StackPanel>
+            </materialDesign:Card>
         </Grid>
     </customControl:ExtendedWindow.Banner>
     <customControl:ExtendedWindow.TaskbarItemInfo>
@@ -516,7 +574,7 @@
             <Grid Visibility="{Binding IsLeftDrawerOpen,Mode=OneWay}">
                 <ListBox SelectedItem="{Binding PreSession,Mode=TwoWay}"
                          BorderThickness="0"
-                         Margin="0,0,6,0"
+                         Margin="0,10,6,0"
                          ItemsSource="{Binding SessionViewModels,Mode=OneWay}">
                     <ListBox.Resources>
                         <converters:ListToStringConverter x:Key="StringToListConverter" Separator="," />
@@ -644,7 +702,7 @@
                                                Height="30"
                                                Margin="10"
                                                VerticalAlignment="Center" />
-                                        <TextBlock Grid.Row="0" 
+                                        <TextBlock Grid.Row="0"
                                                    Grid.Column="1"
                                                    Text="{Binding Requester.DefaultClient.Name}"
                                                    Foreground="DimGray"

@@ -159,26 +159,34 @@ public static class CommonCommands
         }
     }
 
-    public static ICommand OpenFolderCommand => new ActionCommand(o =>
+    private static ICommand? _openFolderCommand;
+
+    public static ICommand OpenFolderCommand
     {
-        if (o is string path && !string.IsNullOrEmpty(path))
+        get
         {
-            try
+            return _openFolderCommand ??= new ActionCommand(o =>
             {
-                var directoryInfo = new DirectoryInfo(path);
-                if (directoryInfo.Exists)
+                if (o is string path && !string.IsNullOrEmpty(path))
                 {
-                    System.Diagnostics.Process.Start("explorer.exe", directoryInfo.FullName);
+                    try
+                    {
+                        var directoryInfo = new DirectoryInfo(path);
+                        if (directoryInfo.Exists)
+                        {
+                            System.Diagnostics.Process.Start("explorer.exe", directoryInfo.FullName);
+                        }
+                        else
+                        {
+                            MessageBox.Show("Directory does not exist.");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message);
+                    }
                 }
-                else
-                {
-                    MessageBox.Show("Directory does not exist.");
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message);
-            }
+            });
         }
-    });
+    }
 }

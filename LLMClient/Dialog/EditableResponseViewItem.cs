@@ -7,7 +7,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
 
-public class EditableResponseViewItem : BaseViewModel
+public class DialogItemEditViewModel : BaseViewModel
 {
     public List<EditableTextContent> TextContents { get; } = new();
 
@@ -28,9 +28,9 @@ public class EditableResponseViewItem : BaseViewModel
         this._response.TriggerTextContentUpdate();
     });
 
-    private readonly ResponseViewItem _response;
+    private readonly IEditableDialogItem _response;
 
-    public EditableResponseViewItem(ResponseViewItem response)
+    public DialogItemEditViewModel(IEditableDialogItem response)
     {
         this._response = response;
         var messages = response.GetMessagesAsync(CancellationToken.None)

@@ -202,8 +202,7 @@ public class MainWindowViewModel : BaseViewModel
 
     #endregion
 
-    public ObservableCollection<ILLMSession> SessionViewModels { get; set; } =
-        new ObservableCollection<ILLMSession>();
+    public ObservableCollection<ILLMSession> SessionViewModels { get; set; } = new();
 
     private ILLMSession? _preSession;
 

@@ -104,6 +104,17 @@ public class CustomRenderer : WpfRenderer
         return (FlowDocument?)this.Render(markdown);
     }
 
+    /*public async Task RenderRawAsync(string raw)
+    {
+        if (string.IsNullOrEmpty(raw.Trim()))
+        {
+            return;
+        }
+
+        var markdownDocument = await Task.Run(() => Markdown.Parse(raw, DefaultPipeline));
+        this.Render(markdownDocument);
+    }*/
+
     public override void LoadDocument(FlowDocument document)
     {
         Document = document;

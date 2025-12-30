@@ -77,11 +77,11 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
 
     public ObservableCollection<CheckableFunctionGroupTree> FunctionGroups { get; } = [];
 
-    public ICommand SelectCommand => new ActionCommand((o) => { AfterSelect?.Invoke(); });
+    public ICommand SelectCommand { get; }
 
-    public ICommand RefreshSourceCommand => new ActionCommand(async (o) => { await RefreshSourceAsync(); });
+    public ICommand RefreshSourceCommand { get; }
 
-    public ICommand CancelRefreshCommand => new ActionCommand((o) => { _refreshSource?.Cancel(); });
+    public ICommand CancelRefreshCommand { get; }
 
     public IEnumerable<CheckableFunctionGroupTree>? SelectedFunctionGroups
     {
@@ -92,6 +92,9 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
 
     public AIFunctionTreeSelectorViewModel()
     {
+        SelectCommand = new ActionCommand((o) => { AfterSelect?.Invoke(); });
+        RefreshSourceCommand = new ActionCommand(async (o) => { await RefreshSourceAsync(); });
+        CancelRefreshCommand = new ActionCommand((o) => { _refreshSource?.Cancel(); });
     }
 
     private readonly List<IFunctionGroupSource> _sources = new List<IFunctionGroupSource>();

@@ -1,4 +1,4 @@
-﻿namespace LLMClient.Component.Render;
+﻿
 
 
 /*var code = content.TrimStart("cpp".ToCharArray()).TrimStart('\n');

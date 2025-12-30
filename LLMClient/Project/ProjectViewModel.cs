@@ -223,11 +223,11 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             _systemPromptBuilder.AppendLine();
             _systemPromptBuilder.AppendLine("项目背景/描述如下：");
             _systemPromptBuilder.AppendLine(Option.Description);
-            if (this.ProjectContextPrompt is { IncludeProjectContext: true })
+            if (this.ProjectContextPrompt is { IncludeContext: true })
             {
                 //todo: 当前只支持项目上下文
                 _systemPromptBuilder.AppendLine("项目上下文：");
-                _systemPromptBuilder.AppendLine(ProjectContextPrompt.ProjectContext);
+                _systemPromptBuilder.AppendLine(ProjectContextPrompt.TotalContext);
             }
 
             var contextTasks = this.Tasks
@@ -423,27 +423,28 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
-    protected virtual Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2, int? index = null,
+    protected virtual async Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2, int? index = null,
         CancellationToken token = default)
     {
         if (SelectedTask == null)
         {
-            return Task.FromException<CompletedResult>(new NotSupportedException("未选择任务"));
+            throw new NotSupportedException("未选择任务");
         }
 
         if (!SelectedTask.Validate())
         {
-            return Task.FromException<CompletedResult>(new InvalidOperationException("当前任务配置不合法"));
+            throw new InvalidOperationException("当前任务配置不合法");
         }
 
         if (!this.Option.Check())
         {
-            return Task.FromException<CompletedResult>(new InvalidOperationException("当前项目配置不合法"));
+            throw new InvalidOperationException("当前项目配置不合法");
         }
 
         this.Ready();
-        this.ProjectContextPrompt?.BuildAsync();
-        return SelectedTask.NewRequest(arg1, arg2, index, token);
+        if (this.ProjectContextPrompt != null)
+            await this.ProjectContextPrompt.BuildAsync();
+        return await SelectedTask.NewRequest(arg1, arg2, index, token);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

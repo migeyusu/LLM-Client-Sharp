@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Component.Utility;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -54,12 +55,17 @@ public class Attachment
         get { return Path.GetFullPath(Path.Combine("Attachment", "Images")); }
     }
 
-    public ICommand OpenFileCommand => new ActionCommand(o =>
+    public static ICommand OpenFileCommand { get; } = new RelayCommand<Attachment>((o) =>
     {
-        if (Type == AttachmentType.Image)
+        if (o == null)
+        {
+            return;
+        }
+
+        if (o.Type == AttachmentType.Image)
         {
             string? filePath = null;
-            var cachedFilePath = CachedFilePath;
+            var cachedFilePath = o.CachedFilePath;
             if (!string.IsNullOrEmpty(cachedFilePath) &&
                 File.Exists(cachedFilePath))
             {
@@ -67,9 +73,10 @@ public class Attachment
             }
             else
             {
-                if (OriUri?.IsFile == true)
+                var uri = o.OriUri;
+                if (uri?.IsFile == true)
                 {
-                    var fileName = Path.GetFullPath(OriUri.LocalPath);
+                    var fileName = Path.GetFullPath(uri.LocalPath);
                     if (File.Exists(fileName))
                     {
                         filePath = fileName;

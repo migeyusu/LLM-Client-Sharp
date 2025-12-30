@@ -32,14 +32,6 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     public string RawTextMessage
     {
         get => _rawTextMessage;
-        set
-        {
-            if (value == _rawTextMessage) return;
-            _rawTextMessage = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(TextMessage));
-            this.Tokens = 0;
-        }
     }
 
     public bool IsFormatting
@@ -134,7 +126,8 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     //使用0表示未计算，因为空字符串不能创建RequestViewItem本身
     private long _tokens = 0;
-    private string _rawTextMessage = string.Empty;
+    
+    private string _rawTextMessage;
 
     public bool IsAvailableInContext { get; } = true;
 
@@ -170,8 +163,15 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public DialogSessionViewModel? ParentSession { get; }
 
-    public RequestViewItem(DialogSessionViewModel? parentSession = null)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="rawTextMessage">直接设定rawtext message会触发tokens和doc重新计算</param>
+    /// <param name="parentSession"></param>
+    /// <exception cref="Exception"></exception>
+    public RequestViewItem(string rawTextMessage, DialogSessionViewModel? parentSession = null)
     {
+        this._rawTextMessage = rawTextMessage;
         ParentSession = parentSession;
         InteractionId = Guid.NewGuid();
         FormatTextCommand = new RelayCommand(async () =>
@@ -256,5 +256,15 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     public string GetCopyText()
     {
         return RawTextMessage;
+    }
+
+    public IEnumerable<EditableTextContent> GetEditableTextContents()
+    {
+        
+    }
+
+    public void TriggerTextContentUpdate()
+    {
+        
     }
 }

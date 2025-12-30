@@ -35,7 +35,6 @@ public class ExtendedWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-            
         var windowCaptionButtonWidth = SystemParameters.MinimizedGridWidth;
         this.BannerMargin = new Thickness(0, 0, windowCaptionButtonWidth, 0);
     }

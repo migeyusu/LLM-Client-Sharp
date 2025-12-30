@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
 using AutoMapper;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
@@ -16,6 +17,8 @@ using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
+using Markdig;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
@@ -56,9 +59,21 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             if (value == _isResponding) return;
             _isResponding = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(Document));
+            OnPropertyChanged(nameof(SearchableDocument));
         }
     }
+
+    public static ICommand EditCommand { get; } = new RelayCommand<ResponseViewItem>(o =>
+    {
+        if (o == null)
+        {
+            return;
+        }
+
+        var editView = o.EditViewModel;
+        DialogHost.Show(editView);
+    });
+
 
     /// <summary>
     /// 是否中断
@@ -147,79 +162,79 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
     private FlowDocument? _tempDocument;
 
-    public FlowDocument? Document
+    private Task<FlowDocument?> GetPreDocumentAsync()
     {
-        get
+        if (this.IsResponding)
         {
-            if (this.IsResponding)
-            {
-                return _tempDocument;
-            }
-
-            return ResultDocument;
+            return Task.FromResult(_tempDocument);
         }
+
+        return GetResultDocumentAsync();
     }
+
 
     private FlowDocument? _resultDocument;
 
-    private FlowDocument? ResultDocument
+    private async Task<FlowDocument?> GetResultDocumentAsync()
     {
-        get
+        if (this.ResponseMessages == null || !this.ResponseMessages.Any())
         {
-            if (this.ResponseMessages == null || !this.ResponseMessages.Any())
+            return null;
+        }
+
+        if (_resultDocument == null)
+        {
+            _resultDocument = new FlowDocument();
+            var renderer = CustomRenderer.NewRenderer(_resultDocument);
+            if (this.Annotations != null)
             {
-                return null;
+                foreach (var annotation in this.Annotations)
+                {
+                    renderer.AppendExpanderItem(annotation,
+                        CustomRenderer.AnnotationStyleKey);
+                }
             }
 
-            if (_resultDocument == null)
+            foreach (var message in ResponseMessages)
             {
-                _resultDocument = new FlowDocument();
-                var renderer = CustomRenderer.NewRenderer(_resultDocument);
-                if (this.Annotations != null)
+                foreach (var content in message.Contents)
                 {
-                    foreach (var annotation in this.Annotations)
+                    switch (content)
                     {
-                        renderer.AppendExpanderItem(annotation,
-                            CustomRenderer.AnnotationStyleKey);
-                    }
-                }
-
-                foreach (var message in ResponseMessages)
-                {
-                    foreach (var content in message.Contents)
-                    {
-                        switch (content)
-                        {
-                            case TextReasoningContent reasoningContent:
+                        case TextReasoningContent reasoningContent:
+                            var markdownDocument = await Task.Run(() =>
+                            {
                                 var stringBuilder = new StringBuilder();
                                 stringBuilder.Append("\n:::think\n");
                                 stringBuilder.Append(reasoningContent.Text);
                                 stringBuilder.Append("\n:::\n");
-                                renderer.RenderRaw(stringBuilder.ToString());
-                                /*renderer.AppendItem(reasoningContent,
-                                    ThinkBlockRenderer.ThinkBlockExpanderStyleKey);*/
-                                break;
-                            case TextContent textContent:
-                                renderer.RenderRaw(textContent.Text);
-                                break;
-                            case FunctionCallContent functionCallContent:
-                                renderer.AppendExpanderItem(functionCallContent,
-                                    CustomRenderer.FunctionCallStyleKey);
-                                break;
-                            case FunctionResultContent functionResultContent:
-                                renderer.AppendExpanderItem(functionResultContent,
-                                    CustomRenderer.FunctionResultStyleKey);
-                                break;
-                            default:
-                                Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");
-                                break;
-                        }
+                                var s = stringBuilder.ToString();
+                                return Markdown.Parse(s, CustomRenderer.DefaultPipeline);
+                            });
+                            renderer.Render(markdownDocument);
+                            break;
+                        case TextContent textContent:
+                            var document = await Task.Run(() =>
+                                Markdown.Parse(textContent.Text, CustomRenderer.DefaultPipeline));
+                            renderer.Render(document);
+                            break;
+                        case FunctionCallContent functionCallContent:
+                            renderer.AppendExpanderItem(functionCallContent,
+                                CustomRenderer.FunctionCallStyleKey);
+                            break;
+                        case FunctionResultContent functionResultContent:
+                            renderer.AppendExpanderItem(functionResultContent,
+                                CustomRenderer.FunctionResultStyleKey);
+                            break;
+                        default:
+                            Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");
+                            break;
                     }
                 }
             }
-
-            return _resultDocument;
         }
+
+        return _resultDocument;
     }
 
     private SearchableDocument? _searchableDocument = null;
@@ -228,28 +243,37 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
     {
         get
         {
-            if (_searchableDocument?.Document != Document)
-            {
-                _searchableDocument = null;
-            }
-
-            // 如果已经有了，则直接返回
-            if (_searchableDocument == null)
-            {
-                var document = Document;
-                if (document != null)
-                {
-                    _searchableDocument = new SearchableDocument(document);
-                }
-            }
-
+            UpdatePreDocumentAsync();
             return _searchableDocument;
         }
     }
 
-    public EditableResponseViewItem EditViewModel
+    private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
+
+    private async void UpdatePreDocumentAsync()
     {
-        get { return new EditableResponseViewItem(this); }
+        await _semaphoreSlim.WaitAsync();
+        try
+        {
+            //读取当前文档时，首先会检查文档是否变化，如果变化则重新创建，创建使用异步
+            var preDoc = await GetPreDocumentAsync();
+            if (_searchableDocument?.Document == preDoc)
+            {
+                return;
+            }
+
+            _searchableDocument = preDoc != null ? new SearchableDocument(preDoc) : null;
+            OnPropertyChanged(nameof(SearchableDocument));
+        }
+        finally
+        {
+            _semaphoreSlim.Release();
+        }
+    }
+
+    public DialogItemEditViewModel EditViewModel
+    {
+        get { return new DialogItemEditViewModel(this); }
     }
 
     private string? _textContent = null;
@@ -445,7 +469,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
     {
         _resultDocument = null;
         _textContent = null;
-        OnPropertyChanged(nameof(Document));
         OnPropertyChanged(nameof(SearchableDocument));
         OnPropertyChanged(nameof(TextContent));
     }

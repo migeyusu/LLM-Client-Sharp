@@ -3,7 +3,7 @@ using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Dialog;
 
-public interface IResponseViewItem : IResponse, IDialogItem
+public interface IResponseViewItem : IResponse, IEditableDialogItem
 {
     ThemedIcon Icon { get; }
 

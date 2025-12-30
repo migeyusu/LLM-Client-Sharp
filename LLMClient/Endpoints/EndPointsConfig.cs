@@ -31,7 +31,7 @@ public static class EndPointsConfig
     /// 加载总节点
     /// </summary>
     /// <returns></returns>
-    public static async Task<JsonNode> LoadDoc()
+    public static async Task<JsonNode> LoadOrCreateRoot()
     {
         var fullPath = Path.GetFullPath(EndPointsJsonFileName);
         var node = await TryLoadDoc(fullPath);
@@ -65,13 +65,13 @@ public static class EndPointsConfig
 
     public static async Task<JsonNode> LoadOptionNode()
     {
-        var loadEndpointsDoc = await LoadDoc();
+        var loadEndpointsDoc = await LoadOrCreateRoot();
         return loadEndpointsDoc.GetOrCreate(OptionsNodeName);
     }
 
     public static async Task<JsonNode> LoadEndpointsNode()
     {
-        var loadEndpointsDoc = await LoadDoc();
+        var loadEndpointsDoc = await LoadOrCreateRoot();
         return loadEndpointsDoc.GetOrCreate(EndpointsNodeName);
     }
 

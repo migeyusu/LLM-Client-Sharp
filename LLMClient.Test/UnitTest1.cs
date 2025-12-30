@@ -184,9 +184,8 @@ public class UnitTest1
                 {
                     DialogItems = new IDialogPersistItem[]
                     {
-                        new RequestViewItem()
+                        new RequestViewItem("test")
                         {
-                            RawTextMessage = "test",
                             /*FunctionGroups = new List<IAIFunctionGroup>()
                             {
                                 new FileSystemPlugin()

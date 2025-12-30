@@ -14,7 +14,16 @@ namespace LLMClient.Dialog;
 
 public class MultiResponseViewItem : BaseViewModel, IDialogItem
 {
-    public Guid InteractionId { get; set; }
+    public Guid InteractionId
+    {
+        get => _interactionId;
+        set
+        {
+            if (value.Equals(_interactionId)) return;
+            _interactionId = value;
+            OnPropertyChanged();
+        }
+    }
 
     public DialogSessionViewModel ParentSession { get; }
 
@@ -74,9 +83,9 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
             if (Equals(value, _items)) return;
             _items = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsResponding));
             OnPropertyChanged(nameof(HasAvailableMessage));
             OnPropertyChanged(nameof(AcceptedResponse));
-            OnPropertyChanged(nameof(RemoveCommand));
         }
     }
 
@@ -84,31 +93,44 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
     private ObservableCollection<ResponseViewItem> _items;
 
     private ResponseViewItem? _acceptedResponse;
+    private bool _canGoToNext;
+    private Guid _interactionId;
+    private bool _canGotoPrevious;
 
     public ModelSelectionPopupViewModel SelectionPopup { get; }
 
-    public ICommand RebaseCommand => new ActionCommand(o => { ParentSession.RemoveAfter(this); });
+    public static ICommand RebaseCommand { get; } =
+        new RelayCommand<MultiResponseViewItem>(o =>
+        {
+            if (o == null)
+            {
+                return;
+            }
+
+            o.ParentSession.RemoveAfter(o);
+        });
 
     public ICommand ClearOthersCommand { get; }
 
     //标记为有效结果
-    public ICommand MarkValid => new ActionCommand((o =>
+    public static ICommand MarkValid { get; } = new RelayCommand<MultiResponseViewItem>((o =>
     {
-        if (this.AcceptedResponse != null)
+        if (o == null)
         {
-            this.AcceptedResponse.IsManualValid = true;
+            return;
+        }
+
+        var acceptedResponse = o.AcceptedResponse;
+        if (acceptedResponse != null)
+        {
+            acceptedResponse.IsManualValid = true;
         }
     }));
 
-    public ICommand RefreshSelectedCommand => new ActionCommand(o => RetryCurrent());
+    public static ICommand RefreshSelectedCommand { get; } =
+        new RelayCommand<MultiResponseViewItem>(o => o?.RetryCurrent());
 
-    public ICommand SetAsAvailableCommand => new ActionCommand(o =>
-    {
-        if (o is ResponseViewItem response)
-        {
-            response.SwitchAvailableInContext();
-        }
-    });
+    public ICommand SetAsAvailableCommand { get; }
 
     public ResponseViewItem? AcceptedResponse
     {
@@ -119,32 +141,43 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
             _acceptedResponse = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsAvailableInContext));
+            OnPropertyChanged(nameof(Tokens));
             OnPropertyChanged(nameof(MarkValid));
-            OnPropertyChanged(nameof(EditCommand));
+            var responseViewItems = this.Items;
+            CanGotoPrevious = value != null &&
+                              responseViewItems.IndexOf(value) - 1 >= 0;
+            CanGoToNext = value != null &&
+                          responseViewItems.IndexOf(value) + 1 < responseViewItems.Count;
         }
     }
 
-    public ICommand RemoveCommand => new ActionCommand(o =>
+    public bool CanGoToNext
     {
-        if (Items.Count == 1)
+        get => _canGoToNext;
+        set
         {
-            return;
+            if (value == _canGoToNext) return;
+            _canGoToNext = value;
+            OnPropertyChanged();
         }
+    }
 
-        if (o is ResponseViewItem response)
-        {
-            this.Remove(response);
-        }
-    });
+    public ICommand GotoNextCommand { get; }
 
-    public ICommand EditCommand => new ActionCommand(o =>
+    public bool CanGotoPrevious
     {
-        if (AcceptedResponse is { } response)
+        get => _canGotoPrevious;
+        set
         {
-            var editView = response.EditViewModel;
-            DialogHost.Show(editView);
+            if (value == _canGotoPrevious) return;
+            _canGotoPrevious = value;
+            OnPropertyChanged();
         }
-    });
+    }
+
+    public ICommand GotoPreviousCommand { get; }
+
+    public ICommand RemoveCommand { get; }
 
     public ICommand CopyInteractionCommand { get; }
 
@@ -164,6 +197,27 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
+        RemoveCommand = new RelayCommand<ResponseViewItem>(o =>
+        {
+            if (o == null)
+            {
+                return;
+            }
+
+            if (Items.Count == 1)
+            {
+                return;
+            }
+
+            this.Remove(o);
+        });
+        SetAsAvailableCommand = new ActionCommand(o =>
+        {
+            if (o is ResponseViewItem response)
+            {
+                response.SwitchAvailableInContext();
+            }
+        });
         CopyInteractionCommand = new ActionCommand(o => { this.ParentSession.CopyInteraction(this); });
         ClearOthersCommand = new RelayCommand(() =>
         {
@@ -172,6 +226,36 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
             {
                 this.Remove(item);
             }
+        });
+        GotoNextCommand = new RelayCommand(() =>
+        {
+            if (this.Items.Count == 0)
+            {
+                return;
+            }
+
+            var index = this.AcceptedResponse == null ? 0 : this.Items.IndexOf(this.AcceptedResponse);
+            if (index < 0 || index + 1 >= this.Items.Count)
+            {
+                return;
+            }
+
+            this.AcceptedResponse = this.Items[index + 1];
+        });
+        GotoPreviousCommand = new RelayCommand(() =>
+        {
+            if (this.Items.Count == 0)
+            {
+                return;
+            }
+
+            var index = this.AcceptedResponse == null ? 0 : this.Items.IndexOf(this.AcceptedResponse);
+            if (index <= 0)
+            {
+                return;
+            }
+
+            this.AcceptedResponse = this.Items[index - 1];
         });
     }
 

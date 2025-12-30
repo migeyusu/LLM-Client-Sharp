@@ -131,22 +131,11 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         }
     }
 
-    public ICommand RefreshToolsCommand => new RelayCommand(async void () => { await RefreshToolsAsync(); });
+    public ICommand RefreshToolsCommand { get; }
 
-    public ICommand ResetToolsCommand => new RelayCommand(async void () => { await ResetAsync(); });
+    public ICommand ResetToolsCommand { get; }
 
-    public ICommand SwitchEnableCommand => new RelayCommand(async void () =>
-    {
-        if (IsEnabled)
-        {
-            IsEnabled = false;
-        }
-        else
-        {
-            IsEnabled = true;
-            await ResetAsync();
-        }
-    });
+    public ICommand SwitchEnableCommand { get; }
 
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
@@ -159,6 +148,24 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
             _isRefreshingTools = value;
             OnPropertyChanged();
         }
+    }
+
+    protected McpServerItem()
+    {
+        ResetToolsCommand = new RelayCommand(async void () => { await ResetAsync(); });
+        SwitchEnableCommand = new RelayCommand(async void () =>
+        {
+            if (IsEnabled)
+            {
+                IsEnabled = false;
+            }
+            else
+            {
+                IsEnabled = true;
+                await ResetAsync();
+            }
+        });
+        RefreshToolsCommand = new RelayCommand(async void () => { await RefreshToolsAsync(); });
     }
 
     /// <summary>
@@ -231,11 +238,6 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
     private bool _isAvailable;
     private bool _isEnabled = true;
     private bool _isRefreshingTools;
-
-
-    protected McpServerItem()
-    {
-    }
 
     public abstract string GetUniqueId();
 

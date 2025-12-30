@@ -199,10 +199,7 @@ public class RequesterViewModel : BaseViewModel
         }
     }
 
-    public ICommand CancelLastCommand => new ActionCommand(_ =>
-    {
-        _tokenSource?.Cancel();
-    });
+    public ICommand CancelLastCommand => new ActionCommand(_ => { _tokenSource?.Cancel(); });
 
     #endregion
 
@@ -323,9 +320,8 @@ public class RequesterViewModel : BaseViewModel
             .Select(model => model.Data)
             .ToArray();
         //每次搜索的条件可能不同，所以传递的是副本
-        return new RequestViewItem()
+        return new RequestViewItem(promptBuilder.ToString())
         {
-            RawTextMessage = promptBuilder.ToString(),
             Attachments = Attachments.Count == 0 ? null : Attachments.ToList(),
             FunctionGroups = tools == null ? [] : [..tools],
             SearchOption = SearchConfig.GetUserSearchOption(),

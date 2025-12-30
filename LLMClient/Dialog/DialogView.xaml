@@ -190,6 +190,8 @@
                             Value="26" />
                     <Setter Property="Height"
                             Value="26" />
+                    <Setter Property="HorizontalAlignment"
+                            Value="Right" />
                 </Style>
             </StackPanel.Resources>
             <Button Command="{Binding ScrollToTopCommand}"
@@ -202,6 +204,19 @@
             <Button Command="{Binding ScrollToEndCommand}"
                     CommandParameter="{Binding ElementName=DialogItemList}"
                     Content="{materialDesign:PackIcon Kind=FormatVerticalAlignBottom}" />
+            <StackPanel Margin="0,10,0,0"
+                        Orientation="Horizontal"
+                        DataContext="{Binding CurrentResponseViewItem,Mode=OneWay}"
+                        Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.HiddenInstance}}">
+                <Button Content="{materialDesign:PackIcon Kind=ArrowLeftBold}"
+                        Margin="0"
+                        Command="{Binding GotoPreviousCommand}"
+                        IsEnabled="{Binding CanGotoPrevious,Mode=OneWay}" />
+                <Button Content="{materialDesign:PackIcon Kind=ArrowRightBold}"
+                        Margin="10,0,0,0"
+                        Command="{Binding GotoNextCommand}"
+                        IsEnabled="{Binding CanGoToNext,Mode=OneWay}" />
+            </StackPanel>
         </StackPanel>
         <dialog:RequesterView Grid.Row="2"
                               DataContext="{Binding Requester,Mode=OneTime}"

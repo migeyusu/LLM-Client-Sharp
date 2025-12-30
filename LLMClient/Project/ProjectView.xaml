@@ -111,7 +111,7 @@
                                          UniformCornerRadius="12"
                                          Style="{StaticResource MaterialDesignOutlinedCard}"
                                          materialDesign:ElevationAssist.Elevation="Dp3">
-                        <CheckBox IsChecked="{Binding ProjectContextPrompt.IncludeProjectContext,Mode=TwoWay}">
+                        <CheckBox IsChecked="{Binding ProjectContextPrompt.IncludeContext,Mode=TwoWay}">
                             <StackPanel VerticalAlignment="Center"
                                         Orientation="Horizontal">
                                 <TextBlock Text="Include Summary"

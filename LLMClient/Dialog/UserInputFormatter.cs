@@ -95,9 +95,8 @@ public class UserInputFormatter
             };
             // 4. 配置 OpenAI JSON Mode
             var completedResult = await promptAgent.SendRequestAsync(new DialogContext([
-                new RequestViewItem()
+                new RequestViewItem(message)
                 {
-                    RawTextMessage = message,
                     ResponseFormat = ChatResponseFormat.ForJsonSchema<CodeBlockAnalysisResult>(),
                 }
             ]), token);

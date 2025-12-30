@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Markup;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
@@ -12,7 +12,6 @@ using Markdig.Renderers;
 using Markdig.Wpf;
 using Microsoft.Web.WebView2.Wpf;
 using Microsoft.Win32;
-using Microsoft.Xaml.Behaviors.Core;
 using TextMateSharp.Grammars;
 
 namespace LLMClient.Component.Render;
@@ -25,7 +24,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
     {
         Extension = extension;
         Name = name ?? string.Empty;
-        _nameLower = Name.ToLower().Trim();
+        NameLower = Name.ToLower().Trim();
         CodeGroup = codeGroup;
         Grammar = grammar;
         _codeStringLazy = new Lazy<string>(codeGroup.ToString);
@@ -45,31 +44,35 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
 
     private readonly string[] _supportedRunExtensions = new[] { "bash", "powershell", "html" };
 
-    private readonly string _nameLower;
+    public string NameLower { get; }
 
     public bool CanRun
     {
-        get { return !string.IsNullOrEmpty(Name) && _supportedRunExtensions.Contains(_nameLower); }
+        get { return !string.IsNullOrEmpty(Name) && _supportedRunExtensions.Contains(NameLower); }
     }
 
-    public ICommand RunCommand => new ActionCommand(o =>
+    public static ICommand RunCommand { get; } = new RelayCommand<CodeViewModel>((async model =>
     {
+        if (model == null)
+        {
+            return;
+        }
+
         try
         {
+            var nameLower = model.NameLower;
             //可以通过webview执行html
-            var s = CodeString;
+            var s = model.CodeString;
             if (!string.IsNullOrEmpty(s))
             {
-                if (_nameLower.Equals("html"))
+                if (nameLower.Equals("html"))
                 {
                     var webView2 = new WebView2()
                     {
                         Source = new Uri("about:blank"),
                     };
-                    webView2.EnsureCoreWebView2Async().ConfigureAwait(true).GetAwaiter().OnCompleted((() =>
-                    {
-                        webView2.CoreWebView2.NavigateToString(s);
-                    }));
+                    await webView2.EnsureCoreWebView2Async();
+                    webView2.CoreWebView2.NavigateToString(s);
                     var window = new Window()
                     {
                         Title = "HTML Preview",
@@ -79,9 +82,9 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
                     };
                     window.Show();
                 }
-                else if (_nameLower.Equals("bash") || _nameLower.Equals("powershell"))
+                else if (nameLower.Equals("bash") || nameLower.Equals("powershell"))
                 {
-                    ExecuteScriptLogic(s, _nameLower);
+                    ExecuteScriptLogic(s, nameLower);
                 }
             }
         }
@@ -89,19 +92,27 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
         {
             MessageEventBus.Publish(e.Message);
         }
-    });
+    }));
 
-    public ICommand SaveCommand => new ActionCommand(o =>
+    public static ICommand SaveCommand { get; } = new RelayCommand<CodeViewModel>(o =>
     {
-        var s = GetCopyText();
+        if (o == null)
+        {
+            return;
+        }
+
+        var s = o.GetCopyText();
         if (!string.IsNullOrEmpty(s))
         {
             try
             {
-                var saveFileDialog = new SaveFileDialog();
-                if (!string.IsNullOrEmpty(Extension))
+                var saveFileDialog = new SaveFileDialog()
                 {
-                    var defaultExt = Extension.TrimStart('.');
+                    RestoreDirectory = true,
+                };
+                if (!string.IsNullOrEmpty(o.Extension))
+                {
+                    var defaultExt = o.Extension.TrimStart('.');
                     saveFileDialog.Filter = $"Code files (*.{defaultExt})|*.{defaultExt}|All files (*.*)|*.*";
                     saveFileDialog.DefaultExt = defaultExt;
                 }
@@ -125,7 +136,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
         }
     });
 
-    private void ExecuteScriptLogic(string scriptContent, string type)
+    private static void ExecuteScriptLogic(string scriptContent, string type)
     {
         // --- 1. 环境选择与检查 ---
         BashEnvironment? selectedBashEnv = null;
@@ -274,7 +285,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
     /// <summary>
     /// 将 Windows 路径转换为 WSL 格式 (C:\path -> /mnt/c/path)
     /// </summary>
-    private string ConvertToWslPath(string windowsPath)
+    private static string ConvertToWslPath(string windowsPath)
     {
         if (string.IsNullOrEmpty(windowsPath)) return windowsPath;
 
@@ -292,7 +303,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
         return fullPath.Replace('\\', '/');
     }
 
-    private void RenderCode(WpfRenderer wpfRenderer, IGrammar? grammar, StringLineGroup codeGroup)
+    private static void RenderCode(WpfRenderer wpfRenderer, IGrammar? grammar, StringLineGroup codeGroup)
     {
         var paragraph = new Paragraph();
         paragraph.BeginInit();

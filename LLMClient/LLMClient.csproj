@@ -38,7 +38,7 @@
         <PackageReference Include="Azure.AI.TextAnalytics" Version="5.3.0"/>
         <PackageReference Include="CefSharp.Wpf.NETCore" Version="141.0.110"/>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0"/>
-        <PackageReference Include="DiffPlex" Version="1.9.0"/>
+        <PackageReference Include="DiffPlex.Wpf" Version="1.9.1" />
         <PackageReference Include="Karl.PdfPig" Version="0.1.12-alpha001"/>
         <PackageReference Include="LambdaConverters" Version="4.0.0"/>
         <PackageReference Include="LatexToMathML" Version="1.0.0.1"/>

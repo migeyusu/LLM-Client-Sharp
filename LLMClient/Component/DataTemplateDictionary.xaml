@@ -171,8 +171,8 @@
                          ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}">
                     <b:Interaction.Triggers>
                         <b:EventTrigger EventName="MouseDoubleClick">
-                            <b:InvokeCommandAction
-                                Command="{Binding CreateDefaultCommand}" />
+                            <b:InvokeCommandAction CommandParameter="{Binding }"
+                                                   Command="{x:Static viewModel:BaseModelSelectionViewModel.CreateDefaultCommand}" />
                         </b:EventTrigger>
                     </b:Interaction.Triggers>
                 </ListBox>
@@ -214,7 +214,8 @@
                     <!--<Button Style="{StaticResource MaterialDesignOutlinedButton}"
                             Command="{x:Static materialDesign:PopupBox.ClosePopupCommand}"
                             Content="取消" />-->
-                    <Button Command="{Binding  CreateDefaultCommand}"
+                    <Button Command="{x:Static viewModel:BaseModelSelectionViewModel.CreateDefaultCommand}"
+                            CommandParameter="{Binding }"
                             Content="确认"
                             Height="32"
                             Style="{StaticResource MaterialDesignRaisedButton}"

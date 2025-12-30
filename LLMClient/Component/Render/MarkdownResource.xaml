@@ -251,8 +251,23 @@
                                    VerticalAlignment="Center" />
                         <StackPanel HorizontalAlignment="Right"
                                     Orientation="Horizontal">
+                            <Button Command="{x:Static render1:CodeCompareViewModel.AddToCompareCommand}"
+                                    CommandParameter="{Binding}"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                    Style="{StaticResource MaterialDesignFlatLightButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="SelectCompare"
+                                                             Width="20"
+                                                             Height="20"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="Add to Compare"
+                                               VerticalAlignment="Center"
+                                               Margin="6,0,0,0" />
+                                </StackPanel>
+                            </Button>
                             <Button Style="{StaticResource MaterialDesignIconButton}"
-                                    Command="{Binding RunCommand}"
+                                    Command="{x:Static render1:CodeViewModel.RunCommand}"
+                                    CommandParameter="{Binding Mode=OneTime}"
                                     Margin="10,0,0,0"
                                     Content="{materialDesign:PackIcon Kind=Play,Size=26}"
                                     Height="40"
@@ -260,7 +275,7 @@
                                     Foreground="Green"
                                     Visibility="{Binding CanRun,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <Button Style="{StaticResource MaterialDesignFlatLightButton}"
-                                    Command="{Binding SaveCommand}"
+                                    Command="{x:Static render1:CodeViewModel.SaveCommand}"
                                     Margin="10,0,0,0"
                                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
                                 <Button.Content>

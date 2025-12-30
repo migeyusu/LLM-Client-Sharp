@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
@@ -207,7 +208,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                     MultiResponsePersistItem multiResponsePersistItem => mapper
                         .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem),
                     RequestPersistItem requestPersistItem => mapper
-                        .Map<RequestPersistItem, RequestViewItem>(requestPersistItem, new RequestViewItem(destination)),
+                        .Map<RequestPersistItem, RequestViewItem>(requestPersistItem,
+                            new RequestViewItem(requestPersistItem.TextMessageContent ?? string.Empty, destination)),
                     _ => (IDialogItem)item
                 };
             })).ToArray();
@@ -414,7 +416,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                 if (item is RequestPersistItem requestViewItem)
                 {
                     return mapper.Map<RequestPersistItem, RequestViewItem>(requestViewItem,
-                        new RequestViewItem(destination));
+                        new RequestViewItem(requestViewItem.TextMessageContent ?? string.Empty, destination));
                 }
 
                 if (item is EraseViewItem eraseViewItem)

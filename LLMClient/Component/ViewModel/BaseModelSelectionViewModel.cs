@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
@@ -53,17 +54,26 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 
-    public ICommand CreateDefaultCommand => new ActionCommand(o =>
+    private static ICommand? _createDefaultCommand;
+
+    public static ICommand CreateDefaultCommand
     {
-        try
+        get
         {
-            SelectModel(this);
+            return _createDefaultCommand ??= new RelayCommand<BaseModelSelectionViewModel>(o =>
+            {
+                try
+                {
+                    o?.SelectModel(o);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show($"Error Create Client:{e.Message}", "Error", MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            });
         }
-        catch (Exception e)
-        {
-            MessageBox.Show($"Error Create Client:{e.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    });
+    }
 
     public ILLMChatClient CreateClient()
     {

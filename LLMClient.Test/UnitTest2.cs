@@ -309,7 +309,7 @@ public class UnitTest2
     [Fact]
     public void SearchService()
     {
-        var requestViewItem = new RequestViewItem()
+        var requestViewItem = new RequestViewItem("TODO")
         {
             SearchOption = new OpenRouterSearchOption(),
             TempAdditionalProperties = new AdditionalPropertiesDictionary()
