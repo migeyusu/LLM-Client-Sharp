@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Text;
 using System.Windows.Input;
-using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;

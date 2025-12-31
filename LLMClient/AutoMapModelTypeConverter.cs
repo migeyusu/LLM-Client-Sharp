@@ -209,7 +209,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                         .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem),
                     RequestPersistItem requestPersistItem => mapper
                         .Map<RequestPersistItem, RequestViewItem>(requestPersistItem,
-                            new RequestViewItem(requestPersistItem.TextMessageContent ?? string.Empty, destination)),
+                            new RequestViewItem(requestPersistItem.RawTextMessage ?? string.Empty, destination)),
                     _ => (IDialogItem)item
                 };
             })).ToArray();
@@ -416,7 +416,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                 if (item is RequestPersistItem requestViewItem)
                 {
                     return mapper.Map<RequestPersistItem, RequestViewItem>(requestViewItem,
-                        new RequestViewItem(requestViewItem.TextMessageContent ?? string.Empty, destination));
+                        new RequestViewItem(requestViewItem.RawTextMessage ?? string.Empty, destination));
                 }
 
                 if (item is EraseViewItem eraseViewItem)

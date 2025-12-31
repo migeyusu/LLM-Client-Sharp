@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using Microsoft.SemanticKernel;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Agent;

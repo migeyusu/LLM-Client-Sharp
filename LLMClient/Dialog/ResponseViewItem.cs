@@ -63,18 +63,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         }
     }
 
-    public static ICommand EditCommand { get; } = new RelayCommand<ResponseViewItem>(o =>
-    {
-        if (o == null)
-        {
-            return;
-        }
-
-        var editView = o.EditViewModel;
-        DialogHost.Show(editView);
-    });
-
-
+    
     /// <summary>
     /// 是否中断
     /// </summary>
@@ -155,6 +144,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
             if (Equals(value, _usage)) return;
             _usage = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(Tokens));
         }
     }
 
@@ -269,11 +259,6 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         {
             _semaphoreSlim.Release();
         }
-    }
-
-    public DialogItemEditViewModel EditViewModel
-    {
-        get { return new DialogItemEditViewModel(this); }
     }
 
     private string? _textContent = null;

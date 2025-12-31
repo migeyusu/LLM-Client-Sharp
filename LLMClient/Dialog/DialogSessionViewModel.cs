@@ -750,7 +750,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 }
                 else if (dialogViewItem is RequestViewItem requestViewItem)
                 {
-                    requestViewItem.SearchableDocument?.ApplySearch(_searchText);
+                    requestViewItem.Document?.ApplySearch(_searchText);
                 }
             }
 
@@ -761,7 +761,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             }
             else if (this.ScrollViewItem is RequestViewItem requestViewItem)
             {
-                requestViewItem.SearchableDocument?.EnsureSearch();
+                requestViewItem.Document?.EnsureSearch();
             }
         }));
         GoToNextHighlightCommand = new ActionCommand((o =>
@@ -945,7 +945,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 {
                     var requestViewItem =
                         _mapper.Map<RequestPersistItem, RequestViewItem>(requestPersistItem,
-                            new RequestViewItem(requestPersistItem.TextMessageContent ?? string.Empty, this),
+                            new RequestViewItem(requestPersistItem.RawTextMessage ?? string.Empty, this),
                             (_ => { }));
                     if (this.DialogItems.Contains(requestViewItem, DialogItemEqualityComparer.Instance))
                     {

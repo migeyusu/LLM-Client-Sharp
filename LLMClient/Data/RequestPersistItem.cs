@@ -10,7 +10,7 @@ public class RequestPersistItem : IDialogPersistItem
 {
     public Guid InteractionId { get; set; }
 
-    [JsonPropertyName("MessageContent")] public string? TextMessageContent { get; set; }
+    [JsonPropertyName("MessageContent")] public string? RawTextMessage { get; set; }
 
     public string? FormattedTextMessage { get; set; }
 

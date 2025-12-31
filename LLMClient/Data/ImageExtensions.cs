@@ -43,13 +43,59 @@ public static class ImageExtensions
 
     private static readonly Lazy<ThemedIcon> APIThemedIconLazy = new Lazy<ThemedIcon>(() =>
     {
-        return  LocalThemedIcon.FromPackIcon(PackIconKind.Api);
+        return LocalThemedIcon.FromPackIcon(PackIconKind.Api);
     });
 
     public static ThemedIcon APIThemedIcon => APIThemedIconLazy.Value;
 
-    private static readonly ConcurrentDictionary<PackIconKind, ImageSource> _packIconCache
-        = new ConcurrentDictionary<PackIconKind, ImageSource>();
+    private static readonly ConcurrentDictionary<PackIconKindEntry, ImageSource> PackIconCache = new();
+
+    private class PackIconKindEntry
+    {
+        public required PackIconKind Kind { get; init; }
+
+        public required Brush Foreground { get; init; }
+
+        public required Brush Background { get; init; }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Kind, Foreground, Background);
+        }
+
+        private bool Equals(PackIconKindEntry other)
+        {
+            return Kind == other.Kind && Foreground.Equals(other.Foreground) && Background.Equals(other.Background);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((PackIconKindEntry)obj);
+        }
+
+        private sealed class KindForegroundBackgroundEqualityComparer : IEqualityComparer<PackIconKindEntry>
+        {
+            public bool Equals(PackIconKindEntry? x, PackIconKindEntry? y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null) return false;
+                if (y is null) return false;
+                if (x.GetType() != y.GetType()) return false;
+                return x.Kind == y.Kind && x.Foreground.Equals(y.Foreground) && x.Background.Equals(y.Background);
+            }
+
+            public int GetHashCode(PackIconKindEntry obj)
+            {
+                return HashCode.Combine((int)obj.Kind, obj.Foreground, obj.Background);
+            }
+        }
+
+        public static IEqualityComparer<PackIconKindEntry> KindForegroundBackgroundComparer { get; } =
+            new KindForegroundBackgroundEqualityComparer();
+    }
 
     /// <summary>
     /// 
@@ -60,15 +106,17 @@ public static class ImageExtensions
     /// <returns></returns>
     public static ImageSource ToImageSource(this PackIconKind kind, Brush? foreground = null, Brush? background = null)
     {
-        return _packIconCache.GetOrAdd(kind, k =>
+        foreground ??= Brushes.Black;
+        background ??= Brushes.White;
+        var packIconKindEntry = new PackIconKindEntry()
+            { Kind = kind, Foreground = foreground, Background = background };
+        return PackIconCache.GetOrAdd(packIconKindEntry, k =>
         {
-            var packIcon = new PackIcon() { Kind = k };
+            var packIcon = new PackIcon() { Kind = k.Kind };
             var packIconData = packIcon.Data;
             var geometry = Geometry.Parse(packIconData);
-            foreground ??= Brushes.Black;
-            background ??= Brushes.White;
             var drawingImage =
-                new DrawingImage(new GeometryDrawing(foreground, new Pen(background, 0), geometry));
+                new DrawingImage(new GeometryDrawing(k.Foreground, new Pen(k.Background, 0), geometry)) { };
             drawingImage.Freeze();
             return drawingImage;
         });

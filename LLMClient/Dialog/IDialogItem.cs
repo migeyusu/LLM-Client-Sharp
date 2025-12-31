@@ -12,7 +12,5 @@ public interface IDialogItem : ITokenizable
 
 public interface IEditableDialogItem : IDialogItem
 {
-    IEnumerable<EditableTextContent> GetEditableTextContents();
-    
     void TriggerTextContentUpdate();
 }

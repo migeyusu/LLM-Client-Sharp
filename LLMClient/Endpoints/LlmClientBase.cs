@@ -155,7 +155,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
-        context.Initialize(_tokensCounterLazy.Value);
 #if DEBUG
         interactor ??= new DebugInvokeInteractor();
 #endif

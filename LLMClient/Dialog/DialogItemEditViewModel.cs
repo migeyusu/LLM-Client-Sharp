@@ -25,14 +25,14 @@ public class DialogItemEditViewModel : BaseViewModel
 
         MessageEventBus.Publish("文本内容已更改");
         DialogHost.CloseDialogCommand.Execute(null, null);
-        this._response.TriggerTextContentUpdate();
+        this._item.TriggerTextContentUpdate();
     });
 
-    private readonly IEditableDialogItem _response;
+    private readonly IEditableDialogItem _item;
 
     public DialogItemEditViewModel(IEditableDialogItem response)
     {
-        this._response = response;
+        this._item = response;
         var messages = response.GetMessagesAsync(CancellationToken.None)
             .ToBlockingEnumerable();
         foreach (var message in messages)

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Documents;
@@ -7,7 +6,6 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.Render;
-using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
@@ -16,13 +14,11 @@ using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.KernelMemory.AI;
-using Microsoft.Xaml.Behaviors.Core;
 using MimeTypes;
 
 namespace LLMClient.Dialog;
 
-public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, CommonCommands.ICopyable
+public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
 {
     /// <summary>
     /// 标记一次请求-响应过程，和响应对应
@@ -31,8 +27,9 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public string RawTextMessage
     {
-        get => _rawTextMessage;
+        get => _textRequestContent.Text;
     }
+
 
     public bool IsFormatting
     {
@@ -41,6 +38,17 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
         {
             if (value == _isFormatting) return;
             _isFormatting = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool DisplayRawText
+    {
+        get => _displayRawText;
+        set
+        {
+            if (value == _displayRawText) return;
+            _displayRawText = value;
             OnPropertyChanged();
         }
     }
@@ -54,7 +62,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
             _formattedTextMessage = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(TextMessage));
-            OnPropertyChanged(nameof(SearchableDocument));
+            OnPropertyChanged(nameof(Document));
             var dialogSessionViewModel = this.ParentSession;
             if (dialogSessionViewModel != null) dialogSessionViewModel.IsDataChanged = true;
         }
@@ -67,22 +75,27 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public ICommand FormatTextCommand { get; }
 
-    private SearchableDocument? _searchableDocument = null;
+    private SearchableDocument? _document = null;
 
-    public SearchableDocument? SearchableDocument
+    public SearchableDocument? Document
     {
         get
         {
+            if (_document != null)
+            {
+                return _document;
+            }
+
             var textMessage = TextMessage;
-            if (!string.IsNullOrEmpty(textMessage) && _searchableDocument == null)
+            if (!string.IsNullOrEmpty(textMessage))
             {
                 var flowDocument = new FlowDocument();
                 var renderer = CustomRenderer.NewRenderer(flowDocument);
                 renderer.RenderRaw(textMessage);
-                _searchableDocument = new SearchableDocument(flowDocument);
+                _document = new SearchableDocument(flowDocument);
             }
 
-            return _searchableDocument;
+            return _document;
         }
     }
 
@@ -98,15 +111,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
                 return false;
             }
 
-            foreach (var group in FunctionGroups)
-            {
-                if (group.IsSelected != false && group.Functions.Count > 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return FunctionGroups.Any(group => group.IsSelected != false && group.Functions.Count > 0);
         }
     }
 
@@ -117,17 +122,13 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     /// <summary>
     /// 对Request附加的额外属性，不持久化
     /// </summary>
-    public AdditionalPropertiesDictionary TempAdditionalProperties { get; set; } = new AdditionalPropertiesDictionary();
+    public AdditionalPropertiesDictionary TempAdditionalProperties { get; init; } = new();
 
     private ChatMessage? _message = null;
+
     private string? _formattedTextMessage;
 
     private bool _isFormatting;
-
-    //使用0表示未计算，因为空字符串不能创建RequestViewItem本身
-    private long _tokens = 0;
-    
-    private string _rawTextMessage;
 
     public bool IsAvailableInContext { get; } = true;
 
@@ -142,26 +143,35 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
 
     public bool HasRagSources
     {
-        get => RagSources != null && RagSources.Count > 0;
+        get => RagSources is { Count: > 0 };
     }
 
     public FunctionCallEngineType CallEngine { get; set; }
+
+    private ITokensCounter? _tokensCounter;
+
+    private ITokensCounter TokensCounter
+    {
+        get
+        {
+            _tokensCounter ??= ServiceLocator.GetService<ITokensCounter>()!;
+            return _tokensCounter;
+        }
+    }
 
     /// <summary>
     /// 预估
     /// </summary>
     public long Tokens
     {
-        get { return _tokens; }
-        set
-        {
-            if (value == _tokens) return;
-            _tokens = value;
-            OnPropertyChanged();
-        }
+        get { return GetAsyncProperty(async () => await TokensCounter.CountTokens(this.RawTextMessage), 0); }
+        set => SetAsyncProperty(value);
     }
 
     public DialogSessionViewModel? ParentSession { get; }
+
+    private readonly TextContent _textRequestContent;
+    private bool _displayRawText;
 
     /// <summary>
     /// 
@@ -171,14 +181,14 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
     /// <exception cref="Exception"></exception>
     public RequestViewItem(string rawTextMessage, DialogSessionViewModel? parentSession = null)
     {
-        this._rawTextMessage = rawTextMessage;
+        this._textRequestContent = new TextContent(rawTextMessage);
         ParentSession = parentSession;
         InteractionId = Guid.NewGuid();
-        FormatTextCommand = new RelayCommand(async () =>
+        FormatTextCommand = new RelayCommand(async void () =>
         {
-            IsFormatting = true;
             try
             {
+                IsFormatting = true;
                 var llmChatClient = ServiceLocator.GetService<GlobalOptions>()?.CreateTextFormatterClient();
                 if (llmChatClient == null)
                 {
@@ -190,7 +200,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
                         this.ParentSession?.SystemPrompt, CancellationToken.None);
                 if (!string.IsNullOrEmpty(userPrompt))
                 {
-                    _searchableDocument = null;
+                    _document = null;
                     this.FormattedTextMessage = userPrompt;
                 }
             }
@@ -206,23 +216,13 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
         });
     }
 
-    /// <summary>
-    /// 发送请求前，计算Tokens数量
-    /// </summary>
-    public async void CalculateTokensAsync(ITokensCounter counter)
-    {
-        if (this.Tokens != 0) return;
-        if (this.RawTextMessage.Length == 0) return;
-        this.Tokens = await counter.CountTokens(this.RawTextMessage);
-    }
-
     public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (_message == null)
         {
             //一旦被创建，就不再改变，所以使用lazy模式
-            _message = new ChatMessage(ChatRole.User, RawTextMessage);
+            _message = new ChatMessage(ChatRole.User, [_textRequestContent]);
             if (Attachments != null)
             {
                 foreach (var attachment in Attachments)
@@ -253,18 +253,17 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem, 
         yield return _message;
     }
 
-    public string GetCopyText()
-    {
-        return RawTextMessage;
-    }
-
-    public IEnumerable<EditableTextContent> GetEditableTextContents()
-    {
-        
-    }
-
     public void TriggerTextContentUpdate()
     {
-        
+        _message = null;
+        _formattedTextMessage = null;
+        _document = null;
+        OnPropertyChanged(nameof(RawTextMessage));
+        OnPropertyChanged(nameof(FormattedTextMessage));
+        OnPropertyChanged(nameof(TextMessage));
+        OnPropertyChanged(nameof(Document));
+        InvalidateAsyncProperty(nameof(Tokens));
+        var dialogSessionViewModel = this.ParentSession;
+        if (dialogSessionViewModel != null) dialogSessionViewModel.IsDataChanged = true;
     }
 }

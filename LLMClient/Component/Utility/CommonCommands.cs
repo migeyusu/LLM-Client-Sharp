@@ -82,6 +82,16 @@ public static class CommonCommands
             DialogHost.Show(new PromptEditorViewModel(o));
         }
     }));
+    
+    public static ICommand EditDialogItemCommand { get; } = new RelayCommand<IEditableDialogItem>(o =>
+    {
+        if (o == null)
+        {
+            return;
+        }
+
+        DialogHost.Show(new DialogItemEditViewModel(o));
+    });
 
     private static ICommand? _copyCommand;
 

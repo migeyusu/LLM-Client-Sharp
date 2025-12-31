@@ -9,6 +9,23 @@
                     xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
                     xmlns:component="clr-namespace:LLMClient.Component"
                     xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions">
+    <Style x:Key="SmallIconButtonStyle"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource MaterialDesignIconButton}">
+        <Setter Property="Width"
+                Value="28" />
+        <Setter Property="Height"
+                Value="28" />
+    </Style>
+    <Style x:Key="AutoHideMenuItemStyle"
+           TargetType="MenuItem"
+           BasedOn="{StaticResource {x:Type MenuItem}}">
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Visibility" Value="Collapsed" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
                   DataType="{x:Type dialog:RequestViewItem}">
         <Grid HorizontalAlignment="Right"
@@ -25,10 +42,6 @@
                                          Margin="0,4,0,0">
                     <Menu Padding="0"
                           ItemsPanel="{StaticResource VerticalItemsPanelTemplate}">
-                        <MenuItem Header="复制"
-                                  Command="{x:Static utility:CommonCommands.CopyCommand}"
-                                  CommandParameter="{Binding Mode=OneTime}"
-                                  Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
                         <MenuItem Header="总结之前对话"
                                   Command="{x:Static utility:CommonCommands.Conclusion}"
                                   CommandParameter="{Binding}"
@@ -43,95 +56,80 @@
                                   Command="{x:Static utility:CommonCommands.Clear}"
                                   CommandParameter="{Binding}"
                                   Icon="{materialDesign:PackIcon Kind=WaveArrowUp}" />
-                        <MenuItem Header="格式化请求"
-                                  Command="{Binding FormatTextCommand}"
-                                  Icon="{materialDesign:PackIcon Kind=FormatText}" />
                         <MenuItem Header="删除"
                                   Command="Delete"
                                   CommandParameter="{Binding}"
                                   Icon="{materialDesign:PackIcon Kind=DeleteOutline}" />
+                        <Separator />
+                        <MenuItem Header="显示原始文本"
+                                  IsCheckable="True"
+                                  IsChecked="{Binding DisplayRawText,Mode=TwoWay}" />
+                        <MenuItem Header="格式化请求"
+                                  Command="{Binding FormatTextCommand}"
+                                  Icon="{materialDesign:PackIcon Kind=FormatText}" />
+                        <MenuItem Header="复制原始文本"
+                                  Command="{x:Static utility:CommonCommands.CopyCommand}"
+                                  CommandParameter="{Binding RawTextMessage, Mode=OneWay}"
+                                  Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
+                        <MenuItem Header="导出"
+                                  ToolTip="导出为Markdown"
+                                  Command="{x:Static utility:CommonCommands.ExportCommand}"
+                                  CommandParameter="{Binding TextMessage,Mode=OneWay}"
+                                  Icon="{materialDesign:PackIcon Kind=Export}" />
                     </Menu>
                 </materialDesign:PopupBox>
+                <Button Style="{StaticResource SmallIconButtonStyle}"
+                        Content="{materialDesign:PackIcon Kind=PencilOutline,Size=20}"
+                        ToolTip="编辑请求内容"
+                        Command="{x:Static utility:CommonCommands.EditDialogItemCommand}"
+                        CommandParameter="{Binding Mode=OneTime}"
+                        Margin="0,4,0,0" />
                 <ProgressBar IsIndeterminate="True"
                              Style="{StaticResource MaterialDesignCircularProgressBar}"
                              Value="0"
                              Margin="5"
-                             Width="30"
-                             Height="30"
+                             Width="18"
+                             Height="18"
                              Visibility="{Binding IsFormatting,Mode=TwoWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
             </StackPanel>
 
-            <StackPanel Grid.Column="1">
+            <StackPanel Grid.Column="1"
+                        Margin="10,0,0,0">
                 <materialDesign:Card Padding="0"
                                      UniformCornerRadius="8"
                                      BorderThickness="0"
                                      Background="{DynamicResource MaterialDesign.Brush.Primary.Light}"
                                      Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light.Foreground}">
-                    <customControl:FlowDocumentScrollViewerEx
-                        FontFamily="Segoe UI Emoji"
-                        BorderThickness="0"
-                        Padding="0"
-                        HighlightableRanges="{Binding SearchableDocument.FoundTextRanges,Mode=OneWay}"
-                        CleanDocument="{Binding SearchableDocument.Document,Mode=OneWay}"
-                        Style="{StaticResource ExFlowDocumentScrollViewerStyle}">
-                        <customControl:FlowDocumentScrollViewerEx.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Command="Copy"
-                                          Header="复制选定">
-                                    <MenuItem.Icon>
-                                        <materialDesign:PackIcon
-                                            Kind="ContentCopy" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Command="SelectAll"
-                                          Header="全选">
-                                    <MenuItem.Icon>
-                                        <materialDesign:PackIcon
-                                            Kind="SelectAll" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <Separator />
-                                <MenuItem Header="复制原始文本"
-                                          Command="{x:Static utility:CommonCommands.CopyCommand}"
-                                          CommandParameter="{Binding Mode=OneTime}">
-                                    <MenuItem.Icon>
-                                        <materialDesign:PackIcon
-                                            Kind="ContentCopy" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="导出"
-                                          ToolTip="导出为Markdown"
-                                          Command="{x:Static utility:CommonCommands.ExportCommand}"
-                                          CommandParameter="{Binding TextMessage,Mode=OneWay}">
-                                    <MenuItem.Icon>
-                                        <materialDesign:PackIcon
-                                            Kind="Export" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                            </ContextMenu>
-                        </customControl:FlowDocumentScrollViewerEx.ContextMenu>
-                    </customControl:FlowDocumentScrollViewerEx>
-                    <!--<TextBox TextWrapping="Wrap"
-                                  IsReadOnly="True"
-                                  Margin="0"
-                                  BorderThickness="0"
-                                  materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                  Text="{Binding TextMessage,Mode=OneWay}" />-->
+                    <StackPanel HorizontalAlignment="Right">
+                        <customControl:FlowDocumentScrollViewerEx FontFamily="Segoe UI Emoji"
+                                                                  BorderThickness="0"
+                                                                  Padding="0"
+                                                                  Visibility="{Binding DisplayRawText,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
+                                                                  HighlightableRanges="{Binding Document.FoundTextRanges,Mode=OneWay}"
+                                                                  CleanDocument="{Binding Document.Document,Mode=OneWay}"
+                                                                  Style="{StaticResource ExFlowDocumentScrollViewerStyle}">
+                            <customControl:FlowDocumentScrollViewerEx.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Command="Copy"
+                                              Header="复制选定"
+                                              Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
+                                    <MenuItem Command="SelectAll"
+                                              Header="全选"
+                                              Icon="{materialDesign:PackIcon Kind=SelectAll}" />
+                                </ContextMenu>
+                            </customControl:FlowDocumentScrollViewerEx.ContextMenu>
+                        </customControl:FlowDocumentScrollViewerEx>
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="16"
+                                   Visibility="{Binding DisplayRawText,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                   Text="{Binding TextMessage,Mode=OneWay}" />
+                    </StackPanel>
                 </materialDesign:Card>
                 <ItemsControl ItemsSource="{Binding Attachments,Mode=OneTime}"
                               Margin="0,8,0,0"
                               HorizontalAlignment="Right"
-                              Visibility="Visible">
-                    <b:Interaction.Triggers>
-                        <b:DataTrigger
-                            Value="0">
-                            <b:DataTrigger.Binding>
-                                <Binding Path="Attachments.Count" />
-                            </b:DataTrigger.Binding>
-                            <b:ChangePropertyAction PropertyName="Visibility"
-                                                    Value="Collapsed" />
-                        </b:DataTrigger>
-                    </b:Interaction.Triggers>
+                              Visibility="{Binding HasAttachments,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type dialog:Attachment}">
                             <materialDesign:Chip IsDeletable="False"
@@ -158,6 +156,8 @@
                 <StackPanel Orientation="Horizontal"
                             Margin="0,8,0,0"
                             HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding Tokens,Mode=OneWay,StringFormat=Tokens:{0}}"
+                               Style="{StaticResource MaterialDesignOverlineTextBlock}" />
                     <materialDesign:PackIcon Kind="Function"
                                              Visibility="{Binding HasFunctions,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
                                              Margin="8,0,0,0" />
@@ -279,23 +279,6 @@
                        Style="{DynamicResource MaterialDesignSubtitle2TextBlock}" />
         </Grid>
     </DataTemplate>
-    <Style x:Key="RefreshButtonStyle"
-           TargetType="{x:Type Button}"
-           BasedOn="{StaticResource MaterialDesignIconButton}">
-        <Setter Property="Width"
-                Value="28" />
-        <Setter Property="Height"
-                Value="28" />
-    </Style>
-    <Style x:Key="AutoHideMenuItemStyle"
-           TargetType="MenuItem"
-           BasedOn="{StaticResource {x:Type MenuItem}}">
-        <Style.Triggers>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Visibility" Value="Collapsed" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
     <DataTemplate x:Key="UsageDetailDataTemplate"
                   DataType="{x:Type ai:UsageDetails}">
         <StackPanel Margin="10">
@@ -323,7 +306,7 @@
                 <StackPanel Orientation="Horizontal" Margin="0,2">
                     <materialDesign:PackIcon Kind="Thinking" Width="18" Height="18" Margin="0,0,6,0" />
                     <TextBlock
-                        Text="{Binding TotalTokenCount,Mode=OneWay,StringFormat=推理 Tokens：{0},TargetNullValue=--}" />
+                        Text="{Binding ReasoningTokenCount,Mode=OneWay,StringFormat=推理 Tokens：{0},TargetNullValue=--}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,2">
                     <materialDesign:PackIcon Kind="Sigma" Width="18" Height="18" Margin="0,0,6,0" />
@@ -409,7 +392,7 @@
                                             Visibility="{Binding IsResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
                                         <Button Width="16"
                                                 Height="16"
-                                                Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveCommand}"
+                                                Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveResponseCommand}"
                                                 Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
                                                 CommandParameter="{Binding  }"
                                                 ToolTip="删除当前"
@@ -437,18 +420,20 @@
                                           Command="{Binding ClearOthersCommand}" />
                                 <MenuItem Header="由此创建新会话"
                                           Command="{x:Static utility:CommonCommands.Fork}"
-                                          CommandParameter="{Binding}"
+                                          CommandParameter="{Binding Mode=OneTime}"
                                           Icon="{materialDesign:PackIcon SourceBranchPlus}"
                                           Style="{StaticResource AutoHideMenuItemStyle}" />
                                 <MenuItem Header="移除之后消息"
-                                          Command="{Binding RebaseCommand}"
+                                          Command="{x:Static dialog:MultiResponseViewItem.RebaseCommand}"
+                                          CommandParameter="{Binding Mode=OneTime}"
                                           ToolTip="保留当前消息并删除所有之后的消息"
                                           Icon="{materialDesign:PackIcon Kind=WaveArrowDown}" />
                                 <MenuItem Header="标记为有效回复"
                                           IsCheckable="True"
                                           IsChecked="{Binding AcceptedResponse.IsManualValid,Mode=TwoWay}"
                                           Visibility="{Binding AcceptedResponse.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-                                <MenuItem Command="{Binding CopyInteractionCommand}"
+                                <MenuItem Command="{x:Static dialog:MultiResponseViewItem.CopyInteractionCommand}"
+                                          CommandParameter="{Binding Mode=OneTime}"
                                           Header="复制对话（包括上下文）"
                                           Icon="{materialDesign:PackIcon Kind=DataMatrixScan}" />
                                 <MenuItem Header="黏贴到之后"
@@ -467,19 +452,21 @@
                                                  Style="{StaticResource MaterialDesignToolPopupBox}"
                                                  PopupContent="{Binding  SelectionPopup,Mode=OneTime}"
                                                  PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}" />
-                        <Button Style="{StaticResource RefreshButtonStyle}"
+                        <Button Style="{StaticResource SmallIconButtonStyle}"
                                 VerticalAlignment="Center"
                                 Margin="6,0,0,0"
                                 ToolTip="重试"
-                                Command="{Binding  RefreshSelectedCommand}"
+                                Command="{x:Static  dialog:MultiResponseViewItem.RetryCurrentCommand}"
+                                CommandParameter="{Binding}"
                                 Content="{materialDesign:PackIcon Kind=Refresh,Size=20}" />
-                        <Button Style="{StaticResource RefreshButtonStyle}"
-                                Command="{Binding EditCommand}"
+                        <Button Style="{StaticResource SmallIconButtonStyle}"
+                                Command="{x:Static utility:CommonCommands.EditDialogItemCommand}"
+                                CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                 VerticalAlignment="Center"
                                 Margin="6,0,0,0"
                                 ToolTip="编辑当前回复"
                                 Content="{materialDesign:PackIcon Kind=PencilOutline,Size=20}" />
-                        <Button Style="{StaticResource RefreshButtonStyle}"
+                        <Button Style="{StaticResource SmallIconButtonStyle}"
                                 Command="{x:Static utility:CommonCommands.CopyCommand}"
                                 CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                 VerticalAlignment="Center"

@@ -113,7 +113,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
     public ICommand ClearOthersCommand { get; }
 
     //标记为有效结果
-    public static ICommand MarkValid { get; } = new RelayCommand<MultiResponseViewItem>((o =>
+    public static ICommand MarkValidCommand { get; } = new RelayCommand<MultiResponseViewItem>((o =>
     {
         if (o == null)
         {
@@ -127,7 +127,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         }
     }));
 
-    public static ICommand RefreshSelectedCommand { get; } =
+    public static ICommand RetryCurrentCommand { get; } =
         new RelayCommand<MultiResponseViewItem>(o => o?.RetryCurrent());
 
     public ICommand SetAsAvailableCommand { get; }
@@ -142,7 +142,6 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsAvailableInContext));
             OnPropertyChanged(nameof(Tokens));
-            OnPropertyChanged(nameof(MarkValid));
             var responseViewItems = this.Items;
             CanGotoPrevious = value != null &&
                               responseViewItems.IndexOf(value) - 1 >= 0;
@@ -177,9 +176,18 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
 
     public ICommand GotoPreviousCommand { get; }
 
-    public ICommand RemoveCommand { get; }
+    public ICommand RemoveResponseCommand { get; }
 
-    public ICommand CopyInteractionCommand { get; }
+    public static ICommand CopyInteractionCommand { get; } =
+        new RelayCommand<MultiResponseViewItem>(o =>
+        {
+            if (o == null)
+            {
+                return;
+            }
+
+            o.ParentSession.CopyInteraction(o);
+        });
 
     public ICommand PasteInteractionCommand => new ActionCommand(o =>
     {
@@ -197,7 +205,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
-        RemoveCommand = new RelayCommand<ResponseViewItem>(o =>
+        RemoveResponseCommand = new RelayCommand<ResponseViewItem>(o =>
         {
             if (o == null)
             {
@@ -209,7 +217,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
                 return;
             }
 
-            this.Remove(o);
+            this.RemoveResponse(o);
         });
         SetAsAvailableCommand = new ActionCommand(o =>
         {
@@ -218,13 +226,13 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
                 response.SwitchAvailableInContext();
             }
         });
-        CopyInteractionCommand = new ActionCommand(o => { this.ParentSession.CopyInteraction(this); });
+
         ClearOthersCommand = new RelayCommand(() =>
         {
             var toRemove = Items.Where(item => item != AcceptedResponse).ToList();
             foreach (var item in toRemove)
             {
-                this.Remove(item);
+                this.RemoveResponse(item);
             }
         });
         GotoNextCommand = new RelayCommand(() =>
@@ -299,7 +307,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         this.IsMultiResponse = Items.Count > 1;
     }
 
-    public void Remove(ResponseViewItem viewItem)
+    public void RemoveResponse(ResponseViewItem viewItem)
     {
         var indexOf = this.Items.IndexOf(viewItem);
         if (indexOf < 0)

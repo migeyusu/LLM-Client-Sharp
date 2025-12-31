@@ -79,6 +79,11 @@ public class LocalThemedIcon : ThemedIcon
         var darkSource = kind.ToImageSource(foreground: Brushes.White, background: Brushes.Black);
         return new LocalThemedIcon(imageSource, darkSource);
     }
+
+    protected override ImageSource GetCurrentSource()
+    {
+        return base.GetCurrentSource();
+    }
 }
 
 public class AsyncThemedIcon : ThemedIcon

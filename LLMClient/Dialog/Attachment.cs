@@ -1,12 +1,10 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Component.Utility;
-using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
 

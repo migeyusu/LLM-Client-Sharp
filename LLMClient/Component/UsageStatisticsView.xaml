@@ -97,7 +97,8 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Completion Tokens" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                    <TextBlock Text="Completion Tokens(Contains Reasoning)"
+                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
                                Margin="10,5" />
                     <ContentControl Grid.Row="1">
                         <ContentControl.Style>
