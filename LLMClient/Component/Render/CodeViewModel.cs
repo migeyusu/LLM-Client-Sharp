@@ -71,8 +71,10 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
                     {
                         Source = new Uri("about:blank"),
                     };
-                    await webView2.EnsureCoreWebView2Async();
-                    webView2.CoreWebView2.NavigateToString(s);
+                    webView2.EnsureCoreWebView2Async().ConfigureAwait(true).GetAwaiter().OnCompleted(() =>
+                    {
+                        webView2.CoreWebView2.NavigateToString(s);
+                    });
                     var window = new Window()
                     {
                         Title = "HTML Preview",

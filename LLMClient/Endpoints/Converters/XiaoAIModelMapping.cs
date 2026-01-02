@@ -8,15 +8,23 @@ using LLMClient.Endpoints.OpenAIAPI;
 
 namespace LLMClient.Endpoints.Converters;
 
-public class XiaoAIModelMapping : ModelMapping
+public class NewAPIModelMapping : ModelMapping
 {
-    public virtual string Url { get; set; } = "https://xiaoai.plus/api/pricing";
-
-    public XiaoAIModelMapping() : this("XiaoAI")
+    //"https://xiaoai.plus/api/pricing"
+    //"https://xiaohumini.site/api/pricing_new"
+    //https://tb.api.mkeai.com/api/pricing
+    public string? Url
     {
+        get => _url;
+        set
+        {
+            if (value == _url) return;
+            _url = value;
+            OnPropertyChanged();
+        }
     }
 
-    public XiaoAIModelMapping(string name) : base(name)
+    public NewAPIModelMapping() : base("NewAPI")
     {
     }
 
@@ -26,11 +34,18 @@ public class XiaoAIModelMapping : ModelMapping
     }
 
     private Dictionary<string, ModelDetails> _modelInfos = new();
+    private string? _url;
 
     private const string EnabledGroup = "default";
 
     public override async Task<bool> Refresh()
     {
+        if (string.IsNullOrEmpty(_url))
+        {
+            MessageEventBus.Publish("Model Mapping URL is not set.");
+            return false;
+        }
+
         try
         {
             using (var handler = new HttpClientHandler())
@@ -212,14 +227,5 @@ public class XiaoAIModelMapping : ModelMapping
         /// </summary>
         [JsonPropertyName("enable_groups")]
         public List<string>? EnableGroups { get; set; }
-    }
-}
-
-public class XiaoHuMiniModelMapping : XiaoAIModelMapping
-{
-    public override string Url { get; set; } = "https://xiaohumini.site/api/pricing_new";
-
-    public XiaoHuMiniModelMapping() : base("XiaoHuMini")
-    {
     }
 }

@@ -1,4 +1,5 @@
-﻿using LLMClient.Endpoints.OpenAIAPI;
+﻿using LLMClient.Component.ViewModel.Base;
+using LLMClient.Endpoints.OpenAIAPI;
 
 namespace LLMClient.Endpoints.Converters;
 
@@ -9,10 +10,11 @@ public enum ModelSource
     O3Fan,
     GeekAI,
     XiaoAI,
-    XiaoHuMini
+    XiaoHuMini,
+    NewAPI,
 }
 
-public abstract class ModelMapping
+public abstract class ModelMapping: BaseViewModel
 {
     public static ModelMapping? Create(ModelSource source)
     {
@@ -21,8 +23,7 @@ public abstract class ModelMapping
             ModelSource.OpenRouter => new OpenRouterModelMapping(),
             ModelSource.O3Fan => new O3FanModelMapping(),
             ModelSource.GeekAI => new GeekAIModelMapping(),
-            ModelSource.XiaoAI => new XiaoAIModelMapping(),
-            ModelSource.XiaoHuMini => new XiaoHuMiniModelMapping(),
+            ModelSource.NewAPI => new NewAPIModelMapping(),
             _ => null
         };
     }

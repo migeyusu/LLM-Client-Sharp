@@ -12,7 +12,7 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
     public override long Tokens
     {
         //估计tokens
-        get => (long)((SummaryPrompt?.Length / 2.5) ?? 0);
+        get => (long)(SummaryPrompt?.Length / 2.8 ?? 0);
     }
 
     public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
@@ -31,7 +31,7 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
     public override bool IsAvailableInContext { get; } = true;
     public void TriggerTextContentUpdate()
     {
-        throw new NotImplementedException();
+        
     }
 
     public Guid InteractionId { get; set; }

@@ -8,11 +8,11 @@ namespace LLMClient.Component.CustomControl;
 
 public class FlowDocumentScrollViewerEx : FlowDocumentScrollViewer
 {
-    public static readonly DependencyProperty CleanDocumentProperty = DependencyProperty.Register(
-        nameof(CleanDocument), typeof(FlowDocument), typeof(FlowDocumentScrollViewerEx),
-        new PropertyMetadata(default(FlowDocument), new PropertyChangedCallback(OnCleanDocumentChanged)));
+    public static readonly DependencyProperty SafeDocumentProperty = DependencyProperty.Register(
+        nameof(SafeDocument), typeof(FlowDocument), typeof(FlowDocumentScrollViewerEx),
+        new PropertyMetadata(default(FlowDocument), OnSafeDocumentChanged));
 
-    private static void OnCleanDocumentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnSafeDocumentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is FlowDocumentScrollViewerEx viewer)
         {
@@ -36,10 +36,10 @@ public class FlowDocumentScrollViewerEx : FlowDocumentScrollViewer
         }
     }
 
-    public FlowDocument CleanDocument
+    public FlowDocument SafeDocument
     {
-        get { return (FlowDocument)GetValue(CleanDocumentProperty); }
-        set { SetValue(CleanDocumentProperty, value); }
+        get { return (FlowDocument)GetValue(SafeDocumentProperty); }
+        set { SetValue(SafeDocumentProperty, value); }
     }
 
     private static readonly Lazy<Brush> DefaultHighlightBrushLazy = new Lazy<Brush>(() =>

@@ -9,8 +9,3 @@ public interface IDialogItem : ITokenizable
 
     bool IsAvailableInContext { get; }
 }
-
-public interface IEditableDialogItem : IDialogItem
-{
-    void TriggerTextContentUpdate();
-}

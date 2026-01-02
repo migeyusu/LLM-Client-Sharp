@@ -162,7 +162,7 @@
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type dialog:DialogItemEditViewModel}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
-                                                            Header="响应内容编辑">
+                                                            Header="内容编辑">
                                         <dialog:ResponseViewItemEditView Width="900"
                                                                          Height="600" />
                                     </HeaderedContentControl>

@@ -106,7 +106,7 @@
                                                                   Padding="0"
                                                                   Visibility="{Binding DisplayRawText,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
                                                                   HighlightableRanges="{Binding Document.FoundTextRanges,Mode=OneWay}"
-                                                                  CleanDocument="{Binding Document.Document,Mode=OneWay}"
+                                                                  SafeDocument="{Binding Document.Document,Mode=OneWay}"
                                                                   Style="{StaticResource ExFlowDocumentScrollViewerStyle}">
                             <customControl:FlowDocumentScrollViewerEx.ContextMenu>
                                 <ContextMenu>
@@ -191,7 +191,7 @@
                 FontFamily="Segoe UI Emoji"
                 BorderThickness="0"
                 HighlightableRanges="{Binding SearchableDocument.FoundTextRanges,Mode=OneWay}"
-                CleanDocument="{Binding SearchableDocument.Document,Mode=OneWay}"
+                SafeDocument="{Binding SearchableDocument.Document,Mode=OneWay}"
                 Style="{StaticResource ExFlowDocumentScrollViewerStyle}">
                 <customControl:FlowDocumentScrollViewerEx.ContextMenu>
                     <ContextMenu>

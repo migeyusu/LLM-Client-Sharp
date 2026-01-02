@@ -70,35 +70,57 @@
             <TextBox Grid.Row="2" Grid.Column="1"
                      Text="{Binding ApiLogUrl,Mode=TwoWay}" />
             <TextBlock Grid.Row="2" Grid.Column="2" Text="Source：" />
-            <DockPanel Grid.Row="2" Grid.Column="3">
+            <Grid Grid.Row="2" Grid.Column="3"
+                  VerticalAlignment="Bottom">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <ComboBox VerticalAlignment="Bottom"
                           HorizontalAlignment="Stretch"
                           DockPanel.Dock="Left"
                           SelectedValue="{Binding ModelsSource,Mode=TwoWay}"
-                          Width="170">
+                          Width="80">
                     <ComboBox.Items>
                         <converters:ModelSource>None</converters:ModelSource>
                         <converters:ModelSource>OpenRouter</converters:ModelSource>
                         <converters:ModelSource>GeekAI</converters:ModelSource>
-                        <converters:ModelSource>XiaoAI</converters:ModelSource>
                         <converters:ModelSource>O3Fan</converters:ModelSource>
-                        <converters:ModelSource>XiaoHuMini</converters:ModelSource>
+                        <converters:ModelSource>NewAPI</converters:ModelSource>
                     </ComboBox.Items>
                 </ComboBox>
-                <Button Style="{StaticResource MaterialDesignPaperButton}"
-                        Margin="10,0"
-                        Padding="0"
+                <TextBox Grid.Column="1"
+                         Margin="6,0,0,0"
+                         materialDesign:HintAssist.Hint="Source URL"
+                         Text="{Binding ModelSourceUrl,Mode=TwoWay,UpdateSourceTrigger=LostFocus}">
+                    <TextBox.Style>
+                        <Style TargetType="{x:Type TextBox}"
+                               BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Setter Property="Visibility"
+                                    Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ModelsSource,Mode=OneWay}"
+                                             Value="{x:Static converters:ModelSource.NewAPI}">
+                                    <Setter Property="Visibility"
+                                            Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+                <Button Grid.Column="2"
+                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                        Width="30"
+                        Height="30"
+                        Margin="6,0,0,0"
                         VerticalContentAlignment="Center"
                         HorizontalContentAlignment="Center"
-                        VerticalAlignment="Bottom"
+                        ToolTip="同步模型"
+                        Content="{materialDesign:PackIcon Kind=Refresh}"
                         Command="{Binding RefreshModelSource}">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Refresh"
-                                                 VerticalAlignment="Center" />
-                        <TextBlock Margin="6,0,0,0">同步模型</TextBlock>
-                    </StackPanel>
                 </Button>
-            </DockPanel>
+            </Grid>
             <TextBlock Grid.Row="3" Grid.Column="0" Text="Proxy：" />
             <StackPanel Grid.Row="3" Grid.Column="1"
                         Orientation="Horizontal"
@@ -212,7 +234,7 @@
                 <CommandBinding Command="MoveUp"
                                 Executed="MoveUp_OnExecuted" />
                 <CommandBinding Command="Paste"
-                                Executed="PastModels_OnExecuted"/>
+                                Executed="PastModels_OnExecuted" />
             </ListBox.CommandBindings>
         </ListBox>
         <Separator Grid.Row="1" Grid.Column="0"

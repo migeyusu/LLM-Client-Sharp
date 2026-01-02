@@ -56,6 +56,17 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         }
     }
 
+    public string? ModelSourceUrl
+    {
+        get => _modelSourceUrl;
+        set
+        {
+            if (value == _modelSourceUrl) return;
+            _modelSourceUrl = value;
+            OnPropertyChanged();
+        }
+    }
+
     private ModelSource _modelsSource = ModelSource.None;
 
     public ModelSource ModelsSource
@@ -94,6 +105,11 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
             return;
         }
 
+        if (modelMapping is NewAPIModelMapping newModelMapping)
+        {
+            newModelMapping.Url = this.ModelSourceUrl;
+        }
+
         if (await modelMapping.Refresh())
         {
             foreach (var apiModelInfo in Models)
@@ -106,6 +122,7 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
     }));
 
     private ObservableCollection<APIModelInfo> _models = [];
+    private string? _modelSourceUrl;
 
     public ObservableCollection<APIModelInfo> Models
     {
