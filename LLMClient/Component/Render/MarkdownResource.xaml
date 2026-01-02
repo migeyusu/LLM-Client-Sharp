@@ -276,6 +276,7 @@
                                     Visibility="{Binding CanRun,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <Button Style="{StaticResource MaterialDesignFlatLightButton}"
                                     Command="{x:Static render1:CodeViewModel.SaveCommand}"
+                                    CommandParameter="{Binding Mode=OneTime}"
                                     Margin="10,0,0,0"
                                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
                                 <Button.Content>
@@ -292,7 +293,7 @@
                             <Button Style="{DynamicResource CopyCommandStyle}"
                                     Margin="10,0,0,0"
                                     Command="{x:Static utility:CommonCommands.CopyCommand}"
-                                    CommandParameter="{Binding}" />
+                                    CommandParameter="{Binding Mode=OneTime}" />
                         </StackPanel>
                     </Grid>
                 </DataTemplate>

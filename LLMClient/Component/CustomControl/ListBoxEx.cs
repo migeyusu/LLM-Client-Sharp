@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace LLMClient.Component.CustomControl;
 
@@ -16,8 +17,7 @@ public class ListBoxEx : ListBox
     {
         this.Loaded += OnLoaded;
     }
-    
-    
+
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -42,14 +42,46 @@ public class ListBoxEx : ListBox
         {
             if (!IsScrollChangeInProgress(lbEx))
             {
-                lbEx.ScrollIntoView(newValue);
+                if (lbEx.ItemContainerGenerator.ContainerFromItem(newValue) is ListBoxItem listBoxItem)
+                {
+                    var scrollViewer = lbEx.ScrollViewer;
+                    if (scrollViewer == null)
+                    {
+                        return;
+                    }
+
+                    var transform = listBoxItem.TransformToVisual(scrollViewer);
+                    var position = transform.Transform(new Point(0, 0));
+                    scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + position.Y);
+                    // listBoxItem.BringIntoView(new Rect(new Point(0,0), listBoxItem.RenderSize));
+                }
+                else
+                {
+                    // 如果容器未生成，先滚动到该项使其可见，再获取容器
+                    lbEx.ScrollIntoView(newValue);
+                    lbEx.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (lbEx.ItemContainerGenerator.ContainerFromItem(newValue) is ListBoxItem lbi)
+                        {
+                            var scrollViewer = lbEx.ScrollViewer;
+                            if (scrollViewer == null)
+                            {
+                                return;
+                            }
+
+                            var transform = lbi.TransformToVisual(scrollViewer);
+                            var position = transform.Transform(new Point(0, 0));
+                            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + position.Y);
+                        }
+                    }, DispatcherPriority.Render);
+                }
             }
         }
     }
 
     private ScrollViewer? _scrollViewer;
 
-    protected ScrollViewer? ScrollViewer
+    private ScrollViewer? ScrollViewer
     {
         get
         {
@@ -90,8 +122,8 @@ public class ListBoxEx : ListBox
 
     private void UpdateCurrentVisibleItem()
     {
-        // 获取可视区域中心的项
-        var currentItem = GetItemAtViewportBottom();
+        // 获取可视区域内的第一个项
+        var currentItem = GetItemAtViewport();
         if (currentItem != null && !object.Equals(currentItem, this.CurrentVisibleItem))
         {
             try
@@ -109,7 +141,7 @@ public class ListBoxEx : ListBox
     }
 
 
-    private object? GetItemAtViewportBottom()
+    private object? GetItemAtViewport()
     {
         var itemCollection = this.Items;
         if (itemCollection.Count == 0) return null;
@@ -120,19 +152,25 @@ public class ListBoxEx : ListBox
         // 获取可视区域的垂直位置
         var verticalOffset = scrollViewer.VerticalOffset;
         var viewportHeight = scrollViewer.ViewportHeight;
-        var bottomPoint = verticalOffset + viewportHeight;
+        var topPoint = verticalOffset; // 视域顶部位置
         var containerGenerator = this.ItemContainerGenerator;
-        // 查找底部位置的项
+
+        // 从上到下查找第一个在视域内的项
         for (var i = 0; i < itemCollection.Count; i++)
         {
             var item = itemCollection[i];
             if (containerGenerator.ContainerFromItem(item) is FrameworkElement container)
             {
-                // 获取项在ListBox中的位置
-                var itemPos = container.TransformToAncestor(scrollViewer).Transform(new Point(0, verticalOffset));
-                var itemTop = itemPos.Y;
-                var itemBottom = container.ActualHeight + itemTop;
-                if (bottomPoint >= itemTop && bottomPoint <= itemBottom)
+                // 正确获取容器相对于滚动视图的位置
+                var transform = container.TransformToAncestor(scrollViewer);
+                var containerRect =
+                    transform.TransformBounds(new Rect(0, 0, container.ActualWidth, container.ActualHeight));
+
+                var itemTop = containerRect.Top;
+                var itemBottom = containerRect.Bottom;
+
+                // 判断项是否在视域内（部分可见也算）
+                if (itemBottom > topPoint && itemTop < topPoint + viewportHeight)
                 {
                     return item;
                 }

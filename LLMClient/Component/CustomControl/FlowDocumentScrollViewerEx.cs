@@ -36,6 +36,9 @@ public class FlowDocumentScrollViewerEx : FlowDocumentScrollViewer
         }
     }
 
+    /// <summary>
+    /// 绑定安全的 FlowDocument，自动处理父级关系
+    /// </summary>
     public FlowDocument SafeDocument
     {
         get { return (FlowDocument)GetValue(SafeDocumentProperty); }
@@ -56,6 +59,9 @@ public class FlowDocumentScrollViewerEx : FlowDocumentScrollViewer
         DependencyProperty.Register("HighlightBrush", typeof(Brush), typeof(FlowDocumentScrollViewerEx),
             new PropertyMetadata(DefaultHighlightBrush));
 
+    /// <summary>
+    /// 搜索高亮颜色
+    /// </summary>
     public Brush HighlightBrush
     {
         get { return (Brush)GetValue(HighlightBrushProperty); }
