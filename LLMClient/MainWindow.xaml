@@ -425,23 +425,15 @@
                           WindowChrome.IsHitTestVisibleInChrome="True"
                           SelectedItem="{Binding ThemeName,Mode=TwoWay}" />
             </StackPanel>
-            <ScrollViewer Grid.Column="1"
-                          VerticalAlignment="Center"
-                          HorizontalAlignment="Left"
-                          WindowChrome.IsHitTestVisibleInChrome="True"
-                          Margin="16,0,0,0"
-                          Style="{StaticResource HorizontalArrowScrollViewer}">
-                <StackPanel Orientation="Horizontal">
-                    <StackPanel.Resources>
-                        <Style TargetType="{x:Type Button}"
-                               BasedOn="{StaticResource MaterialDesignOutlinedLightButton}">
-                            <Setter Property="Padding"
-                                    Value="8,2" />
-                        </Style>
-                    </StackPanel.Resources>
-                    <Button Style="{StaticResource MaterialDesignOutlinedLightButton}"
-                            Padding="8,2"
-                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+            <ToolBarTray Grid.Column="1"
+                         HorizontalAlignment="Left"
+                         Margin="16,0,0,0"
+                         IsLocked="True"
+                         WindowChrome.IsHitTestVisibleInChrome="True">
+                <ToolBar>
+                    <Button Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            Padding="12,6"
+                            Margin="0,0,0,0"
                             CommandParameter="{Binding EndpointsViewModel,Mode=OneTime}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Connection" />
@@ -450,9 +442,10 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Margin="10,0,0,0"
-                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                            CommandParameter="{Binding PromptsResource,Mode=OneTime}">
+                    <Button Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            Margin="6,0,0,0"
+                            CommandParameter="{Binding PromptsResource,Mode=OneTime}"
+                            Padding="12,6">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="CodeString" />
                             <TextBlock Text="System Prompts"
@@ -460,8 +453,9 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Margin="10,0,0,0"
-                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                    <Button Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                            Padding="12,6"
+                            Margin="6,0,0,0"
                             CommandParameter="{Binding McpServiceCollection,Mode=OneTime}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="ServerNetwork" />
@@ -470,7 +464,8 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Margin="10,0,0,0"
+                    <Button Margin="6,0,0,0"
+                            Padding="12,6"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                             CommandParameter="{Binding RagSourceCollection,Mode=OneTime}">
                         <StackPanel Orientation="Horizontal">
@@ -504,8 +499,8 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>-->
-                </StackPanel>
-            </ScrollViewer>
+                </ToolBar>
+            </ToolBarTray>
             <!--code compare-->
             <materialDesign:Card Grid.Column="2"
                                  materialDesign:ElevationAssist.Elevation="Dp2"
