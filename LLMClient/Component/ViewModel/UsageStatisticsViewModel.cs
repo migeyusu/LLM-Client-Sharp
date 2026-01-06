@@ -7,6 +7,7 @@ using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel.Base;
+using Microsoft.Web.WebView2.Core.Raw;
 using SkiaSharp;
 
 namespace LLMClient.Component.ViewModel;
@@ -44,13 +45,86 @@ public class UsageStatisticsViewModel : BaseViewModel
             if (value == _isPieChart) return;
             _isPieChart = value;
             OnPropertyChanged();
-            UpdateCharts();
+            UpdateSource();
         }
     }
 
-    public ISeries[] CompletionTokensSeries { get; private set; } = [];
-    public ISeries[] CallTimesSeries { get; private set; } = [];
-    public ISeries[] PriceSeries { get; private set; } = [];
+    public long TotalCompletionTokens
+    {
+        get => _totalCompletionTokens;
+        set
+        {
+            if (value == _totalCompletionTokens) return;
+            _totalCompletionTokens = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ISeries[] CompletionTokensSeries
+    {
+        get => _completionTokensSeries;
+        private set
+        {
+            if (Equals(value, _completionTokensSeries)) return;
+            _completionTokensSeries = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int TotalCallTimes
+    {
+        get => _totalCallTimes;
+        set
+        {
+            if (value == _totalCallTimes) return;
+            _totalCallTimes = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ISeries[] CallTimesSeries
+    {
+        get => _callTimesSeries;
+        private set
+        {
+            if (Equals(value, _callTimesSeries)) return;
+            _callTimesSeries = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public double TotalPrice
+    {
+        get => _totalPrice;
+        set
+        {
+            if (value.Equals(_totalPrice)) return;
+            _totalPrice = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ISeries[] PriceSeries
+    {
+        get => _priceSeries;
+        private set
+        {
+            if (Equals(value, _priceSeries)) return;
+            _priceSeries = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public float MeanAvgTps
+    {
+        get => _meanAvgTps;
+        set
+        {
+            if (value.Equals(_meanAvgTps)) return;
+            _meanAvgTps = value;
+            OnPropertyChanged();
+        }
+    }
 
     private ISeries[]? _averageTpsSeries;
 
@@ -92,22 +166,123 @@ public class UsageStatisticsViewModel : BaseViewModel
             OnPropertyChanged();
             if (value <= _existingItemsCount)
             {
-                UpdateCharts();
+                UpdateSource();
             }
         }
     }
 
+    public int CriteriaIndex
+    {
+        get => _criteriaIndex;
+        set
+        {
+            if (value == _criteriaIndex) return;
+            _criteriaIndex = value;
+            OnPropertyChanged();
+            UpdateSource();
+        }
+    }
+
+    public IRelayCommand RefreshCommand => new RelayCommand(UpdateSource);
+
     public UsageStatisticsViewModel(IEndpointService endpointService)
     {
         _endpointService = endpointService;
-        UpdateCharts();
+        UpdateSource();
     }
 
-    public IRelayCommand RefreshCommand => new RelayCommand(UpdateCharts);
 
     private int _existingItemsCount = 0;
+    private long _totalCompletionTokens;
+    private int _totalCallTimes;
+    private double _totalPrice;
+    private float _meanAvgTps;
+    private ISeries[] _completionTokensSeries = [];
+    private ISeries[] _callTimesSeries = [];
+    private ISeries[] _priceSeries = [];
+    private int _criteriaIndex = 0;
 
-    private void UpdateCharts()
+    private void UpdateSource()
+    {
+        if (_criteriaIndex == 0)
+        {
+            UpdateModelsStatistics();
+        }
+        else
+        {
+            UpdateEndpointStatistics();
+        }
+    }
+
+    /// <summary>
+    /// 按端点统计的使用数据
+    /// </summary>
+    private void UpdateEndpointStatistics()
+    {
+        IList<(string Name, UsageCount Usage)> endpoints = new List<(string Name, UsageCount Usage)>();
+        foreach (var endpoint in _endpointService.AvailableEndpoints)
+        {
+            UsageCount? usage = null;
+            foreach (var model in endpoint.AvailableModels)
+            {
+                if (model.Telemetry != null && model.Telemetry.CallTimes > 0)
+                {
+                    if (usage == null)
+                    {
+                        usage = new UsageCount(model.Telemetry);
+                    }
+                    else
+                    {
+                        usage.Add(model.Telemetry);
+                    }
+                }
+            }
+
+            if (usage?.CallTimes > 0)
+            {
+                endpoints.Add((endpoint.DisplayName, usage));
+            }
+        }
+
+        _existingItemsCount = endpoints.Count;
+        endpoints = endpoints.OrderByDescending(tuple => tuple.Usage.CompletionTokens)
+            .Take(MaxItemsCount)
+            .ToArray();
+        Legend = endpoints.Select(e =>
+        {
+            var color = GetModelColor(e.Name);
+            return new LegendItem(e.Name, color.ToString());
+        }).ToList();
+
+        // Always setup axes for Cartesian charts (Average TPS is always Cartesian)
+        // Use RowSeries (Horizontal Bars), so YAxis holds the labels (Categories) and XAxis holds the values
+        TotalCompletionTokens = endpoints.Sum(e => e.Usage.CompletionTokens);
+        TotalCallTimes = endpoints.Sum(e => e.Usage.CallTimes);
+        TotalPrice = endpoints.Sum(e => e.Usage.Price);
+        MeanAvgTps = endpoints.Count > 0
+            ? endpoints.Average(e => e.Usage.AverageTps)
+            : 0;
+        if (IsPieChart)
+        {
+            CompletionTokensSeries = CreatePieSeries(endpoints, e => e.Usage.CompletionTokens);
+            CallTimesSeries = CreatePieSeries(endpoints, e => e.Usage.CallTimes);
+            PriceSeries = CreatePieSeries(endpoints, e => e.Usage.Price, "C2");
+        }
+        else
+        {
+            CompletionTokensSeries =
+                CreateRowSeries(endpoints, (e, i) => { return new Coordinate(i, e.Data.CompletionTokens); });
+            CallTimesSeries = CreateRowSeries(endpoints, (e, i) => new Coordinate(i, e.Data.CallTimes));
+            PriceSeries = CreateRowSeries(endpoints, (e, i) => new Coordinate(i, e.Data.Price));
+        }
+
+        AverageTpsSeries = CreateRowSeries(endpoints, (e, i) => new Coordinate(i, e.Data.AverageTps));
+    }
+
+    /// <summary>
+    /// 按模型统计的使用数据
+    /// </summary>
+    private void UpdateModelsStatistics()
     {
         IList<(string Name, UsageCount Usage)> models = new List<(string Name, UsageCount Usage)>();
         foreach (var endpoint in _endpointService.AvailableEndpoints)
@@ -134,7 +309,12 @@ public class UsageStatisticsViewModel : BaseViewModel
 
         // Always setup axes for Cartesian charts (Average TPS is always Cartesian)
         // Use RowSeries (Horizontal Bars), so YAxis holds the labels (Categories) and XAxis holds the values
-
+        TotalCompletionTokens = models.Sum(m => m.Usage.CompletionTokens);
+        TotalCallTimes = models.Sum(m => m.Usage.CallTimes);
+        TotalPrice = models.Sum(m => m.Usage.Price);
+        MeanAvgTps = models.Count > 0
+            ? models.Average(m => m.Usage.AverageTps)
+            : 0;
         if (IsPieChart)
         {
             CompletionTokensSeries = CreatePieSeries(models, m => m.Usage.CompletionTokens);
@@ -147,12 +327,9 @@ public class UsageStatisticsViewModel : BaseViewModel
                 CreateRowSeries(models, (m, i) => { return new Coordinate(i, m.Data.CompletionTokens); });
             CallTimesSeries = CreateRowSeries(models, (m, i) => new Coordinate(i, m.Data.CallTimes));
             PriceSeries = CreateRowSeries(models, (m, i) => new Coordinate(i, m.Data.Price));
-            AverageTpsSeries ??= CreateRowSeries(models, (m, i) => new Coordinate(i, m.Data.AverageTps));
         }
 
-        OnPropertyChanged(nameof(CompletionTokensSeries));
-        OnPropertyChanged(nameof(CallTimesSeries));
-        OnPropertyChanged(nameof(PriceSeries));
+        AverageTpsSeries = CreateRowSeries(models, (m, i) => new Coordinate(i, m.Data.AverageTps));
     }
 
     private ISeries[] CreateRowSeries(IList<(string Name, UsageCount Usage)> models,

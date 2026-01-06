@@ -88,7 +88,7 @@ public class UserInputFormatter
                     { "contextHint", systemPrompt },
                     { "input", sbInput.ToString() }
                 });
-            var promptAgent = new PromptAgent(client, TraceInvokeInteractor.Instance)
+            var promptAgent = new PromptBasedAgent(client, TraceInvokeInteractor.Instance)
             {
                 Timeout = TimeSpan.FromSeconds(30),
             };

@@ -351,7 +351,7 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
                 }
 
                 stringBuilder.Append(raw);
-                var promptAgent = new PromptAgent(client, null);
+                var promptAgent = new PromptBasedAgent(client, null);
                 var textResponse =
                     await promptAgent.GetMessageAsync(stringBuilder.ToString(), cancellationToken: token);
                 if (!string.IsNullOrEmpty(textResponse) && !response.IsInterrupt)

@@ -7,6 +7,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
              xmlns:chart="clr-namespace:LLMClient.Component.Chart"
+             xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800"
              d:DataContext="{d:DesignInstance viewModel:UsageStatisticsViewModel}">
@@ -23,6 +24,37 @@
         <StackPanel Grid.Column="0" Margin="10" Width="260">
             <TextBlock Text="Usage Statistics" Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                        VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal"
+                        Margin="0,12,0,0">
+                <TextBlock Text="Criteria:" 
+                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                           VerticalAlignment="Center"/>
+                <ListBox Margin="8,0,0,0"
+                         ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}"
+                         Style="{StaticResource MaterialDesignToolToggleListBox}"
+                         SelectedIndex="{Binding  CriteriaIndex,Mode=TwoWay}">
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Cube" />
+                                <TextBlock Text="Models"
+                                           Margin="5,0,0,0"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Server" />
+                                <TextBlock Text="Endpoints"
+                                           Margin="5,0,0,0"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ListBoxItem>
+                </ListBox>
+            </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                 <ToggleButton IsChecked="{Binding IsPieChart}"
                               Style="{StaticResource MaterialDesignSwitchToggleButton}"
@@ -46,7 +78,7 @@
             <Border Margin="0,12,0,0" Padding="10"
                     BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="5">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding Legend}">
+                    <ItemsControl ItemsSource="{Binding Legend,Mode=OneWay}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" Margin="0,2">
@@ -97,9 +129,12 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Completion Tokens(Contains Reasoning)"
-                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
-                               Margin="10,5" />
+                    <TextBlock Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                               Margin="10,5">
+                        <Run>Completion Tokens</Run>
+                        <Run
+                            Text="{Binding TotalCompletionTokens,Mode=OneWay,StringFormat=：{0} @Total,Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
+                    </TextBlock>
                     <ContentControl Grid.Row="1">
                         <ContentControl.Style>
                             <Style TargetType="ContentControl">
@@ -146,8 +181,11 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Call Times" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
-                               Margin="10,5" />
+                    <TextBlock Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                               Margin="10,5">
+                        <Run Text="Call Times" />
+                        <Run Text="{Binding TotalCallTimes,Mode=OneWay,StringFormat=：{0} @Total}" />
+                    </TextBlock>
                     <ContentControl Grid.Row="1">
                         <ContentControl.Style>
                             <Style TargetType="ContentControl">
@@ -194,7 +232,10 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Price ($)" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="10,5" />
+                    <TextBlock Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="10,5">
+                        <Run Text="Price" />
+                        <Run Text="{Binding  TotalPrice,Mode=OneWay,StringFormat=：{0:N3}$ @Total}" />
+                    </TextBlock>
                     <ContentControl Grid.Row="1">
                         <ContentControl.Style>
                             <Style TargetType="ContentControl">
@@ -242,9 +283,11 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Average TPS"
-                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
-                               Margin="10,5" />
+                    <TextBlock Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                               Margin="10,5">
+                        <Run Text="Average TPS" />
+                        <Run Text="{Binding MeanAvgTps,Mode=OneWay,StringFormat=：{0:N0} @Mean}" />
+                    </TextBlock>
                     <ContentControl Grid.Row="1">
                         <ContentControl.Style>
                             <Style TargetType="ContentControl">

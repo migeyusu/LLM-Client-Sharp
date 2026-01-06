@@ -422,7 +422,6 @@
                            VerticalAlignment="Center"
                            Margin="10,0,8,0" />
                 <ComboBox ItemsSource="{Binding Source={StaticResource DataFromEnum}}"
-                          WindowChrome.IsHitTestVisibleInChrome="True"
                           SelectedItem="{Binding ThemeName,Mode=TwoWay}" />
             </StackPanel>
             <ToolBarTray Grid.Column="1"
@@ -436,7 +435,7 @@
                             Margin="0,0,0,0"
                             CommandParameter="{Binding EndpointsViewModel,Mode=OneTime}">
                         <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Connection" />
+                            <materialDesign:PackIcon Kind="Server" />
                             <TextBlock Text="Endpoints"
                                        Margin="5,0,0,0"
                                        VerticalAlignment="Center" />

@@ -162,7 +162,7 @@
         </materialDesign:Card>
         <customControl:ListBoxEx Grid.Row="1"
                                  Style="{StaticResource DialogListBoxStyle}"
-                                 CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"
+                                 CurrentViewItem="{Binding ScrollViewItem,Mode=TwoWay}"
                                  ItemsSource="{Binding DialogItems,Mode=OneWay}"
                                  x:Name="DialogItemList">
             <!--component:ListBoxHelper.CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"-->
@@ -194,15 +194,17 @@
                             Value="Right" />
                 </Style>
             </StackPanel.Resources>
-            <Button Command="{Binding ScrollToTopCommand}"
-                    CommandParameter="{Binding ElementName=DialogItemList}"
+            <Button Command="{x:Static customControl:ListBoxEx.ScrollToTopCommand}"
+                    CommandTarget="{Binding ElementName=DialogItemList}"
                     Content="{materialDesign:PackIcon Kind=FormatVerticalAlignTop}" />
-            <Button Command="{Binding ScrollToPreviousCommand}"
+            <Button Command="{x:Static customControl:ListBoxEx.ScrollToPreviousItemCommand}"
+                    CommandTarget="{Binding ElementName=DialogItemList}"
                     Content="{materialDesign:PackIcon Kind=ArrowUpBold}" />
-            <Button Command="{Binding ScrollToNextCommand}"
+            <Button Command="{x:Static customControl:ListBoxEx.ScrollToNextItemCommand}"
+                    CommandTarget="{Binding ElementName=DialogItemList}"
                     Content="{materialDesign:PackIcon Kind=ArrowDownBold}" />
-            <Button Command="{Binding ScrollToEndCommand}"
-                    CommandParameter="{Binding ElementName=DialogItemList}"
+            <Button Command="{x:Static customControl:ListBoxEx.ScrollToBottomCommand}"
+                    CommandTarget="{Binding ElementName=DialogItemList}"
                     Content="{materialDesign:PackIcon Kind=FormatVerticalAlignBottom}" />
             <StackPanel Margin="0,10,0,0"
                         Orientation="Horizontal"

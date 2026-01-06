@@ -42,6 +42,22 @@
                                          Margin="0,4,0,0">
                     <Menu Padding="0"
                           ItemsPanel="{StaticResource VerticalItemsPanelTemplate}">
+                        <MenuItem Header="复制原始文本"
+                                  Command="{x:Static utility:CommonCommands.CopyCommand}"
+                                  CommandParameter="{Binding RawTextMessage, Mode=OneWay}"
+                                  Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
+                        <MenuItem Header="显示Raw文本"
+                                  IsCheckable="True"
+                                  IsChecked="{Binding DisplayRawText,Mode=TwoWay}" />
+                        <MenuItem Header="格式化请求"
+                                  Command="{Binding FormatTextCommand}"
+                                  Icon="{materialDesign:PackIcon Kind=FormatText}" />
+                        <MenuItem Header="导出"
+                                  ToolTip="导出为Markdown"
+                                  Command="{x:Static utility:CommonCommands.ExportCommand}"
+                                  CommandParameter="{Binding TextMessage,Mode=OneWay}"
+                                  Icon="{materialDesign:PackIcon Kind=Export}" />
+                        <Separator />
                         <MenuItem Header="总结之前对话"
                                   Command="{x:Static utility:CommonCommands.Conclusion}"
                                   CommandParameter="{Binding}"
@@ -60,22 +76,6 @@
                                   Command="Delete"
                                   CommandParameter="{Binding}"
                                   Icon="{materialDesign:PackIcon Kind=DeleteOutline}" />
-                        <Separator />
-                        <MenuItem Header="显示原始文本"
-                                  IsCheckable="True"
-                                  IsChecked="{Binding DisplayRawText,Mode=TwoWay}" />
-                        <MenuItem Header="格式化请求"
-                                  Command="{Binding FormatTextCommand}"
-                                  Icon="{materialDesign:PackIcon Kind=FormatText}" />
-                        <MenuItem Header="复制原始文本"
-                                  Command="{x:Static utility:CommonCommands.CopyCommand}"
-                                  CommandParameter="{Binding RawTextMessage, Mode=OneWay}"
-                                  Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
-                        <MenuItem Header="导出"
-                                  ToolTip="导出为Markdown"
-                                  Command="{x:Static utility:CommonCommands.ExportCommand}"
-                                  CommandParameter="{Binding TextMessage,Mode=OneWay}"
-                                  Icon="{materialDesign:PackIcon Kind=Export}" />
                     </Menu>
                 </materialDesign:PopupBox>
                 <Button Style="{StaticResource SmallIconButtonStyle}"
@@ -355,8 +355,8 @@
                                         <Grid>
                                             <ProgressBar IsIndeterminate="True"
                                                          Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
-                                                         Width="28"
-                                                         Height="28"
+                                                         Width="26"
+                                                         Height="26"
                                                          Style="{StaticResource MaterialDesignCircularProgressBar}"
                                                          Value="0" />
                                             <materialDesign:PackIcon Width="17"

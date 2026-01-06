@@ -138,52 +138,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
     }
 
-    public ICommand ScrollToPreviousCommand { get; }
-
-    public ICommand ScrollToNextCommand { get; }
-
-    public ICommand ScrollToLastItemCommand => new ActionCommand((o => { ScrollToLast(); }));
-
-    public ICommand ScrollToTopCommand { get; }
-
-    public ICommand ScrollToEndCommand { get; }
-
-    public void ScrollToLast()
-    {
-        if (!DialogItems.Any())
-        {
-            return;
-        }
-
-        var scrollViewItem = DialogItems.Last();
-        if (scrollViewItem == this.ScrollViewItem)
-        {
-            MessageEventBus.Publish("已经是最后一条了！");
-            return;
-        }
-
-        this.ScrollViewItem = scrollViewItem;
-    }
-
-    public ICommand ScrollToFirstItemCommand => new ActionCommand((o => { ScrollToFirst(); }));
-
-    public void ScrollToFirst()
-    {
-        if (!DialogItems.Any())
-        {
-            return;
-        }
-
-        var scrollViewItem = DialogItems.First();
-        if (scrollViewItem == this.ScrollViewItem)
-        {
-            MessageEventBus.Publish("已经是第一条了！");
-            return;
-        }
-
-        this.ScrollViewItem = scrollViewItem;
-    }
-
     #endregion
 
     #region search
@@ -656,88 +610,21 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #endregion
 
-    public DialogSessionViewModel(IMapper mapper, IList<IDialogItem>? dialogItems = null)
+    protected DialogSessionViewModel(IMapper mapper, IList<IDialogItem>? dialogItems = null)
     {
         _mapper = mapper;
         DialogItems = dialogItems == null
             ? []
             : new ObservableCollection<IDialogItem>(dialogItems);
         this.PredictedContextLength = GetContextTokensBefore();
-        DialogItems.CollectionChanged += (sender, args) =>
+        DialogItems.CollectionChanged += (_, _) =>
         {
             OnPropertyChangedAsync(nameof(Shortcut));
             OnPropertyChanged(nameof(CurrentContextTokens));
             this.PredictedContextLength = GetContextTokensBefore();
         };
         this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
-        ScrollToPreviousCommand = new ActionCommand(_ =>
-        {
-            if (DialogItems.Count == 0)
-            {
-                return;
-            }
-
-            var scrollViewItem = this.ScrollViewItem;
-            if (scrollViewItem != null)
-            {
-                var indexOf = this.DialogItems.IndexOf(scrollViewItem);
-                if (indexOf > 0)
-                {
-                    this.ScrollViewItem = this.DialogItems[indexOf - 1];
-                }
-            }
-            else
-            {
-                this.ScrollViewItem = this.DialogItems.FirstOrDefault();
-            }
-        });
-        ScrollToNextCommand = new ActionCommand(o =>
-        {
-            if (DialogItems.Count == 0)
-            {
-                return;
-            }
-
-            var scrollViewItem = this.ScrollViewItem;
-            if (scrollViewItem != null)
-            {
-                var indexOf = this.DialogItems.IndexOf(scrollViewItem);
-                if (indexOf == -1)
-                {
-                    return;
-                }
-
-                if (indexOf == this.DialogItems.Count - 1)
-                {
-                    MessageEventBus.Publish("已经是最后一条了！");
-                    return;
-                }
-
-                this.ScrollViewItem = this.DialogItems[indexOf + 1];
-            }
-            else
-            {
-                this.ScrollViewItem = this.DialogItems.LastOrDefault();
-            }
-        });
-        ScrollToTopCommand = new ActionCommand((o =>
-        {
-            if (o is ListBox listBox)
-            {
-                var scrollViewer = listBox.FindVisualChild<ScrollViewer>();
-                scrollViewer?.ScrollToTop();
-            }
-        }));
-
-        ScrollToEndCommand = new ActionCommand((o =>
-        {
-            if (o is ListBox listBox)
-            {
-                var scrollViewer = listBox.FindVisualChild<ScrollViewer>();
-                scrollViewer?.ScrollToBottom();
-            }
-        }));
-        SearchCommand = new ActionCommand((o =>
+        SearchCommand = new ActionCommand((_ =>
         {
             foreach (var dialogViewItem in this.DialogItems)
             {
@@ -764,7 +651,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 requestViewItem.Document?.EnsureSearch();
             }
         }));
-        GoToNextHighlightCommand = new ActionCommand((o =>
+        GoToNextHighlightCommand = new ActionCommand((_ =>
         {
             if (string.IsNullOrEmpty(SearchText))
             {
@@ -772,7 +659,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             }
 
             var responseViewItems = DialogItems.OfType<MultiResponseViewItem>()
-                .Where(item => item.AcceptedResponse is ResponseViewItem { SearchableDocument.HasMatched: true })
+                .Where(item => item.AcceptedResponse is { SearchableDocument.HasMatched: true })
                 .ToArray();
             if (responseViewItems.Length == 0)
             {
@@ -795,7 +682,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
             GoToHighlight();
         }));
-        GoToPreviousHighlightCommand = new ActionCommand((o =>
+        GoToPreviousHighlightCommand = new ActionCommand((_ =>
         {
             if (string.IsNullOrEmpty(SearchText))
             {
@@ -803,7 +690,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             }
 
             var responseViewItems = DialogItems.OfType<MultiResponseViewItem>()
-                .Where(item => item.AcceptedResponse is ResponseViewItem { SearchableDocument.HasMatched: true })
+                .Where(item => item.AcceptedResponse is { SearchableDocument.HasMatched: true })
                 .ToArray();
             if (responseViewItems.Length == 0)
             {
@@ -826,7 +713,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             GoToHighlight();
         }));
 
-        ExportCommand = new ActionCommand((async _ =>
+        ExportCommand = new ActionCommand((async void (_) =>
         {
             try
             {
@@ -879,16 +766,16 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 MessageBox.Show(e.Message);
             }
         }));
-        PastInteractionCommand = new ActionCommand((o => { PasteInteraction(); }));
-        ClearContextCommand = new ActionCommand(o => { CutContext(); });
-        ClearDialogCommand = new ActionCommand(async o =>
+        PastInteractionCommand = new ActionCommand((_ => { PasteInteraction(); }));
+        ClearContextCommand = new ActionCommand(_ => { CutContext(); });
+        ClearDialogCommand = new ActionCommand(async void (_) =>
         {
             if ((await DialogHost.Show(new ConfirmView() { Header = "清空会话？" })) is true)
             {
                 DialogItems.Clear();
             }
         });
-        ClearUnavailableCommand = new ActionCommand((o =>
+        ClearUnavailableCommand = new ActionCommand((_ =>
         {
             var deleteItems = new List<IDialogItem>();
             var unusedInteractionId = Guid.Empty;

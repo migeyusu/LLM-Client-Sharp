@@ -49,10 +49,10 @@ public class NvidiaResearchClient : ResearchClient
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        PromptAgent? agent = null;
+        PromptBasedAgent? agent = null;
         try
         {
-            agent = new PromptAgent(new EmptyLlmModelClient(), interactor);
+            agent = new PromptBasedAgent(new EmptyLlmModelClient(), interactor);
             // ====================================================================
             // 阶段 1: 研究
             // ====================================================================
@@ -244,7 +244,7 @@ public class NvidiaResearchClient : ResearchClient
     /// <param name="prompt"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    private async Task<bool> CheckIfPromptIsValidAsync(PromptAgent promptAgent,
+    private async Task<bool> CheckIfPromptIsValidAsync(PromptBasedAgent promptAgent,
         string prompt, CancellationToken token)
     {
         var response = await promptAgent.GetMessageAsync(
@@ -268,7 +268,7 @@ public class NvidiaResearchClient : ResearchClient
     /// <param name="token"></param>
     /// <returns></returns>
     private async Task<(string TaskPrompt, string FormatPrompt)> PerformPromptDecompositionAsync(
-        PromptAgent promptAgent, string prompt, IInvokeInteractor? logger, CancellationToken token)
+        PromptBasedAgent promptAgent, string prompt, IInvokeInteractor? logger, CancellationToken token)
     {
         var response = await promptAgent.GetMessageAsync(
             $"Decompose the PROMPT into a task to be performed and a format in which the report should be produced. If there is no formatting constraint, output 'No formatting constraint' in the second prompt. Do not output any other text.\n\n" +
@@ -298,7 +298,7 @@ public class NvidiaResearchClient : ResearchClient
     /// <param name="taskPrompt"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    private async Task<List<string>> GenerateTopicsAsync(PromptAgent promptAgent, string taskPrompt,
+    private async Task<List<string>> GenerateTopicsAsync(PromptBasedAgent promptAgent, string taskPrompt,
         CancellationToken token)
     {
         var response = await promptAgent.GetMessageAsync(
@@ -321,7 +321,7 @@ public class NvidiaResearchClient : ResearchClient
     /// <param name="topic"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    private async Task<List<string>> ProduceSearchPhrasesAsync(PromptAgent promptAgent,
+    private async Task<List<string>> ProduceSearchPhrasesAsync(PromptBasedAgent promptAgent,
         string prompt, string topic, CancellationToken token)
     {
         var response = await promptAgent.GetMessageAsync(
@@ -350,7 +350,7 @@ public class NvidiaResearchClient : ResearchClient
     /// <param name="searchResultUrlIndex"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    private async Task<List<string>> FindRelevantSegmentsAsync(PromptAgent promptAgent,
+    private async Task<List<string>> FindRelevantSegmentsAsync(PromptBasedAgent promptAgent,
         string prompt, string topic, string searchResult, int searchResultUrlIndex, CancellationToken token)
     {
         var response = await promptAgent.GetMessageAsync(
@@ -372,7 +372,7 @@ public class NvidiaResearchClient : ResearchClient
     /// <param name="topicRelevantSegments"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    private async Task<string> ProduceReportAsync(PromptAgent promptAgent,
+    private async Task<string> ProduceReportAsync(PromptBasedAgent promptAgent,
         string prompt, string formatPrompt, Dictionary<string, List<string>> topicRelevantSegments,
         CancellationToken token)
     {
@@ -399,7 +399,7 @@ public class NvidiaResearchClient : ResearchClient
     /// <param name="report"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    private async Task<string> EnsureFormatIsRespectedAsync(PromptAgent promptAgent,
+    private async Task<string> EnsureFormatIsRespectedAsync(PromptBasedAgent promptAgent,
         string formatPrompt, string report, CancellationToken token)
     {
         var messageAsync = await promptAgent.GetMessageAsync(

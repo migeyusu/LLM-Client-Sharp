@@ -439,7 +439,7 @@
               Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
             <customControl:ListBoxEx Grid.Row="0"
                                      Style="{StaticResource DialogListBoxStyle}"
-                                     CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"
+                                     CurrentViewItem="{Binding ScrollViewItem,Mode=TwoWay}"
                                      ItemsSource="{Binding DialogItems,Mode=OneWay}">
                 <customControl:ListBoxEx.ContextMenu>
                     <ContextMenu>
@@ -476,13 +476,17 @@
                                 Value="26" />
                     </Style>
                 </StackPanel.Resources>
-                <Button Command="{Binding ScrollToTopCommand}"
+                <Button Command="{x:Static customControl:ListBoxEx.ScrollToTopCommand}"
+                        CommandTarget="{Binding ElementName=DialogListBoxEx}"
                         Content="{materialDesign:PackIcon Kind=FormatVerticalAlignTop}" />
-                <Button Command="{Binding ScrollToPreviousCommand}"
+                <Button Command="{x:Static customControl:ListBoxEx.ScrollToPreviousItemCommand}"
+                        CommandTarget="{Binding ElementName=DialogListBoxEx}"
                         Content="{materialDesign:PackIcon Kind=ArrowUpBold}" />
-                <Button Command="{Binding ScrollToNextCommand}"
+                <Button Command="{x:Static customControl:ListBoxEx.ScrollToNextItemCommand}"
+                        CommandTarget="{Binding ElementName=DialogListBoxEx}"
                         Content="{materialDesign:PackIcon Kind=ArrowDownBold}" />
-                <Button Command="{Binding ScrollToEndCommand}"
+                <Button Command="{x:Static customControl:ListBoxEx.ScrollToBottomCommand}"
+                        CommandTarget="{Binding ElementName=DialogListBoxEx}"
                         Content="{materialDesign:PackIcon Kind=FormatVerticalAlignBottom}" />
             </StackPanel>
         </Grid>

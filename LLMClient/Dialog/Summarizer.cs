@@ -30,7 +30,7 @@ public readonly struct Summarizer
             dialogItems.AddRange(dialog.DialogItems);
             dialogItems.Add(new RequestViewItem(_options.SubjectSummarizePrompt));
             var dialogContext = new DialogContext(dialogItems);
-            var sendRequestAsync = await new PromptAgent(client, new TraceInvokeInteractor())
+            var sendRequestAsync = await new PromptBasedAgent(client, new TraceInvokeInteractor())
                 {
                     Timeout = duration,
                 }
