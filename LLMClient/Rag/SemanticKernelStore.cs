@@ -4,7 +4,9 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
+using LLMClient.Component.Converters;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
@@ -16,6 +18,8 @@ using OpenAI;
 
 namespace LLMClient.Rag;
 
+[TypeConverter(typeof(EnumDescriptionTypeConverter))]
+[JsonConverter(typeof(JsonStringEnumConverter<SearchAlgorithm>))]
 public enum SearchAlgorithm
 {
     /// <summary>

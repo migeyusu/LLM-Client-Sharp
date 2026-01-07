@@ -88,6 +88,8 @@ public class AzureModelInfo : ILLMModel
 
     [JsonIgnore] public ILLMAPIEndpoint Endpoint { get; set; } = EmptyLLMEndpoint.Instance;
 
+    public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.None;
+
     [JsonIgnore] public bool SupportSystemPrompt => true;
 
     [JsonIgnore] public bool TopPEnable { get; set; }
@@ -225,8 +227,7 @@ public class AzureModelInfo : ILLMModel
 
     public IPriceCalculator? PriceCalculator { get; } = null;
 
-    [JsonIgnore]
-    public UsageCount? Telemetry { get; set; }
+    [JsonIgnore] public UsageCount? Telemetry { get; set; }
 
     [JsonIgnore]
     public float FrequencyPenalty

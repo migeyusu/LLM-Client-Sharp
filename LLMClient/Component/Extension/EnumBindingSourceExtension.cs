@@ -2,6 +2,7 @@
 
 namespace LLMClient.Component.Extension;
 
+
 public class EnumBindingSourceExtension : MarkupExtension
 {
     private Type? _enumType;

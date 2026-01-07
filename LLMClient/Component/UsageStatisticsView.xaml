@@ -21,14 +21,14 @@
         </Grid.ColumnDefinitions>
 
         <!-- Left sidebar: banner controls stacked with legend -->
-        <StackPanel Grid.Column="0" Margin="10" Width="260">
+        <StackPanel Grid.Column="0" Margin="10" Width="271">
             <TextBlock Text="Usage Statistics" Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                        VerticalAlignment="Center" />
             <StackPanel Orientation="Horizontal"
                         Margin="0,12,0,0">
-                <TextBlock Text="Criteria:" 
+                <TextBlock Text="Criteria:"
                            Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
-                           VerticalAlignment="Center"/>
+                           VerticalAlignment="Center" />
                 <ListBox Margin="8,0,0,0"
                          ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}"
                          Style="{StaticResource MaterialDesignToolToggleListBox}"

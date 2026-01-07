@@ -62,7 +62,7 @@ public class APITest
                     Debugger.Break();
                 }
 
-                var mergeResponse = LlmClientBase.MergeResponse(updates);
+                var mergeResponse = updates.MergeResponse();
                 Debugger.Break();
             }
         }

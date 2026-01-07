@@ -31,6 +31,8 @@ public class EmptyLLMChatModel : ILLMModel
         set => throw new NotImplementedException();
     }
 
+    public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.None;
+
     public bool SupportSystemPrompt { get; set; }
     public bool TopPEnable { get; set; }
     public bool TopKEnable { get; set; }
@@ -54,7 +56,7 @@ public class EmptyLLMChatModel : ILLMModel
     public bool SupportFunctionCall { get; set; }
     public bool FunctionCallOnStreaming { get; set; }
     public IPriceCalculator? PriceCalculator { get; init; }
-    
+
     public UsageCount? Telemetry { get; set; }
     public bool Streaming { get; set; }
     public string? SystemPrompt { get; set; }

@@ -196,6 +196,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     private bool _functionCallOnStreaming = false;
     private bool _thinkingEnabled;
     private IThinkingConfig? _thinkingConfig;
+    private ThinkingIncludeMode _thinkingIncludeMode;
 
     public int MaxContextSize
     {
@@ -210,6 +211,16 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
 
     [JsonIgnore] public ILLMAPIEndpoint Endpoint { get; set; } = new EmptyLLMEndpoint();
 
+    public ThinkingIncludeMode ThinkingIncludeMode
+    {
+        get => _thinkingIncludeMode;
+        set
+        {
+            if (value == _thinkingIncludeMode) return;
+            _thinkingIncludeMode = value;
+            OnPropertyChanged();
+        }
+    }
 
     public bool SupportSystemPrompt
     {

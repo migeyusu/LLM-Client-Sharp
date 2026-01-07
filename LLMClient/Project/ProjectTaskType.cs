@@ -1,7 +1,11 @@
 ﻿using System.ComponentModel;
+using System.Text.Json.Serialization;
+using LLMClient.Component.Converters;
 
 namespace LLMClient.Project;
 
+[TypeConverter(typeof(EnumDescriptionTypeConverter))]
+[JsonConverter(typeof(JsonStringEnumConverter<ProjectTaskType>))]
 public enum ProjectTaskType : int
 {
     [Description("需求变更")] NewDemand,

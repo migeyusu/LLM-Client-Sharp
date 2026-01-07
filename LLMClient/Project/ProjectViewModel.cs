@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
@@ -12,6 +13,7 @@ using CommunityToolkit.Mvvm.Input;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Google.Apis.Util;
 using LLMClient.Abstraction;
+using LLMClient.Component.Converters;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering;
@@ -25,6 +27,8 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Project;
 
+[TypeConverter(typeof(EnumDescriptionTypeConverter))]
+[JsonConverter(typeof(JsonStringEnumConverter<ProjectTaskType>))]  
 public enum ProjectType
 {
     [Description("代码")] Standard,
