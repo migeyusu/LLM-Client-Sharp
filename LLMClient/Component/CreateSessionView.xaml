@@ -20,7 +20,7 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <ContentControl Grid.Row="0"
-                        Height="450"
+                        Height="700"
                         ContentTemplate="{StaticResource FullModelSelectionDataTemplate}"
                         Content="{Binding ModelSelection,Mode=OneTime}"
                         Visibility="{Binding ModelSelectionEnable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
