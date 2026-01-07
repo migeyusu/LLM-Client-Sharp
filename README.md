@@ -12,7 +12,7 @@
    - 利用 `Microsoft.Extensions.AI` 用于集成大语言模型 API。
    - 利用 `Markdig.Wpf` 实现Markdown解析
    - 利用`Microsoft.SemanticKernel`实现核心的大模型对话和RAG能力
-   - 利用`ig`实现PDF文档的读取和解析
+   - 利用`pdfpig`实现PDF文档的读取和解析
    - 利用`ModelContextProtocol`实现MCP协议的支持
    - 利用`TextMateSharp`实现语法高亮
    ---
@@ -36,7 +36,7 @@
    - 可重发消息
    - 可对比消息（对比时完整支持上下文如函数调用）
    - 可切换模型和调整模型参数
-   <img src="images/model_param.png" alt="edit param" style="zoom:60%;"/>
+   ![模型参数](images/model_param.png)
    - 可搜索对话，并以黄色高亮显示，可快速定位搜索结果
    - 支持Markdown渲染，支持代码高亮
    - 支持对话导出为Markdown格式，便于存档和分享
