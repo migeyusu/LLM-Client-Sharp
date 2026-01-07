@@ -422,7 +422,8 @@
                            VerticalAlignment="Center"
                            Margin="10,0,8,0" />
                 <ComboBox ItemsSource="{Binding Source={StaticResource DataFromEnum}}"
-                          SelectedItem="{Binding ThemeName,Mode=TwoWay}" />
+                          SelectedItem="{Binding ThemeName,Mode=TwoWay}" 
+                          WindowChrome.IsHitTestVisibleInChrome="True"/>
             </StackPanel>
             <ToolBarTray Grid.Column="1"
                          HorizontalAlignment="Left"
