@@ -92,7 +92,14 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
                 case nameof(RagFileBase.Status):
                     if (ragFile.Status == RagStatus.Constructed)
                     {
-                        await this.SaveAsync();
+                        try
+                        {
+                            await this.SaveAsync();
+                        }
+                        catch (Exception exception)
+                        {
+                            Trace.TraceError("Failed to save Rag configuration: " + exception);
+                        }
                     }
 
                     break;
@@ -151,26 +158,24 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
         }
     }
 
-    public ICommand SaveCommand => new ActionCommand(async o => { await SaveAsync(); });
+    public ICommand SaveCommand => new ActionCommand(async o =>
+    {
+        try
+        {
+            await SaveAsync();
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show("保存Rag配置失败: " + e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    });
 
     public const string ConfigFileName = "rag_file_collection.json";
-
-    private static readonly SemaphoreSlim SaveSemaphore = new SemaphoreSlim(1, 1);
 
     public async Task SaveAsync()
     {
         var fullPath = Path.GetFullPath(ConfigFileName);
-        var json = JsonSerializer.Serialize(this.Sources, Extension.DefaultJsonSerializerOptions);
-        try
-        {
-            await SaveSemaphore.WaitAsync();
-            await File.WriteAllTextAsync(fullPath, json);
-        }
-        finally
-        {
-            SaveSemaphore.Release();
-        }
-
+        await this.Sources.SaveJsonToFileAsync(fullPath, Extension.DefaultJsonSerializerOptions);
         MessageEventBus.Publish("已保存Rag配置");
     }
 

@@ -281,8 +281,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
             }
 
             var fullPath = Path.GetFullPath(FileName);
-            var json = JsonSerializer.Serialize(this.Items, Extension.DefaultJsonSerializerOptions);
-            await File.WriteAllTextAsync(fullPath, json);
+            await Items.SaveJsonToFileAsync(fullPath, Extension.DefaultJsonSerializerOptions);
             MessageEventBus.Publish("已保存MCP服务器配置");
         });
     }

@@ -35,6 +35,7 @@
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding}"
+                                   ToolTipService.InitialShowDelay="0"
                                    ToolTip="{Binding Converter={x:Static converters:SnapConverters.EnumToDescriptionConverter}}" />
                     </DataTemplate>
                 </ComboBox.ItemTemplate>

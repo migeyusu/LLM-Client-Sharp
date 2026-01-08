@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows.Forms;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
@@ -14,6 +14,7 @@ using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel.Data;
 using Microsoft.Xaml.Behaviors.Core;
+using MessageBox = System.Windows.MessageBox;
 
 namespace LLMClient.Configuration;
 
@@ -259,11 +260,13 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
 
         var currentDirectory = Directory.GetCurrentDirectory();
         var configFilePath = Path.GetFullPath(DefaultConfigFile, currentDirectory);
-        var fileInfo = new FileInfo(configFilePath);
-        fileInfo.Directory?.Create();
-        using (var fileStream = fileInfo.Open(FileMode.Create, FileAccess.Write))
+        try
         {
-            await JsonSerializer.SerializeAsync(fileStream, this, Extension.DefaultJsonSerializerOptions);
+            await this.SaveJsonToFileAsync(configFilePath, Extension.DefaultJsonSerializerOptions);
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show("Failed to save global configuration: " + e.Message, "Error");
         }
 
         MessageEventBus.Publish("Global configuration saved successfully.");

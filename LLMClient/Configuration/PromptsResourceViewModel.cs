@@ -70,11 +70,7 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
         }
         else
         {
-            using (var fileStream = fileInfo.Open(FileMode.Create, FileAccess.Write))
-            {
-                await JsonSerializer.SerializeAsync<IList<PromptEntry>>(fileStream, this.Prompts,
-                    Extension.DefaultJsonSerializerOptions);
-            }
+            await this.Prompts.SaveJsonToFileAsync(PromptsFileName, Extension.DefaultJsonSerializerOptions);
         }
 
         MessageEventBus.Publish("已保存系统提示词");
