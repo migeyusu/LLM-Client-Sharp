@@ -18,7 +18,7 @@ using OpenAI;
 
 namespace LLMClient.Rag;
 
-[TypeConverter(typeof(EnumDescriptionTypeConverter))]
+//[TypeConverter(typeof(EnumDescriptionTypeConverter))]
 [JsonConverter(typeof(JsonStringEnumConverter<SearchAlgorithm>))]
 public enum SearchAlgorithm
 {

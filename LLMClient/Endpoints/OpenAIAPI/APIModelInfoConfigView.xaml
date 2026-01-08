@@ -135,10 +135,11 @@
             <CheckBox IsChecked="{Binding ThinkingEnabled,Mode=TwoWay}"
                       Content="Reasoning Enable"
                       Visibility="{Binding Reasonable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
-            <ComboBox
-                Visibility="{Binding Reasonable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type abstraction:ThinkingIncludeMode}}}"
-                SelectedValue="{Binding ThinkingIncludeMode,Mode=TwoWay}" />
+            <ComboBox materialDesign:HintAssist.Hint="Include Mode"
+                      ToolTip="indicates whether to include the reasoning process when send to llm's api"
+                      Visibility="{Binding Reasonable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                      ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type abstraction:ThinkingIncludeMode}}}"
+                      SelectedValue="{Binding ThinkingIncludeMode,Mode=TwoWay}" />
         </StackPanel>
         <ContentControl Content="{Binding ThinkingConfig,Mode=OneWay}"
                         ContentTemplate="{StaticResource ThinkingConfigDataTemplate}"
