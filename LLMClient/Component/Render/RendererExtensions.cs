@@ -24,7 +24,7 @@ public static class RendererExtensions
     {
         try
         {
-            document = Markdown.Parse(raw, CustomRenderer.DefaultPipeline);
+            document = Markdown.Parse(raw, CustomMarkdownRenderer.DefaultPipeline);
             return true;
         }
         catch (Exception ex)
@@ -327,7 +327,7 @@ public static class RendererExtensions
     public static FlowDocument RenderOnFlowDocument(this string raw, FlowDocument? result = null)
     {
         result ??= new FlowDocument();
-        CustomRenderer.Instance.RenderRaw(raw, result);
+        CustomMarkdownRenderer.Instance.RenderRaw(raw, result);
         return result;
     }
 

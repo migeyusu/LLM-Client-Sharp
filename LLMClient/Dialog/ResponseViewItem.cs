@@ -175,13 +175,13 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         if (_resultDocument == null)
         {
             _resultDocument = new FlowDocument();
-            var renderer = CustomRenderer.NewRenderer(_resultDocument);
+            var renderer = CustomMarkdownRenderer.NewRenderer(_resultDocument);
             if (this.Annotations != null)
             {
                 foreach (var annotation in this.Annotations)
                 {
                     renderer.AppendExpanderItem(annotation,
-                        CustomRenderer.AnnotationStyleKey);
+                        CustomMarkdownRenderer.AnnotationStyleKey);
                 }
             }
 
@@ -199,23 +199,24 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
                                 stringBuilder.Append(reasoningContent.Text);
                                 stringBuilder.Append("\n:::\n");
                                 var s = stringBuilder.ToString();
-                                return Markdown.Parse(s, CustomRenderer.DefaultPipeline);
+                                return Markdown.Parse(s, CustomMarkdownRenderer.DefaultPipeline);
                             });
                             renderer.Render(markdownDocument);
                             break;
                         case TextContent textContent:
                             var document = await Task.Run(() =>
-                                Markdown.Parse(textContent.Text, CustomRenderer.DefaultPipeline));
+                                Markdown.Parse(textContent.Text, CustomMarkdownRenderer.DefaultPipeline));
                             renderer.Render(document);
                             break;
                         case FunctionCallContent functionCallContent:
                             renderer.AppendExpanderItem(functionCallContent,
-                                CustomRenderer.FunctionCallStyleKey);
+                                CustomMarkdownRenderer.FunctionCallStyleKey);
                             break;
                         case FunctionResultContent functionResultContent:
                             renderer.AppendExpanderItem(functionResultContent,
-                                CustomRenderer.FunctionResultStyleKey);
+                                CustomMarkdownRenderer.FunctionResultStyleKey);
                             break;
+                        
                         default:
                             Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");
                             break;
@@ -469,12 +470,12 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
         private readonly Task _task;
 
-        private readonly CustomRenderer _customRenderer;
+        private readonly CustomMarkdownRenderer _customRenderer;
 
         public ResponseViewItemInteractor(FlowDocument flowDocument, ResponseViewItem responseViewItem)
         {
             var responseViewItem1 = responseViewItem;
-            _customRenderer = CustomRenderer.NewRenderer(flowDocument);
+            _customRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
             _task = Task.Run(() =>
             {
                 // ReSharper disable once AccessToDisposedClosure
@@ -533,7 +534,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         {
             var permissionViewModel = new PermissionViewModel() { Title = title, Content = message };
             _customRenderer.AppendExpanderItem(permissionViewModel,
-                CustomRenderer.PermissionRequestStyleKey);
+                CustomMarkdownRenderer.PermissionRequestStyleKey);
             return permissionViewModel.Task;
         }
 
@@ -541,7 +542,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         {
             var permissionViewModel = new PermissionViewModel() { Content = content };
             _customRenderer.AppendExpanderItem(permissionViewModel,
-                CustomRenderer.PermissionRequestStyleKey);
+                CustomMarkdownRenderer.PermissionRequestStyleKey);
             return permissionViewModel.Task;
         }
 

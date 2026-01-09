@@ -11,11 +11,11 @@ using Markdown = Markdig.Markdown;
 
 namespace LLMClient.Component.Render;
 
-public class CustomRenderer : WpfRenderer
+public class CustomMarkdownRenderer : WpfRenderer
 {
-    public static CustomRenderer Instance => Renderer;
+    public static CustomMarkdownRenderer Instance => Renderer;
 
-    private static readonly CustomRenderer Renderer;
+    private static readonly CustomMarkdownRenderer Renderer;
 
     public static readonly MarkdownPipeline DefaultPipeline =
         new MarkdownPipelineBuilder()
@@ -28,19 +28,19 @@ public class CustomRenderer : WpfRenderer
             .UseGenericAttributes()
             .Build();
 
-    static CustomRenderer()
+    static CustomMarkdownRenderer()
     {
-        Renderer = new CustomRenderer();
+        Renderer = new CustomMarkdownRenderer();
         Renderer.Initialize();
         DefaultPipeline.Setup(Renderer);
     }
 
     public static ComponentResourceKey PermissionRequestStyleKey =>
-        new(typeof(CustomRenderer), nameof(PermissionRequestStyleKey));
+        new(typeof(CustomMarkdownRenderer), nameof(PermissionRequestStyleKey));
 
-    public static CustomRenderer NewRenderer(FlowDocument flowDocument)
+    public static CustomMarkdownRenderer NewRenderer(FlowDocument flowDocument)
     {
-        var renderer = new CustomRenderer();
+        var renderer = new CustomMarkdownRenderer();
         renderer.Initialize();
         DefaultPipeline.Setup(renderer);
         renderer.LoadDocument(flowDocument);
@@ -48,13 +48,13 @@ public class CustomRenderer : WpfRenderer
     }
 
     public static ComponentResourceKey FunctionCallStyleKey { get; } =
-        new(typeof(CustomRenderer), nameof(FunctionCallStyleKey));
+        new(typeof(CustomMarkdownRenderer), nameof(FunctionCallStyleKey));
 
 
     public static ComponentResourceKey FunctionResultStyleKey { get; } =
-        new(typeof(CustomRenderer), (object)nameof(FunctionResultStyleKey));
+        new(typeof(CustomMarkdownRenderer), (object)nameof(FunctionResultStyleKey));
 
-    public static ComponentResourceKey AnnotationStyleKey => new(typeof(CustomRenderer), nameof(AnnotationStyleKey));
+    public static ComponentResourceKey AnnotationStyleKey => new(typeof(CustomMarkdownRenderer), nameof(AnnotationStyleKey));
 
     public void AppendExpanderItem<T>(T obj, ComponentResourceKey styleKey)
     {

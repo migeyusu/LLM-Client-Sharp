@@ -86,7 +86,7 @@ public partial class TestWindow : Window, INotifyPropertyChanged
                 var cancellationToken = cancellationTokenSource.Token;
                 using (var blockingCollection = new BlockingCollection<string>())
                 {
-                    var customRenderer = CustomRenderer.NewRenderer(Document);
+                    var customRenderer = CustomMarkdownRenderer.NewRenderer(Document);
                     var task = Task.Run(() =>
                     {
                         RendererExtensions.StreamParse(blockingCollection,

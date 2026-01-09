@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -97,6 +98,33 @@ public static class ImageExtensions
             new KindForegroundBackgroundEqualityComparer();
     }
 
+    // 正则表达式用于匹配 Data URI 的头部
+    // 格式如: data:image/png;base64,....
+    private static readonly Regex DataUriPattern = new Regex(
+        @"^data:(?<mimeType>(?<type>[\w\-\.]+)\/(?<ext>[\w\-\.\+]+));(?<encoding>\w+),(?<data>.*)", 
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+    public static bool IsBase64Image(this string str)
+    {
+        return DataUriPattern.IsMatch(str);
+    }
+
+    public static bool TryGetBase64ImageInfo(this string str, [NotNullWhen(true)] out string? ext,
+        [NotNullWhen(true)] out string? base64Data)
+    {
+        var match = DataUriPattern.Match(str);
+        if (!match.Success)
+        {
+            ext = null;
+            base64Data = null;
+            return false;
+        }
+
+        ext = match.Groups["ext"].Value;
+        base64Data = match.Groups["data"].Value;
+        return true;
+    }
+
     /// <summary>
     /// 
     /// </summary>
@@ -147,8 +175,10 @@ public static class ImageExtensions
                 , UriKind.Absolute);
         }
 
-        return new AsyncThemedIcon(async () => await GetImageSourceAsync(lightUri) ?? APIThemedIcon.CurrentSource,
-            darkUri != null ? (async () => (await GetImageSourceAsync(darkUri)) ?? APIThemedIcon.CurrentSource) : null);
+        return new AsyncThemedIcon(async () => await lightUri.GetImageSourceAsync() ?? APIThemedIcon.CurrentSource,
+            darkUri != null
+                ? (async () => (await darkUri.GetImageSourceAsync()) ?? APIThemedIcon.CurrentSource)
+                : null);
     }
 
     public static LocalThemedIcon GetThemedIcon(this PackIconKind kind)
@@ -189,7 +219,8 @@ public static class ImageExtensions
         return ImageCache.GetOrAdd(uri, u => new Lazy<Task<ImageSource?>>(() => CreateImageSourceAsync(u))).Value;
     }
 
-
+/*System.Uri 类主要是为网络资源定位设计的（如 HTTP/HTTPS），由于历史原因和性能考量，它通常限制 URL 长度在 65519 或 65520 个字符左右（具体取决于 .NET 版本和配置，但在 .NET 6+ 中此限制依然存在于内部实现中）。
+Base64 编码的图片非常容易超过这个长度（大约 48KB 的图片编码后就会达到 64KB 的字符限制）*/
     /// <summary>
     /// get image stream from uri, support pack, http(s), file and base64.
     /// <para>stream must correspond to a image format, otherwise throw NotSupportedException</para>
@@ -241,7 +272,7 @@ public static class ImageExtensions
                 stream = fileInfo.OpenRead();
                 extension = Path.GetExtension(localPath);
             }
-            else if (uri.Scheme == "data" && uri.OriginalString.StartsWith(Base64ImagePrefix))
+            else if (uri.Scheme == "data" && uri.OriginalString.IsBase64Image())
             {
                 // data URI scheme
                 if (!TryGetBinaryFromBase64(uri.ToString(), out var bytes, out var ext))
@@ -266,7 +297,7 @@ public static class ImageExtensions
     {
         try
         {
-            var (stream, extension) = await GetImageStreamAsync(uri);
+            var (stream, extension) = await uri.GetImageStreamAsync();
             await using (stream)
             {
                 return stream.ToImageSource(extension);
@@ -380,16 +411,13 @@ public static class ImageExtensions
         [NotNullWhen(true)] out string? extension)
     {
         //parse data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
-        if (!base64Image.StartsWith(Base64ImagePrefix) || !base64Image.Contains("base64,"))
+        if (!base64Image.TryGetBase64ImageInfo(out extension, out var base64Data))
         {
             binary = null;
             extension = null;
             return false;
         }
 
-        var length = Base64ImagePrefix.Length;
-        extension = base64Image.Substring(length, base64Image.IndexOf(';') - length);
-        var base64Data = base64Image.Substring(base64Image.IndexOf("base64,", StringComparison.Ordinal) + 7);
         binary = Convert.FromBase64String(base64Data);
         return true;
     }

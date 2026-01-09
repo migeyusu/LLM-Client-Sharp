@@ -119,41 +119,21 @@ public class MarkdownText : BaseViewModel, IContentUnit
             {
                 try
                 {
-                    if (imageLink.StartsWith(ImageExtensions.Base64ImagePrefix))
+                    if (imageLink.IsBase64Image())
                     {
                         // 已经是base64编码的图像
                         _imageList.Add(imageLink);
                         continue;
                     }
-
+                    
+                    
                     if (Uri.TryCreate(imageLink, UriKind.RelativeOrAbsolute, out var uri))
                     {
                         if (uri.IsAbsoluteUri)
                         {
-                            string? filePath = null;
-                            if (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
-                            {
-                                // 远程URL，下载
-                                filePath = await HttpContentCache.Instance.GetOrCreateAsync(uri.AbsoluteUri);
-                            }
-                            else if (uri.IsFile)
-                            {
-                                filePath = uri.LocalPath;
-                            }
-
-                            if (filePath != null)
-                            {
-                                var fileInfo = new FileInfo(uri.LocalPath);
-                                if (fileInfo.Exists)
-                                {
-                                    await using (var fileStream = fileInfo.OpenRead())
-                                    {
-                                        _imageList.Add(
-                                            await fileStream.ToBase64StringAsync(
-                                                Path.GetExtension(fileInfo.FullName)));
-                                    }
-                                }
-                            }
+                            var (stream, extension) = await uri.GetImageStreamAsync();
+                            _imageList.Add(
+                                await stream.ToBase64StringAsync(extension));
                         }
                         else
                         {

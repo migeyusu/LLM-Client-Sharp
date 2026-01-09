@@ -72,7 +72,7 @@ public class PromptsResourceViewModel : BaseViewModel, IPromptsResource
         {
             await this.Prompts.SaveJsonToFileAsync(PromptsFileName, Extension.DefaultJsonSerializerOptions);
         }
-
+        
         MessageEventBus.Publish("已保存系统提示词");
     }));
 

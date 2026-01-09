@@ -387,7 +387,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render1:CustomRenderer.FunctionCallStyleKey}">
+           x:Key="{x:Static render1:CustomMarkdownRenderer.FunctionCallStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
@@ -485,7 +485,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render1:CustomRenderer.FunctionResultStyleKey}">
+           x:Key="{x:Static render1:CustomMarkdownRenderer.FunctionResultStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
@@ -623,7 +623,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render1:CustomRenderer.PermissionRequestStyleKey}">
+           x:Key="{x:Static render1:CustomMarkdownRenderer.PermissionRequestStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
@@ -695,7 +695,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render1:CustomRenderer.AnnotationStyleKey}">
+           x:Key="{x:Static render1:CustomMarkdownRenderer.AnnotationStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
@@ -805,10 +805,14 @@
         <!-- no changes -->
     </Style>
     <Style TargetType="{x:Type Image}" x:Key="{x:Static markdig:Styles.ImageStyleKey}">
-        <Setter Property="MaxHeight"
+        <!--<Setter Property="MaxHeight"
                 Value="{Binding RelativeSource={RelativeSource Self}, Path=Source.(BitmapSource.PixelHeight)}" />
         <Setter Property="MaxWidth"
-                Value="{Binding RelativeSource={RelativeSource Self}, Path=Source.(BitmapSource.PixelWidth)}" />
+                Value="{Binding RelativeSource={RelativeSource Self}, Path=Source.(BitmapSource.PixelWidth)}" />-->
+        <Setter Property="Stretch" Value="Uniform" />
+        <Setter Property="StretchDirection" Value="DownOnly" />
+        <Setter Property="MaxHeight" Value="1080" />
+        <Setter Property="MaxWidth" Value="1920" />
     </Style>
     <Style TargetType="{x:Type Section}" x:Key="{x:Static markdig:Styles.QuoteBlockStyleKey}">
         <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Card.Border}" />

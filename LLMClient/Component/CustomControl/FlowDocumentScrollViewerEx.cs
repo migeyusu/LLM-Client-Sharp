@@ -1,8 +1,10 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using LLMClient.Data;
 
 namespace LLMClient.Component.CustomControl;
 
@@ -76,6 +78,52 @@ public class FlowDocumentScrollViewerEx : FlowDocumentScrollViewer
     {
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+        this.CommandBindings.Add(new CommandBinding(Markdig.Wpf.Commands.Image, async (s, e) =>
+        {
+            //在弹窗中显示图片，传入的是一个url
+            if (e.Parameter is not string url)
+            {
+                return;
+            }
+
+            ImageSource? imageSource = null;
+            try
+            {
+                if (url.IsBase64Image())
+                {
+                    imageSource = ImageExtensions.GetImageSourceFromBase64(url);
+                }
+                else
+                {
+                    if (Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))
+                    {
+                        imageSource = await uri.GetImageSourceAsync();
+                    }
+                }
+
+                var window = new Window()
+                {
+                    Title = "Image Preview",
+                    Width = 800,
+                    Height = 600,
+                    Content = new ScrollViewer
+                    {
+                        Content = new Image
+                        {
+                            Source = imageSource,
+                            Stretch = Stretch.Uniform
+                        }
+                    }
+                };
+                window.Show();
+            }
+            catch (Exception exception)
+            {
+                Trace.TraceWarning($"Failed to load image from URL '{url}': {exception.Message}");
+            }
+
+            e.Handled = true;
+        }));
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

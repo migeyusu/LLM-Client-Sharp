@@ -15,8 +15,10 @@ public class ImageTest
     [Fact]
     public void Base64Uri()
     {
-        var testRaw = "base64:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...";
-        var tryCreate = System.Uri.TryCreate(testRaw, UriKind.RelativeOrAbsolute, out var uri);
+        /*data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEBLAEsAAD/6xdmSlAAAQAAAAEAABdcanVtYgAAAB5q*/
+        var rawData = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEBLAEsAAD/6xdmSlAAAQAAAAEAABdcanVtYgAAAB5q";
+       // var testRaw = "base64:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...";
+        var tryCreate = System.Uri.TryCreate(rawData, UriKind.RelativeOrAbsolute, out var uri);
         _output.WriteLine($"TryCreate:{tryCreate}, Uri:{uri}");
         if (tryCreate)
         {

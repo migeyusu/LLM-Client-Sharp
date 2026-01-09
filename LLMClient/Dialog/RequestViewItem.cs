@@ -90,7 +90,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
             if (!string.IsNullOrEmpty(textMessage))
             {
                 var flowDocument = new FlowDocument();
-                var renderer = CustomRenderer.NewRenderer(flowDocument);
+                var renderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
                 renderer.RenderRaw(textMessage);
                 _document = new SearchableDocument(flowDocument);
             }

@@ -111,7 +111,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     }
 
     [Experimental("SKEXP0001")]
-    private static async Task<bool> AddTools(IEnumerable<IAIFunctionGroup> functionGroups, StringBuilder toolsPromptBuilder,
+    private static async Task<bool> AddTools(IEnumerable<IAIFunctionGroup> functionGroups,
+        StringBuilder toolsPromptBuilder,
         KernelPluginCollection kernelPluginCollection, CancellationToken cancellationToken)
     {
         var startCount = kernelPluginCollection.Count;
@@ -354,7 +355,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             interactor?.WriteLine(preResponse.Text);
                             await chatContext.CompleteResponse(preResponse, result);
                         }
-
+                        
                         _stopwatch.Stop();
                         var preResponseMessages = preResponse.Messages;
                         foreach (var preResponseMessage in preResponseMessages)
@@ -383,9 +384,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                                 errorContent.Message, errorContent.Details, errorContent.ErrorCode));
                                         break;
                                     default:
-                                        interactor?.Warning(
+                                        interactor?.Info("Received content:" + content.GetType().Name);
+                                        /*interactor?.Warning(
                                             $"Unsupported content type: {content.GetType().Name}");
-                                        interactor?.Warning(content.RawRepresentation?.ToString() ?? string.Empty);
+                                        interactor?.Warning(content.RawRepresentation?.ToString() ?? string.Empty);*/
                                         break;
                                 }
                             }

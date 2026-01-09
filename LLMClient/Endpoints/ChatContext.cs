@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
+using OpenAI.Assistants;
 using OpenAI.Chat;
 
 namespace LLMClient.Endpoints;
@@ -40,6 +41,7 @@ public class ChatContext
 
     public void CompleteStreamResponse(CompletedResult result, ChatResponseUpdate update)
     {
+        result.Annotations ??= new List<ChatAnnotation>();
         result.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         var dictionary = result.AdditionalProperties;
         if (update.RawRepresentation is StreamingChatCompletionUpdate rawUpdate)
@@ -55,7 +57,7 @@ public class ChatContext
                         foreach (var keyValuePair in jsonObject)
                         {
                             dictionary[keyValuePair.Key] = keyValuePair.Value?.ToString() ?? string.Empty;
-                        }   
+                        }
                     }
                 }
             }
