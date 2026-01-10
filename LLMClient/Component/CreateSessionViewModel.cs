@@ -13,7 +13,6 @@ namespace LLMClient.Component;
 
 public class CreateSessionViewModel : BaseViewModel
 {
-    private readonly MainWindowViewModel _mainWindowViewModel;
     private int _selectedIndex;
     private string _dialogTitle = "新建会话";
     private bool _modelSelectionEnable = true;
@@ -87,7 +86,6 @@ public class CreateSessionViewModel : BaseViewModel
     public CreateSessionViewModel(IViewModelFactory factory, MainWindowViewModel mainWindowViewModel,
         NvidiaResearchClientOption nvidiaResearchClientOption)
     {
-        _mainWindowViewModel = mainWindowViewModel;
         CreateSessionCommand = new RelayCommand(() =>
         {
             try
@@ -134,7 +132,7 @@ public class CreateSessionViewModel : BaseViewModel
                         throw new ArgumentOutOfRangeException();
                 }
 
-                _mainWindowViewModel.AddSession(session);
+                mainWindowViewModel.AddSession(session);
                 DialogHost.CloseDialogCommand.Execute(null, null);
             }
             catch (Exception e)

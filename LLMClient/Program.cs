@@ -1,7 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Threading;
+﻿using System.Diagnostics;
 using System.Windows;
 using CefSharp;
 using CefSharp.Wpf;
@@ -13,10 +10,8 @@ using LLMClient.Configuration;
 using LLMClient.ContextEngineering;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using LLMClient.Log;
 using LLMClient.Rag;
 using LLMClient.Research;
-using LLMClient.Test;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;
 using Microsoft.Extensions.DependencyInjection;
@@ -88,6 +83,7 @@ public class Program
                 .AddMeter("Microsoft.SemanticKernel*")
                 .AddConsoleExporter()
                 .Build();
+            
             collection.AddLogging(builder =>
             {
                 builder.AddDebug();
@@ -142,7 +138,7 @@ public class Program
             {
                 if (mainWindow?.DataContext is MainWindowViewModel { IsInitialized: true } mainWindowViewModel)
                 {
-                    mainWindowViewModel.SaveData().Wait(TimeSpan.FromSeconds(30));
+                    mainWindowViewModel.SaveDataAsync().Wait(TimeSpan.FromSeconds(30));
                 }
             }
             catch (Exception exception)
@@ -158,6 +154,7 @@ public class Program
             }
 
             // tempPath.Delete(true);//默认不删除
+            
             Cef.Shutdown();
         }
     }

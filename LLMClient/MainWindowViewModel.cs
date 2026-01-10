@@ -28,9 +28,15 @@ using TextMateSharp.Grammars;
 
 namespace LLMClient;
 
-public class MainWindowViewModel : BaseViewModel
+public class MainWindowViewModel : BaseViewModel, IDisposable
 {
     public SnackbarMessageQueue MessageQueue { get; set; } = new();
+
+    public WindowState WindowState { get; set; }
+
+    public bool IsTopMost { get; set; }
+
+    public bool IsShownActivated { get; set; }
 
     public bool IsLeftDrawerOpen
     {
@@ -43,7 +49,7 @@ public class MainWindowViewModel : BaseViewModel
         }
     }
 
-    public GlobalOptions GlobalOptions => _globalOptions;
+    public GlobalOptions GlobalOptions { get; }
 
     public IEndpointService EndpointsViewModel { get; }
 
@@ -51,13 +57,15 @@ public class MainWindowViewModel : BaseViewModel
 
     public bool IsInitialized { get; private set; }
 
-    public bool IsInitializing
+    private bool _isProcessing;
+
+    public bool IsProcessing
     {
-        get => _isInitializing;
+        get => _isProcessing;
         set
         {
-            if (value == _isInitializing) return;
-            _isInitializing = value;
+            if (value == _isProcessing) return;
+            _isProcessing = value;
             OnPropertyChanged();
         }
     }
@@ -173,8 +181,6 @@ public class MainWindowViewModel : BaseViewModel
 
     private readonly IMapper _mapper;
 
-    private readonly GlobalOptions _globalOptions;
-
     public DialogFileViewModel AddNewDialog(ILLMChatClient client, string dialogName = "新建会话")
     {
         var dialogSession = NewDialogViewModel(client, dialogName);
@@ -217,40 +223,13 @@ public class MainWindowViewModel : BaseViewModel
         }
     }
 
-    public ICommand LoadCommand => new ActionCommand((_ =>
-    {
-        try
-        {
-            Initialize();
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }));
 
-    public ICommand SaveCommand => new ActionCommand((async _ =>
-    {
-        try
-        {
-            IsInitializing = true;
-            await SaveSessionsToLocal();
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            IsInitializing = false;
-        }
-    }));
-
-    private bool _isInitializing;
     private string _loadingMessage = "Loading...";
     private bool _isLeftDrawerOpen = true;
 
-    private UISettings _uiSettings;
+    private readonly UISettings _uiSettings;
+
+    private readonly Timer _timer;
 
     public MainWindowViewModel(IEndpointService configureViewModel, IPromptsResource promptsResource,
         IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection, IMapper mapper,
@@ -261,12 +240,27 @@ public class MainWindowViewModel : BaseViewModel
         McpServiceCollection = mcpServiceCollection;
         RagSourceCollection = ragSourceCollection;
         _mapper = mapper;
-        _globalOptions = globalOptions;
+        GlobalOptions = globalOptions;
         EndpointsViewModel = configureViewModel;
         _uiSettings = new UISettings();
         IsDarkTheme = !IsColorLight(_uiSettings.GetColorValue(UIColorType.Background));
         _createSessionLazy =
-            new Lazy<CreateSessionViewModel>((() => serviceProvider.GetService<CreateSessionViewModel>()!));
+            new Lazy<CreateSessionViewModel>(() => serviceProvider.GetService<CreateSessionViewModel>()!);
+        _timer = new Timer(state =>
+        {
+            //执行自动保存
+            Application.Current.Dispatcher.Invoke(async () =>
+            {
+                if (IsBusy || IsProcessing)
+                {
+                    return;
+                }
+
+                await SaveDataAsync();
+            });
+        });
+        //间隔一分钟检查保存
+        _timer.Change(0, 60000);
         /*SystemEvents.UserPreferenceChanged += (_, e) =>
         {
             if (e.Category == UserPreferenceCategory.Color)
@@ -307,7 +301,7 @@ public class MainWindowViewModel : BaseViewModel
 
     public DialogFileViewModel NewDialogViewModel(ILLMChatClient client, string dialogName = "新建会话")
     {
-        return new DialogFileViewModel(dialogName, client, _mapper, _globalOptions, RagSourceCollection);
+        return new DialogFileViewModel(dialogName, client, _mapper, GlobalOptions, RagSourceCollection);
     }
 
     public void AddSession(ILLMSession projectViewModel)
@@ -425,13 +419,24 @@ public class MainWindowViewModel : BaseViewModel
         session.Delete();
     }
 
-    public async Task SaveData()
+    public async Task SaveDataAsync()
     {
-        this.LoadingMessage = "Saving data...";
-        this.IsInitializing = true;
-        await this.SaveSessionsToLocal();
-        await this.EndpointsViewModel.SaveActivities();
-        await HttpContentCache.Instance.PersistIndexAsync();
+        this.LoadingMessage = "Auto Saving data...";
+        this.IsProcessing = true;
+        try
+        {
+            await this.SaveSessionsToLocal();
+            await this.EndpointsViewModel.SaveActivities();
+            await HttpContentCache.Instance.PersistIndexAsync();
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
     }
 
     #endregion
@@ -446,7 +451,7 @@ public class MainWindowViewModel : BaseViewModel
                 return;
             }
 
-            IsInitializing = true;
+            IsProcessing = true;
             await TextMateCodeRenderer.InitializeAsync();
             await McpServiceCollection.LoadAsync();
             await RagSourceCollection.LoadAsync();
@@ -470,7 +475,7 @@ public class MainWindowViewModel : BaseViewModel
         }
         finally
         {
-            IsInitializing = false;
+            IsProcessing = false;
         }
     }
 
@@ -480,5 +485,11 @@ public class MainWindowViewModel : BaseViewModel
         var theme = paletteHelper.GetTheme();
         modificationAction.Invoke(theme);
         paletteHelper.SetTheme(theme);
+    }
+
+    public void Dispose()
+    {
+        _timer.Dispose();
+        MessageQueue.Dispose();
     }
 }

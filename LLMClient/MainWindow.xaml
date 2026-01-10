@@ -38,6 +38,9 @@
                               AllowsTransparency="False"
                               Closing="MainWindow_OnClosing"
                               Loaded="MainWindow_OnLoaded"
+                              WindowState="{Binding WindowState,Mode=OneWayToSource}"
+                              Topmost="{Binding IsTopMost,Mode=OneWayToSource}"
+                              ShowActivated="{Binding IsShownActivated,Mode=OneWayToSource}"
                               d:DataContext="{d:DesignInstance llmClient:MainWindowViewModel}">
     <Window.Style>
         <Style TargetType="{x:Type llmClient:MainWindow}"
@@ -422,8 +425,8 @@
                            VerticalAlignment="Center"
                            Margin="10,0,8,0" />
                 <ComboBox ItemsSource="{Binding Source={StaticResource DataFromEnum}}"
-                          SelectedItem="{Binding ThemeName,Mode=TwoWay}" 
-                          WindowChrome.IsHitTestVisibleInChrome="True"/>
+                          SelectedItem="{Binding ThemeName,Mode=TwoWay}"
+                          WindowChrome.IsHitTestVisibleInChrome="True" />
             </StackPanel>
             <ToolBarTray Grid.Column="1"
                          HorizontalAlignment="Left"
@@ -558,7 +561,7 @@
     </b:Interaction.Triggers>
     <Grid>
         <Grid Margin="10,0,10,10"
-              IsEnabled="{Binding IsInitializing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+              IsEnabled="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="260"
                                   MaxWidth="600"
@@ -856,7 +859,7 @@
             </ContentControl>
             <materialDesign:Card Grid.Row="0" Grid.Column="0"
                                  Grid.ColumnSpan="2"
-                                 Visibility="{Binding IsInitializing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                 Visibility="{Binding IsProcessing,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                  VerticalAlignment="Center"
                                  HorizontalAlignment="Center">
                 <StackPanel Margin="30">

@@ -79,7 +79,7 @@ public partial class MainWindow : ExtendedWindow
                 _closing = true;
                 try
                 {
-                    await _mainWindowViewModel.SaveData();
+                    await _mainWindowViewModel.SaveDataAsync();
                 }
                 catch (Exception exception)
                 {

@@ -316,43 +316,48 @@
                                     Height="30"
                                     Content="安全黏贴"
                                     Click="TestPaste_OnClick"/>-->
-                            <Button Command="{Binding NewRequestCommand}"
-                                    Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
-                                    Width="80"
-                                    Height="30"
-                                    Margin="16,0,0,0"
-                                    Style="{StaticResource MaterialDesignRaisedDarkButton}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="发送"
-                                               VerticalAlignment="Center" />
-                                    <materialDesign:PackIcon Kind="Send"
-                                                             Width="16"
-                                                             Height="16"
-                                                             Margin="6,0,0,0"
-                                                             VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
                             <Button Command="{Binding CancelLastCommand}"
                                     Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                     Style="{StaticResource StopButtonStyle}"
                                     Margin="16,0,0,0" />
-                            <Button Command="{Binding SummarizeCommand}"
-                                    Margin="16,0,0,0"
-                                    Width="80"
-                                    Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
-                                    Style="{StaticResource MaterialDesignPaperLightButton}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="总结"
-                                               VerticalAlignment="Center" />
-                                    <materialDesign:PackIcon Kind="LightbulbOnOutline"
-                                                             Width="16"
-                                                             Height="16"
-                                                             Margin="6,0,0,0"
-                                                             VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-                            <!--<Button Command="{Binding TestCommand}"
-                        Content="测试" />-->
+                            <materialDesign:SplitButton Margin="16,0,0,0"
+                                                        Padding="10,4"
+                                                        PopupUniformCornerRadius="6"
+                                                        Command="{Binding NewRequestCommand}"
+                                                        Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
+                                <materialDesign:SplitButton.ContentTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="发送"
+                                                       VerticalAlignment="Center" />
+                                            <materialDesign:PackIcon Kind="Send"
+                                                                     Width="16"
+                                                                     Height="16"
+                                                                     Margin="10,0,0,0"
+                                                                     VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <!--
+                                                   Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}"-->
+                                    </DataTemplate>
+                                </materialDesign:SplitButton.ContentTemplate>
+                                <materialDesign:SplitButton.PopupContent>
+                                    <Button Command="{Binding SummarizeCommand}"
+                                            Width="120"
+                                            Height="30"
+                                            Style="{StaticResource MaterialDesignPaperLightButton}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="总结"
+                                                       VerticalAlignment="Center" />
+                                            <materialDesign:PackIcon Kind="LightbulbOnOutline"
+                                                                     Width="16"
+                                                                     Height="16"
+                                                                     Margin="6,0,0,0"
+                                                                     VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </materialDesign:SplitButton.PopupContent>
+                            </materialDesign:SplitButton>
+                            <!--<Button Command="{Binding TestCommand}" Content="测试" />-->
                         </StackPanel>
                     </Grid>
                 </StackPanel>

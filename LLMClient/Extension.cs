@@ -164,7 +164,7 @@ public static class Extension
                 .ConvertUsing<AutoMapModelTypeConverter>();
             // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
             expression.ConstructServicesUsing(provider.GetService);
-        }, AppDomain.CurrentDomain.GetAssemblies());
+        }, AppDomain.CurrentDomain.GetAssemblies().ToArray(),ServiceLifetime.Singleton);
     }
 
     /// <summary>
