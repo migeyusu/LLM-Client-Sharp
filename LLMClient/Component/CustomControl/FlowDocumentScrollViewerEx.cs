@@ -4,7 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using LLMClient.Data;
+using Markdig.Wpf;
 
 namespace LLMClient.Component.CustomControl;
 
@@ -78,7 +80,32 @@ public class FlowDocumentScrollViewerEx : FlowDocumentScrollViewer
     {
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
-        this.CommandBindings.Add(new CommandBinding(Markdig.Wpf.Commands.Image, async (s, e) =>
+        this.CommandBindings.Add(new CommandBinding(Commands.Hyperlink, ((sender, args) =>
+        {
+            if (args.Parameter is not string url)
+            {
+                return;
+            }
+
+            try
+            {
+                if (Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = uri.ToString(),
+                        UseShellExecute = true
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceWarning($"Failed to open hyperlink '{url}': {ex.Message}");
+            }
+
+            args.Handled = true;
+        })));
+        this.CommandBindings.Add(new CommandBinding(Commands.Image, async (s, e) =>
         {
             //在弹窗中显示图片，传入的是一个url
             if (e.Parameter is not string url)
@@ -111,10 +138,50 @@ public class FlowDocumentScrollViewerEx : FlowDocumentScrollViewer
                         Content = new Image
                         {
                             Source = imageSource,
-                            Stretch = Stretch.Uniform
+                            Stretch = Stretch.Uniform,
+                            ContextMenu = new ContextMenu
+                            {
+                                Items =
+                                {
+                                    new MenuItem
+                                    {
+                                        Header = "Save Image As...",
+                                        Command = ApplicationCommands.SaveAs,
+                                        CommandParameter = imageSource
+                                    }
+                                }
+                            }
                         }
-                    }
+                    },
                 };
+                window.CommandBindings.Add(new CommandBinding(ApplicationCommands.SaveAs, async (sender, args) =>
+                {
+                    if (args.Parameter is not ImageSource imgSource)
+                    {
+                        return;
+                    }
+
+                    var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                    {
+                        Filter = "PNG Image|*.png|JPEG Image|*.jpg;*.jpeg|Bitmap Image|*.bmp|All Files|*.*",
+                        DefaultExt = ".png"
+                    };
+
+                    if (saveFileDialog.ShowDialog() == true)
+                    {
+                        // Save the image according to the selected format
+                        BitmapEncoder encoder = saveFileDialog.FilterIndex switch
+                        {
+                            1 => new PngBitmapEncoder(),
+                            2 => new JpegBitmapEncoder(),
+                            3 => new BmpBitmapEncoder(),
+                            _ => new PngBitmapEncoder(),
+                        };
+                        encoder.Frames.Add(BitmapFrame.Create((BitmapSource)imgSource));
+                        await using var stream = File.Create(saveFileDialog.FileName);
+                        encoder.Save(stream);
+                    }
+                }));
                 window.Show();
             }
             catch (Exception exception)
