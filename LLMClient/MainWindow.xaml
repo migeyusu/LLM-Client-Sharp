@@ -38,9 +38,6 @@
                               AllowsTransparency="False"
                               Closing="MainWindow_OnClosing"
                               Loaded="MainWindow_OnLoaded"
-                              WindowState="{Binding WindowState,Mode=OneWayToSource}"
-                              Topmost="{Binding IsTopMost,Mode=OneWayToSource}"
-                              ShowActivated="{Binding IsShownActivated,Mode=OneWayToSource}"
                               d:DataContext="{d:DesignInstance llmClient:MainWindowViewModel}">
     <Window.Style>
         <Style TargetType="{x:Type llmClient:MainWindow}"

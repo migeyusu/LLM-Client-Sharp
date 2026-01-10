@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -31,12 +32,6 @@ namespace LLMClient;
 public class MainWindowViewModel : BaseViewModel, IDisposable
 {
     public SnackbarMessageQueue MessageQueue { get; set; } = new();
-
-    public WindowState WindowState { get; set; }
-
-    public bool IsTopMost { get; set; }
-
-    public bool IsShownActivated { get; set; }
 
     public bool IsLeftDrawerOpen
     {
@@ -229,8 +224,6 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     private readonly UISettings _uiSettings;
 
-    private readonly Timer _timer;
-
     public MainWindowViewModel(IEndpointService configureViewModel, IPromptsResource promptsResource,
         IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection, IMapper mapper,
         GlobalOptions globalOptions, IServiceProvider serviceProvider)
@@ -246,21 +239,6 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         IsDarkTheme = !IsColorLight(_uiSettings.GetColorValue(UIColorType.Background));
         _createSessionLazy =
             new Lazy<CreateSessionViewModel>(() => serviceProvider.GetService<CreateSessionViewModel>()!);
-        _timer = new Timer(state =>
-        {
-            //执行自动保存
-            Application.Current.Dispatcher.Invoke(async () =>
-            {
-                if (IsBusy || IsProcessing)
-                {
-                    return;
-                }
-
-                await SaveDataAsync();
-            });
-        });
-        //间隔一分钟检查保存
-        _timer.Change(0, 60000);
         /*SystemEvents.UserPreferenceChanged += (_, e) =>
         {
             if (e.Category == UserPreferenceCategory.Color)
@@ -421,6 +399,10 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public async Task SaveDataAsync()
     {
+        if (this.IsBusy || this.IsProcessing)
+        {
+            return;
+        }
         this.LoadingMessage = "Auto Saving data...";
         this.IsProcessing = true;
         try
@@ -489,7 +471,6 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public void Dispose()
     {
-        _timer.Dispose();
         MessageQueue.Dispose();
     }
 }

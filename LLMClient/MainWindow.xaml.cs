@@ -20,15 +20,30 @@ namespace LLMClient;
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
-public partial class MainWindow : ExtendedWindow
+public partial class MainWindow : ExtendedWindow, IDisposable
 {
     private readonly MainWindowViewModel _mainWindowViewModel;
+
+    private readonly Timer _timer;
 
     public MainWindow(MainWindowViewModel mainWindowViewModel)
     {
         this._mainWindowViewModel = mainWindowViewModel;
         this.DataContext = mainWindowViewModel;
         InitializeComponent();
+        _timer = new Timer(state =>
+        {
+            //执行自动保存
+            Application.Current.Dispatcher.Invoke(async () =>
+            {
+                if (IsWindowNotInForeground())
+                {
+                    await mainWindowViewModel.SaveDataAsync();
+                }
+            });
+        });
+        //间隔一分钟检查保存
+        _timer.Change(0, 60000);
     }
 
     private async void Delete_OnExecuted(object sender, ExecutedRoutedEventArgs e)
@@ -83,7 +98,7 @@ public partial class MainWindow : ExtendedWindow
                 }
                 catch (Exception exception)
                 {
-                    MessageBox.Show("保存会话数据失败: " + exception.Message);
+                    Trace.TraceError("保存会话数据失败: " + exception.Message);
                 }
 
                 _closing = false;
@@ -159,7 +174,7 @@ public partial class MainWindow : ExtendedWindow
 
     #endregion
 
-    private readonly LoggerWindow _logWindow = new LoggerWindow();
+    private readonly LoggerWindow _logWindow = new();
 
     private void OpenLogger_OnClick(object sender, RoutedEventArgs e)
     {
@@ -226,5 +241,21 @@ public partial class MainWindow : ExtendedWindow
     {
         var statsViewModel = new UsageStatisticsViewModel(_mainWindowViewModel.EndpointsViewModel);
         DialogHost.OpenDialogCommand.Execute(statsViewModel, null);
+    }
+
+    /// <summary>
+    /// 判断窗口是否处于非前台状态（最小化或失去焦点）
+    /// </summary>
+    /// <returns>true表示非前台，false表示在前台</returns>
+    private bool IsWindowNotInForeground()
+    {
+        // 窗口最小化 或者 窗口非激活状态
+        return this.WindowState == WindowState.Minimized || !this.IsActive;
+    }
+
+    public void Dispose()
+    {
+        _mainWindowViewModel.Dispose();
+        _timer.Dispose();
     }
 }
