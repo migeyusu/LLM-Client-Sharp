@@ -88,7 +88,7 @@ public class AzureModelInfo : ILLMModel
 
     [JsonIgnore] public ILLMAPIEndpoint Endpoint { get; set; } = EmptyLLMEndpoint.Instance;
 
-    public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.None;
+    [JsonIgnore] public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.None;
 
     [JsonIgnore] public bool SupportSystemPrompt => true;
 

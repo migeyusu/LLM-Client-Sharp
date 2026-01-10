@@ -170,7 +170,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
     {
         if (model is APIModelInfo apiModelInfo)
         {
-            return new APIClient(this, apiModelInfo, Option.ConfigOption, _loggerFactory);
+            return new OpenAIAPIClient(this, apiModelInfo, Option.ConfigOption, _loggerFactory);
         }
 
         return null;

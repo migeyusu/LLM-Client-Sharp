@@ -40,7 +40,6 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
         get
         {
             return this._loadedModelInfos.Values.Where(info => info.IsEnabled).ToArray();
-            ;
         }
     }
 

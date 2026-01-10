@@ -1,6 +1,5 @@
 ﻿using System.ClientModel;
 using System.ClientModel.Primitives;
-using System.Diagnostics;
 using System.Net.Http;
 using AutoMapper;
 using LLMClient.Abstraction;
@@ -12,13 +11,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using OpenAI;
-using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
-#pragma warning disable SKEXP0010
-#pragma warning disable SKEXP0001
-public class APIClient : LlmClientBase
+public class OpenAIAPIClient : LlmClientBase
 {
     private static readonly Mapper Mapper =
         new(new MapperConfiguration(expression => { expression.CreateMap<APIModelInfo, IModelParams>(); },
@@ -42,7 +38,7 @@ public class APIClient : LlmClientBase
 
     private APIDefaultOption _optionCopy;
 
-    public APIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option,
+    public OpenAIAPIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option,
         ILoggerFactory loggerFactory)
     {
         _option = option;
@@ -53,7 +49,7 @@ public class APIClient : LlmClientBase
         Mapper.Map<APIModelInfo, IModelParams>(modelInfo, this.Parameters);
     }
 
-    ~APIClient()
+    ~OpenAIAPIClient()
     {
         _chatClient?.Dispose();
     }
@@ -121,54 +117,5 @@ public class APIClient : LlmClientBase
             });
         }*/
         return chatOptions;
-    }
-}
-
-public class DebugMessageLogger : DelegatingHandler
-{
-    public DebugMessageLogger() : base(new HttpClientHandler())
-    {
-    }
-
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        var requestContent = request.Content;
-        if (requestContent != null)
-        {
-            var requestString = await requestContent.ReadAsStringAsync(cancellationToken);
-            /*var jsonNode = JsonNode.Parse(requestString);
-            var foo = new[]
-            {
-                new
-                {
-                    id = "web",
-                }
-            };
-            var node = JsonSerializer.SerializeToNode(foo);
-            jsonNode["plugins"] = node;
-            request.Content = new StringContent(JsonSerializer.Serialize(jsonNode));*/
-        }
-
-        var httpResponseMessage = await base.SendAsync(request, cancellationToken);
-        var response = await httpResponseMessage.Content.ReadAsStringAsync(cancellationToken);
-        Debug.WriteLine(response);
-        return httpResponseMessage;
-    }
-}
-
-#pragma warning restore SKEXP0010
-#pragma warning restore SKEXP0001
-
-public class CustomChatClient : DelegatingChatClient
-{
-    protected CustomChatClient(IChatClient innerClient) : base(innerClient)
-    {
-    }
-
-    public override Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null,
-        CancellationToken cancellationToken = new CancellationToken())
-    {
-        return base.GetResponseAsync(messages, options, cancellationToken);
     }
 }
