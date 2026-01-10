@@ -10,6 +10,7 @@ using LLMClient.Configuration;
 using LLMClient.ContextEngineering;
 using LLMClient.Data;
 using LLMClient.Endpoints;
+using LLMClient.Log;
 using LLMClient.Rag;
 using LLMClient.Research;
 using LLMClient.ToolCall;
