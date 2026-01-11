@@ -89,7 +89,21 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         }
     }
 
-    public ICommand CompareAllCommand { get; }
+    public static ICommand CompareAllCommand { get; } = new RelayCommand<MultiResponseViewItem>((item =>
+    {
+        if (item == null)
+        {
+            return;
+        }
+
+        if (!item.Items.Any())
+        {
+            return;
+        }
+        
+        var compareWindow = new MultiResponseCompareWindow(item.Items);
+        compareWindow.ShowDialog();
+    }));
 
     private bool _isMultiResponse = false;
     private ObservableCollection<ResponseViewItem> _items;
@@ -121,6 +135,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         {
             return;
         }
+
         o.IsManualValid = true;
     }));
 
@@ -205,7 +220,6 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
-        CompareAllCommand
         RemoveResponseCommand = new RelayCommand<ResponseViewItem>(o =>
         {
             if (o == null)

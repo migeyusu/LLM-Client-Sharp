@@ -474,10 +474,11 @@
                                 ToolTip="复制（仅文本）"
                                 Content="{materialDesign:PackIcon Kind=ContentCopy,Size=20}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
-                                Command="{Binding CompareAllCommand}"
+                                Command="{x:Static dialog:MultiResponseViewItem.CompareAllCommand}"
+                                CommandParameter="{Binding Mode=OneTime}"
                                 VerticalAlignment="Center"
                                 Margin="6,0,0,0"
-                                ToolTip="对比内容"
+                                ToolTip="对比所有响应"
                                 Content="{materialDesign:PackIcon Kind=Compare,Size=20}" />
                     </StackPanel>
                 </Grid>
