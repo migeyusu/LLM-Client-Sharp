@@ -89,6 +89,8 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         }
     }
 
+    public ICommand CompareAllCommand { get; }
+
     private bool _isMultiResponse = false;
     private ObservableCollection<ResponseViewItem> _items;
 
@@ -113,24 +115,22 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
     public ICommand ClearOthersCommand { get; }
 
     //标记为有效结果
-    public static ICommand MarkValidCommand { get; } = new RelayCommand<MultiResponseViewItem>((o =>
+    public static ICommand MarkValidCommand { get; } = new RelayCommand<ResponseViewItem>((o =>
     {
         if (o == null)
         {
             return;
         }
-
-        var acceptedResponse = o.AcceptedResponse;
-        if (acceptedResponse != null)
-        {
-            acceptedResponse.IsManualValid = true;
-        }
+        o.IsManualValid = true;
     }));
 
     public static ICommand RetryCurrentCommand { get; } =
         new RelayCommand<MultiResponseViewItem>(o => o?.RetryCurrent());
 
-    public ICommand SetAsAvailableCommand { get; }
+    public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<ResponseViewItem>(o =>
+    {
+        o?.SwitchAvailableInContext();
+    });
 
     public ResponseViewItem? AcceptedResponse
     {
@@ -205,6 +205,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
+        CompareAllCommand
         RemoveResponseCommand = new RelayCommand<ResponseViewItem>(o =>
         {
             if (o == null)
@@ -218,13 +219,6 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
             }
 
             this.RemoveResponse(o);
-        });
-        SetAsAvailableCommand = new ActionCommand(o =>
-        {
-            if (o is ResponseViewItem response)
-            {
-                response.SwitchAvailableInContext();
-            }
         });
 
         ClearOthersCommand = new RelayCommand(() =>

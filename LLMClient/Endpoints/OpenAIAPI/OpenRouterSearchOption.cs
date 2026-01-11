@@ -73,7 +73,7 @@ public class OpenRouterSearchOption : BaseViewModel, ISearchOption
         }
         else
         {
-            requestViewItem.TempAdditionalProperties["plugins"] = new PluginConfig[]
+            requestViewItem.TempAdditionalProperties["plugins"] = new[]
             {
                 new PluginConfig()
                 {

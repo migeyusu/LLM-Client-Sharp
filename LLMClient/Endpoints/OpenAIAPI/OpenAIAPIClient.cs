@@ -102,20 +102,4 @@ public class OpenAIAPIClient : LlmClientBase
 
         return _chatClient;
     }
-
-    protected override ChatOptions CreateChatOptions()
-    {
-        var chatOptions = base.CreateChatOptions();
-        /*if (this.ModelInfo.ReasoningEnable)
-        {
-            chatOptions.AdditionalProperties = new AdditionalPropertiesDictionary(new Dictionary<string, object?>()
-            {
-                // { "reasoning_effort", ChatReasoningEffortLevel.Medium },
-                {
-                    "reasoning_effort", "medium"
-                }
-            });
-        }*/
-        return chatOptions;
-    }
 }

@@ -82,14 +82,6 @@ public class OpenAIChatClientEx : ChatClient
 
         return result;
     }
-
-
-    public override AsyncCollectionResult<StreamingChatCompletionUpdate> CompleteChatStreamingAsync(
-        IEnumerable<ChatMessage> messages, ChatCompletionOptions? options = null,
-        CancellationToken cancellationToken = new CancellationToken())
-    {
-        return base.CompleteChatStreamingAsync(messages, options, cancellationToken);
-    }
 }
 
 /*public class CustomAsyncCollectionResult : AsyncCollectionResult<StreamingChatCompletionUpdate>

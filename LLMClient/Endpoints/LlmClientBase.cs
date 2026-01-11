@@ -100,7 +100,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             chatOptions.Seed = modelParams.Seed.Value;
         }
 
-        if (modelParams.ThinkingEnabled)
+        if (this.Model.Reasonable && modelParams.ThinkingEnabled)
         {
             var thinkingConfig =
                 IThinkingConfig.CreateFrom(this.Endpoint, modelParams.ThinkingConfig as ThinkingConfigViewModel);
@@ -277,13 +277,16 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     throw new ArgumentOutOfRangeException();
             }
 
-            var additionalProperties = requestViewItem?.TempAdditionalProperties;
-            if (additionalProperties != null)
+            var tempAdditionalProperties = requestViewItem?.TempAdditionalProperties;
+            var requestOptionsAdditionalProperties = requestOptions.AdditionalProperties;
+            if (tempAdditionalProperties != null && requestOptionsAdditionalProperties != null)
             {
-                requestOptions.AdditionalProperties ??= new AdditionalPropertiesDictionary();
-                foreach (var additionalProperty in additionalProperties)
+                //由于openai库的实现不使用requestoptions.AdditionalProperties传递额外参数，
+                //所以这里需要把临时属性也添加进去
+                foreach (var requestOptionsAdditionalProperty in requestOptionsAdditionalProperties)
                 {
-                    requestOptions.AdditionalProperties[additionalProperty.Key] = additionalProperty.Value;
+                    tempAdditionalProperties[requestOptionsAdditionalProperty.Key] =
+                        requestOptionsAdditionalProperty.Value;
                 }
             }
 
@@ -313,7 +316,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            var chatContext = new ChatContext(interactor, requestViewItem?.TempAdditionalProperties)
+            var chatContext = new ChatContext(interactor, tempAdditionalProperties)
                 { Streaming = streaming };
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
@@ -355,7 +358,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             interactor?.WriteLine(preResponse.Text);
                             await chatContext.CompleteResponse(preResponse, result);
                         }
-                        
+
                         _stopwatch.Stop();
                         var preResponseMessages = preResponse.Messages;
                         foreach (var preResponseMessage in preResponseMessages)

@@ -97,7 +97,7 @@ public class Program
                     options.IncludeFormattedMessage = true;
                     options.IncludeScopes = true;
                 });
-                builder.SetMinimumLevel(LogLevel.Information);
+                builder.SetMinimumLevel(LogLevel.Trace);
             });
 #else
             var logPath = Path.GetFullPath("Logs");

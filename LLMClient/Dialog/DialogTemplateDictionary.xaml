@@ -445,7 +445,7 @@
                                                  StaysOpen="True"
                                                  PopupUniformCornerRadius="8"
                                                  VerticalAlignment="Center"
-                                                 ToolTip="对比其他模型"
+                                                 ToolTip="添加其他模型"
                                                  Margin="10,0,0,0"
                                                  Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
                                                  ToggleContent="{materialDesign:PackIcon Kind=AddBold,Size=20}"
@@ -473,6 +473,12 @@
                                 Margin="6,0,0,0"
                                 ToolTip="复制（仅文本）"
                                 Content="{materialDesign:PackIcon Kind=ContentCopy,Size=20}" />
+                        <Button Style="{StaticResource SmallIconButtonStyle}"
+                                Command="{Binding CompareAllCommand}"
+                                VerticalAlignment="Center"
+                                Margin="6,0,0,0"
+                                ToolTip="对比内容"
+                                Content="{materialDesign:PackIcon Kind=Compare,Size=20}" />
                     </StackPanel>
                 </Grid>
                 <StackPanel Grid.Column="1"
@@ -482,7 +488,7 @@
                             Margin="16,0,0,0">
                     <TextBlock Text="在上下文中有效"
                                VerticalAlignment="Center" />
-                    <ToggleButton Command="{Binding SetAsAvailableCommand}"
+                    <ToggleButton Command="{x:Static dialog:MultiResponseViewItem.SetAsAvailableCommand}"
                                   CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                   VerticalAlignment="Center"
                                   Margin="6,0"
