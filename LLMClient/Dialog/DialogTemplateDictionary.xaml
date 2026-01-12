@@ -156,7 +156,7 @@
                 <StackPanel Orientation="Horizontal"
                             Margin="0,8,0,0"
                             HorizontalAlignment="Right">
-                    <TextBlock Text="{Binding Tokens,Mode=OneWay,StringFormat=Tokens:{0}}"
+                    <TextBlock Text="{Binding Tokens,Mode=OneWay,StringFormat=Estimated Tokens:{0}}"
                                Style="{StaticResource MaterialDesignOverlineTextBlock}" />
                     <materialDesign:PackIcon Kind="Function"
                                              Visibility="{Binding HasFunctions,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"

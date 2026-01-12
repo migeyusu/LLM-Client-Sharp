@@ -20,7 +20,7 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
     }
 
     public override bool IsBusy => Dialog.IsBusy;
-    
+
     public const string SaveFolder = "Dialogs";
 
     private static readonly Lazy<string> SaveFolderPathLazy = new Lazy<string>((() => Path.GetFullPath(SaveFolder)));
@@ -90,8 +90,9 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
     private IMapper _mapper;
 
     public DialogFileViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, IRagSourceCollection ragSourceCollection, IList<IDialogItem>? items = null) :
-        this(new DialogViewModel(topic, modelClient, mapper, options, ragSourceCollection, items), mapper)
+        GlobalOptions options, IRagSourceCollection ragSourceCollection, IViewModelFactory factory,
+        IList<IDialogItem>? items = null) :
+        this(new DialogViewModel(topic, modelClient, mapper, options, factory, items), mapper)
     {
     }
 

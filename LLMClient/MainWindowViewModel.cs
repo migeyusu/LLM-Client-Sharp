@@ -118,7 +118,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     #region dialog
 
-    public ICommand ImportDialogCommand => new ActionCommand((async o =>
+    public ICommand ImportDialogCommand => new ActionCommand((async void (o) =>
     {
         try
         {
@@ -136,7 +136,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
             }
 
             var fileInfos = openFileDialog.FileNames.Select((s => new FileInfo(s)));
-            IAsyncEnumerable<ILLMSession> sessions;
+            IAsyncEnumerable<FileBasedSessionBase> sessions;
             switch (type)
             {
                 case "dialog":
@@ -151,7 +151,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
                     throw new ArgumentOutOfRangeException();
             }
 
-            var sessionList = new List<ILLMSession>();
+            var sessionList = new List<FileBasedSessionBase>();
             await foreach (var llmSession in sessions)
             {
                 sessionList.Add(llmSession);
@@ -175,10 +175,11 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
     public IMapper Mapper => _mapper;
 
     private readonly IMapper _mapper;
+    private readonly IViewModelFactory _viewModelFactory;
 
     public DialogFileViewModel AddNewDialog(ILLMChatClient client, string dialogName = "新建会话")
     {
-        var dialogSession = NewDialogViewModel(client, dialogName);
+        var dialogSession = _viewModelFactory.CreateViewModel<DialogFileViewModel>(dialogName, client);
         AddSession(dialogSession);
         return dialogSession;
     }
@@ -203,7 +204,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     #endregion
 
-    public ObservableCollection<ILLMSession> SessionViewModels { get; set; } = new();
+    public ObservableCollection<FileBasedSessionBase> SessionViewModels { get; set; } = new();
 
     private ILLMSession? _preSession;
 
@@ -226,19 +227,20 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public MainWindowViewModel(IEndpointService configureViewModel, IPromptsResource promptsResource,
         IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection, IMapper mapper,
-        GlobalOptions globalOptions, IServiceProvider serviceProvider)
+        GlobalOptions globalOptions, IViewModelFactory viewModelFactory)
     {
         MessageEventBus.MessageReceived += s => MessageQueue.Enqueue(s);
         PromptsResource = promptsResource;
         McpServiceCollection = mcpServiceCollection;
         RagSourceCollection = ragSourceCollection;
         _mapper = mapper;
+        _viewModelFactory = viewModelFactory;
         GlobalOptions = globalOptions;
         EndpointsViewModel = configureViewModel;
         _uiSettings = new UISettings();
         IsDarkTheme = !IsColorLight(_uiSettings.GetColorValue(UIColorType.Background));
         _createSessionLazy =
-            new Lazy<CreateSessionViewModel>(() => serviceProvider.GetService<CreateSessionViewModel>()!);
+            new Lazy<CreateSessionViewModel>(() => viewModelFactory.CreateViewModel<CreateSessionViewModel>());
         /*SystemEvents.UserPreferenceChanged += (_, e) =>
         {
             if (e.Category == UserPreferenceCategory.Color)
@@ -277,12 +279,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     #region item management
 
-    public DialogFileViewModel NewDialogViewModel(ILLMChatClient client, string dialogName = "新建会话")
-    {
-        return new DialogFileViewModel(dialogName, client, _mapper, GlobalOptions, RagSourceCollection);
-    }
-
-    public void AddSession(ILLMSession projectViewModel)
+    public void AddSession(FileBasedSessionBase projectViewModel)
     {
         ((INotifyPropertyChanged)projectViewModel).PropertyChanged += SessionOnPropertyChanged;
         this.SessionViewModels.Insert(0, projectViewModel);
@@ -291,7 +288,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     private async Task InitialSessionsFromLocal()
     {
-        var sessions = new List<ILLMSession>();
+        var sessions = new List<FileBasedSessionBase>();
         sessions.AddRange(
             await FileBasedSessionBase.LoadFromLocal<DialogFileViewModel>(_mapper,
                 DialogFileViewModel.SaveFolderPath));
@@ -304,7 +301,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         }
     }
 
-    private void InsertSessions(IEnumerable<ILLMSession> sessions)
+    private void InsertSessions(IEnumerable<FileBasedSessionBase> sessions)
     {
         foreach (var session in sessions.OrderByDescending(model => model.EditTime))
         {
@@ -328,7 +325,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     private void SessionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var session = ((ILLMSession?)sender)!;
+        var session = ((FileBasedSessionBase?)sender)!;
         switch (e.PropertyName)
         {
             case nameof(ILLMSession.EditTime):
@@ -374,7 +371,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public async Task SaveSessionsToLocal()
     {
-        foreach (var sessionViewModel in SessionViewModels)
+        foreach (var sessionViewModel in SessionViewModels.Where((session => session.IsDataChanged)))
         {
             if (sessionViewModel is DialogFileViewModel dialogViewModel)
             {
@@ -385,11 +382,9 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
                 await projectViewModel.SaveToLocal();
             }
         }
-
-        MessageQueue.Enqueue("会话已保存到本地");
     }
 
-    public void DeleteSession(ILLMSession session)
+    public void DeleteSession(FileBasedSessionBase session)
     {
         ((INotifyPropertyChanged)session).PropertyChanged -= SessionOnPropertyChanged;
         this.SessionViewModels.Remove(session);
@@ -403,6 +398,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         {
             return;
         }
+
         this.LoadingMessage = "Auto Saving data...";
         this.IsProcessing = true;
         try

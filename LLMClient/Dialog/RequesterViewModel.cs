@@ -195,6 +195,23 @@ public class RequesterViewModel : BaseViewModel
             if (value == _promptString) return;
             _promptString = value;
             OnPropertyChanged();
+            InvalidateAsyncProperty(nameof(EstimatedTokens));
+        }
+    }
+
+    public long EstimatedTokens
+    {
+        get
+        {
+            return GetAsyncProperty(async () =>
+            {
+                if (string.IsNullOrEmpty(_promptString))
+                {
+                    return 0;
+                }
+
+                return await _tokensCounter.CountTokens(_promptString);
+            });
         }
     }
 
@@ -205,9 +222,11 @@ public class RequesterViewModel : BaseViewModel
     private readonly Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>> _getResponse;
     private readonly GlobalOptions _options;
 
+    private readonly ITokensCounter _tokensCounter;
+
     public RequesterViewModel(ILLMChatClient modelClient,
         Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>> getResponse,
-        GlobalOptions options, IRagSourceCollection ragSourceCollection)
+        GlobalOptions options, IRagSourceCollection ragSourceCollection, ITokensCounter tokensCounter)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
@@ -216,6 +235,7 @@ public class RequesterViewModel : BaseViewModel
         this._getResponse = getResponse;
         _options = options;
         _ragSourceCollection = ragSourceCollection;
+        _tokensCounter = tokensCounter;
         this.BindClient(modelClient);
         this.PropertyChanged += (sender, args) => { this.IsDataChanged = true; };
     }

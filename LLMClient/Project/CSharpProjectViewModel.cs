@@ -1,22 +1,21 @@
 ﻿using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
-using ICSharpCode.AvalonEdit.CodeCompletion;
 using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Project;
 
 public class CppProjectViewModel : ProjectViewModel
 {
     public CppProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, IRagSourceCollection ragSourceCollection,
+        GlobalOptions options, IViewModelFactory factory,
         IEnumerable<ProjectTaskViewModel>? tasks = null)
-        : base(option, modelClient, mapper, options, ragSourceCollection, tasks)
+        : base(option, modelClient, mapper, options, factory, tasks)
     {
     }
 }
@@ -66,15 +65,12 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     private readonly CSharpContextPromptViewModel _projectContextPrompt;
 
-    public override ContextPromptViewModel? ProjectContextPrompt
-    {
-        get { return _projectContextPrompt; }
-    }
+    public override ContextPromptViewModel ProjectContextPrompt => _projectContextPrompt;
 
     public CSharpProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
         GlobalOptions options, ITokensCounter tokensCounter,
-        IRagSourceCollection ragSourceCollection, IEnumerable<ProjectTaskViewModel>? tasks = null)
-        : base(option, modelClient, mapper, options, ragSourceCollection, tasks)
+        IViewModelFactory factory, IEnumerable<ProjectTaskViewModel>? tasks = null)
+        : base(option, modelClient, mapper, options, factory, tasks)
     {
         _projectContextPrompt = new CSharpContextPromptViewModel(this, tokensCounter);
         SelectPathCommand = new RelayCommand(() =>

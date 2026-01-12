@@ -48,7 +48,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
 
     private async void Delete_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is ILLMSession session)
+        if (e.Parameter is FileBasedSessionBase session)
         {
             if (session.IsBusy)
             {
@@ -155,7 +155,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
             if (session != null)
             {
                 var clone = session.Clone();
-                if (clone is ILLMSession sessionClone)
+                if (clone is FileBasedSessionBase sessionClone)
                 {
                     _mainWindowViewModel.AddSession(sessionClone);
                     _mainWindowViewModel.MessageQueue.Enqueue("克隆会话成功");

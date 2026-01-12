@@ -28,7 +28,7 @@ using Microsoft.Xaml.Behaviors.Core;
 namespace LLMClient.Project;
 
 [TypeConverter(typeof(EnumDescriptionTypeConverter))]
-[JsonConverter(typeof(JsonStringEnumConverter<ProjectTaskType>))]  
+[JsonConverter(typeof(JsonStringEnumConverter<ProjectTaskType>))]
 public enum ProjectType
 {
     [Description("代码")] Standard,
@@ -345,20 +345,13 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
 
 
     public ProjectViewModel(ProjectOption projectOption, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options,
-        IRagSourceCollection ragSourceCollection, IEnumerable<ProjectTaskViewModel>? tasks = null)
+        GlobalOptions options, IViewModelFactory factory, IEnumerable<ProjectTaskViewModel>? tasks = null)
     {
         this._mapper = mapper;
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
-        Requester = new RequesterViewModel(modelClient, GetResponse, options, ragSourceCollection)
-        {
-            FunctionTreeSelector =
-            {
-                FunctionSelected = true,
-            }
-        };
-
+        Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
+            (Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>>)GetResponse);
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedTask?.SelectedFunctionGroups));

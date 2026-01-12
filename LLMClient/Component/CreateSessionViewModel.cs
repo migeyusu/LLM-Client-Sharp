@@ -90,7 +90,7 @@ public class CreateSessionViewModel : BaseViewModel
         {
             try
             {
-                ILLMSession session;
+                FileBasedSessionBase session;
                 switch (SelectedIndex)
                 {
                     case 0:

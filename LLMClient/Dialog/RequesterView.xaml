@@ -316,11 +316,15 @@
                                     Height="30"
                                     Content="安全黏贴"
                                     Click="TestPaste_OnClick"/>-->
+                            <TextBlock Text="{Binding EstimatedTokens,Mode=OneWay,StringFormat=Estimated Tokens:{0}}"
+                                       VerticalAlignment="Center"
+                                       Margin="16,0,0,0"
+                                       Style="{StaticResource MaterialDesignOverlineTextBlock}" />
                             <Button Command="{Binding CancelLastCommand}"
                                     Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                     Style="{StaticResource StopButtonStyle}"
                                     Margin="16,0,0,0" />
-                            <materialDesign:SplitButton Margin="16,0,0,0"
+                            <materialDesign:SplitButton Margin="6,0,0,0"
                                                         Padding="10,4"
                                                         PopupUniformCornerRadius="6"
                                                         Command="{Binding NewRequestCommand}"

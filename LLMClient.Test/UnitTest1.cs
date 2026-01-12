@@ -251,11 +251,9 @@ public class UnitTest1
     [Fact]
     public void Mapping()
     {
+        var viewModelFactory = serviceProvider.GetService<IViewModelFactory>()!;
+        var dialogSession = viewModelFactory.CreateViewModel<DialogViewModel>("sadg", new EmptyLlmModelClient());
         var mapper = serviceProvider.GetService<IMapper>()!;
-        var dialogSession =
-            new DialogFileViewModel(
-                new DialogViewModel("sadg", new EmptyLlmModelClient(), mapper, new GlobalOptions(),
-                    new RagSourceCollection()), mapper);
         var dialogSessionPersistModel =
             mapper?.Map(dialogSession, new DialogFilePersistModel());
         Assert.NotNull(dialogSessionPersistModel);
@@ -267,7 +265,8 @@ public class UnitTest1
         var mapper = serviceProvider.GetService<IMapper>()!;
         var client = new EmptyLlmModelClient();
         var dialogViewModel =
-            new DialogViewModel("test", client, mapper, new GlobalOptions(), new RagSourceCollection());
+            new DialogViewModel("test", client, mapper, new GlobalOptions(),
+                serviceProvider.GetService<IViewModelFactory>()!);
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
         multiResponseViewItem.Append(new ResponseViewItem(client));
         multiResponseViewItem.Append(new ResponseViewItem(client));
@@ -289,7 +288,8 @@ public class UnitTest1
         var mapper = serviceProvider.GetService<IMapper>()!;
         var client = new EmptyLlmModelClient();
         var dialogViewModel =
-            new DialogViewModel("test", client, mapper, new GlobalOptions(), new RagSourceCollection());
+            new DialogViewModel("test", client, mapper, new GlobalOptions(),
+                serviceProvider.GetService<IViewModelFactory>()!);
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
         multiResponseViewItem.Append(new ResponseViewItem(client));
         multiResponseViewItem.Append(new ResponseViewItem(client));
@@ -308,7 +308,7 @@ public class UnitTest1
         var viewModel =
             mapper.Map<DialogFilePersistModel, DialogFileViewModel>(filePersistModel!, (options => { }));
         var multiResponseViewItemDe = viewModel.Dialog.DialogItems.First() as MultiResponseViewItem;
-        var responseViewItems = multiResponseViewItemDe!.Items.OfType<ResponseViewItem>().ToArray();
+        var responseViewItems = multiResponseViewItemDe!.Items.ToArray();
         Assert.Same(responseViewItems[0].Client, responseViewItems[1].Client);
     }
 

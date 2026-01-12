@@ -6,6 +6,7 @@ using System.Text;
 using System.Windows;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
@@ -227,15 +228,13 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
     }
 
     public DialogViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, IRagSourceCollection ragSourceCollection,
+        GlobalOptions options, IViewModelFactory factory,
         IList<IDialogItem>? items = null) : base(mapper, items)
     {
         _topic = topic;
         _options = options;
-        Requester = new RequesterViewModel(modelClient, NewRequest, options, ragSourceCollection)
-        {
-            FunctionGroupSource = this
-        };
+        Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
+            (Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>>)NewRequest);
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedFunctionGroups));
