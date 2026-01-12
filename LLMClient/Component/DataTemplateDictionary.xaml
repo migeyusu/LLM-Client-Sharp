@@ -14,7 +14,8 @@
                     xmlns:converters="clr-namespace:LLMClient.Component.Converters"
                     xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                     xmlns:project="clr-namespace:LLMClient.Project"
-                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:utility="clr-namespace:LLMClient.Component.Utility">
     <ItemsPanelTemplate x:Key="HorizontalItemsPanelTemplate">
         <StackPanel Orientation="Horizontal"
                     IsItemsHost="True" />
@@ -639,6 +640,14 @@
                     </ToolTip>
                 </TextBlock.ToolTip>
             </TextBlock>
+            <DockPanel.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Copy"
+                              Icon="{materialDesign:PackIcon Kind=ContentCopy}"
+                              Command="{x:Static utility:CommonCommands.CopyCommand}"
+                              CommandParameter="{Binding Prompt,Mode=OneWay}" />
+                </ContextMenu>
+            </DockPanel.ContextMenu>
         </DockPanel>
     </DataTemplate>
 </ResourceDictionary>
