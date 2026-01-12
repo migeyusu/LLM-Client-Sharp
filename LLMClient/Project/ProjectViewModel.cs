@@ -111,8 +111,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             {
                 throw new Exception($"Project mapping failed: {typeText} != {viewmodelType}");
             }
-
-            viewModel.IsDataChanged = false;
+            
             return viewModel;
         }
         catch (Exception e)

@@ -66,7 +66,6 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
 
             var viewModel =
                 mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSession, (options => { }));
-            viewModel.IsDataChanged = false;
             return viewModel;
         }
         catch (Exception e)

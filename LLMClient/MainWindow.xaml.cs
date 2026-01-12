@@ -43,7 +43,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
             });
         });
         //间隔一分钟检查保存
-        _timer.Change(0, 60000);
+        _timer.Change(60000, 60000);
     }
 
     private async void Delete_OnExecuted(object sender, ExecutedRoutedEventArgs e)

@@ -100,7 +100,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         {
             return;
         }
-        
+
         var compareWindow = new MultiResponseCompareWindow(item.Items);
         compareWindow.ShowDialog();
     }));
@@ -285,7 +285,11 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         var responseViewItem = this.AcceptedResponse;
         if (responseViewItem == null)
         {
-            MessageBox.Show("未选择响应！");
+            return;
+        }
+
+        if (responseViewItem.IsResponding)
+        {
             return;
         }
 

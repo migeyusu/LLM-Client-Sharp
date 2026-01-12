@@ -369,7 +369,12 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         }
     }
 
-    public async Task SaveSessionsToLocal()
+    private bool ShouldSaveSessions()
+    {
+        return SessionViewModels.Any(session => session.IsDataChanged);
+    }
+
+    private async Task SaveSessionsToLocal()
     {
         foreach (var sessionViewModel in SessionViewModels.Where((session => session.IsDataChanged)))
         {
@@ -399,21 +404,32 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
             return;
         }
 
-        this.LoadingMessage = "Auto Saving data...";
-        this.IsProcessing = true;
         try
         {
-            await this.SaveSessionsToLocal();
             await this.EndpointsViewModel.SaveActivities();
             await HttpContentCache.Instance.PersistIndexAsync();
         }
         catch (Exception e)
         {
-            MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            Trace.TraceError(e.Message, "Error");
         }
-        finally
+
+        if (this.ShouldSaveSessions())
         {
-            IsProcessing = false;
+            this.LoadingMessage = "Auto Saving data...";
+            this.IsProcessing = true;
+            try
+            {
+                await this.SaveSessionsToLocal();
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError(e.Message);
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
         }
     }
 

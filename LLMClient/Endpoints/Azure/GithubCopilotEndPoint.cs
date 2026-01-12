@@ -1,10 +1,7 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Data;
@@ -37,10 +34,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
 
     public override IReadOnlyCollection<ILLMModel> AvailableModels
     {
-        get
-        {
-            return this._loadedModelInfos.Values.Where(info => info.IsEnabled).ToArray();
-        }
+        get { return this._loadedModelInfos.Values.Where(info => info.IsEnabled).ToArray(); }
     }
 
     public IReadOnlyCollection<AzureModelInfo> TotalModelsInfos
@@ -50,23 +44,25 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
 
     public GithubCopilotEndPoint()
     {
-        Action<IModelParams> full = (info) =>
+        Action<IModelParams> gpt4 = (info) =>
         {
             info.TopP = 1;
             info.Temperature = 1;
             info.FrequencyPenalty = 0;
             info.PresencePenalty = 0;
+            info.MaxTokens = 8192;
         };
         Action<IModelParams> mistral = (info) =>
         {
-            info.MaxTokens = 2048;
+            info.MaxTokens = 4096;
             info.Temperature = 0.8f;
             info.TopP = 0.1f;
         };
-        Action<IModelParams> baseModel = (info) =>
+        Action<IModelParams> gpt4o = (info) =>
         {
             info.TopP = 1;
             info.Temperature = 1;
+            info.MaxTokens = 8192;
         };
 
         Action<IModelParams> llama3 = (info) =>
@@ -77,29 +73,30 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             info.PresencePenalty = 0;
             info.FrequencyPenalty = 0;
         };
-        Action<IModelParams> empty = (info) => { };
-        Action<IModelParams> deepSeek_R1 = (info) => { info.MaxTokens = 2048; };
+        Action<IModelParams> o1 = (info) => { info.MaxTokens = 8192; };
+        Action<IModelParams> o3 = (info) => { info.MaxTokens = 12288; };
+        Action<IModelParams> deepSeek_R1 = (info) => { info.MaxTokens = 4096; };
         Action<IModelParams> deepSeek_V3 = (info) =>
         {
             info.TopP = 0.1f;
             info.Temperature = 0.8f;
-            info.MaxTokens = 2048;
+            info.MaxTokens = 4096;
             info.FrequencyPenalty = 0;
             info.PresencePenalty = 0;
         };
         Action<IModelParams> phi4 = (info) =>
         {
-            info.MaxTokens = 2048;
+            info.MaxTokens = 4096;
             info.Temperature = 0.8f;
             info.TopP = 0.1f;
             info.PresencePenalty = 0;
             info.PresencePenalty = 0;
         };
-        Action<IModelParams> gpt_5 = (info) => { info.MaxTokens = 16384; };
+        Action<IModelParams> gpt5 = (info) => { info.MaxTokens = 16384; };
 
         _predefinedModels = new Dictionary<string, Action<IModelParams>>()
         {
-            { "OpenAI gpt-5", gpt_5 },
+            { "OpenAI gpt-5", gpt5 },
             {
                 "OpenAI gpt-5-chat (preview)", (info =>
                 {
@@ -108,23 +105,29 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
                     info.MaxTokens = 16384;
                 })
             },
-            { "OpenAI gpt-5-mini", gpt_5 },
-            { "OpenAI gpt-5-nano", gpt_5 },
+            { "OpenAI gpt-5-mini", gpt5 },
+            { "OpenAI gpt-5-nano", gpt5 },
 
-            { "OpenAI GPT-4.1", full },
-            { "OpenAI GPT-4.1-mini", full },
-            { "OpenAI GPT-4.1-nano", full },
+            { "OpenAI GPT-4.1", gpt4 },
+            { "OpenAI GPT-4.1-mini", gpt4 },
+            { "OpenAI GPT-4.1-nano", gpt4 },
 
-            { "OpenAI GPT-4o", baseModel },
-            { "OpenAI GPT-4o mini", baseModel },
+            { "OpenAI GPT-4o", gpt4o },
+            {
+                "OpenAI GPT-4o mini", (info) =>
+                {
+                    info.TopP = 1;
+                    info.Temperature = 1;
+                }
+            },
 
-            { "OpenAI o1", empty },
-            { "OpenAI o1-mini", empty },
+            { "OpenAI o1", o1 },
+            { "OpenAI o1-mini", o1 },
 
-            { "OpenAI o3", empty },
-            { "OpenAI o3-mini", empty },
+            { "OpenAI o3", o3 },
+            { "OpenAI o3-mini", o3 },
 
-            { "OpenAI o4-mini", empty },
+            { "OpenAI o4-mini", o3 },
 
             { "Ministral 3B", mistral },
             { "Mistral Large 24.11", mistral },
@@ -157,12 +160,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
     {
         if (model is AzureModelInfo azureModelInfo)
         {
-            var azureClientBase = new AzureClientBase(this, azureModelInfo);
-            if (_predefinedModels.TryGetValue(model.Name, out var action))
-            {
-                action(azureClientBase.Parameters);
-                return azureClientBase;
-            }
+            return new AzureClientBase(this, azureModelInfo);
         }
 
         return null;
@@ -238,19 +236,20 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             return;
         }
 
-        foreach (var modelInfo in
+        foreach (var azureModelInfo in
                  azureModelInfos.Where((info => info.ModelTask == AzureModelInfo.FilteredTask
                                                 && info.SupportedInputModalities?.Contains(AzureModelInfo
                                                     .FilteredInputText) == true)))
         {
-            var modelInfoName = modelInfo.FriendlyName;
-            if (_predefinedModels.ContainsKey(modelInfoName))
+            var modelInfoName = azureModelInfo.FriendlyName;
+            if (_predefinedModels.TryGetValue(modelInfoName, out var setupAction))
             {
-                modelInfo.Endpoint = this;
-                modelInfo.IsEnabled = true;
+                setupAction(azureModelInfo);
+                azureModelInfo.Endpoint = this;
+                azureModelInfo.IsEnabled = true;
             }
 
-            _loadedModelInfos.Add(modelInfoName, modelInfo);
+            _loadedModelInfos.Add(modelInfoName, azureModelInfo);
         }
     }
 

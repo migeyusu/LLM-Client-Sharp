@@ -237,7 +237,15 @@ public class RequesterViewModel : BaseViewModel
         _ragSourceCollection = ragSourceCollection;
         _tokensCounter = tokensCounter;
         this.BindClient(modelClient);
-        this.PropertyChanged += (sender, args) => { this.IsDataChanged = true; };
+        this.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(EstimatedTokens))
+            {
+                return;
+            }
+
+            this.IsDataChanged = true;
+        };
     }
 
     private void BindClient(ILLMChatClient client)

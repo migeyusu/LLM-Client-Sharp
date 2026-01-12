@@ -92,6 +92,13 @@ public class HttpContentCache
         }
 
         var json = JsonSerializer.Serialize(dictionaryToPersist, Extension.DefaultJsonSerializerOptions);
+        var old = await File.ReadAllTextAsync(_indexPath);
+        if (old == json)
+        {
+            Trace.WriteLine("[Cache] Index unchanged, skipping persist.");
+            return;
+        }
+
         await File.WriteAllTextAsync(_indexPath, json);
         Trace.WriteLine($"[Cache] Persisted {dictionaryToPersist.Count} items to index.");
     }
