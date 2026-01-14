@@ -18,7 +18,7 @@ using MimeTypes;
 
 namespace LLMClient.Dialog;
 
-public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
+public class RequestViewItem : BaseViewModel, IRequestItem, ISearchableDialogItem, IDialogPersistItem
 {
     /// <summary>
     /// 标记一次请求-响应过程，和响应对应
@@ -29,8 +29,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
     {
         get => _textRequestContent.Text;
     }
-
-
+    
     public bool IsFormatting
     {
         get => _isFormatting;
@@ -62,7 +61,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
             _formattedTextMessage = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(TextMessage));
-            OnPropertyChanged(nameof(Document));
+            OnPropertyChanged(nameof(SearchableDocument));
             var dialogSessionViewModel = this.ParentSession;
             if (dialogSessionViewModel != null) dialogSessionViewModel.IsDataChanged = true;
         }
@@ -77,7 +76,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
 
     private SearchableDocument? _document = null;
 
-    public SearchableDocument? Document
+    public SearchableDocument? SearchableDocument
     {
         get
         {
@@ -261,7 +260,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, IDialogPersistItem
         OnPropertyChanged(nameof(RawTextMessage));
         OnPropertyChanged(nameof(FormattedTextMessage));
         OnPropertyChanged(nameof(TextMessage));
-        OnPropertyChanged(nameof(Document));
+        OnPropertyChanged(nameof(SearchableDocument));
         InvalidateAsyncProperty(nameof(Tokens));
         var dialogSessionViewModel = this.ParentSession;
         if (dialogSessionViewModel != null) dialogSessionViewModel.IsDataChanged = true;

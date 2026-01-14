@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using MaterialDesignThemes.Wpf;
@@ -12,7 +13,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
 
-public class MultiResponseViewItem : BaseViewModel, IDialogItem
+public class MultiResponseViewItem : BaseViewModel, ISearchableDialogItem, IInteractionItem
 {
     public Guid InteractionId
     {
@@ -75,19 +76,12 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         }
     }
 
-    public ObservableCollection<ResponseViewItem> Items
+    public SearchableDocument? SearchableDocument
     {
-        get => _items;
-        set
-        {
-            if (Equals(value, _items)) return;
-            _items = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsResponding));
-            OnPropertyChanged(nameof(HasAvailableMessage));
-            OnPropertyChanged(nameof(AcceptedResponse));
-        }
+        get { return AcceptedResponse?.SearchableDocument; }
     }
+
+    public ObservableCollection<ResponseViewItem> Items { get; }
 
     public static ICommand CompareAllCommand { get; } = new RelayCommand<MultiResponseViewItem>((item =>
     {
@@ -106,7 +100,6 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
     }));
 
     private bool _isMultiResponse = false;
-    private ObservableCollection<ResponseViewItem> _items;
 
     private ResponseViewItem? _acceptedResponse;
     private bool _canGoToNext;
@@ -157,11 +150,11 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsAvailableInContext));
             OnPropertyChanged(nameof(Tokens));
-            var responseViewItems = this.Items;
+            OnPropertyChanged(nameof(SearchableDocument));
             CanGotoPrevious = value != null &&
-                              responseViewItems.IndexOf(value) - 1 >= 0;
+                              Items.IndexOf(value) - 1 >= 0;
             CanGoToNext = value != null &&
-                          responseViewItems.IndexOf(value) + 1 < responseViewItems.Count;
+                          Items.IndexOf(value) + 1 < Items.Count;
         }
     }
 
@@ -213,8 +206,8 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
     public MultiResponseViewItem(IEnumerable<ResponseViewItem> items, DialogSessionViewModel parentSession)
     {
         ParentSession = parentSession;
-        _items = new ObservableCollection<ResponseViewItem>(items);
-        _items.CollectionChanged += (sender, args) => { this.ParentSession.IsDataChanged = true; };
+        Items = new ObservableCollection<ResponseViewItem>(items);
+        Items.CollectionChanged += (_, _) => { this.ParentSession.IsDataChanged = true; };
         IsMultiResponse = Items.Count > 1;
         SelectionPopup = new ModelSelectionPopupViewModel(client => { this.NewRequest(client.CreateClient()); })
         {
@@ -332,7 +325,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         this.IsMultiResponse = Items.Count > 1;
         if (removeAccepted)
         {
-            this.AcceptedResponse = _items.FirstOrDefault();
+            this.AcceptedResponse = Items.FirstOrDefault();
         }
     }
 
@@ -342,7 +335,7 @@ public class MultiResponseViewItem : BaseViewModel, IDialogItem
         this.Items.RemoveAt(index);
         if (responseViewItem == AcceptedResponse)
         {
-            this.AcceptedResponse = _items.FirstOrDefault();
+            this.AcceptedResponse = Items.FirstOrDefault();
         }
 
         this.IsMultiResponse = Items.Count > 1;

@@ -126,21 +126,20 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             if (Equals(value, _scrollViewItem)) return;
             _scrollViewItem = value;
             OnPropertyChanged();
-            if (value is MultiResponseViewItem viewItem)
+            if (value is ISearchableDialogItem viewItem)
             {
-                viewItem.AcceptedResponse?.SearchableDocument?.EnsureSearch();
-                CurrentResponseViewItem = viewItem;
+                viewItem.SearchableDocument?.EnsureSearch();
             }
-            else
-            {
-                CurrentResponseViewItem = null;
-            }
+
+            CurrentResponseViewItem = value as MultiResponseViewItem;
         }
     }
 
     #endregion
 
     #region search
+
+    private string? _highlightedText;
 
     private string? _searchText;
 
@@ -159,15 +158,15 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     private int _currentHighlightIndex = 0;
 
-    private MultiResponseViewItem? _focusedResponse;
+    private ISearchableDialogItem? _focusedResponse;
 
-    private MultiResponseViewItem? FocusedResponse
+    private ISearchableDialogItem? FocusedHighlightItem
     {
         get => _focusedResponse;
         set
         {
             _focusedResponse = value;
-            var document = value?.AcceptedResponse?.SearchableDocument;
+            var document = value?.SearchableDocument;
             if (document is { HasMatched: true })
             {
                 document.EnsureSearch();
@@ -175,33 +174,33 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
     }
 
-    SearchableDocument? FocusedDocument
+    SearchableDocument? FocusedHighlightDocument
     {
-        get { return FocusedResponse?.AcceptedResponse?.SearchableDocument; }
+        get { return FocusedHighlightItem?.SearchableDocument; }
     }
 
-    private void CheckFocusResponse(IList<MultiResponseViewItem> responseViewItems, ref int responseIndex)
+    private void CheckFocusItem(IList<ISearchableDialogItem> searchableDialogItems, ref int itemIndex)
     {
-        if (FocusedResponse != null)
+        if (FocusedHighlightItem != null)
         {
-            responseIndex = responseViewItems.IndexOf(FocusedResponse);
-            if (responseIndex == -1)
+            itemIndex = searchableDialogItems.IndexOf(FocusedHighlightItem);
+            if (itemIndex == -1)
             {
-                FocusedResponse = null;
-                responseIndex = 0;
+                FocusedHighlightItem = null;
+                itemIndex = 0;
             }
         }
 
-        if (FocusedResponse == null)
+        if (FocusedHighlightItem == null)
         {
-            this.FocusedResponse = responseViewItems.First();
+            this.FocusedHighlightItem = searchableDialogItems.First();
         }
     }
 
     private void GoToHighlight()
     {
-        ScrollViewItem = this.FocusedResponse;
-        var count = FocusedDocument?.FoundTextRanges.Count;
+        ScrollViewItem = this.FocusedHighlightItem;
+        var count = FocusedHighlightDocument?.FoundTextRanges.Count;
         if (count == null || count == 0)
         {
             return;
@@ -216,10 +215,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             _currentHighlightIndex = 0;
         }
 
-        var foundTextRange = FocusedDocument?.FoundTextRanges[_currentHighlightIndex];
+        var foundTextRange = FocusedHighlightDocument?.FoundTextRanges[_currentHighlightIndex];
         if (foundTextRange == null)
             return;
-        var parent = FocusedDocument?.Document.Parent;
+        var parent = FocusedHighlightDocument?.Document.Parent;
         if (parent is FlowDocumentScrollViewerEx ex)
         {
             ex.ScrollToRange(foundTextRange);
@@ -330,7 +329,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     public ICommand ClearUnavailableCommand { get; }
 
     #endregion
-    
+
     public long CurrentContextTokens
     {
         get
@@ -384,6 +383,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 }
                 else
                 {
+                    //这样的设计允许中间有不可用的响应（跳过）
                     interactionId = null;
                 }
             }
@@ -624,33 +624,21 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             this.PredictedContextLength = GetContextTokensBefore();
         };
         this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
-        SearchCommand = new ActionCommand((_ =>
+        SearchCommand = new ActionCommand(_ =>
         {
-            foreach (var dialogViewItem in this.DialogItems)
+            foreach (var dialogViewItem in this.DialogItems.OfType<ISearchableDialogItem>())
             {
-                if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
-                {
-                    foreach (var responseViewItem in multiResponseViewItem.Items.OfType<ResponseViewItem>())
-                    {
-                        responseViewItem.SearchableDocument?.ApplySearch(_searchText);
-                    }
-                }
-                else if (dialogViewItem is RequestViewItem requestViewItem)
-                {
-                    requestViewItem.Document?.ApplySearch(_searchText);
-                }
+                dialogViewItem.SearchableDocument?.ApplySearch(_searchText);
             }
 
-            this.FocusedResponse = null;
-            if (this.ScrollViewItem is MultiResponseViewItem viewItem)
+            this.FocusedHighlightItem = null;
+            if (this.ScrollViewItem is ISearchableDialogItem viewItem)
             {
-                viewItem.AcceptedResponse?.SearchableDocument?.EnsureSearch();
+                viewItem.SearchableDocument?.EnsureSearch();
             }
-            else if (this.ScrollViewItem is RequestViewItem requestViewItem)
-            {
-                requestViewItem.Document?.EnsureSearch();
-            }
-        }));
+
+            _highlightedText = _searchText;
+        });
         GoToNextHighlightCommand = new ActionCommand((_ =>
         {
             if (string.IsNullOrEmpty(SearchText))
@@ -658,25 +646,31 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 return;
             }
 
-            var responseViewItems = DialogItems.OfType<MultiResponseViewItem>()
-                .Where(item => item.AcceptedResponse is { SearchableDocument.HasMatched: true })
+            if (_highlightedText != SearchText)
+            {
+                //重新搜索
+                SearchCommand.Execute(null);
+            }
+
+            var searchableDialogItems = DialogItems.OfType<ISearchableDialogItem>()
+                .Where(item => item is { SearchableDocument.HasMatched: true })
                 .ToArray();
-            if (responseViewItems.Length == 0)
+            if (searchableDialogItems.Length == 0)
             {
                 MessageEventBus.Publish("没有找到匹配的结果！");
                 return;
             }
 
-            var responseIndex = 0;
-            CheckFocusResponse(responseViewItems, ref responseIndex);
+            var focusItemIndex = 0;
+            CheckFocusItem(searchableDialogItems, ref focusItemIndex);
             _currentHighlightIndex++;
-            if (_currentHighlightIndex >= FocusedDocument?.FoundTextRanges.Count)
+            if (_currentHighlightIndex >= FocusedHighlightDocument?.FoundTextRanges.Count)
             {
                 //跳转到下一个FlowDocument
-                responseIndex++;
-                FocusedResponse = responseIndex < responseViewItems.Length
-                    ? responseViewItems[responseIndex]
-                    : responseViewItems[0];
+                focusItemIndex++;
+                FocusedHighlightItem = focusItemIndex < searchableDialogItems.Length
+                    ? searchableDialogItems[focusItemIndex]
+                    : searchableDialogItems[0];
                 _currentHighlightIndex = 0;
             }
 
@@ -689,25 +683,31 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 return;
             }
 
-            var responseViewItems = DialogItems.OfType<MultiResponseViewItem>()
-                .Where(item => item.AcceptedResponse is { SearchableDocument.HasMatched: true })
+            if (_highlightedText != SearchText)
+            {
+                //重新搜索
+                SearchCommand.Execute(null);
+            }
+
+            var searchableDialogItems = DialogItems.OfType<ISearchableDialogItem>()
+                .Where(item => item is { SearchableDocument.HasMatched: true })
                 .ToArray();
-            if (responseViewItems.Length == 0)
+            if (searchableDialogItems.Length == 0)
             {
                 MessageEventBus.Publish("没有找到匹配的结果！");
                 return;
             }
 
-            var responseIndex = responseViewItems.Length - 1;
-            CheckFocusResponse(responseViewItems, ref responseIndex);
+            var searchItemIndex = searchableDialogItems.Length - 1;
+            CheckFocusItem(searchableDialogItems, ref searchItemIndex);
             _currentHighlightIndex--;
             if (_currentHighlightIndex < 0)
             {
                 //跳转到上一个FlowDocument
-                FocusedResponse = responseIndex > 0
-                    ? responseViewItems[--responseIndex]
-                    : responseViewItems.Last();
-                _currentHighlightIndex = FocusedDocument?.FoundTextRanges.Count - 1 ?? 0;
+                FocusedHighlightItem = searchItemIndex > 0
+                    ? searchableDialogItems[--searchItemIndex]
+                    : searchableDialogItems.Last();
+                _currentHighlightIndex = FocusedHighlightDocument?.FoundTextRanges.Count - 1 ?? 0;
             }
 
             GoToHighlight();

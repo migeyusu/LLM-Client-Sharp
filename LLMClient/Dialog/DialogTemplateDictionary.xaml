@@ -105,8 +105,8 @@
                                                                   BorderThickness="0"
                                                                   Padding="0"
                                                                   Visibility="{Binding DisplayRawText,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
-                                                                  HighlightableRanges="{Binding Document.FoundTextRanges,Mode=OneWay}"
-                                                                  SafeDocument="{Binding Document.Document,Mode=OneWay}"
+                                                                  HighlightableRanges="{Binding SearchableDocument.FoundTextRanges,Mode=OneWay}"
+                                                                  SafeDocument="{Binding SearchableDocument.Document,Mode=OneWay}"
                                                                   Style="{StaticResource ExFlowDocumentScrollViewerStyle}">
                             <customControl:FlowDocumentScrollViewerEx.ContextMenu>
                                 <ContextMenu>

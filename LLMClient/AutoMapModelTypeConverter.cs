@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using AutoMapper;
+using Elsa.Extensions;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
@@ -89,7 +90,11 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
         else
         {
-            destination.Items = new ObservableCollection<ResponseViewItem>(items);
+            var responseViewItems = destination.Items;
+            foreach (var item in items)
+            {
+                responseViewItems.Add(item);
+            }
         }
 
         destination.AcceptedResponse = items.Length <= 0 ? null : items[Math.Max(source.AcceptedIndex, 0)];
