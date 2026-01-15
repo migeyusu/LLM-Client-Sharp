@@ -27,7 +27,7 @@ using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Dialog;
 
-public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands.ICopyable
+public class ResponseViewItem : BaseDialogItem, IResponseViewItem, CommonCommands.ICopyable
 {
     public ThemedIcon Icon
     {
@@ -79,7 +79,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
         }
     }
 
-    public long Tokens
+    public override long Tokens
     {
         get => Usage?.OutputTokenCount ?? 0;
     }
@@ -354,7 +354,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
     /// </summary>
     public bool IsAvailableInContextSwitch { get; set; } = true;
 
-    public bool IsAvailableInContext
+    public override bool IsAvailableInContext
     {
         get { return (IsManualValid || !IsInterrupt) && IsAvailableInContextSwitch; }
     }
@@ -422,7 +422,7 @@ public class ResponseViewItem : BaseViewModel, IResponseViewItem, CommonCommands
 
     #endregion
 
-    public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
+    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await Task.CompletedTask;

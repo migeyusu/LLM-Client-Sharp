@@ -1,6 +1,5 @@
 ﻿using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
-using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
@@ -13,7 +12,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
 
-public class MultiResponseViewItem : BaseViewModel, ISearchableDialogItem, IInteractionItem
+public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInteractionItem
 {
     public Guid InteractionId
     {
@@ -28,7 +27,7 @@ public class MultiResponseViewItem : BaseViewModel, ISearchableDialogItem, IInte
 
     public DialogSessionViewModel ParentSession { get; }
 
-    public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
+    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (AcceptedResponse == null)
@@ -45,7 +44,7 @@ public class MultiResponseViewItem : BaseViewModel, ISearchableDialogItem, IInte
     /// <summary>
     /// warning: 禁止用于绑定，因为没有实现属性通知
     /// </summary>
-    public bool IsAvailableInContext
+    public override bool IsAvailableInContext
     {
         get { return AcceptedResponse?.IsAvailableInContext == true; }
     }
@@ -60,7 +59,7 @@ public class MultiResponseViewItem : BaseViewModel, ISearchableDialogItem, IInte
         get { return Items.Any((item => item.IsAvailableInContext)); }
     }
 
-    public long Tokens
+    public override long Tokens
     {
         get { return AcceptedResponse?.Tokens ?? 0; }
     }

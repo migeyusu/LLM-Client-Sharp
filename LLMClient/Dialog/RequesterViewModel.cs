@@ -305,6 +305,7 @@ public class RequesterViewModel : BaseViewModel
             {
                 SummaryPrompt = _options.ContextSummarizePrompt,
                 OutputLength = _options.ContextSummarizeWordsCount,
+                InteractionId = Guid.NewGuid(),
             };
 
             var summarizeModel = _options.CreateContextSummarizeClient() ?? this.DefaultClient;

@@ -10,8 +10,3 @@ public class DialogSessionPersistModel
 
     public AIFunctionGroupPersistObject[]? AllowedFunctions { get; set; }
 }
-
-public class PromptsPersistModel
-{
-    public Guid[]? PromptReference { get; set; }
-}

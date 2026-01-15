@@ -1,7 +1,5 @@
 ﻿using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
 using AutoMapper;
-using Elsa.Extensions;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
@@ -76,7 +74,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         ResolutionContext context)
     {
         var contextItems = context.Items;
-        if (!contextItems.TryGetValue(ParentSessionViewModelKey, out var parentDialogViewModel)
+        if (!contextItems.TryGetValue(ParentDialogViewModelKey, out var parentDialogViewModel)
             || !(parentDialogViewModel is DialogSessionViewModel parentViewModel))
         {
             throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
@@ -121,25 +119,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     {
         destination ??= new DialogFilePersistModel();
         var mapper = context.Mapper;
-        var dialogItems = source.DialogItems.Select<IDialogItem, IDialogPersistItem>(item =>
-        {
-            if (item is EraseViewItem eraseViewItem)
-            {
-                return eraseViewItem;
-            }
-
-            if (item is RequestViewItem requestViewItem)
-            {
-                return mapper.Map<RequestViewItem, RequestPersistItem>(requestViewItem);
-            }
-
-            if (item is MultiResponseViewItem multiResponseViewItem)
-            {
-                return mapper.Map<MultiResponseViewItem, MultiResponsePersistItem>(multiResponseViewItem);
-            }
-
-            throw new NotSupportedException();
-        }).ToArray();
+        var dialogItems = source.DialogItems
+            .Select<IDialogItem, IDialogPersistItem>(item => mapper.Map<IDialogItem, IDialogPersistItem>(item))
+            .ToArray();
         destination.DialogItems = dialogItems;
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
@@ -161,7 +143,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    public const string ParentSessionViewModelKey = "ParentDialogViewModel";
+    public const string ParentDialogViewModelKey = "ParentDialogViewModel";
 
     public const string ParentProjectViewModelKey = "ParentProjectViewModel";
 
@@ -185,6 +167,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return null;
     }
 
+
     public DialogViewModel Convert(DialogFilePersistModel source, DialogViewModel? destination,
         ResolutionContext context)
     {
@@ -203,21 +186,12 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination = _viewModelFactory.CreateViewModel<DialogViewModel>(source.Topic, llmClient);
         }
 
-        context.Items.Add(ParentSessionViewModelKey, destination);
+        context.Items.Add(ParentDialogViewModelKey, destination);
         try
         {
-            var sourceDialogItems = source.DialogItems?.Select<IDialogPersistItem, IDialogItem>((item =>
-            {
-                return item switch
-                {
-                    MultiResponsePersistItem multiResponsePersistItem => mapper
-                        .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem),
-                    RequestPersistItem requestPersistItem => mapper
-                        .Map<RequestPersistItem, RequestViewItem>(requestPersistItem,
-                            new RequestViewItem(requestPersistItem.RawTextMessage ?? string.Empty, destination)),
-                    _ => (IDialogItem)item
-                };
-            })).ToArray();
+            var sourceDialogItems = source.DialogItems
+                ?.Select<IDialogPersistItem, IDialogItem>(item => mapper.Map<IDialogPersistItem, IDialogItem>(item))
+                .ToArray();
             if (sourceDialogItems != null)
             {
                 foreach (var sourceDialogItem in sourceDialogItems)
@@ -237,12 +211,12 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
             var requester = destination.Requester;
             requester.PromptString = source.PromptString;
-            destination.SelectedFunctionGroups = source.AllowedFunctions?.Select((o =>
-                mapper.Map<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>(o))).ToArray();
+            destination.SelectedFunctionGroups = source.AllowedFunctions?.Select(o =>
+                mapper.Map<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>(o)).ToArray();
         }
         finally
         {
-            context.Items.Remove(ParentSessionViewModelKey);
+            context.Items.Remove(ParentDialogViewModelKey);
         }
 
         return destination;
@@ -289,7 +263,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
                 destination = cSharpProjectViewModel;
                 break;
             case ProjectType.Cpp:
-                if (source is not CppProjectPersistModel projectCppPersistModel)
+                if (source is not CppProjectPersistModel)
                 {
                     throw new NotSupportedException("源项目不是CppProjectPersistModel类型.");
                 }
@@ -351,10 +325,10 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             cSharpProjectPersistModel.ProjectFilePath = cSharpProjectViewModel.ProjectFilePath;
             cSharpProjectPersistModel.SolutionFilePath = cSharpProjectViewModel.SolutionFilePath;
         }
-        else if (source is CppProjectViewModel cppProjectViewModel)
+        else if (source is CppProjectViewModel)
         {
             destination ??= new CppProjectPersistModel();
-            if (destination is not CppProjectPersistModel cppProjectPersistModel)
+            if (destination is not CppProjectPersistModel)
             {
                 throw new InvalidOperationException("Destination is not CppProjectPersistModel.");
             }
@@ -368,7 +342,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    private void MapProjectViewModelBase(ProjectViewModel source, ProjectPersistModel destination,
+    private static void MapProjectViewModelBase(ProjectViewModel source, ProjectPersistModel destination,
         ResolutionContext context)
     {
         var mapper = context.Mapper;
@@ -385,14 +359,14 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             : null;
         destination.FolderPath = projectOption.FolderPath;
         destination.UserSystemPrompt = source.UserSystemPrompt;
-        destination.AllowedFolderPaths = projectOption.AllowedFolderPaths?.ToArray();
+        destination.AllowedFolderPaths = projectOption.AllowedFolderPaths.ToArray();
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
         destination.Client =
             context.Mapper.Map<ILLMChatClient, ParameterizedLLMModelPO>(source.Requester.DefaultClient);
         destination.UserPrompt = source.Requester.PromptString;
         var projectTaskPersistModels = source.Tasks
-            ?.Select(task => mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(task)).ToArray();
+            .Select(task => mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(task)).ToArray();
         destination.Tasks = projectTaskPersistModels;
     }
 
@@ -400,37 +374,19 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         ResolutionContext context)
     {
         if (!context.Items.TryGetValue(ParentProjectViewModelKey, out var parentProjectViewModel)
-            || !(parentProjectViewModel is ProjectViewModel projectViewModel))
+            || parentProjectViewModel is not ProjectViewModel projectViewModel)
         {
             throw new InvalidOperationException("Parent ProjectViewModel is not set in context.");
         }
 
         destination ??= _viewModelFactory.CreateViewModel<ProjectTaskViewModel>(projectViewModel);
-        context.Items.Add(ParentSessionViewModelKey, destination);
+        context.Items.Add(ParentDialogViewModelKey, destination);
         var mapper = context.Mapper;
         try
         {
-            var sourceDialogItems = source.DialogItems?.Select<IDialogPersistItem, IDialogItem>((item =>
-            {
-                if (item is MultiResponsePersistItem multiResponsePersistItem)
-                {
-                    return mapper
-                        .Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem);
-                }
-
-                if (item is RequestPersistItem requestViewItem)
-                {
-                    return mapper.Map<RequestPersistItem, RequestViewItem>(requestViewItem,
-                        new RequestViewItem(requestViewItem.RawTextMessage ?? string.Empty, destination));
-                }
-
-                if (item is EraseViewItem eraseViewItem)
-                {
-                    return eraseViewItem;
-                }
-
-                throw new NotSupportedException();
-            })).ToArray();
+            var sourceDialogItems = source.DialogItems
+                ?.Select<IDialogPersistItem, IDialogItem>((item => mapper.Map<IDialogPersistItem, IDialogItem>(item)))
+                .ToArray();
             if (sourceDialogItems != null)
             {
                 foreach (var sourceDialogItem in sourceDialogItems)
@@ -452,7 +408,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
         finally
         {
-            context.Items.Remove(ParentSessionViewModelKey);
+            context.Items.Remove(ParentDialogViewModelKey);
         }
 
         return destination;
@@ -462,25 +418,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         ResolutionContext context)
     {
         var mapper = context.Mapper;
-        var dialogItems = source.DialogItems.Select<IDialogItem, IDialogPersistItem>(item =>
-        {
-            if (item is EraseViewItem eraseViewItem)
-            {
-                return eraseViewItem;
-            }
-
-            if (item is RequestViewItem requestViewItem)
-            {
-                return mapper.Map<RequestViewItem, RequestPersistItem>(requestViewItem);
-            }
-
-            if (item is MultiResponseViewItem multiResponseViewItem)
-            {
-                return mapper.Map<MultiResponseViewItem, MultiResponsePersistItem>(multiResponseViewItem);
-            }
-
-            throw new NotSupportedException();
-        }).ToArray();
+        var dialogItems = source.DialogItems
+            .Select<IDialogItem, IDialogPersistItem>(item => mapper.Map<IDialogItem, IDialogPersistItem>(item))
+            .ToArray();
         destination ??= new ProjectTaskPersistModel();
         destination.Name = source.Name;
         destination.Summary = source.Summary;
@@ -578,7 +518,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    public ParameterizedLLMModelPO Convert(IParameterizedLLMModel source, ParameterizedLLMModelPO destination,
+    public ParameterizedLLMModelPO Convert(IParameterizedLLMModel source, ParameterizedLLMModelPO? destination,
         ResolutionContext context)
     {
         var key = new ContextCacheKey(source, typeof(ParameterizedLLMModelPO));
@@ -596,7 +536,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    public IParameterizedLLMModel Convert(ParameterizedLLMModelPO source, IParameterizedLLMModel destination,
+    public IParameterizedLLMModel Convert(ParameterizedLLMModelPO source, IParameterizedLLMModel? destination,
         ResolutionContext context)
     {
         if (destination != null)

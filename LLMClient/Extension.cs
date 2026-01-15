@@ -110,7 +110,34 @@ public static class Extension
             expression.CreateMap<UsageContent, UsageContentPO>();
             expression.CreateMap<UsageContentPO, UsageContent>();
             expression.CreateMap<RequestViewItem, RequestPersistItem>();
-            expression.CreateMap<RequestPersistItem, RequestViewItem>();
+            expression.CreateMap<RequestPersistItem, RequestViewItem>()
+                .ConstructUsing((item, context) =>
+                {
+                    var contextItems = context.Items;
+                    if (!contextItems.TryGetValue(AutoMapModelTypeConverter.ParentDialogViewModelKey,
+                            out var parentDialogViewModel)
+                        || parentDialogViewModel is not DialogSessionViewModel parentViewModel)
+                    {
+                        throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
+                    }
+
+                    return new RequestViewItem(item.RawTextMessage ?? string.Empty, parentViewModel);
+                });
+
+            expression.CreateMap<SummaryRequestViewItem, SummaryRequestPersistItem>();
+            expression.CreateMap<SummaryRequestPersistItem, SummaryRequestViewItem>();
+            expression.CreateMap<EraseViewItem, ErasePersistItem>();
+            expression.CreateMap<ErasePersistItem, EraseViewItem>();
+            expression.CreateMap<IDialogItem, IDialogPersistItem>()
+                .Include<RequestViewItem, RequestPersistItem>()
+                .Include<SummaryRequestViewItem, SummaryRequestPersistItem>()
+                .Include<EraseViewItem, ErasePersistItem>()
+                .Include<MultiResponseViewItem, MultiResponsePersistItem>();
+            expression.CreateMap<IDialogPersistItem, IDialogItem>()
+                .Include<RequestPersistItem, RequestViewItem>()
+                .Include<SummaryRequestPersistItem, SummaryRequestViewItem>()
+                .Include<ErasePersistItem, EraseViewItem>()
+                .Include<MultiResponsePersistItem, MultiResponseViewItem>();
             expression.CreateMap<IResponse, ResponseViewItem>();
             expression.CreateMap<IModelParams, IModelParams>();
             expression.CreateMap<IModelParams, DefaultModelParam>();
@@ -164,7 +191,7 @@ public static class Extension
                 .ConvertUsing<AutoMapModelTypeConverter>();
             // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
             expression.ConstructServicesUsing(provider.GetService);
-        }, AppDomain.CurrentDomain.GetAssemblies().ToArray(),ServiceLifetime.Singleton);
+        }, AppDomain.CurrentDomain.GetAssemblies().ToArray(), ServiceLifetime.Singleton);
     }
 
     /// <summary>

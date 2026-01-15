@@ -6,7 +6,7 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Data;
 
-public class RequestPersistItem : IDialogPersistItem
+public class RequestPersistItem : BaseDialogPersistItem
 {
     public Guid InteractionId { get; set; }
 

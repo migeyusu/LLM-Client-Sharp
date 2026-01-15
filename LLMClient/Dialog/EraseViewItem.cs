@@ -4,14 +4,14 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 
-public class EraseViewItem : IDialogItem, IDialogPersistItem
+public class EraseViewItem : BaseDialogItem
 {
-    public virtual IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken)
+    public override IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken)
     {
         throw new NotSupportedException();
     }
 
-    [JsonIgnore] public virtual bool IsAvailableInContext { get; } = false;
+    public override bool IsAvailableInContext => false;
 
-    public virtual long Tokens { get; } = 0;
+    public override long Tokens => 0;
 }

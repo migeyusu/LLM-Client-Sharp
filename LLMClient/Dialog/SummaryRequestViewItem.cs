@@ -29,6 +29,7 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
     }
 
     public override bool IsAvailableInContext { get; } = true;
+    
     public void TriggerTextContentUpdate()
     {
         

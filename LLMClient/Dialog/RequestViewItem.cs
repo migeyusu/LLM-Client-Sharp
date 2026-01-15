@@ -7,9 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.Render;
 using LLMClient.Component.ViewModel;
-using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
-using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
@@ -18,7 +16,7 @@ using MimeTypes;
 
 namespace LLMClient.Dialog;
 
-public class RequestViewItem : BaseViewModel, IRequestItem, ISearchableDialogItem, IDialogPersistItem
+public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogItem
 {
     /// <summary>
     /// 标记一次请求-响应过程，和响应对应
@@ -29,7 +27,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, ISearchableDialogIte
     {
         get => _textRequestContent.Text;
     }
-    
+
     public bool IsFormatting
     {
         get => _isFormatting;
@@ -129,7 +127,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, ISearchableDialogIte
 
     private bool _isFormatting;
 
-    public bool IsAvailableInContext { get; } = true;
+    public override bool IsAvailableInContext { get; } = true;
 
     public List<Attachment>? Attachments { get; set; }
 
@@ -161,10 +159,9 @@ public class RequestViewItem : BaseViewModel, IRequestItem, ISearchableDialogIte
     /// <summary>
     /// 预估
     /// </summary>
-    public long Tokens
+    public override long Tokens
     {
         get { return GetAsyncProperty(async () => await TokensCounter.CountTokens(this.RawTextMessage), 0); }
-        set => SetAsyncProperty(value);
     }
 
     public DialogSessionViewModel? ParentSession { get; }
@@ -215,7 +212,7 @@ public class RequestViewItem : BaseViewModel, IRequestItem, ISearchableDialogIte
         });
     }
 
-    public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
+    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (_message == null)

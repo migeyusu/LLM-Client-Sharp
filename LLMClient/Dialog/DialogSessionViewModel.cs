@@ -861,7 +861,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                         _mapper.Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem,
                             options =>
                             {
-                                options.Items.Add(AutoMapModelTypeConverter.ParentSessionViewModelKey, this);
+                                options.Items.Add(AutoMapModelTypeConverter.ParentDialogViewModelKey, this);
                             });
                     if (this.DialogItems.Contains(multiResponseViewItem, DialogItemEqualityComparer.Instance))
                     {
