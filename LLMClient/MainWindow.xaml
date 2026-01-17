@@ -62,6 +62,7 @@
                                                             Style="{StaticResource DialogContentControlStyle}">
                                         <controls:DiffViewer OldText="{Binding  ComparedLeft}"
                                                              NewText="{Binding ComparedRight}"
+                                                             
                                                              MaxHeight="750"
                                                              MaxWidth="1000" />
                                     </HeaderedContentControl>

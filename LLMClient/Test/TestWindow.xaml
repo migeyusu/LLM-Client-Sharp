@@ -9,45 +9,40 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance test:TestWindow}"
         Title="TestWindow" Height="800" Width="1200">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition />
-        </Grid.RowDefinitions>
-        <Image Source="{Binding LatexSource,Mode=OneWay}"
-               Stretch="None" />
-        <wpf:WebView2 Grid.Row="1"
-                      x:Name="WebView2" />
-        <!--<FlowDocumentScrollViewer Document="{Binding Document,Mode=OneWay}" 
-                                  MaxHeight="700"/>-->
-        <StackPanel Grid.Row="0">
-            <controls:FormulaControl Scale="30"
-                                     Formula="{Binding Formula,Mode=OneWay}" />
-            <TextBox AcceptsReturn="True"
-                     x:Name="FormulaInput"/>
-        </StackPanel>
+        <Grid>
+                <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-        <!--
-        <component:MarkdownTextBlock Grid.Row="1"
-                                     TextWrapping="Wrap"
-                                     VerticalAlignment="Top"
-                                     Source="{Binding  Collection,Mode=OneTime}" />-->
-        <StackPanel Grid.Row="1"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Margin="10">
-            <Button Content="选择"
-                    Click="Input_OnClick"
-                    Margin="10,0,0,0"/>
-            <Button Content="test"
-                    Margin="10,0,0,0"/>
-            <Button Click="OK_OnClick"
-                    Margin="10,0,0,0"
-                    Content="OK" />
-            <Button Click="Cancel_OnClick"
-                    Content="Cancel"
-                    Margin="10,0,0,0" />
-        </StackPanel>
-    </Grid>
+                <!-- 顶部工具栏 -->
+                <Border Grid.Row="0" Background="#2d2d3d" Padding="12">
+                        <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🌿 Conversation Branches" 
+                                           FontSize="16" 
+                                           FontWeight="SemiBold"
+                                           Foreground="White"
+                                           VerticalAlignment="Center"/>
+                                <Rectangle Width="1" Fill="#444" Margin="20,0"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Ellipse Width="12" Height="12" Fill="#3b82f6" Margin="0,0,6,0"/>
+                                        <TextBlock Text="User" Foreground="#aaa" Margin="0,0,16,0"/>
+                                        <Ellipse Width="12" Height="12" Fill="#10b981" Margin="0,0,6,0"/>
+                                        <TextBlock Text="Assistant" Foreground="#aaa"/>
+                                </StackPanel>
+                        </StackPanel>
+                </Border>       
+
+                <!-- 树形视图区域 -->
+                <ScrollViewer Grid.Row="1" 
+                              PanningMode="Both"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              Background="#f5f5f5">
+                        <test:BranchTreeControl x:Name="BranchTree"
+                                                    MinWidth="800"
+                                                    MinHeight="600"/>
+                </ScrollViewer>
+        </Grid>
+
 </Window>

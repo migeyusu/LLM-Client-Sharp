@@ -176,7 +176,7 @@ public class UnitTest1
     [Fact]
     public void FunctionCallGeneratorSerialize()
     {
-        var projectPersistModel = new ProjectPersistModel
+        var projectPersistModel = new GeneralProjectPersistModel()
         {
             Tasks =
             [
@@ -184,7 +184,7 @@ public class UnitTest1
                 {
                     DialogItems = new IDialogPersistItem[]
                     {
-                        new RequestViewItem("test")
+                        new RequestPersistItem()
                         {
                             /*FunctionGroups = new List<IAIFunctionGroup>()
                             {

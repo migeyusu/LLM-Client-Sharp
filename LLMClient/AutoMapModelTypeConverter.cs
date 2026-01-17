@@ -6,7 +6,6 @@ using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using LLMClient.Project;
 using LLMClient.ToolCall;
 
 namespace LLMClient;
@@ -17,10 +16,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     ITypeConverter<DialogFilePersistModel, DialogViewModel>,
     ITypeConverter<MultiResponsePersistItem, MultiResponseViewItem>,
     ITypeConverter<MultiResponseViewItem, MultiResponsePersistItem>,
-    ITypeConverter<ProjectPersistModel, ProjectViewModel>,
-    ITypeConverter<ProjectViewModel, ProjectPersistModel>,
-    ITypeConverter<ProjectTaskPersistModel, ProjectTaskViewModel>,
-    ITypeConverter<ProjectTaskViewModel, ProjectTaskPersistModel>,
     ITypeConverter<ILLMChatClient, ParameterizedLLMModelPO>,
     ITypeConverter<ParameterizedLLMModelPO, ILLMChatClient>,
     ITypeConverter<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>,
@@ -34,7 +29,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
     private readonly IViewModelFactory _viewModelFactory;
 
-    private readonly IPromptsResource _promptsResource;
+    private IPromptsResource _promptsResource;
 
     public AutoMapModelTypeConverter(IEndpointService service, IMcpServiceCollection mcpServiceCollection,
         IViewModelFactory factory, IPromptsResource promptsResource)
@@ -42,7 +37,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         this._endpointService = service;
         this._mcpServiceCollection = mcpServiceCollection;
         this._viewModelFactory = factory;
-        this._promptsResource = promptsResource;
+        _promptsResource = promptsResource;
     }
 
     public DialogFilePersistModel Convert(DialogFileViewModel from, DialogFilePersistModel? destination,
@@ -147,26 +142,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
     public const string ParentProjectViewModelKey = "ParentProjectViewModel";
 
-    private ObservableCollection<PromptEntry>? MapPrompts(PromptsPersistModel? sourceExtendedPrompts)
-    {
-        if (sourceExtendedPrompts != null)
-        {
-            var promptReference = sourceExtendedPrompts.PromptReference;
-            var systemPrompts = _promptsResource.SystemPrompts;
-            if (promptReference != null && systemPrompts.Any())
-            {
-                var promptEntries = promptReference
-                    .Select(id => systemPrompts.FirstOrDefault(p => p.Id == id))
-                    .Where(p => p != null)
-                    .OfType<PromptEntry>()
-                    .ToArray();
-                return new ObservableCollection<PromptEntry>(promptEntries);
-            }
-        }
-
-        return null;
-    }
-
 
     public DialogViewModel Convert(DialogFilePersistModel source, DialogViewModel? destination,
         ResolutionContext context)
@@ -203,7 +178,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             destination.TokensConsumption = source.TokensConsumption;
             destination.TotalPrice = source.TotalPrice;
             destination.UserSystemPrompt = source.UserSystemPrompt;
-            var mapPrompts = MapPrompts(source.ExtendedPrompts);
+            var mapPrompts = MapPrompts(source.ExtendedPrompts, _promptsResource);
             if (mapPrompts != null)
             {
                 destination.ExtendedSystemPrompts = mapPrompts;
@@ -222,219 +197,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    public ProjectViewModel Convert(ProjectPersistModel source, ProjectViewModel? destination,
-        ResolutionContext context)
-    {
-        var mapper = context.Mapper;
-        var defaultClient = source.Client == null
-            ? EmptyLlmModelClient.Instance
-            : context.Mapper.Map<ParameterizedLLMModelPO, ILLMChatClient>(source.Client);
-        var sourceType = source.Type;
-        var projectOption = new ProjectOption
-        {
-            Name = source.Name,
-            Description = source.Description,
-            FolderPath = source.FolderPath,
-            AllowedFolderPaths = source.AllowedFolderPaths == null
-                ? []
-                : new ObservableCollection<string>(source.AllowedFolderPaths),
-            Type = string.IsNullOrEmpty(sourceType)
-                ? ProjectType.Standard
-                : (Enum.TryParse(sourceType, true, out ProjectType projectType) ? projectType : ProjectType.Standard),
-        };
-        if (destination != null)
-        {
-            throw new NotSupportedException("不允许直接创建ProjectViewModel!");
-        }
-
-        switch (projectOption.Type)
-        {
-            case ProjectType.CSharp:
-                if (source is not CSharpProjectPersistModel projectCSharpPersistModel)
-                {
-                    throw new NotSupportedException("源项目不是CSharpProjectPersistModel类型.");
-                }
-
-                var cSharpProjectViewModel =
-                    _viewModelFactory.CreateViewModel<CSharpProjectViewModel>(projectOption, defaultClient);
-                cSharpProjectViewModel.ProjectFilePath = projectCSharpPersistModel.ProjectFilePath;
-                cSharpProjectViewModel.SolutionFilePath = projectCSharpPersistModel.SolutionFilePath;
-                cSharpProjectViewModel.IsSolutionMode = projectCSharpPersistModel.IsSolutionMode;
-                destination = cSharpProjectViewModel;
-                break;
-            case ProjectType.Cpp:
-                if (source is not CppProjectPersistModel)
-                {
-                    throw new NotSupportedException("源项目不是CppProjectPersistModel类型.");
-                }
-
-                destination = _viewModelFactory.CreateViewModel<CppProjectViewModel>(projectOption, defaultClient);
-                break;
-            default:
-                destination = _viewModelFactory.CreateViewModel<ProjectViewModel>(projectOption, defaultClient);
-                break;
-        }
-
-        destination.Requester.PromptString = source.UserPrompt;
-        var mapPrompts = MapPrompts(source.ExtendedPrompts);
-        if (mapPrompts != null)
-        {
-            destination.ExtendedSystemPrompts = mapPrompts;
-        }
-
-        destination.UserSystemPrompt = source.UserSystemPrompt;
-        context.Items.Add(ParentProjectViewModelKey, destination);
-        try
-        {
-            destination.Tasks.Clear();
-            var tasks = source.Tasks?
-                .Select(task => mapper.Map<ProjectTaskPersistModel, ProjectTaskViewModel>(task))
-                .ToArray();
-            if (tasks != null)
-            {
-                foreach (var projectTask in tasks)
-                {
-                    destination.AddTask(projectTask);
-                }
-            }
-
-            destination.TokensConsumption = source.TokensConsumption;
-            destination.TotalPrice = source.TotalPrice;
-            destination.EditTime = source.EditTime;
-        }
-        finally
-        {
-            context.Items.Remove(ParentProjectViewModelKey);
-        }
-
-        return destination;
-    }
-
-    public ProjectPersistModel Convert(ProjectViewModel source, ProjectPersistModel? destination,
-        ResolutionContext context)
-    {
-        if (source is CSharpProjectViewModel cSharpProjectViewModel)
-        {
-            destination ??= new CSharpProjectPersistModel();
-            if (destination is not CSharpProjectPersistModel cSharpProjectPersistModel)
-            {
-                throw new InvalidOperationException("Destination is not CSharpProjectPersistModel.");
-            }
-
-            cSharpProjectPersistModel.IsSolutionMode = cSharpProjectViewModel.IsSolutionMode;
-            cSharpProjectPersistModel.ProjectFilePath = cSharpProjectViewModel.ProjectFilePath;
-            cSharpProjectPersistModel.SolutionFilePath = cSharpProjectViewModel.SolutionFilePath;
-        }
-        else if (source is CppProjectViewModel)
-        {
-            destination ??= new CppProjectPersistModel();
-            if (destination is not CppProjectPersistModel)
-            {
-                throw new InvalidOperationException("Destination is not CppProjectPersistModel.");
-            }
-        }
-        else
-        {
-            destination ??= new ProjectPersistModel();
-        }
-
-        MapProjectViewModelBase(source, destination, context);
-        return destination;
-    }
-
-    private static void MapProjectViewModelBase(ProjectViewModel source, ProjectPersistModel destination,
-        ResolutionContext context)
-    {
-        var mapper = context.Mapper;
-        var projectOption = source.Option;
-        destination.Name = projectOption.Name;
-        destination.EditTime = source.EditTime;
-        destination.Description = projectOption.Description;
-        destination.Type = projectOption.Type.ToString();
-        destination.ExtendedPrompts = source.ExtendedSystemPrompts.Any()
-            ? new PromptsPersistModel()
-            {
-                PromptReference = source.ExtendedSystemPrompts.Select(entry => entry.Id).ToArray(),
-            }
-            : null;
-        destination.FolderPath = projectOption.FolderPath;
-        destination.UserSystemPrompt = source.UserSystemPrompt;
-        destination.AllowedFolderPaths = projectOption.AllowedFolderPaths.ToArray();
-        destination.TokensConsumption = source.TokensConsumption;
-        destination.TotalPrice = source.TotalPrice;
-        destination.Client =
-            context.Mapper.Map<ILLMChatClient, ParameterizedLLMModelPO>(source.Requester.DefaultClient);
-        destination.UserPrompt = source.Requester.PromptString;
-        var projectTaskPersistModels = source.Tasks
-            .Select(task => mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(task)).ToArray();
-        destination.Tasks = projectTaskPersistModels;
-    }
-
-    public ProjectTaskViewModel Convert(ProjectTaskPersistModel source, ProjectTaskViewModel? destination,
-        ResolutionContext context)
-    {
-        if (!context.Items.TryGetValue(ParentProjectViewModelKey, out var parentProjectViewModel)
-            || parentProjectViewModel is not ProjectViewModel projectViewModel)
-        {
-            throw new InvalidOperationException("Parent ProjectViewModel is not set in context.");
-        }
-
-        destination ??= _viewModelFactory.CreateViewModel<ProjectTaskViewModel>(projectViewModel);
-        context.Items.Add(ParentDialogViewModelKey, destination);
-        var mapper = context.Mapper;
-        try
-        {
-            var sourceDialogItems = source.DialogItems
-                ?.Select<IDialogPersistItem, IDialogItem>((item => mapper.Map<IDialogPersistItem, IDialogItem>(item)))
-                .ToArray();
-            if (sourceDialogItems != null)
-            {
-                foreach (var sourceDialogItem in sourceDialogItems)
-                {
-                    destination.DialogItems.Add(sourceDialogItem);
-                }
-            }
-
-            destination.Name = source.Name;
-            destination.Summary = source.Summary;
-            destination.Description = source.Description;
-            destination.EnableInContext = source.EnableInContext;
-            destination.Type = source.Type;
-            destination.TokensConsumption = source.TokensConsumption;
-            destination.TotalPrice = source.TotalPrice;
-            destination.SelectedFunctionGroups = source.AllowedFunctions?
-                .Select((o => mapper.Map<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>(o)))
-                .ToArray();
-        }
-        finally
-        {
-            context.Items.Remove(ParentDialogViewModelKey);
-        }
-
-        return destination;
-    }
-
-    public ProjectTaskPersistModel Convert(ProjectTaskViewModel source, ProjectTaskPersistModel? destination,
-        ResolutionContext context)
-    {
-        var mapper = context.Mapper;
-        var dialogItems = source.DialogItems
-            .Select<IDialogItem, IDialogPersistItem>(item => mapper.Map<IDialogItem, IDialogPersistItem>(item))
-            .ToArray();
-        destination ??= new ProjectTaskPersistModel();
-        destination.Name = source.Name;
-        destination.Summary = source.Summary;
-        destination.Type = source.Type;
-        destination.DialogItems = dialogItems;
-        destination.Description = source.Description;
-        destination.EnableInContext = source.EnableInContext;
-        destination.TokensConsumption = source.TokensConsumption;
-        destination.TotalPrice = source.TotalPrice;
-        destination.AllowedFunctions = source.SelectedFunctionGroups?
-            .Select(tree => mapper.Map<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>(tree))
-            .ToArray();
-        return destination;
-    }
 
     public ParameterizedLLMModelPO Convert(ILLMChatClient source, ParameterizedLLMModelPO? destination,
         ResolutionContext context)
@@ -449,7 +211,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination ??= new ParameterizedLLMModelPO();
         destination.EndPointName = source.Endpoint.Name;
         destination.ModelName = source.Model.Name;
-        destination.Params = source.Parameters;
+        destination.Parameters = source.Parameters;
         context.InstanceCache?.TryAdd(key, destination);
         return destination;
     }
@@ -474,7 +236,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             : _endpointService.GetEndpoint(source.EndPointName);
         var llmModelClient = llmEndpoint?.GetModel(source.ModelName)?
             .CreateChatClient() ?? EmptyLlmModelClient.Instance;
-        var sourceJsonModel = source.Params;
+        var sourceJsonModel = source.Parameters;
         if (sourceJsonModel != null)
         {
             context.Mapper.Map(sourceJsonModel, llmModelClient.Parameters);
@@ -531,7 +293,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         destination ??= new ParameterizedLLMModelPO();
         destination.EndPointName = source.Model.Endpoint.Name;
         destination.ModelName = source.Model.Name;
-        destination.Params = source.Parameters;
+        destination.Parameters = source.Parameters;
         context.InstanceCache?.TryAdd(key, destination);
         return destination;
     }
@@ -556,7 +318,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
             : _endpointService.GetEndpoint(source.EndPointName);
         var llmModelClient = llmEndpoint?.GetModel(source.ModelName)?
             .CreateChatClient() ?? EmptyLlmModelClient.Instance;
-        var sourceJsonModel = source.Params;
+        var sourceJsonModel = source.Parameters;
         if (sourceJsonModel != null)
         {
             context.Mapper.Map(sourceJsonModel, llmModelClient.Parameters);
@@ -564,5 +326,103 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
         context.InstanceCache?.TryAdd(contextCacheKey, llmModelClient);
         return llmModelClient;
+    }
+
+    public static ObservableCollection<PromptEntry>? MapPrompts(PromptsPersistModel? sourceExtendedPrompts,
+        IPromptsResource promptsResource)
+    {
+        if (sourceExtendedPrompts != null)
+        {
+            var promptReference = sourceExtendedPrompts.PromptReference;
+            var systemPrompts = promptsResource.SystemPrompts;
+            if (promptReference != null && systemPrompts.Any())
+            {
+                var promptEntries = promptReference
+                    .Select(id => systemPrompts.FirstOrDefault(p => p.Id == id))
+                    .Where(p => p != null)
+                    .OfType<PromptEntry>()
+                    .ToArray();
+                return new ObservableCollection<PromptEntry>(promptEntries);
+            }
+        }
+
+        return null;
+    }
+
+    private static IDialogItem? BuildTreeFromFlatList(IMapperBase mapper, IDialogPersistItem[]? flatPersistItems)
+    {
+        if (flatPersistItems == null || flatPersistItems.Length == 0) return null;
+
+        var vmList = new List<IDialogItem>();
+        var idMap = new Dictionary<Guid, IDialogItem>();
+        // 临时变量，用于记录线性数组的上一个节点（处理老数据用）
+        IDialogItem? lastImplicitParent = null;
+        foreach (var persistItem in flatPersistItems)
+        {
+            // A.如果老数据没有 ID，现场分配一个，保证运行时有 ID
+            if (persistItem.Id == Guid.Empty)
+            {
+                persistItem.Id = Guid.NewGuid();
+            }
+
+            // 转为 ViewModel (使用 AutoMapper)
+            var dialogItem = mapper.Map<IDialogItem>(persistItem);
+
+            // B. 确定 PreviousItemId
+            // 如果文件里有 PreviousItemId (新数据 分叉)，用文件里的
+            // 如果文件里没有 (老数据/主干)，默认认为是上一个 Item 的孩子
+            var parentId = persistItem.PreviousItemId ?? lastImplicitParent?.Id;
+
+            // C. 建立树关系
+            if (parentId.HasValue && idMap.TryGetValue(parentId.Value, out var previousNode))
+            {
+                previousNode.AppendChild(dialogItem);
+            }
+            // 没有 parent 或者找不到 parent，说明是根节点
+            // (通常只有数组第一个元素，或者断链的数据)
+
+            // D. 注册到字典，供后续节点查找
+            idMap[dialogItem.Id] = dialogItem;
+
+            // E. 更新“隐式父节点”，为下一个循环做准备
+            // 只有当这是老数据模式（即物理相邻表示逻辑相邻）时才更新
+            // 如果是新数据的分叉节点（append在数组末尾的），逻辑上不一定是下一个节点的父，
+            // 但为了保险，通常我们只对 ParentId 为 null 的情况使用这个 lastImplicitParent
+            lastImplicitParent = dialogItem;
+            vmList.Add(dialogItem);
+        }
+
+        // 返回所有的根节点（Parent 为空的节点）
+        return vmList.FirstOrDefault(x => x.PreviousItem == null);
+    }
+
+    private IDialogPersistItem[] FlattenTreeForSave(IDialogItem root, IMapperBase mapper)
+    {
+        var flatList = new List<IDialogPersistItem>();
+        var visited = new HashSet<Guid>();
+
+        Visit(root);
+        return flatList.ToArray();
+
+        // 递归遍历（保证了父节点先加入列表）
+        void Visit(IDialogItem item)
+        {
+            if (!visited.Add(item.Id)) return; // 防止循环引用死循环
+
+            var persistItem = mapper.Map<IDialogPersistItem>(item);
+
+            // 【关键】：写入 PreviousItemId
+            persistItem.PreviousItemId = item.PreviousItem?.Id;
+
+            // 这一步确保 ID 即使在 VM 运行时被新建，也能回写到 PO
+            persistItem.Id = item.Id;
+
+            flatList.Add(persistItem);
+
+            foreach (var child in item.Children)
+            {
+                Visit(child);
+            }
+        }
     }
 }

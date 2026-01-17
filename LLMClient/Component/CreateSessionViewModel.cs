@@ -102,6 +102,7 @@ public class CreateSessionViewModel : BaseViewModel
                         {
                             throw new NotSupportedException("Project option is not valid");
                         }
+
                         var client = ModelSelection.CreateClient();
                         var projectOption = (ProjectOption)Project.Clone();
 
@@ -111,7 +112,11 @@ public class CreateSessionViewModel : BaseViewModel
                                 session = factory.CreateViewModel<CSharpProjectViewModel>(projectOption, client);
                                 break;
                             case ProjectType.Standard:
+                                session = factory.CreateViewModel<GeneralProjectViewModel>(projectOption, client);
+                                break;
                             case ProjectType.Cpp:
+                                session = factory.CreateViewModel<CppProjectViewModel>(projectOption, client);
+                                break;
                             default:
                                 session = factory.CreateViewModel<ProjectViewModel>(projectOption, client);
                                 break;

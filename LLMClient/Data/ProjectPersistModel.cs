@@ -2,28 +2,19 @@
 
 namespace LLMClient.Data;
 
-public class ProjectPersistModel
+public abstract class ProjectPersistModel
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
 
     public int Version { get; set; } = CurrentVersion;
 
-    public string? Type { get; set; }
-
     public DateTime EditTime { get; set; }
 
-    public string? Name { get; set; }
-
-    public string? Description { get; set; }
+    [JsonPropertyName("ProjectOptions")] public ProjectOptionsPersistModel? Option { get; set; }
 
     public PromptsPersistModel? ExtendedPrompts { get; set; }
 
-    public string[]? AllowedFolderPaths { get; set; }
-
-    public string? FolderPath { get; set; }
-    
-    [JsonPropertyName("SystemPrompt")]
-    public string? UserSystemPrompt { get; set; }
+    [JsonPropertyName("SystemPrompt")] public string? UserSystemPrompt { get; set; }
 
     #region requester
 
@@ -38,6 +29,10 @@ public class ProjectPersistModel
     public double TotalPrice { get; set; }
 
     public ProjectTaskPersistModel[]? Tasks { get; set; }
+}
+
+public class GeneralProjectPersistModel : ProjectPersistModel
+{
 }
 
 public class CSharpProjectPersistModel : ProjectPersistModel

@@ -1,7 +1,6 @@
 ﻿using System.ClientModel;
 using System.Collections.Concurrent;
 using System.ComponentModel;
-using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
@@ -15,14 +14,10 @@ using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
-using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.Project;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
-using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -58,140 +53,6 @@ public static class Extension
         stream.Position = 0;
 
         return await JsonNode.ParseAsync(stream);
-    }
-
-    public static IServiceCollection AddMap(this IServiceCollection collection)
-    {
-        return collection.AddAutoMapper((provider, expression) =>
-        {
-            expression.CreateMap<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<IThinkingConfig, GeekAIThinkingConfig>();
-            expression.CreateMap<IThinkingConfig, OpenRouterReasoningConfig>();
-            expression.CreateMap<IThinkingConfig, NVDAAPIThinkingConfig>();
-            expression.CreateMap<IAIContent, AIContent>().IncludeAllDerived();
-            expression.CreateMap<AIContent, IAIContent>().IncludeAllDerived();
-            expression.CreateMap<ChatMessage, ChatMessagePO>();
-            expression.CreateMap<ChatMessagePO, ChatMessage>();
-            expression.CreateMap<TextContent, TextContentPO>();
-            expression.CreateMap<TextContentPO, TextContent>();
-            expression.CreateMap<FunctionCallContent, FunctionCallContentPO>();
-            expression.CreateMap<FunctionCallContentPO, FunctionCallContent>();
-            expression.CreateMap<DataContent, DataContentPO>()
-                .ForMember(po => po.Data, opt => opt.MapFrom(content => content.Data));
-            expression.CreateMap<DataContentPO, DataContent>()
-                .ConstructUsing(((po, _) =>
-                {
-                    if (po.Data != null)
-                    {
-                        return new DataContent(po.Data, po.MediaType);
-                    }
-
-                    if (po.Uri != null)
-                    {
-                        return new DataContent(po.Uri, po.MediaType);
-                    }
-
-                    throw new InvalidOperationException();
-                }));
-            expression.CreateMap<ErrorContent, ErrorContentPO>();
-            expression.CreateMap<ErrorContentPO, ErrorContent>();
-            expression.CreateMap<FunctionResultContent, FunctionResultContentPO>();
-            expression.CreateMap<FunctionResultContentPO, FunctionResultContent>()
-                .ConstructUsing((po, _) => new FunctionResultContent(po.CallId, po.Result)
-                    { Exception = po.Exception });
-            expression.CreateMap<TextReasoningContent, TextReasoningContentPO>();
-            expression.CreateMap<TextReasoningContentPO, TextReasoningContent>();
-            expression.CreateMap<UriContent, UriContentPO>();
-            expression.CreateMap<UriContentPO, UriContent>()
-                .ConstructUsing((po => new UriContent(po.Uri!, po.MediaType!)));
-            expression.CreateMap<UsageContent, UsageContentPO>();
-            expression.CreateMap<UsageContentPO, UsageContent>();
-            expression.CreateMap<RequestViewItem, RequestPersistItem>();
-            expression.CreateMap<RequestPersistItem, RequestViewItem>()
-                .ConstructUsing((item, context) =>
-                {
-                    var contextItems = context.Items;
-                    if (!contextItems.TryGetValue(AutoMapModelTypeConverter.ParentDialogViewModelKey,
-                            out var parentDialogViewModel)
-                        || parentDialogViewModel is not DialogSessionViewModel parentViewModel)
-                    {
-                        throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
-                    }
-
-                    return new RequestViewItem(item.RawTextMessage ?? string.Empty, parentViewModel);
-                });
-
-            expression.CreateMap<SummaryRequestViewItem, SummaryRequestPersistItem>();
-            expression.CreateMap<SummaryRequestPersistItem, SummaryRequestViewItem>();
-            expression.CreateMap<EraseViewItem, ErasePersistItem>();
-            expression.CreateMap<ErasePersistItem, EraseViewItem>();
-            expression.CreateMap<IDialogItem, IDialogPersistItem>()
-                .Include<RequestViewItem, RequestPersistItem>()
-                .Include<SummaryRequestViewItem, SummaryRequestPersistItem>()
-                .Include<EraseViewItem, ErasePersistItem>()
-                .Include<MultiResponseViewItem, MultiResponsePersistItem>();
-            expression.CreateMap<IDialogPersistItem, IDialogItem>()
-                .Include<RequestPersistItem, RequestViewItem>()
-                .Include<SummaryRequestPersistItem, SummaryRequestViewItem>()
-                .Include<ErasePersistItem, EraseViewItem>()
-                .Include<MultiResponsePersistItem, MultiResponseViewItem>();
-            expression.CreateMap<IResponse, ResponseViewItem>();
-            expression.CreateMap<IModelParams, IModelParams>();
-            expression.CreateMap<IModelParams, DefaultModelParam>();
-            expression.CreateMap<DefaultModelParam, DefaultModelParam>();
-            expression.CreateMap<IModelParams, ILLMModel>();
-            expression.CreateMap<ILLMModel, IModelParams>();
-            expression.CreateMap<IModelParams, APIModelInfo>();
-            expression.CreateMap<APIDefaultOption, APIDefaultOption>();
-            expression.CreateMap<ILLMChatClient, ParameterizedLLMModelPO>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<IParameterizedLLMModel, ParameterizedLLMModelPO>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ParameterizedLLMModelPO, IParameterizedLLMModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ParameterizedLLMModelPO, ILLMChatClient>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<DialogFilePersistModel, DialogFileViewModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<DialogFileViewModel, DialogFilePersistModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<DialogViewModel, DialogFilePersistModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<DialogFilePersistModel, DialogViewModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ResponseViewItem, ResponsePersistItem>()
-                .PreserveReferences();
-            expression.CreateMap<ResponsePersistItem, ResponseViewItem>()
-                .PreserveReferences()
-                .ConstructUsing((source, context) =>
-                {
-                    ILLMChatClient llmClient = EmptyLlmModelClient.Instance;
-                    var client = source.Client;
-                    if (client != null)
-                    {
-                        llmClient = context.Mapper.Map<ParameterizedLLMModelPO, ILLMChatClient>(client);
-                    }
-
-                    return new ResponseViewItem(llmClient);
-                });
-            expression.CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ProjectViewModel, ProjectPersistModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ProjectPersistModel, ProjectViewModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ProjectTaskViewModel, ProjectTaskPersistModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            expression.CreateMap<ProjectTaskPersistModel, ProjectTaskViewModel>()
-                .ConvertUsing<AutoMapModelTypeConverter>();
-            // expression.CreateMap<AzureOption, GithubCopilotEndPoint>();
-            expression.ConstructServicesUsing(provider.GetService);
-        }, AppDomain.CurrentDomain.GetAssemblies().ToArray(), ServiceLifetime.Singleton);
     }
 
     /// <summary>
@@ -307,6 +168,28 @@ public static class Extension
         }
 
         return generator.ToString();
+    }
+
+    public static IServiceCollection AddMap(this IServiceCollection collection)
+    {
+        return collection.AddAutoMapper((provider, expression) =>
+            {
+                var dialogMappingProfile = provider.GetService<DialogMappingProfile>();
+                // 可以在这里添加全局配置
+                expression.AllowNullCollections = true;
+                // cfg.Advanced.AllowAdditiveTypeMapCreation = true; // 如有需要\
+                // var viewModelFactory = provider.GetRequiredService<IViewModelFactory>();
+                expression.AddProfile(dialogMappingProfile);
+            },
+            Enumerable.Empty<Assembly>());
+    }
+
+    public static IReadOnlyList<IDialogItem> PathFromRoot(this IDialogItem item)
+    {
+        var stack = new Stack<IDialogItem>();
+        for (var p = item; p != null; p = p.PreviousItem)
+            stack.Push(p);
+        return stack.ToList();
     }
 
     #region json

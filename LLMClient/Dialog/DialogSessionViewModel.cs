@@ -4,7 +4,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
@@ -234,10 +233,43 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     #region items management
 
     public abstract string? SystemPrompt { get; }
+
+    /// <summary>
+    /// 当前叶子节点，用于新建请求时定位上下文，默认是最后一个可用节点
+    /// <para>用法：新建分支时设置改节点为最后一个节点</para>
+    /// </summary>
+    public MultiResponseViewItem? CurrentLeaf
+    {
+        get => _currentLeaf;
+        set
+        {
+            if (Equals(value, _currentLeaf)) return;
+            _currentLeaf = value;
+            OnPropertyChanged();
+            if (value != null)
+            {
+                
+            }
+        }
+    }
+
+    private void RebuildLinearItems()
+    {
+        DialogItems.Clear();
+        if (CurrentLeaf == null) return;
+        
+        foreach (var node in CurrentLeaf.PathFromRoot())
+            DialogItems.Add(node);
+    }
+
     public ObservableCollection<IDialogItem> DialogItems { get; }
 
     public ICommand ClearContextCommand { get; }
 
+    /// <summary>
+    /// 通过插入擦除标记来切断上下文
+    /// </summary>
+    /// <param name="requestViewItem"></param>
     public void CutContext(IRequestItem? requestViewItem = null)
     {
         if (DialogItems.Count == 0)
@@ -521,6 +553,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     private readonly IMapper _mapper;
     private long _predictedContextLength;
     private MultiResponseViewItem? _currentResponseViewItem;
+    private MultiResponseViewItem? _currentLeaf;
 
     public async Task<CompletedResult> AddNewResponse(ILLMChatClient client,
         IList<IDialogItem> history,

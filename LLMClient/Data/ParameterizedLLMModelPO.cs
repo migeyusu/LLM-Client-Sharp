@@ -1,8 +1,10 @@
 ﻿using LLMClient.Abstraction;
+using Newtonsoft.Json;
 
 namespace LLMClient.Data;
 
 public class ParameterizedLLMModelPO : LLMModelPersistModel
 {
-    public IModelParams? Params { get; set; }
+    [JsonProperty("Params")]
+    public IModelParams? Parameters { get; set; }
 }

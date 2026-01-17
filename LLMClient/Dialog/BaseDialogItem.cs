@@ -8,8 +8,9 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
 {
     public abstract long Tokens { get; }
 
-    public Guid Id { get; } = Guid.NewGuid();
-
+    public Guid Id { get; set; } = Guid.NewGuid();
+    
+    private IDialogItem? _previousItem;
     public IDialogItem? PreviousItem
     {
         get => _previousItem;
@@ -18,11 +19,11 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
             if (Equals(value, _previousItem)) return;
             _previousItem = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(PreviousItemId));
         }
     }
 
     public Guid? PreviousItemId => PreviousItem?.Id;
-
     public ObservableCollection<IDialogItem> ChildItemsObservables { get; } = [];
 
     public IReadOnlyCollection<IDialogItem> Children => _childrenReadOnly;
@@ -30,7 +31,6 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
     public abstract bool IsAvailableInContext { get; }
 
     private readonly ReadOnlyObservableCollection<IDialogItem> _childrenReadOnly;
-    private IDialogItem? _previousItem;
 
     protected BaseDialogItem()
     {
@@ -38,4 +38,10 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
     }
 
     public abstract IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken);
+
+    public void AppendChild(IDialogItem child)
+    {
+        ((BaseDialogItem)child).PreviousItem = this;
+        ChildItemsObservables.Add(child);
+    }
 }

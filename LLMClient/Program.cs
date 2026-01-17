@@ -65,6 +65,7 @@ public class Program
                 .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()
                 .AddSingleton<CreateSessionViewModel>()
                 .AddSingleton<ITokensCounter, DefaultTokensCounter>()
+                .AddSingleton<DialogMappingProfile>()
                 .AddMap();
 #if DEBUG
             var resourceBuilder = ResourceBuilder
@@ -125,7 +126,7 @@ public class Program
             ContextExtension.RegisterMSBuild();
             App app = new App();
             app.InitializeComponent();
-            // app.Run(new TestWindow());
+            app.Run(new LLMClient.Test.TestWindow());
             //app.Run(new AsyncTestWindow());
             mainWindow = serviceProvider.GetService<MainWindow>();
             app.Run(mainWindow);

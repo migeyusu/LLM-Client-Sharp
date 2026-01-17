@@ -36,12 +36,11 @@ public enum ProjectType
     [Description("C++")] Cpp
 }
 
-public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectViewModel>, IPromptableSession
+public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectViewModel>, IPromptableSession
 {
     public const string SaveDir = "Projects";
 
     private readonly IMapper _mapper;
-
 
     private bool _isDataChanged = true;
 
@@ -98,7 +97,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
                 throw new Exception($"Project version mismatch: {version} != {ProjectPersistModel.CurrentVersion}");
             }
 
-            var typeText = root[nameof(ProjectPersistModel.Type)]?.GetValue<string>();
+            var typeText = root["ProjectOptions"]?[nameof(ProjectOptionsPersistModel.Type)]?.GetValue<string>();
             var (poType, viewmodelType) = ResolveTypePair(typeText);
             var persistModel = (ProjectPersistModel?)root.Deserialize(poType, SerializerOption);
             if (persistModel == null)
@@ -111,7 +110,7 @@ public class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectV
             {
                 throw new Exception($"Project mapping failed: {typeText} != {viewmodelType}");
             }
-            
+
             return viewModel;
         }
         catch (Exception e)
