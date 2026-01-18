@@ -126,7 +126,7 @@ public class Program
             ContextExtension.RegisterMSBuild();
             App app = new App();
             app.InitializeComponent();
-            app.Run(new LLMClient.Test.TestWindow());
+            // app.Run(new LLMClient.Test.TestWindow());
             //app.Run(new AsyncTestWindow());
             mainWindow = serviceProvider.GetService<MainWindow>();
             app.Run(mainWindow);

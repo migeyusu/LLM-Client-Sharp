@@ -235,6 +235,8 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         _options = options;
         Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
             (Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>>)NewRequest);
+        Requester.FunctionGroupSource = this;
+        Requester.FunctionTreeSelector.Reset();
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedFunctionGroups));
