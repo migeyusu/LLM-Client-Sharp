@@ -1,0 +1,285 @@
+<Window x:Class="ForkChatDemo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ForkChatDemo"
+        xmlns:vm="clr-namespace:ForkChatDemo.ViewModels"
+        xmlns:models="clr-namespace:ForkChatDemo.Models"
+        xmlns:conv="clr-namespace:ForkChatDemo.Converters"
+        Title="对话分叉树 Demo" 
+        Height="750" Width="1200"
+        Background="#F5F5F5"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        <!-- 转换器 -->
+        <conv:RoleToBackgroundConverter x:Key="RoleToBackground"/>
+        <conv:RoleToBorderConverter x:Key="RoleToBorder"/>
+        <conv:RoleToForegroundConverter x:Key="RoleToForeground"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
+        <conv:ChildCountToVisibilityConverter x:Key="ChildCountToVisibility"/>
+
+        <!-- 连线画笔 -->
+        <SolidColorBrush x:Key="LineBrush" Color="#C0C0C0"/>
+        <SolidColorBrush x:Key="LineActiveBrush" Color="#4A90D9"/>
+
+        <!-- ============================================ -->
+        <!-- TreeViewItem 自定义样式（核心：连线实现） -->
+        <!-- ============================================ -->
+        <Style x:Key="ChatTreeViewItemStyle" TargetType="TreeViewItem">
+            <Setter Property="IsExpanded" Value="True"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TreeViewItem">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- ====== 第一行：当前节点 ====== -->
+                            <Grid Grid.Row="0" Margin="0,0,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <!-- 连线区域 -->
+                                    <ColumnDefinition Width="24"/>
+                                    <!-- 内容区域 -->
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 连线Canvas -->
+                                <Canvas Grid.Column="0" 
+                                        Width="24" 
+                                        ClipToBounds="False"
+                                        VerticalAlignment="Stretch">
+                                    
+                                    <!-- 竖线（上半段：连接到父节点） -->
+                                    <Line X1="12" Y1="0" X2="12" Y2="20"
+                                          Stroke="{StaticResource LineBrush}"
+                                          StrokeThickness="2"
+                                          Visibility="{Binding Parent, 
+                                              Converter={StaticResource BoolToVisibility},
+                                              ConverterParameter=NotNull}"/>
+                                    
+                                    <!-- 横线（连接到节点） -->
+                                    <Line X1="12" Y1="20" X2="24" Y2="20"
+                                          Stroke="{StaticResource LineBrush}"
+                                          StrokeThickness="2"
+                                          Visibility="{Binding Parent, 
+                                              Converter={StaticResource BoolToVisibility},
+                                              ConverterParameter=NotNull}"/>
+                                    
+                                    <!-- 节点圆点 -->
+                                    <Ellipse Canvas.Left="6" Canvas.Top="14" 
+                                             Width="12" Height="12"
+                                             Fill="{Binding Role, Converter={StaticResource RoleToBorder}}"
+                                             Stroke="White" StrokeThickness="2"/>
+                                </Canvas>
+
+                                <!-- 节点内容卡片 -->
+                                <Border Grid.Column="1"
+                                        Margin="4,4,8,4"
+                                        Padding="12,8"
+                                        CornerRadius="8"
+                                        Background="{Binding Role, Converter={StaticResource RoleToBackground}}"
+                                        BorderBrush="{Binding Role, Converter={StaticResource RoleToBorder}}"
+                                        BorderThickness="1.5"
+                                        Cursor="Hand"
+                                        MaxWidth="600"
+                                        HorizontalAlignment="Left">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="6" 
+                                                          ShadowDepth="1" 
+                                                          Opacity="0.15" 
+                                                          Color="Black"/>
+                                    </Border.Effect>
+                                    
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- 角色标签 + 分叉标记 -->
+                                        <StackPanel Grid.Row="0" 
+                                                    Orientation="Horizontal" 
+                                                    Margin="0,0,0,4">
+                                            <TextBlock Text="{Binding RoleLabel}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="12"
+                                                       Foreground="{Binding Role, Converter={StaticResource RoleToForeground}}"/>
+                                            
+                                            <!-- 分叉标记 -->
+                                            <Border Margin="8,0,0,0"
+                                                    Padding="6,2"
+                                                    CornerRadius="4"
+                                                    Background="#FFE4B5"
+                                                    Visibility="{Binding Children.Count, 
+                                                        Converter={StaticResource ChildCountToVisibility}}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="⑂" FontSize="10" Margin="0,0,3,0"/>
+                                                    <TextBlock FontSize="10" Foreground="#996600">
+                                                        <Run Text="{Binding Children.Count, Mode=OneWay}"/>
+                                                        <Run Text="条分支"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- 内容文本 -->
+                                        <TextBlock Grid.Row="1"
+                                                   Text="{Binding DisplayText}"
+                                                   TextWrapping="Wrap"
+                                                   FontSize="13"
+                                                   Foreground="#333"
+                                                   MaxWidth="550"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+
+                            <!-- ====== 第二行：子节点容器 ====== -->
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <!-- 连线延伸区域 -->
+                                    <ColumnDefinition Width="24"/>
+                                    <!-- 子节点区域 -->
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 延伸竖线（仅当有子节点时显示） -->
+                                <Border Grid.Column="0" 
+                                        Width="2" 
+                                        HorizontalAlignment="Center"
+                                        Background="{StaticResource LineBrush}"
+                                        Visibility="{Binding HasItems, 
+                                            RelativeSource={RelativeSource TemplatedParent},
+                                            Converter={StaticResource BoolToVisibility}}"
+                                        Margin="0,-4,0,0"/>
+
+                                <!-- 子节点ItemsPresenter -->
+                                <ItemsPresenter Grid.Column="1" Margin="0"/>
+                            </Grid>
+                        </Grid>
+
+                        <!-- 触发器 -->
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="Transparent"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+
+            <!-- 选中状态高亮 -->
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="Transparent"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 层级数据模板 -->
+        <HierarchicalDataTemplate x:Key="ChatNodeTemplate" 
+                                  DataType="{x:Type models:ChatNode}"
+                                  ItemsSource="{Binding Children}">
+            <!-- 内容由 TreeViewItem 模板处理 -->
+        </HierarchicalDataTemplate>
+
+    </Window.Resources>
+
+    <!-- ============================================ -->
+    <!-- 主界面布局 -->
+    <!-- ============================================ -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" MinWidth="400"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*" MinWidth="300"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 左侧：对话树 -->
+        <DockPanel Grid.Column="0" Margin="16">
+            <!-- 标题栏 -->
+            <Border DockPanel.Dock="Top" 
+                    Margin="0,0,0,12" 
+                    Padding="12,8"
+                    Background="White"
+                    CornerRadius="8">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🌳" FontSize="20" Margin="0,0,8,0"/>
+                    <TextBlock Text="对话分叉树" 
+                               FontSize="18" 
+                               FontWeight="Bold" 
+                               Foreground="#333"/>
+                    <TextBlock Text="（点击节点查看完整对话路径）" 
+                               FontSize="12" 
+                               Foreground="#888"
+                               VerticalAlignment="Center"
+                               Margin="12,0,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 树形视图 -->
+            <Border Background="White" CornerRadius="8" Padding="8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Auto">
+                    <TreeView ItemsSource="{Binding RootNodes}"
+                              ItemContainerStyle="{StaticResource ChatTreeViewItemStyle}"
+                              ItemTemplate="{StaticResource ChatNodeTemplate}"
+                              SelectedItemChanged="TreeView_SelectedItemChanged"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Padding="8"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+                              VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    </TreeView>
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+
+        <!-- 分隔条 -->
+        <GridSplitter Grid.Column="1" 
+                      Width="6" 
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Stretch"
+                      Background="#E0E0E0"
+                      Margin="0,16"/>
+
+        <!-- 右侧：选中路径预览 -->
+        <DockPanel Grid.Column="2" Margin="16">
+            <!-- 标题 -->
+            <Border DockPanel.Dock="Top" 
+                    Margin="0,0,0,12" 
+                    Padding="12,8"
+                    Background="White"
+                    CornerRadius="8">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📋" FontSize="20" Margin="0,0,8,0"/>
+                    <TextBlock Text="完整对话路径" 
+                               FontSize="18" 
+                               FontWeight="Bold" 
+                               Foreground="#333"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 路径内容 -->
+            <Border Background="White" CornerRadius="8" Padding="16">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding SelectedPath}"
+                               TextWrapping="Wrap"
+                               FontSize="13"
+                               LineHeight="22"
+                               Foreground="#444"/>
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+    </Grid>
+</Window>
