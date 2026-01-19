@@ -89,3 +89,22 @@ public class ChildCountToVisibilityConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotImplementedException();
 }
+/// <summary>
+/// 兄弟索引 -> 分支颜色
+/// </summary>
+public class SiblingIndexToBrushConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return value switch
+        {
+            0 => new SolidColorBrush(Color.FromRgb(74, 144, 217)),   // 蓝色
+            1 => new SolidColorBrush(Color.FromRgb(102, 187, 106)),  // 绿色
+            2 => new SolidColorBrush(Color.FromRgb(255, 167, 38)),   // 橙色
+            _ => new SolidColorBrush(Color.FromRgb(149, 117, 205))   // 紫色（更多分支）
+        };
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
