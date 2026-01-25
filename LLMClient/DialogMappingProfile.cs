@@ -98,8 +98,8 @@ public class DialogMappingProfile : Profile
         CreateMap<IModelParams, IModelParams>();
         CreateMap<IModelParams, DefaultModelParam>();
         CreateMap<DefaultModelParam, DefaultModelParam>();
-        CreateMap<IModelParams, ILLMModel>();
-        CreateMap<ILLMModel, IModelParams>();
+        CreateMap<IModelParams, IEndpointModel>();
+        CreateMap<IEndpointModel, IModelParams>();
         CreateMap<IModelParams, APIModelInfo>();
         CreateMap<APIDefaultOption, APIDefaultOption>();
         CreateMap<ILLMChatClient, ParameterizedLLMModelPO>()

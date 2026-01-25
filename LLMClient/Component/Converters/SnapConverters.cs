@@ -61,7 +61,7 @@ internal static class SnapConverters
     public static readonly IValueConverter NullToBooleanConverter =
         ValueConverter.Create<object?, bool>(e => e.Value != null);
 
-    public static readonly IValueConverter EnumerableToVisibilityConverter =
+    public static readonly IValueConverter EnumerableAnyToVisibilityConverter =
         ValueConverter.Create<IEnumerable<object>?, Visibility>(e =>
         {
             if (e.Value == null || !e.Value.Any())

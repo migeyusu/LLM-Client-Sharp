@@ -94,7 +94,7 @@ public class NewAPIModelMapping : ModelMapping
     {
         var apiModelInfo = new APIModelInfo()
         {
-            Id = modelId,
+            APIId = modelId,
         };
         this.MapInfo(apiModelInfo);
         return apiModelInfo;
@@ -102,7 +102,7 @@ public class NewAPIModelMapping : ModelMapping
 
     public override bool MapInfo(APIModelInfo modelInfo)
     {
-        var modelInfoId = modelInfo.Id;
+        var modelInfoId = modelInfo.APIId;
         if (_modelInfos.TryGetValue(modelInfoId, out var modelDetails))
         {
             if (modelInfo.PriceCalculator is TokenBasedPriceCalculator calculator)

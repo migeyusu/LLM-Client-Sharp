@@ -75,7 +75,7 @@ public class OpenRouterModelMapping : ModelMapping
 
         var apiModelInfo = new APIModelInfo
         {
-            Id = openRouterModel.Slug,
+            APIId = openRouterModel.Slug,
             Name = openRouterModel.ShortName,
         };
         this.MapInfo(apiModelInfo);
@@ -88,7 +88,7 @@ public class OpenRouterModelMapping : ModelMapping
     {
         var openRouterModel = _modelInfos.FirstOrDefault((model =>
         {
-            var id = modelInfo.Id;
+            var id = modelInfo.APIId;
             return model.Slug == id
                    || model.Endpoint?.ModelVariantSlug == id;
         }));

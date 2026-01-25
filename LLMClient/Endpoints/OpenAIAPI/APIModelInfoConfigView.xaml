@@ -34,22 +34,46 @@
             </Grid.ColumnDefinitions>
             <TextBox Text="{Binding Name,Mode=TwoWay}"
                      materialDesign:HintAssist.Hint="模型名称"
-                     MinWidth="120"
+                     MinWidth="160"
                      MaxWidth="200"
                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                      Margin="0,0,10,0" />
-            <TextBox Grid.Column="1" Text="{Binding Id,Mode=TwoWay}"
+            <TextBox Grid.Column="1" Text="{Binding APIId,Mode=TwoWay}"
                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                      Margin="0,0,10,0"
                      materialDesign:HintAssist.Hint="模型ID" />
             <TextBox Grid.Column="2"
-                     MinWidth="50"
+                     MinWidth="40"
                      MaxWidth="100"
                      Text="{Binding MaxContextSize,Mode=TwoWay,Converter={StaticResource KUnitConverter}}"
                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                      Margin="0,0,0,0"
                      materialDesign:TextFieldAssist.SuffixText="K"
                      materialDesign:HintAssist.Hint="最大上下文长度" />
+        </Grid>
+        <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <ComboBox materialDesign:HintAssist.Hint="模型发布商"
+                      MinWidth="200"
+                      MaxWidth="260"
+                      x:Name="PublisherComboBox"
+                      Padding="16,10"
+                      DisplayMemberPath="ProviderName"
+                      ItemsSource="{x:Static endpoints:ModelRegister.OfficialModels}"
+                      SelectedValue="{Binding  Publisher,Mode=TwoWay}"
+                      SelectedValuePath="ProviderName"
+                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                      Margin="0,0,10,0" />
+            <ComboBox Grid.Column="1"
+                      Padding="16,10"
+                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                      ItemsSource="{Binding ElementName=PublisherComboBox,Path=SelectedItem.ModelNames,Mode=OneWay}"
+                      Text="{Binding OfficialName,Mode=TwoWay}"
+                      Margin="0,0,10,0"
+                      materialDesign:HintAssist.Hint="模型" />
         </Grid>
         <TextBox Text="{Binding InfoUrl,Mode=TwoWay}"
                  Margin="0,0,0,10"

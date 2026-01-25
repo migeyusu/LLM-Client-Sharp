@@ -57,7 +57,7 @@ public class GeekAIModelMapping : ModelMapping
             var info = new APIModelInfo()
             {
                 Name = modelInfo.Alias,
-                Id = modelInfo.Name,
+                APIId = modelInfo.Name,
             };
             this.MapInfo(info);
             return info;
@@ -68,7 +68,7 @@ public class GeekAIModelMapping : ModelMapping
 
     public override bool MapInfo(APIModelInfo modelInfo)
     {
-        var info = _modelInfos.FirstOrDefault(x => x.Name.Equals(modelInfo.Id, StringComparison.OrdinalIgnoreCase));
+        var info = _modelInfos.FirstOrDefault(x => x.Name.Equals(modelInfo.APIId, StringComparison.OrdinalIgnoreCase));
         if (info == null)
         {
             return false;

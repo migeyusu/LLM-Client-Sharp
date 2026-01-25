@@ -29,7 +29,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     public abstract ILLMAPIEndpoint Endpoint { get; }
 
-    [JsonIgnore] public abstract ILLMModel Model { get; }
+    [JsonIgnore] public abstract IEndpointModel Model { get; }
 
     /// <summary>
     /// 默认情况下，应该让LLM了解函数调用失败的情况，并继续生成内容。
@@ -62,7 +62,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         var modelParams = this.Parameters;
         var chatOptions = new ChatOptions()
         {
-            ModelId = modelInfo.Id,
+            ModelId = modelInfo.APIId,
         };
 
         if (modelInfo.TopPEnable)

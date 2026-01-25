@@ -6,7 +6,7 @@ namespace LLMClient.Endpoints;
 
 public class StubEndPoint : ILLMAPIEndpoint
 {
-    public StubEndPoint(IReadOnlyCollection<ILLMModel> availableModels)
+    public StubEndPoint(IReadOnlyCollection<IEndpointModel> availableModels)
     {
         AvailableModels = availableModels;
     }
@@ -17,14 +17,14 @@ public class StubEndPoint : ILLMAPIEndpoint
     public required string Name { get; set; }
     public required ThemedIcon Icon { get; set; }
 
-    public IReadOnlyCollection<ILLMModel> AvailableModels { get; }
+    public IReadOnlyCollection<IEndpointModel> AvailableModels { get; }
 
-    public ILLMChatClient? NewChatClient(ILLMModel model)
+    public ILLMChatClient? NewChatClient(IEndpointModel model)
     {
         return model.CreateChatClient();
     }
 
-    public ILLMModel? GetModel(string modelName)
+    public IEndpointModel? GetModel(string modelName)
     {
         return AvailableModels.FirstOrDefault(model => model.Name == modelName);
     }

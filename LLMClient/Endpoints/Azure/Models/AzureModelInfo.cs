@@ -12,14 +12,14 @@ namespace LLMClient.Endpoints.Azure.Models;
 
 //https://github.com/models/available
 
-public class AzureModelInfo : ILLMModel
+public class AzureModelInfo : IEndpointModel
 {
     [JsonIgnore] public bool IsEnabled { get; set; }
 
     [JsonPropertyName("friendly_name")] public string FriendlyName { get; set; } = string.Empty;
 
     [JsonIgnore]
-    public string Id
+    public string APIId
     {
         get { return this.Publisher?.ToLower() + "/" + this.OriginalName; }
     }
@@ -283,6 +283,11 @@ public class AzureModelInfo : ILLMModel
 
             return _document;
         }
+    }
+
+    public string? OfficialName
+    {
+        get { return FriendlyName; }
     }
 
     [JsonPropertyName("publisher")] public string? Publisher { get; set; }

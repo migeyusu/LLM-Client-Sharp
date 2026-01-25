@@ -161,12 +161,12 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
         }
     }
 
-    public IReadOnlyCollection<ILLMModel> AvailableModels
+    public IReadOnlyCollection<IEndpointModel> AvailableModels
     {
         get { return this.Option.Models; }
     }
 
-    public ILLMChatClient? NewChatClient(ILLMModel model)
+    public ILLMChatClient? NewChatClient(IEndpointModel model)
     {
         if (model is APIModelInfo apiModelInfo)
         {
@@ -176,7 +176,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
         return null;
     }
 
-    public ILLMModel? GetModel(string modelName)
+    public IEndpointModel? GetModel(string modelName)
     {
         return Option.Models.FirstOrDefault(x => x.Name == modelName);
     }

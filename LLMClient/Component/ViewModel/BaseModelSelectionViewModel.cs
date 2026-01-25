@@ -13,10 +13,10 @@ namespace LLMClient.Component.ViewModel;
 
 public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterizedLLMModel
 {
-    private ILLMModel? _selectedModel;
+    private IEndpointModel? _selectedModel;
     private bool _showModelParams;
 
-    public ILLMModel? SelectedModel
+    public IEndpointModel? SelectedModel
     {
         get => _selectedModel;
         set
@@ -97,5 +97,5 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
 
     public string Name { get; } = "Fake Client";
 
-    public ILLMModel Model => SelectedModel ?? EmptyLLMChatModel.Instance;
+    public IEndpointModel Model => SelectedModel ?? EmptyLLMChatModel.Instance;
 }

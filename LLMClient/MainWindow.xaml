@@ -786,7 +786,7 @@
                         <ItemsControl ItemsSource="{Binding  EndpointsViewModel.SuggestedModels,Mode=OneWay}"
                                       Margin="10">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type abstraction:ILLMModel}">
+                                <DataTemplate DataType="{x:Type abstraction:IEndpointModel}">
                                     <StackPanel Orientation="Horizontal">
                                         <Button Command="Select"
                                                 CommandParameter="{Binding}"

@@ -35,7 +35,7 @@ public class AzureClientBase : LlmClientBase, ILLMChatClient
     protected readonly AzureOption Option;
 
     [JsonIgnore]
-    public override ILLMModel Model
+    public override IEndpointModel Model
     {
         get { return ModelInfo; }
     }
@@ -70,7 +70,7 @@ public class AzureClientBase : LlmClientBase, ILLMChatClient
     private IChatClient CreateChatClient()
     {
         _kernel = Kernel.CreateBuilder()
-            .AddOpenAIChatCompletion(this.ModelInfo.Id, new Uri(Option.URL), this.Option.APIToken)
+            .AddOpenAIChatCompletion(this.ModelInfo.APIId, new Uri(Option.URL), this.Option.APIToken)
             .Build();
         return _kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
     }

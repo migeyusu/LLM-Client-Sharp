@@ -148,23 +148,23 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     private readonly StubEndPoint _suggestedEndPoint;
 
-    private readonly ObservableCollection<ILLMModel> _historyChatModelsOb = [];
+    private readonly ObservableCollection<IEndpointModel> _historyChatModelsOb = [];
 
-    private readonly ReadOnlyObservableCollection<ILLMModel> _historyChatModels;
+    private readonly ReadOnlyObservableCollection<IEndpointModel> _historyChatModels;
 
-    public IReadOnlyList<ILLMModel> HistoryModels
+    public IReadOnlyList<IEndpointModel> HistoryModels
     {
         get { return _historyChatModels; }
     }
 
-    private readonly ReadOnlyObservableCollection<ILLMModel> _suggestedModels;
+    private readonly ReadOnlyObservableCollection<IEndpointModel> _suggestedModels;
 
-    public IReadOnlyList<ILLMModel> SuggestedModels
+    public IReadOnlyList<IEndpointModel> SuggestedModels
     {
         get { return _suggestedModels; }
     }
 
-    public void SetModelHistory(ILLMModel model)
+    public void SetModelHistory(IEndpointModel model)
     {
         var indexOf = _historyChatModelsOb.IndexOf(model);
         if (indexOf >= 0)
@@ -181,14 +181,14 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
     }
 
-    public ObservableCollection<ILLMModel> SuggestedModelsOb { get; } =
-        new ObservableCollection<ILLMModel>();
+    public ObservableCollection<IEndpointModel> SuggestedModelsOb { get; } =
+        new ObservableCollection<IEndpointModel>();
 
     public ModelSelectionPopupViewModel PopupSelectViewModel { get; }
 
     public ICommand RemoveSuggestedModelCommand => new ActionCommand((o =>
     {
-        if (o is ILLMModel suggestedModel)
+        if (o is IEndpointModel suggestedModel)
         {
             this.SuggestedModelsOb.Remove(suggestedModel);
         }
@@ -201,9 +201,9 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         this._loggerFactory = loggerFactory;
         PopupSelectViewModel = new ModelSelectionPopupViewModel(OnModelSelected)
             { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
-        _suggestedModels = new ReadOnlyObservableCollection<ILLMModel>(SuggestedModelsOb);
+        _suggestedModels = new ReadOnlyObservableCollection<IEndpointModel>(SuggestedModelsOb);
         _availableEndpoints = new ReadOnlyObservableCollection<ILLMAPIEndpoint>(Endpoints);
-        _historyChatModels = new ReadOnlyObservableCollection<ILLMModel>(_historyChatModelsOb);
+        _historyChatModels = new ReadOnlyObservableCollection<IEndpointModel>(_historyChatModelsOb);
         _historyEndPoint = new StubEndPoint(_historyChatModelsOb)
         {
             DisplayName = "History Models",

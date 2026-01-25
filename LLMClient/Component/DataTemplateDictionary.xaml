@@ -55,7 +55,7 @@
             </HierarchicalDataTemplate>
         </component:DataTemplateTypePair>
         <component:DataTemplateTypePair>
-            <DataTemplate DataType="{x:Type abstraction:ILLMModel}">
+            <DataTemplate DataType="{x:Type abstraction:IEndpointModel}">
                 <StackPanel Orientation="Horizontal">
                     <Image Width="23"
                            Height="23"
@@ -274,7 +274,7 @@
                              FontSize="18"
                              FontWeight="Bold" />
                         <Run FontSize="12"> (</Run>
-                        <Run Text="{Binding Id,Mode=OneWay}"
+                        <Run Text="{Binding APIId,Mode=OneWay}"
                              FontSize="12" />
                         <Run FontSize="12">)</Run>
                     </TextBlock>
