@@ -20,13 +20,13 @@ public class EmptyLlmModelClient : ILLMChatClient
         }
     }
 
-    public ILLMModel Model
+    public IEndpointModel Model
     {
         get
         {
             return new APIModelInfo
             {
-                Id = "fake-model",
+                APIId = "fake-model",
                 Name = "Fake Model",
                 IsNotMatchFromSource = false,
                 Streaming = true,

@@ -14,14 +14,14 @@ namespace LLMClient.Endpoints
         public string Name => "EmptyEndpoint";
         public ThemedIcon Icon => ImageExtensions.EndpointThemedIcon;
 
-        public IReadOnlyCollection<ILLMModel> AvailableModels => [];
+        public IReadOnlyCollection<IEndpointModel> AvailableModels => [];
 
-        public ILLMChatClient? NewChatClient(ILLMModel model)
+        public ILLMChatClient? NewChatClient(IEndpointModel model)
         {
             return null;
         }
 
-        public ILLMModel? GetModel(string modelName)
+        public IEndpointModel? GetModel(string modelName)
         {
             return null;
         }

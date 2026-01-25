@@ -112,7 +112,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
 
     private void SnapNewDialog_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is ILLMModel suggested)
+        if (e.Parameter is IEndpointModel suggested)
         {
             var llmModelClient = suggested.CreateChatClient();
             if (llmModelClient != null)

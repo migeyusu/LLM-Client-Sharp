@@ -30,7 +30,7 @@ public abstract class FunctionCallEngine
         this.KernelPluginCollection = kernelPluginCollection;
     }
 
-    public abstract void Initialize(ChatOptions options, ILLMModel model,
+    public abstract void Initialize(ChatOptions options, IEndpointModel model,
         IList<ChatMessage> chatMessages);
 
     public abstract bool TryParseFunctionCalls(ChatResponse response, out List<FunctionCallContent> functionCalls);
@@ -54,7 +54,7 @@ public class DefaultFunctionCallEngine : FunctionCallEngine
     {
     }
 
-    public override void Initialize(ChatOptions options, ILLMModel model, IList<ChatMessage> chatMessages)
+    public override void Initialize(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
     {
         options.Tools = KernelPluginCollection.SelectMany(plugin => plugin).ToArray<AITool>();
     }
@@ -281,7 +281,7 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         return functionCalls;
     }
 
-    public override void Initialize(ChatOptions options, ILLMModel model, IList<ChatMessage> chatMessages)
+    public override void Initialize(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
     {
         var prompt = CreatePrompt(KernelPluginCollection.SelectMany(plugin => plugin));
         if (model.SupportSystemPrompt)

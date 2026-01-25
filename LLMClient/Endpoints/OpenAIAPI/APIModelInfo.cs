@@ -10,9 +10,32 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
-public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
+public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
 {
-    public string Id
+    public string? OfficialName
+    {
+        get => _officialName;
+        set
+        {
+            if (value == _officialName) return;
+            _officialName = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? Publisher
+    {
+        get => _publisher;
+        set
+        {
+            if (value == _publisher) return;
+            _publisher = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    [JsonPropertyName("Id")]
+    public string APIId
     {
         get => _id;
         set
@@ -23,6 +46,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
         }
     }
 
+    [JsonPropertyName("Name")]
     public string Name
     {
         get => _name;
@@ -197,6 +221,8 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, ILLMModel
     private bool _thinkingEnabled;
     private IThinkingConfig? _thinkingConfig;
     private ThinkingIncludeMode _thinkingIncludeMode;
+    private string? _officialName;
+    private string? _publisher;
 
     public int MaxContextSize
     {

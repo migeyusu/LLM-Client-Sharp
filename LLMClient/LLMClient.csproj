@@ -195,11 +195,6 @@
         <Page Update="Project\ProjectView.xaml">
             <Generator>MSBuild:Compile</Generator>
         </Page>
-        <Page Update="Test\TestWindow.xaml">
-            <Generator>MSBuild:Compile</Generator>
-            <XamlRuntime>Wpf</XamlRuntime>
-            <SubType>Designer</SubType>
-        </Page>
         <Page Update="Configuration\GlobalOptionsView.xaml">
             <Generator>MSBuild:Compile</Generator>
             <XamlRuntime>Wpf</XamlRuntime>

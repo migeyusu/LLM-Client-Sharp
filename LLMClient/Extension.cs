@@ -299,7 +299,7 @@ public static class Extension
         return client;
     }
 
-    public static ILLMChatClient? CreateChatClient(this ILLMModel llmModel)
+    public static ILLMChatClient? CreateChatClient(this IEndpointModel llmModel)
     {
         var endpoint = llmModel.Endpoint;
         if (!endpoint.IsEnabled)

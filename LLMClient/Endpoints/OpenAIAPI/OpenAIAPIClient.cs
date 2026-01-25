@@ -22,7 +22,7 @@ public class OpenAIAPIClient : LlmClientBase
 
     public APIModelInfo ModelInfo { get; }
 
-    public override ILLMModel Model
+    public override IEndpointModel Model
     {
         get { return ModelInfo; }
     }
@@ -84,7 +84,7 @@ public class OpenAIAPIClient : LlmClientBase
 #if DEBUG //只有debug模式下才需要获取每次请求的日志
         builder.Services.AddSingleton(_loggerFactory);
 #endif
-        var kernel = builder.AddOpenAIChatCompletion(this.Model.Id, openAiClient)
+        var kernel = builder.AddOpenAIChatCompletion(this.Model.APIId, openAiClient)
             .Build();
         return kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
     }

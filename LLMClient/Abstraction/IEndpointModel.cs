@@ -1,10 +1,17 @@
-﻿using LLMClient.Component.CustomControl;
+﻿using System.Text.Json.Serialization;
+using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Abstraction;
 
-public interface ILLMModel : IModelParams
+/// <summary>
+/// 不同的服务商提供相同模型的不同特性
+/// </summary>
+public interface IEndpointModel : IModel, IModelParams
 {
-    string Id { get; }
+    /// <summary>
+    /// 用于api的id
+    /// </summary>
+    string APIId { get; }
 
     /// <summary>
     /// friendly name

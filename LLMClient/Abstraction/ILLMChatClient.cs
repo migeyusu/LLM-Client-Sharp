@@ -26,7 +26,7 @@ public interface IChatEndpoint
 
 public interface IParameterizedLLMModel
 {
-    ILLMModel Model { get; }
+    IEndpointModel Model { get; }
 
     IModelParams Parameters { get; set; }
 }

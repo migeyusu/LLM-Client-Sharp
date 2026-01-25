@@ -137,7 +137,7 @@ public class O3FanModelMapping : ModelMapping
         var apiModelInfo = new APIModelInfo()
         {
             Name = modelInfoSimple.Id,
-            Id = modelInfoSimple.Id,
+            APIId = modelInfoSimple.Id,
         };
         MapInfo(apiModelInfo);
         return apiModelInfo;
@@ -146,7 +146,7 @@ public class O3FanModelMapping : ModelMapping
     public override bool MapInfo(APIModelInfo modelInfo)
     {
         var modelInfoSimple =
-            _modelInfos.FirstOrDefault(info => info.Id.Equals(modelInfo.Id, StringComparison.OrdinalIgnoreCase));
+            _modelInfos.FirstOrDefault(info => info.Id.Equals(modelInfo.APIId, StringComparison.OrdinalIgnoreCase));
         if (modelInfoSimple == null)
         {
             return false;

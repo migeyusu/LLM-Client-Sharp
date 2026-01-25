@@ -18,11 +18,11 @@ public interface ILLMAPIEndpoint
 
     ThemedIcon Icon { get; }
     
-    IReadOnlyCollection<ILLMModel> AvailableModels { get; }
+    IReadOnlyCollection<IEndpointModel> AvailableModels { get; }
 
-    ILLMChatClient? NewChatClient(ILLMModel model);
+    ILLMChatClient? NewChatClient(IEndpointModel model);
 
-    ILLMModel? GetModel(string modelName);
+    IEndpointModel? GetModel(string modelName);
 
     Task InitializeAsync();
 }

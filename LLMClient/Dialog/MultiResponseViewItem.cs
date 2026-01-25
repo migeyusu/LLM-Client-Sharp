@@ -4,7 +4,6 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
-using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
@@ -62,6 +61,13 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     public override long Tokens
     {
         get { return AcceptedResponse?.Tokens ?? 0; }
+    }
+
+    public override ChatRole Role { get; } = ChatRole.Assistant;
+
+    public override string DisplayText
+    {
+        get { return AcceptedResponse?.TextContent ?? string.Empty; }
     }
 
     public bool IsMultiResponse
@@ -150,6 +156,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
             OnPropertyChanged(nameof(IsAvailableInContext));
             OnPropertyChanged(nameof(Tokens));
             OnPropertyChanged(nameof(SearchableDocument));
+            OnPropertyChanged(nameof(DisplayText));
             CanGotoPrevious = value != null &&
                               Items.IndexOf(value) - 1 >= 0;
             CanGoToNext = value != null &&

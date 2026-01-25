@@ -171,7 +171,7 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
                     Logs.Start();
                     IsSummaryFailed = false;
                     IsProcessing = true;
-                    await PromptsCache.LoadAsync(digestClient.Endpoint.Name, digestClient.Model.Id, SummarySize);
+                    await PromptsCache.LoadAsync(digestClient.Endpoint.Name, digestClient.Model.APIId, SummarySize);
                     /*Func<string, CancellationToken, Task<string>> summaryDelegate = async (s, cancellationToken) =>
                     {
                         await Task.Delay(1000, cancellationToken);

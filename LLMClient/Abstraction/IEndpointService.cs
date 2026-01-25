@@ -12,11 +12,11 @@ public interface IEndpointService
     /// <summary>
     /// models used in history
     /// </summary>
-    IReadOnlyList<ILLMModel> HistoryModels { get; }
+    IReadOnlyList<IEndpointModel> HistoryModels { get; }
 
-    IReadOnlyList<ILLMModel> SuggestedModels { get; }
+    IReadOnlyList<IEndpointModel> SuggestedModels { get; }
 
-    void SetModelHistory(ILLMModel model);
+    void SetModelHistory(IEndpointModel model);
 
     Task Initialize();
 

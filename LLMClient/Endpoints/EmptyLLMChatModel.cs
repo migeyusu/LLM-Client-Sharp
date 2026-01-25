@@ -3,11 +3,14 @@ using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Endpoints;
 
-public class EmptyLLMChatModel : ILLMModel
+public class EmptyLLMChatModel : IEndpointModel
 {
     public static EmptyLLMChatModel Instance { get; } = new EmptyLLMChatModel();
 
-    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string? OfficialName { get; } = string.Empty;
+
+    public string? Publisher { get; } = string.Empty;
+    public string APIId { get; set; } = Guid.NewGuid().ToString();
 
     public string Name
     {

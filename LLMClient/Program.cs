@@ -85,7 +85,7 @@ public class Program
                 .AddMeter("Microsoft.SemanticKernel*")
                 .AddConsoleExporter()
                 .Build();
-            
+
             collection.AddLogging(builder =>
             {
                 builder.AddDebug();
@@ -126,7 +126,6 @@ public class Program
             ContextExtension.RegisterMSBuild();
             App app = new App();
             app.InitializeComponent();
-            // app.Run(new LLMClient.Test.TestWindow());
             //app.Run(new AsyncTestWindow());
             mainWindow = serviceProvider.GetService<MainWindow>();
             app.Run(mainWindow);
@@ -156,7 +155,7 @@ public class Program
             }
 
             // tempPath.Delete(true);//默认不删除
-            
+
             Cef.Shutdown();
         }
     }

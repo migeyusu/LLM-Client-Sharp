@@ -9,8 +9,11 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
     public abstract long Tokens { get; }
 
     public Guid Id { get; set; } = Guid.NewGuid();
-    
+
+    public abstract ChatRole Role { get; }
+
     private IDialogItem? _previousItem;
+
     public IDialogItem? PreviousItem
     {
         get => _previousItem;
@@ -23,10 +26,14 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
         }
     }
 
+    public abstract string DisplayText { get; }
+
     public Guid? PreviousItemId => PreviousItem?.Id;
-    public ObservableCollection<IDialogItem> ChildItemsObservables { get; } = [];
+    private ObservableCollection<IDialogItem> ChildItemsObservables { get; } = [];
 
     public IReadOnlyCollection<IDialogItem> Children => _childrenReadOnly;
+
+    public int SiblingIndex => ((BaseDialogItem?)PreviousItem)?.ChildItemsObservables.IndexOf(this) ?? 0;
 
     public abstract bool IsAvailableInContext { get; }
 

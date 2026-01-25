@@ -33,7 +33,7 @@ public class UITest
         {
             var app = new App();
             app.InitializeComponent();
-            app.Run(new TestWindow());
+           
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
