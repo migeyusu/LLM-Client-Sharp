@@ -3,21 +3,39 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using Google.Apis.Util;
 using LambdaConverters;
-using LLMClient.Test;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 
+public interface INavigationViewModel
+{
+    IReadOnlyCollection<IDialogItem> RootNodes { get; }
+
+    IDialogItem CurrentLeaf { set; }
+
+    bool IsNodeSelectable(IDialogItem item);
+}
+
 public partial class NavigationView : UserControl
 {
-    public ObservableCollection<IDialogItem> RootNodes { get; } = new();
-    
     public NavigationView()
     {
-        this.DataContext = this;
         InitializeComponent();
+    }
+
+    private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (DataContext is INavigationViewModel vm && e.NewValue is IDialogItem node)
+        {
+            if (!vm.IsNodeSelectable(node))
+            {
+                // 禁止选择
+                return;
+            }
+
+            vm.CurrentLeaf = node;
+        }
     }
 }
 
@@ -78,7 +96,7 @@ internal static class NavigationConverters
 
         return Brushes.Black;
     });
-    
+
     public static readonly IValueConverter SiblingIndexToBrush = ValueConverter.Create<int, Brush>(e => e.Value switch
     {
         0 => new SolidColorBrush(Color.FromRgb(74, 144, 217)), // 蓝色

@@ -115,7 +115,35 @@ public class DialogMappingProfile : Profile
         CreateMap<DialogFileViewModel, DialogFilePersistModel>()
             .ConvertUsing<AutoMapModelTypeConverter>();
         CreateMap<DialogViewModel, DialogFilePersistModel>()
-            .ConvertUsing<AutoMapModelTypeConverter>();
+            .ForMember((model => model.DialogItems),
+                opt => opt.MapFrom(src => src.DialogItems))
+            .ForMember(model => model.ExtendedPrompts, expression =>
+            {
+                expression.MapFrom(s => new PromptsPersistModel()
+                {
+                    PromptReference = s.ExtendedSystemPrompts.Select(entry => entry.Id).ToArray(),
+                });
+            })
+            .ForMember((model => model.PromptString), opt => opt.MapFrom(src => src.Requester.PromptString))
+            .ForMember(model => model.Client, opt => opt.MapFrom(src => src.Requester.DefaultClient))
+            .ForMember((model => model.RootNode), (expression => expression.Ignore()))
+            .ForMember((model => model.CurrentLeaf), (expression => expression.Ignore()))
+            .AfterMap((source, destination) =>
+            {
+                var dialogPersistItems = destination.DialogItems;
+                if (dialogPersistItems == null || dialogPersistItems.Length == 0)
+                {
+                    return;
+                }
+
+                var sourceDialogItems = source.DialogItems;
+                var sourceRootNode = source.RootNode;
+                var indexOf = sourceDialogItems.IndexOf(sourceRootNode);
+                destination.RootNode = dialogPersistItems[indexOf];
+                var sourceCurrentLeaf = source.CurrentLeaf;
+                var indexOf1 = sourceDialogItems.IndexOf(sourceCurrentLeaf);
+                destination.CurrentLeaf = dialogPersistItems[indexOf1];
+            });
         CreateMap<DialogFilePersistModel, DialogViewModel>()
             .ConvertUsing<AutoMapModelTypeConverter>();
         CreateMap<ResponseViewItem, ResponsePersistItem>()
@@ -171,7 +199,6 @@ public class DialogMappingProfile : Profile
         CreateMap<CSharpProjectViewModel, CSharpProjectPersistModel>();
         CreateMap<CppProjectViewModel, CppProjectPersistModel>();
 
-
         CreateMap<ProjectTaskViewModel, ProjectTaskPersistModel>()
             .ForMember(dest => dest.AllowedFunctions, opt => opt.MapFrom(src => src.SelectedFunctionGroups))
             .ForMember(dest => dest.DialogItems, opt => opt.MapFrom(src => src.DialogItems));
@@ -195,6 +222,7 @@ public class DialogMappingProfile : Profile
             {
                 try
                 {
+                    var runtimeMapper = ctx.Mapper;
                     // 设置子节点需要的上下文
                     ctx.Items[AutoMapModelTypeConverter.ParentDialogViewModelKey] = dest;
                     if (src.DialogItems != null)
@@ -202,7 +230,7 @@ public class DialogMappingProfile : Profile
                         // 利用之前配置好的 IDialogPersistItem -> IDialogItem 多态映射
                         foreach (var persistItem in src.DialogItems)
                         {
-                            var viewItem = ctx.Mapper.Map<IDialogItem>(persistItem);
+                            var viewItem = runtimeMapper.Map<IDialogItem>(persistItem);
                             dest.DialogItems.Add(viewItem);
                         }
                     }

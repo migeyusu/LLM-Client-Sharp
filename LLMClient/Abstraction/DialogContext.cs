@@ -4,7 +4,7 @@ namespace LLMClient.Abstraction;
 
 public class DialogContext
 {
-    public DialogContext(IList<IDialogItem> dialogItems,
+    public DialogContext(IReadOnlyList<IDialogItem> dialogItems,
         string? systemPrompt = null)
     {
         DialogItems = dialogItems;
@@ -17,7 +17,7 @@ public class DialogContext
 
     public string? SystemPrompt { get; }
 
-    public IList<IDialogItem> DialogItems { get; }
+    public IReadOnlyList<IDialogItem> DialogItems { get; }
 
     public RequestViewItem? Request { get; }
 }

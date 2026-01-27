@@ -6,7 +6,8 @@
              xmlns:local="clr-namespace:LLMClient.Dialog"
              xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="300">
+             d:DesignHeight="300" d:DesignWidth="300"
+             d:DataContext="{d:DesignInstance local:INavigationViewModel}">
     <UserControl.Resources>
         <!-- 分支颜色定义 -->
         <Style x:Key="ChatTreeViewItemStyle" TargetType="TreeViewItem">
@@ -174,7 +175,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <!-- 层级数据模板 -->
         <HierarchicalDataTemplate x:Key="ChatNodeTemplate"
                                   DataType="{x:Type local:BaseDialogItem}"
@@ -185,12 +185,13 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Auto">
-            <TreeView ItemsSource="{Binding RootNodes}"
+            <TreeView ItemsSource="{Binding RootNodes,Mode=OneWay}"
                       ItemContainerStyle="{StaticResource ChatTreeViewItemStyle}"
                       ItemTemplate="{StaticResource ChatNodeTemplate}"
                       Background="Transparent"
                       BorderThickness="0"
                       Padding="8"
+                      SelectedItemChanged="TreeView_OnSelectedItemChanged"
                       VirtualizingStackPanel.IsVirtualizing="True"
                       VirtualizingStackPanel.VirtualizationMode="Recycling">
             </TreeView>

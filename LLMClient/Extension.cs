@@ -192,6 +192,20 @@ public static class Extension
         return stack.ToList();
     }
 
+    public static IDialogItem DefaultLastItem(this IDialogItem item)
+    {
+        while (true)
+        {
+            if (item.Children.Any())
+            {
+                item = item.Children.First();
+                continue;
+            }
+
+            return item;
+        }
+    }
+
     #region json
 
     public static JsonNode GetOrCreate(this JsonNode jsonNode, string key)

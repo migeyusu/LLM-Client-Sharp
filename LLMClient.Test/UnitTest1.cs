@@ -271,6 +271,7 @@ public class UnitTest1
         multiResponseViewItem.Append(new ResponseViewItem(client));
         multiResponseViewItem.Append(new ResponseViewItem(client));
         dialogViewModel.DialogItems.Add(multiResponseViewItem);
+        
         var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper);
         var dialogFilePersistModel =
             mapper?.Map<DialogFileViewModel, DialogFilePersistModel>(dialogFileViewModel, (options => { }));

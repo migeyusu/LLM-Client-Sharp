@@ -29,7 +29,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
     private readonly IViewModelFactory _viewModelFactory;
 
-    private IPromptsResource _promptsResource;
+    private readonly IPromptsResource _promptsResource;
 
     public AutoMapModelTypeConverter(IEndpointService service, IMcpServiceCollection mcpServiceCollection,
         IViewModelFactory factory, IPromptsResource promptsResource)
@@ -57,7 +57,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         var dialogViewModel = context.Mapper.Map<DialogSessionPersistModel, DialogViewModel>(source);
         if (destination != null)
         {
-            throw new NotSupportedException("Cannot set dialogViewModel to exist DialogSession");
+            throw new NotSupportedException("Cannot set dialogViewModel to exist 'DialogSession' instance");
         }
 
         var viewModel = _viewModelFactory.CreateViewModel<DialogFileViewModel>(dialogViewModel);
@@ -114,10 +114,11 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     {
         destination ??= new DialogFilePersistModel();
         var mapper = context.Mapper;
-        var dialogItems = source.DialogItems
+        var sourceDialogItems = source.DialogItems;
+        var dialogPersistItems = sourceDialogItems
             .Select<IDialogItem, IDialogPersistItem>(item => mapper.Map<IDialogItem, IDialogPersistItem>(item))
             .ToArray();
-        destination.DialogItems = dialogItems;
+        destination.DialogItems = dialogPersistItems;
         destination.TokensConsumption = source.TokensConsumption;
         destination.TotalPrice = source.TotalPrice;
         destination.UserSystemPrompt = source.UserSystemPrompt;
@@ -132,8 +133,13 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
         var requester = source.Requester;
         destination.PromptString = requester.PromptString;
+        //可以使用id查找，但是为了兼容性，还是用index查找
+        var sourceRootNode = source.RootNode;
+        var indexOf = sourceDialogItems.IndexOf(sourceRootNode);
+        destination.RootNode = dialogPersistItems[indexOf];
         destination.AllowedFunctions = source.SelectedFunctionGroups
-            ?.Select((tree => mapper.Map<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>(tree))).ToArray();
+            ?.Select((tree => mapper.Map<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>(tree)))
+            .ToArray();
         destination.Client = mapper.Map<ILLMChatClient, ParameterizedLLMModelPO>(requester.DefaultClient);
         return destination;
     }
@@ -141,8 +147,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     public const string ParentDialogViewModelKey = "ParentDialogViewModel";
 
     public const string ParentProjectViewModelKey = "ParentProjectViewModel";
-
-
+    
     public DialogViewModel Convert(DialogFilePersistModel source, DialogViewModel? destination,
         ResolutionContext context)
     {

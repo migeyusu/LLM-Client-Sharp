@@ -20,7 +20,8 @@ using ConfirmView = LLMClient.Component.UserControls.ConfirmView;
 
 namespace LLMClient.Dialog;
 
-public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase, ITextDialogSession
+public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase, ITextDialogSession,
+    INavigationViewModel
 {
     /// <summary>
     /// indicate whether data is changed after loading.
@@ -234,11 +235,17 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public abstract string? SystemPrompt { get; }
 
+    public IDialogItem RootNode { get; set; }
+
+    public IReadOnlyCollection<IDialogItem> RootNodes => [RootNode];
+
+    private IDialogItem _currentLeaf;
+
     /// <summary>
     /// 当前叶子节点，用于新建请求时定位上下文，默认是最后一个可用节点
     /// <para>用法：新建分支时设置改节点为最后一个节点</para>
     /// </summary>
-    public MultiResponseViewItem? CurrentLeaf
+    public IDialogItem CurrentLeaf
     {
         get => _currentLeaf;
         set
@@ -246,23 +253,30 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             if (Equals(value, _currentLeaf)) return;
             _currentLeaf = value;
             OnPropertyChanged();
-            if (value != null)
-            {
-                
-            }
+            RebuildLinearItems();
         }
     }
 
     private void RebuildLinearItems()
     {
         DialogItems.Clear();
-        if (CurrentLeaf == null) return;
-        
         foreach (var node in CurrentLeaf.PathFromRoot())
             DialogItems.Add(node);
     }
 
-    public ObservableCollection<IDialogItem> DialogItems { get; }
+    private ObservableCollection<IDialogItem> DialogItemsObservable { get; } = [];
+
+    private readonly ReadOnlyObservableCollection<IDialogItem> _readOnlyDialogItems;
+
+    public bool IsNodeSelectable(IDialogItem item)
+    {
+        return item is MultiResponseViewItem;
+    }
+
+    public IReadOnlyList<IDialogItem> DialogItems
+    {
+        get { return _readOnlyDialogItems; }
+    }
 
     public ICommand ClearContextCommand { get; }
 
@@ -553,7 +567,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     private readonly IMapper _mapper;
     private long _predictedContextLength;
     private MultiResponseViewItem? _currentResponseViewItem;
-    private MultiResponseViewItem? _currentLeaf;
 
     public async Task<CompletedResult> AddNewResponse(ILLMChatClient client,
         IList<IDialogItem> history,
@@ -646,9 +659,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     protected DialogSessionViewModel(IMapper mapper, IList<IDialogItem>? dialogItems = null)
     {
         _mapper = mapper;
-        DialogItems = dialogItems == null
-            ? []
-            : new ObservableCollection<IDialogItem>(dialogItems);
+        _readOnlyDialogItems = new ReadOnlyObservableCollection<IDialogItem>(DialogItemsObservable);
+        
+        RootNode = DialogItems.FirstOrDefault() ?? RootDialogItem.Instance;
+        _currentLeaf = DialogItems.LastOrDefault() ?? RootNode;
         this.PredictedContextLength = GetContextTokensBefore();
         DialogItems.CollectionChanged += (_, _) =>
         {

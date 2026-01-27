@@ -7,7 +7,7 @@ public interface ITextDialogSession
 {
     string? SystemPrompt { get; }
 
-    ObservableCollection<IDialogItem> DialogItems { get; }
+    IReadOnlyList<IDialogItem> DialogItems { get; }
 }
 
 public interface IPromptableSession
