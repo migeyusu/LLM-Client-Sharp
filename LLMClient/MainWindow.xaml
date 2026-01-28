@@ -626,7 +626,7 @@
                                                     <ColumnDefinition Width="Auto"
                                                                       MaxWidth="120" />
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding Name}"
+                                                <TextBlock Text="{Binding Name,Mode=OneWay}"
                                                            Foreground="DimGray"
                                                            TextWrapping="NoWrap"
                                                            TextTrimming="CharacterEllipsis"
@@ -828,9 +828,6 @@
                                         <dialog:DialogView.CommandBindings>
                                             <CommandBinding Command="{x:Static utility:CommonCommands.Fork}"
                                                             Executed="DialogBranch_OnExecuted" />
-                                            <CommandBinding
-                                                Command="{x:Static utility:CommonCommands.ReprocessDialog}"
-                                                Executed="DialogReprocess_OnExecuted" />
                                             <CommandBinding Command="{x:Static utility:CommonCommands.Clone}"
                                                             Executed="CloneCommand_OnExecuted" />
                                         </dialog:DialogView.CommandBindings>

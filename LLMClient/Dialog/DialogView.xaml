@@ -147,10 +147,6 @@
                     <materialDesign:PopupBox StaysOpen="True">
                         <StackPanel MaxWidth="200"
                                     MaxHeight="200">
-                            <Button Content="对话重执行"
-                                    ToolTip="基于现有对话，使用新模型重新执行"
-                                    CommandParameter="{Binding}"
-                                    Command="{x:Static utility:CommonCommands.ReprocessDialog}" />
                             <Button Content="打开文件"
                                     Command="{x:Static utility:CommonCommands.OpenSource}" />
                         </StackPanel>

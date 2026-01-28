@@ -12,8 +12,6 @@ namespace LLMClient;
 
 public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, DialogFilePersistModel>,
     ITypeConverter<DialogFilePersistModel, DialogFileViewModel>,
-    ITypeConverter<DialogViewModel, DialogFilePersistModel>,
-    ITypeConverter<DialogFilePersistModel, DialogViewModel>,
     ITypeConverter<MultiResponsePersistItem, MultiResponseViewItem>,
     ITypeConverter<MultiResponseViewItem, MultiResponsePersistItem>,
     ITypeConverter<ILLMChatClient, ParameterizedLLMModelPO>,
@@ -29,15 +27,12 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
     private readonly IViewModelFactory _viewModelFactory;
 
-    private readonly IPromptsResource _promptsResource;
-
     public AutoMapModelTypeConverter(IEndpointService service, IMcpServiceCollection mcpServiceCollection,
-        IViewModelFactory factory, IPromptsResource promptsResource)
+        IViewModelFactory factory)
     {
         this._endpointService = service;
         this._mcpServiceCollection = mcpServiceCollection;
         this._viewModelFactory = factory;
-        _promptsResource = promptsResource;
     }
 
     public DialogFilePersistModel Convert(DialogFileViewModel from, DialogFilePersistModel? destination,
@@ -109,99 +104,9 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         return destination;
     }
 
-    public DialogFilePersistModel Convert(DialogViewModel source, DialogFilePersistModel? destination,
-        ResolutionContext context)
-    {
-        destination ??= new DialogFilePersistModel();
-        var mapper = context.Mapper;
-        var sourceDialogItems = source.DialogItems;
-        var dialogPersistItems = sourceDialogItems
-            .Select<IDialogItem, IDialogPersistItem>(item => mapper.Map<IDialogItem, IDialogPersistItem>(item))
-            .ToArray();
-        destination.DialogItems = dialogPersistItems;
-        destination.TokensConsumption = source.TokensConsumption;
-        destination.TotalPrice = source.TotalPrice;
-        destination.UserSystemPrompt = source.UserSystemPrompt;
-        var sourceExtendedSystemPrompts = source.ExtendedSystemPrompts;
-        if (sourceExtendedSystemPrompts.Any())
-        {
-            destination.ExtendedPrompts = new PromptsPersistModel()
-            {
-                PromptReference = sourceExtendedSystemPrompts.Select(entry => entry.Id).ToArray(),
-            };
-        }
-
-        var requester = source.Requester;
-        destination.PromptString = requester.PromptString;
-        //可以使用id查找，但是为了兼容性，还是用index查找
-        var sourceRootNode = source.RootNode;
-        var indexOf = sourceDialogItems.IndexOf(sourceRootNode);
-        destination.RootNode = dialogPersistItems[indexOf];
-        destination.AllowedFunctions = source.SelectedFunctionGroups
-            ?.Select((tree => mapper.Map<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>(tree)))
-            .ToArray();
-        destination.Client = mapper.Map<ILLMChatClient, ParameterizedLLMModelPO>(requester.DefaultClient);
-        return destination;
-    }
-
     public const string ParentDialogViewModelKey = "ParentDialogViewModel";
 
     public const string ParentProjectViewModelKey = "ParentProjectViewModel";
-    
-    public DialogViewModel Convert(DialogFilePersistModel source, DialogViewModel? destination,
-        ResolutionContext context)
-    {
-        var mapper = context.Mapper;
-        var llmClient = source.Client == null
-            ? EmptyLlmModelClient.Instance
-            : mapper.Map<ParameterizedLLMModelPO, ILLMChatClient>(source.Client);
-        if (destination != null)
-        {
-            destination.Topic = source.Topic;
-            destination.Requester.DefaultClient = llmClient;
-            destination.DialogItems.Clear();
-        }
-        else
-        {
-            destination = _viewModelFactory.CreateViewModel<DialogViewModel>(source.Topic, llmClient);
-        }
-
-        context.Items.Add(ParentDialogViewModelKey, destination);
-        try
-        {
-            var sourceDialogItems = source.DialogItems
-                ?.Select<IDialogPersistItem, IDialogItem>(item => mapper.Map<IDialogPersistItem, IDialogItem>(item))
-                .ToArray();
-            if (sourceDialogItems != null)
-            {
-                foreach (var sourceDialogItem in sourceDialogItems)
-                {
-                    destination.DialogItems.Add(sourceDialogItem);
-                }
-            }
-
-            destination.TokensConsumption = source.TokensConsumption;
-            destination.TotalPrice = source.TotalPrice;
-            destination.UserSystemPrompt = source.UserSystemPrompt;
-            var mapPrompts = MapPrompts(source.ExtendedPrompts, _promptsResource);
-            if (mapPrompts != null)
-            {
-                destination.ExtendedSystemPrompts = mapPrompts;
-            }
-
-            var requester = destination.Requester;
-            requester.PromptString = source.PromptString;
-            destination.SelectedFunctionGroups = source.AllowedFunctions?.Select(o =>
-                mapper.Map<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>(o)).ToArray();
-        }
-        finally
-        {
-            context.Items.Remove(ParentDialogViewModelKey);
-        }
-
-        return destination;
-    }
-
 
     public ParameterizedLLMModelPO Convert(ILLMChatClient source, ParameterizedLLMModelPO? destination,
         ResolutionContext context)
@@ -352,82 +257,5 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         }
 
         return null;
-    }
-
-    private static IDialogItem? BuildTreeFromFlatList(IMapperBase mapper, IDialogPersistItem[]? flatPersistItems)
-    {
-        if (flatPersistItems == null || flatPersistItems.Length == 0) return null;
-
-        var vmList = new List<IDialogItem>();
-        var idMap = new Dictionary<Guid, IDialogItem>();
-        // 临时变量，用于记录线性数组的上一个节点（处理老数据用）
-        IDialogItem? lastImplicitParent = null;
-        foreach (var persistItem in flatPersistItems)
-        {
-            // A.如果老数据没有 ID，现场分配一个，保证运行时有 ID
-            if (persistItem.Id == Guid.Empty)
-            {
-                persistItem.Id = Guid.NewGuid();
-            }
-
-            // 转为 ViewModel (使用 AutoMapper)
-            var dialogItem = mapper.Map<IDialogItem>(persistItem);
-
-            // B. 确定 PreviousItemId
-            // 如果文件里有 PreviousItemId (新数据 分叉)，用文件里的
-            // 如果文件里没有 (老数据/主干)，默认认为是上一个 Item 的孩子
-            var parentId = persistItem.PreviousItemId ?? lastImplicitParent?.Id;
-
-            // C. 建立树关系
-            if (parentId.HasValue && idMap.TryGetValue(parentId.Value, out var previousNode))
-            {
-                previousNode.AppendChild(dialogItem);
-            }
-            // 没有 parent 或者找不到 parent，说明是根节点
-            // (通常只有数组第一个元素，或者断链的数据)
-
-            // D. 注册到字典，供后续节点查找
-            idMap[dialogItem.Id] = dialogItem;
-
-            // E. 更新“隐式父节点”，为下一个循环做准备
-            // 只有当这是老数据模式（即物理相邻表示逻辑相邻）时才更新
-            // 如果是新数据的分叉节点（append在数组末尾的），逻辑上不一定是下一个节点的父，
-            // 但为了保险，通常我们只对 ParentId 为 null 的情况使用这个 lastImplicitParent
-            lastImplicitParent = dialogItem;
-            vmList.Add(dialogItem);
-        }
-
-        // 返回所有的根节点（Parent 为空的节点）
-        return vmList.FirstOrDefault(x => x.PreviousItem == null);
-    }
-
-    private IDialogPersistItem[] FlattenTreeForSave(IDialogItem root, IMapperBase mapper)
-    {
-        var flatList = new List<IDialogPersistItem>();
-        var visited = new HashSet<Guid>();
-
-        Visit(root);
-        return flatList.ToArray();
-
-        // 递归遍历（保证了父节点先加入列表）
-        void Visit(IDialogItem item)
-        {
-            if (!visited.Add(item.Id)) return; // 防止循环引用死循环
-
-            var persistItem = mapper.Map<IDialogPersistItem>(item);
-
-            // 【关键】：写入 PreviousItemId
-            persistItem.PreviousItemId = item.PreviousItem?.Id;
-
-            // 这一步确保 ID 即使在 VM 运行时被新建，也能回写到 PO
-            persistItem.Id = item.Id;
-
-            flatList.Add(persistItem);
-
-            foreach (var child in item.Children)
-            {
-                Visit(child);
-            }
-        }
     }
 }

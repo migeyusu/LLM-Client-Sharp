@@ -136,70 +136,6 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         }
     }
 
-    public async void SequentialChain(IEnumerable<IDialogItem> dialogItems)
-    {
-        var client = Requester.DefaultClient;
-        RespondingCount++;
-        IsChaining = true;
-        ChainingStep = 0;
-        var pendingItems = dialogItems
-            .Where(item => item is IRequestItem || item is EraseViewItem)
-            .ToArray();
-        ChainStepCount = pendingItems.Length;
-        try
-        {
-            foreach (var oldDialogDialogItem in pendingItems)
-            {
-                if (oldDialogDialogItem is IRequestItem requestViewItem)
-                {
-                    var newGuid = Guid.NewGuid();
-                    var newItem = Extension.Clone(requestViewItem);
-                    DialogItems.Add(newItem);
-                    var copy = GenerateHistoryFromSelf();
-                    int retryCount = 3;
-                    while (retryCount > 0)
-                    {
-                        var multiResponseViewItem = new MultiResponseViewItem(this) { InteractionId = newGuid };
-                        DialogItems.Add(multiResponseViewItem);
-                        var completedResult =
-                            await AddNewResponse(client, copy, multiResponseViewItem, this.UserSystemPrompt);
-                        if (!completedResult.IsInterrupt)
-                        {
-                            break;
-                        }
-
-                        DialogItems.Remove(multiResponseViewItem);
-                        retryCount--;
-                    }
-
-                    if (retryCount == 0)
-                    {
-                        MessageBox.Show("请求失败，重试次数已用完！", "错误", MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                    }
-                }
-                else if (oldDialogDialogItem is EraseViewItem)
-                {
-                    DialogItems.Add(new EraseViewItem());
-                }
-
-                ChainingStep++;
-            }
-        }
-        catch (Exception exception)
-        {
-            MessageBox.Show("重试处理对话失败: " + exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            RespondingCount--;
-            IsChaining = false;
-            /*this.ChainStepCount = 0;
-            this.ChainingStep = 0;*/
-            ScrollViewItem = DialogItems.Last();
-        }
-    }
-
     #endregion
 
     private bool _isChaining;
@@ -212,29 +148,18 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         nameof(SearchText)
     ];
 
-    private IList<CheckableFunctionGroupTree>? _selectedFunctionGroups;
-
     public RequesterViewModel Requester { get; }
 
-    public IList<CheckableFunctionGroupTree>? SelectedFunctionGroups
-    {
-        get => _selectedFunctionGroups;
-        set
-        {
-            if (Equals(value, _selectedFunctionGroups)) return;
-            _selectedFunctionGroups = value;
-            OnPropertyChanged();
-        }
-    }
-
     public DialogViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, IViewModelFactory factory,
-        IList<IDialogItem>? items = null) : base(mapper, items)
+        GlobalOptions options, IViewModelFactory factory, IDialogItem? rootNode = null, IDialogItem? currentLeaf = null)
+        : base(mapper, rootNode, currentLeaf)
     {
         _topic = topic;
         _options = options;
+        ((INotifyCollectionChanged)this.RootNode.Children).CollectionChanged += OnRootCollectionChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
-            (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>>)NewRequest);
+            (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>>)
+            NewRequest);
         Requester.FunctionGroupSource = this;
         Requester.FunctionTreeSelector.Reset();
         var functionTreeSelector = Requester.FunctionTreeSelector;
@@ -260,9 +185,8 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         OnPropertyChanged(nameof(SystemPrompt));
     }
 
-    protected override void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        base.DialogOnCollectionChanged(sender, e);
+    private void OnRootCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {;
         if (_options.EnableAutoSubjectGeneration &&
             e.Action is NotifyCollectionChangedAction.Remove or NotifyCollectionChangedAction.Reset
             && this.DialogItems.Count == 0)

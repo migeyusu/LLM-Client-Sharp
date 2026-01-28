@@ -10,9 +10,9 @@ namespace LLMClient.Dialog;
 
 public interface INavigationViewModel
 {
-    IReadOnlyCollection<IDialogItem> RootNodes { get; }
+    IDialogItem RootNode { get; }
 
-    IDialogItem CurrentLeaf { set; }
+    IDialogItem CurrentLeaf { get; set; }
 
     bool IsNodeSelectable(IDialogItem item);
 }

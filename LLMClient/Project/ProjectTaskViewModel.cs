@@ -29,18 +29,7 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
     private string? _summary;
     private ProjectTaskType _type;
     private string? _description;
-
-    public IList<CheckableFunctionGroupTree>? SelectedFunctionGroups
-    {
-        get => _selectedFunctionGroups;
-        set
-        {
-            if (Equals(value, _selectedFunctionGroups)) return;
-            _selectedFunctionGroups = value;
-            OnPropertyChanged();
-        }
-    }
-
+    
     public override string? Name
     {
         get => _name;
@@ -80,8 +69,6 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
 
 
     private readonly StringBuilder _systemPromptBuilder = new(1024);
-    
-    private IList<CheckableFunctionGroupTree>? _selectedFunctionGroups;
 
     public ProjectPromptTemplateViewModel PromptTemplate { get; }
 
@@ -151,7 +138,8 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
 
     public ProjectTaskViewModel(ProjectViewModel parentProject, IMapper mapper,
         IList<CheckableFunctionGroupTree>? functionGroupTrees = null,
-        IList<IDialogItem>? items = null) : base(mapper, items)
+        IDialogItem? rootNode = null, IDialogItem? currentLeaf = null)
+        : base(mapper, rootNode, currentLeaf)
     {
         ParentProject = parentProject;
         SelectedFunctionGroups = functionGroupTrees;

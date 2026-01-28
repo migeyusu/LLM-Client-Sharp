@@ -185,7 +185,7 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Auto">
-            <TreeView ItemsSource="{Binding RootNodes,Mode=OneWay}"
+            <TreeView ItemsSource="{Binding RootNode.Children,Mode=OneWay}"
                       ItemContainerStyle="{StaticResource ChatTreeViewItemStyle}"
                       ItemTemplate="{StaticResource ChatNodeTemplate}"
                       Background="Transparent"

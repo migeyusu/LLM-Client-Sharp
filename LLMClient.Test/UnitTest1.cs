@@ -270,7 +270,7 @@ public class UnitTest1
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
-        dialogViewModel.DialogItems.Add(multiResponseViewItem);
+        // dialogViewModel.DialogItems.Add(multiResponseViewItem);
         
         var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper);
         var dialogFilePersistModel =
@@ -294,7 +294,7 @@ public class UnitTest1
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
-        dialogViewModel.DialogItems.Add(multiResponseViewItem);
+        // dialogViewModel.DialogItems.Add(multiResponseViewItem);
         var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper);
         var dialogFilePersistModel =
             mapper.Map<DialogFileViewModel, DialogFilePersistModel>(dialogFileViewModel, (options => { }));

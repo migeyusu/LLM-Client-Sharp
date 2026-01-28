@@ -34,6 +34,11 @@ public partial class MainWindow : ExtendedWindow, IDisposable
         _timer = new Timer(state =>
         {
             //执行自动保存
+            if (Debugger.IsAttached)
+            {
+                return;
+            }
+
             Application.Current.Dispatcher.Invoke(async () =>
             {
                 if (IsWindowNotInForeground())
@@ -131,19 +136,6 @@ public partial class MainWindow : ExtendedWindow, IDisposable
         if (e.Parameter is IDialogItem dialogViewItem)
         {
             _mainWindowViewModel.ForkPreDialog(dialogViewItem);
-        }
-    }
-
-    private async void DialogReprocess_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.Parameter is DialogViewModel oldDialog)
-        {
-            var selectionViewModel = new ModelSelectionPopupViewModel((client =>
-            {
-                var newDialog = _mainWindowViewModel.AddNewDialog(client.CreateClient(), oldDialog.Topic);
-                newDialog.Dialog.SequentialChain(oldDialog.DialogItems);
-            }));
-            await DialogHost.Show(selectionViewModel);
         }
     }
 

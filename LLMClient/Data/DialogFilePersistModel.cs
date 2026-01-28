@@ -17,6 +17,7 @@ public class DialogFilePersistModel : DialogSessionPersistModel
 
     public ParameterizedLLMModelPO? Client { get; set; }
     
+    //自动映射
     [JsonPropertyName("SystemPrompt")]
     public string? UserSystemPrompt { get; set; }
 

@@ -188,7 +188,15 @@ public static class Extension
     {
         var stack = new Stack<IDialogItem>();
         for (var p = item; p != null; p = p.PreviousItem)
+        {
+            if (item is RootDialogItem)
+            {
+                break;
+            }
+
             stack.Push(p);
+        }
+
         return stack.ToList();
     }
 

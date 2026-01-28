@@ -14,6 +14,7 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Endpoints;
+using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
@@ -103,6 +104,20 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             OnPropertyChanged();
         }
     }
+
+    private IList<CheckableFunctionGroupTree>? _selectedFunctionGroups;
+
+    public IList<CheckableFunctionGroupTree>? SelectedFunctionGroups
+    {
+        get => _selectedFunctionGroups;
+        set
+        {
+            if (Equals(value, _selectedFunctionGroups)) return;
+            _selectedFunctionGroups = value;
+            OnPropertyChanged();
+        }
+    }
+
 
     #region scroll
 
@@ -236,9 +251,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public abstract string? SystemPrompt { get; }
 
-    public IDialogItem RootNode { get; set; }
-
-    public IReadOnlyCollection<IDialogItem> RootNodes => [RootNode];
+    public IDialogItem RootNode { get; }
 
     private IDialogItem _currentLeaf;
 
@@ -263,7 +276,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         DialogItemsObservable.ResetWith(CurrentLeaf.PathFromRoot());
     }
 
-    private SuspendableObservableCollection<IDialogItem> DialogItemsObservable { get; } = [];
+    public SuspendableObservableCollection<IDialogItem> DialogItemsObservable { get; } = [];
 
     private readonly ReadOnlyObservableCollection<IDialogItem> _readOnlyDialogItems;
 
@@ -604,53 +617,21 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #endregion
 
-    #region copy items
-
-    private const string CopyFormat = "LMClient.Interaction";
-
-    /// <summary>
-    /// 复制单次交互
-    /// </summary>
-    /// <param name="responseViewItem"></param>
-    public void CopyInteraction(MultiResponseViewItem responseViewItem)
-    {
-        var indexOf = this.DialogItems.IndexOf(responseViewItem);
-        if (indexOf < 0)
-        {
-            return;
-        }
-
-        var jsonObject = new JsonObject();
-        var multiResponsePersistItem =
-            _mapper.Map<MultiResponseViewItem, MultiResponsePersistItem>(responseViewItem, (_ => { }));
-        jsonObject["response"] =
-            JsonNode.Parse(JsonSerializer.Serialize(multiResponsePersistItem, Extension.DefaultJsonSerializerOptions));
-        if (this.DialogItems[indexOf - 1] is RequestViewItem requestViewItem)
-        {
-            var requestPersistItem =
-                _mapper.Map<RequestViewItem, RequestPersistItem>(requestViewItem, (_ => { }));
-            jsonObject["request"] =
-                JsonNode.Parse(JsonSerializer.Serialize(requestPersistItem, Extension.DefaultJsonSerializerOptions));
-        }
-
-        var data = JsonSerializer.Serialize(jsonObject, Extension.DefaultJsonSerializerOptions);
-        var dataObject = new DataObject();
-        dataObject.SetData(CopyFormat, data);
-        Clipboard.SetDataObject(dataObject, true);
-        MessageEventBus.Publish("已复制到剪贴板，可以粘贴到其他会话");
-    }
-
-    public ICommand PastInteractionCommand { get; }
-
-    #endregion
 
     protected DialogSessionViewModel(IMapper mapper, IDialogItem? rootNode, IDialogItem? currentLeaf = null)
     {
         _mapper = mapper;
         _readOnlyDialogItems = new ReadOnlyObservableCollection<IDialogItem>(DialogItemsObservable);
-
-        RootNode = rootNode ?? RootDialogItem.Instance;
-        _currentLeaf = currentLeaf ?? RootNode;
+        if (rootNode == null)
+        {
+            RootNode = RootDialogItem.Instance;
+            _currentLeaf = RootNode;
+        }
+        else
+        {
+            RootNode = rootNode;
+            _currentLeaf = currentLeaf ?? RootNode;
+        }
         RebuildLinearItems();
         this.PredictedContextLength = GetContextTokensBefore();
         DialogItemsObservable.CollectionChanged += (_, _) =>
@@ -802,7 +783,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 MessageBox.Show(e.Message);
             }
         }));
-        PastInteractionCommand = new ActionCommand((_ => { PasteInteraction(); }));
         ClearContextCommand = new ActionCommand(_ => { CutContext(); });
         ClearDialogCommand = new ActionCommand(async void (_) =>
         {
@@ -813,94 +793,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 ScrollViewItem = null;
             }
         });
-    }
-
-
-    public void PasteInteraction(int insertIndex = -1)
-    {
-        if (Clipboard.GetDataObject() is not DataObject dataObject)
-        {
-            return;
-        }
-
-        if (!dataObject.GetDataPresent(CopyFormat))
-        {
-            return;
-        }
-
-        if (dataObject.GetData(CopyFormat) is not string data)
-        {
-            return;
-        }
-
-        try
-        {
-            var jsonNode = JsonNode.Parse(data);
-            if (jsonNode is not JsonObject jsonObject)
-            {
-                return;
-            }
-
-            if (jsonObject.TryGetPropertyValue("request", out var requestNode) && requestNode != null)
-            {
-                var requestPersistItem =
-                    requestNode.Deserialize<RequestPersistItem>(Extension.DefaultJsonSerializerOptions);
-                if (requestPersistItem != null)
-                {
-                    var requestViewItem =
-                        _mapper.Map<RequestPersistItem, RequestViewItem>(requestPersistItem,
-                            new RequestViewItem(requestPersistItem.RawTextMessage ?? string.Empty, this),
-                            (_ => { }));
-                    if (this.DialogItems.Contains(requestViewItem, DialogItemEqualityComparer.Instance))
-                    {
-                        return;
-                    }
-
-                    if (insertIndex == -1)
-                    {
-                        this.DialogItems.Add(requestViewItem);
-                    }
-                    else
-                    {
-                        this.DialogItems.Insert(insertIndex, requestViewItem);
-                        insertIndex++;
-                    }
-                }
-            }
-
-            if (jsonObject.TryGetPropertyValue("response", out var responseNode) && responseNode != null)
-            {
-                var multiResponsePersistItem =
-                    responseNode.Deserialize<MultiResponsePersistItem>(Extension.DefaultJsonSerializerOptions);
-                if (multiResponsePersistItem != null)
-                {
-                    var multiResponseViewItem =
-                        _mapper.Map<MultiResponsePersistItem, MultiResponseViewItem>(multiResponsePersistItem,
-                            options =>
-                            {
-                                options.Items.Add(AutoMapModelTypeConverter.ParentDialogViewModelKey, this);
-                            });
-                    if (this.DialogItems.Contains(multiResponseViewItem, DialogItemEqualityComparer.Instance))
-                    {
-                        return;
-                    }
-
-                    // multiResponseViewItem.ParentSession = this;
-                    if (insertIndex == -1)
-                    {
-                        this.DialogItems.Add(multiResponseViewItem);
-                    }
-                    else
-                    {
-                        this.DialogItems.Insert(insertIndex, multiResponseViewItem);
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            MessageBox.Show(e.Message, "粘贴失败", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
     }
 
     protected virtual void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

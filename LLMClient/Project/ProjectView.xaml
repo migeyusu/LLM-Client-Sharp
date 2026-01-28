@@ -441,13 +441,13 @@
                                      Style="{StaticResource DialogListBoxStyle}"
                                      CurrentViewItem="{Binding ScrollViewItem,Mode=TwoWay}"
                                      ItemsSource="{Binding DialogItems,Mode=OneWay}">
-                <customControl:ListBoxEx.ContextMenu>
+                <!--<customControl:ListBoxEx.ContextMenu>
                     <ContextMenu>
                         <MenuItem Icon="{materialDesign:PackIcon Kind=ClipboardArrowDown}"
                                   Header="黏贴对话"
                                   Command="{Binding PastInteractionCommand}" />
                     </ContextMenu>
-                </customControl:ListBoxEx.ContextMenu>
+                </customControl:ListBoxEx.ContextMenu>-->
                 <ListBox.CommandBindings>
                     <CommandBinding Command="{x:Static utility:CommonCommands.Fork}"
                                     Executed="ProjectBranch_OnExecuted" />

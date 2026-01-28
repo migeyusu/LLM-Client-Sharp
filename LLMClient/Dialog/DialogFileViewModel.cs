@@ -90,8 +90,8 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
 
     public DialogFileViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
         GlobalOptions options, IRagSourceCollection ragSourceCollection, IViewModelFactory factory,
-        IList<IDialogItem>? items = null) :
-        this(new DialogViewModel(topic, modelClient, mapper, options, factory, items), mapper)
+        IDialogItem? rootNode = null, IDialogItem? leaf = null) :
+        this(new DialogViewModel(topic, modelClient, mapper, options, factory, rootNode, leaf), mapper)
     {
     }
 
@@ -108,7 +108,7 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
             }
         };
         _mapper = mapper;
-        this.Dialog.DialogItems.CollectionChanged += DialogItemsOnCollectionChanged;
+        dialogModel.DialogItemsObservable.CollectionChanged += DialogItemsOnCollectionChanged;
     }
 
     private void DialogItemsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

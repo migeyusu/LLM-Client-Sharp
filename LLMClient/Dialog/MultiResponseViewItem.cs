@@ -11,7 +11,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
 
-public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInteractionItem
+public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInteractionItem, IEditableDialogItem
 {
     public Guid InteractionId
     {
@@ -46,6 +46,11 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     public override bool IsAvailableInContext
     {
         get { return AcceptedResponse?.IsAvailableInContext == true; }
+    }
+
+    public void TriggerTextContentUpdate()
+    {
+        AcceptedResponse?.TriggerTextContentUpdate();
     }
 
     public bool IsResponding
@@ -191,23 +196,6 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     public ICommand GotoPreviousCommand { get; }
 
     public ICommand RemoveResponseCommand { get; }
-
-    public static ICommand CopyInteractionCommand { get; } =
-        new RelayCommand<MultiResponseViewItem>(o =>
-        {
-            if (o == null)
-            {
-                return;
-            }
-
-            o.ParentSession.CopyInteraction(o);
-        });
-
-    public ICommand PasteInteractionCommand => new ActionCommand(o =>
-    {
-        var indexOf = this.ParentSession.DialogItems.IndexOf(this);
-        this.ParentSession.PasteInteraction(indexOf + 1);
-    });
 
     public MultiResponseViewItem(IEnumerable<ResponseViewItem> items, DialogSessionViewModel parentSession)
     {

@@ -432,13 +432,6 @@
                                           IsCheckable="True"
                                           IsChecked="{Binding AcceptedResponse.IsManualValid,Mode=TwoWay}"
                                           Visibility="{Binding AcceptedResponse.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-                                <MenuItem Command="{x:Static dialog:MultiResponseViewItem.CopyInteractionCommand}"
-                                          CommandParameter="{Binding Mode=OneTime}"
-                                          Header="复制对话（包括上下文）"
-                                          Icon="{materialDesign:PackIcon Kind=DataMatrixScan}" />
-                                <MenuItem Header="黏贴到之后"
-                                          Icon="{materialDesign:PackIcon Kind=ClipboardArrowDown}"
-                                          Command="{Binding PasteInteractionCommand}" />
                             </MenuItem>
                         </Menu>
                         <materialDesign:PopupBox Padding="4,0"
@@ -461,7 +454,7 @@
                                 Content="{materialDesign:PackIcon Kind=Refresh,Size=20}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
                                 Command="{x:Static utility:CommonCommands.EditDialogItemCommand}"
-                                CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
+                                CommandParameter="{Binding  Mode=OneTime}"
                                 VerticalAlignment="Center"
                                 Margin="6,0,0,0"
                                 ToolTip="编辑当前回复"
