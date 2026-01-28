@@ -17,5 +17,9 @@ public interface IDialogItem : ITokenizable
 
     bool IsAvailableInContext { get; }
 
-    void AppendChild(IDialogItem child);
+    IDialogItem AppendChild(IDialogItem child);
+    
+    IDialogItem RemoveChild(IDialogItem child);
+
+    void ClearChildren();
 }

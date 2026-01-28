@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -259,12 +260,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     private void RebuildLinearItems()
     {
-        DialogItems.Clear();
-        foreach (var node in CurrentLeaf.PathFromRoot())
-            DialogItems.Add(node);
+        DialogItemsObservable.ResetWith(CurrentLeaf.PathFromRoot());
     }
 
-    private ObservableCollection<IDialogItem> DialogItemsObservable { get; } = [];
+    private SuspendableObservableCollection<IDialogItem> DialogItemsObservable { get; } = [];
 
     private readonly ReadOnlyObservableCollection<IDialogItem> _readOnlyDialogItems;
 
@@ -280,10 +279,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public ICommand ClearContextCommand { get; }
 
+//todo:测试动态插入时的UI性能
+
     /// <summary>
     /// 通过插入擦除标记来切断上下文
     /// </summary>
-    /// <param name="requestViewItem"></param>
+    /// <param name="requestViewItem">if null:last</param>
     public void CutContext(IRequestItem? requestViewItem = null)
     {
         if (DialogItems.Count == 0)
@@ -291,88 +292,66 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             return;
         }
 
-        var item = new EraseViewItem();
+        var eraseViewItem = new EraseViewItem();
         if (requestViewItem != null)
         {
             var indexOf = DialogItems.IndexOf(requestViewItem);
             if (indexOf <= 0)
             {
+                Trace.TraceWarning("请求项不在对话列表中，无法切断上下文");
                 return;
             }
 
-            DialogItems.Insert(indexOf, item);
+            requestViewItem.InsertBefore(eraseViewItem);
         }
         else
         {
-            DialogItems.Add(item);
+            CurrentLeaf.AppendChild(eraseViewItem);
+            CurrentLeaf = eraseViewItem;
         }
 
-        ScrollViewItem = item;
+        ScrollViewItem = eraseViewItem;
     }
 
     public ICommand ClearDialogCommand { get; }
 
     public virtual void DeleteItem(IDialogItem item)
     {
-        var indexOf = this.DialogItems.IndexOf(item);
-        if (item is IRequestItem requestViewItem)
+        if (item is IRequestItem requestItem)
         {
-            var interactionId = requestViewItem.InteractionId;
-            // 删除所有与该请求相关的响应
-            if (indexOf < this.DialogItems.Count - 1)
-            {
-                var index = indexOf + 1;
-                var dialogViewItem = this.DialogItems[index];
-                if (dialogViewItem is MultiResponseViewItem multiResponseViewItem &&
-                    multiResponseViewItem.InteractionId == interactionId)
-                {
-                    this.DialogItems.RemoveAt(index);
-                }
-            }
+            requestItem.DeleteInteraction();
+        }
+        else if (item is EraseViewItem eraseViewItem)
+        {
+            eraseViewItem.Delete();
         }
 
-        this.DialogItems.RemoveAt(indexOf);
-        if (ScrollViewItem == item)
+        //检查leaf可达性
+        if (!CurrentLeaf.CanReachRoot())
         {
-            ScrollViewItem = this.DialogItems.LastOrDefault();
+            CurrentLeaf = item.PreviousItem!;
         }
+        //todo: focus item？
     }
 
-    public void RemoveAfter(MultiResponseViewItem responseViewItem)
+    public async void RemoveAfter(MultiResponseViewItem responseViewItem)
     {
-        //删除之后的所有记录
-        var indexOf = DialogItems.IndexOf(responseViewItem);
-        var dialogCount = DialogItems.Count;
-        for (int i = 0; i < dialogCount - indexOf; i++)
-        {
-            DialogItems.RemoveAt(indexOf);
-        }
-    }
-
-    public async void ClearBefore(RequestViewItem requestViewItem)
-    {
-        if ((await DialogHost.Show(new ConfirmView() { Header = "清空会话？" })) is true)
-        {
-            RemoveBefore(requestViewItem);
-        }
-    }
-
-    public void RemoveBefore(RequestViewItem request)
-    {
-        //删除之前的所有记录
-        var indexOf = DialogItems.IndexOf(request);
-        if (indexOf <= 0)
+        if (responseViewItem.Children.Count == 0)
         {
             return;
         }
 
-        for (int i = 0; i < indexOf; i++)
+        if (responseViewItem.Children.Count > 1)
         {
-            DialogItems.RemoveAt(0);
+            if ((await DialogHost.Show(new ConfirmView() { Header = "该节点后包含分支，依然清空？" })) is not true)
+            {
+                return;
+            }
         }
-    }
 
-    public ICommand ClearUnavailableCommand { get; }
+        responseViewItem.ClearChildren();
+        CurrentLeaf = responseViewItem;
+    }
 
     #endregion
 
@@ -387,7 +366,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
             try
             {
-                return FilterHistory(DialogItems)
+                return GetChatHistory(CurrentLeaf)
                     .Sum(item => item.Tokens);
             }
             catch (Exception)
@@ -403,13 +382,16 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region core methods
 
-    private static IEnumerable<IDialogItem> FilterHistory(IList<IDialogItem> source, int? endIndex = null)
+    private static IEnumerable<IDialogItem> GetChatHistory(IDialogItem lastItem)
     {
-        endIndex ??= source.Count - 1;
-        Guid? interactionId = null;
-        for (int i = endIndex.Value; i >= 0; i--)
+        if (lastItem is not IResponseViewItem)
         {
-            var dialogViewItem = source[i];
+            yield break;
+        }
+
+        Guid? interactionId = null;
+        for (var dialogViewItem = lastItem; dialogViewItem != null; dialogViewItem = dialogViewItem.PreviousItem)
+        {
             if (dialogViewItem is EraseViewItem)
             {
                 yield break;
@@ -449,7 +431,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     /// <param name="endIndex">if null: last index</param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public IDialogItem[] GenerateHistoryFromSelf(int? endIndex = null)
+    public IReadOnlyList<IDialogItem> GenerateHistoryFromSelf(int? endIndex = null)
     {
         if (DialogItems.Count == 0)
         {
@@ -464,7 +446,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
 
         //从倒数第二条开始
-        return FilterHistory(DialogItems, index - 1).Reverse().Append(lastRequest).ToArray();
+        return GetChatHistory(DialogItems[index - 1]).Reverse().Append(lastRequest).ToArray();
     }
 
     /// <summary>
@@ -569,7 +551,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     private MultiResponseViewItem? _currentResponseViewItem;
 
     public async Task<CompletedResult> AddNewResponse(ILLMChatClient client,
-        IList<IDialogItem> history,
+        IReadOnlyList<IDialogItem> history,
         MultiResponseViewItem multiResponseViewItem, string? systemPrompt = null)
     {
         CompletedResult completedResult;
@@ -577,7 +559,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         var responseViewItem = new ResponseViewItem(client);
         try
         {
-            multiResponseViewItem.Append(responseViewItem);
+            multiResponseViewItem.AppendResponse(responseViewItem);
             var dialogContext = new DialogContext(history, systemPrompt);
             completedResult = await responseViewItem.SendRequest(dialogContext);
         }
@@ -592,24 +574,30 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     }
 
     public virtual async Task<CompletedResult> NewRequest(ILLMChatClient client, IRequestItem requestViewItem,
-        int? insertIndex = null, CancellationToken token = default)
+        IRequestItem? insertBefore = null, CancellationToken token = default)
     {
         var multiResponseViewItem = new MultiResponseViewItem(this)
             { InteractionId = requestViewItem.InteractionId };
-        var items = this.DialogItems;
-        if (insertIndex == null)
+        if (insertBefore == null)
         {
-            items.Add(requestViewItem);
-            items.Add(multiResponseViewItem);
+            this.CurrentLeaf.AppendChild(requestViewItem)
+                .AppendChild(multiResponseViewItem);
         }
         else
         {
-            var index = insertIndex.Value;
-            items.Insert(index, requestViewItem);
-            index += 1;
-            items.Insert(index, multiResponseViewItem);
+            var previousItem = insertBefore.PreviousItem;
+            if (previousItem == null)
+            {
+                throw new InvalidOperationException("无法在根节点前插入请求");
+            }
+
+            previousItem.RemoveChild(insertBefore);
+            previousItem.AppendChild(requestViewItem)
+                .AppendChild(multiResponseViewItem)
+                .AppendChild(insertBefore);
         }
 
+        this.CurrentLeaf = multiResponseViewItem;
         this.ScrollViewItem = multiResponseViewItem;
         return await multiResponseViewItem.NewRequest(client, token);
     }
@@ -656,21 +644,22 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #endregion
 
-    protected DialogSessionViewModel(IMapper mapper, IList<IDialogItem>? dialogItems = null)
+    protected DialogSessionViewModel(IMapper mapper, IDialogItem? rootNode, IDialogItem? currentLeaf = null)
     {
         _mapper = mapper;
         _readOnlyDialogItems = new ReadOnlyObservableCollection<IDialogItem>(DialogItemsObservable);
-        
-        RootNode = DialogItems.FirstOrDefault() ?? RootDialogItem.Instance;
-        _currentLeaf = DialogItems.LastOrDefault() ?? RootNode;
+
+        RootNode = rootNode ?? RootDialogItem.Instance;
+        _currentLeaf = currentLeaf ?? RootNode;
+        RebuildLinearItems();
         this.PredictedContextLength = GetContextTokensBefore();
-        DialogItems.CollectionChanged += (_, _) =>
+        DialogItemsObservable.CollectionChanged += (_, _) =>
         {
             OnPropertyChangedAsync(nameof(Shortcut));
             OnPropertyChanged(nameof(CurrentContextTokens));
             this.PredictedContextLength = GetContextTokensBefore();
         };
-        this.DialogItems.CollectionChanged += DialogOnCollectionChanged;
+        this.DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
         SearchCommand = new ActionCommand(_ =>
         {
             foreach (var dialogViewItem in this.DialogItems.OfType<ISearchableDialogItem>())
@@ -819,30 +808,11 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         {
             if ((await DialogHost.Show(new ConfirmView() { Header = "清空会话？" })) is true)
             {
-                DialogItems.Clear();
+                RootNode.ClearChildren();
+                CurrentLeaf = RootNode;
+                ScrollViewItem = null;
             }
         });
-        ClearUnavailableCommand = new ActionCommand((_ =>
-        {
-            var deleteItems = new List<IDialogItem>();
-            var unusedInteractionId = Guid.Empty;
-            for (var index = DialogItems.Count - 1; index >= 0; index--)
-            {
-                var dialogViewItem = DialogItems[index];
-                if (dialogViewItem is MultiResponseViewItem item && !item.HasAvailableMessage)
-                {
-                    deleteItems.Add(dialogViewItem);
-                    unusedInteractionId = item.InteractionId;
-                }
-                else if (dialogViewItem is RequestViewItem requestViewItem &&
-                         requestViewItem.InteractionId == unusedInteractionId)
-                {
-                    deleteItems.Add(requestViewItem);
-                }
-            }
-
-            deleteItems.ForEach(item => DialogItems.Remove(item));
-        }));
     }
 
 

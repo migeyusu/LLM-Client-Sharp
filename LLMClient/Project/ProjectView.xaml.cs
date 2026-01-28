@@ -29,14 +29,6 @@ public partial class ProjectView : UserControl
         }
     }
 
-    private void ClearBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.Parameter is RequestViewItem requestViewItem)
-        {
-            ViewModel.SelectedTask?.ClearBefore(requestViewItem);
-        }
-    }
-
     ProjectViewModel ViewModel => (DataContext as ProjectViewModel)!;
 
     private void TaskMoveLeft_OnExecuted(object sender, ExecutedRoutedEventArgs e)

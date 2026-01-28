@@ -67,11 +67,11 @@
                                   Command="{x:Static utility:CommonCommands.Exclude}"
                                   CommandParameter="{Binding}"
                                   Icon="{materialDesign:PackIcon Kind=FormatAlignTop}" />
-                        <MenuItem Header="清空之前对话"
+                        <!--<MenuItem Header="清空之前对话"
                                   ToolTip="删除之前的对话内容"
                                   Command="{x:Static utility:CommonCommands.Clear}"
                                   CommandParameter="{Binding}"
-                                  Icon="{materialDesign:PackIcon Kind=WaveArrowUp}" />
+                                  Icon="{materialDesign:PackIcon Kind=WaveArrowUp}" />-->
                         <MenuItem Header="删除"
                                   Command="Delete"
                                   CommandParameter="{Binding}"

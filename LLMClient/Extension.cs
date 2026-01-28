@@ -192,6 +192,19 @@ public static class Extension
         return stack.ToList();
     }
 
+    public static bool CanReachRoot(this IDialogItem item)
+    {
+        for (var p = item; p != null; p = p.PreviousItem)
+        {
+            if (p is RootDialogItem)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static IDialogItem DefaultLastItem(this IDialogItem item)
     {
         while (true)
@@ -204,6 +217,92 @@ public static class Extension
 
             return item;
         }
+    }
+
+
+    /// <summary>
+    /// 删除一次回复
+    /// </summary>
+    /// <param name="requestItem"></param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static void DeleteInteraction(this IRequestItem requestItem)
+    {
+        var previousItem = requestItem.PreviousItem;
+        if (previousItem == null)
+        {
+            throw new InvalidOperationException("PreviousItem 不能为空");
+        }
+
+        previousItem.RemoveChild(requestItem);
+        var firstOrDefault = requestItem.Children.FirstOrDefault();
+        if (firstOrDefault is IResponseViewItem responseViewItem)
+        {
+            foreach (var request in responseViewItem.Children)
+            {
+                previousItem.AppendChild(request);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="requestItem"></param>
+    /// <returns>返回前一个节点</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static IDialogItem DeleteFrom(this IRequestItem requestItem)
+    {
+        var previousItem = requestItem.PreviousItem;
+        if (previousItem == null)
+        {
+            throw new InvalidOperationException("PreviousItem 不能为空");
+        }
+
+        previousItem.RemoveChild(requestItem);
+        return previousItem;
+    }
+
+    public static void DeleteAfter(this IResponseViewItem responseViewItem)
+    {
+        responseViewItem.ClearChildren();
+    }
+
+    /// <summary>
+    /// 删除单个节点
+    /// </summary>
+    /// <param name="viewItem"></param>
+    /// <returns>后继节点</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static IDialogItem? Delete(this EraseViewItem viewItem)
+    {
+        var previousItem = viewItem.PreviousItem;
+        if (previousItem == null)
+        {
+            throw new InvalidOperationException("PreviousItem 不能为空");
+        }
+
+        previousItem.RemoveChild(viewItem);
+        var sucessor = viewItem.Children.FirstOrDefault();
+        if (sucessor != null)
+        {
+            previousItem.AppendChild(sucessor);
+        }
+
+        return sucessor;
+    }
+
+    public static IDialogItem InsertBefore(this IRequestItem requestItem, EraseViewItem eraseViewItem)
+    {
+        var previousItem = requestItem.PreviousItem;
+        if (previousItem == null)
+        {
+            throw new InvalidOperationException("PreviousItem 不能为空");
+        }
+
+        previousItem.RemoveChild(requestItem);
+        previousItem.AppendChild(eraseViewItem)
+            .AppendChild(requestItem);
+        return eraseViewItem;
     }
 
     #region json

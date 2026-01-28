@@ -2,6 +2,9 @@
 
 namespace LLMClient.Dialog;
 
+/// <summary>
+/// 空的根对话项，作为对话树的根节点。
+/// </summary>
 public class RootDialogItem : BaseDialogItem
 {
     public static RootDialogItem Instance { get; } = new();

@@ -349,7 +349,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
-            (Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>>)GetResponse);
+            (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>>)GetResponse);
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedTask?.SelectedFunctionGroups));
@@ -418,7 +418,8 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
-    protected virtual async Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2, int? index = null,
+    protected virtual async Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
+        IRequestItem? insertViewItem = null,
         CancellationToken token = default)
     {
         if (SelectedTask == null)
@@ -439,7 +440,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.Ready();
         if (this.ProjectContextPrompt != null)
             await this.ProjectContextPrompt.BuildAsync();
-        return await SelectedTask.NewRequest(arg1, arg2, index, token);
+        return await SelectedTask.NewRequest(arg1, arg2, insertViewItem, token);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

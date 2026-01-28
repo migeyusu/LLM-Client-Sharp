@@ -28,14 +28,6 @@ public partial class DialogView : UserControl
         }
     }
 
-    private void ClearBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.Parameter is RequestViewItem requestViewItem)
-        {
-            ViewModel.ClearBefore(requestViewItem);
-        }
-    }
-
     private void ConclusionBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is RequestViewItem requestViewItem)
@@ -45,7 +37,7 @@ public partial class DialogView : UserControl
             {
                 return;
             }
-            ViewModel.Requester.Summarize(indexOf);
+            ViewModel.Requester.Summarize(requestViewItem);
         }
     }
 }

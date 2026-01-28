@@ -5,8 +5,6 @@ using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering;
-using LLMClient.Dialog;
-using LLMClient.Endpoints;
 
 namespace LLMClient.Project;
 
@@ -93,12 +91,6 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
             }
         });
 
-    }
-
-    protected override async Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
-        int? index = null, CancellationToken token = default)
-    {
-        return await base.GetResponse(arg1, arg2, index, token);
     }
 
     public void Dispose()

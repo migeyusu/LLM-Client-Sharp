@@ -219,13 +219,13 @@ public class RequesterViewModel : BaseViewModel
 
     #endregion
 
-    private readonly Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>> _getResponse;
+    private readonly Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>> _getResponse;
     private readonly GlobalOptions _options;
 
     private readonly ITokensCounter _tokensCounter;
 
     public RequesterViewModel(ILLMChatClient modelClient,
-        Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>> getResponse,
+        Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>> getResponse,
         GlobalOptions options, IRagSourceCollection ragSourceCollection, ITokensCounter tokensCounter)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
@@ -296,7 +296,7 @@ public class RequesterViewModel : BaseViewModel
 
     private CancellationTokenSource? _tokenSource;
 
-    public async void Summarize(int? index = null)
+    public async void Summarize(IRequestItem? insertBefore = null)
     {
         IsNewResponding = true;
         try
@@ -311,7 +311,7 @@ public class RequesterViewModel : BaseViewModel
             var summarizeModel = _options.CreateContextSummarizeClient() ?? this.DefaultClient;
             using (_tokenSource = new CancellationTokenSource())
             {
-                await _getResponse.Invoke(summarizeModel, summaryRequest, index, _tokenSource.Token);
+                await _getResponse.Invoke(summarizeModel, summaryRequest, insertBefore, _tokenSource.Token);
             }
         }
         catch (Exception e)

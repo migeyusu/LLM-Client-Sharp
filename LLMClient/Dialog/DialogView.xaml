@@ -151,8 +151,6 @@
                                     ToolTip="基于现有对话，使用新模型重新执行"
                                     CommandParameter="{Binding}"
                                     Command="{x:Static utility:CommonCommands.ReprocessDialog}" />
-                            <Button Content="清空无效对话"
-                                    Command="{Binding ClearUnavailableCommand}" />
                             <Button Content="打开文件"
                                     Command="{x:Static utility:CommonCommands.OpenSource}" />
                         </StackPanel>
@@ -171,8 +169,6 @@
                                 Executed="OnDeleteExecuted" />
                 <CommandBinding Command="{x:Static utility:CommonCommands.Exclude}"
                                 Executed="OnExcludeExecuted" />
-                <CommandBinding Command="{x:Static utility:CommonCommands.Clear}"
-                                Executed="ClearBefore_OnExecuted" />
                 <CommandBinding Command="{x:Static utility:CommonCommands.Conclusion}"
                                 Executed="ConclusionBefore_OnExecuted" />
             </ListBox.CommandBindings>

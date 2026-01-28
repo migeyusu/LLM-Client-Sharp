@@ -38,14 +38,15 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
         }
     }
 
-    public void EndAdd(IList<T> addItems)
+    public void EndAdd(IReadOnlyList<T> addItems)
     {
         if (--_suspendCount == 0)
         {
             _isSuspended = false;
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, (IList)addItems));
+            OnCollectionChanged(
+                new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, (IList)addItems));
         }
     }
 

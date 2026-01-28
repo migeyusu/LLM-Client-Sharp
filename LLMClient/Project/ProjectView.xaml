@@ -455,8 +455,6 @@
                                     Executed="OnDeleteExecuted" />
                     <CommandBinding Command="{x:Static utility:CommonCommands.Exclude}"
                                     Executed="OnExcludeExecuted" />
-                    <CommandBinding Command="{x:Static utility:CommonCommands.Clear}"
-                                    Executed="ClearBefore_OnExecuted" />
                     <CommandBinding Command="{x:Static utility:CommonCommands.Conclusion}"
                                     Executed="ConclusionBefore_OnExecuted" />
                 </ListBox.CommandBindings>

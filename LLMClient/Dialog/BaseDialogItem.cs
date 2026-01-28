@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using DocumentFormat.OpenXml.Packaging;
 using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.AI;
 
@@ -46,9 +47,25 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
 
     public abstract IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken);
 
-    public void AppendChild(IDialogItem child)
+    public IDialogItem AppendChild(IDialogItem child)
     {
         ((BaseDialogItem)child).PreviousItem = this;
         ChildItemsObservables.Add(child);
+        return child;
+    }
+
+    public IDialogItem RemoveChild(IDialogItem child)
+    {
+        if (ChildItemsObservables.Remove(child))
+        {
+            ((BaseDialogItem)child).PreviousItem = null;
+        }
+
+        return child;
+    }
+
+    public void ClearChildren()
+    {
+        ChildItemsObservables.Clear();
     }
 }

@@ -234,7 +234,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         _topic = topic;
         _options = options;
         Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
-            (Func<ILLMChatClient, IRequestItem, int?, CancellationToken, Task<CompletedResult>>)NewRequest);
+            (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>>)NewRequest);
         Requester.FunctionGroupSource = this;
         Requester.FunctionTreeSelector.Reset();
         var functionTreeSelector = Requester.FunctionTreeSelector;

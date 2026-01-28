@@ -268,8 +268,8 @@ public class UnitTest1
             new DialogViewModel("test", client, mapper, new GlobalOptions(),
                 serviceProvider.GetService<IViewModelFactory>()!);
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
-        multiResponseViewItem.Append(new ResponseViewItem(client));
-        multiResponseViewItem.Append(new ResponseViewItem(client));
+        multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
+        multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         dialogViewModel.DialogItems.Add(multiResponseViewItem);
         
         var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper);
@@ -292,8 +292,8 @@ public class UnitTest1
             new DialogViewModel("test", client, mapper, new GlobalOptions(),
                 serviceProvider.GetService<IViewModelFactory>()!);
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
-        multiResponseViewItem.Append(new ResponseViewItem(client));
-        multiResponseViewItem.Append(new ResponseViewItem(client));
+        multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
+        multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         dialogViewModel.DialogItems.Add(multiResponseViewItem);
         var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper);
         var dialogFilePersistModel =

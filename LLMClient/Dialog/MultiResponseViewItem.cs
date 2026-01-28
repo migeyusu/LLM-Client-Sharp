@@ -299,12 +299,12 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     public Task<CompletedResult> NewRequest(ILLMChatClient chatClient, CancellationToken token = default)
     {
         var responseViewItem = new ResponseViewItem(chatClient);
-        this.Append(responseViewItem);
+        this.AppendResponse(responseViewItem);
         var dialogContext = ParentSession.CreateDialogContextBefore(this);
         return ParentSession.InvokeRequest(() => responseViewItem.SendRequest(dialogContext, token));
     }
 
-    public void Append(ResponseViewItem viewItem)
+    public void AppendResponse(ResponseViewItem viewItem)
     {
         this.Items.Add(viewItem);
         this.AcceptedResponse = viewItem;
