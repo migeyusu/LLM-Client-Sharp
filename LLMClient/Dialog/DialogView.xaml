@@ -24,7 +24,7 @@
         </Grid.RowDefinitions>
         <materialDesign:Card Grid.Row="0"
                              Margin="0,0,0,5"
-                             Padding="10,4"
+                             Padding="10,0"
                              Height="50">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -48,7 +48,7 @@
                                             Margin="0,0,10,0"
                                             PopupElevation="Dp6"
                                             Height="50"
-                                            Padding="10,4"
+                                            Padding="10,0"
                                             PopupUniformCornerRadius="6"
                                             PopupContent="{Binding SystemPrompt,Mode=OneWay}"
                                             Style="{StaticResource MaterialDesignFlatSplitButton}"
@@ -129,6 +129,12 @@
                     <Button ToolTip="导出对话为Markdown"
                             Command="{Binding ExportCommand}">
                         <materialDesign:PackIcon Kind="FileExport"
+                                                 Width="20"
+                                                 Height="20" />
+                    </Button>
+                    <Button ToolTip="打开对话路由"
+                            Command="{Binding OpenDialogRouteCommand}">
+                        <materialDesign:PackIcon Kind="SitemapOutline"
                                                  Width="20"
                                                  Height="20" />
                     </Button>

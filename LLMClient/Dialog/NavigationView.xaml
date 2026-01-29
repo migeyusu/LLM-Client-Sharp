@@ -191,9 +191,7 @@
                       Background="Transparent"
                       BorderThickness="0"
                       Padding="8"
-                      SelectedItemChanged="TreeView_OnSelectedItemChanged"
-                      VirtualizingStackPanel.IsVirtualizing="True"
-                      VirtualizingStackPanel.VirtualizationMode="Recycling">
+                      SelectedItemChanged="TreeView_OnSelectedItemChanged">
             </TreeView>
         </ScrollViewer>
     </Grid>

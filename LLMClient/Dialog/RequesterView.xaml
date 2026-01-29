@@ -347,7 +347,7 @@
                                 <materialDesign:SplitButton.PopupContent>
                                     <Button Command="{Binding SummarizeCommand}"
                                             Width="120"
-                                            Height="30"
+                                            Height="40"
                                             Style="{StaticResource MaterialDesignPaperLightButton}">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="总结"

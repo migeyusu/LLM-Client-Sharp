@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using LambdaConverters;
+using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
@@ -37,6 +38,16 @@ public partial class NavigationView : UserControl
             vm.CurrentLeaf = node;
         }
     }
+}
+
+public class NavigationViewModel : BaseViewModel
+{
+    public NavigationViewModel(INavigationViewModel model)
+    {
+        Model = model;
+    }
+
+    public INavigationViewModel Model { get; set; }
 }
 
 internal static class NavigationConverters

@@ -7,8 +7,6 @@ namespace LLMClient.Dialog;
 /// </summary>
 public class RootDialogItem : BaseDialogItem
 {
-    public static RootDialogItem Instance { get; } = new();
-
     private static readonly ChatRole EmptyRole = new ChatRole("Empty");
     public override long Tokens { get; } = 0;
     public override ChatRole Role { get; } = EmptyRole;

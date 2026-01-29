@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
@@ -291,6 +292,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     }
 
     public ICommand ClearContextCommand { get; }
+
+    public ICommand OpenDialogRouteCommand { get; }
 
 //todo:测试动态插入时的UI性能
 
@@ -624,7 +627,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         _readOnlyDialogItems = new ReadOnlyObservableCollection<IDialogItem>(DialogItemsObservable);
         if (rootNode == null)
         {
-            RootNode = RootDialogItem.Instance;
+            RootNode = new RootDialogItem();
             _currentLeaf = RootNode;
         }
         else
@@ -632,6 +635,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             RootNode = rootNode;
             _currentLeaf = currentLeaf ?? RootNode;
         }
+
         RebuildLinearItems();
         this.PredictedContextLength = GetContextTokensBefore();
         DialogItemsObservable.CollectionChanged += (_, _) =>
@@ -641,6 +645,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             this.PredictedContextLength = GetContextTokensBefore();
         };
         this.DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
+        OpenDialogRouteCommand = new ActionCommand(async o =>
+        {
+            await DialogHost.Show(new NavigationViewModel(this));
+        });
         SearchCommand = new ActionCommand(_ =>
         {
             foreach (var dialogViewItem in this.DialogItems.OfType<ISearchableDialogItem>())
