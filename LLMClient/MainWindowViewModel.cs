@@ -184,24 +184,6 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         return dialogSession;
     }
 
-    public void ForkPreDialog(IDialogItem item)
-    {
-        var preSession = PreSession;
-        if (preSession is not DialogFileViewModel preDialog)
-        {
-            return;
-        }
-
-        var indexOf = this.SessionViewModels.IndexOf(preDialog);
-        if (indexOf < 0)
-        {
-            return;
-        }
-
-        var dialogSession = preDialog.Fork(item);
-        AddSession(dialogSession);
-    }
-
     #endregion
 
     public ObservableCollection<FileBasedSessionBase> SessionViewModels { get; set; } = new();

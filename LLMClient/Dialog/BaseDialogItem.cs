@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using DocumentFormat.OpenXml.Packaging;
 using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.AI;
 
@@ -23,13 +22,11 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
             if (Equals(value, _previousItem)) return;
             _previousItem = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(PreviousItemId));
         }
     }
 
     public abstract string DisplayText { get; }
-
-    public Guid? PreviousItemId => PreviousItem?.Id;
+    
     private ObservableCollection<IDialogItem> ChildItemsObservables { get; } = [];
 
     public IReadOnlyCollection<IDialogItem> Children => _childrenReadOnly;

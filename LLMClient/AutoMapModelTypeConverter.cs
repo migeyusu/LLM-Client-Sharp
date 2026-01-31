@@ -12,8 +12,6 @@ namespace LLMClient;
 
 public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, DialogFilePersistModel>,
     ITypeConverter<DialogFilePersistModel, DialogFileViewModel>,
-    ITypeConverter<MultiResponsePersistItem, MultiResponseViewItem>,
-    ITypeConverter<MultiResponseViewItem, MultiResponsePersistItem>,
     ITypeConverter<ILLMChatClient, ParameterizedLLMModelPO>,
     ITypeConverter<ParameterizedLLMModelPO, ILLMChatClient>,
     ITypeConverter<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>,
@@ -49,7 +47,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
     public DialogFileViewModel Convert(DialogFilePersistModel source, DialogFileViewModel? destination,
         ResolutionContext context)
     {
-        var dialogViewModel = context.Mapper.Map<DialogSessionPersistModel, DialogViewModel>(source);
+        var dialogViewModel = context.Mapper.Map<DialogFilePersistModel, DialogViewModel>(source);
         if (destination != null)
         {
             throw new NotSupportedException("Cannot set dialogViewModel to exist 'DialogSession' instance");
@@ -58,50 +56,6 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         var viewModel = _viewModelFactory.CreateViewModel<DialogFileViewModel>(dialogViewModel);
         viewModel.EditTime = source.EditTime;
         return viewModel;
-    }
-
-    public MultiResponseViewItem Convert(MultiResponsePersistItem source, MultiResponseViewItem? destination,
-        ResolutionContext context)
-    {
-        var contextItems = context.Items;
-        if (!contextItems.TryGetValue(ParentDialogViewModelKey, out var parentDialogViewModel)
-            || !(parentDialogViewModel is DialogSessionViewModel parentViewModel))
-        {
-            throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
-        }
-
-        var items = source.ResponseItems.Select(x =>
-            context.Mapper.Map<ResponsePersistItem, ResponseViewItem>(x)).ToArray();
-        if (destination == null)
-        {
-            destination = new MultiResponseViewItem(items, parentViewModel);
-        }
-        else
-        {
-            var responseViewItems = destination.Items;
-            foreach (var item in items)
-            {
-                responseViewItems.Add(item);
-            }
-        }
-
-        destination.AcceptedResponse = items.Length <= 0 ? null : items[Math.Max(source.AcceptedIndex, 0)];
-        destination.InteractionId = source.InteractionId;
-        return destination;
-    }
-
-    public MultiResponsePersistItem Convert(MultiResponseViewItem source, MultiResponsePersistItem? destination,
-        ResolutionContext context)
-    {
-        destination ??= new MultiResponsePersistItem();
-        destination.AcceptedIndex = source.AcceptedResponse != null
-            ? source.Items.IndexOf(source.AcceptedResponse)
-            : source.Items.Count - 1;
-        destination.ResponseItems = source.Items
-            .Select(x => context.Mapper.Map<ResponseViewItem, ResponsePersistItem>(x))
-            .ToArray();
-        destination.InteractionId = source.InteractionId;
-        return destination;
     }
 
     public const string ParentDialogViewModelKey = "ParentDialogViewModel";
@@ -236,26 +190,5 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
         context.InstanceCache?.TryAdd(contextCacheKey, llmModelClient);
         return llmModelClient;
-    }
-
-    public static ObservableCollection<PromptEntry>? MapPrompts(PromptsPersistModel? sourceExtendedPrompts,
-        IPromptsResource promptsResource)
-    {
-        if (sourceExtendedPrompts != null)
-        {
-            var promptReference = sourceExtendedPrompts.PromptReference;
-            var systemPrompts = promptsResource.SystemPrompts;
-            if (promptReference != null && systemPrompts.Any())
-            {
-                var promptEntries = promptReference
-                    .Select(id => systemPrompts.FirstOrDefault(p => p.Id == id))
-                    .Where(p => p != null)
-                    .OfType<PromptEntry>()
-                    .ToArray();
-                return new ObservableCollection<PromptEntry>(promptEntries);
-            }
-        }
-
-        return null;
     }
 }

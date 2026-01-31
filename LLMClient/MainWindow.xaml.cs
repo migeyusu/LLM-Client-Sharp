@@ -130,15 +130,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
             }
         }
     }
-
-    private void DialogBranch_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.Parameter is IDialogItem dialogViewItem)
-        {
-            _mainWindowViewModel.ForkPreDialog(dialogViewItem);
-        }
-    }
-
+    
     private void CloneCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         try

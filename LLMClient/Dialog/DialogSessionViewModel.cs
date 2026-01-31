@@ -8,6 +8,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using AutoMapper;
+using DiffPlex;
+using Elsa.Workflows.Helpers;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
@@ -274,7 +276,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     private void RebuildLinearItems()
     {
-        DialogItemsObservable.ResetWith(CurrentLeaf.PathFromRoot());
+        var newList = CurrentLeaf.PathFromRoot();
+        ObservableCollectionPatcher.PatchByLcs(DialogItemsObservable, newList,
+            (a) => a.Id);
+        // DialogItemsObservable.ResetWith(newList);
     }
 
     public SuspendableObservableCollection<IDialogItem> DialogItemsObservable { get; } = [];
@@ -326,6 +331,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             CurrentLeaf = eraseViewItem;
         }
 
+        RebuildLinearItems();
         ScrollViewItem = eraseViewItem;
     }
 
@@ -333,6 +339,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public virtual void DeleteItem(IDialogItem item)
     {
+        var previousItem = item.PreviousItem;
         if (item is IRequestItem requestItem)
         {
             requestItem.DeleteInteraction();
@@ -345,9 +352,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         //检查leaf可达性
         if (!CurrentLeaf.CanReachRoot())
         {
-            CurrentLeaf = item.PreviousItem!;
+            CurrentLeaf = previousItem;
         }
-        //todo: focus item？
+        else
+        {
+            RebuildLinearItems();
+        }
     }
 
     public async void RemoveAfter(MultiResponseViewItem responseViewItem)
@@ -400,7 +410,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     private static IEnumerable<IDialogItem> GetChatHistory(IDialogItem lastItem)
     {
-        if (lastItem is not IResponseViewItem)
+        if (lastItem is not MultiResponseViewItem)
         {
             yield break;
         }
@@ -598,6 +608,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         {
             this.CurrentLeaf.AppendChild(requestViewItem)
                 .AppendChild(multiResponseViewItem);
+            this.CurrentLeaf = multiResponseViewItem;
         }
         else
         {
@@ -611,15 +622,19 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             previousItem.AppendChild(requestViewItem)
                 .AppendChild(multiResponseViewItem)
                 .AppendChild(insertBefore);
+            RebuildLinearItems();
         }
 
-        this.CurrentLeaf = multiResponseViewItem;
         this.ScrollViewItem = multiResponseViewItem;
         return await multiResponseViewItem.NewRequest(client, token);
     }
 
-    #endregion
+    public void ForkPreTask(MultiResponseViewItem dialogViewItem)
+    {
+        CurrentLeaf = dialogViewItem;
+    }
 
+    #endregion
 
     protected DialogSessionViewModel(IMapper mapper, IDialogItem? rootNode, IDialogItem? currentLeaf = null)
     {

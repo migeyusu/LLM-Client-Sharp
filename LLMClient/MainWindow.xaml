@@ -834,8 +834,6 @@
                                 <DataTemplate DataType="{x:Type dialog:DialogFileViewModel}">
                                     <dialog:DialogView DataContext="{Binding Dialog,Mode=OneTime}">
                                         <dialog:DialogView.CommandBindings>
-                                            <CommandBinding Command="{x:Static utility:CommonCommands.Fork}"
-                                                            Executed="DialogBranch_OnExecuted" />
                                             <CommandBinding Command="{x:Static utility:CommonCommands.Clone}"
                                                             Executed="CloneCommand_OnExecuted" />
                                         </dialog:DialogView.CommandBindings>

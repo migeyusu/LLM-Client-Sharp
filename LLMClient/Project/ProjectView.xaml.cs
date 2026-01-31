@@ -64,20 +64,5 @@ public partial class ProjectView : UserControl
             ViewModel.Requester.Summarize();
         }
     }
-
-
-    /// <summary>
-    /// 基于当前对话创建分支
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void ProjectBranch_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.Parameter is IDialogItem dialogViewItem)
-        {
-            ViewModel.ForkPreTask(dialogViewItem);
-        }
-
-        e.Handled = true;
-    }
+    
 }

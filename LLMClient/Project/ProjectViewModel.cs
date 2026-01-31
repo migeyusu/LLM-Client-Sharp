@@ -462,35 +462,4 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
             }
         }
     }
-
-    public void ForkPreTask(IDialogItem? dialogViewItem)
-    {
-        var projectTaskViewModel = this.SelectedTask;
-        if (projectTaskViewModel == null)
-        {
-            return;
-        }
-
-        var dialogSessionClone =
-            _mapper.Map<ProjectTaskViewModel, ProjectTaskPersistModel>(projectTaskViewModel, _ => { });
-        if (dialogSessionClone == null)
-        {
-            return;
-        }
-
-        if (dialogViewItem != null)
-        {
-            var findIndex = projectTaskViewModel.DialogItems.IndexOf(dialogViewItem);
-            if (findIndex >= 0)
-            {
-                dialogSessionClone.DialogItems = dialogSessionClone.DialogItems?.Take(findIndex + 1).ToArray();
-            }
-        }
-
-        var cloneSession =
-            _mapper.Map<ProjectTaskPersistModel, ProjectTaskViewModel>(dialogSessionClone,
-                (options => { options.Items[AutoMapModelTypeConverter.ParentProjectViewModelKey] = this; }));
-        cloneSession.IsDataChanged = true;
-        this.AddTask(cloneSession);
-    }
 }

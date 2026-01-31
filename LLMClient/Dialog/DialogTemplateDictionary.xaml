@@ -334,7 +334,7 @@
                              VerticalAlignment="Bottom"
                              VerticalContentAlignment="Bottom"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                             SelectedItem="{Binding AcceptedResponse,Mode=TwoWay}"
+                             SelectedIndex="{Binding AcceptedIndex,Mode=TwoWay}"
                              Style="{StaticResource MaterialDesignChoiceChipPrimaryListBox}"
                              ItemsSource="{Binding Items,Mode=OneWay}"
                              ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
@@ -418,9 +418,8 @@
                                 <MenuItem Header="删除其他回复"
                                           Icon="{materialDesign:PackIcon Kind=Clear}"
                                           Command="{Binding ClearOthersCommand}" />
-                                <MenuItem Header="由此创建新会话"
-                                          Command="{x:Static utility:CommonCommands.Fork}"
-                                          CommandParameter="{Binding Mode=OneTime}"
+                                <MenuItem Header="由此创建新分支"
+                                          Command="{Binding NewBranchCommand}"
                                           Icon="{materialDesign:PackIcon SourceBranchPlus}"
                                           Style="{StaticResource AutoHideMenuItemStyle}" />
                                 <MenuItem Header="移除之后消息"

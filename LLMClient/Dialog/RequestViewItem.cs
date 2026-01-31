@@ -10,9 +10,9 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using MimeTypes;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 

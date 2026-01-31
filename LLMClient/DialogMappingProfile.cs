@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
@@ -65,8 +66,33 @@ public class DialogMappingProfile : Profile
             .ConstructUsing(po => new UriContent(po.Uri!, po.MediaType!));
         CreateMap<UsageContent, UsageContentPO>();
         CreateMap<UsageContentPO, UsageContent>();
-        CreateMap<RequestViewItem, RequestPersistItem>();
+
         const string parentDialogViewModelKey = AutoMapModelTypeConverter.ParentDialogViewModelKey;
+
+        //vm -> po
+        CreateMap<IDialogItem, IDialogPersistItem>()
+            .Include<RequestViewItem, RequestPersistItem>()
+            .Include<SummaryRequestViewItem, SummaryRequestPersistItem>()
+            .Include<EraseViewItem, ErasePersistItem>()
+            .Include<MultiResponseViewItem, MultiResponsePersistItem>();
+
+        CreateMap<RequestViewItem, RequestPersistItem>()
+            .IncludeBase<IDialogItem, IDialogPersistItem>();
+        CreateMap<SummaryRequestViewItem, SummaryRequestPersistItem>()
+            .IncludeBase<IDialogItem, IDialogPersistItem>();
+        CreateMap<EraseViewItem, ErasePersistItem>()
+            .IncludeBase<IDialogItem, IDialogPersistItem>();
+        CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
+            .IncludeBase<IDialogItem, IDialogPersistItem>()
+            .ForMember(item => item.ResponseItems, opt => opt.MapFrom(item => item.Items));
+
+        //po -> vm
+        CreateMap<IDialogPersistItem, IDialogItem>()
+            .Include<RequestPersistItem, RequestViewItem>()
+            .Include<SummaryRequestPersistItem, SummaryRequestViewItem>()
+            .Include<ErasePersistItem, EraseViewItem>()
+            .Include<MultiResponsePersistItem, MultiResponseViewItem>();
+
         CreateMap<RequestPersistItem, RequestViewItem>()
             .ConstructUsing((item, context) =>
             {
@@ -80,21 +106,35 @@ public class DialogMappingProfile : Profile
 
                 return new RequestViewItem(item.RawTextMessage ?? string.Empty, parentViewModel);
             });
+        CreateMap<SummaryRequestPersistItem, SummaryRequestViewItem>()
+            .IncludeBase<IDialogPersistItem, IDialogItem>();
+        CreateMap<ErasePersistItem, EraseViewItem>()
+            .IncludeBase<IDialogPersistItem, IDialogItem>();
+        CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
+            .IncludeBase<IDialogPersistItem, IDialogItem>()
+            .ConstructUsing((item, context) =>
+            {
+                var contextItems = context.Items;
+                if (!contextItems.TryGetValue(parentDialogViewModelKey, out var parentDialogViewModel)
+                    || !(parentDialogViewModel is DialogSessionViewModel parentViewModel))
+                {
+                    throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
+                }
 
-        CreateMap<SummaryRequestViewItem, SummaryRequestPersistItem>();
-        CreateMap<SummaryRequestPersistItem, SummaryRequestViewItem>();
-        CreateMap<EraseViewItem, ErasePersistItem>();
-        CreateMap<ErasePersistItem, EraseViewItem>();
-        CreateMap<IDialogItem, IDialogPersistItem>()
-            .Include<RequestViewItem, RequestPersistItem>()
-            .Include<SummaryRequestViewItem, SummaryRequestPersistItem>()
-            .Include<EraseViewItem, ErasePersistItem>()
-            .Include<MultiResponseViewItem, MultiResponsePersistItem>();
-        CreateMap<IDialogPersistItem, IDialogItem>()
-            .Include<RequestPersistItem, RequestViewItem>()
-            .Include<SummaryRequestPersistItem, SummaryRequestViewItem>()
-            .Include<ErasePersistItem, EraseViewItem>()
-            .Include<MultiResponsePersistItem, MultiResponseViewItem>();
+                return new MultiResponseViewItem(parentViewModel);
+            })
+            .AfterMap((source, destination, context) =>
+            {
+                var contextMapper = context.Mapper;
+                var items = source.ResponseItems.Select(x =>
+                    contextMapper.Map<ResponsePersistItem, ResponseViewItem>(x)).ToArray();
+                var responseViewItems = destination.Items;
+                foreach (var item in items)
+                {
+                    responseViewItems.Add(item);
+                }
+            });
+
         CreateMap<IResponse, ResponseViewItem>();
         CreateMap<IModelParams, IModelParams>();
         CreateMap<IModelParams, DefaultModelParam>();
@@ -131,10 +171,8 @@ public class DialogMappingProfile : Profile
 
                 return new ResponseViewItem(llmClient);
             });
-        CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
-            .ConvertUsing<AutoMapModelTypeConverter>();
-        CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
-            .ConvertUsing<AutoMapModelTypeConverter>();
+
+
         CreateMap<ProjectOptionsPersistModel, ProjectOption>();
         CreateMap<ProjectOption, ProjectOptionsPersistModel>();
 
@@ -150,7 +188,7 @@ public class DialogMappingProfile : Profile
                 opt =>
                 {
                     opt.PreCondition(src => src.ExtendedPrompts != null);
-                    opt.MapFrom(src => AutoMapModelTypeConverter.MapPrompts(src.ExtendedPrompts, promptsResource));
+                    opt.MapFrom(src => MapPrompts(src.ExtendedPrompts, promptsResource));
                 })
             .AfterMap(AfterMapProjectViewModel);
 
@@ -225,6 +263,8 @@ public class DialogMappingProfile : Profile
             .Include<DialogFilePersistModel, DialogViewModel>()
             .Include<ProjectTaskPersistModel, ProjectTaskViewModel>()
             .ForMember(dest => dest.DialogItems, opt => opt.Ignore())
+            .ForMember(dest => dest.RootNode, opt => opt.Ignore())
+            .ForMember(dest => dest.CurrentLeaf, opt => opt.Ignore())
             .ForMember(dest => dest.SelectedFunctionGroups, opt => opt.MapFrom(src => src.AllowedFunctions))
             .AfterMap((src, dest, ctx) =>
             {
@@ -256,7 +296,7 @@ public class DialogMappingProfile : Profile
                 opt =>
                 {
                     opt.PreCondition(src => src.ExtendedPrompts != null);
-                    opt.MapFrom(src => AutoMapModelTypeConverter.MapPrompts(src.ExtendedPrompts, promptsResource));
+                    opt.MapFrom(src => MapPrompts(src.ExtendedPrompts, promptsResource));
                 })
             .AfterMap((src, dest, ctx) => { dest.Requester.PromptString = src.PromptString; });
 
@@ -322,8 +362,28 @@ public class DialogMappingProfile : Profile
         }
     }
 
+    private static ObservableCollection<PromptEntry>? MapPrompts(PromptsPersistModel? sourceExtendedPrompts,
+        IPromptsResource promptsResource)
+    {
+        if (sourceExtendedPrompts != null)
+        {
+            var promptReference = sourceExtendedPrompts.PromptReference;
+            var systemPrompts = promptsResource.SystemPrompts;
+            if (promptReference != null && systemPrompts.Any())
+            {
+                var promptEntries = promptReference
+                    .Select(id => systemPrompts.FirstOrDefault(p => p.Id == id))
+                    .Where(p => p != null)
+                    .OfType<PromptEntry>()
+                    .ToArray();
+                return new ObservableCollection<PromptEntry>(promptEntries);
+            }
+        }
 
-    public static void BuildTreeFromFlatList(IMapperBase mapper, DialogSessionPersistModel source,
+        return null;
+    }
+
+    private static void BuildTreeFromFlatList(IMapperBase mapper, DialogSessionPersistModel source,
         INavigationViewModel destination)
     {
         List<IDialogItem> vmList = [];
@@ -333,8 +393,9 @@ public class DialogMappingProfile : Profile
         var idMap = new Dictionary<Guid, IDialogItem>();
         // 临时变量，用于记录线性数组的上一个节点（处理老数据用）
         IDialogItem? lastImplicitParent = null;
-        foreach (var persistItem in flatPersistItems)
+        for (var index = 0; index < flatPersistItems.Length; index++)
         {
+            var persistItem = flatPersistItems[index];
             // A.如果老数据没有 ID，现场分配一个，保证运行时有 ID
             if (persistItem.Id == Guid.Empty)
             {
@@ -347,15 +408,21 @@ public class DialogMappingProfile : Profile
             // B. 确定 PreviousItemId
             // 如果文件里有 PreviousItemId (新数据 分叉)，用文件里的
             // 如果文件里没有 (老数据/主干)，默认认为是上一个 Item 的孩子
-            var parentId = persistItem.PreviousItemId ?? lastImplicitParent?.Id;
+            var previousItemId = persistItem.PreviousItemId ?? lastImplicitParent?.Id;
 
             // C. 建立树关系
-            if (parentId.HasValue && idMap.TryGetValue(parentId.Value, out var previousNode))
+            if (previousItemId.HasValue && idMap.TryGetValue(previousItemId.Value, out var previousNode))
             {
                 previousNode.AppendChild(dialogItem);
             }
-            // 没有 parent 或者找不到 parent，说明是根节点
-            // (通常只有数组第一个元素，或者断链的数据)
+            else
+            {
+                Trace.TraceInformation(
+                    "DialogMappingProfile.BuildTreeFromFlatList: Node {0} has no valid previous node, treat as root.",
+                    dialogItem.Id);
+            }
+            // 没有 parent 或者找不到 parent，说明是根节点 (通常只有数组第一个元素，或者断链的数据)
+            // 由于每个对话根都是隐式节点，所以头默认会找不到前向节点
 
             // D. 注册到字典，供后续节点查找
             idMap[dialogItem.Id] = dialogItem;
@@ -388,7 +455,7 @@ public class DialogMappingProfile : Profile
         }
     }
 
-    public static void FlattenTreeForSave(INavigationViewModel source, DialogSessionPersistModel destination,
+    private static void FlattenTreeForSave(INavigationViewModel source, DialogSessionPersistModel destination,
         IMapperBase mapper)
     {
         var flatList = new List<IDialogPersistItem>();

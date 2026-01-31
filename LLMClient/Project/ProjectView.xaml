@@ -449,8 +449,6 @@
                     </ContextMenu>
                 </customControl:ListBoxEx.ContextMenu>-->
                 <ListBox.CommandBindings>
-                    <CommandBinding Command="{x:Static utility:CommonCommands.Fork}"
-                                    Executed="ProjectBranch_OnExecuted" />
                     <CommandBinding Command="Delete"
                                     Executed="OnDeleteExecuted" />
                     <CommandBinding Command="{x:Static utility:CommonCommands.Exclude}"

@@ -5,11 +5,11 @@ namespace LLMClient.Dialog;
 
 public interface IDialogItem : ITokenizable
 {
-    Guid Id { get; }
+    Guid Id { get; set; }
 
     IDialogItem? PreviousItem { get; }
 
-    Guid? PreviousItemId { get; }
+    Guid? PreviousItemId => PreviousItem?.Id;
 
     public IReadOnlyCollection<IDialogItem> Children { get; }
 
@@ -18,7 +18,7 @@ public interface IDialogItem : ITokenizable
     bool IsAvailableInContext { get; }
 
     IDialogItem AppendChild(IDialogItem child);
-    
+
     IDialogItem RemoveChild(IDialogItem child);
 
     void ClearChildren();

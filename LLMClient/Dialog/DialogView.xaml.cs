@@ -37,6 +37,7 @@ public partial class DialogView : UserControl
             {
                 return;
             }
+
             ViewModel.Requester.Summarize(requestViewItem);
         }
     }

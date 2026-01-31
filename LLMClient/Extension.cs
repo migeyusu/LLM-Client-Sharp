@@ -243,7 +243,7 @@ public static class Extension
 
         previousItem.RemoveChild(requestItem);
         var firstOrDefault = requestItem.Children.FirstOrDefault();
-        if (firstOrDefault is IResponseViewItem responseViewItem)
+        if (firstOrDefault is MultiResponseViewItem responseViewItem)
         {
             foreach (var request in responseViewItem.Children)
             {
@@ -270,7 +270,7 @@ public static class Extension
         return previousItem;
     }
 
-    public static void DeleteAfter(this IResponseViewItem responseViewItem)
+    public static void DeleteAfter(this MultiResponseViewItem responseViewItem)
     {
         responseViewItem.ClearChildren();
     }

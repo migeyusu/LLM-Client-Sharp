@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
@@ -111,7 +112,6 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
     private bool _isMultiResponse = false;
 
-    private ResponseViewItem? _acceptedResponse;
     private bool _canGoToNext;
     private Guid _interactionId;
     private bool _canGotoPrevious;
@@ -150,22 +150,36 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         o?.SwitchAvailableInContext();
     });
 
-    public ResponseViewItem? AcceptedResponse
+    private int _acceptedIndex = -1;
+
+    public int AcceptedIndex
     {
-        get => _acceptedResponse;
+        get => _acceptedIndex;
         set
         {
-            if (Equals(value, _acceptedResponse)) return;
-            _acceptedResponse = value;
+            if (value == _acceptedIndex) return;
+            _acceptedIndex = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(AcceptedResponse));
             OnPropertyChanged(nameof(IsAvailableInContext));
             OnPropertyChanged(nameof(Tokens));
             OnPropertyChanged(nameof(SearchableDocument));
             OnPropertyChanged(nameof(DisplayText));
-            CanGotoPrevious = value != null &&
-                              Items.IndexOf(value) - 1 >= 0;
-            CanGoToNext = value != null &&
-                          Items.IndexOf(value) + 1 < Items.Count;
+            CanGotoPrevious = value - 1 >= 0;
+            CanGoToNext = value + 1 < Items.Count;
+        }
+    }
+
+    public ResponseViewItem? AcceptedResponse
+    {
+        get
+        {
+            if (AcceptedIndex < 0 || AcceptedIndex >= Items.Count)
+            {
+                return Items.FirstOrDefault();
+            }
+
+            return Items[AcceptedIndex];
         }
     }
 
@@ -196,6 +210,8 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     public ICommand GotoPreviousCommand { get; }
 
     public ICommand RemoveResponseCommand { get; }
+
+    public ICommand NewBranchCommand { get; }
 
     public MultiResponseViewItem(IEnumerable<ResponseViewItem> items, DialogSessionViewModel parentSession)
     {
@@ -243,7 +259,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
                 return;
             }
 
-            this.AcceptedResponse = this.Items[index + 1];
+            this.AcceptedIndex = index + 1;
         });
         GotoPreviousCommand = new RelayCommand(() =>
         {
@@ -258,8 +274,9 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
                 return;
             }
 
-            this.AcceptedResponse = this.Items[index - 1];
+            this.AcceptedIndex = index - 1;
         });
+        NewBranchCommand = new ActionCommand((o => { this.ParentSession.ForkPreTask(this); }));
     }
 
     public MultiResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)
@@ -295,14 +312,14 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     public void AppendResponse(ResponseViewItem viewItem)
     {
         this.Items.Add(viewItem);
-        this.AcceptedResponse = viewItem;
+        this.AcceptedIndex = this.Items.Count - 1;
         this.IsMultiResponse = Items.Count > 1;
     }
 
     public void Insert(ResponseViewItem viewItem, int index)
     {
         this.Items.Insert(index, viewItem);
-        this.AcceptedResponse = viewItem;
+        this.AcceptedIndex = index;
         this.IsMultiResponse = Items.Count > 1;
     }
 
@@ -319,17 +336,16 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         this.IsMultiResponse = Items.Count > 1;
         if (removeAccepted)
         {
-            this.AcceptedResponse = Items.FirstOrDefault();
+            this.AcceptedIndex = 0;
         }
     }
 
     public void RemoveAt(int index)
     {
-        var responseViewItem = this.Items[index];
         this.Items.RemoveAt(index);
-        if (responseViewItem == AcceptedResponse)
+        if (index >= this.Items.Count)
         {
-            this.AcceptedResponse = Items.FirstOrDefault();
+            this.AcceptedIndex = this.Items.Count - 1;
         }
 
         this.IsMultiResponse = Items.Count > 1;
