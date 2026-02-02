@@ -4,140 +4,86 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:LLMClient.Dialog.Controls"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:dialog="clr-namespace:LLMClient.Dialog"
              mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="300"
              d:DataContext="{d:DesignInstance local:DialogGraphViewModel}">
+
     <UserControl.Resources>
-        <!-- 颜色定义 -->
-        <SolidColorBrush x:Key="LineColor">#cbd5e1</SolidColorBrush>
-        <SolidColorBrush x:Key="ForkColor">#f59e0b</SolidColorBrush>
-        <Color x:Key="UserBorderColor">#2563eb</Color>
-        <SolidColorBrush x:Key="BotBgColor">#f1f7ff</SolidColorBrush>
-        <SolidColorBrush x:Key="BotBorderColor">#dbeafe</SolidColorBrush>
+        <!-- 颜色资源保留 -->
+        <Color x:Key="ForkColor">#f59e0b</Color>
+        <SolidColorBrush x:Key="ForkBrush" Color="{StaticResource ForkColor}" />
 
-        <!-- 转换器：Bool To Visibility -->
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-
-        <!-- 连线的数据模板 -->
-        <DataTemplate x:Key="ConnectionTemplate" DataType="{x:Type local:GraphConnectionViewModel}">
-            <Path Data="{Binding PathData}"
-                  StrokeThickness="2"
-                  StrokeStartLineCap="Round"
-                  StrokeEndLineCap="Round">
-                <Path.Style>
-                    <Style TargetType="Path">
-                        <!-- 默认为橙色分叉线 -->
-                        <Setter Property="Stroke" Value="{StaticResource ForkColor}">
-                        </Setter>
-                        <!-- 如果是主线，改为灰色 -->
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsMainBranch}" Value="True">
-                                <Setter Property="Stroke" Value="{StaticResource LineColor}" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Path.Style>
-            </Path>
-        </DataTemplate>
-
-        <!-- 节点的数据模板 -->
+        <!-- 节点模板：完全自适应高度 -->
         <DataTemplate x:Key="NodeTemplate" DataType="{x:Type local:GraphNodeViewModel}">
-            <Grid Width="{Binding Width}" Height="{Binding Height}">
-                <Border CornerRadius="12" BorderThickness="1" Padding="14">
-                    <Border.Effect>
-                        <DropShadowEffect Color="Black" Opacity="0.05" BlurRadius="12" ShadowDepth="4" Direction="270" />
-                    </Border.Effect>
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <!-- 默认 Bot 样式 -->
-                            <Setter Property="Background" Value="White" />
-                            <Setter Property="BorderBrush" Value="{StaticResource BotBorderColor}" />
-                            <Setter Property="Background" Value="{StaticResource BotBgColor}" />
-
-                            <!-- User 样式触发器 -->
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsUser}" Value="True">
-                                    <Setter Property="Background" Value="White" />
-                                    <!-- User 左边有蓝条，这里用 Border 左边框模拟 -->
-                                    <Setter Property="BorderThickness" Value="4,1,1,1" />
-                                    <Setter Property="BorderBrush" Value="#e2e8f0" /> <!-- 默认灰边 -->
-                                    <Setter Property="BorderBrush">
-                                        <Setter.Value>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                <GradientStop Color="{StaticResource UserBorderColor}" Offset="0" />
-                                                <GradientStop Color="{StaticResource UserBorderColor}" Offset="0.02" />
-                                                <!-- 模拟左侧边条 -->
-                                                <GradientStop Color="#e2e8f0" Offset="0.021" />
-                                                <GradientStop Color="#e2e8f0" Offset="1" />
-                                            </LinearGradientBrush>
-                                        </Setter.Value>
-                                    </Setter>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-
-                    <StackPanel>
-                        <!-- Label -->
-                        <TextBlock Text="{Binding Data.Role}"
-                                   Foreground="#64748b"
-                                   FontSize="11"
-                                   FontWeight="Bold"
-                                   Margin="0,0,0,6" />
-                        <!-- Content -->
-                        <TextBlock Text="{Binding Data.DisplayText}"
-                                   Foreground="#1e293b"
-                                   FontSize="13"
-                                   TextWrapping="Wrap"
-                                   LineHeight="20" />
-                    </StackPanel>
+            <Grid>
+                <!-- 
+                   注意：不需要设置具体 Height，只需 Width 
+                   Width 绑定到 Panel 外部定义宽度，或写死 260 
+                -->
+                <Border Width="260" Margin="0,0,0,6"> <!-- 底部留白给 ForkDot -->
+                    <materialDesign:Card UniformCornerRadius="12"
+                                         Padding="6"
+                                         materialDesign:ElevationAssist.Elevation="Dp3"
+                                         Style="{StaticResource MaterialDesignOutlinedCard}">
+                        <StackPanel>
+                            <!-- 角色标签 -->
+                            <TextBlock Text="{Binding Data.Role,Mode=OneTime}"
+                                       Foreground="{Binding Data.Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToForeground}}"
+                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,6" />
+                            <TextBlock Text="{Binding Data.DisplayText}"
+                                       TextWrapping="Wrap"
+                                       MaxHeight="300"
+                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                       LineHeight="20" />
+                        </StackPanel>
+                    </materialDesign:Card>
                 </Border>
 
-                <!-- Fork Dot (橙色圆点) - 绝对定位在底部中心 -->
+                <!-- Fork Dot -->
+                <!-- 垂直对齐到底部，加上 RenderTransform/Margin 修正视觉位置 -->
                 <Ellipse Width="12" Height="12"
-                         Fill="{StaticResource ForkColor}"
+                         Fill="{StaticResource ForkBrush}"
                          Stroke="White" StrokeThickness="2"
-                         HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                         Margin="0,0,0,-6"
-                         Panel.ZIndex="10"
-                         Visibility="{Binding ShowForkDot, Converter={StaticResource BoolToVis}}">
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Bottom"
+                         Margin="0,0,0,0"
+                         Visibility="{Binding ShowForkDot, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Ellipse.Effect>
                         <DropShadowEffect Color="#f59e0b" BlurRadius="4" ShadowDepth="0" Opacity="0.4" />
                     </Ellipse.Effect>
                 </Ellipse>
             </Grid>
         </DataTemplate>
-
     </UserControl.Resources>
 
-    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" PanningMode="Both">
-        <Grid x:Name="CanvasContainer" Width="{Binding ContainerWidth,Mode=OneWay}"
-              Height="{Binding ContainerHeight,Mode=OneWay}" Background="#f8fafc">
-            <!-- 连线层 (在下) -->
-            <ItemsControl ItemsSource="{Binding Connections}"
-                          ItemTemplate="{StaticResource ConnectionTemplate}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <Canvas IsItemsHost="True" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
+    <ScrollViewer PanningMode="Both"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto">
 
-            <!-- 节点层 (在上) -->
-            <ItemsControl ItemsSource="{Binding Nodes}"
-                          ItemTemplate="{StaticResource NodeTemplate}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <Canvas IsItemsHost="True" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemContainerStyle>
-                    <Style TargetType="ContentPresenter">
-                        <Setter Property="Canvas.Left" Value="{Binding X}" />
-                        <Setter Property="Canvas.Top" Value="{Binding Y}" />
-                    </Style>
-                </ItemsControl.ItemContainerStyle>
-            </ItemsControl>
-        </Grid>
+        <!-- 绑定到扁平化列表 -->
+        <ItemsControl ItemsSource="{Binding FlatNodes}"
+                      ItemTemplate="{StaticResource NodeTemplate}">
+            <!-- 使用自定义面板 -->
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <local:DialogTreePanel ItemWidth="260"
+                                           ColumnGap="80"
+                                           RowGap="60"
+                                           Background="#f8fafc"
+                                           IsItemsHost="True" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                    <!-- 绑定附加属性 -->
+                    <Setter Property="local:GraphProps.NodeId" Value="{Binding Data.Id}" />
+                    <Setter Property="local:GraphProps.ParentId" Value="{Binding Data.PreviousItem.Id}" />
+                </Style>
+            </ItemsControl.ItemContainerStyle>
+        </ItemsControl>
     </ScrollViewer>
 </UserControl>

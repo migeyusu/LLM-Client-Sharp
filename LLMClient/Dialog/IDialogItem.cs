@@ -7,11 +7,15 @@ public interface IDialogItem : ITokenizable
 {
     Guid Id { get; set; }
 
+    ChatRole Role { get; }
+    
+    string DisplayText { get; }
+
     IDialogItem? PreviousItem { get; }
 
     Guid? PreviousItemId => PreviousItem?.Id;
 
-    public IReadOnlyCollection<IDialogItem> Children { get; }
+    IReadOnlyCollection<IDialogItem> Children { get; }
 
     IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken);
 

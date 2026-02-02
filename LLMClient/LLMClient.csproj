@@ -450,4 +450,8 @@
       <Folder Include="Workflow\Coding\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Dialog\Graph\DialogGraphControlViewModel.cs" />
+    </ItemGroup>
+
 </Project>

@@ -1,5 +1,6 @@
 ﻿using System.Windows.Data;
 using System.Windows.Media;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using LambdaConverters;
 using Microsoft.Extensions.AI;
 
@@ -63,11 +64,13 @@ internal static class NavigationConverters
         return Brushes.Black;
     });
 
-    public static readonly IValueConverter SiblingIndexToBrush = ValueConverter.Create<int, Brush>(e => e.Value switch
+    public static readonly IValueConverter SubString = ValueConverter.Create<string, string, int>(args =>
     {
-        0 => new SolidColorBrush(Color.FromRgb(74, 144, 217)), // 蓝色
-        1 => new SolidColorBrush(Color.FromRgb(102, 187, 106)), // 绿色
-        2 => new SolidColorBrush(Color.FromRgb(255, 167, 38)), // 橙色
-        _ => new SolidColorBrush(Color.FromRgb(149, 117, 205)) // 紫色（更多分支）
+        var argsValue = args.Value;
+        if (!string.IsNullOrEmpty(argsValue))
+        {
+            return argsValue.Length > args.Parameter ? argsValue[args.Parameter..] : argsValue;
+        }
+        return argsValue;
     });
 }
