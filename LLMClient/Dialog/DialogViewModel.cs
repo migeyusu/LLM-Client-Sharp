@@ -3,7 +3,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Text;
-using System.Windows;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
@@ -12,7 +11,6 @@ using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;
 using MaterialDesignThemes.Wpf;
-using MessageBox = System.Windows.MessageBox;
 
 namespace LLMClient.Dialog;
 

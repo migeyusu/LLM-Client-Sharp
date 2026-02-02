@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-using LLMClient.Data;
-using Microsoft.Extensions.AI;
+﻿using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 

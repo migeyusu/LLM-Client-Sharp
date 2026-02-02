@@ -2,21 +2,14 @@
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using AutoMapper;
-using DiffPlex;
-using Elsa.Workflows.Helpers;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
-using LLMClient.Component.Graph;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
-using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
@@ -663,8 +656,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         this.DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
         OpenDialogRouteCommand = new ActionCommand(async o =>
         {
-            Window window = new Window(){Content = new DialogGraphControl(){ViewModel = this}};
-            window.Show();
+         
             //await DialogHost.Show(new NavigationViewModel(this));
         });
         SearchCommand = new ActionCommand(_ =>
