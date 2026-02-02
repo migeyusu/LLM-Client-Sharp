@@ -12,6 +12,7 @@ using DiffPlex;
 using Elsa.Workflows.Helpers;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
+using LLMClient.Component.Graph;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
@@ -662,7 +663,9 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         this.DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
         OpenDialogRouteCommand = new ActionCommand(async o =>
         {
-            await DialogHost.Show(new NavigationViewModel(this));
+            Window window = new Window(){Content = new DialogGraphControl(){ViewModel = this}};
+            window.Show();
+            //await DialogHost.Show(new NavigationViewModel(this));
         });
         SearchCommand = new ActionCommand(_ =>
         {

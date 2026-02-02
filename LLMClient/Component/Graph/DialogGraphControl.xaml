@@ -1,0 +1,77 @@
+﻿<UserControl x:Class="LLMClient.Component.Graph.DialogGraphControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:LLMClient.Component.Graph"
+             xmlns:dialog="clr-namespace:LLMClient.Dialog"
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="1200">
+    
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        
+        <!-- 节点模板 -->
+        <DataTemplate x:Key="NodeTemplate" DataType="{x:Type local:GraphNodeViewModel}">
+            <Grid Width="{Binding Width}" Height="{Binding Height}">
+                <!-- 卡片本体 -->
+                <Border CornerRadius="12" Background="White"
+                        BorderThickness="1"> <!-- 假设你有定义阴影资源 -->
+                    <Border.Effect>
+                        <DropShadowEffect/>
+                    </Border.Effect>
+                    <Border.BorderBrush>
+                        <Binding  Path="Data.Role" Converter="{x:Static dialog:NavigationConverters.RoleToBorder}"/>
+                    </Border.BorderBrush>
+                    
+                    <!-- 内容 -->
+                    <StackPanel Margin="14">
+                        <TextBlock Text="{Binding Data.Role}" 
+                                   FontWeight="Bold" FontSize="11" Foreground="#64748b"/>
+                        <TextBlock Text="{Binding Data.DisplayText}" 
+                                   FontSize="13" Foreground="#1e293b" TextWrapping="Wrap" 
+                                   LineHeight="20"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 特殊身份标记 (如 User 左侧蓝条) -->
+                <!-- 此处省略具体样式的触发器，保持代码简洁 -->
+
+                <!-- 分叉圆点 (Fork Dot) - 绑定到底部中心 -->
+                <Ellipse Width="12" Height="12" 
+                         Fill="#f59e0b" Stroke="White" StrokeThickness="2"
+                         HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                         Margin="0,0,0,-6"
+                         Panel.ZIndex="10"
+                         Visibility="{Binding HasFork, Converter={StaticResource BoolToVis}}">
+                    <Ellipse.Effect>
+                        <DropShadowEffect Color="#f59e0b" Opacity="0.4" BlurRadius="4" ShadowDepth="0"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#f8fafc">
+        <Grid x:Name="GraphContainer" Width="2000" Height="2000"> <!-- 尺寸应动态计算 -->
+            
+            <!-- 1. 连线层 (绘制在最底层) -->
+            <Path x:Name="ConnectionsPath" StrokeThickness="2" Panel.ZIndex="0"/>
+
+            <!-- 2. 节点层 -->
+            <ItemsControl x:Name="NodesControl" ItemTemplate="{StaticResource NodeTemplate}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemContainerStyle>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
+            </ItemsControl>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

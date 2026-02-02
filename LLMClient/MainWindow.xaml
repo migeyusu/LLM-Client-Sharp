@@ -27,6 +27,7 @@
                               xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
                               xmlns:render="clr-namespace:LLMClient.Component.Render"
                               xmlns:controls="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf"
+                              xmlns:graph="clr-namespace:LLMClient.Component.Graph"
                               mc:Ignorable="d"
                               FontFamily="Microsoft YaHei UI"
                               Title="LLM Client"
@@ -178,9 +179,10 @@
                                 <DataTemplate DataType="{x:Type dialog:NavigationViewModel}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="Dialog Navigation">
-                                        <dialog:NavigationView Width="900"
+                                        <graph:DialogGraphControl ViewModel="{Binding Model}"/>
+                                        <!--<dialog:NavigationView Width="900"
                                                                Height="600" 
-                                                               DataContext="{Binding  Model,Mode=OneTime}"/>
+                                                               DataContext="{Binding  Model,Mode=OneTime}"/>-->
                                     </HeaderedContentControl>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type dialog:FileQueryViewModel}">
