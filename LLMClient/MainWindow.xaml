@@ -180,9 +180,6 @@
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="Dialog Navigation">
                                         <!--<controls1:DialogGraphControl DataContext="{Binding Model,Mode=OneTime}"/>-->
-                                        <!--<dialog:NavigationView Width="900"
-                                                               Height="600" 
-                                                               DataContext="{Binding  Model,Mode=OneTime}"/>-->
                                     </HeaderedContentControl>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type controls1:DialogGraphViewModel}">
