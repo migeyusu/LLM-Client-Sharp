@@ -10,6 +10,7 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Dialog.Controls;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
@@ -656,8 +657,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         this.DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
         OpenDialogRouteCommand = new ActionCommand(async o =>
         {
-         
-            //await DialogHost.Show(new NavigationViewModel(this));
+            await DialogHost.Show(new DialogGraphViewModel(this));
         });
         SearchCommand = new ActionCommand(_ =>
         {

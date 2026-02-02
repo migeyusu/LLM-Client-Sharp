@@ -27,6 +27,7 @@
                               xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
                               xmlns:render="clr-namespace:LLMClient.Component.Render"
                               xmlns:controls="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf"
+                              xmlns:controls1="clr-namespace:LLMClient.Dialog.Controls"
                               mc:Ignorable="d"
                               FontFamily="Microsoft YaHei UI"
                               Title="LLM Client"
@@ -178,6 +179,16 @@
                                 <DataTemplate DataType="{x:Type dialog:NavigationViewModel}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="Dialog Navigation">
+                                        <!--<controls1:DialogGraphControl DataContext="{Binding Model,Mode=OneTime}"/>-->
+                                        <!--<dialog:NavigationView Width="900"
+                                                               Height="600" 
+                                                               DataContext="{Binding  Model,Mode=OneTime}"/>-->
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type controls1:DialogGraphViewModel}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="Dialog Navigation">
+                                        <controls1:DialogGraphControl DataContext="{Binding Mode=OneTime}" />
                                         <!--<dialog:NavigationView Width="900"
                                                                Height="600" 
                                                                DataContext="{Binding  Model,Mode=OneTime}"/>-->
