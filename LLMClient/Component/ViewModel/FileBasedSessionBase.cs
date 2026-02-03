@@ -58,32 +58,39 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
 
     protected FileBasedSessionBase()
     {
-        BackupCommand = new AsyncRelayCommand(Backup);
+        BackupCommand = new RelayCommand((() => _ = SaveAs()));
     }
 
     public ICommand BackupCommand { get; }
 
-    public virtual async Task Backup()
+    public virtual async Task SaveAs(string? fileName = null)
     {
-        var saveFileDialog = new SaveFileDialog()
+        if (string.IsNullOrEmpty(fileName))
         {
-            AddExtension = true, DefaultExt = ".json", CheckPathExists = true,
-            Filter = "json files (*.json)|*.json"
-        };
+            var saveFileDialog = new SaveFileDialog()
+            {
+                AddExtension = true, DefaultExt = ".json", CheckPathExists = true,
+                Filter = "json files (*.json)|*.json"
+            };
 
-        if (saveFileDialog.ShowDialog() != true)
-        {
-            return;
+            if (saveFileDialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            fileName = saveFileDialog.FileName;
         }
 
-        var fileName = saveFileDialog.FileName;
         var fileInfo = new FileInfo(fileName);
+        if (!fileInfo.Directory!.Exists)
+        {
+            fileInfo.Directory.Create();
+        }
+
         await using (var fileStream = fileInfo.OpenWrite())
         {
             await SaveToStream(fileStream);
         }
-
-        MessageEventBus.Publish("已备份");
     }
 
     public abstract object Clone();

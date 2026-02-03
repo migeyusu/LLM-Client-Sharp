@@ -130,7 +130,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
             }
         }
     }
-    
+
     private void CloneCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         try
@@ -173,19 +173,20 @@ public partial class MainWindow : ExtendedWindow, IDisposable
         base.OnClosed(e);
     }
 
-    private async void BackupCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    private async void SaveAs_Command_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         try
         {
             var session = _mainWindowViewModel.PreSession;
             if (session != null)
             {
-                await session.Backup();
+                await session.SaveAs();
+                MessageEventBus.Publish("已保存会话");
             }
         }
         catch (Exception exception)
         {
-            MessageEventBus.Publish("备份会话失败: " + exception.Message);
+            MessageEventBus.Publish("保存会话失败: " + exception.Message);
         }
     }
 
@@ -241,5 +242,27 @@ public partial class MainWindow : ExtendedWindow, IDisposable
     {
         _mainWindowViewModel.Dispose();
         _timer.Dispose();
+    }
+
+    private const string BackupFolderName = "Archive";
+
+    private async void Backup_CommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        //自动备份到archive文件夹
+        try
+        {
+            if (e.Parameter is FileBasedSessionBase sessionBase)
+            {
+                var fullPath = Path.GetFullPath(BackupFolderName);
+                var fileName = Path.GetFileName(sessionBase.FileFullPath);
+                var path = Path.GetFullPath(fileName, fullPath);
+                await sessionBase.SaveAs(path);
+                MessageEventBus.Publish("已备份");
+            }
+        }
+        catch (Exception exception)
+        {
+            MessageEventBus.Publish("备份会话失败: " + exception.Message);
+        }
     }
 }

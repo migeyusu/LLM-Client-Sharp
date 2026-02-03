@@ -179,7 +179,7 @@
                                 <DataTemplate DataType="{x:Type controls1:DialogGraphViewModel}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="Dialog Navigation">
-                                        <controls1:DialogGraphControl DataContext="{Binding Mode=OneTime}" 
+                                        <controls1:DialogGraphControl DataContext="{Binding Mode=OneTime}"
                                                                       MaxWidth="900"
                                                                       MaxHeight="600" />
                                         <!--<dialog:NavigationView Width="900"
@@ -584,11 +584,10 @@
                          BorderThickness="0"
                          Margin="0,10,6,0"
                          ItemsSource="{Binding SessionViewModels,Mode=OneWay}">
-                    <ListBox.Resources>
-                        <converters:ListToStringConverter x:Key="StringToListConverter" Separator="," />
-                    </ListBox.Resources>
                     <ListBox.CommandBindings>
                         <CommandBinding Command="Delete" Executed="Delete_OnExecuted" />
+                        <CommandBinding Command="{x:Static utility:CommonCommands.Backup}"
+                                        Executed="Backup_CommandBinding_OnExecuted" />
                     </ListBox.CommandBindings>
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="{x:Type ListBoxItem}"
@@ -605,6 +604,18 @@
                                     Value="Stretch" />
                             <Setter Property="HorizontalContentAlignment"
                                     Value="Stretch" />
+                            <Setter Property="ContextMenu">
+                                <Setter.Value>
+                                    <ContextMenu>
+                                        <MenuItem Header="删除"
+                                                  Command="Delete"
+                                                  CommandParameter="{Binding}" />
+                                        <MenuItem Header="存档"
+                                                  Command="{x:Static utility:CommonCommands.Backup}"
+                                                  CommandParameter="{Binding}" />
+                                    </ContextMenu>
+                                </Setter.Value>
+                            </Setter>
                         </Style>
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplateSelector>
@@ -856,8 +867,8 @@
                 </ContentControl.ContentTemplateSelector>
                 <ContentControl.CommandBindings>
                     <!--session 级别command-->
-                    <CommandBinding Command="{x:Static utility:CommonCommands.Backup}"
-                                    Executed="BackupCommand_OnExecuted" />
+                    <CommandBinding Command="SaveAs"
+                                    Executed="SaveAs_Command_OnExecuted" />
                     <CommandBinding Command="{x:Static utility:CommonCommands.OpenSource}"
                                     Executed="OpenSessionFile_OnExecuted" />
                 </ContentControl.CommandBindings>

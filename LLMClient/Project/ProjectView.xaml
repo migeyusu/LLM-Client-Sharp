@@ -163,8 +163,8 @@
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                             CommandParameter="{Binding Mode=OneTime}" />
                     <Button ToolTip="备份"
-                            Content="{materialDesign:PackIcon Kind=ArchiveArrowUpOutline,Size=20}"
-                            Command="{x:Static utility:CommonCommands.Backup}" />
+                            Content="{materialDesign:PackIcon Kind=ContentSave,Size=20}"
+                            Command="SaveAs" />
                     <materialDesign:PopupBox StaysOpen="True">
                         <StackPanel MaxWidth="200"
                                     MaxHeight="200">

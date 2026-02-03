@@ -138,9 +138,9 @@
                                                  Width="20"
                                                  Height="20" />
                     </Button>
-                    <Button ToolTip="备份"
-                            Command="{x:Static utility:CommonCommands.Backup}">
-                        <materialDesign:PackIcon Kind="ArchiveArrowUpOutline"
+                    <Button ToolTip="另存为"
+                            Command="SaveAs">
+                        <materialDesign:PackIcon Kind="ContentSave"
                                                  Width="20"
                                                  Height="20" />
                     </Button>

@@ -9,7 +9,7 @@ namespace LLMClient.Abstraction
 
         bool IsBusy { get; }
 
-        Task Backup();
+        Task SaveAs(string? fileName = null);
 
         void Delete();
     }
