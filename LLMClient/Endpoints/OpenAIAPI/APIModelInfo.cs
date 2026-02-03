@@ -12,18 +12,18 @@ namespace LLMClient.Endpoints.OpenAIAPI;
 
 public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
 {
-    public string? OfficialName
+    public string? SeriesName
     {
-        get => _officialName;
+        get => _seriesName;
         set
         {
-            if (value == _officialName) return;
-            _officialName = value;
+            if (value == _seriesName) return;
+            _seriesName = value;
             OnPropertyChanged();
         }
     }
 
-    public string? Publisher
+    public string? Provider
     {
         get => _publisher;
         set
@@ -221,7 +221,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
     private bool _thinkingEnabled;
     private IThinkingConfig? _thinkingConfig;
     private ThinkingIncludeMode _thinkingIncludeMode;
-    private string? _officialName;
+    private string? _seriesName;
     private string? _publisher;
 
     public int MaxContextSize

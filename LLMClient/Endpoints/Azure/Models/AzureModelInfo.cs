@@ -21,7 +21,7 @@ public class AzureModelInfo : IEndpointModel
     [JsonIgnore]
     public string APIId
     {
-        get { return this.Publisher?.ToLower() + "/" + this.OriginalName; }
+        get { return this.Provider?.ToLower() + "/" + this.OriginalName; }
     }
 
     [JsonPropertyName("name")] public string ModelName { get; set; } = string.Empty;
@@ -285,12 +285,12 @@ public class AzureModelInfo : IEndpointModel
         }
     }
 
-    public string? OfficialName
+    public string? SeriesName
     {
         get { return FriendlyName; }
     }
 
-    [JsonPropertyName("publisher")] public string? Publisher { get; set; }
+    [JsonPropertyName("publisher")] public string? Provider { get; set; }
 
     [JsonPropertyName("logo_url")] public string? LogoUrl { get; set; }
 

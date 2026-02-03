@@ -21,19 +21,17 @@
         </Grid.ColumnDefinitions>
 
         <!-- Left sidebar: banner controls stacked with legend -->
-        <StackPanel Grid.Column="0" Margin="10" Width="271">
-            <TextBlock Text="Usage Statistics" Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+        <StackPanel Grid.Column="0" Margin="10" Width="300">
+            <TextBlock Text="Usage Statistics"
+                       Style="{StaticResource MaterialDesignHeadline5TextBlock}"
                        VerticalAlignment="Center" />
             <StackPanel Orientation="Horizontal"
                         Margin="0,12,0,0">
-                <TextBlock Text="Criteria:"
-                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
-                           VerticalAlignment="Center" />
-                <ListBox Margin="8,0,0,0"
+                <ListBox Margin="0,0,0,0"
                          ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}"
                          Style="{StaticResource MaterialDesignToolToggleListBox}"
                          SelectedIndex="{Binding  CriteriaIndex,Mode=TwoWay}">
-                    <ListBoxItem>
+                    <ListBoxItem ToolTip="Group by Model">
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Cube" />
@@ -43,11 +41,21 @@
                             </StackPanel>
                         </StackPanel>
                     </ListBoxItem>
-                    <ListBoxItem>
+                    <ListBoxItem ToolTip="Group by Server">
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Server" />
                                 <TextBlock Text="Endpoints"
+                                           Margin="5,0,0,0"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem ToolTip="Group by Series">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="VectorCombine" />
+                                <TextBlock Text="Series"
                                            Margin="5,0,0,0"
                                            VerticalAlignment="Center" />
                             </StackPanel>

@@ -7,9 +7,9 @@ public class EmptyLLMChatModel : IEndpointModel
 {
     public static EmptyLLMChatModel Instance { get; } = new EmptyLLMChatModel();
 
-    public string? OfficialName { get; } = string.Empty;
+    public string? SeriesName { get; } = string.Empty;
 
-    public string? Publisher { get; } = string.Empty;
+    public string? Provider { get; } = string.Empty;
     public string APIId { get; set; } = Guid.NewGuid().ToString();
 
     public string Name

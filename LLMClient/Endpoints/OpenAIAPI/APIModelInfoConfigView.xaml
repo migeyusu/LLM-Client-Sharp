@@ -33,7 +33,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBox Text="{Binding Name,Mode=TwoWay}"
-                     materialDesign:HintAssist.Hint="模型名称"
+                     materialDesign:HintAssist.Hint="Unique Name"
                      MinWidth="160"
                      MaxWidth="200"
                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
@@ -41,7 +41,7 @@
             <TextBox Grid.Column="1" Text="{Binding APIId,Mode=TwoWay}"
                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                      Margin="0,0,10,0"
-                     materialDesign:HintAssist.Hint="模型ID" />
+                     materialDesign:HintAssist.Hint="OpenAI API ID" />
             <TextBox Grid.Column="2"
                      MinWidth="40"
                      MaxWidth="100"
@@ -63,17 +63,17 @@
                       Padding="16,10"
                       DisplayMemberPath="ProviderName"
                       ItemsSource="{x:Static endpoints:ModelRegister.OfficialModels}"
-                      SelectedValue="{Binding  Publisher,Mode=TwoWay}"
+                      SelectedValue="{Binding  Provider,Mode=TwoWay}"
                       SelectedValuePath="ProviderName"
                       Style="{StaticResource MaterialDesignOutlinedComboBox}"
                       Margin="0,0,10,0" />
             <ComboBox Grid.Column="1"
                       Padding="16,10"
                       Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                      ItemsSource="{Binding ElementName=PublisherComboBox,Path=SelectedItem.ModelNames,Mode=OneWay}"
-                      Text="{Binding OfficialName,Mode=TwoWay}"
+                      ItemsSource="{Binding Provider,Converter={x:Static endpoints:ModelRegister.ProviderToModelNamesConverter},Mode=OneWay}"
+                      SelectedValue="{Binding SeriesName,Mode=TwoWay}"
                       Margin="0,0,10,0"
-                      materialDesign:HintAssist.Hint="模型" />
+                      materialDesign:HintAssist.Hint="模型官方名" />
         </Grid>
         <TextBox Text="{Binding InfoUrl,Mode=TwoWay}"
                  Margin="0,0,0,10"

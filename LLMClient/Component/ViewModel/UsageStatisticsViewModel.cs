@@ -208,95 +208,18 @@ public class UsageStatisticsViewModel : BaseViewModel
         {
             UpdateModelsStatistics();
         }
-        else
+        else if (_criteriaIndex == 1)
         {
             UpdateEndpointStatistics();
         }
+        else if (_criteriaIndex == 2)
+        {
+            UpdateSeriesStatistics();
+        }
     }
 
-    /// <summary>
-    /// 按端点统计的使用数据
-    /// </summary>
-    private void UpdateEndpointStatistics()
+    private void UpdateStatistics(IList<(string Name, UsageCount Usage)> models)
     {
-        IList<(string Name, UsageCount Usage)> endpoints = new List<(string Name, UsageCount Usage)>();
-        foreach (var endpoint in _endpointService.AvailableEndpoints)
-        {
-            UsageCount? usage = null;
-            foreach (var model in endpoint.AvailableModels)
-            {
-                if (model.Telemetry != null && model.Telemetry.CallTimes > 0)
-                {
-                    if (usage == null)
-                    {
-                        usage = new UsageCount(model.Telemetry);
-                    }
-                    else
-                    {
-                        usage.Add(model.Telemetry);
-                    }
-                }
-            }
-
-            if (usage?.CallTimes > 0)
-            {
-                endpoints.Add((endpoint.DisplayName, usage));
-            }
-        }
-
-        _existingItemsCount = endpoints.Count;
-        endpoints = endpoints.OrderByDescending(tuple => tuple.Usage.CompletionTokens)
-            .Take(MaxItemsCount)
-            .ToArray();
-        Legend = endpoints.Select(e =>
-        {
-            var color = GetModelColor(e.Name);
-            return new LegendItem(e.Name, color.ToString());
-        }).ToList();
-
-        // Always setup axes for Cartesian charts (Average TPS is always Cartesian)
-        // Use RowSeries (Horizontal Bars), so YAxis holds the labels (Categories) and XAxis holds the values
-        TotalCompletionTokens = endpoints.Sum(e => e.Usage.CompletionTokens);
-        TotalCallTimes = endpoints.Sum(e => e.Usage.CallTimes);
-        TotalPrice = endpoints.Sum(e => e.Usage.Price);
-        MeanAvgTps = endpoints.Count > 0
-            ? endpoints.Average(e => e.Usage.AverageTps)
-            : 0;
-        if (IsPieChart)
-        {
-            CompletionTokensSeries = CreatePieSeries(endpoints, e => e.Usage.CompletionTokens);
-            CallTimesSeries = CreatePieSeries(endpoints, e => e.Usage.CallTimes);
-            PriceSeries = CreatePieSeries(endpoints, e => e.Usage.Price, "C2");
-        }
-        else
-        {
-            CompletionTokensSeries =
-                CreateRowSeries(endpoints, (e, i) => { return new Coordinate(i, e.Data.CompletionTokens); });
-            CallTimesSeries = CreateRowSeries(endpoints, (e, i) => new Coordinate(i, e.Data.CallTimes));
-            PriceSeries = CreateRowSeries(endpoints, (e, i) => new Coordinate(i, e.Data.Price));
-        }
-
-        AverageTpsSeries = CreateRowSeries(endpoints, (e, i) => new Coordinate(i, e.Data.AverageTps));
-    }
-
-    /// <summary>
-    /// 按模型统计的使用数据
-    /// </summary>
-    private void UpdateModelsStatistics()
-    {
-        IList<(string Name, UsageCount Usage)> models = new List<(string Name, UsageCount Usage)>();
-        foreach (var endpoint in _endpointService.AvailableEndpoints)
-        {
-            foreach (var model in endpoint.AvailableModels)
-            {
-                if (model.Telemetry != null && model.Telemetry.CallTimes > 0)
-                {
-                    string name = $"{model.Name} ({endpoint.DisplayName})";
-                    models.Add((name, model.Telemetry));
-                }
-            }
-        }
-
         _existingItemsCount = models.Count;
         models = models.OrderByDescending(tuple => tuple.Usage.CompletionTokens)
             .Take(MaxItemsCount)
@@ -330,6 +253,89 @@ public class UsageStatisticsViewModel : BaseViewModel
         }
 
         AverageTpsSeries = CreateRowSeries(models, (m, i) => new Coordinate(i, m.Data.AverageTps));
+    }
+
+    /// <summary>
+    /// 按系列统计的使用数据
+    /// </summary>
+    private void UpdateSeriesStatistics()
+    {
+        IList<(string Name, UsageCount Usage)> series = new List<(string Name, UsageCount Usage)>();
+        foreach (var endpoint in _endpointService.AvailableEndpoints)
+        {
+            foreach (var model in endpoint.AvailableModels)
+            {
+                if (model.Telemetry != null && model.Telemetry.CallTimes > 0)
+                {
+                    var name = model.SeriesName ?? model.Name;
+                    var existing = series.FirstOrDefault(s => s.Name == name);
+                    if (existing.Name != null)
+                    {
+                        existing.Usage.Add(model.Telemetry);
+                    }
+                    else
+                    {
+                        series.Add((name, model.Telemetry));
+                    }
+                }
+            }
+        }
+
+        UpdateStatistics(series);
+    }
+
+    /// <summary>
+    /// 按端点统计的使用数据
+    /// </summary>
+    private void UpdateEndpointStatistics()
+    {
+        IList<(string Name, UsageCount Usage)> endpoints = new List<(string Name, UsageCount Usage)>();
+        foreach (var endpoint in _endpointService.AvailableEndpoints)
+        {
+            UsageCount? usage = null;
+            foreach (var model in endpoint.AvailableModels)
+            {
+                if (model.Telemetry != null && model.Telemetry.CallTimes > 0)
+                {
+                    if (usage == null)
+                    {
+                        usage = new UsageCount(model.Telemetry);
+                    }
+                    else
+                    {
+                        usage.Add(model.Telemetry);
+                    }
+                }
+            }
+
+            if (usage?.CallTimes > 0)
+            {
+                endpoints.Add((endpoint.DisplayName, usage));
+            }
+        }
+
+        UpdateStatistics(endpoints);
+    }
+
+    /// <summary>
+    /// 按模型统计的使用数据
+    /// </summary>
+    private void UpdateModelsStatistics()
+    {
+        IList<(string Name, UsageCount Usage)> models = new List<(string Name, UsageCount Usage)>();
+        foreach (var endpoint in _endpointService.AvailableEndpoints)
+        {
+            foreach (var model in endpoint.AvailableModels)
+            {
+                if (model.Telemetry is { CallTimes: > 0 })
+                {
+                    var name = $"{model.Name} ({endpoint.DisplayName})";
+                    models.Add((name, model.Telemetry));
+                }
+            }
+        }
+
+        UpdateStatistics(models);
     }
 
     private ISeries[] CreateRowSeries(IList<(string Name, UsageCount Usage)> models,
