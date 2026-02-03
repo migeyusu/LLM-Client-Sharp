@@ -2,13 +2,15 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+                    x:Class="LLMClient.Dialog.DialogTemplateDictionary"
                     xmlns:dialog="clr-namespace:LLMClient.Dialog"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
                     xmlns:utility="clr-namespace:LLMClient.Component.Utility"
                     xmlns:converters="clr-namespace:LLMClient.Component.Converters"
                     xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
                     xmlns:component="clr-namespace:LLMClient.Component"
-                    xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions">
+                    xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
+                    xmlns:controls="clr-namespace:LLMClient.Dialog.Controls">
     <Style x:Key="SmallIconButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignIconButton}">
@@ -410,18 +412,15 @@
                                 Orientation="Horizontal"
                                 VerticalAlignment="Bottom">
                         <Menu VerticalAlignment="Center"
-                              Margin="10,0,0,0">
+                              Margin="6,0,0,0">
                             <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert,Size=18}"
                                       Width="18"
                                       Height="45"
                                       Padding="0">
                                 <MenuItem Header="删除其他回复"
                                           Icon="{materialDesign:PackIcon Kind=Clear}"
+                                          Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                           Command="{Binding ClearOthersCommand}" />
-                                <MenuItem Header="由此创建新分支"
-                                          Command="{Binding NewBranchCommand}"
-                                          Icon="{materialDesign:PackIcon SourceBranchPlus}"
-                                          Style="{StaticResource AutoHideMenuItemStyle}" />
                                 <MenuItem Header="移除之后消息"
                                           Command="{x:Static dialog:MultiResponseViewItem.RebaseCommand}"
                                           CommandParameter="{Binding Mode=OneTime}"
@@ -437,12 +436,33 @@
                                                  StaysOpen="True"
                                                  PopupUniformCornerRadius="8"
                                                  VerticalAlignment="Center"
+                                                 ToolTip="分支导航"
+                                                 Margin="10,0,0,0"
+                                                 Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                                 ToggleContent="{materialDesign:PackIcon Kind=DirectionsFork,Size=20}"
+                                                 Style="{StaticResource MaterialDesignToolPopupBox}"
+                                                 Opened="ForkNavigation_PopupBox_OnOpened"
+                                                 PopupContent="{Binding ParentSession.SharedGraphViewModel,Mode=OneTime}"
+                                                 Visibility="{Binding HasFork,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <materialDesign:PopupBox.PopupContentTemplate>
+                                <DataTemplate DataType="{x:Type controls:DialogGraphViewModel}">
+                                    <controls:DialogGraphControl DataContext="{Binding}"
+                                                                 MaxHeight="800"
+                                                                 MaxWidth="600" />
+                                </DataTemplate>
+                            </materialDesign:PopupBox.PopupContentTemplate>
+                        </materialDesign:PopupBox>
+                        <materialDesign:PopupBox Padding="4,0"
+                                                 StaysOpen="True"
+                                                 PopupUniformCornerRadius="8"
+                                                 VerticalAlignment="Center"
                                                  ToolTip="添加其他模型"
                                                  Margin="10,0,0,0"
                                                  Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
                                                  ToggleContent="{materialDesign:PackIcon Kind=AddBold,Size=20}"
                                                  Style="{StaticResource MaterialDesignToolPopupBox}"
-                                                 PopupContent="{Binding  SelectionPopup,Mode=OneTime}"
+                                                 Opened="AppendModel_PopupBox_OnOpened"
+                                                 PopupContent="{x:Static dialog:ModelSelectionPopupViewModel.Shared}"
                                                  PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
                                 VerticalAlignment="Center"
@@ -467,11 +487,17 @@
                                 Content="{materialDesign:PackIcon Kind=ContentCopy,Size=20}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
                                 Command="{x:Static dialog:MultiResponseViewItem.CompareAllCommand}"
+                                Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                 CommandParameter="{Binding Mode=OneTime}"
                                 VerticalAlignment="Center"
                                 Margin="6,0,0,0"
                                 ToolTip="对比所有响应"
                                 Content="{materialDesign:PackIcon Kind=Compare,Size=20}" />
+                        <Button ToolTip="由此创建新分支"
+                                Margin="6,0,0,0"
+                                Command="{Binding NewBranchCommand}"
+                                Content="{materialDesign:PackIcon SourceBranchPlus,Size=20}"
+                                Style="{StaticResource SmallIconButtonStyle}" />
                     </StackPanel>
                 </Grid>
                 <StackPanel Grid.Column="1"
@@ -479,14 +505,14 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Margin="16,0,0,0">
-                    <TextBlock Text="在上下文中有效"
-                               VerticalAlignment="Center" />
-                    <ToggleButton Command="{x:Static dialog:MultiResponseViewItem.SetAsAvailableCommand}"
-                                  CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
-                                  VerticalAlignment="Center"
-                                  Margin="6,0"
-                                  ToolTip="通过将当前回复设置为在上下文中有效，可以跳过一些回复，减少上下文的长度"
-                                  IsChecked="{Binding AcceptedResponse.IsAvailableInContext,Mode=OneWay}" />
+                    <CheckBox VerticalAlignment="Center"
+                              Margin="6,0"
+                              Command="{x:Static dialog:MultiResponseViewItem.SetAsAvailableCommand}"
+                              CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
+                              ToolTip="通过将当前回复设置为在上下文中有效，可以跳过一些回复，减少上下文的长度"
+                              IsChecked="{Binding AcceptedResponse.IsAvailableInContext,Mode=OneWay}">
+                        参与上下文
+                    </CheckBox>
                 </StackPanel>
             </Grid>
             <materialDesign:Card Padding="0"
@@ -580,7 +606,7 @@
         </Setter>
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
-                <Style TargetType="{x:Type ListBoxItem}" 
+                <Style TargetType="{x:Type ListBoxItem}"
                        BasedOn="{StaticResource MaterialDesignListBoxItem}">
                     <Setter Property="Padding" Value="0" />
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />

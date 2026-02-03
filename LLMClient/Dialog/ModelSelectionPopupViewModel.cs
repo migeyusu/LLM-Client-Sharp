@@ -6,7 +6,15 @@ namespace LLMClient.Dialog;
 
 public class ModelSelectionPopupViewModel : ModelSelectionViewModel
 {
-    public ModelSelectionPopupViewModel(Action<BaseModelSelectionViewModel> successAction)
+    private static readonly Lazy<ModelSelectionPopupViewModel> SharedLazy =
+        new Lazy<ModelSelectionPopupViewModel>(() => new ModelSelectionPopupViewModel());
+
+    public static ModelSelectionPopupViewModel Shared
+    {
+        get { return SharedLazy.Value; }
+    }
+
+    public ModelSelectionPopupViewModel(Action<BaseModelSelectionViewModel>? successAction = null)
         : base(successAction)
     {
     }
@@ -18,4 +26,5 @@ public class ModelSelectionPopupViewModel : ModelSelectionViewModel
         SuccessAction?.Invoke(client);
         SuccessRoutedCommand?.Execute(true, null);
     }
+    
 }

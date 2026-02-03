@@ -295,6 +295,11 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public ICommand OpenDialogRouteCommand { get; }
 
+    /// <summary>
+    /// 用于子项路由选择
+    /// </summary>
+    public DialogGraphViewModel SharedGraphViewModel { get; }
+
 //todo:测试动态插入时的UI性能
 
     /// <summary>
@@ -347,7 +352,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         //检查leaf可达性
         if (!CurrentLeaf.CanReachRoot())
         {
-            CurrentLeaf = previousItem;
+            CurrentLeaf = previousItem ?? RootNode;
         }
         else
         {
@@ -627,6 +632,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     public void ForkPreTask(MultiResponseViewItem dialogViewItem)
     {
         CurrentLeaf = dialogViewItem;
+        MessageEventBus.Publish("您已创建新分支");
     }
 
     #endregion
@@ -647,6 +653,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
 
         RebuildLinearItems();
+        SharedGraphViewModel = new DialogGraphViewModel(this);
         this.PredictedContextLength = GetContextTokensBefore();
         DialogItemsObservable.CollectionChanged += (_, _) =>
         {
@@ -655,10 +662,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             this.PredictedContextLength = GetContextTokensBefore();
         };
         this.DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
-        OpenDialogRouteCommand = new ActionCommand(async o =>
-        {
-            await DialogHost.Show(new DialogGraphViewModel(this));
-        });
+        OpenDialogRouteCommand =
+            new ActionCommand(async o => { await DialogHost.Show(new DialogGraphViewModel(this)); });
         SearchCommand = new ActionCommand(_ =>
         {
             foreach (var dialogViewItem in this.DialogItems.OfType<ISearchableDialogItem>())

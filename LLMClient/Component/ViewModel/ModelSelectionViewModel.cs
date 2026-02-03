@@ -4,7 +4,7 @@ namespace LLMClient.Component.ViewModel;
 
 public class ModelSelectionViewModel : BaseModelSelectionViewModel
 {
-    public Action<BaseModelSelectionViewModel>? SuccessAction { get; }
+    public Action<BaseModelSelectionViewModel>? SuccessAction { get; set; }
 
     public ModelSelectionViewModel(Action<BaseModelSelectionViewModel>? successAction = null)
     {

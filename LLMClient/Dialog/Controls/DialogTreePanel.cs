@@ -9,10 +9,10 @@ public class DialogTreePanel : Panel
     // --- 配置参数 ---
     public double ColumnGap { get; set; } = 80;
     public double RowGap { get; set; } = 60;
-    
+
     // 节点的期望宽度，须与 XAML ItemTemplate 宽度匹配
     public static readonly DependencyProperty ItemWidthProperty =
-        DependencyProperty.Register(nameof(ItemWidth), typeof(double), typeof(DialogTreePanel), 
+        DependencyProperty.Register(nameof(ItemWidth), typeof(double), typeof(DialogTreePanel),
             new FrameworkPropertyMetadata(260.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
 
     public double ItemWidth
@@ -24,6 +24,7 @@ public class DialogTreePanel : Panel
     // --- 内部缓存 ---
     // 保存计算好位置的矩形
     private readonly Dictionary<UIElement, Rect> _layoutCache = new();
+
     // 保存需要绘制的连线信息: (起点, 终点, 是否主分支)
     private readonly List<(Point Start, Point End, bool IsMain)> _connections = new();
 
@@ -72,7 +73,6 @@ public class DialogTreePanel : Panel
             var parentId = GraphProps.GetParentId(child);
 
             elementMap[id] = child;
-
             if (parentId == null || parentId == Guid.Empty)
             {
                 rootId = id;
@@ -85,7 +85,20 @@ public class DialogTreePanel : Panel
             }
         }
 
-        if (rootId == null && InternalChildren.Count > 0) 
+        if (rootId == null)
+        {
+            //当在里面找不到前继节点时就是根节点
+            foreach (var id in childrenMap.Keys)
+            {
+                if (!elementMap.ContainsKey(id))
+                {
+                    rootId = childrenMap[id].FirstOrDefault();
+                    break;
+                }
+            }
+        }
+
+        if (rootId == null && InternalChildren.Count > 0)
             return new Size(0, 0); // 没找到根，无法布局
 
         // 3. 执行布局逻辑 (DFS)
@@ -99,7 +112,7 @@ public class DialogTreePanel : Panel
 
             double w = ItemWidth;
             double h = element.DesiredSize.Height; // 【关键】使用测量后的真实高度
-            
+
             // 计算 X
             double x = 20 + colIndex * (w + ColumnGap);
 
@@ -112,7 +125,8 @@ public class DialogTreePanel : Panel
 
             // 规则：不能高于父节点底部 (视觉上的自上而下)
             var pId = GraphProps.GetParentId(element);
-            if (pId != null && elementMap.TryGetValue(pId.Value, out var parentElem) && _layoutCache.TryGetValue(parentElem, out var pRect))
+            if (pId != null && elementMap.TryGetValue(pId.Value, out var parentElem) &&
+                _layoutCache.TryGetValue(parentElem, out var pRect))
             {
                 startY = Math.Max(startY, pRect.Bottom + RowGap);
             }
@@ -132,12 +146,15 @@ public class DialogTreePanel : Panel
                 for (int i = 0; i < children.Count; i++)
                 {
                     // 只有第一个孩子继承当前列 (主分支)，其他孩子去新列
-                    int targetCol = (i == 0) ? colIndex : FindNextColumn(colIndex + 1, columnBottoms, rect.Bottom + RowGap);
-                    
+                    int targetCol = (i == 0)
+                        ? colIndex
+                        : FindNextColumn(colIndex + 1, columnBottoms, rect.Bottom + RowGap);
+
                     LayoutNode(children[i], targetCol);
 
                     // 记录连线 (现在子节点位置已算出)
-                    if (elementMap.TryGetValue(children[i], out var childElem) && _layoutCache.TryGetValue(childElem, out var cRect))
+                    if (elementMap.TryGetValue(children[i], out var childElem) &&
+                        _layoutCache.TryGetValue(childElem, out var cRect))
                     {
                         var endPoint = new Point(cRect.Left + cRect.Width / 2, cRect.Top);
                         _connections.Add((startPoint, endPoint, i == 0));
@@ -205,6 +222,7 @@ public class DialogTreePanel : Panel
                 ctx.BeginFigure(start, false, false);
                 ctx.BezierTo(p1, p2, end, true, false);
             }
+
             geo.Freeze();
             dc.DrawGeometry(null, pen, geo);
         }

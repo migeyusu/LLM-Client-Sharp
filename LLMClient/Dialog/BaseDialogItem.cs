@@ -26,7 +26,12 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
     }
 
     public abstract string DisplayText { get; }
-    
+
+    public bool HasFork
+    {
+        get { return ChildItemsObservables.Count > 1; }
+    }
+
     private ObservableCollection<IDialogItem> ChildItemsObservables { get; } = [];
 
     public IReadOnlyCollection<IDialogItem> Children => _childrenReadOnly;
@@ -48,6 +53,7 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
     {
         ((BaseDialogItem)child).PreviousItem = this;
         ChildItemsObservables.Add(child);
+        OnPropertyChanged(nameof(HasFork));
         return child;
     }
 
@@ -56,6 +62,7 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
         if (ChildItemsObservables.Remove(child))
         {
             ((BaseDialogItem)child).PreviousItem = null;
+            OnPropertyChanged(nameof(HasFork));
         }
 
         return child;
@@ -64,5 +71,6 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
     public void ClearChildren()
     {
         ChildItemsObservables.Clear();
+        OnPropertyChanged(nameof(HasFork));
     }
 }

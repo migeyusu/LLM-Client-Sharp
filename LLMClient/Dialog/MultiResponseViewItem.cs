@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -218,7 +219,10 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         Items = new ObservableCollection<ResponseViewItem>(items);
         Items.CollectionChanged += (_, _) => { this.ParentSession.IsDataChanged = true; };
         IsMultiResponse = Items.Count > 1;
-        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.NewRequest(client.CreateClient()); })
+        SelectionPopup = new ModelSelectionPopupViewModel(client =>
+        {
+            this.NewRequest(client.CreateClient());
+        })
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };

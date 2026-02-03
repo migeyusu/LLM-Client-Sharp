@@ -2,8 +2,8 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
-using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog.Controls;
 
@@ -33,15 +33,15 @@ public class DialogGraphViewModel : BaseViewModel
 
     public ICommand SelectCommand { get; }
 
-    public DialogGraphViewModel(INavigationViewModel viewModel)
+    public DialogGraphViewModel(INavigationViewModel viewModel, IDialogItem? rootNode = null)
     {
         _viewModel = viewModel;
-        LoadTree(viewModel.RootNode);
-        SelectedLeaf = FlatNodes.FirstOrDefault(model => model.Data == viewModel.CurrentLeaf);
+        LoadTree(rootNode ?? viewModel.RootNode);
         SelectCommand = new RelayCommand(() =>
         {
             if (SelectedLeaf == null || !_viewModel.IsNodeSelectable(SelectedLeaf.Data)) return;
             viewModel.CurrentLeaf = SelectedLeaf.Data;
+            MessageEventBus.Publish("您已切换到所选节点。");
         });
     }
 
@@ -50,6 +50,7 @@ public class DialogGraphViewModel : BaseViewModel
     {
         FlatNodes.Clear();
         FlattenRecursive(root);
+        SelectedLeaf = FlatNodes.FirstOrDefault(model => model.Data == _viewModel.CurrentLeaf);
     }
 
     private void FlattenRecursive(IDialogItem? item)

@@ -74,7 +74,7 @@
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">
             <!-- 绑定到扁平化列表 -->
-            <ListBox ItemsSource="{Binding FlatNodes,Mode=OneTime}"
+            <ListBox ItemsSource="{Binding FlatNodes,Mode=OneWay}"
                      ItemTemplate="{StaticResource NodeTemplate}"
                      SelectedItem="{Binding SelectedLeaf,Mode=TwoWay}">
                 <!-- 使用自定义面板 -->
