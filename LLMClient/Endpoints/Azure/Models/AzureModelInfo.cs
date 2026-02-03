@@ -31,7 +31,7 @@ public class AzureModelInfo : IEndpointModel
     [JsonIgnore]
     public string Name
     {
-        get { return FriendlyName; }
+        get { return OriginalName; }
     }
 
     [JsonIgnore] public bool Streaming { get; set; } = true;

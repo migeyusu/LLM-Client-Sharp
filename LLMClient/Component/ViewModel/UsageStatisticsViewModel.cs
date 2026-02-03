@@ -265,7 +265,7 @@ public class UsageStatisticsViewModel : BaseViewModel
         {
             foreach (var model in endpoint.AvailableModels)
             {
-                if (model.Telemetry != null && model.Telemetry.CallTimes > 0)
+                if (model.Telemetry is { CallTimes: > 0 })
                 {
                     var name = model.SeriesName ?? model.Name + $" ({endpoint.DisplayName})";
                     var existing = series.FirstOrDefault(s => s.Name == name);
@@ -275,7 +275,8 @@ public class UsageStatisticsViewModel : BaseViewModel
                     }
                     else
                     {
-                        series.Add((name, model.Telemetry));
+                        var usage = new UsageCount(model.Telemetry);
+                        series.Add((name, usage));
                     }
                 }
             }

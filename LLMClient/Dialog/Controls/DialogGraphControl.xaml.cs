@@ -40,7 +40,7 @@ public class DialogGraphViewModel : BaseViewModel
         SelectedLeaf = FlatNodes.FirstOrDefault(model => model.Data == viewModel.CurrentLeaf);
         SelectCommand = new RelayCommand(() =>
         {
-            if (SelectedLeaf == null || _viewModel.IsNodeSelectable(SelectedLeaf.Data)) return;
+            if (SelectedLeaf == null || !_viewModel.IsNodeSelectable(SelectedLeaf.Data)) return;
             viewModel.CurrentLeaf = SelectedLeaf.Data;
         });
     }

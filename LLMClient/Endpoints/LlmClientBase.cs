@@ -592,7 +592,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var duration = (int)Math.Ceiling(_stopwatch.ElapsedMilliseconds / 1000f);
             var price = this.Model.PriceCalculator?.Calculate(totalUsageDetails);
             result.Usage = totalUsageDetails;
-            result.ResponseMessages = responseMessages;
             result.ErrorMessage = errorMessage;
             result.Latency = latency ?? 0;
             result.Duration = duration;

@@ -53,8 +53,11 @@ public static class ModelRegister
                         "GPT-5",
                         "GPT-5-Chat",
                         "GPT-5-mini",
+                        "GPT-5-nano",
                         "GPT-5.1",
+                        "GPT-5.1 Codex Max",
                         "GPT-5.2",
+                        "GPT-5.2-Chat",
                         "GPT-5.2 Pro"
                     ]
                 },
@@ -71,6 +74,18 @@ public static class ModelRegister
                         "Gemini 2.5 Flash Lite",
                         "Gemini 3 Pro",
                         "Gemini 3 Flash",
+                    ]
+                },
+                new ()
+                {
+                  ProviderName  = "xAI",
+                    ModelNames =
+                    [
+                        "Grok 3",
+                        "Grok 4",
+                        "Grok 4.1",
+                        "Grok 4.1 Fast",
+                        "Grok Code Fast 1"
                     ]
                 },
 
