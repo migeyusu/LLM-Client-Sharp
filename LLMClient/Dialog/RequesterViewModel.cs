@@ -351,7 +351,7 @@ public class RequesterViewModel : BaseViewModel
         return new RequestViewItem(promptBuilder.ToString())
         {
             Attachments = Attachments.Count == 0 ? null : Attachments.ToList(),
-            FunctionGroups = tools == null ? [] : [..tools],
+            FunctionGroups = tools == null ? null : [..tools],
             SearchOption = SearchConfig.GetUserSearchOption(),
             RagSources = ragSources.Length > 0 ? ragSources : null,
             CallEngine = this.FunctionTreeSelector.EngineType ??
