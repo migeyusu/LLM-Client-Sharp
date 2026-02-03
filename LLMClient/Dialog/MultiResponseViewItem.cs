@@ -1,8 +1,11 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LambdaConverters;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Endpoints;
@@ -93,6 +96,12 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     }
 
     public ObservableCollection<ResponseViewItem> Items { get; }
+
+    public static readonly IMultiValueConverter DeleteItemConverter = MultiValueConverter.Create<bool, Visibility>(args =>
+    {
+        var values = args.Values;
+        return !values[0] && values[1]? Visibility.Visible : Visibility.Collapsed;
+    });
 
     public static ICommand CompareAllCommand { get; } = new RelayCommand<MultiResponseViewItem>((item =>
     {
@@ -217,12 +226,13 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     {
         ParentSession = parentSession;
         Items = new ObservableCollection<ResponseViewItem>(items);
-        Items.CollectionChanged += (_, _) => { this.ParentSession.IsDataChanged = true; };
-        IsMultiResponse = Items.Count > 1;
-        SelectionPopup = new ModelSelectionPopupViewModel(client =>
+        Items.CollectionChanged += (_, _) =>
         {
-            this.NewRequest(client.CreateClient());
-        })
+            this.ParentSession.IsDataChanged = true;
+            this.IsMultiResponse = Items.Count > 1;
+        };
+        IsMultiResponse = Items.Count > 1;
+        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.NewRequest(client.CreateClient()); })
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
@@ -323,7 +333,6 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     {
         this.Items.Insert(index, viewItem);
         this.AcceptedIndex = index;
-        this.IsMultiResponse = Items.Count > 1;
     }
 
     public void RemoveResponse(ResponseViewItem viewItem)
@@ -336,7 +345,6 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
         var removeAccepted = AcceptedResponse == viewItem;
         this.Items.RemoveAt(indexOf);
-        this.IsMultiResponse = Items.Count > 1;
         if (removeAccepted)
         {
             this.AcceptedIndex = 0;
@@ -350,7 +358,5 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         {
             this.AcceptedIndex = this.Items.Count - 1;
         }
-
-        this.IsMultiResponse = Items.Count > 1;
     }
 }

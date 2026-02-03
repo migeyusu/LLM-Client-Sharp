@@ -388,18 +388,24 @@
                                                              Margin="-5,0"
                                                              ToolTip="当前回复有错误，将不加入对话上下文"
                                                              Visibility="{Binding IsAvailableInContext,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
-                                    <Border BorderThickness="0"
-                                            Margin="6,0,-6,0"
+                                    <Button Width="16"
+                                            Height="16"
                                             VerticalAlignment="Center"
-                                            Visibility="{Binding IsResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
-                                        <Button Width="16"
-                                                Height="16"
-                                                Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveResponseCommand}"
-                                                Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
-                                                CommandParameter="{Binding  }"
-                                                ToolTip="删除当前"
-                                                Template="{StaticResource ItemDeleteButtonTemplate}" />
-                                    </Border>
+                                            Margin="6,0,-6,0"
+                                            Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveResponseCommand}"
+                                            CommandParameter="{Binding  }"
+                                            ToolTip="删除当前"
+                                            Template="{StaticResource ItemDeleteButtonTemplate}">
+                                        <Button.Visibility>
+                                            <MultiBinding
+                                                Converter="{x:Static dialog:MultiResponseViewItem.DeleteItemConverter}">
+                                                <Binding Path="IsResponding" Mode="OneWay" />
+                                                <Binding
+                                                    RelativeSource="{RelativeSource FindAncestor, AncestorType=ListBox}"
+                                                    Path="DataContext.IsMultiResponse" Mode="OneWay" />
+                                            </MultiBinding>
+                                        </Button.Visibility>
+                                    </Button>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
