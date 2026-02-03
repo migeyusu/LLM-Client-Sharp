@@ -19,6 +19,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
     public APIEndPointOption Option { get; }
 
     public string DisplayName => Option.DisplayName;
+    
     public virtual bool IsInbuilt => false;
 
     public bool IsEnabled => true;

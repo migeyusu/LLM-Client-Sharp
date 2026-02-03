@@ -13,7 +13,7 @@ public class ModelDescriptor
 public static class ModelRegister
 {
     public static readonly IValueConverter ProviderToModelNamesConverter =
-        ValueConverter.Create<string?, ICollection<string>?>((args =>
+        ValueConverter.Create<string?, ICollection<string>?>(args =>
         {
             var value = args.Value;
             if (value == null || string.IsNullOrEmpty(value))
@@ -23,7 +23,7 @@ public static class ModelRegister
 
             var descriptor = OfficialModels.FirstOrDefault(d => d.ProviderName == value);
             return descriptor?.ModelNames;
-        }));
+        });
 
     private static List<ModelDescriptor>? _officialModels;
 

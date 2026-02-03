@@ -267,7 +267,7 @@ public class UsageStatisticsViewModel : BaseViewModel
             {
                 if (model.Telemetry != null && model.Telemetry.CallTimes > 0)
                 {
-                    var name = model.SeriesName ?? model.Name;
+                    var name = model.SeriesName ?? model.Name + $" ({endpoint.DisplayName})";
                     var existing = series.FirstOrDefault(s => s.Name == name);
                     if (existing.Name != null)
                     {
