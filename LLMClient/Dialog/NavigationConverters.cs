@@ -28,7 +28,7 @@ internal static class NavigationConverters
         return Brushes.White;
     });
 
-    public static readonly IValueConverter RoleToBorder = ValueConverter.Create<ChatRole, Brush>(e =>
+    public static readonly IValueConverter RoleToBorderBrush = ValueConverter.Create<ChatRole, Brush>(e =>
     {
         if (e.Value == ChatRole.User)
         {

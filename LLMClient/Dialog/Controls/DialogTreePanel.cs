@@ -28,8 +28,8 @@ public class DialogTreePanel : Panel
     private readonly List<(Point Start, Point End, bool IsMain)> _connections = new();
 
     // 画笔缓存
-    private Pen _mainPen;
-    private Pen _forkPen;
+    private readonly Pen _mainPen;
+    private readonly Pen _forkPen;
 
     public DialogTreePanel()
     {
@@ -185,7 +185,6 @@ public class DialogTreePanel : Panel
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
-
         foreach (var conn in _connections)
         {
             var pen = conn.IsMain ? _mainPen : _forkPen;

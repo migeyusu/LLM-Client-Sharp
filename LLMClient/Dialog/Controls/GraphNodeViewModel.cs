@@ -18,13 +18,3 @@ public class GraphNodeViewModel : BaseViewModel
         Data = data;
     }
 }
-
-// 连线的显示模型
-public class GraphConnectionViewModel : BaseViewModel
-{
-    // 是否是主分支连线（决定颜色：灰色 vs 橙色）
-    public bool IsMainBranch { get; set; }
-
-    // SVG 路径数据字符串
-    public string PathData { get; set; } = string.Empty;
-}

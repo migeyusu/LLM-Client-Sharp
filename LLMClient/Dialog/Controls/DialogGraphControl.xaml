@@ -8,49 +8,56 @@
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DialogGraphViewModel}">
-
     <UserControl.Resources>
-        <!-- 颜色资源保留 -->
         <Color x:Key="ForkColor">#f59e0b</Color>
         <SolidColorBrush x:Key="ForkBrush" Color="{StaticResource ForkColor}" />
-
-        <!-- 节点模板：完全自适应高度 -->
         <DataTemplate x:Key="NodeTemplate" DataType="{x:Type local:GraphNodeViewModel}">
-            <Grid>
-                <!-- 
-                   注意：不需要设置具体 Height，只需 Width 
-                   Width 绑定到 Panel 外部定义宽度，或写死 260 
-                -->
-                <Border Width="260" Margin="0,0,0,6"> <!-- 底部留白给 ForkDot -->
-                    <materialDesign:Card UniformCornerRadius="12"
-                                         Padding="6"
-                                         materialDesign:ElevationAssist.Elevation="Dp3"
-                                         Style="{StaticResource MaterialDesignOutlinedCard}">
-                        <StackPanel>
-                            <!-- 角色标签 -->
-                            <TextBlock Text="{Binding Data.Role,Mode=OneTime}"
-                                       Foreground="{Binding Data.Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToForeground}}"
-                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                       FontWeight="Bold"
-                                       Margin="0,0,0,6" />
-                            <TextBlock Text="{Binding Data.DisplayText}"
-                                       TextWrapping="Wrap"
-                                       MaxHeight="300"
-                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                       LineHeight="20" />
-                        </StackPanel>
-                    </materialDesign:Card>
+            <Grid ClipToBounds="False">
+                <Border Padding="16"
+                        BorderBrush="{Binding Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToBorderBrush}}"
+                        DataContext="{Binding Data,Mode=OneTime}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <!-- 角色标签 -->
+                        <TextBlock Text="{Binding Role,Mode=OneTime}"
+                                   HorizontalAlignment="Left"
+                                   Foreground="{Binding Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToForeground}}"
+                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,6" />
+                        <materialDesign:PopupBox HorizontalAlignment="Right"
+                                                 Grid.Row="0"
+                                                 PopupUniformCornerRadius="8"
+                                                 PlacementMode="LeftAndAlignMiddles">
+                            <ScrollViewer MaxHeight="600"
+                                          MaxWidth="600">
+                                <TextBlock Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                           TextWrapping="Wrap"
+                                           Margin="16"
+                                           Text="{Binding DisplayText,Mode=OneTime}" />
+                            </ScrollViewer>
+                        </materialDesign:PopupBox>
+                        <TextBlock Grid.Row="1"
+                                   Text="{Binding DisplayText,Mode=OneTime}"
+                                   TextWrapping="Wrap"
+                                   MaxHeight="300"
+                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                   LineHeight="20" />
+                    </Grid>
                 </Border>
-
                 <!-- Fork Dot -->
                 <!-- 垂直对齐到底部，加上 RenderTransform/Margin 修正视觉位置 -->
-                <Ellipse Width="12" Height="12"
+                <Ellipse Width="12"
+                         Height="12"
                          Fill="{StaticResource ForkBrush}"
                          Stroke="White" StrokeThickness="2"
                          HorizontalAlignment="Center"
                          VerticalAlignment="Bottom"
                          Margin="0,0,0,0"
-                         Visibility="{Binding ShowForkDot, Converter={StaticResource BooleanToVisibilityConverter}}">
+                         Visibility="{Binding ShowForkDot, Converter={StaticResource BooleanToVisibilityConverter},Mode=OneTime}">
                     <Ellipse.Effect>
                         <DropShadowEffect Color="#f59e0b" BlurRadius="4" ShadowDepth="0" Opacity="0.4" />
                     </Ellipse.Effect>
@@ -58,32 +65,90 @@
             </Grid>
         </DataTemplate>
     </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ScrollViewer PanningMode="Both"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto">
+            <!-- 绑定到扁平化列表 -->
+            <ListBox ItemsSource="{Binding FlatNodes,Mode=OneTime}"
+                     ItemTemplate="{StaticResource NodeTemplate}"
+                     SelectedItem="{Binding SelectedLeaf,Mode=TwoWay}">
+                <!-- 使用自定义面板 -->
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <local:DialogTreePanel ItemWidth="300"
+                                               ColumnGap="80"
+                                               RowGap="60"
+                                               Background="{DynamicResource MaterialDesign.Brush.Background}"
+                                               IsItemsHost="True" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}"
+                           BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                        <Setter Property="HorizontalContentAlignment"
+                                Value="Stretch" />
+                        <!-- 绑定附加属性 -->
+                        <Setter Property="local:GraphProps.NodeId" Value="{Binding Data.Id,Mode=OneTime}" />
+                        <Setter Property="local:GraphProps.ParentId"
+                                Value="{Binding Data.PreviousItem.Id,Mode=OneTime}" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="ClipToBounds"
+                                Value="False" />
+                        <Setter Property="Padding"
+                                Value="0" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <Border Margin="{TemplateBinding Margin}"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            ClipToBounds="{TemplateBinding ClipToBounds}">
+                                        <materialDesign:Card x:Name="Ripple"
+                                                             UniformCornerRadius="12"
+                                                             Padding="{TemplateBinding Padding}"
+                                                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                             Content="{TemplateBinding Content}"
+                                                             ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                             ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                                             Focusable="False"
+                                                             BorderThickness="0"
+                                                             ClipToBounds="False"
+                                                             BorderBrush="{DynamicResource MaterialDesign.Brush.Card.Border}"
+                                                             SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Ripple" Property="Opacity" Value=".92" />
+                                            <Setter TargetName="Ripple" Property="BorderThickness"
+                                                    Value="1" />
+                                        </Trigger>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value=".56" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Setter Property="VerticalContentAlignment"
+                                Value="{Binding VerticalContentAlignment, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}, FallbackValue=Center}" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
+        </ScrollViewer>
+        <Button Grid.Row="1"
+                HorizontalAlignment="Right"
+                Width="120"
+                Content="Select As Current Leaf"
+                Margin="16,6"
+                IsEnabled="{Binding CanSelect,Mode=OneWay}"
+                Command="{Binding SelectCommand}" />
+    </Grid>
 
-    <ScrollViewer PanningMode="Both"
-                  HorizontalScrollBarVisibility="Auto"
-                  VerticalScrollBarVisibility="Auto">
-
-        <!-- 绑定到扁平化列表 -->
-        <ItemsControl ItemsSource="{Binding FlatNodes}"
-                      ItemTemplate="{StaticResource NodeTemplate}">
-            <!-- 使用自定义面板 -->
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <local:DialogTreePanel ItemWidth="260"
-                                           ColumnGap="80"
-                                           RowGap="60"
-                                           Background="#f8fafc"
-                                           IsItemsHost="True" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-
-            <ItemsControl.ItemContainerStyle>
-                <Style TargetType="ContentPresenter">
-                    <!-- 绑定附加属性 -->
-                    <Setter Property="local:GraphProps.NodeId" Value="{Binding Data.Id}" />
-                    <Setter Property="local:GraphProps.ParentId" Value="{Binding Data.PreviousItem.Id}" />
-                </Style>
-            </ItemsControl.ItemContainerStyle>
-        </ItemsControl>
-    </ScrollViewer>
 </UserControl>
