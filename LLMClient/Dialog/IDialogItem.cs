@@ -8,8 +8,6 @@ public interface IDialogItem : ITokenizable
     Guid Id { get; set; }
 
     ChatRole Role { get; }
-    
-    string DisplayText { get; }
 
     IDialogItem? PreviousItem { get; }
 

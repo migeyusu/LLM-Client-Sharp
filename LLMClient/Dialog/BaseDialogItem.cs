@@ -25,8 +25,6 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
         }
     }
 
-    public abstract string DisplayText { get; }
-
     public bool HasFork
     {
         get { return ChildItemsObservables.Count > 1; }

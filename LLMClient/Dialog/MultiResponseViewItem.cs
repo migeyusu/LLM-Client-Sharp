@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -47,6 +48,9 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     /// <summary>
     /// warning: 禁止用于绑定，因为没有实现属性通知
     /// </summary>
+    [Bindable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]  
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public override bool IsAvailableInContext
     {
         get { return AcceptedResponse?.IsAvailableInContext == true; }
@@ -67,17 +71,15 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         get { return Items.Any((item => item.IsAvailableInContext)); }
     }
 
+    [Bindable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]  
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public override long Tokens
     {
         get { return AcceptedResponse?.Tokens ?? 0; }
     }
 
     public override ChatRole Role { get; } = ChatRole.Assistant;
-
-    public override string DisplayText
-    {
-        get { return AcceptedResponse?.TextContent ?? string.Empty; }
-    }
 
     public bool IsMultiResponse
     {
@@ -90,6 +92,9 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         }
     }
 
+    [Bindable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]  
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public SearchableDocument? SearchableDocument
     {
         get { return AcceptedResponse?.SearchableDocument; }
@@ -173,7 +178,6 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
             OnPropertyChanged(nameof(IsAvailableInContext));
             OnPropertyChanged(nameof(Tokens));
             OnPropertyChanged(nameof(SearchableDocument));
-            OnPropertyChanged(nameof(DisplayText));
             CanGotoPrevious = value - 1 >= 0;
             CanGoToNext = value + 1 < Items.Count;
         }

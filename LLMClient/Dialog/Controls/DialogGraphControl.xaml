@@ -6,48 +6,111 @@
              xmlns:local="clr-namespace:LLMClient.Dialog.Controls"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
+             xmlns:component="clr-namespace:LLMClient.Component"
+             xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DialogGraphViewModel}">
     <UserControl.Resources>
         <Color x:Key="ForkColor">#f59e0b</Color>
         <SolidColorBrush x:Key="ForkBrush" Color="{StaticResource ForkColor}" />
+        <Style TargetType="{x:Type materialDesign:Card}"
+               BasedOn="{StaticResource MaterialDesignOutlinedCard}">
+            <Setter Property="BorderThickness"
+                    Value="0" />
+            <Setter Property="BorderBrush"
+                    Value="{Binding Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToBorderBrush}}" />
+            <Setter Property="Padding"
+                    Value="10" />
+            <Setter Property="UniformCornerRadius"
+                    Value="12" />
+            <Style.Triggers>
+                <DataTrigger
+                    Binding="{Binding  RelativeSource={RelativeSource FindAncestor, AncestorType=ListBoxItem},Path=IsSelected}"
+                    Value="True">
+                    <Setter Property="BorderThickness" Value="3" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
         <DataTemplate x:Key="NodeTemplate" DataType="{x:Type local:GraphNodeViewModel}">
             <Grid ClipToBounds="False">
-                <Border Padding="16"
-                        BorderBrush="{Binding Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToBorderBrush}}"
-                        DataContext="{Binding Data,Mode=OneTime}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
-                        <!-- 角色标签 -->
-                        <TextBlock Text="{Binding Role,Mode=OneTime}"
-                                   HorizontalAlignment="Left"
-                                   Foreground="{Binding Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToForeground}}"
-                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
-                                   FontWeight="Bold"
-                                   Margin="0,0,0,6" />
-                        <materialDesign:PopupBox HorizontalAlignment="Right"
-                                                 Grid.Row="0"
-                                                 PopupUniformCornerRadius="8"
-                                                 PlacementMode="LeftAndAlignMiddles">
-                            <ScrollViewer MaxHeight="600"
-                                          MaxWidth="600">
-                                <TextBlock Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                           TextWrapping="Wrap"
-                                           Margin="16"
-                                           Text="{Binding DisplayText,Mode=OneTime}" />
-                            </ScrollViewer>
-                        </materialDesign:PopupBox>
-                        <TextBlock Grid.Row="1"
-                                   Text="{Binding DisplayText,Mode=OneTime}"
-                                   TextWrapping="Wrap"
-                                   MaxHeight="300"
-                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                   LineHeight="20" />
-                    </Grid>
-                </Border>
+                <ContentPresenter Content="{Binding Data,Mode=OneTime}">
+                    <ContentPresenter.ContentTemplateSelector>
+                        <component:TypeBasedDataTemplateSelector>
+                            <component:DataTemplateTypePair>
+                                <DataTemplate DataType="{x:Type dialog:RequestViewItem}">
+                                    <materialDesign:Card>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="{Binding Role,Mode=OneTime}"
+                                                       HorizontalAlignment="Left"
+                                                       Foreground="{Binding Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToForeground}}"
+                                                       Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                                       FontWeight="Bold"
+                                                       Margin="0,0,0,10" />
+                                            <TextBlock Grid.Row="1"
+                                                       Text="{Binding TextMessage,Mode=OneWay}"
+                                                       TextWrapping="Wrap"
+                                                       MaxHeight="300"
+                                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                       LineHeight="20" />
+                                        </Grid>
+                                    </materialDesign:Card>
+                                </DataTemplate>
+                            </component:DataTemplateTypePair>
+                            <component:DataTemplateTypePair>
+                                <DataTemplate DataType="{x:Type dialog:MultiResponseViewItem}">
+                                    <materialDesign:Card>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="{Binding Role,Mode=OneTime}"
+                                                       HorizontalAlignment="Left"
+                                                       Foreground="{Binding Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToForeground}}"
+                                                       Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                                       FontWeight="Bold"
+                                                       Margin="0,0,0,10" />
+                                            <TextBlock Grid.Row="1"
+                                                       Text="{Binding AcceptedResponse.TextContent,Mode=OneTime}"
+                                                       TextWrapping="Wrap"
+                                                       MaxHeight="300"
+                                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                       LineHeight="20" />
+                                            <materialDesign:PopupBox HorizontalAlignment="Right"
+                                                                     Grid.Row="0"
+                                                                     VerticalAlignment="Center"
+                                                                     ToggleContent="{materialDesign:PackIcon Kind=InfoBox}"
+                                                                     PopupUniformCornerRadius="8"
+                                                                     PlacementMode="LeftAndAlignMiddles">
+                                                <ScrollViewer MaxHeight="600"
+                                                              MaxWidth="600">
+                                                    <TextBlock TextWrapping="Wrap"
+                                                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                               Margin="16"
+                                                               Text="{Binding AcceptedResponse.TextContent,Mode=OneTime}" />
+                                                </ScrollViewer>
+                                            </materialDesign:PopupBox>
+                                        </Grid>
+                                    </materialDesign:Card>
+                                </DataTemplate>
+                            </component:DataTemplateTypePair>
+                            <component:DataTemplateTypePair>
+                                <DataTemplate DataType="{x:Type dialog:EraseViewItem}">
+                                    <materialDesign:PackIcon Kind="ScissorsCutting"
+                                                             VerticalAlignment="Center"
+                                                             HorizontalAlignment="Center"
+                                                             Width="50"
+                                                             Height="50"
+                                                             ToolTip="Cutting Context" />
+                                </DataTemplate>
+                            </component:DataTemplateTypePair>
+                        </component:TypeBasedDataTemplateSelector>
+                    </ContentPresenter.ContentTemplateSelector>
+                </ContentPresenter>
                 <!-- Fork Dot -->
                 <!-- 垂直对齐到底部，加上 RenderTransform/Margin 修正视觉位置 -->
                 <Ellipse Width="12"
@@ -77,6 +140,10 @@
             <ListBox ItemsSource="{Binding FlatNodes,Mode=OneWay}"
                      ItemTemplate="{StaticResource NodeTemplate}"
                      SelectedItem="{Binding SelectedLeaf,Mode=TwoWay}">
+                <ListBox.LayoutTransform>
+                    <ScaleTransform ScaleX="{Binding Value, ElementName=ZoomSlider}"
+                                    ScaleY="{Binding Value, ElementName=ZoomSlider}" />
+                </ListBox.LayoutTransform>
                 <!-- 使用自定义面板 -->
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -96,38 +163,39 @@
                         <Setter Property="local:GraphProps.NodeId" Value="{Binding Data.Id,Mode=OneTime}" />
                         <Setter Property="local:GraphProps.ParentId"
                                 Value="{Binding Data.PreviousItem.Id,Mode=OneTime}" />
-                        <Setter Property="BorderThickness" Value="0" />
-                        <Setter Property="ClipToBounds"
-                                Value="False" />
                         <Setter Property="Padding"
                                 Value="0" />
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                    <Border Margin="{TemplateBinding Margin}"
-                                            Background="{TemplateBinding Background}"
-                                            BorderBrush="{TemplateBinding BorderBrush}"
-                                            BorderThickness="{TemplateBinding BorderThickness}"
-                                            ClipToBounds="{TemplateBinding ClipToBounds}">
-                                        <materialDesign:Card x:Name="Ripple"
-                                                             UniformCornerRadius="12"
-                                                             Padding="{TemplateBinding Padding}"
-                                                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                             Content="{TemplateBinding Content}"
-                                                             ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                             ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                                                             Focusable="False"
-                                                             BorderThickness="0"
-                                                             ClipToBounds="False"
-                                                             BorderBrush="{DynamicResource MaterialDesign.Brush.Card.Border}"
-                                                             SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                    </Border>
+                                    <Grid Margin="{TemplateBinding Margin}"
+                                          Background="{TemplateBinding Background}"
+                                          ClipToBounds="False">
+                                        <ContentPresenter x:Name="Ripple"
+                                                          Margin="{TemplateBinding Padding}"
+                                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                          Content="{TemplateBinding Content}"
+                                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                          ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                                          Focusable="False"
+                                                          ClipToBounds="False"
+                                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                        <materialDesign:PackIcon Kind="HandPointingLeft"
+                                                                 Width="35"
+                                                                 Height="35"
+                                                                 x:Name="Icon"
+                                                                 Visibility="Collapsed"
+                                                                 HorizontalAlignment="Right"
+                                                                 VerticalAlignment="Center"
+                                                                 Margin="0,0,-35,0" />
+                                    </Grid>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsSelected" Value="True">
                                             <Setter TargetName="Ripple" Property="Opacity" Value=".92" />
-                                            <Setter TargetName="Ripple" Property="BorderThickness"
-                                                    Value="1" />
+                                            <Setter TargetName="Icon"
+                                                    Property="Visibility"
+                                                    Value="Visible" />
                                         </Trigger>
                                         <Trigger Property="IsEnabled" Value="False">
                                             <Setter Property="Opacity" Value=".56" />
@@ -142,6 +210,28 @@
                 </ListBox.ItemContainerStyle>
             </ListBox>
         </ScrollViewer>
+        <Border Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Right"
+                Background="{DynamicResource MaterialDesignPaper}"
+                CornerRadius="8" Padding="4" Margin="16"
+                Effect="{DynamicResource MaterialDesignShadowDepth2}">
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource MaterialDesignIconButton}" Click="ZoomOut_Click" ToolTip="缩小">
+                    <materialDesign:PackIcon Kind="Minus" />
+                </Button>
+
+                <Slider x:Name="ZoomSlider" Width="60" Minimum="0.2" Maximum="3.0" Value="1.0"
+                        VerticalAlignment="Center" Margin="4,0"
+                        Ticks="0.2, 0.5, 1.0, 1.5, 2.0, 3.0" IsSnapToTickEnabled="False" />
+
+                <Button Style="{StaticResource MaterialDesignIconButton}" Click="ZoomIn_Click" ToolTip="放大">
+                    <materialDesign:PackIcon Kind="Plus" />
+                </Button>
+                <Button Style="{StaticResource MaterialDesignFlatButton}" Click="ZoomReset_Click" ToolTip="重置缩放"
+                        Padding="4,0" MinWidth="50" Foreground="{DynamicResource MaterialDesignBody}">
+                    <TextBlock Text="{Binding Value, ElementName=ZoomSlider, StringFormat={}{0:P0}}" />
+                </Button>
+            </StackPanel>
+        </Border>
         <Button Grid.Row="1"
                 HorizontalAlignment="Right"
                 Content="Select As Current Leaf"

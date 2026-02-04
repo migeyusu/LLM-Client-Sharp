@@ -75,5 +75,31 @@ public partial class DialogGraphControl : UserControl
     public DialogGraphControl()
     {
         InitializeComponent();
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
+    {
+        // 锁定当前大小，防止后续因内容缩放导致控件尺寸跳变
+        if (ActualWidth > 0 && ActualHeight > 0)
+        {
+            Width = ActualWidth;
+            Height = ActualHeight;
+        }
+    }
+
+    private void ZoomIn_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 0.2);
+    }
+
+    private void ZoomOut_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, ZoomSlider.Value - 0.2);
+    }
+
+    private void ZoomReset_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        ZoomSlider.Value = 1.0;
     }
 }

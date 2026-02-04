@@ -166,11 +166,6 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
 
     public override ChatRole Role { get; } = ChatRole.User;
 
-    public override string DisplayText
-    {
-        get { return TextMessage ?? string.Empty; }
-    }
-
     public DialogSessionViewModel? ParentSession { get; }
 
     private readonly TextContent _textRequestContent;

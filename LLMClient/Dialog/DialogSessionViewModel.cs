@@ -663,7 +663,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         };
         this.DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
         OpenDialogRouteCommand =
-            new ActionCommand(async o => { await DialogHost.Show(new DialogGraphViewModel(this)); });
+            new ActionCommand(async o =>
+            {
+                await DialogHost.Show(new DialogGraphViewModel(this, this.RootNode.Children.FirstOrDefault()));
+            });
         SearchCommand = new ActionCommand(_ =>
         {
             foreach (var dialogViewItem in this.DialogItems.OfType<ISearchableDialogItem>())
