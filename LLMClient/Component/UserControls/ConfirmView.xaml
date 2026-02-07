@@ -9,10 +9,10 @@
     <StackPanel Margin="16">
         <TextBlock x:Name="HeaderTextBlock"
                    Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
-        <StackPanel
-            HorizontalAlignment="Right"
-            Orientation="Horizontal">
-            <Button Margin="0,8,8,0"
+        <StackPanel Margin="0,16,0,0"
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal">
+            <Button Margin="0,0,8,0"
                     Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
                     Content="CANCEL"
                     IsCancel="True"
@@ -24,8 +24,7 @@
                     </system:Boolean>
                 </Button.CommandParameter>
             </Button>
-            <Button Margin="0,8,0,0"
-                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+            <Button Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
                     Content="YES"
                     IsDefault="True"
                     Width="80"

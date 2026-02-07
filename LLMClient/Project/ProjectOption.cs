@@ -125,7 +125,10 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
             }
 
             _folderPath = value;
-            AllowedFolderPaths.Add(value);
+            if (!AllowedFolderPaths.Contains(value))
+            {
+                AllowedFolderPaths.Add(value);
+            }
             OnPropertyChanged();
         }
     }
@@ -191,7 +194,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
             return false;
         }
 
-        return !this.HasErrors;
+        return true;
     }
 
     public object Clone()

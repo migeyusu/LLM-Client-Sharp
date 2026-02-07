@@ -141,8 +141,10 @@
                                 <DataTemplate DataType="{x:Type project:CSharpProjectViewModel}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="C# Project"
-                                                            Width="600"
-                                                            Height="500"
+                                                            MinWidth="600"
+                                                            MinHeight="500"
+                                                            MaxWidth="1200"
+                                                            MaxHeight="800"
                                                             VerticalContentAlignment="Stretch"
                                                             HorizontalContentAlignment="Stretch"
                                                             ContentTemplate="{StaticResource CSharpProjectViewModelDataTemplate}"
@@ -194,13 +196,6 @@
                                                             Header="File Query">
                                         <dialog:FileQueryView Width="900"
                                                               Height="600" />
-                                    </HeaderedContentControl>
-                                </DataTemplate>
-                                <DataTemplate DataType="{x:Type project:ProjectPromptTemplateViewModel}">
-                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
-                                                            Header="Prompt Template">
-                                        <project:ProjectPromptTemplateView Width="900"
-                                                                           Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type research:ResearchClient}">

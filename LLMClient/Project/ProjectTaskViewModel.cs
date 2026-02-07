@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Text;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
@@ -26,10 +25,7 @@ namespace LLMClient.Project;
 public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
 {
     private string? _name;
-    private string? _summary;
-    private ProjectTaskType _type;
-    private string? _description;
-    
+
     public override string? Name
     {
         get => _name;
@@ -48,50 +44,12 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
-    public string? Description
-    {
-        get => _description;
-        set
-        {
-            if (value == _description) return;
-            ClearError();
-            if (string.IsNullOrEmpty(value))
-            {
-                AddError("Description cannot be null or empty.");
-                return;
-            }
-
-            _description = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(SystemPrompt));
-        }
-    }
-
-
-    private readonly StringBuilder _systemPromptBuilder = new(1024);
-
-    public ProjectPromptTemplateViewModel PromptTemplate { get; }
-
     /// <summary>
     /// Task内的上下文
     /// </summary>
     public override string? SystemPrompt
     {
-        get
-        {
-            if (!Validate())
-            {
-                return null;
-            }
-
-            _systemPromptBuilder.Clear();
-            _systemPromptBuilder.AppendLine(ParentProject.Context);
-            _systemPromptBuilder.AppendFormat("现在有一个{0}类型的任务，我希望你能帮助我完成它。", Type.GetEnumDescription());
-            _systemPromptBuilder.AppendLine();
-            _systemPromptBuilder.Append("任务描述：");
-            _systemPromptBuilder.AppendLine(Description);
-            return _systemPromptBuilder.ToString();
-        }
+        get { return ParentProject.Context; }
     }
 
     public ProjectViewModel ParentProject { get; }
@@ -110,6 +68,8 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
+    private string? _summary;
+
     /// <summary>
     /// summary of the task, when task end, generate for total context.
     /// </summary>
@@ -124,27 +84,14 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
-    public ProjectTaskType Type
-    {
-        get => _type;
-        set
-        {
-            if (value == _type) return;
-            _type = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(SystemPrompt));
-        }
-    }
-
     public ProjectTaskViewModel(ProjectViewModel parentProject, IMapper mapper,
         IList<CheckableFunctionGroupTree>? functionGroupTrees = null,
         IDialogItem? rootNode = null, IDialogItem? currentLeaf = null)
-        : base(mapper, rootNode, currentLeaf)
+        : base(rootNode, currentLeaf)
     {
         ParentProject = parentProject;
         SelectedFunctionGroups = functionGroupTrees;
         PropertyChanged += OnPropertyChanged;
-        this.PromptTemplate = new ProjectPromptTemplateViewModel(this);
     }
 
     private readonly string[] _notTrackingProperties =
@@ -164,29 +111,6 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
 
         IsDataChanged = true;
-    }
-
-
-    public bool Validate()
-    {
-        if (this.HasErrors)
-        {
-            return false;
-        }
-
-        if (string.IsNullOrEmpty(Name))
-        {
-            AddError("Name cannot be null or empty.", nameof(Name));
-            return false;
-        }
-
-        if (string.IsNullOrEmpty(Description))
-        {
-            AddError("Description cannot be null or empty.", nameof(Description));
-            return false;
-        }
-
-        return true;
     }
 
     public IEnumerable<IAIFunctionGroup> GetFunctionGroups()

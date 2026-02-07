@@ -294,7 +294,10 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
             this.AcceptedIndex = index - 1;
         });
-        NewBranchCommand = new ActionCommand((o => { this.ParentSession.ForkPreTask(this); }));
+        NewBranchCommand = new ActionCommand(o =>
+        {
+            this.ParentSession.ForkPreTask(this);
+        });
     }
 
     public MultiResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)
@@ -315,14 +318,14 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
             return;
         }
 
-        await ParentSession.Invoke(responseViewItem, this);
+        await ParentSession.InvokeRequest(responseViewItem, this);
     }
 
     public Task<CompletedResult> AppendResponse(ILLMChatClient chatClient, CancellationToken token = default)
     {
         var responseViewItem = new ResponseViewItem(chatClient);
         this.AppendResponse(responseViewItem);
-        return ParentSession.Invoke(responseViewItem, this);
+        return ParentSession.InvokeRequest(responseViewItem, this);
     }
 
     public void AppendResponse(ResponseViewItem viewItem)

@@ -17,7 +17,6 @@
     <Grid Margin="10,0,10,6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -29,7 +28,6 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition />
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBox Text="{Binding  Option.Name,Mode=TwoWay}"
@@ -51,12 +49,12 @@
                                             CommandParameter="{Binding Mode=OneTime}"
                                             Padding="10,4"
                                             PopupUniformCornerRadius="6"
-                                            PopupContent="{Binding Context,Mode=OneWay}"
                                             Style="{StaticResource MaterialDesignFlatSplitButton}"
+                                            PopupContent="{Binding Context,Mode=OneWay}"
                                             Content="{Binding Context,Mode=OneWay}">
                     <materialDesign:SplitButton.ContentTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding}"
+                            <TextBlock Text="{Binding Context,Mode=OneWay}"
                                        Foreground="{DynamicResource MaterialDesignBody}"
                                        TextWrapping="Wrap"
                                        Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
@@ -93,10 +91,38 @@
                                     Value="6,0" />
                         </Style>
                     </StackPanel.Resources>
+                    <materialDesign:Card Padding="4,0"
+                                         UniformCornerRadius="12"
+                                         Style="{StaticResource MaterialDesignOutlinedCard}">
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <ComboBox ItemsSource="{Binding  Tasks,Mode=OneWay}"
+                                      SelectedItem="{Binding SelectedTask,Mode=TwoWay}"
+                                      IsEnabled="{Binding SelectedTask,Mode=OneWay,Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}"
+                                      IsEditable="True"
+                                      TextSearch.TextPath="Name"
+                                      Width="200">
+                                <ComboBox.Text>
+                                    <Binding Path="SelectedTask.Name"
+                                             UpdateSourceTrigger="PropertyChanged"
+                                             Mode="TwoWay" />
+                                </ComboBox.Text>
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type local:ProjectTaskViewModel}">
+                                        <TextBlock Text="{Binding Name,Mode=OneWay}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Button Content="{materialDesign:PackIcon Kind=Add,Size=16}"
+                                    Command="{Binding NewTaskCommand}"
+                                    Margin="6,0,0,0"
+                                    ToolTip="Add Tasks" />
+                        </StackPanel>
+                    </materialDesign:Card>
                     <TextBlock MaxWidth="140"
                                TextWrapping="Wrap"
                                HorizontalAlignment="Right"
-                               Margin="0,0,10,0"
+                               Margin="8,0,10,0"
                                VerticalAlignment="Center"
                                Style="{StaticResource MaterialDesignOverlineTextBlock}">
                         <Run
@@ -105,16 +131,15 @@
                         <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                         <LineBreak />
                         <Run
-                            Text="{Binding SelectedTask.CurrentContextTokens,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
+                            Text="{Binding SelectedTask.CurrentContextTokens,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter},TargetNullValue=No Tasks Selected}" />
                     </TextBlock>
                     <materialDesign:Card Padding="4,0"
                                          UniformCornerRadius="12"
-                                         Style="{StaticResource MaterialDesignOutlinedCard}"
-                                         materialDesign:ElevationAssist.Elevation="Dp3">
+                                         Style="{StaticResource MaterialDesignOutlinedCard}">
                         <CheckBox IsChecked="{Binding ProjectContextPrompt.IncludeContext,Mode=TwoWay}">
                             <StackPanel VerticalAlignment="Center"
                                         Orientation="Horizontal">
-                                <TextBlock Text="Include Summary"
+                                <TextBlock Text="Include Context"
                                            VerticalAlignment="Center" />
                                 <Button Content="{materialDesign:PackIcon Kind=TableOfContents,Size=20}"
                                         ToolTip="View Summary"
@@ -162,73 +187,9 @@
                             ToolTip="Config Project"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                             CommandParameter="{Binding Mode=OneTime}" />
-                    <Button ToolTip="备份"
-                            Content="{materialDesign:PackIcon Kind=ContentSave,Size=20}"
-                            Command="SaveAs" />
-                    <materialDesign:PopupBox StaysOpen="True">
-                        <StackPanel MaxWidth="200"
-                                    MaxHeight="200">
-                            <Button Content="打开项目文件夹"
-                                    CommandParameter="{Binding Option.FolderPath,Mode=OneWay}"
-                                    Command="{x:Static utility:CommonCommands.OpenFolderCommand}" />
-                            <Button Content="打开文件"
-                                    Command="{x:Static utility:CommonCommands.OpenSource}" />
-                        </StackPanel>
-                    </materialDesign:PopupBox>
-                </StackPanel>
-            </Grid>
-        </materialDesign:Card>
-        <Expander Grid.Row="1"
-                  materialDesign:ExpanderAssist.ExpanderButtonPosition="Start"
-                  materialDesign:ExpanderAssist.HorizontalHeaderPadding="12,4">
-            <Expander.Header>
-                <Grid Height="50">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Margin="4"
-                                Orientation="Horizontal">
-                        <StackPanel.Resources>
-                            <Style TargetType="{x:Type Button}"
-                                   BasedOn="{StaticResource MaterialDesignFloatingActionMiniDarkButton}">
-                                <Setter Property="VerticalAlignment"
-                                        Value="Center" />
-                                <Setter Property="Height"
-                                        Value="30" />
-                                <Setter Property="Width"
-                                        Value="30" />
-                                <Setter Property="Margin"
-                                        Value="10,0,0,0" />
-                            </Style>
-                        </StackPanel.Resources>
-                        <TextBlock Text="Tasks"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
-                        <Button Content="{materialDesign:PackIcon Kind=Add,Size=16}"
-                                Command="{Binding NewTaskCommand}"
-                                Margin="16,0,0,0"
-                                ToolTip="Add Tasks" />
-                    </StackPanel>
-                    <TextBox Grid.Column="1"
-                             Text="{Binding SelectedTask.SystemPrompt,Mode=OneWay,StringFormat=上下文：{0}}"
-                             materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                             BorderThickness="0"
-                             HorizontalAlignment="Stretch"
-                             Padding="0"
-                             Margin="16,0"
-                             TextWrapping="Wrap"
-                             VerticalAlignment="Center"
-                             TextAlignment="Left"
-                             IsReadOnly="True"
-                             MaxHeight="45"
-                             VerticalScrollBarVisibility="Auto" />
-                    <StackPanel Grid.Column="2"
-                                Orientation="Horizontal"
+                    <StackPanel Orientation="Horizontal"
                                 DataContext="{Binding SelectedTask,Mode=OneWay}"
-                                Visibility="{Binding Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
-                                IsEnabled="{Binding IsBusy,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+                                IsEnabled="{Binding Mode=OneWay,Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}">
                         <StackPanel.Resources>
                             <Style TargetType="{x:Type Button}"
                                    BasedOn="{StaticResource MaterialDesignIconButton}">
@@ -239,28 +200,6 @@
                                         Value="36" />
                             </Style>
                         </StackPanel.Resources>
-                        <Button VerticalAlignment="Center"
-                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                Width="30"
-                                Height="30"
-                                Margin="0,0,10,0"
-                                Visibility="{Binding Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
-                                Content="{materialDesign:PackIcon Kind=Eye}"
-                                Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                CommandParameter="{Binding PromptTemplate,Mode=OneWay}" />
-                        <TextBlock MaxWidth="140"
-                                   TextWrapping="Wrap"
-                                   HorizontalAlignment="Right"
-                                   Margin="0,0,10,0"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource MaterialDesignOverlineTextBlock}">
-                            <Run
-                                Text="{Binding TokensConsumption, Mode=OneWay,StringFormat=Total Tokens:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
-                            <LineBreak />
-                            <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
-                            <Run
-                                Text="{Binding CurrentContextTokens,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
-                        </TextBlock>
                         <customControl:SearchBox Margin="10,0"
                                                  Padding="8,4,8,4"
                                                  Panel.ZIndex="1"
@@ -288,152 +227,23 @@
                                                      Height="20" />
                         </Button>
                     </StackPanel>
-                </Grid>
-            </Expander.Header>
-            <!--tasks listbox-->
-            <ListBox MaxHeight="220"
-                     Margin="0,10"
-                     SelectedItem="{Binding SelectedTask,Mode=TwoWay}"
-                     ItemsSource="{Binding Tasks,Mode=OneWay}">
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel IsItemsHost="True" />
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type local:ProjectTaskViewModel}">
-                        <materialDesign:Card Width="220"
-                                             Height="100"
-                                             Padding="3"
-                                             BorderThickness="1"
-                                             materialDesign:ElevationAssist.Elevation="Dp4"
-                                             Style="{StaticResource MaterialDesignOutlinedCard}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox Text="{Binding Name,Mode=TwoWay}"
-                                         materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                                         materialDesign:HintAssist.Hint="Task Name"
-                                         Margin="0"
-                                         Padding="0"
-                                         TextWrapping="NoWrap"
-                                         BorderThickness="0"
-                                         VerticalAlignment="Top"
-                                         FontSize="18"
-                                         FontWeight="Bold" />
-                                <StackPanel Grid.Row="0" Grid.Column="1"
-                                            Orientation="Horizontal">
-                                    <Button HorizontalAlignment="Right"
-                                            VerticalAlignment="Top"
-                                            Style="{StaticResource ListBoxHoverButtonStyle}"
-                                            Width="23"
-                                            Height="23"
-                                            Background="White"
-                                            Content="{materialDesign:PackIcon Kind=ArrowLeftBold,Size=20}"
-                                            Command="MoveLeft"
-                                            CommandParameter="{Binding Mode=OneTime}" />
-                                    <Button Style="{StaticResource MaterialDesignIconForegroundButton}"
-                                            Template="{StaticResource ItemDeleteButtonTemplate}"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Top"
-                                            Command="Delete"
-                                            CommandParameter="{Binding Mode=OneTime}"
-                                            Margin="6,0,0,0"
-                                            Width="23"
-                                            Height="23" />
-                                </StackPanel>
-                                <Grid Grid.Row="1" Grid.Column="0"
-                                      Grid.ColumnSpan="2">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock VerticalAlignment="Center"
-                                               Text="{Binding Type,Mode=OneWay,Converter={x:Static converters:SnapConverters.EnumToDescriptionConverter}}" />
-                                    <TextBlock Grid.Column="1"
-                                               Margin="6,0,0,0"
-                                               Style="{StaticResource MaterialDesignOverlineTextBlock}"
-                                               TextWrapping="Wrap"
-                                               TextTrimming="CharacterEllipsis"
-                                               MaxHeight="30"
-                                               Foreground="DimGray"
-                                               VerticalAlignment="Center"
-                                               Text="{Binding  Description,Mode=OneWay}" />
-                                </Grid>
-                                <CheckBox Grid.Row="2"
-                                          Grid.Column="0"
-                                          Grid.ColumnSpan="2"
-                                          IsChecked="{Binding EnableInContext,Mode=TwoWay}"
-                                          Content="Enable In Context"
-                                          VerticalContentAlignment="Center" />
-                                <materialDesign:PopupBox Grid.Row="2"
-                                                         Grid.Column="1"
-                                                         StaysOpen="True"
-                                                         PopupUniformCornerRadius="4"
-                                                         HorizontalAlignment="Right">
-                                    <StackPanel Width="400"
-                                                MaxHeight="600">
-                                        <StackPanel.Resources>
-                                            <Style TargetType="{x:Type TextBox}"
-                                                   BasedOn="{StaticResource MaterialDesignTextBox}">
-                                                <Setter Property="Margin"
-                                                        Value="8,8,8,8" />
-                                                <Setter Property="materialDesign:HintAssist.IsFloating"
-                                                        Value="True" />
-                                                <Setter Property="TextAlignment"
-                                                        Value="Left" />
-                                                <Setter Property="SpellCheck.IsEnabled"
-                                                        Value="True" />
-                                            </Style>
-                                        </StackPanel.Resources>
-                                        <TextBox materialDesign:HintAssist.Hint="Name"
-                                                 Text="{Binding Name,Mode=TwoWay}" />
-                                        <TextBox materialDesign:HintAssist.Hint="Description"
-                                                 TextWrapping="Wrap"
-                                                 AcceptsReturn="True"
-                                                 AcceptsTab="True"
-                                                 VerticalScrollBarVisibility="Auto"
-                                                 MaxHeight="200"
-                                                 Text="{Binding Description,Mode=TwoWay,UpdateSourceTrigger=LostFocus}" />
-                                        <ComboBox Margin="8"
-                                                  ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type local:ProjectTaskType}}}"
-                                                  SelectedValue="{Binding Type,Mode=TwoWay}"
-                                                  materialDesign:HintAssist.Hint="Type"
-                                                  materialDesign:HintAssist.IsFloating="True"
-                                                  MaxDropDownHeight="200" />
-                                        <TextBox materialDesign:HintAssist.Hint="Summary"
-                                                 materialDesign:HintAssist.HelperText="Summary can be added to the context of subsequent tasks."
-                                                 TextWrapping="Wrap"
-                                                 AcceptsReturn="True"
-                                                 AcceptsTab="True"
-                                                 VerticalScrollBarVisibility="Auto"
-                                                 MaxHeight="300"
-                                                 Text="{Binding Summary,Mode=TwoWay,UpdateSourceTrigger=LostFocus}" />
-                                    </StackPanel>
-                                </materialDesign:PopupBox>
-                            </Grid>
-                        </materialDesign:Card>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-                <ListBox.CommandBindings>
-                    <CommandBinding Command="Delete"
-                                    Executed="TaskDelete_OnExecuted" />
-                    <CommandBinding Command="MoveLeft"
-                                    Executed="TaskMoveLeft_OnExecuted" />
-                </ListBox.CommandBindings>
-            </ListBox>
-        </Expander>
-        <Border Grid.Row="1"
-                BorderBrush="{DynamicResource MaterialDesignDivider}"
-                BorderThickness="0,0,0,1" />
-        <Grid Grid.Row="2"
+                    <Button ToolTip="备份"
+                            Content="{materialDesign:PackIcon Kind=ContentSave,Size=20}"
+                            Command="SaveAs" />
+                    <materialDesign:PopupBox StaysOpen="True">
+                        <StackPanel MaxWidth="200"
+                                    MaxHeight="200">
+                            <Button Content="打开项目文件夹"
+                                    CommandParameter="{Binding Option.FolderPath,Mode=OneWay}"
+                                    Command="{x:Static utility:CommonCommands.OpenFolderCommand}" />
+                            <Button Content="定位到源文件"
+                                    Command="{x:Static utility:CommonCommands.OpenSource}" />
+                        </StackPanel>
+                    </materialDesign:PopupBox>
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
+        <Grid Grid.Row="1"
               Margin="0,4"
               DataContext="{Binding SelectedTask,Mode=OneWay}"
               Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
@@ -441,13 +251,6 @@
                                      Style="{StaticResource DialogListBoxStyle}"
                                      CurrentViewItem="{Binding ScrollViewItem,Mode=TwoWay}"
                                      ItemsSource="{Binding DialogItems,Mode=OneWay}">
-                <!--<customControl:ListBoxEx.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Icon="{materialDesign:PackIcon Kind=ClipboardArrowDown}"
-                                  Header="黏贴对话"
-                                  Command="{Binding PastInteractionCommand}" />
-                    </ContextMenu>
-                </customControl:ListBoxEx.ContextMenu>-->
                 <ListBox.CommandBindings>
                     <CommandBinding Command="Delete"
                                     Executed="OnDeleteExecuted" />
@@ -457,6 +260,11 @@
                                     Executed="ConclusionBefore_OnExecuted" />
                 </ListBox.CommandBindings>
             </customControl:ListBoxEx>
+            <TextBlock Text="Add Tasks First"
+                       Style="{StaticResource MaterialDesignHeadline1TextBlock}"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}" />
             <StackPanel Grid.Row="0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom"
@@ -486,7 +294,7 @@
                         Content="{materialDesign:PackIcon Kind=FormatVerticalAlignBottom}" />
             </StackPanel>
         </Grid>
-        <Border Grid.Row="3"
+        <Border Grid.Row="2"
                 BorderThickness="0"
                 Visibility="{Binding SelectedTask,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                 Margin="0,4,0,0">

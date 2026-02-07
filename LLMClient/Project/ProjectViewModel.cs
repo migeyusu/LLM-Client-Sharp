@@ -28,10 +28,9 @@ using Microsoft.Xaml.Behaviors.Core;
 namespace LLMClient.Project;
 
 [TypeConverter(typeof(EnumDescriptionTypeConverter))]
-[JsonConverter(typeof(JsonStringEnumConverter<ProjectTaskType>))]
-public enum ProjectType
+public enum ProjectType : int
 {
-    [Description("代码")] Standard,
+    [Description("代码")] Default,
     [Description("C#")] CSharp,
     [Description("C++")] Cpp
 }
@@ -97,18 +96,19 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 throw new Exception($"Project version mismatch: {version} != {ProjectPersistModel.CurrentVersion}");
             }
 
-            var typeText = root["ProjectOptions"]?[nameof(ProjectOptionsPersistModel.Type)]?.GetValue<string>();
-            var (poType, viewmodelType) = ResolveTypePair(typeText);
+            var typeInt = root["ProjectOptions"]?[nameof(ProjectOptionsPersistModel.Type)]?.GetValue<int>() ?? 0;
+            var type = Enum.IsDefined(typeof(ProjectType), typeInt) ? (ProjectType)typeInt : ProjectType.Default;
+            var (poType, viewmodelType) = ResolveTypePair(type);
             var persistModel = (ProjectPersistModel?)root.Deserialize(poType, SerializerOption);
             if (persistModel == null)
             {
-                throw new Exception($"Project type mismatch: {typeText} != {poType}");
+                throw new Exception($"Project type mismatch: {type} != {poType}");
             }
 
             var viewModel = mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, (_ => { }));
             if (viewModel.GetType() != viewmodelType)
             {
-                throw new Exception($"Project mapping failed: {typeText} != {viewmodelType}");
+                throw new Exception($"Project mapping failed: {type} != {viewmodelType}");
             }
 
             return viewModel;
@@ -120,35 +120,25 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         }
     }
 
-    private static Tuple<Type, Type> ResolveTypePair(string? typeText)
+    private static Tuple<Type, Type> ResolveTypePair(ProjectType projectType)
     {
-        if (string.IsNullOrWhiteSpace(typeText))
+        switch (projectType)
         {
-            return new Tuple<Type, Type>(typeof(ProjectPersistModel), typeof(ProjectViewModel));
+            case ProjectType.Default:
+                return new Tuple<Type, Type>(typeof(ProjectPersistModel), typeof(ProjectViewModel));
+            case ProjectType.CSharp:
+                return new Tuple<Type, Type>(typeof(CSharpProjectPersistModel), typeof(CSharpProjectViewModel));
+            case ProjectType.Cpp:
+                return new Tuple<Type, Type>(typeof(CppProjectPersistModel), typeof(CppProjectViewModel));
+            default:
+                throw new ArgumentOutOfRangeException($"Unknown project type: {projectType.ToString()}");
         }
-
-        if (Enum.TryParse(typeText, true, out ProjectType projectType))
-        {
-            switch (projectType)
-            {
-                case ProjectType.Standard:
-                    return new Tuple<Type, Type>(typeof(ProjectPersistModel), typeof(ProjectViewModel));
-                case ProjectType.CSharp:
-                    return new Tuple<Type, Type>(typeof(CSharpProjectPersistModel), typeof(CSharpProjectViewModel));
-                case ProjectType.Cpp:
-                    return new Tuple<Type, Type>(typeof(CppProjectPersistModel), typeof(CppProjectViewModel));
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        throw new Exception($"Unknown project type: {typeText}");
     }
 
 
     protected override async Task SaveToStream(Stream stream)
     {
-        var (po, vmo) = ResolveTypePair(this.Option.Type.ToString());
+        var (po, vmo) = ResolveTypePair(this.Option.Type);
         var dialogModel =
             _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, _ => { });
         await JsonSerializer.SerializeAsync(stream, dialogModel, po, SerializerOption);
@@ -427,11 +417,6 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
             throw new NotSupportedException("未选择任务");
         }
 
-        if (!SelectedTask.Validate())
-        {
-            throw new InvalidOperationException("当前任务配置不合法");
-        }
-
         if (!this.Option.Check())
         {
             throw new InvalidOperationException("当前项目配置不合法");
@@ -440,7 +425,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.Ready();
         if (this.ProjectContextPrompt != null)
             await this.ProjectContextPrompt.BuildAsync();
-        return await SelectedTask.CreateResponse(arg1, arg2, insertViewItem, token);
+        return await SelectedTask.NewResponse(arg1, arg2, insertViewItem, token);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

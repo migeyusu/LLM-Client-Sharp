@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
-using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
@@ -398,28 +397,26 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region core methods
 
-    public virtual async Task<CompletedResult> Invoke(ResponseViewItem responseViewItem,
+    public virtual async Task<CompletedResult> InvokeRequest(ResponseViewItem responseViewItem,
         MultiResponseViewItem multiResponseViewItem)
     {
-        CompletedResult completedResult;
         RespondingCount++;
         try
         {
             var dialogItems = multiResponseViewItem.GetChatHistory().ToArray();
             var dialogContext = new DialogContext(dialogItems, this.SystemPrompt);
-            completedResult = await responseViewItem.ProcessRequest(dialogContext);
+            var completedResult = await responseViewItem.ProcessRequest(dialogContext);
+            this.TokensConsumption += completedResult.Usage?.TotalTokenCount ?? 0;
+            this.TotalPrice += completedResult.Price ?? 0;
+            return completedResult;
         }
         finally
         {
             RespondingCount--;
         }
-
-        this.TokensConsumption += completedResult.Usage?.TotalTokenCount ?? 0;
-        this.TotalPrice += completedResult.Price ?? 0;
-        return completedResult;
     }
 
-    public virtual async Task<CompletedResult> CreateResponse(ILLMChatClient client, IRequestItem requestViewItem,
+    public async Task<CompletedResult> NewResponse(ILLMChatClient client, IRequestItem requestViewItem,
         IRequestItem? insertBefore = null, CancellationToken token = default)
     {
         var multiResponseViewItem = new MultiResponseViewItem(this)
@@ -457,7 +454,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #endregion
 
-    protected DialogSessionViewModel(IMapper mapper, IDialogItem? rootNode, IDialogItem? currentLeaf = null)
+    protected DialogSessionViewModel(IDialogItem? rootNode, IDialogItem? currentLeaf = null)
     {
         _readOnlyDialogItems = new ReadOnlyObservableCollection<IDialogItem>(DialogItemsObservable);
         if (rootNode == null)
@@ -499,7 +496,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
             _highlightedText = _searchText;
         });
-        GoToNextHighlightCommand = new ActionCommand((_ =>
+        GoToNextHighlightCommand = new ActionCommand(_ =>
         {
             if (string.IsNullOrEmpty(SearchText))
             {
@@ -535,8 +532,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             }
 
             GoToHighlight();
-        }));
-        GoToPreviousHighlightCommand = new ActionCommand((_ =>
+        });
+        GoToPreviousHighlightCommand = new ActionCommand(_ =>
         {
             if (string.IsNullOrEmpty(SearchText))
             {
@@ -571,9 +568,9 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             }
 
             GoToHighlight();
-        }));
+        });
 
-        ExportCommand = new ActionCommand((async void (_) =>
+        ExportCommand = new ActionCommand(async void (_) =>
         {
             try
             {
@@ -594,7 +591,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 var stringBuilder = new StringBuilder(8192);
                 /*stringBuilder.AppendLine($"# {this.Topic}");
             stringBuilder.AppendLine($"### {this.DefaultClient.Name}");*/
-                foreach (var viewItem in DialogItems.Where((item => item.IsAvailableInContext)))
+                foreach (var viewItem in DialogItems.Where(item => item.IsAvailableInContext))
                 {
                     if (viewItem is MultiResponseViewItem { AcceptedResponse: { } responseViewItem })
                     {
@@ -625,11 +622,11 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             {
                 MessageBox.Show(e.Message);
             }
-        }));
+        });
         ClearContextCommand = new ActionCommand(_ => { CutContext(); });
         ClearDialogCommand = new ActionCommand(async void (_) =>
         {
-            if ((await DialogHost.Show(new ConfirmView() { Header = "清空会话？" })) is true)
+            if (await DialogHost.Show(new ConfirmView() { Header = "清空会话？" }) is true)
             {
                 RootNode.ClearChildren();
                 CurrentLeaf = RootNode;

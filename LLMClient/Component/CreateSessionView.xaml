@@ -16,11 +16,10 @@
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition />
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <ContentControl Grid.Row="0"
-                        Height="700"
                         ContentTemplate="{StaticResource FullModelSelectionDataTemplate}"
                         Content="{Binding ModelSelection,Mode=OneTime}"
                         Visibility="{Binding ModelSelectionEnable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
@@ -62,8 +61,7 @@
                     </DockPanel>
                 </TabItem.Header>
                 <ContentPresenter Content="{Binding Project,Mode=OneWay}"
-                                  ContentTemplate="{StaticResource ProjectConfigDataTemplate}"
-                                  Margin="10" />
+                                  ContentTemplate="{StaticResource ProjectConfigDataTemplate}" />
             </TabItem>
             <TabItem IsEnabled="False">
                 <TabItem.Header>

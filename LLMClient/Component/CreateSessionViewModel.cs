@@ -111,7 +111,7 @@ public class CreateSessionViewModel : BaseViewModel
                             case ProjectType.CSharp:
                                 session = factory.CreateViewModel<CSharpProjectViewModel>(projectOption, client);
                                 break;
-                            case ProjectType.Standard:
+                            case ProjectType.Default:
                                 session = factory.CreateViewModel<GeneralProjectViewModel>(projectOption, client);
                                 break;
                             case ProjectType.Cpp:

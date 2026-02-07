@@ -459,13 +459,15 @@
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
-                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="80"/>
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
                 <TextBox Margin="0"
                          materialDesign:HintAssist.Hint="输入项目名称"
                          TextWrapping="NoWrap"
+                         MaxWidth="120"
+                         MinWidth="80"
                          Text="{Binding Name, Mode=TwoWay}" />
                 <ComboBox Grid.Column="1"
                           Margin="6,0"
@@ -485,68 +487,74 @@
                         Width="30"
                         Height="30"
                         Command="{Binding SelectProjectFolderCommand}"
-                        Content="{materialDesign:PackIcon Kind=FolderSettings,Size=16}"
+                        Content="{materialDesign:PackIcon Kind=FolderSettingsOutline,Size=16}"
                         Style="{StaticResource MaterialDesignIconForegroundButton}" />
             </Grid>
-            <TextBox Grid.Row="1" Grid.Column="0"
+            <TextBox Grid.Row="1"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto"
                      materialDesign:HintAssist.Hint="输入项目描述"
-                     Margin="0,5,0,16"
+                     MinHeight="60"
+                     Margin="0,6"
                      Text="{Binding Description,Mode=TwoWay}" />
-            <TextBlock Grid.Row="2" Grid.Column="0"
-                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                       Text="项目可访问路径：" />
-            <ListBox Grid.Row="2"
-                     MaxHeight="60"
-                     Margin="0,5,0,0"
-                     ItemsSource="{Binding AllowedFolderPaths,Mode=OneWay}">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="{x:Type ListBoxItem}"
-                           BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                        <Setter Property="HorizontalContentAlignment"
-                                Value="Stretch" />
-                        <Setter Property="Padding"
-                                Value="0,4,26,4" />
-                    </Style>
-                </ListBox.ItemContainerStyle>
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type sys:String}">
-                        <Grid>
-                            <TextBlock Text="{Binding}"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Style="{StaticResource MaterialDesignCaptionTextBlock}" />
-                            <Button Width="20"
-                                    Height="20"
-                                    Template="{StaticResource ItemDeleteButtonTemplate}"
-                                    ToolTip="删除当前"
-                                    Margin="0,0,10,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Command="{Binding DataContext.RemoveAllowedFolderPathCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox}}"
-                                    CommandParameter="{Binding}" />
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-            <Button Grid.Row="2"
-                    VerticalAlignment="Bottom"
-                    HorizontalAlignment="Right"
-                    Margin="6"
-                    Width="30"
-                    Height="30"
-                    Content="{materialDesign:PackIcon Kind=Plus,Size=21}"
-                    Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
-                    Command="{Binding AddAllowedFolderPathsCommand}" />
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                           Text="项目可访问路径："
+                           VerticalAlignment="Center" />
+                <ListBox Grid.Column="1"
+                         ItemsSource="{Binding AllowedFolderPaths,Mode=OneWay}">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="{x:Type ListBoxItem}"
+                               BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                            <Setter Property="HorizontalContentAlignment"
+                                    Value="Stretch" />
+                            <Setter Property="Padding"
+                                    Value="0,4" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type sys:String}">
+                            <Grid>
+                                <TextBlock Text="{Binding}"
+                                           Margin="5,0,0,0"
+                                           VerticalAlignment="Center"
+                                           Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                <Button Width="20"
+                                        Height="20"
+                                        Template="{StaticResource ItemDeleteButtonTemplate}"
+                                        ToolTip="删除当前"
+                                        Margin="0,0,6,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding DataContext.RemoveAllowedFolderPathCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox}}"
+                                        CommandParameter="{Binding}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <Button Grid.Column="2"
+                        VerticalAlignment="Bottom"
+                        HorizontalAlignment="Right"
+                        Margin="6"
+                        Width="30"
+                        Height="30"
+                        BorderThickness="1"
+                        Content="{materialDesign:PackIcon Kind=Plus,Size=21}"
+                        Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
+                        Command="{Binding AddAllowedFolderPathsCommand}" />
+            </Grid>
         </Grid>
     </DataTemplate>
-
-
     <DataTemplate x:Key="CSharpProjectViewModelDataTemplate"
                   DataType="{x:Type project:CSharpProjectViewModel}">
-        <Grid Margin="10,0,10,10">
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition Height="Auto" />
@@ -606,7 +614,7 @@
                     Width="30"
                     Height="30"
                     Command="{Binding SelectPathCommand}"
-                    Content="{materialDesign:PackIcon Kind=File,Size=16}"
+                    Content="{materialDesign:PackIcon Kind=FilePlusOutline,Size=16}"
                     Style="{StaticResource MaterialDesignIconForegroundButton}" />
         </Grid>
     </DataTemplate>
