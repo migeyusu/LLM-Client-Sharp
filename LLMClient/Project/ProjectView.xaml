@@ -105,7 +105,7 @@
                         <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                         <LineBreak />
                         <Run
-                            Text="{Binding SelectedTask.PredictedContextLength,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
+                            Text="{Binding SelectedTask.CurrentContextTokens,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                     </TextBlock>
                     <materialDesign:Card Padding="4,0"
                                          UniformCornerRadius="12"
@@ -259,7 +259,7 @@
                             <LineBreak />
                             <Run Text="{Binding TotalPrice, Mode=OneWay,StringFormat=Total Cost:{0:F2}$}" />
                             <Run
-                                Text="{Binding PredictedContextLength,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
+                                Text="{Binding CurrentContextTokens,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                         </TextBlock>
                         <customControl:SearchBox Margin="10,0"
                                                  Padding="8,4,8,4"

@@ -76,20 +76,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
     }
 
-    /// <summary>
-    /// 预测的上下文长度
-    /// </summary>
-    public long PredictedContextLength
-    {
-        get => _predictedContextLength;
-        set
-        {
-            if (value == _predictedContextLength) return;
-            _predictedContextLength = value;
-            OnPropertyChanged();
-        }
-    }
-
     private double _totalPrice;
 
     public double TotalPrice
@@ -116,8 +102,9 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
     }
 
-
     #region scroll
+
+    private MultiResponseViewItem? _currentResponseViewItem;
 
     public MultiResponseViewItem? CurrentResponseViewItem
     {
@@ -265,6 +252,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             if (Equals(value, _currentLeaf)) return;
             _currentLeaf = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CurrentContextTokens));
             RebuildLinearItems();
         }
     }
@@ -273,7 +261,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     {
         var newList = CurrentLeaf.PathFromRoot();
         ObservableCollectionPatcher.PatchByLcs(DialogItemsObservable, newList,
-            (a) => a.Id);
+            a => a.Id);
         // DialogItemsObservable.ResetWith(newList);
     }
 
@@ -299,8 +287,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     /// 用于子项路由选择
     /// </summary>
     public DialogGraphViewModel SharedGraphViewModel { get; }
-
-//todo:测试动态插入时的UI性能
 
     /// <summary>
     /// 通过插入擦除标记来切断上下文
@@ -392,8 +378,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
             try
             {
-                return GetChatHistory(CurrentLeaf)
-                    .Sum(item => item.Tokens);
+                if (CurrentLeaf is MultiResponseViewItem responseViewItem)
+                {
+                    return responseViewItem.GetChatHistory().Append(CurrentLeaf).Sum(item => item.Tokens);
+                }
+
+                return 0;
             }
             catch (Exception)
             {
@@ -408,159 +398,16 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region core methods
 
-    private static IEnumerable<IDialogItem> GetChatHistory(IDialogItem lastItem)
+    public virtual async Task<CompletedResult> Invoke(ResponseViewItem responseViewItem,
+        MultiResponseViewItem multiResponseViewItem)
     {
-        if (lastItem is not MultiResponseViewItem)
-        {
-            yield break;
-        }
-
-        Guid? interactionId = null;
-        for (var dialogViewItem = lastItem; dialogViewItem != null; dialogViewItem = dialogViewItem.PreviousItem)
-        {
-            if (dialogViewItem is EraseViewItem)
-            {
-                yield break;
-            }
-
-            if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
-            {
-                if (multiResponseViewItem.IsResponding)
-                {
-                    throw new InvalidOperationException("无法生成包含正在响应的记录的历史");
-                }
-
-                if (multiResponseViewItem.IsAvailableInContext)
-                {
-                    interactionId = multiResponseViewItem.InteractionId;
-                    yield return multiResponseViewItem;
-                }
-                else
-                {
-                    //这样的设计允许中间有不可用的响应（跳过）
-                    interactionId = null;
-                }
-            }
-            else if (dialogViewItem is RequestViewItem requestViewItem)
-            {
-                if (interactionId == requestViewItem.InteractionId)
-                {
-                    yield return requestViewItem;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="endIndex">if null: last index</param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    public IReadOnlyList<IDialogItem> GenerateHistoryFromSelf(int? endIndex = null)
-    {
-        if (DialogItems.Count == 0)
-        {
-            return [];
-        }
-
-        var index = endIndex ?? DialogItems.Count - 1;
-        var lastRequest = DialogItems[index];
-        if (lastRequest is not IRequestItem)
-        {
-            throw new InvalidOperationException("最后一条记录不是请求");
-        }
-
-        //从倒数第二条开始
-        return GetChatHistory(DialogItems[index - 1]).Reverse().Append(lastRequest).ToArray();
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="responseViewItem">if null, from last</param>
-    /// <returns></returns>
-    public long GetContextTokensBefore(MultiResponseViewItem? responseViewItem = null)
-    {
-        long contextLength = 0;
-        var source = this.DialogItems;
-        var endIndex = responseViewItem == null
-            ? source.Count - 1
-            : source.IndexOf(responseViewItem);
-        if (endIndex < 0)
-        {
-            return contextLength;
-        }
-
-        Guid? interactionId = null;
-        for (int i = endIndex; i >= 0; i--)
-        {
-            var dialogViewItem = source[i];
-            if (dialogViewItem is EraseViewItem)
-            {
-                break;
-            }
-
-            if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
-            {
-                if (multiResponseViewItem.IsResponding)
-                {
-                    break;
-                }
-
-                if (multiResponseViewItem.IsAvailableInContext)
-                {
-                    interactionId = multiResponseViewItem.InteractionId;
-                    contextLength += multiResponseViewItem.Tokens;
-                }
-                else
-                {
-                    interactionId = null;
-                }
-            }
-            else if (dialogViewItem is RequestViewItem requestViewItem)
-            {
-                if (interactionId == requestViewItem.InteractionId)
-                {
-                    contextLength += requestViewItem.Tokens;
-                }
-            }
-        }
-
-        return contextLength;
-    }
-
-
-    public DialogContext CreateDialogContextBefore(MultiResponseViewItem? responseViewItem = null)
-    {
-        int? endIndex = null;
-        if (responseViewItem != null)
-        {
-            //获得之前的所有请求
-            var indexOf = DialogItems.IndexOf(responseViewItem);
-            if (indexOf >= 1)
-            {
-                endIndex = indexOf - 1;
-            }
-        }
-
-
-        var dialogItems = GenerateHistoryFromSelf(endIndex);
-        return new DialogContext(dialogItems, this.SystemPrompt);
-    }
-
-    /// <summary>
-    /// 核心请求方法，负责统计请求数据以及插入上下文操作
-    /// </summary>
-    /// <param name="invoke"></param>
-    /// <returns></returns>
-    public virtual async Task<CompletedResult> InvokeRequest(Func<Task<CompletedResult>> invoke)
-    {
-        RespondingCount++;
         CompletedResult completedResult;
+        RespondingCount++;
         try
         {
-            completedResult = await invoke.Invoke();
+            var dialogItems = multiResponseViewItem.GetChatHistory().ToArray();
+            var dialogContext = new DialogContext(dialogItems, this.SystemPrompt);
+            completedResult = await responseViewItem.ProcessRequest(dialogContext);
         }
         finally
         {
@@ -572,34 +419,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         return completedResult;
     }
 
-    private readonly IMapper _mapper;
-    private long _predictedContextLength;
-    private MultiResponseViewItem? _currentResponseViewItem;
-
-    public async Task<CompletedResult> AddNewResponse(ILLMChatClient client,
-        IReadOnlyList<IDialogItem> history,
-        MultiResponseViewItem multiResponseViewItem, string? systemPrompt = null)
-    {
-        CompletedResult completedResult;
-        RespondingCount++;
-        var responseViewItem = new ResponseViewItem(client);
-        try
-        {
-            multiResponseViewItem.AppendResponse(responseViewItem);
-            var dialogContext = new DialogContext(history, systemPrompt);
-            completedResult = await responseViewItem.SendRequest(dialogContext);
-        }
-        finally
-        {
-            RespondingCount--;
-        }
-
-        this.TokensConsumption += completedResult.Usage?.TotalTokenCount ?? 0;
-        this.TotalPrice += completedResult.Price ?? 0;
-        return completedResult;
-    }
-
-    public virtual async Task<CompletedResult> NewRequest(ILLMChatClient client, IRequestItem requestViewItem,
+    public virtual async Task<CompletedResult> CreateResponse(ILLMChatClient client, IRequestItem requestViewItem,
         IRequestItem? insertBefore = null, CancellationToken token = default)
     {
         var multiResponseViewItem = new MultiResponseViewItem(this)
@@ -626,7 +446,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
 
         this.ScrollViewItem = multiResponseViewItem;
-        return await multiResponseViewItem.NewRequest(client, token);
+        return await multiResponseViewItem.AppendResponse(client, token);
     }
 
     public void ForkPreTask(MultiResponseViewItem dialogViewItem)
@@ -639,7 +459,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     protected DialogSessionViewModel(IMapper mapper, IDialogItem? rootNode, IDialogItem? currentLeaf = null)
     {
-        _mapper = mapper;
         _readOnlyDialogItems = new ReadOnlyObservableCollection<IDialogItem>(DialogItemsObservable);
         if (rootNode == null)
         {
@@ -654,12 +473,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
         RebuildLinearItems();
         SharedGraphViewModel = new DialogGraphViewModel(this);
-        this.PredictedContextLength = GetContextTokensBefore();
         DialogItemsObservable.CollectionChanged += (_, _) =>
         {
             OnPropertyChangedAsync(nameof(Shortcut));
             OnPropertyChanged(nameof(CurrentContextTokens));
-            this.PredictedContextLength = GetContextTokensBefore();
         };
         this.DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
         OpenDialogRouteCommand =

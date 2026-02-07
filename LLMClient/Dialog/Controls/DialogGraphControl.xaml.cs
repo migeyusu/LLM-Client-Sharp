@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -76,6 +77,13 @@ public partial class DialogGraphControl : UserControl
     {
         InitializeComponent();
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        this.Width = double.NaN;
+        this.Height = double.NaN;
     }
 
     private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)

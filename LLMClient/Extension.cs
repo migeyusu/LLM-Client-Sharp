@@ -313,6 +313,51 @@ public static class Extension
         return eraseViewItem;
     }
 
+    public static IEnumerable<IDialogItem> GetChatHistory(this MultiResponseViewItem lastItem)
+    {
+        return lastItem.GetChatHistoryInverse().Reverse();
+    }
+
+    public static IEnumerable<IDialogItem> GetChatHistoryInverse(this MultiResponseViewItem lastItem)
+    {
+        Guid? interactionId = lastItem.InteractionId;
+        for (var dialogViewItem = lastItem.PreviousItem;
+             dialogViewItem != null;
+             dialogViewItem = dialogViewItem.PreviousItem)
+        {
+            if (dialogViewItem is EraseViewItem)
+            {
+                yield break;
+            }
+
+            if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
+            {
+                if (multiResponseViewItem.IsResponding)
+                {
+                    throw new InvalidOperationException("无法生成包含正在响应的记录的历史");
+                }
+
+                if (multiResponseViewItem.IsAvailableInContext)
+                {
+                    interactionId = multiResponseViewItem.InteractionId;
+                    yield return multiResponseViewItem;
+                }
+                else
+                {
+                    //这样的设计允许中间有不可用的响应（跳过）
+                    interactionId = null;
+                }
+            }
+            else if (dialogViewItem is RequestViewItem requestViewItem)
+            {
+                if (interactionId == requestViewItem.InteractionId)
+                {
+                    yield return requestViewItem;
+                }
+            }
+        }
+    }
+
     #region json
 
     public static JsonNode GetOrCreate(this JsonNode jsonNode, string key)

@@ -4,10 +4,10 @@ namespace LLMClient.Abstraction;
 
 public class DialogContext
 {
-    public DialogContext(IReadOnlyList<IDialogItem> dialogItems,
+    public DialogContext(IReadOnlyList<IDialogItem> history,
         string? systemPrompt = null)
     {
-        DialogItems = dialogItems;
+        DialogItems = history;
         SystemPrompt = systemPrompt;
         if (DialogItems.Last() is RequestViewItem request)
         {

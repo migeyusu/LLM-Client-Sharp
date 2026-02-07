@@ -30,7 +30,7 @@ public partial class DialogTemplateDictionary : ResourceDictionary
                 popupViewModel.SuccessAction = model =>
                 {
                     var llmChatClient = model.CreateClient();
-                    multiResponseViewItem.NewRequest(llmChatClient);
+                    multiResponseViewItem.AppendResponse(llmChatClient);
                 };
             }
         }

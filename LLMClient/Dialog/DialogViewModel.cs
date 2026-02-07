@@ -157,7 +157,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         ((INotifyCollectionChanged)this.RootNode.Children).CollectionChanged += OnRootCollectionChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
             (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>>)
-            NewRequest);
+            CreateResponse);
         Requester.FunctionGroupSource = this;
         Requester.FunctionTreeSelector.Reset();
         var functionTreeSelector = Requester.FunctionTreeSelector;
@@ -184,7 +184,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
     }
 
     private void OnRootCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {;
+    {
         if (_options.EnableAutoSubjectGeneration &&
             e.Action is NotifyCollectionChangedAction.Remove or NotifyCollectionChangedAction.Reset
             && this.DialogItems.Count == 0)
@@ -195,18 +195,21 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
 
     private static readonly TimeSpan TopicTimeOut = TimeSpan.FromSeconds(30);
 
-    public override async Task<CompletedResult> InvokeRequest(Func<Task<CompletedResult>> invoke)
-    {
-        //判断是否需要进行主题总结
-        var needSummarize = this.DialogItems is [IRequestItem, MultiResponseViewItem]
-                            && this.Topic == "新建会话";
+    public Task? SummarizeTask = null;
 
-        var completedResult = await base.InvokeRequest(invoke);
-        if (needSummarize && !completedResult.IsInterrupt
-                          && _options.EnableAutoSubjectGeneration)
+    public override async Task<CompletedResult> Invoke(ResponseViewItem responseViewItem,
+        MultiResponseViewItem multiResponseViewItem)
+    {
+        var completedResult = await base.Invoke(responseViewItem, multiResponseViewItem);
+        //判断是否需要进行主题总结
+        if (this.Topic == "新建会话" &&
+            this.DialogItems.FirstOrDefault(item => item is MultiResponseViewItem) == multiResponseViewItem
+            && !completedResult.IsInterrupt
+            && _options.EnableAutoSubjectGeneration
+            && (SummarizeTask == null || SummarizeTask.IsCompleted))
         {
             //不要wait
-            _ = Task.Run(async () =>
+            SummarizeTask = Task.Run(async () =>
             {
                 var summarizer = new Summarizer(_options);
                 var newTopic = await summarizer.SummarizeTopicAsync(this, TopicTimeOut);

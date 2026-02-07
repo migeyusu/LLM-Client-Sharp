@@ -440,7 +440,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.Ready();
         if (this.ProjectContextPrompt != null)
             await this.ProjectContextPrompt.BuildAsync();
-        return await SelectedTask.NewRequest(arg1, arg2, insertViewItem, token);
+        return await SelectedTask.CreateResponse(arg1, arg2, insertViewItem, token);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

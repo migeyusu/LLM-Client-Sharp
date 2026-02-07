@@ -49,7 +49,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     /// warning: 禁止用于绑定，因为没有实现属性通知
     /// </summary>
     [Bindable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]  
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public override bool IsAvailableInContext
     {
@@ -72,7 +72,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     }
 
     [Bindable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]  
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public override long Tokens
     {
@@ -93,7 +93,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     }
 
     [Bindable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]  
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public SearchableDocument? SearchableDocument
     {
@@ -102,11 +102,12 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
     public ObservableCollection<ResponseViewItem> Items { get; }
 
-    public static readonly IMultiValueConverter DeleteItemConverter = MultiValueConverter.Create<bool, Visibility>(args =>
-    {
-        var values = args.Values;
-        return !values[0] && values[1]? Visibility.Visible : Visibility.Collapsed;
-    });
+    public static readonly IMultiValueConverter DeleteItemConverter =
+        MultiValueConverter.Create<bool, Visibility>(args =>
+        {
+            var values = args.Values;
+            return !values[0] && values[1] ? Visibility.Visible : Visibility.Collapsed;
+        });
 
     public static ICommand CompareAllCommand { get; } = new RelayCommand<MultiResponseViewItem>((item =>
     {
@@ -236,7 +237,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
             this.IsMultiResponse = Items.Count > 1;
         };
         IsMultiResponse = Items.Count > 1;
-        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.NewRequest(client.CreateClient()); })
+        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.AppendResponse(client.CreateClient()); })
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
@@ -314,16 +315,14 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
             return;
         }
 
-        var dialogContext = ParentSession.CreateDialogContextBefore(this);
-        await ParentSession.InvokeRequest(() => responseViewItem.SendRequest(dialogContext));
+        await ParentSession.Invoke(responseViewItem, this);
     }
 
-    public Task<CompletedResult> NewRequest(ILLMChatClient chatClient, CancellationToken token = default)
+    public Task<CompletedResult> AppendResponse(ILLMChatClient chatClient, CancellationToken token = default)
     {
         var responseViewItem = new ResponseViewItem(chatClient);
         this.AppendResponse(responseViewItem);
-        var dialogContext = ParentSession.CreateDialogContextBefore(this);
-        return ParentSession.InvokeRequest(() => responseViewItem.SendRequest(dialogContext, token));
+        return ParentSession.Invoke(responseViewItem, this);
     }
 
     public void AppendResponse(ResponseViewItem viewItem)

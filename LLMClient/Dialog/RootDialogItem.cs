@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.AI;
+﻿using System.Runtime.CompilerServices;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 
@@ -11,9 +12,9 @@ public class RootDialogItem : BaseDialogItem
     public override long Tokens { get; } = 0;
     public override ChatRole Role { get; } = EmptyRole;
 
-    public override IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken)
+    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        throw new NotSupportedException();
+        yield break;
     }
 
     public override bool IsAvailableInContext { get; } = false;
