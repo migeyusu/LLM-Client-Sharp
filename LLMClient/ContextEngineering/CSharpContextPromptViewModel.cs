@@ -4,7 +4,7 @@ using LLMClient.Project;
 namespace LLMClient.ContextEngineering;
 
 /// <summary>
-/// 代码上下文提示构建器
+/// C#项目代码上下文提示构建器
 /// </summary>
 public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProjectViewModel>
 {

@@ -28,7 +28,7 @@ public abstract class ProjectPersistModel
 
     public double TotalPrice { get; set; }
 
-    public ProjectTaskPersistModel[]? Tasks { get; set; }
+    public ProjectSessionPersistModel[]? Tasks { get; set; }
 }
 
 public class GeneralProjectPersistModel : ProjectPersistModel

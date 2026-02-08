@@ -108,7 +108,7 @@
                                              Mode="TwoWay" />
                                 </ComboBox.Text>
                                 <ComboBox.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type local:ProjectTaskViewModel}">
+                                    <DataTemplate DataType="{x:Type local:ProjectSessionViewModel}">
                                         <TextBlock Text="{Binding Name,Mode=OneWay}" />
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>

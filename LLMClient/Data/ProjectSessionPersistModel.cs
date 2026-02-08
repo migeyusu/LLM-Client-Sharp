@@ -2,7 +2,7 @@
 
 namespace LLMClient.Data;
 
-public class ProjectTaskPersistModel : DialogSessionPersistModel
+public class ProjectSessionPersistModel : DialogSessionPersistModel
 {
     public string? Name { get; set; }
 

@@ -22,7 +22,7 @@ namespace LLMClient.Project;
  * 1. 如何构建工程级别的上下文
  * 2. 如何构建任务级别的上下文
  */
-public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
+public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSource
 {
     private string? _name;
 
@@ -84,7 +84,7 @@ public class ProjectTaskViewModel : DialogSessionViewModel, IFunctionGroupSource
         }
     }
 
-    public ProjectTaskViewModel(ProjectViewModel parentProject, IMapper mapper,
+    public ProjectSessionViewModel(ProjectViewModel parentProject, IMapper mapper,
         IList<CheckableFunctionGroupTree>? functionGroupTrees = null,
         IDialogItem? rootNode = null, IDialogItem? currentLeaf = null)
         : base(rootNode, currentLeaf)

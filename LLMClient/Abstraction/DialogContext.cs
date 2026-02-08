@@ -9,7 +9,7 @@ public class DialogContext
     {
         DialogItems = history;
         SystemPrompt = systemPrompt;
-        if (DialogItems.Last() is RequestViewItem request)
+        if (DialogItems[^1] is RequestViewItem request)
         {
             Request = request;
         }

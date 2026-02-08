@@ -5,13 +5,8 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
-using CommunityToolkit.Mvvm.Input;
-using DocumentFormat.OpenXml.Wordprocessing;
-using Google.Apis.Util;
 using LLMClient.Abstraction;
 using LLMClient.Component.Converters;
 using LLMClient.Component.ViewModel;
@@ -193,7 +188,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
     private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
 
     /// <summary>
-    /// 项目级别的上下文，在task间共享
+    /// 项目级别的上下文，在Item间共享
     /// </summary>
     public virtual string? Context
     {
@@ -210,27 +205,27 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 _systemPromptBuilder.AppendLine(UserSystemPrompt);
             }
 
+            _systemPromptBuilder.AppendLine("# 项目背景");
             _systemPromptBuilder.AppendFormat("这是一个名为{0}的{1}项目，项目代码位于文件夹{2}。", Option.Name,
                 Option.Type.GetEnumDescription(), Option.FolderPath);
             _systemPromptBuilder.AppendLine();
-            _systemPromptBuilder.AppendLine("项目背景/描述如下：");
             _systemPromptBuilder.AppendLine(Option.Description);
             if (this.ProjectContextPrompt is { IncludeContext: true })
             {
                 //todo: 当前只支持项目上下文
-                _systemPromptBuilder.AppendLine("项目上下文：");
+                _systemPromptBuilder.AppendLine("# 项目上下文：");
                 _systemPromptBuilder.AppendLine(ProjectContextPrompt.TotalContext);
             }
 
             var contextTasks = this.Tasks
                 .Where(model => model.EnableInContext && string.IsNullOrEmpty(model.Summary))
                 .ToArray();
-            if (contextTasks.Any())
+            if (contextTasks.Length != 0)
             {
-                _systemPromptBuilder.AppendLine("以下是与当前任务相关的信息：");
+                _systemPromptBuilder.AppendLine("以下是曾经完成的任务信息：");
                 foreach (var projectTaskViewModel in contextTasks)
                 {
-                    _systemPromptBuilder.Append("#");
+                    _systemPromptBuilder.Append("#" );
                     _systemPromptBuilder.AppendLine(projectTaskViewModel.Name);
                     _systemPromptBuilder.AppendLine(projectTaskViewModel.Summary);
                 }
@@ -275,15 +270,15 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
     #region tasks
 
-    public ICommand NewTaskCommand => new ActionCommand(_ => { AddTask(new ProjectTaskViewModel(this, _mapper)); });
+    public ICommand NewTaskCommand => new ActionCommand(_ => { AddTask(new ProjectSessionViewModel(this, _mapper)); });
 
-    public void AddTask(ProjectTaskViewModel task)
+    public void AddTask(ProjectSessionViewModel task)
     {
         task.PropertyChanged += OnTaskPropertyChanged;
         this.Tasks.Add(task);
     }
 
-    public void RemoveTask(ProjectTaskViewModel task)
+    public void RemoveTask(ProjectSessionViewModel task)
     {
         task.PropertyChanged -= OnTaskPropertyChanged;
         this.Tasks.Remove(task);
@@ -294,7 +289,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         var propertyName = e.PropertyName;
         switch (propertyName)
         {
-            case nameof(ProjectTaskViewModel.EnableInContext):
+            case nameof(ProjectSessionViewModel.EnableInContext):
                 OnPropertyChanged(nameof(Context));
                 break;
             case nameof(DialogSessionViewModel.IsBusy):
@@ -303,11 +298,11 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         }
     }
 
-    public ObservableCollection<ProjectTaskViewModel> Tasks { get; set; }
+    public ObservableCollection<ProjectSessionViewModel> Tasks { get; set; }
 
-    private ProjectTaskViewModel? _selectedTask;
+    private ProjectSessionViewModel? _selectedTask;
 
-    public ProjectTaskViewModel? SelectedTask
+    public ProjectSessionViewModel? SelectedTask
     {
         get => _selectedTask;
         set
@@ -333,7 +328,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
 
     public ProjectViewModel(ProjectOption projectOption, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, IViewModelFactory factory, IEnumerable<ProjectTaskViewModel>? tasks = null)
+        GlobalOptions options, IViewModelFactory factory, IEnumerable<ProjectSessionViewModel>? tasks = null)
     {
         this._mapper = mapper;
         this.Option = projectOption;
@@ -422,8 +417,8 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
             throw new InvalidOperationException("当前项目配置不合法");
         }
 
-        this.Ready();
-        if (this.ProjectContextPrompt != null)
+        this.ReadyForRequest();
+        if (this.ProjectContextPrompt is { IncludeContext: true })
             await this.ProjectContextPrompt.BuildAsync();
         return await SelectedTask.NewResponse(arg1, arg2, insertViewItem, token);
     }
@@ -433,7 +428,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.IsDataChanged = true;
     }
 
-    public void Ready()
+    public void ReadyForRequest()
     {
         var functionGroups = this.SelectedTask?.SelectedFunctionGroups;
         if (functionGroups != null)

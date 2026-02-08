@@ -8,16 +8,6 @@ using LLMClient.ContextEngineering;
 
 namespace LLMClient.Project;
 
-public class CppProjectViewModel : ProjectViewModel
-{
-    public CppProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, IViewModelFactory factory,
-        IEnumerable<ProjectTaskViewModel>? tasks = null)
-        : base(option, modelClient, mapper, options, factory, tasks)
-    {
-    }
-}
-
 public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 {
     private string? _projectFilePath;
@@ -67,7 +57,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     public CSharpProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
         GlobalOptions options, ITokensCounter tokensCounter,
-        IViewModelFactory factory, IEnumerable<ProjectTaskViewModel>? tasks = null)
+        IViewModelFactory factory, IEnumerable<ProjectSessionViewModel>? tasks = null)
         : base(option, modelClient, mapper, options, factory, tasks)
     {
         _projectContextPrompt = new CSharpContextPromptViewModel(this, tokensCounter);

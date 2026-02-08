@@ -172,6 +172,7 @@ public class MarkdownSummaryFormatter
 
         // 基本类型信息+相对路径
         stringBuilder.Append($"{indentStr}- `{type.Name}` ({type.Kind})")
+            .Append(" ")
             .Append("*")
             .Append($"@{type.RelativePath}:{type.LineNumber}")
             .Append("*");

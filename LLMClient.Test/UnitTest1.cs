@@ -180,7 +180,7 @@ public class UnitTest1
         {
             Tasks =
             [
-                new ProjectTaskPersistModel()
+                new ProjectSessionPersistModel()
                 {
                     DialogItems = new IDialogPersistItem[]
                     {

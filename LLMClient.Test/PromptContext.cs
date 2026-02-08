@@ -8,57 +8,71 @@ namespace LLMClient.Test;
 
 public class PromptContext
 {
+    private AnalyzerConfig _analyzerConfig;
+
     private ITestOutputHelper _output;
+
+    const string solutionPath = @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\AIClient.sln";
+
+    const string projectPath = @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\LLMClient\LLMClient.csproj";
 
     public PromptContext(ITestOutputHelper output)
     {
         _output = output;
+        ContextExtension.RegisterMSBuild();
+        // 配置
+        _analyzerConfig = new AnalyzerConfig
+        {
+            IncludeTestProjects = true,
+            IncludePrivateMembers = true,
+            MaxConcurrency = 4
+        };
+    }
+
+    [Fact]
+    public async Task FileTree()
+    {
+        using var analyzer = new RoslynProjectAnalyzer(null, _analyzerConfig);
+        var projectInfo = await analyzer.AnalyzeProjectAsync(projectPath);
+        var fileTreeFormatter = new CompactFileTreeFormatter();
+        var format = fileTreeFormatter.Format(projectInfo);
+        var outputPath = "filetree.md";
+        await File.WriteAllTextAsync(outputPath, format);
+        _output.WriteLine($"File tree written to {outputPath}");
     }
 
 
     [Fact]
     public async Task TestBuild()
     {
-        ContextExtension.RegisterMSBuild();
-        // 配置
-        var config = new AnalyzerConfig
-        {
-            IncludeTestProjects = true,
-            IncludePrivateMembers = true,
-            MaxConcurrency = 4
-        };
-
         // 日志
-        ServiceCollection serviceCollection = new ServiceCollection();
+        var serviceCollection = new ServiceCollection();
         serviceCollection.AddLogging((builder => builder.AddConsole()));
         await using (var buildServiceProvider = serviceCollection.BuildServiceProvider())
         {
             var iLogger = buildServiceProvider.GetService<ILogger<RoslynProjectAnalyzer>>()!;
             // 缓存管理
-            var cacheManager = new InfoCacheManager();
-            var solutionPath = @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\AIClient.sln";
+            // var cacheManager = new InfoCacheManager();
             // 分析
-            using var analyzer = new RoslynProjectAnalyzer(iLogger, config);
-            var summary = await analyzer.AnalyzeProjectAsync(
-                @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\LLMClient.Avalonia\LLMClient.Avalonia.csproj");
-            _output.WriteLine(summary.Name);
-            summary = await analyzer.AnalyzeProjectAsync(
-                @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\LLMClient\LLMClient.csproj");
-            _output.WriteLine(summary.Name);
-            Stopwatch stopwatch = new Stopwatch();
+            using var analyzer = new RoslynProjectAnalyzer(iLogger, _analyzerConfig);
+
+            var stopwatch = new Stopwatch();
             stopwatch.Start();
-            summary = await analyzer.AnalyzeProjectAsync(
-                @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\LLMClient\LLMClient.csproj");
+            var summary = await analyzer.AnalyzeProjectAsync(projectPath);
+            _output.WriteLine($"First analysis completed in {stopwatch.ElapsedMilliseconds}ms");
+            _output.WriteLine(summary.Name);
+            stopwatch.Restart();
+            summary = await analyzer.AnalyzeProjectAsync(projectPath);
             /*var summary = await cacheManager.GetOrGenerateAsync(
                 solutionPath,
                 async () => await analyzer.AnalyzeSolutionAsync(solutionPath)
             );*/
             stopwatch.Stop();
-            _output.WriteLine($"Analysis completed in {stopwatch.ElapsedMilliseconds}ms");
+            _output.WriteLine($"Second Analysis completed in {stopwatch.ElapsedMilliseconds}ms");
             // 格式化输出
             var formatterOptions = new FormatterOptions
             {
-                IncludeMembers = true,
+                IncludeMembers = false,
                 IncludePackages = true
             };
 

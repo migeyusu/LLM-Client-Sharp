@@ -233,7 +233,7 @@ public class DialogMappingProfile : Profile
         //VM -> PO
         CreateMap<DialogSessionViewModel, DialogSessionPersistModel>()
             .Include<DialogViewModel, DialogFilePersistModel>()
-            .Include<ProjectTaskViewModel, ProjectTaskPersistModel>()
+            .Include<ProjectSessionViewModel, ProjectSessionPersistModel>()
             .ForMember(model => model.AllowedFunctions,
                 expression => expression.MapFrom((model => model.SelectedFunctionGroups)))
             .ForMember(model => model.DialogItems, opt => opt.Ignore())
@@ -255,13 +255,13 @@ public class DialogMappingProfile : Profile
             .ForMember(model => model.PromptString, opt => opt.MapFrom(src => src.Requester.PromptString))
             .ForMember(model => model.Client, opt => opt.MapFrom(src => src.Requester.DefaultClient));
 
-        CreateMap<ProjectTaskViewModel, ProjectTaskPersistModel>()
+        CreateMap<ProjectSessionViewModel, ProjectSessionPersistModel>()
             .IncludeBase<DialogSessionViewModel, DialogSessionPersistModel>();
 
         // PO -> VM
         CreateMap<DialogSessionPersistModel, DialogSessionViewModel>()
             .Include<DialogFilePersistModel, DialogViewModel>()
-            .Include<ProjectTaskPersistModel, ProjectTaskViewModel>()
+            .Include<ProjectSessionPersistModel, ProjectSessionViewModel>()
             .ForMember(dest => dest.DialogItems, opt => opt.Ignore())
             .ForMember(dest => dest.RootNode, opt => opt.Ignore())
             .ForMember(dest => dest.CurrentLeaf, opt => opt.Ignore())
@@ -300,7 +300,7 @@ public class DialogMappingProfile : Profile
                 })
             .AfterMap((src, dest, ctx) => { dest.Requester.PromptString = src.PromptString; });
 
-        CreateMap<ProjectTaskPersistModel, ProjectTaskViewModel>()
+        CreateMap<ProjectSessionPersistModel, ProjectSessionViewModel>()
             .IncludeBase<DialogSessionPersistModel, DialogSessionViewModel>()
             .ConstructUsing((src, ctx) =>
             {
@@ -311,7 +311,7 @@ public class DialogMappingProfile : Profile
                     throw new InvalidOperationException("Parent ProjectViewModel is not set in context.");
                 }
 
-                return viewModelFactory.CreateViewModel<ProjectTaskViewModel>(projectViewModel);
+                return viewModelFactory.CreateViewModel<ProjectSessionViewModel>(projectViewModel);
             });
 
         #endregion
@@ -349,7 +349,7 @@ public class DialogMappingProfile : Profile
             if (source.Tasks != null && source.Tasks.Length != 0)
             {
                 dest.Tasks.Clear();
-                var tasks = context.Mapper.Map<IEnumerable<ProjectTaskViewModel>>(source.Tasks);
+                var tasks = context.Mapper.Map<IEnumerable<ProjectSessionViewModel>>(source.Tasks);
                 foreach (var task in tasks)
                 {
                     dest.AddTask(task);

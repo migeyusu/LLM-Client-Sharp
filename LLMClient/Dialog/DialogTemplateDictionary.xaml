@@ -468,7 +468,7 @@
                                                  ToggleContent="{materialDesign:PackIcon Kind=AddBold,Size=20}"
                                                  Style="{StaticResource MaterialDesignToolPopupBox}"
                                                  Opened="AppendModel_PopupBox_OnOpened"
-                                                 PopupContent="{x:Static dialog:ModelSelectionPopupViewModel.Shared}"
+                                                 PopupContent="{x:Static dialog:ModelSelectionPopupViewModel.PopupShared}"
                                                  PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
                                 VerticalAlignment="Center"
