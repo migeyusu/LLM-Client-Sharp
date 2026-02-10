@@ -29,18 +29,6 @@ public partial class ProjectView : UserControl
 
     ProjectViewModel ViewModel => (DataContext as ProjectViewModel)!;
 
-    private void TaskMoveLeft_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.Parameter is ProjectSessionViewModel task)
-        {
-            var i = ViewModel.Tasks.IndexOf(task);
-            if (i > 0)
-            {
-                ViewModel.Tasks.Move(i, i - 1);
-            }
-        }
-    }
-
     private void TaskDelete_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is ProjectSessionViewModel task)
@@ -59,7 +47,7 @@ public partial class ProjectView : UserControl
                 return;
             }
 
-            ViewModel.Requester.Summarize();
+            ViewModel.Requester.Summarize(requestViewItem);
         }
     }
     

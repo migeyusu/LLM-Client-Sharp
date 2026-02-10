@@ -299,15 +299,15 @@ public class RequesterViewModel : BaseViewModel
     public async void Summarize(IRequestItem? insertBefore = null)
     {
         IsNewResponding = true;
+        var summaryRequest = new SummaryRequestViewItem()
+        {
+            SummaryPrompt = _options.ContextSummarizePrompt,
+            OutputLength = _options.ContextSummarizeWordsCount,
+            InteractionId = Guid.NewGuid(),
+            IsSummarizing = true,
+        };
         try
         {
-            var summaryRequest = new SummaryRequestViewItem()
-            {
-                SummaryPrompt = _options.ContextSummarizePrompt,
-                OutputLength = _options.ContextSummarizeWordsCount,
-                InteractionId = Guid.NewGuid(),
-            };
-
             var summarizeModel = _options.CreateContextSummarizeClient() ?? this.DefaultClient;
             using (_tokenSource = new CancellationTokenSource())
             {
@@ -320,6 +320,7 @@ public class RequesterViewModel : BaseViewModel
         }
         finally
         {
+            summaryRequest.IsSummarizing = false;
             IsNewResponding = false;
         }
     }

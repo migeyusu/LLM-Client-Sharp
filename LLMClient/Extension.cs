@@ -325,12 +325,30 @@ public static class Extension
              dialogViewItem != null;
              dialogViewItem = dialogViewItem.PreviousItem)
         {
-            if (dialogViewItem is EraseViewItem)
+            if (dialogViewItem is SummaryRequestViewItem summaryRequestViewItem)
+            {
+                if (summaryRequestViewItem.IsSummarizing)
+                {
+                    yield return summaryRequestViewItem;
+                }
+                else
+                {
+                    //这样的设计允许中间有不可用的总结（跳过）
+                    if (summaryRequestViewItem.InteractionId == interactionId)
+                    {
+                        yield break;
+                    }
+                    else
+                    {
+                        interactionId = null;
+                    }
+                }
+            }
+            else if (dialogViewItem is EraseViewItem)
             {
                 yield break;
             }
-
-            if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
+            else if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
             {
                 if (multiResponseViewItem.IsResponding)
                 {

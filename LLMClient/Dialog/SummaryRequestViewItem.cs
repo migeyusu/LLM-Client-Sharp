@@ -9,6 +9,8 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
 
     public string? SummaryPrompt { get; set; }
 
+    public bool IsSummarizing { get; set; }
+
     public override long Tokens
     {
         //估计tokens
@@ -29,10 +31,9 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
     }
 
     public override bool IsAvailableInContext { get; } = true;
-    
+
     public void TriggerTextContentUpdate()
     {
-        
     }
 
     public Guid InteractionId { get; set; }
