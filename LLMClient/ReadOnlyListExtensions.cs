@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace LLMClient;
+﻿namespace LLMClient;
 
 public static class ReadOnlyListExtensions
 {

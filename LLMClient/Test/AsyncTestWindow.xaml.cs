@@ -2,8 +2,6 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Documents;
-using CefSharp;
-using LLMClient.Component.Render;
 
 namespace LLMClient.Test;
 

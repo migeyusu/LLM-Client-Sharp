@@ -1,5 +1,4 @@
-﻿using System.Windows.Media;
-using LLMClient.Abstraction;
+﻿using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Data;
 

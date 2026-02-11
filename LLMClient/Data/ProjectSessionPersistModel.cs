@@ -1,6 +1,4 @@
-﻿using LLMClient.Project;
-
-namespace LLMClient.Data;
+﻿namespace LLMClient.Data;
 
 public class ProjectSessionPersistModel : DialogSessionPersistModel
 {

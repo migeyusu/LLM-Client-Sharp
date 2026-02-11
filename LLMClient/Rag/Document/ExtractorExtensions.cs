@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LLMClient.Data;

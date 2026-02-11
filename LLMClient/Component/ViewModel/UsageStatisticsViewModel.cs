@@ -7,7 +7,6 @@ using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel.Base;
-using Microsoft.Web.WebView2.Core.Raw;
 using SkiaSharp;
 
 namespace LLMClient.Component.ViewModel;

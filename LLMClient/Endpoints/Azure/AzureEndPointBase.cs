@@ -1,6 +1,4 @@
-﻿using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using LLMClient.Abstraction;
+﻿using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;

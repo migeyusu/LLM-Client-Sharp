@@ -1,6 +1,5 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Text.Json;
 using System.Windows.Input;
 using LLMClient.Component.Utility;

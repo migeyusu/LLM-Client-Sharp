@@ -1,8 +1,6 @@
-﻿using System.Collections.ObjectModel;
-using AutoMapper;
+﻿using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
-using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;

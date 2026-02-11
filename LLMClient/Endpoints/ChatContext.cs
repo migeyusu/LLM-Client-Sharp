@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
-using OpenAI.Assistants;
 using OpenAI.Chat;
 
 namespace LLMClient.Endpoints;

@@ -1,6 +1,7 @@
 ﻿using System.Windows.Data;
-using AutoMapper;
 using LambdaConverters;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace LLMClient.Endpoints;
 
@@ -27,11 +28,71 @@ public static class ModelRegister
 
     private static List<ModelDescriptor>? _officialModels;
 
+    public const string ModelsDefinitionFileName = "models_definition.json";
+
+    private static void LoadModelsFromFile(List<ModelDescriptor> models)
+    {
+        var fullPath = Path.GetFullPath(ModelsDefinitionFileName);
+        if (File.Exists(fullPath))
+        {
+            try
+            {
+                using var stream = File.OpenRead(fullPath);
+                var loadedModels = JsonSerializer.Deserialize<List<ModelDescriptor>>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (loadedModels != null)
+                {
+                    foreach (var loadedModel in loadedModels)
+                    {
+                        var existing = models.FirstOrDefault(m =>
+                            m.ProviderName.Equals(loadedModel.ProviderName, StringComparison.OrdinalIgnoreCase));
+                        if (existing != null)
+                        {
+                            var newModels = loadedModel.ModelNames
+                                .Except(existing.ModelNames, StringComparer.OrdinalIgnoreCase).ToArray();
+                            if (newModels.Length > 0)
+                            {
+                                existing.ModelNames = existing.ModelNames.Concat(newModels).ToArray();
+                            }
+                        }
+                        else
+                        {
+                            models.Add(loadedModel);
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError($"Failed to load models from {ModelsDefinitionFileName}: {e.Message}");
+            }
+        }
+    }
+
+    public static void RegisterModel(string provider, string modelName)
+    {
+        var modelDescriptors = OfficialModels;
+        var providerDescriptor = modelDescriptors.FirstOrDefault(p => p.ProviderName.Equals(provider, StringComparison.OrdinalIgnoreCase));
+        if (providerDescriptor == null)
+        {
+            providerDescriptor = new ModelDescriptor { ProviderName = provider, ModelNames = [] };
+            modelDescriptors.Add(providerDescriptor);
+        }
+
+        if (!providerDescriptor.ModelNames.Contains(modelName))
+        {
+            var newList = providerDescriptor.ModelNames.ToList();
+            newList.Add(modelName);
+            providerDescriptor.ModelNames = newList.ToArray();
+        }
+    }
+
     public static List<ModelDescriptor> OfficialModels
     {
         get
         {
-            _officialModels ??=
+            if (_officialModels != null) return _officialModels;
+            
+            _officialModels =
             [
                 new()
                 {
@@ -190,22 +251,10 @@ public static class ModelRegister
                     ]
                 }
             ];
+            
+            LoadModelsFromFile(_officialModels);
+            
             return _officialModels;
-        }
-    }
-
-    private static string[]? _officialModelNames;
-
-    public static string[] GetOfficialModelNames
-    {
-        get
-        {
-            _officialModelNames ??= OfficialModels.SelectMany(descriptor =>
-            {
-                var descriptorSeriesName = descriptor.ProviderName;
-                return descriptor.ModelNames.Select((s => descriptorSeriesName + " " + s));
-            }).ToArray();
-            return _officialModelNames;
         }
     }
 }

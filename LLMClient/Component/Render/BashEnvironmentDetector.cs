@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.IO;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Component.Render;

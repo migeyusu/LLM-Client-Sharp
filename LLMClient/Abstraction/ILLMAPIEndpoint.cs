@@ -1,5 +1,4 @@
-﻿using System.Windows.Media;
-using LLMClient.Component.CustomControl;
+﻿using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Abstraction;
 

@@ -1,5 +1,4 @@
-﻿using System.IO;
-using Microsoft.SemanticKernel;
+﻿using Microsoft.SemanticKernel;
 using Newtonsoft.Json;
 
 namespace LLMClient.Rag;

@@ -4,7 +4,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace LLMClient.Component.CustomControl;
 

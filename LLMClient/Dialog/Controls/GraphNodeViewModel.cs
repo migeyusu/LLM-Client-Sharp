@@ -1,6 +1,4 @@
-﻿using System.Windows;
-using LLMClient.Component.ViewModel;
-using LLMClient.Component.ViewModel.Base;
+﻿using LLMClient.Component.ViewModel;
 
 // 引用你的数据结构命名空间
 

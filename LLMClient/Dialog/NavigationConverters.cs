@@ -1,6 +1,5 @@
 ﻿using System.Windows.Data;
 using System.Windows.Media;
-using DocumentFormat.OpenXml.Drawing.Charts;
 using LambdaConverters;
 using Microsoft.Extensions.AI;
 

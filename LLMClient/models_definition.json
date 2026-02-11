@@ -1,0 +1,16 @@
+﻿[
+  {
+    "ProviderName": "CustomProvider",
+    "ModelNames": [
+      "custom-model-1",
+      "custom-model-2"
+    ]
+  },
+  {
+    "ProviderName": "OpenAI",
+    "ModelNames": [
+      "gpt-4-32k"
+    ]
+  }
+]
+

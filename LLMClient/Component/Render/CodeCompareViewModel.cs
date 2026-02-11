@@ -2,8 +2,6 @@
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Component.ViewModel.Base;
-using MaterialDesignThemes.Wpf;
-using OpenTK.Graphics.GL;
 
 namespace LLMClient.Component.Render;
 

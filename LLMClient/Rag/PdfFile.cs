@@ -1,5 +1,4 @@
-﻿using System.IO;
-using LLMClient.Data;
+﻿using LLMClient.Data;
 using LLMClient.Rag.Document;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;

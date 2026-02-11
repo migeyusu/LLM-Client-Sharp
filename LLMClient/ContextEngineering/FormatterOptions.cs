@@ -1,6 +1,4 @@
-﻿using Project = Microsoft.CodeAnalysis.Project;
-
-namespace LLMClient.ContextEngineering;
+﻿namespace LLMClient.ContextEngineering;
 
 // 内部使用的结果模型
 

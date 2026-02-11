@@ -1,6 +1,4 @@
-﻿using LLMClient.Abstraction;
-
-namespace LLMClient.Component.ViewModel;
+﻿namespace LLMClient.Component.ViewModel;
 
 public class ModelSelectionViewModel : BaseModelSelectionViewModel
 {

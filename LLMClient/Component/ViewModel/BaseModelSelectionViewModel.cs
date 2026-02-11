@@ -7,7 +7,6 @@ using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Component.ViewModel;
 
