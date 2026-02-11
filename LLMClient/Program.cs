@@ -116,7 +116,7 @@ public class Program
 #else
             //注册LoggerFactory到Listeners
             var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-            var traceListener = new LoggerTraceListener(loggerFactory);
+            var traceListener = new LLMClient.Log.LoggerTraceListener(loggerFactory);
             Trace.Listeners.Add(traceListener);
 #endif
             ContextExtension.RegisterMSBuild();

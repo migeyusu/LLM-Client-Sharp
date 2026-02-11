@@ -33,7 +33,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
             OnPropertyChanged();
         }
     }
-    
+
     [JsonPropertyName("Id")]
     public string APIId
     {
@@ -216,9 +216,9 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
     private bool _supportImageInput;
     private bool _supportVideoGeneration;
     private bool _supportAudioGeneration;
-    private bool _supportStreaming = true;
+    private bool _supportStreaming = true; //默认支持streaming，除非这个模型确实不支持，否则不建议关闭
     private bool _functionCallOnStreaming = false;
-    private bool _thinkingEnabled;
+    private bool _thinkingEnabled = true; //默认开启thinking，除非这个模型确实不支持，否则不建议关闭
     private IThinkingConfig? _thinkingConfig;
     private ThinkingIncludeMode _thinkingIncludeMode;
     private string? _seriesName;

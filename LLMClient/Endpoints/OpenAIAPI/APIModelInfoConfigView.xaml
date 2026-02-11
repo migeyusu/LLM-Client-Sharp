@@ -177,42 +177,47 @@
                       Visibility="{Binding SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                       ToolTip="Support Function Call when Streaming (Many Endpoints don't support)" />
         </StackPanel>
-        <endpoints:ParamConfigView PropertyName="Top P Enable"
-                                   Value="{Binding TopP,Mode=TwoWay}"
-                                   Description="通过选择最可能的词直到达到设定概率，控制文本多样性。"
-                                   Maximum="1"
-                                   Available="{Binding TopPEnable,Mode=TwoWay}"
-                                   Minimum="0.01" />
-        <endpoints:ParamConfigView PropertyName="Top K Enable"
-                                   Value="{Binding TopK,Mode=TwoWay}"
-                                   Description="Top-K采样会从概率分布中选择前K个最可能的词，然后只从这部分中采样下一个词。"
-                                   Maximum="{Binding TopKMax,Mode=TwoWay}"
-                                   MaximumEditable="True"
-                                   Available="{Binding TopKEnable,Mode=TwoWay}"
-                                   Minimum="5" />
-        <endpoints:ParamConfigView PropertyName="Temperature  Enable"
-                                   Available="{Binding TemperatureEnable,Mode=TwoWay}"
-                                   Value="{Binding Temperature,Mode=TwoWay}"
-                                   Description="控制回复的随机性，数值越低越确定。"
-                                   Minimum="0"
-                                   TickFrequency="0.01" />
-        <endpoints:ParamConfigView PropertyName="Max Tokens  Enable"
-                                   Unit="K"
-                                   Available="{Binding MaxTokensEnable,Mode=TwoWay}"
-                                   Value="{Binding MaxTokens,Mode=TwoWay,Converter={StaticResource KUnitConverter}}"
-                                   Description="限制模型回复的最大输出tokens数量。"
-                                   MaximumEditable="True"
-                                   Minimum="1"
-                                   Maximum="{Binding MaxTokenLimit,Mode=TwoWay,Converter={StaticResource KUnitConverter}}" />
-        <endpoints:ParamConfigView PropertyName="Presence Penalty  Enable"
-                                   Available="{Binding PresencePenaltyEnable,Mode=TwoWay}"
-                                   Value="{Binding PresencePenalty,Mode=TwoWay}"
-                                   Description="通过对文本中已出现的词语施加惩罚（-2.0到2.0），减少模型重复相同词语或短语的频率。"
-                                   Minimum="-2" />
-        <endpoints:ParamConfigView PropertyName="Frequency Penalty  Enable"
-                                   Available="{Binding FrequencyPenaltyEnable,Mode=TwoWay}"
-                                   Value="{Binding FrequencyPenalty,Mode=TwoWay}"
-                                   Description="通过对文本中已存在的词语施加惩罚（-2.0到2.0），减少模型生成相同词语或短语的频率。"
-                                   Minimum="-2" />
+        <Expander Header="Advanced Mode"
+                  Margin="0,10,0,0">
+            <StackPanel>
+                <endpoints:ParamConfigView PropertyName="Top P Enable"
+                                           Value="{Binding TopP,Mode=TwoWay}"
+                                           Description="通过选择最可能的词直到达到设定概率，控制文本多样性。"
+                                           Maximum="1"
+                                           Available="{Binding TopPEnable,Mode=TwoWay}"
+                                           Minimum="0.01" />
+                <endpoints:ParamConfigView PropertyName="Top K Enable"
+                                           Value="{Binding TopK,Mode=TwoWay}"
+                                           Description="Top-K采样会从概率分布中选择前K个最可能的词，然后只从这部分中采样下一个词。"
+                                           Maximum="{Binding TopKMax,Mode=TwoWay}"
+                                           MaximumEditable="True"
+                                           Available="{Binding TopKEnable,Mode=TwoWay}"
+                                           Minimum="5" />
+                <endpoints:ParamConfigView PropertyName="Temperature  Enable"
+                                           Available="{Binding TemperatureEnable,Mode=TwoWay}"
+                                           Value="{Binding Temperature,Mode=TwoWay}"
+                                           Description="控制回复的随机性，数值越低越确定。"
+                                           Minimum="0"
+                                           TickFrequency="0.01" />
+                <endpoints:ParamConfigView PropertyName="Max Tokens  Enable"
+                                           Unit="K"
+                                           Available="{Binding MaxTokensEnable,Mode=TwoWay}"
+                                           Value="{Binding MaxTokens,Mode=TwoWay,Converter={StaticResource KUnitConverter}}"
+                                           Description="限制模型回复的最大输出tokens数量。"
+                                           MaximumEditable="True"
+                                           Minimum="1"
+                                           Maximum="{Binding MaxTokenLimit,Mode=TwoWay,Converter={StaticResource KUnitConverter}}" />
+                <endpoints:ParamConfigView PropertyName="Presence Penalty  Enable"
+                                           Available="{Binding PresencePenaltyEnable,Mode=TwoWay}"
+                                           Value="{Binding PresencePenalty,Mode=TwoWay}"
+                                           Description="通过对文本中已出现的词语施加惩罚（-2.0到2.0），减少模型重复相同词语或短语的频率。"
+                                           Minimum="-2" />
+                <endpoints:ParamConfigView PropertyName="Frequency Penalty  Enable"
+                                           Available="{Binding FrequencyPenaltyEnable,Mode=TwoWay}"
+                                           Value="{Binding FrequencyPenalty,Mode=TwoWay}"
+                                           Description="通过对文本中已存在的词语施加惩罚（-2.0到2.0），减少模型生成相同词语或短语的频率。"
+                                           Minimum="-2" />
+            </StackPanel>
+        </Expander>
     </StackPanel>
 </UserControl>

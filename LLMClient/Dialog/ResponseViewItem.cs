@@ -151,7 +151,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
     /// <summary>
     /// 在响应过程中，临时存储文本内容，不持久化
     /// </summary>
-    private readonly StringBuilder _responseHistory = new StringBuilder();
+    private readonly StringBuilder _responseHistory = new();
 
     public static ICommand ShowTempResponseCommand { get; } = new RelayCommand<ResponseViewItem>(o =>
     {
