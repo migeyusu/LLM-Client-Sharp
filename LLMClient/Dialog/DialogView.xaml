@@ -144,8 +144,8 @@
                                                  Width="20"
                                                  Height="20" />
                     </Button>
-                    <Button ToolTip="克隆"
-                            Command="{x:Static utility:CommonCommands.Clone}">
+                    <Button ToolTip="克隆模板"
+                            Command="{x:Static utility:CommonCommands.CloneTemplate}">
                         <materialDesign:PackIcon Kind="BoxShadow"
                                                  Width="20"
                                                  Height="20" />
@@ -155,6 +155,8 @@
                                     MaxHeight="200">
                             <Button Content="打开文件"
                                     Command="{x:Static utility:CommonCommands.OpenSource}" />
+                            <Button Content="克隆"
+                                    Command="{x:Static utility:CommonCommands.Clone}" />
                         </StackPanel>
                     </materialDesign:PopupBox>
                 </StackPanel>

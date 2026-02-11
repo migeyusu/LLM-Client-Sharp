@@ -11,6 +11,7 @@ namespace LLMClient.Dialog;
 
 public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<DialogFileViewModel>
 {
+    private readonly IViewModelFactory _factory;
     public DialogViewModel Dialog { get; }
 
     public override bool IsDataChanged
@@ -47,6 +48,11 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
         return cloneSession;
     }
 
+    public override ILLMSession CloneHeader()
+    {
+        var chatClient = this.Dialog.Requester.DefaultClient.CloneClient();
+        return _factory.CreateViewModel<DialogFileViewModel>(this.Dialog.Topic, chatClient);
+    }
 
     public static async Task<DialogFileViewModel?> LoadFromStream(Stream fileStream, IMapper mapper)
     {
@@ -75,27 +81,17 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
         }
     }
 
-    public DialogFileViewModel Fork(IDialogItem viewModel)
-    {
-        var of = this.Dialog.DialogItems.IndexOf(viewModel);
-        var dialogSessionClone = _mapper.Map<DialogFileViewModel, DialogFilePersistModel>(this, (options => { }));
-        dialogSessionClone.DialogItems = dialogSessionClone.DialogItems?.Take(of + 1).ToArray();
-        var cloneSession =
-            _mapper.Map<DialogFilePersistModel, DialogFileViewModel>(dialogSessionClone, (options => { }));
-        cloneSession.IsDataChanged = true;
-        return cloneSession;
-    }
-
     private IMapper _mapper;
 
     public DialogFileViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
         GlobalOptions options, IRagSourceCollection ragSourceCollection, IViewModelFactory factory,
         IDialogItem? rootNode = null, IDialogItem? leaf = null) :
-        this(new DialogViewModel(topic, modelClient, mapper, options, factory, rootNode, leaf), mapper)
+        this(new DialogViewModel(topic, modelClient, mapper, options, factory, rootNode, leaf), mapper, factory)
     {
+        _factory = factory;
     }
 
-    public DialogFileViewModel(DialogViewModel dialogModel, IMapper mapper)
+    public DialogFileViewModel(DialogViewModel dialogModel, IMapper mapper, IViewModelFactory factory)
     {
         this.Dialog = dialogModel;
         dialogModel.PropertyChanged += (sender, args) =>
@@ -108,6 +104,7 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
             }
         };
         _mapper = mapper;
+        _factory = factory;
         dialogModel.DialogItemsObservable.CollectionChanged += DialogItemsOnCollectionChanged;
     }
 

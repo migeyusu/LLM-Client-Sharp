@@ -265,4 +265,29 @@ public partial class MainWindow : ExtendedWindow, IDisposable
             MessageEventBus.Publish("备份会话失败: " + exception.Message);
         }
     }
+
+    private void CloneTemplate_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        try
+        {
+            var session = _mainWindowViewModel.PreSession;
+            if (session != null)
+            {
+                var clone = session.CloneHeader();
+                if (clone is FileBasedSessionBase sessionClone)
+                {
+                    _mainWindowViewModel.AddSession(sessionClone);
+                    _mainWindowViewModel.MessageQueue.Enqueue("克隆模板会话成功");
+                }
+                else
+                {
+                    _mainWindowViewModel.MessageQueue.Enqueue("克隆模板会话失败: 无法克隆该类型的会话");
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            MessageEventBus.Publish("克隆模板会话失败: " + exception.Message);
+        }
+    }
 }

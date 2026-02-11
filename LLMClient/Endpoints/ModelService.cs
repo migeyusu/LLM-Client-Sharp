@@ -58,7 +58,8 @@ public static class ModelRegister
                         "GPT-5.1 Codex Max",
                         "GPT-5.2",
                         "GPT-5.2-Chat",
-                        "GPT-5.2 Pro"
+                        "GPT-5.2 Pro",
+                        "GPT-5.3-Codex"
                     ]
                 },
 
@@ -76,9 +77,17 @@ public static class ModelRegister
                         "Gemini 3 Flash",
                     ]
                 },
-                new ()
+                new()
                 {
-                  ProviderName  = "xAI",
+                    ProviderName = "StepFun",
+                    ModelNames =
+                    [
+                        "Step 3.5",
+                    ]
+                },
+                new()
+                {
+                    ProviderName = "xAI",
                     ModelNames =
                     [
                         "Grok 3",
@@ -88,6 +97,7 @@ public static class ModelRegister
                         "Grok Code Fast 1"
                     ]
                 },
+
 
                 new()
                 {
@@ -105,6 +115,7 @@ public static class ModelRegister
                         "Claude Opus 4.1",
                         "Claude Opus 4.5",
                         "Claude Sonnet 4.5",
+                        "Claude Opus 4.6",
                     ]
                 },
 
@@ -119,6 +130,7 @@ public static class ModelRegister
                         "Qwen3-Next-80B-A3B",
                         "Qwen3-Coder-480B-A35B",
                         "Qwen3-Coder-Plus",
+                        "Qwen3-Coder-Next",
                         "Qwen3-Max",
                     ]
                 },
@@ -143,7 +155,8 @@ public static class ModelRegister
                         "GLM-4.5",
                         "GLM-4.5 Air",
                         "GLM-4.6",
-                        "GLM-4.7"
+                        "GLM-4.7",
+                        "GLM 4.7 Flash"
                     ]
                 },
 
@@ -166,6 +179,14 @@ public static class ModelRegister
                         "MiniMax M1",
                         "MiniMax M2",
                         "MiniMax M2.1"
+                    ]
+                },
+                new()
+                {
+                    ProviderName = "NVIDIA",
+                    ModelNames =
+                    [
+                        "Nemotron 3 Nano 30B A3B"
                     ]
                 }
             ];

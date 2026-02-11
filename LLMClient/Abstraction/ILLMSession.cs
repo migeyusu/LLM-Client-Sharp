@@ -1,5 +1,4 @@
-﻿using System.IO;
-using AutoMapper;
+﻿using AutoMapper;
 
 namespace LLMClient.Abstraction
 {
@@ -12,6 +11,8 @@ namespace LLMClient.Abstraction
         Task SaveAs(string? fileName = null);
 
         void Delete();
+
+        ILLMSession CloneHeader();
     }
 
     public interface ILLMSessionLoader<T>

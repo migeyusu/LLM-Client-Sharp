@@ -38,7 +38,7 @@ public class McpTest
         foreach (var mcpClientTool in clientTools)
         {
             stringBuilder.AppendLine("Name: " + mcpClientTool.Name);
-            stringBuilder.AppendLine("Description: " + mcpClientTool.Description);
+            // stringBuilder.AppendLine("Description: " + mcpClientTool.Description);
             stringBuilder.AppendLine("Parameters: " + mcpClientTool.JsonSchema);
             stringBuilder.AppendLine("Returns: " + mcpClientTool.ReturnJsonSchema);
         }
@@ -47,7 +47,7 @@ public class McpTest
 
         ValueKind = Object : "{"properties":{"directoryPath":{"type":"string","description":"Path relative to the project root"},"maxDepth":{"type":"integer","description":"Maximum recursion depth"},"timeout":{"type":"integer","description":"Timeout in milliseconds"},"projectPath":{"type":"string","description":" The project path. Pass this value ALWAYS if you are aware of it. It reduces numbers of ambiguous calls. \n In the case you know only the current working directory you can use it as the project path.\n If you\u0027re not aware about the project path you can ask user about it."}},"required":["directoryPath"],"type":"object"}"
          */
-        var toolResult = await clientTools.First((tool => tool.Name == "list_directory_tree"))
+        var toolResult = await clientTools.First((tool => tool.Name == "get_symbol_info"))
             .CallAsync(new Dictionary<string, object?>()
             {
                 ["directoryPath"] = ".",

@@ -373,6 +373,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
         var completedResult = CompletedResult.Empty;
         try
         {
+            
             if (Client == null)
             {
                 throw new InvalidOperationException("Client is null");

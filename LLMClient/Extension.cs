@@ -184,6 +184,8 @@ public static class Extension
             Enumerable.Empty<Assembly>());
     }
 
+    #region dialog tree helper
+
     public static IReadOnlyList<IDialogItem> PathFromRoot(this IDialogItem item)
     {
         var stack = new Stack<IDialogItem>();
@@ -376,6 +378,8 @@ public static class Extension
         }
     }
 
+    #endregion
+
     #region json
 
     public static JsonNode GetOrCreate(this JsonNode jsonNode, string key)
@@ -498,6 +502,16 @@ public static class Extension
         }
 
         return endpoint.NewChatClient(llmModel);
+    }
+
+    public static T CloneClient<T>(this T chatClient) where T : class, ILLMChatClient
+    {
+        if (chatClient is EmptyLlmModelClient client)
+        {
+            return (T)(object)client;
+        }
+
+        return (T)chatClient.Endpoint.NewChatClient(chatClient.Model)!;
     }
 
     public static void AddLine(this IList<string> list, string? msg = null)

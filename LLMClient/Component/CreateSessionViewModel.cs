@@ -118,8 +118,7 @@ public class CreateSessionViewModel : BaseViewModel
                                 session = factory.CreateViewModel<CppProjectViewModel>(projectOption, client);
                                 break;
                             default:
-                                session = factory.CreateViewModel<ProjectViewModel>(projectOption, client);
-                                break;
+                                throw new NotSupportedException();
                             // _mainWindowViewModel.NewProjectViewModel(client, projectOption);
                         }
 

@@ -264,15 +264,16 @@ public class UnitTest1
     {
         var mapper = serviceProvider.GetService<IMapper>()!;
         var client = new EmptyLlmModelClient();
+        var viewModelFactory = serviceProvider.GetService<IViewModelFactory>()!;
         var dialogViewModel =
             new DialogViewModel("test", client, mapper, new GlobalOptions(),
-                serviceProvider.GetService<IViewModelFactory>()!);
+                viewModelFactory);
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         // dialogViewModel.DialogItems.Add(multiResponseViewItem);
-        
-        var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper);
+
+        var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper, viewModelFactory);
         var dialogFilePersistModel =
             mapper?.Map<DialogFileViewModel, DialogFilePersistModel>(dialogFileViewModel, (options => { }));
         Assert.NotNull(dialogFilePersistModel);
@@ -288,14 +289,15 @@ public class UnitTest1
     {
         var mapper = serviceProvider.GetService<IMapper>()!;
         var client = new EmptyLlmModelClient();
+        var viewModelFactory = serviceProvider.GetService<IViewModelFactory>()!;
         var dialogViewModel =
             new DialogViewModel("test", client, mapper, new GlobalOptions(),
-                serviceProvider.GetService<IViewModelFactory>()!);
+                viewModelFactory);
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         // dialogViewModel.DialogItems.Add(multiResponseViewItem);
-        var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper);
+        var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper, viewModelFactory);
         var dialogFilePersistModel =
             mapper.Map<DialogFileViewModel, DialogFilePersistModel>(dialogFileViewModel, (options => { }));
         var serializerOptions = new JsonSerializerOptions()

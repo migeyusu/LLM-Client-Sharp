@@ -119,7 +119,7 @@
                                     ToolTip="Add Tasks" />
                         </StackPanel>
                     </materialDesign:Card>
-                    <TextBlock MaxWidth="140"
+                    <!--<TextBlock MaxWidth="140"
                                TextWrapping="Wrap"
                                HorizontalAlignment="Right"
                                Margin="8,0,10,0"
@@ -132,7 +132,7 @@
                         <LineBreak />
                         <Run
                             Text="{Binding SelectedTask.CurrentContextTokens,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter},TargetNullValue=No Tasks Selected}" />
-                    </TextBlock>
+                    </TextBlock>-->
                     <materialDesign:Card Padding="4,0"
                                          UniformCornerRadius="12"
                                          Style="{StaticResource MaterialDesignOutlinedCard}">
@@ -220,24 +220,23 @@
                                                      Width="20"
                                                      Height="20" />
                         </Button>
-                        <Button ToolTip="导出对话为Markdown"
-                                Command="{Binding ExportCommand}">
-                            <materialDesign:PackIcon Kind="FileExport"
-                                                     Width="20"
-                                                     Height="20" />
-                        </Button>
                     </StackPanel>
-                    <Button ToolTip="备份"
-                            Content="{materialDesign:PackIcon Kind=ContentSave,Size=20}"
-                            Command="SaveAs" />
                     <materialDesign:PopupBox StaysOpen="True">
                         <StackPanel MaxWidth="200"
                                     MaxHeight="200">
+                            <Button Content="导出对话为Markdown"
+                                    Command="{Binding SelectedTask.ExportCommand}" />
                             <Button Content="打开项目文件夹"
                                     CommandParameter="{Binding Option.FolderPath,Mode=OneWay}"
                                     Command="{x:Static utility:CommonCommands.OpenFolderCommand}" />
                             <Button Content="定位到源文件"
                                     Command="{x:Static utility:CommonCommands.OpenSource}" />
+                            <Button Content="克隆模板"
+                                    Command="{x:Static utility:CommonCommands.CloneTemplate}" />
+                            <Button Content="克隆"
+                                    Command="{x:Static utility:CommonCommands.Clone}" />
+                            <Button Content="备份"
+                                    Command="SaveAs" />
                         </StackPanel>
                     </materialDesign:PopupBox>
                 </StackPanel>

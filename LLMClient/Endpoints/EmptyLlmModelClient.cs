@@ -1,5 +1,4 @@
-﻿using System.IO;
-using LLMClient.Abstraction;
+﻿using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;

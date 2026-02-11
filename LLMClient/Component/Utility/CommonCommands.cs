@@ -38,6 +38,9 @@ public static class CommonCommands
     public static RoutedCommand Clone =
         new RoutedUICommand("Clone", "Clone", typeof(CommonCommands));
 
+    public static RoutedCommand CloneTemplate =
+        new RoutedUICommand("CloneTemplate", "CloneTemplate", typeof(CommonCommands));
+
     public static RoutedCommand Conclusion =
         new RoutedUICommand("Conclusion", "Conclusion", typeof(CommonCommands));
 
@@ -82,7 +85,7 @@ public static class CommonCommands
             DialogHost.Show(new PromptEditorViewModel(o));
         }
     }));
-    
+
     public static ICommand EditDialogItemCommand { get; } = new RelayCommand<IEditableDialogItem>(o =>
     {
         if (o == null)

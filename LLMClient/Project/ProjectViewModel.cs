@@ -35,6 +35,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
     public const string SaveDir = "Projects";
 
     private readonly IMapper _mapper;
+    private readonly IViewModelFactory _factory;
 
     private bool _isDataChanged = true;
 
@@ -151,6 +152,23 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         }
     }
 
+    public override ILLMSession CloneHeader()
+    {
+        var projectOption = (ProjectOption)this.Option.Clone();
+        var client = this.Requester.DefaultClient.CloneClient();
+        switch (projectOption.Type)
+        {
+            case ProjectType.CSharp:
+                return _factory.CreateViewModel<CSharpProjectViewModel>(projectOption, client);
+            case ProjectType.Default:
+                return _factory.CreateViewModel<GeneralProjectViewModel>(projectOption, client);
+            case ProjectType.Cpp:
+                return _factory.CreateViewModel<CppProjectViewModel>(projectOption, client);
+            default:
+                throw new NotSupportedException();
+        }
+    }
+
     #endregion
 
     #region info
@@ -225,7 +243,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 _systemPromptBuilder.AppendLine("以下是曾经完成的任务信息：");
                 foreach (var projectTaskViewModel in contextTasks)
                 {
-                    _systemPromptBuilder.Append("#" );
+                    _systemPromptBuilder.Append("#");
                     _systemPromptBuilder.AppendLine(projectTaskViewModel.Name);
                     _systemPromptBuilder.AppendLine(projectTaskViewModel.Summary);
                 }
@@ -331,6 +349,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         GlobalOptions options, IViewModelFactory factory, IEnumerable<ProjectSessionViewModel>? tasks = null)
     {
         this._mapper = mapper;
+        _factory = factory;
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,

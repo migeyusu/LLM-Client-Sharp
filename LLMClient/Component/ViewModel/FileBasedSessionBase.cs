@@ -104,6 +104,8 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
         }
     }
 
+    public abstract ILLMSession CloneHeader();
+
     protected FileInfo GetAssociateFile()
     {
         return new FileInfo(FileFullPath);

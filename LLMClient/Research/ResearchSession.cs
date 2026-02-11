@@ -39,6 +39,11 @@ public class ResearchSession : FileBasedSessionBase, ILLMSessionLoader<ResearchS
         throw new NotImplementedException();
     }
 
+    public override ILLMSession CloneHeader()
+    {
+        throw new NotImplementedException();
+    }
+
     protected override Task SaveToStream(Stream stream)
     {
         throw new NotImplementedException();

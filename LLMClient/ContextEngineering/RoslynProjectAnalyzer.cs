@@ -1,8 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 
@@ -20,6 +22,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
     {
         _config = config ?? new AnalyzerConfig();
         _logger = logger;
+        
         _workspace = MSBuildWorkspace.Create();
         _workspace.RegisterWorkspaceFailedHandler(args =>
         {
@@ -29,6 +32,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
             else
                 _logger?.LogError($"MSBuild error: {e.Message}");
         });
+        
     }
 
 
