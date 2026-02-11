@@ -4,9 +4,11 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using AutoMapper;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
@@ -145,6 +147,50 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
             OnPropertyChanged(nameof(Tokens));
         }
     }
+
+    /// <summary>
+    /// 在响应过程中，临时存储文本内容，不持久化
+    /// </summary>
+    private readonly StringBuilder _responseHistory = new StringBuilder();
+
+    public static ICommand ShowTempResponseCommand { get; } = new RelayCommand<ResponseViewItem>(o =>
+    {
+        if (o == null)
+        {
+            return;
+        }
+
+        var tempWindow = new Window()
+        {
+            Content = new ScrollViewer()
+            {
+                Content = new TextBox()
+                {
+                    IsReadOnly = true,
+                    Text = o._responseHistory.ToString(),
+                    TextWrapping = TextWrapping.Wrap
+                }
+            }
+        };
+        tempWindow.ShowDialog();
+    });
+
+    //标记为有效结果
+    public static ICommand MarkValidCommand { get; } = new RelayCommand<ResponseViewItem>((o =>
+    {
+        if (o == null)
+        {
+            return;
+        }
+
+        o.IsManualValid = true;
+    }));
+
+
+    public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<ResponseViewItem>(o =>
+    {
+        o?.SwitchAvailableInContext();
+    });
 
     public ObservableCollection<string> TempResponseText { get; } = new();
 
@@ -373,7 +419,6 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
         var completedResult = CompletedResult.Empty;
         try
         {
-            
             if (Client == null)
             {
                 throw new InvalidOperationException("Client is null");
@@ -389,6 +434,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
             _tempDocument = new FlowDocument();
             IsResponding = true;
             TempResponseText.Clear();
+            _responseHistory.Clear();
             RequestTokenSource = token != CancellationToken.None
                 ? CancellationTokenSource.CreateLinkedTokenSource(token)
                 : new CancellationTokenSource();
@@ -457,7 +503,6 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
 
         public ResponseViewItemInteractor(FlowDocument flowDocument, ResponseViewItem responseViewItem)
         {
-            var responseViewItem1 = responseViewItem;
             _customRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
             _task = Task.Run(() =>
             {
@@ -472,10 +517,14 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
                         });
                     });
             });
-            _outputAction = (message) =>
+            _outputAction = message =>
             {
                 _blockingCollection.Add(message);
-                Dispatch(() => responseViewItem1.TempResponseText.Add(message));
+                Dispatch(() =>
+                {
+                    responseViewItem.TempResponseText.Add(message);
+                    responseViewItem._responseHistory.Append(message);
+                });
             };
         }
 

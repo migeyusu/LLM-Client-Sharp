@@ -38,7 +38,7 @@ public static class ModelRegister
             try
             {
                 using var stream = File.OpenRead(fullPath);
-                var loadedModels = JsonSerializer.Deserialize<List<ModelDescriptor>>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var loadedModels = JsonSerializer.Deserialize<List<ModelDescriptor>>(stream, options: new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (loadedModels != null)
                 {
                     foreach (var loadedModel in loadedModels)

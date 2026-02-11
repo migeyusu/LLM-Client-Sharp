@@ -432,6 +432,9 @@
                                           CommandParameter="{Binding Mode=OneTime}"
                                           ToolTip="保留当前消息并删除所有之后的消息"
                                           Icon="{materialDesign:PackIcon Kind=WaveArrowDown}" />
+                                <MenuItem Header="查看日志"
+                                          Command="{x:Static dialog:ResponseViewItem.ShowTempResponseCommand}"
+                                          CommandParameter="{Binding AcceptedResponse,Mode=OneWay}" />
                                 <MenuItem Header="标记为有效回复"
                                           IsCheckable="True"
                                           IsChecked="{Binding AcceptedResponse.IsManualValid,Mode=TwoWay}"
@@ -513,7 +516,7 @@
                             Margin="16,0,0,0">
                     <CheckBox VerticalAlignment="Center"
                               Margin="6,0"
-                              Command="{x:Static dialog:MultiResponseViewItem.SetAsAvailableCommand}"
+                              Command="{x:Static dialog:ResponseViewItem.SetAsAvailableCommand}"
                               CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                               ToolTip="通过将当前回复设置为在上下文中有效，可以跳过一些回复，减少上下文的长度"
                               IsChecked="{Binding AcceptedResponse.IsAvailableInContext,Mode=OneWay}">

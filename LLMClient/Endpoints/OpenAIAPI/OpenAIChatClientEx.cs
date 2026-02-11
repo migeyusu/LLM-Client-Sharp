@@ -23,7 +23,7 @@ public class OpenAIChatClientEx : ChatClient
         var clientContext = AsyncContextStore<ChatContext>.Current;
         if (clientContext != null)
         {
-            if (clientContext.AdditionalObjects.Count != 0)
+            if (clientContext.AdditionalObjects.Count != 0 || clientContext.ShowRequestJson)
             {
                 await using (var oriStream = new MemoryStream())
                 {
@@ -34,6 +34,12 @@ public class OpenAIChatClientEx : ChatClient
                     if (jsonNode == null)
                     {
                         throw new InvalidOperationException("Content is not valid JSON.");
+                    }
+
+                    if (clientContext.ShowRequestJson)
+                    {
+                        clientContext.Interactor?.WriteLine("Request JSON:");
+                        clientContext.Interactor?.WriteLine(jsonNode.ToString());
                     }
 
                     foreach (var additionalObject in clientContext.AdditionalObjects)

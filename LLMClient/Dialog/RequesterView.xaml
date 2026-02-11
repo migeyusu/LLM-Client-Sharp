@@ -305,13 +305,6 @@
                                                        ChangeModelCommand="{Binding ChangeModelCommand}"
                                                        ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                                        Model="{Binding DefaultClient.Model,Mode=OneWay}" />
-                            <!--<CheckBox Content="回车发送"
-                                      Margin="10,0,0,0"
-                                      Checked="EnterKeyInputBinding_OnChecked"
-                                      Padding="0,0,0,0"
-                                      Height="36"
-                                      Unchecked="EnterKeyInputBinding_OnUnchecked"
-                                      materialDesign:CheckBoxAssist.CheckBoxSize="30" />-->
                             <!--<Button Width="120"
                                     Height="30"
                                     Content="安全黏贴"
@@ -320,6 +313,25 @@
                                        VerticalAlignment="Center"
                                        Margin="16,0,0,0"
                                        Style="{StaticResource MaterialDesignOverlineTextBlock}" />
+                            <Menu VerticalAlignment="Center"
+                                  Margin="6,0,0,0">
+                                <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert,Size=18}"
+                                          Width="18"
+                                          Height="45"
+                                          Padding="0">
+                                    <MenuItem Header="回车发送"
+                                              IsCheckable="True"
+                                              ToolTip="When enabled, pressing Enter key will send the request. When disabled, pressing Enter key will insert a new line. You can also press Ctrl+Enter to send the request when this option is disabled."
+                                              materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                                              Checked="EnterKeyInputBinding_OnChecked"
+                                              Unchecked="EnterKeyInputBinding_OnUnchecked" />
+                                    <MenuItem Header="显示请求Json"
+                                              ToolTip="When enabled, the request JSON will be displayed in the response area. This is useful for debugging and understanding the request structure."
+                                              IsCheckable="True"
+                                              materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                                              IsChecked="{Binding IsDebugMode,Mode=TwoWay}" />
+                                </MenuItem>
+                            </Menu>
                             <Button Command="{Binding CancelLastCommand}"
                                     Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                     Style="{StaticResource StopButtonStyle}"

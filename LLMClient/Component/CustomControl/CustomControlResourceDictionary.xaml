@@ -272,7 +272,7 @@
                                         Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
                                         Style="{StaticResource MaterialDesignIconButton}"
                                         Command="{TemplateBinding ChangeModelCommand}">
-                                    <iconPacks:PackIconMaterialDesign Kind="ChangeCircle"
+                                    <iconPacks:PackIconMaterialDesign Kind="SwapHorizontalCircle"
                                                                       Width="22"
                                                                       Height="22"
                                                                       Foreground="White"

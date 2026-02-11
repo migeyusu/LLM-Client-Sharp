@@ -22,6 +22,8 @@ public class ChatContext
 
     public bool Streaming { get; set; }
 
+    public bool ShowRequestJson { get; set; }
+
     public AdditionalPropertiesDictionary AdditionalObjects { get; }
 
     public List<AIContent> AdditionalFunctionCallResult { get; } = new List<AIContent>();

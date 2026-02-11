@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -142,27 +143,12 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
             o.ParentSession.RemoveAfter(o);
         });
-
+    
     public ICommand ClearOthersCommand { get; }
-
-    //标记为有效结果
-    public static ICommand MarkValidCommand { get; } = new RelayCommand<ResponseViewItem>((o =>
-    {
-        if (o == null)
-        {
-            return;
-        }
-
-        o.IsManualValid = true;
-    }));
 
     public static ICommand RetryCurrentCommand { get; } =
         new RelayCommand<MultiResponseViewItem>(o => o?.RetryCurrent());
 
-    public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<ResponseViewItem>(o =>
-    {
-        o?.SwitchAvailableInContext();
-    });
 
     private int _acceptedIndex = -1;
 

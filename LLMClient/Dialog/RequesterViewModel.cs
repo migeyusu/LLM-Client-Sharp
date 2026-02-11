@@ -215,11 +215,26 @@ public class RequesterViewModel : BaseViewModel
         }
     }
 
-    public ICommand CancelLastCommand => new ActionCommand(_ => { _tokenSource?.Cancel(); });
+    public ICommand CancelLastCommand { get; }
+
+    private bool _isDebugMode;
+
+    public bool IsDebugMode
+    {
+        get => _isDebugMode;
+        set
+        {
+            if (value == _isDebugMode) return;
+            _isDebugMode = value;
+            OnPropertyChanged();
+        }
+    }
 
     #endregion
 
-    private readonly Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>> _getResponse;
+    private readonly Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>>
+        _getResponse;
+
     private readonly GlobalOptions _options;
 
     private readonly ITokensCounter _tokensCounter;
@@ -237,6 +252,7 @@ public class RequesterViewModel : BaseViewModel
         _ragSourceCollection = ragSourceCollection;
         _tokensCounter = tokensCounter;
         this.BindClient(modelClient);
+        CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
         this.PropertyChanged += (sender, args) =>
         {
             if (args.PropertyName == nameof(EstimatedTokens))
@@ -357,6 +373,7 @@ public class RequesterViewModel : BaseViewModel
             RagSources = ragSources.Length > 0 ? ragSources : null,
             CallEngine = this.FunctionTreeSelector.EngineType ??
                          this.FunctionTreeSelector.SelectableCallEngineTypes.FirstOrDefault(),
+            IsDebugMode = this.IsDebugMode
         };
     }
 

@@ -39,6 +39,8 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
         }
     }
 
+    public bool IsDebugMode { get; set; }
+
     public bool DisplayRawText
     {
         get => _displayRawText;
