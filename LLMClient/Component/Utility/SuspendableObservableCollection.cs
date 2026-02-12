@@ -125,7 +125,7 @@ public class SuspendableObservableCollection<T> : ObservableCollection<T>, ISupp
     }
 
     /// <summary>
-    /// same as endreset
+    /// same as end reset
     /// </summary>
     public void EndInit()
     {

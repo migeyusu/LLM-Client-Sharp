@@ -38,6 +38,17 @@ public enum ModelIconType : int
     GoogleCloud,
     HuaweiCloud,
     AlibabaCloud,
+    StepFun,
+    [DarkMode]
+    KwaiKAT,
+    [DarkMode]
+    Anthropic,
+    [DarkMode]
+    OpenAI,
+    VertexAI,
+    Ollama,
+    Alibaba,
+    Deepmind,
 }
 
 public class DarkModeAttribute : Attribute

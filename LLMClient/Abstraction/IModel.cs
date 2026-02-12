@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.Abstraction;
 
-public interface IModel
+public interface IModel : IModelParams
 {
     string? SeriesName { get; }
 

@@ -217,7 +217,7 @@ public class RequesterViewModel : BaseViewModel
 
     public ICommand CancelLastCommand { get; }
 
-    private bool _isDebugMode;
+    private bool _isDebugMode = true;
 
     public bool IsDebugMode
     {

@@ -2,10 +2,13 @@
 
 public interface IEndpointService
 {
+    /// <summary>
+    /// distinct endpoints, which can be used for selection when creating a new session. It may contain endpoints that are not used in history, but can be used for new sessions. It should not contain endpoints that are used in history but not available anymore.
+    /// </summary>
     IReadOnlyList<ILLMAPIEndpoint> AvailableEndpoints { get; }
 
     /// <summary>
-    /// all available endpoint candidates, including history models and suggested endpoints
+    /// for ui, including history models and suggested endpoints
     /// </summary>
     IReadOnlyList<ILLMAPIEndpoint> CandidateEndpoints { get; }
 

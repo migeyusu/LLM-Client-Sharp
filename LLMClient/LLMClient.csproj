@@ -452,6 +452,30 @@
         <Resource Include="Resources\Images\llm\openrouter-light.png"/>
         <None Remove="Resources\Images\llm\perplexity.png"/>
         <Resource Include="Resources\Images\llm\perplexity.png"/>
+        <None Remove="Resources\Images\llm\alibaba.png" />
+        <Resource Include="Resources\Images\llm\alibaba.png" />
+        <None Remove="Resources\Images\llm\anthropic-dark.png" />
+        <Resource Include="Resources\Images\llm\anthropic-dark.png" />
+        <None Remove="Resources\Images\llm\anthropic-light.png" />
+        <Resource Include="Resources\Images\llm\anthropic-light.png" />
+        <None Remove="Resources\Images\llm\deepmind.png" />
+        <Resource Include="Resources\Images\llm\deepmind.png" />
+        <None Remove="Resources\Images\llm\kwaikat-dark.png" />
+        <Resource Include="Resources\Images\llm\kwaikat-dark.png" />
+        <None Remove="Resources\Images\llm\kwaikat-light.png" />
+        <Resource Include="Resources\Images\llm\kwaikat-light.png" />
+        <None Remove="Resources\Images\llm\ollama-dark.png" />
+        <Resource Include="Resources\Images\llm\ollama-dark.png" />
+        <None Remove="Resources\Images\llm\ollama-light.png" />
+        <Resource Include="Resources\Images\llm\ollama-light.png" />
+        <None Remove="Resources\Images\llm\openai-dark.png" />
+        <Resource Include="Resources\Images\llm\openai-dark.png" />
+        <None Remove="Resources\Images\llm\openai-light.png" />
+        <Resource Include="Resources\Images\llm\openai-light.png" />
+        <None Remove="Resources\Images\llm\stepfun.png" />
+        <Resource Include="Resources\Images\llm\stepfun.png" />
+        <None Remove="Resources\Images\llm\vertexai.png" />
+        <Resource Include="Resources\Images\llm\vertexai.png" />
     </ItemGroup>
 
     <ItemGroup>

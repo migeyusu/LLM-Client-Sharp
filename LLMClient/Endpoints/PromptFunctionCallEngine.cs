@@ -1,10 +1,13 @@
-﻿using System.Text;
+﻿using System.ComponentModel;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using LLMClient.Abstraction;
+using LLMClient.Component.Converters;
 using LLMClient.Component.Render;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
@@ -14,10 +17,14 @@ using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Endpoints;
 
+[TypeConverter(typeof(EnumDescriptionTypeConverter))]
+[JsonConverter(typeof(JsonStringEnumConverter<FunctionCallEngineType>))]
+
 public enum FunctionCallEngineType
 {
-    OpenAI,
-    Prompt
+    [Description("OpenAI API")] OpenAI,
+
+    [Description("Prompt-based")] Prompt
 }
 
 public abstract class FunctionCallEngine
@@ -343,7 +350,7 @@ public class PromptFunctionCallEngine : FunctionCallEngine
                 serializer.Serialize(xmlWriter, container);
             }
         }
-        
+
         // 添加到回复消息中
         replyMessage.Contents.Insert(0, new TextContent(sb.ToString()));
     }

@@ -1,14 +1,44 @@
-﻿using System.Windows.Data;
+﻿using System.Collections.ObjectModel;
+using System.Windows.Data;
 using LambdaConverters;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Windows.Media;
+using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
+using LLMClient.Component.Utility;
+using LLMClient.Data;
 
 namespace LLMClient.Endpoints;
 
-public class ModelDescriptor
+/// <summary>
+/// used for defining the provider and model information
+/// </summary>
+public class ProviderDescriptor
 {
     public required string ProviderName { get; set; }
     public required string[] ModelNames { get; set; }
+}
+
+public class ProviderEntry
+{
+    public required string ProviderName { get; set; }
+
+    public ThemedIcon? Icon { get; set; }
+    public ObservableCollection<ModelEntry> ModelEntries { get; set; } = [];
+}
+
+public class ModelEntry
+{
+    public required string ModelName { get; set; }
+
+    public ThemedIcon? Icon { get; set; }
+
+    /// <summary>
+    /// associated models in endpoints.
+    /// </summary>
+    public ObservableCollection<IEndpointModel> InstanceList { get; set; } = [];
 }
 
 public static class ModelRegister
@@ -22,23 +52,108 @@ public static class ModelRegister
                 return null;
             }
 
-            var descriptor = OfficialModels.FirstOrDefault(d => d.ProviderName == value);
+            var descriptor = ModelsDefinitions.FirstOrDefault(d => d.ProviderName == value);
             return descriptor?.ModelNames;
         });
 
-    private static List<ModelDescriptor>? _officialModels;
+    public static SuspendableObservableCollection<ProviderEntry> ProviderEntries { get; } = [];
+
+    private static void DeAssociateModelInstance(string oriProviderName, string oriModelName, IEndpointModel model)
+    {
+        if (string.IsNullOrEmpty(oriProviderName) || string.IsNullOrEmpty(oriModelName))
+        {
+            //触发完全遍历
+            foreach (var provider in ProviderEntries)
+            {
+                foreach (var modelEntry in provider.ModelEntries)
+                {
+                    modelEntry.InstanceList.Remove(model);
+                }
+            }
+        }
+        else
+        {
+            //找到并移除
+            var provider = ProviderEntries.FirstOrDefault(p =>
+                p.ProviderName.Equals(oriProviderName, StringComparison.OrdinalIgnoreCase));
+            var modelEntry = provider?.ModelEntries.FirstOrDefault(me =>
+                me.ModelName.Equals(oriModelName, StringComparison.OrdinalIgnoreCase));
+            modelEntry?.InstanceList.Remove(model);
+        }
+    }
+
+    /// <summary>
+    /// associate model instance for a provider and model name. This is used to associate the model instance with the provider and model name, so that it can be retrieved later when needed. If the provider or model name does not exist, it will be created. If the model instance already exists for the provider and model name, it will not be added again.
+    /// </summary>
+    /// <param name="modelInstance"></param>
+    private static void AssociateModelInstance(IEndpointModel modelInstance)
+    {
+        var providerName = modelInstance.Provider;
+        var modelName = modelInstance.SeriesName;
+        if (string.IsNullOrEmpty(providerName) || string.IsNullOrEmpty(modelName))
+        {
+            return;
+        }
+
+        var provider = ProviderEntries.FirstOrDefault(p =>
+            p.ProviderName.Equals(providerName, StringComparison.OrdinalIgnoreCase));
+        if (provider == null)
+        {
+            provider = new ProviderEntry { ProviderName = providerName, ModelEntries = [] };
+            var @default = Enum.GetNames<ModelIconType>()
+                .FirstOrDefault(s => s.Equals(providerName, StringComparison.OrdinalIgnoreCase));
+            if (@default != null)
+            {
+                provider.Icon = ((ModelIconType)Enum.Parse(typeof(ModelIconType), @default)).GetIcon();
+            }
+            else
+            {
+                provider.Icon = modelInstance.Icon;
+            }
+
+            ProviderEntries.Add(provider);
+        }
+
+        var modelEntry = provider.ModelEntries.FirstOrDefault(me =>
+            me.ModelName.Equals(modelName, StringComparison.OrdinalIgnoreCase));
+        if (modelEntry == null)
+        {
+            modelEntry = new ModelEntry
+            {
+                ModelName = modelName, InstanceList = [],
+                Icon = modelInstance.Icon
+            };
+            provider.ModelEntries.Add(modelEntry);
+        }
+
+        if (!modelEntry.InstanceList.Contains(modelInstance))
+        {
+            modelEntry.InstanceList.Add(modelInstance);
+        }
+    }
+
+    public static async Task Initialize(IEnumerable<IEndpointModel>? endpointModels)
+    {
+        await LoadModelDefinitionsFromFile(ModelsDefinitions);
+        if (endpointModels != null)
+            foreach (var model in endpointModels)
+            {
+                AssociateModelInstance(model);
+            }
+    }
 
     public const string ModelsDefinitionFileName = "models_definition.json";
 
-    private static void LoadModelsFromFile(List<ModelDescriptor> models)
+    private static async Task LoadModelDefinitionsFromFile(List<ProviderDescriptor> models)
     {
         var fullPath = Path.GetFullPath(ModelsDefinitionFileName);
         if (File.Exists(fullPath))
         {
             try
             {
-                using var stream = File.OpenRead(fullPath);
-                var loadedModels = JsonSerializer.Deserialize<List<ModelDescriptor>>(stream, options: new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                await using var stream = File.OpenRead(fullPath);
+                var loadedModels = await JsonSerializer.DeserializeAsync<List<ProviderDescriptor>>(stream,
+                    options: new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (loadedModels != null)
                 {
                     foreach (var loadedModel in loadedModels)
@@ -68,31 +183,15 @@ public static class ModelRegister
         }
     }
 
-    public static void RegisterModel(string provider, string modelName)
-    {
-        var modelDescriptors = OfficialModels;
-        var providerDescriptor = modelDescriptors.FirstOrDefault(p => p.ProviderName.Equals(provider, StringComparison.OrdinalIgnoreCase));
-        if (providerDescriptor == null)
-        {
-            providerDescriptor = new ModelDescriptor { ProviderName = provider, ModelNames = [] };
-            modelDescriptors.Add(providerDescriptor);
-        }
+    private static List<ProviderDescriptor>? _modelsDefinitions;
 
-        if (!providerDescriptor.ModelNames.Contains(modelName))
-        {
-            var newList = providerDescriptor.ModelNames.ToList();
-            newList.Add(modelName);
-            providerDescriptor.ModelNames = newList.ToArray();
-        }
-    }
-
-    public static List<ModelDescriptor> OfficialModels
+    public static List<ProviderDescriptor> ModelsDefinitions
     {
         get
         {
-            if (_officialModels != null) return _officialModels;
-            
-            _officialModels =
+            if (_modelsDefinitions != null) return _modelsDefinitions;
+
+            _modelsDefinitions =
             [
                 new()
                 {
@@ -251,10 +350,7 @@ public static class ModelRegister
                     ]
                 }
             ];
-            
-            LoadModelsFromFile(_officialModels);
-            
-            return _officialModels;
+            return _modelsDefinitions;
         }
     }
 }

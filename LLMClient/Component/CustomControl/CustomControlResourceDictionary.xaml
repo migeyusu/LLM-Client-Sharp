@@ -45,8 +45,8 @@
                             Background="{TemplateBinding Background}"
                             Margin="{TemplateBinding Padding}">
                         <customControl:ScrollViewerEx x:Name="PART_ContentHost" CanContentScroll="True"
-                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -235,15 +235,6 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type customControl:ModelButton}">
                     <StackPanel Orientation="Horizontal">
-                        <Button ToolTip="模型信息"
-                                Width="30"
-                                Height="30"
-                                Margin="0,0,4,0"
-                                Content="{materialDesign:PackIcon Kind=InformationOutline,Size=20}"
-                                Style="{StaticResource MaterialDesignIconButton}"
-                                Visibility="{TemplateBinding Model,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
-                                Command="{TemplateBinding   ModelDetailCommand}"
-                                CommandParameter="{TemplateBinding Model}" />
                         <Button Command="{TemplateBinding Command}"
                                 CommandParameter="{TemplateBinding CommandParameter}"
                                 CommandTarget="{TemplateBinding CommandTarget}"
@@ -251,19 +242,27 @@
                                 materialDesign:ButtonAssist.CornerRadius="15"
                                 Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
                                 BorderThickness="0"
-                                Padding="10,5"
+                                Padding="4,0"
                                 ToolTip="配置模型">
                             <StackPanel Orientation="Horizontal">
-                                <Image
-                                    Source="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Model.Icon.CurrentSource}"
-                                    Width="20"
-                                    Height="20" />
+                                <Button ToolTip="模型信息"
+                                        Width="30"
+                                        Height="30"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Visibility="{TemplateBinding Model,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                        Command="{TemplateBinding   ModelDetailCommand}"
+                                        CommandParameter="{TemplateBinding Model}">
+                                    <Image
+                                        Source="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Model.Icon.CurrentSource}"
+                                        Width="20"
+                                        Height="20" />
+                                </Button>
                                 <TextBlock
                                     Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path= Model.Name}"
                                     VerticalAlignment="Center"
                                     TextTrimming="CharacterEllipsis"
-                                    MaxWidth="120"
-                                    Margin="10,0,0,0" />
+                                    MaxWidth="160"
+                                    Margin="4,0,0,0" />
                                 <Button ToolTip="更改模型"
                                         Visibility="{TemplateBinding ChangeModelEnable,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
                                         Margin="10,0,0,0"

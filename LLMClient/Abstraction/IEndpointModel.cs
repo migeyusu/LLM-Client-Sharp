@@ -3,9 +3,9 @@
 namespace LLMClient.Abstraction;
 
 /// <summary>
-/// 不同的服务商提供相同模型的不同特性
+/// models for endpoints, which can be used for selection when creating a new session or changing the model of an existing session. It also contains the information about the features supported by the model, which can be used for rendering the UI and enabling/disabling certain features.
 /// </summary>
-public interface IEndpointModel : IModel, IModelParams
+public interface IEndpointModel : IModel
 {
     /// <summary>
     /// 用于api的id

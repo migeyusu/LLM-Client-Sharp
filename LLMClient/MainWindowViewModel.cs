@@ -16,6 +16,7 @@ using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Dialog;
+using LLMClient.Endpoints;
 using LLMClient.Project;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
@@ -428,6 +429,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
             await McpServiceCollection.LoadAsync();
             await RagSourceCollection.LoadAsync();
             await EndpointsViewModel.Initialize();
+            await ModelRegister.Initialize(EndpointsViewModel.AvailableEndpoints.SelectMany((endpoint => endpoint.AvailableModels)));
             await PromptsResource.Initialize();
             await InitialSessionsFromLocal();
             if (SessionViewModels.Any())

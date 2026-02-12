@@ -128,16 +128,6 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="Tools"
                                                    VerticalAlignment="Center" />
-                                        <ComboBox Width="80"
-                                                  ToolTip="When only model don't support function call, only 'Prompt' mode is enable."
-                                                  ToolTipService.InitialShowDelay="0"
-                                                  BorderThickness="0"
-                                                  materialDesign:HintAssist.Hint="Mode"
-                                                  Padding="6,3"
-                                                  VerticalAlignment="Center"
-                                                  ItemsSource="{Binding SelectableCallEngineTypes,Mode=OneWay}"
-                                                  SelectedItem="{Binding EngineType,Mode=TwoWay}">
-                                        </ComboBox>
                                         <materialDesign:PopupBox Margin="4,0,6,0"
                                                                  StaysOpen="True"
                                                                  PlacementMode="TopAndAlignLeftEdges"
@@ -152,48 +142,51 @@
                                     </StackPanel>
                                 </CheckBox>
                             </materialDesign:Card>
-                            <materialDesign:Card Padding="8,0"
+                            <materialDesign:Card Padding="4,0"
                                                  Margin="6,0,0,0"
                                                  UniformCornerRadius="12"
                                                  Height="32"
                                                  Visibility="{Binding SearchConfig.IsSearchAvailable,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                                  materialDesign:ElevationAssist.Elevation="Dp3">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PopupBox StaysOpen="True"
-                                                             PlacementMode="TopAndAlignLeftEdges"
-                                                             ToggleContent="{materialDesign:PackIcon Kind=Web,Size=16}"
-                                                             VerticalAlignment="Center"
-                                                             ToolTip="Web Search工具"
-                                                             PopupUniformCornerRadius="8"
-                                                             PopupContent="{Binding SearchConfig,Mode=OneWay}"
-                                                             Style="{StaticResource MaterialDesignToolPopupBox}">
-                                        <materialDesign:PopupBox.PopupContentTemplate>
-                                            <DataTemplate DataType="{x:Type toolCall:SearchConfigViewModel}">
-                                                <ListBox ItemsSource="{Binding SelectableSearchOptions,Mode=OneWay}"
-                                                         SelectedItem="{Binding SelectedSearchService,Mode=TwoWay}"
-                                                         SelectionMode="Single">
-                                                    <ListBox.ItemTemplate>
-                                                        <DataTemplate DataType="{x:Type abstraction:ISearchOption}">
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Image
-                                                                    Source="{Binding Icon.CurrentSource,Mode=OneWay}"
-                                                                    Width="21"
-                                                                    Height="21" />
-                                                                <TextBlock Text="{Binding Name,Mode=OneTime}"
-                                                                           VerticalAlignment="Center"
-                                                                           Margin="6,0,0,0" />
-                                                            </StackPanel>
-                                                        </DataTemplate>
-                                                    </ListBox.ItemTemplate>
-                                                </ListBox>
-                                            </DataTemplate>
-                                        </materialDesign:PopupBox.PopupContentTemplate>
-                                    </materialDesign:PopupBox>
-                                    <TextBlock Text="Search"
-                                               Margin="6,0"
-                                               VerticalAlignment="Center" />
-                                    <ToggleButton IsChecked="{Binding SearchConfig.SearchEnable,Mode=TwoWay}" />
-                                </StackPanel>
+                                <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
+                                          IsChecked="{Binding SearchConfig.SearchEnable,Mode=TwoWay}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Search"
+                                                   VerticalAlignment="Center" />
+                                        <materialDesign:PopupBox Margin="4,0,6,0"
+                                                                 StaysOpen="True"
+                                                                 PlacementMode="TopAndAlignLeftEdges"
+                                                                 ToggleContent="{materialDesign:PackIcon Kind=Web,Size=16}"
+                                                                 VerticalAlignment="Center"
+                                                                 ToolTip="Web Search工具"
+                                                                 PopupUniformCornerRadius="8"
+                                                                 PopupContent="{Binding SearchConfig,Mode=OneWay}"
+                                                                 Style="{StaticResource MaterialDesignToolPopupBox}">
+                                            <materialDesign:PopupBox.PopupContentTemplate>
+                                                <DataTemplate DataType="{x:Type toolCall:SearchConfigViewModel}">
+                                                    <ListBox
+                                                        ItemsSource="{Binding SelectableSearchOptions,Mode=OneWay}"
+                                                        SelectedItem="{Binding SelectedSearchService,Mode=TwoWay}"
+                                                        SelectionMode="Single">
+                                                        <ListBox.ItemTemplate>
+                                                            <DataTemplate DataType="{x:Type abstraction:ISearchOption}">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Image
+                                                                        Source="{Binding Icon.CurrentSource,Mode=OneWay}"
+                                                                        Width="21"
+                                                                        Height="21" />
+                                                                    <TextBlock Text="{Binding Name,Mode=OneTime}"
+                                                                               VerticalAlignment="Center"
+                                                                               Margin="6,0,0,0" />
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </ListBox.ItemTemplate>
+                                                    </ListBox>
+                                                </DataTemplate>
+                                            </materialDesign:PopupBox.PopupContentTemplate>
+                                        </materialDesign:PopupBox>
+                                    </StackPanel>
+                                </CheckBox>
                             </materialDesign:Card>
                             <materialDesign:Card Padding="4,0"
                                                  Margin="6,0,0,0"
@@ -229,7 +222,7 @@
                                                              Opened="RagPopupBox_OnOpened"
                                                              Closed="RagPopupBox_OnClosed"
                                                              PlacementMode="TopAndAlignLeftEdges"
-                                                             ToggleContent="{materialDesign:PackIcon Kind=DataMatrixEdit,Size=16}"
+                                                             ToggleContent="{materialDesign:PackIcon Kind=Database,Size=16}"
                                                              ToggleCheckedContent="{materialDesign:PackIcon Kind=Add,Size=16}"
                                                              VerticalAlignment="Center"
                                                              PopupUniformCornerRadius="8"

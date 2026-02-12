@@ -33,7 +33,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBox Text="{Binding Name,Mode=TwoWay}"
-                     materialDesign:HintAssist.Hint="Unique Name"
+                     materialDesign:HintAssist.Hint="Unique Name for EndPoint"
                      MinWidth="160"
                      MaxWidth="200"
                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
@@ -62,7 +62,7 @@
                       x:Name="PublisherComboBox"
                       Padding="16,10"
                       DisplayMemberPath="ProviderName"
-                      ItemsSource="{x:Static endpoints:ModelRegister.OfficialModels}"
+                      ItemsSource="{x:Static endpoints:ModelRegister.ModelsDefinitions}"
                       SelectedValue="{Binding  Provider,Mode=TwoWay}"
                       SelectedValuePath="ProviderName"
                       Style="{StaticResource MaterialDesignOutlinedComboBox}"
@@ -87,7 +87,7 @@
                  Margin="0,0,0,10" />
         <ContentControl Content="{Binding PriceCalculator,Mode=OneWay}"
                         ContentTemplate="{StaticResource PriceCalculatorDataTemplate}" />
-        <Grid>
+        <Grid Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition />
@@ -177,7 +177,7 @@
                       Visibility="{Binding SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                       ToolTip="Support Function Call when Streaming (Many Endpoints don't support)" />
         </StackPanel>
-        <Expander Header="Advanced Mode"
+        <Expander Header="Advanced Parameters"
                   Margin="0,10,0,0">
             <StackPanel>
                 <endpoints:ParamConfigView PropertyName="Top P Enable"

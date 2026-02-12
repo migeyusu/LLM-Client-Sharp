@@ -138,6 +138,17 @@
                             Command="{Binding CancelRefreshCommand}" />
                 </StackPanel>
             </materialDesign:Card>
+            <ComboBox Grid.Row="1"
+                      Width="120"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center"
+                      ToolTip="When only model don't support function call, only 'Prompt' mode is enable."
+                      ToolTipService.InitialShowDelay="0"
+                      BorderThickness="0"
+                      materialDesign:HintAssist.Hint="Call Mode"
+                      Padding="6,3"
+                      ItemsSource="{Binding SelectableCallEngineTypes,Mode=OneWay}"
+                      SelectedItem="{Binding EngineType,Mode=TwoWay}" />
             <StackPanel Grid.Row="1"
                         HorizontalAlignment="Right"
                         Orientation="Horizontal"
@@ -158,27 +169,111 @@
                   DataType="{x:Type viewModel:BaseModelSelectionViewModel}">
         <StackPanel Margin="5,10"
                     Width="370">
-            <DockPanel Height="200">
-                <ListBox DisplayMemberPath="DisplayName"
-                         Width="150"
-                         SelectedIndex="0"
-                         x:Name="AvailableEndpointsListBox"
-                         ItemsSource="{Binding Source={extension:Service {x:Type abstraction:IEndpointService}},Path=CandidateEndpoints,Mode=OneWay}" />
-                <ListBox DockPanel.Dock="Right"
-                         HorizontalAlignment="Stretch"
-                         DisplayMemberPath="Name"
-                         materialDesign:RippleAssist.IsDisabled="True"
-                         SelectedItem="{Binding SelectedModel,Mode=TwoWay}"
-                         ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}">
-                    <b:Interaction.Triggers>
-                        <b:EventTrigger EventName="MouseDoubleClick">
-                            <b:InvokeCommandAction CommandParameter="{Binding }"
-                                                   Command="{x:Static viewModel:BaseModelSelectionViewModel.CreateDefaultCommand}" />
-                        </b:EventTrigger>
-                    </b:Interaction.Triggers>
-                </ListBox>
-            </DockPanel>
-            <Grid>
+            <materialDesign:Flipper Height="250"
+                                    materialDesign:ElevationAssist.Elevation="Dp0"
+                                    BorderThickness="0"
+                                    HorizontalContentAlignment="Stretch"
+                                    HorizontalAlignment="Stretch">
+                <materialDesign:Flipper.FrontContent>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Endpoints View"
+                                   FontWeight="Black"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Left"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                        <Button Grid.Row="0"
+                                HorizontalAlignment="Right"
+                                Margin="0"
+                                Width="32"
+                                Height="32"
+                                Command="{x:Static materialDesign:Flipper.FlipCommand}"
+                                Content="{materialDesign:PackIcon Kind=SwapHorizontalBold}"
+                                Style="{StaticResource MaterialDesignIconButton}" />
+                        <DockPanel Grid.Row="1"
+                                   Margin="0,10,0,0">
+                            <ListBox DisplayMemberPath="DisplayName"
+                                     Width="150"
+                                     SelectedIndex="0"
+                                     x:Name="AvailableEndpointsListBox"
+                                     ItemsSource="{Binding Source={extension:Service {x:Type abstraction:IEndpointService}},Path=CandidateEndpoints,Mode=OneWay}" />
+                            <ListBox DockPanel.Dock="Right"
+                                     HorizontalAlignment="Stretch"
+                                     DisplayMemberPath="Name"
+                                     materialDesign:RippleAssist.IsDisabled="True"
+                                     SelectedItem="{Binding SelectedModel,Mode=TwoWay}"
+                                     ItemsSource="{Binding ElementName=AvailableEndpointsListBox,Path=SelectedItem.AvailableModels,Mode=OneWay}">
+                                <b:Interaction.Triggers>
+                                    <b:EventTrigger EventName="MouseDoubleClick">
+                                        <b:InvokeCommandAction CommandParameter="{Binding }"
+                                                               Command="{x:Static viewModel:BaseModelSelectionViewModel.CreateDefaultCommand}" />
+                                    </b:EventTrigger>
+                                </b:Interaction.Triggers>
+                            </ListBox>
+                        </DockPanel>
+                    </Grid>
+                </materialDesign:Flipper.FrontContent>
+                <materialDesign:Flipper.BackContent>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Models View"
+                                   FontWeight="Black"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Left"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                        <Button Grid.Row="0"
+                                HorizontalAlignment="Right"
+                                Margin="0"
+                                Width="32"
+                                Height="32"
+                                Command="{x:Static materialDesign:Flipper.FlipCommand}"
+                                Content="{materialDesign:PackIcon Kind=SwapHorizontalBold}"
+                                Style="{StaticResource MaterialDesignIconButton}" />
+                        <TreeView Grid.Row="1"
+                                  Margin="0,10,0,0"
+                                  SelectedItemChanged="TreeView_OnSelectedItemChanged"
+                                  ItemsSource="{Binding Source={x:Static endpoints:ModelRegister.ProviderEntries},Mode=OneWay}">
+                            <TreeView.Resources>
+                                <HierarchicalDataTemplate DataType="{x:Type endpoints:ProviderEntry}"
+                                                          ItemsSource="{Binding ModelEntries,Mode=OneTime}">
+                                    <TextBlock Text="{Binding ProviderName,Mode=OneTime}" />
+                                </HierarchicalDataTemplate>
+                                <HierarchicalDataTemplate DataType="{x:Type endpoints:ModelEntry}"
+                                                          ItemsSource="{Binding InstanceList,Mode=OneTime}">
+                                    <TextBlock Text="{Binding ModelName,Mode=OneTime}" />
+                                </HierarchicalDataTemplate>
+                                <DataTemplate DataType="{x:Type openAiapi:APIModelInfo}">
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0} ({1})">
+                                                <Binding Path="Endpoint.DisplayName" Mode="OneTime" />
+                                                <Binding Path="PriceCalculator" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type models:AzureModelInfo}">
+                                    <TextBlock>
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0} ({1})">
+                                                <Binding Path="Endpoint.DisplayName" Mode="OneTime" />
+                                                <Binding Path="PriceCalculator" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </TreeView.Resources>
+                        </TreeView>
+                    </Grid>
+                </materialDesign:Flipper.BackContent>
+            </materialDesign:Flipper>
+            <Grid Margin="0,10,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition />
@@ -201,24 +296,16 @@
                            HorizontalAlignment="Left"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis"
-                           DataContext="{Binding SelectedModel,Mode=OneWay}">
-                    <TextBlock.Text>
-                        <MultiBinding StringFormat="{}{0} —— {1}">
-                            <Binding Path="Name" TargetNullValue="无" />
-                            <Binding Path="Endpoint.DisplayName" TargetNullValue="无" />
-                        </MultiBinding>
-                    </TextBlock.Text>
-                </TextBlock>
+                           DataContext="{Binding SelectedModel,Mode=OneWay}"
+                           Text="{Binding Path=Name, TargetNullValue=无,Mode=OneWay}" />
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right">
-                    <!--<Button Style="{StaticResource MaterialDesignOutlinedButton}"
-                            Command="{x:Static materialDesign:PopupBox.ClosePopupCommand}"
-                            Content="取消" />-->
                     <Button Command="{x:Static viewModel:BaseModelSelectionViewModel.CreateDefaultCommand}"
                             CommandParameter="{Binding }"
                             Content="确认"
                             Height="32"
+                            Padding="20,0"
                             Style="{StaticResource MaterialDesignRaisedButton}"
                             Margin="10,0,0,0" />
                 </StackPanel>
@@ -368,18 +455,84 @@
 
     <DataTemplate x:Key="FullModelSelectionDataTemplate"
                   DataType="{x:Type viewModel:BaseModelSelectionViewModel}">
-        <Grid Grid.Row="1">
+        <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <TreeView x:Name="EndpointsTreeView"
-                      SelectedItemChanged="TreeView_OnSelectedItemChanged"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Stretch"
-                      Width="300"
-                      ItemsSource="{Binding Source={StaticResource EndpointService},Path=CandidateEndpoints,Mode=OneWay}"
-                      ItemTemplateSelector="{StaticResource ModelsDataTemplateSelector}" />
+            <TabControl Width="300">
+                <TabItem Header="Endpoints View">
+                    <TreeView SelectedItemChanged="TreeView_OnSelectedItemChanged"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch"
+                              ItemsSource="{Binding Source={StaticResource EndpointService},Path=CandidateEndpoints,Mode=OneWay}"
+                              ItemTemplateSelector="{StaticResource ModelsDataTemplateSelector}" />
+                </TabItem>
+                <TabItem Header="Models View">
+                    <TreeView SelectedItemChanged="TreeView_OnSelectedItemChanged"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch"
+                              ItemsSource="{Binding Source={x:Static endpoints:ModelRegister.ProviderEntries},Mode=OneWay}">
+                        <TreeView.Resources>
+                            <HierarchicalDataTemplate DataType="{x:Type endpoints:ProviderEntry}"
+                                                      ItemsSource="{Binding ModelEntries,Mode=OneTime}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
+                                           Width="26"
+                                           Height="26"
+                                           Visibility="{Binding Icon,Mode=OneWay}" />
+                                    <TextBlock Text="{Binding ProviderName,Mode=OneTime}"
+                                               Margin="10,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </HierarchicalDataTemplate>
+                            <HierarchicalDataTemplate DataType="{x:Type endpoints:ModelEntry}"
+                                                      ItemsSource="{Binding InstanceList,Mode=OneTime}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
+                                           Width="26"
+                                           Height="26" />
+                                    <TextBlock Text="{Binding ModelName,Mode=OneTime}"
+                                               VerticalAlignment="Center"
+                                               Margin="10,0" />
+                                </StackPanel>
+                            </HierarchicalDataTemplate>
+                            <DataTemplate DataType="{x:Type openAiapi:APIModelInfo}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding Endpoint.Icon.CurrentSource,Mode=OneWay}"
+                                           Width="26"
+                                           Height="26" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Margin="10,0">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0} ({1})">
+                                                <Binding Path="Endpoint.DisplayName" Mode="OneTime" />
+                                                <Binding Path="PriceCalculator" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                            <DataTemplate DataType="{x:Type models:AzureModelInfo}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding Endpoint.Icon.CurrentSource,Mode=OneWay}"
+                                           Width="26"
+                                           Height="26" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Margin="10,0">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0} ({1})">
+                                                <Binding Path="Endpoint.DisplayName" Mode="OneTime" />
+                                                <Binding Path="PriceCalculator" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </TreeView.Resources>
+                    </TreeView>
+                </TabItem>
+            </TabControl>
             <Separator Grid.Column="0"
                        VerticalAlignment="Stretch"
                        Background="DarkGray"
@@ -388,7 +541,7 @@
                        Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
                        HorizontalAlignment="Right" />
             <ContentControl Grid.Column="1"
-                            Content="{Binding ElementName=EndpointsTreeView,Path=SelectedItem}">
+                            Content="{Binding SelectedModel,Mode=OneWay}">
                 <ContentControl.ContentTemplateSelector>
                     <component:TypeBasedDataTemplateSelector>
                         <component:DataTemplateTypePair>
@@ -459,8 +612,8 @@
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="80" />
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
                 <TextBox Margin="0"

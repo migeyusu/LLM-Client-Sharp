@@ -106,7 +106,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         MultiValueConverter.Create<bool, Visibility>(args =>
         {
             var values = args.Values;
-            return !values[0] && values[1] ? Visibility.Visible : Visibility.Collapsed;
+            return !values[0] && values[1] && values[1] ? Visibility.Visible : Visibility.Collapsed;
         });
 
     public static ICommand CompareAllCommand { get; } = new RelayCommand<MultiResponseViewItem>((item =>
@@ -143,7 +143,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
             o.ParentSession.RemoveAfter(o);
         });
-    
+
     public ICommand ClearOthersCommand { get; }
 
     public static ICommand RetryCurrentCommand { get; } =
@@ -279,10 +279,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
             this.AcceptedIndex = index - 1;
         });
-        NewBranchCommand = new ActionCommand(o =>
-        {
-            this.ParentSession.ForkPreTask(this);
-        });
+        NewBranchCommand = new ActionCommand(o => { this.ParentSession.ForkPreTask(this); });
     }
 
     public MultiResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)

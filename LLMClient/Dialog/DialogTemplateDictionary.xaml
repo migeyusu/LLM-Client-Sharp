@@ -401,6 +401,10 @@
                                                 Converter="{x:Static dialog:MultiResponseViewItem.DeleteItemConverter}">
                                                 <Binding Path="IsResponding" Mode="OneWay" />
                                                 <Binding
+                                                    RelativeSource="{RelativeSource FindAncestor,AncestorType=ListBoxItem}"
+                                                    Path="IsSelected"
+                                                    Mode="OneWay" />
+                                                <Binding
                                                     RelativeSource="{RelativeSource FindAncestor, AncestorType=ListBox}"
                                                     Path="DataContext.IsMultiResponse" Mode="OneWay" />
                                             </MultiBinding>

@@ -38,10 +38,10 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
     }
 
-    public ICommand AddNewEndpointCommand => new ActionCommand((o =>
+    public ICommand AddNewEndpointCommand => new ActionCommand(o =>
     {
         Endpoints.Add(new APIEndPoint(new APIEndPointOption(), _loggerFactory));
-    }));
+    });
 
     public ICommand RemoveEndPointCommand => new RelayCommand<ILLMAPIEndpoint?>((o =>
     {

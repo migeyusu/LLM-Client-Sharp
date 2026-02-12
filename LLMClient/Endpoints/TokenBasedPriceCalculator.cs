@@ -41,4 +41,9 @@ public class TokenBasedPriceCalculator : IPriceCalculator
                 OutputPrice * usage.OutputTokenCount.Value / 1000000) *
                DiscountFactor;
     }
+
+    public override string ToString()
+    {
+        return $"Input: {InputPrice}/1M tokens, Output: {OutputPrice}/1M tokens, Discount: {DiscountFactor * 100}%";
+    }
 }

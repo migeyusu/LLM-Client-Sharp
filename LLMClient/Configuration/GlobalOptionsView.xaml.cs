@@ -66,6 +66,7 @@ public partial class GlobalOptionsView : UserControl
                 CopyRootFileIfExists(McpServiceCollection.FileName, folderName);
                 CopyRootFileIfExists(RagSourceCollection.ConfigFileName, folderName);
                 CopyRootFileIfExists(PromptsResourceViewModel.PromptsFileName, folderName);
+                CopyRootFileIfExists(ModelRegister.ModelsDefinitionFileName, folderName);
                 //copy directory
                 await CopyDirectoryIfExists(Path.Combine(currentDirectory, DialogFileViewModel.SaveFolder),
                     Path.Combine(folderName, DialogFileViewModel.SaveFolder));
