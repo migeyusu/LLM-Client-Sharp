@@ -895,5 +895,15 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type render1:RequestBlock}">
+                    <TextBlock Foreground="DarkGray"
+                               FontStyle="Italic"
+                               TextWrapping="Wrap"
+                               Text="{Binding Content,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToJsonConverter}}" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 </ResourceDictionary>

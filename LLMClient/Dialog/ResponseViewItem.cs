@@ -191,9 +191,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
     {
         o?.SwitchAvailableInContext();
     });
-
-    public ObservableCollection<string> TempResponseText { get; } = new();
-
+    
     private FlowDocument? _tempDocument;
 
     private async Task<FlowDocument?> GetPreDocumentAsync()
@@ -433,7 +431,6 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
             ErrorMessage = null;
             _tempDocument = new FlowDocument();
             IsResponding = true;
-            TempResponseText.Clear();
             _responseHistory.Clear();
             RequestTokenSource = token != CancellationToken.None
                 ? CancellationTokenSource.CreateLinkedTokenSource(token)
@@ -457,7 +454,6 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
         }
         finally
         {
-            TempResponseText.Clear();
             _tempDocument = null;
             IsResponding = false;
         }
@@ -496,37 +492,40 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
     private class ResponseViewItemInteractor : BaseViewModel, IInvokeInteractor, IAsyncDisposable
     {
         private readonly BlockingCollection<string> _blockingCollection = new();
-
         private readonly Task _task;
 
+        // 替换原本直接的 Renderer 操作
         private readonly CustomMarkdownRenderer _customRenderer;
 
         public ResponseViewItemInteractor(FlowDocument flowDocument, ResponseViewItem responseViewItem)
         {
+            var markdownStreamer =
+                // 初始化流式处理器
+                new MarkdownStreamer(flowDocument, CustomMarkdownRenderer.DefaultPipeline);
             _customRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
             _task = Task.Run(() =>
             {
-                // ReSharper disable once AccessToDisposedClosure
-                RendererExtensions.StreamParse(_blockingCollection,
-                    (_, block) =>
-                    {
-                        Dispatch(() =>
-                        {
-                            responseViewItem.TempResponseText.Clear();
-                            _customRenderer.AppendMarkdownObject(block);
-                        });
-                    });
+                // 简单的消费者循环
+                foreach (var message in _blockingCollection.GetConsumingEnumerable())
+                {
+                    // 这里可以直接调用，MetricsHandling 建议在 ProcessStream 内部做一个简单的 Throttle (节流)
+                    // 比如每 50ms 更新一次 UI，避免 CPU 占用过高，但对于文本来说通常直接更新也很快。
+                    markdownStreamer.ProcessStream(message);
+                }
             });
+
             _outputAction = message =>
             {
                 _blockingCollection.Add(message);
                 Dispatch(() =>
                 {
-                    responseViewItem.TempResponseText.Add(message);
+                    // 更新内存中的 History 用于 Save/Copy
                     responseViewItem._responseHistory.Append(message);
                 });
             };
         }
+
+        // ... 其余代码 (Info, Error, WriteLine, DisposeAsync) 保持不变 ...
 
         private readonly Action<string> _outputAction;
 
