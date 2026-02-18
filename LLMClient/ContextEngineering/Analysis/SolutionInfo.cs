@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace LLMClient.ContextEngineering;
+namespace LLMClient.ContextEngineering.Analysis;
 
 public class SolutionInfo
 {

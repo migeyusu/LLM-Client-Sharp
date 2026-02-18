@@ -18,8 +18,10 @@
                 </ItemsControl.CommandBindings>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type local:ComparableResponseViewItem}">
-                        <Border BorderBrush="Gray" BorderThickness="1" Margin="4"
-                                Width="{Binding Width}" MinWidth="200">
+                        <Border BorderBrush="Gray"
+                                BorderThickness="0,0,1,0"
+                                Width="{Binding Width}"
+                                MinWidth="200">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -62,7 +64,8 @@
                                                           Document="{Binding  FullDocument,Mode=OneWay}" />
                                 <Thumb Grid.Row="0"
                                        Grid.RowSpan="2"
-                                       Grid.Column="1" Cursor="SizeWE"
+                                       Grid.Column="1"
+                                       Cursor="SizeWE"
                                        DragDelta="Thumb_DragDelta"
                                        Background="Transparent" />
                             </Grid>

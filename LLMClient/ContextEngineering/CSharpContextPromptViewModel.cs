@@ -1,4 +1,5 @@
 ﻿using LLMClient.Abstraction;
+using LLMClient.ContextEngineering.Analysis;
 using LLMClient.Project;
 
 namespace LLMClient.ContextEngineering;
@@ -19,7 +20,7 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
     public CSharpContextPromptViewModel(CSharpProjectViewModel projectViewModel, ITokensCounter tokensCounter)
         : base(projectViewModel, tokensCounter)
     {
-        _analyzer = new RoslynProjectAnalyzer(null, new AnalyzerConfig()
+        _analyzer = new Analysis.RoslynProjectAnalyzer(null, new AnalyzerConfig()
         {
             IncludeTestProjects = true,
             IncludePrivateMembers = true,
@@ -131,7 +132,7 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
             mainVariables);
     }
 
-    private readonly RoslynProjectAnalyzer _analyzer;
+    private readonly Analysis.RoslynProjectAnalyzer _analyzer;
     
     public override void Dispose()
     {

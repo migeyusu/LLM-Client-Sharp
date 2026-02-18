@@ -1,4 +1,6 @@
-﻿namespace LLMClient.ContextEngineering;
+﻿using LLMClient.ContextEngineering.Analysis;
+
+namespace LLMClient.ContextEngineering;
 
 /// <summary>
 /// 当前聚焦的上下文（用户正在编辑的位置）

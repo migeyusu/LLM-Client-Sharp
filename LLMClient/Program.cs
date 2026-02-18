@@ -6,6 +6,7 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering;
+using LLMClient.ContextEngineering.Analysis;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Rag;
@@ -119,7 +120,7 @@ public class Program
             var traceListener = new LLMClient.Log.LoggerTraceListener(loggerFactory);
             Trace.Listeners.Add(traceListener);
 #endif
-            ContextExtension.RegisterMSBuild();
+            AnalyzerExtension.RegisterMsBuild();
             App app = new App();
             app.InitializeComponent();
             //app.Run(new AsyncTestWindow());

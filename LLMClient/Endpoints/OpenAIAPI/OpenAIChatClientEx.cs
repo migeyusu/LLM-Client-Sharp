@@ -38,8 +38,9 @@ public class OpenAIChatClientEx : ChatClient
 
                     if (clientContext.ShowRequestJson)
                     {
-                        clientContext.Interactor?.WriteLine("Request JSON:");
+                        clientContext.Interactor?.WriteLine("<request>");
                         clientContext.Interactor?.WriteLine(jsonNode.ToString());
+                        clientContext.Interactor?.WriteLine("</request>");
                     }
 
                     foreach (var additionalObject in clientContext.AdditionalObjects)

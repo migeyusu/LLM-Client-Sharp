@@ -4,6 +4,10 @@ using Markdig.Syntax;
 
 namespace LLMClient.Component.Render;
 
+/// <summary>
+/// 以 tag开始和结束的块解析，但是要求开始和结束标签必须单独为一行
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeafBlock
 {
     public bool IgnoreCase { get; set; } = true;

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using LLMClient.ContextEngineering;
+using LLMClient.ContextEngineering.Analysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
@@ -19,7 +20,7 @@ public class PromptContext
     public PromptContext(ITestOutputHelper output)
     {
         _output = output;
-        ContextExtension.RegisterMSBuild();
+        AnalyzerExtension.RegisterMsBuild();
         // 配置
         _analyzerConfig = new AnalyzerConfig
         {

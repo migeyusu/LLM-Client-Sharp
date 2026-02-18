@@ -1,4 +1,4 @@
-﻿namespace LLMClient.ContextEngineering;
+﻿namespace LLMClient.ContextEngineering.Analysis;
 
 public class NamespaceInfo
 {

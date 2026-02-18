@@ -3,9 +3,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using LLMClient.ContextEngineering.Analysis;
 
 namespace LLMClient.ContextEngineering;
 
+[Obsolete("这个类目前设计得比较简单，后续可能会重构为更通用的缓存管理器，支持多种类型的缓存数据。目前主要用于缓存项目分析结果。")]
 public class InfoCacheManager
 {
     private readonly string _cacheDirectory;

@@ -1,11 +1,11 @@
 ﻿using System.Diagnostics;
 using Microsoft.Build.Locator;
 
-namespace LLMClient.ContextEngineering;
+namespace LLMClient.ContextEngineering.Analysis;
 
-public static class ContextExtension
+public static class AnalyzerExtension
 {
-    public static void RegisterMSBuild()
+    public static void RegisterMsBuild()
     {
         if (MSBuildLocator.IsRegistered) return;
 

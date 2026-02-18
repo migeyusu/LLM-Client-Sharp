@@ -357,6 +357,13 @@ public static class RendererExtensions
         return pipeline;
     }
 
+    public static MarkdownPipelineBuilder UseRequestBlock(
+        this MarkdownPipelineBuilder pipeline)
+    {
+        pipeline.Extensions.ReplaceOrAdd<RequestBlockExtension>(new RequestBlockExtension());
+        return pipeline;
+    }
+
     public static MarkdownPipelineBuilder UseCustomMathematics(
         this MarkdownPipelineBuilder pipeline)
     {

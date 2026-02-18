@@ -21,6 +21,7 @@ public class CustomMarkdownRenderer : WpfRenderer
         new MarkdownPipelineBuilder()
             .UseAdvancedExtensions()
             .UseThinkBlock()
+            .UseRequestBlock()
             .UseMathematics()
             .UseCustomMathematics()
             .UseFunctionCallBlock()

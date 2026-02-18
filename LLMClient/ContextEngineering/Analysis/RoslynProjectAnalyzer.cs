@@ -1,13 +1,14 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using LLMClient.Dialog;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.MSBuild;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.Logging;
 
-namespace LLMClient.ContextEngineering;
+namespace LLMClient.ContextEngineering.Analysis;
 
 public partial class RoslynProjectAnalyzer : IDisposable
 {
@@ -16,6 +17,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
     private readonly ILogger? _logger;
     private readonly ConcurrentDictionary<string, string> _xmlDocCache = new();
     private readonly ConcurrentDictionary<string, IList<DocumentAnalysisResult>> _docCache = new();
+    private readonly SymbolIndexService _symbolIndexService = new();
 
     public RoslynProjectAnalyzer(ILogger? logger, AnalyzerConfig? config = null)
     {
@@ -30,7 +32,6 @@ public partial class RoslynProjectAnalyzer : IDisposable
             else
                 _logger?.LogError($"MSBuild error: {e.Message}");
         });
-        
     }
 
 
@@ -173,7 +174,6 @@ public partial class RoslynProjectAnalyzer : IDisposable
         var stopwatch = Stopwatch.StartNew();
         var compilation = await project.GetCompilationAsync(cancellationToken);
         if (compilation == null) return null;
-
         var projectFilePath = project.FilePath;
         if (string.IsNullOrEmpty(projectFilePath))
         {
@@ -396,6 +396,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
                 cachedResult.FilePath == documentFilePath &&
                 cachedResult.SourceEditTime == fileInfo.LastWriteTimeUtc)) != null)
         {
+            _symbolIndexService.InvalidateByFile(documentFilePath);
             return result;
         }
 
@@ -495,8 +496,8 @@ public partial class RoslynProjectAnalyzer : IDisposable
         var info = new TypeInfo
         {
             Name = symbol.Name,
-            FullName = symbol.ToDisplayString(),
             Kind = GetTypeKind(typeDecl),
+            Signature = symbol.ToDisplayString(),
             Accessibility = symbol.DeclaredAccessibility.ToString(),
             Summary = GetXmlComment(typeDecl),
             FilePath = filePath,
@@ -506,9 +507,30 @@ public partial class RoslynProjectAnalyzer : IDisposable
             IsSealed = symbol.IsSealed,
             // 提取属性
             Attributes = ExtractAttributes(typeDecl.AttributeLists),
-            RelativePath = relativePath
+            RelativePath = relativePath,
+            Locations = symbol.Locations
+                .Where(loc => loc.IsInSource)
+                .Select(loc =>
+                {
+                    var lineSpan = loc.GetLineSpan(); // 获取文件与行列范围  
+                    return new CodeLocation
+                    {
+                        FilePath = lineSpan.Path,
+                        Location = new LinePositionSpan(
+                            new LinePosition(
+                                lineSpan.StartLinePosition.Line + 1, // 转为1基  
+                                lineSpan.StartLinePosition.Character + 1
+                            ),
+                            new LinePosition(
+                                lineSpan.EndLinePosition.Line + 1,
+                                lineSpan.EndLinePosition.Character + 1
+                            )
+                        )
+                    };
+                })
+                .ToList()
         };
-
+        _symbolIndexService.AddSymbol(info);
         // 提取基类型
         if (symbol.BaseType != null && symbol.BaseType.SpecialType == SpecialType.None)
         {
@@ -566,14 +588,70 @@ public partial class RoslynProjectAnalyzer : IDisposable
 
     private MemberInfo? ExtractMemberInfo(MemberDeclarationSyntax member, SemanticModel semanticModel)
     {
-        return member switch
+        MemberInfo? memberInfo = null;
+        switch (member)
         {
-            MethodDeclarationSyntax method => ExtractMethodInfo(method, semanticModel),
-            PropertyDeclarationSyntax property => ExtractPropertyInfo(property, semanticModel),
-            FieldDeclarationSyntax field => ExtractFieldInfo(field, semanticModel),
-            ConstructorDeclarationSyntax ctor => ExtractConstructorInfo(ctor, semanticModel),
-            EventDeclarationSyntax evt => ExtractEventInfo(evt, semanticModel),
-            _ => null
+            case MethodDeclarationSyntax method:
+                memberInfo = ExtractMethodInfo(method, semanticModel);
+                break;
+            case PropertyDeclarationSyntax property:
+                memberInfo = ExtractPropertyInfo(property, semanticModel);
+                break;
+            case FieldDeclarationSyntax field:
+                memberInfo = ExtractFieldInfo(field, semanticModel);
+                break;
+            case ConstructorDeclarationSyntax ctor:
+                memberInfo = ExtractConstructorInfo(ctor, semanticModel);
+                break;
+            case EventDeclarationSyntax evt:
+                memberInfo = ExtractEventInfo(evt, semanticModel);
+                break;
+            default:
+                memberInfo = null;
+                break;
+        }
+
+        if (memberInfo != null)
+        {
+            _symbolIndexService.AddSymbol(memberInfo);
+        }
+
+        return memberInfo;
+    }
+
+    private static MemberInfo CreateMemberInfo(ISymbol symbol)
+    {
+        return new MemberInfo
+        {
+            Name = symbol.Name,
+            Kind = symbol.Kind.ToString(),
+            Accessibility = symbol.DeclaredAccessibility.ToString(),
+            Signature = BuildSymbolSignature(symbol),
+            IsStatic = symbol.IsStatic,
+            IsVirtual = symbol.IsVirtual,
+            IsOverride = symbol.IsOverride,
+            UniqueId = symbol.GetDocumentationCommentId(),
+            Locations = symbol.Locations
+                .Where(loc => loc.IsInSource)
+                .Select(loc =>
+                {
+                    var lineSpan = loc.GetLineSpan(); // 获取文件与行列范围  
+                    return new CodeLocation
+                    {
+                        FilePath = lineSpan.Path,
+                        Location = new LinePositionSpan(
+                            new LinePosition(
+                                lineSpan.StartLinePosition.Line + 1, // 转为1基  
+                                lineSpan.StartLinePosition.Character + 1
+                            ),
+                            new LinePosition(
+                                lineSpan.EndLinePosition.Line + 1,
+                                lineSpan.EndLinePosition.Character + 1
+                            )
+                        )
+                    };
+                })
+                .ToList()
         };
     }
 
@@ -588,49 +666,30 @@ public partial class RoslynProjectAnalyzer : IDisposable
         // 对于转发方法，根据配置决定是否包含
         if (!_config.IncludeForwardingMethods && IsForwardingMethod(method))
             return null;
-
-        return new MemberInfo
+        var memberInfo = CreateMemberInfo(symbol);
+        memberInfo.IsAsync = symbol.IsAsync;
+        memberInfo.ReturnType = FormatTypeName(symbol.ReturnType);
+        memberInfo.Parameters = symbol.Parameters.Select(p => new ParameterInfo
         {
-            Name = symbol.Name,
-            Kind = "Method",
-            Accessibility = symbol.DeclaredAccessibility.ToString(),
-            Signature = BuildSymbolSignature(symbol),
-            IsStatic = symbol.IsStatic,
-            IsAsync = symbol.IsAsync,
-            IsVirtual = symbol.IsVirtual,
-            IsOverride = symbol.IsOverride,
-            ReturnType = FormatTypeName(symbol.ReturnType),
-            Parameters = symbol.Parameters.Select(p => new ParameterInfo
-            {
-                Name = p.Name,
-                Type = FormatTypeName(p.Type),
-                HasDefaultValue = p.HasExplicitDefaultValue,
-                DefaultValue = p.HasExplicitDefaultValue ? p.ExplicitDefaultValue?.ToString() : null
-            }).ToList(),
-            Comment = GetXmlComment(method),
-            Attributes = ExtractAttributes(method.AttributeLists),
-        };
+            Name = p.Name,
+            Type = FormatTypeName(p.Type),
+            HasDefaultValue = p.HasExplicitDefaultValue,
+            DefaultValue = p.HasExplicitDefaultValue ? p.ExplicitDefaultValue?.ToString() : null
+        }).ToList();
+        memberInfo.Comment = GetXmlComment(method);
+        memberInfo.Attributes = ExtractAttributes(method.AttributeLists);
+        return memberInfo;
     }
-
 
     private MemberInfo? ExtractPropertyInfo(PropertyDeclarationSyntax property, SemanticModel semanticModel)
     {
         var symbol = semanticModel.GetDeclaredSymbol(property);
         if (symbol == null) return null;
-
-        return new MemberInfo
-        {
-            Name = symbol.Name,
-            Kind = "Property",
-            Accessibility = symbol.DeclaredAccessibility.ToString(),
-            Signature = BuildSymbolSignature(symbol),
-            IsStatic = symbol.IsStatic,
-            IsVirtual = symbol.IsVirtual,
-            IsOverride = symbol.IsOverride,
-            ReturnType = FormatTypeName(symbol.Type),
-            Comment = GetXmlComment(property),
-            Attributes = ExtractAttributes(property.AttributeLists)
-        };
+        var memberInfo = CreateMemberInfo(symbol);
+        memberInfo.ReturnType = FormatTypeName(symbol.Type);
+        memberInfo.Comment = GetXmlComment(property);
+        memberInfo.Attributes = ExtractAttributes(property.AttributeLists);
+        return memberInfo;
     }
 
     private MemberInfo? ExtractFieldInfo(FieldDeclarationSyntax field, SemanticModel semanticModel)
@@ -640,64 +699,43 @@ public partial class RoslynProjectAnalyzer : IDisposable
 
         var symbol = semanticModel.GetDeclaredSymbol(variable) as IFieldSymbol;
         if (symbol == null) return null;
-
-        return new MemberInfo
-        {
-            Name = symbol.Name,
-            Kind = symbol.IsConst ? "Constant" : "Field",
-            Accessibility = symbol.DeclaredAccessibility.ToString(),
-            Signature = BuildSymbolSignature(symbol),
-            IsStatic = symbol.IsStatic,
-            ReturnType = FormatTypeName(symbol.Type),
-            Comment = GetXmlComment(field),
-            Attributes = ExtractAttributes(field.AttributeLists)
-        };
+        var memberInfo = CreateMemberInfo(symbol);
+        memberInfo.ReturnType = FormatTypeName(symbol.Type);
+        memberInfo.Comment = GetXmlComment(field);
+        memberInfo.Attributes = ExtractAttributes(field.AttributeLists);
+        return memberInfo;
     }
 
     private MemberInfo? ExtractConstructorInfo(ConstructorDeclarationSyntax ctor, SemanticModel semanticModel)
     {
         var symbol = semanticModel.GetDeclaredSymbol(ctor);
         if (symbol == null) return null;
-
-        return new MemberInfo
-        {
-            Name = symbol.ContainingType.Name,
-            Kind = "Constructor",
-            Accessibility = symbol.DeclaredAccessibility.ToString(),
-            Signature = BuildSymbolSignature(symbol),
-            IsStatic = symbol.IsStatic,
-            Parameters = symbol.Parameters.Select(p => new ParameterInfo
-                {
-                    Name = p.Name,
-                    Type = FormatTypeName(p.Type),
-                    HasDefaultValue = p.HasExplicitDefaultValue,
-                    DefaultValue = p.HasExplicitDefaultValue
-                        ? p.ExplicitDefaultValue?.ToString()
-                        : null
-                })
-                .ToList(),
-
-            Comment = GetXmlComment(ctor),
-            Attributes = ExtractAttributes(ctor.AttributeLists),
-            ReturnType = symbol.ReturnType.Name
-        };
+        var memberInfo = CreateMemberInfo(symbol);
+        memberInfo.Name = symbol.ContainingType.Name; // 构造函数显示为类型名
+        memberInfo.Parameters = symbol.Parameters.Select(p => new ParameterInfo
+            {
+                Name = p.Name,
+                Type = FormatTypeName(p.Type),
+                HasDefaultValue = p.HasExplicitDefaultValue,
+                DefaultValue = p.HasExplicitDefaultValue
+                    ? p.ExplicitDefaultValue?.ToString()
+                    : null
+            })
+            .ToList();
+        memberInfo.Comment = GetXmlComment(ctor);
+        memberInfo.Attributes = ExtractAttributes(ctor.AttributeLists);
+        memberInfo.ReturnType = symbol.ReturnType.Name;
+        return memberInfo;
     }
 
     private MemberInfo? ExtractEventInfo(EventDeclarationSyntax evt, SemanticModel semanticModel)
     {
         var symbol = semanticModel.GetDeclaredSymbol(evt);
         if (symbol == null) return null;
-
-        return new MemberInfo
-        {
-            Name = symbol.Name,
-            Kind = "Event",
-            Accessibility = symbol.DeclaredAccessibility.ToString(),
-            Signature = BuildSymbolSignature(symbol),
-            IsStatic = symbol.IsStatic,
-            ReturnType = FormatTypeName(symbol.Type),
-            Comment = GetXmlComment(evt)
-        };
+        var memberInfo = CreateMemberInfo(symbol);
+        memberInfo.ReturnType = FormatTypeName(symbol.Type);
+        memberInfo.Comment = GetXmlComment(evt);
+        return memberInfo;
     }
 
     private static string BuildSymbolSignature(ISymbol symbol)
