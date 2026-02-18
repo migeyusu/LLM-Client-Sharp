@@ -136,16 +136,19 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             var list = new List<ILLMAPIEndpoint>(Endpoints.Count + 2)
             {
                 _historyEndPoint,
-                _suggestedEndPoint
+                _suggestedEndPoint,
+                _testEndPoint,
             };
             list.AddRange(Endpoints);
             return list;
         }
     }
 
-    private readonly StubEndPoint _historyEndPoint;
+    private readonly ModelsViewEndpoint _historyEndPoint;
 
-    private readonly StubEndPoint _suggestedEndPoint;
+    private readonly ModelsViewEndpoint _suggestedEndPoint;
+
+    private readonly StubEndPoint _testEndPoint;
 
     private readonly ObservableCollection<IEndpointModel> _historyChatModelsOb = [];
 
@@ -180,8 +183,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
     }
 
-    public ObservableCollection<IEndpointModel> SuggestedModelsOb { get; } =
-        new ObservableCollection<IEndpointModel>();
+    public ObservableCollection<IEndpointModel> SuggestedModelsOb { get; } = [];
 
     public ModelSelectionPopupViewModel PopupSelectViewModel { get; }
 
@@ -203,18 +205,19 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         _suggestedModels = new ReadOnlyObservableCollection<IEndpointModel>(SuggestedModelsOb);
         _availableEndpoints = new ReadOnlyObservableCollection<ILLMAPIEndpoint>(Endpoints);
         _historyChatModels = new ReadOnlyObservableCollection<IEndpointModel>(_historyChatModelsOb);
-        _historyEndPoint = new StubEndPoint(_historyChatModelsOb)
+        _historyEndPoint = new ModelsViewEndpoint(_historyChatModelsOb)
         {
             DisplayName = "History Models",
             Name = "HistoryEndPoint",
             Icon = PackIconKind.History.GetThemedIcon(),
         };
-        _suggestedEndPoint = new StubEndPoint(SuggestedModelsOb)
+        _suggestedEndPoint = new ModelsViewEndpoint(SuggestedModelsOb)
         {
             DisplayName = "Suggested Models",
             Name = "SuggestedEndPoint",
             Icon = PackIconKind.StarOutline.GetThemedIcon(),
         };
+        _testEndPoint = new StubEndPoint("Test Endpoint");
         /*var collection = new CompositeCollection();
         var collectionContainer = new CollectionContainer() { Collection = Endpoints };
         collection.Add(collectionContainer);

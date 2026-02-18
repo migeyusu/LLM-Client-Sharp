@@ -1,9 +1,79 @@
 ﻿using LLMClient.Abstraction;
+using LLMClient.Component;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LLMClient.Endpoints;
+
+public class StubLlmClient : ILLMChatClient
+{
+    public IEndpointModel Model { get; } = StubLLMChatModel.Instance;
+    public IModelParams Parameters { get; set; } = new DefaultModelParam();
+    public string Name { get; } = "StubLlmClient";
+    public bool IsResponding { get; set; }
+
+    public async Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
+        CancellationToken cancellationToken = default)
+    {
+#if DEBUG
+        interactor ??= new DebugInvokeInteractor();
+#endif
+        var str =
+            "### 进程与命令（建议强权限控制）\n- `proc.run(command, args, cwd, timeout, env, capture)`：执行构建/测试/格式化等  \n  *建议带 allowlist 与沙箱策略；输出要可截断并带 exitCode。*";
+        if (Parameters.Streaming)
+        {
+            var random = new Random();
+            int currentIndex = 0;
+            while (currentIndex < str.Length)
+            {
+                if (cancellationToken.IsCancellationRequested) break;
+
+                int len = random.Next(3, 6); // 3 to 5 characters
+                if (currentIndex + len > str.Length)
+                {
+                    len = str.Length - currentIndex;
+                }
+
+                var chunk = str.Substring(currentIndex, len);
+                interactor?.Info(chunk);
+                currentIndex += len;
+
+                await Task.Delay(100, cancellationToken);
+            }
+
+            return new CompletedResult()
+            {
+                ResponseMessages = [new ChatMessage(ChatRole.Assistant, str)],
+                Usage = new UsageDetails(),
+                FinishReason = ChatFinishReason.Stop
+            };
+        }
+        else
+        {
+            return new CompletedResult()
+            {
+                ResponseMessages = [new ChatMessage(ChatRole.Assistant, str)],
+                Usage = new UsageDetails
+                {
+                    InputTokenCount = 0,
+                    OutputTokenCount = 0,
+                    TotalTokenCount = 0,
+                    AdditionalCounts = null
+                },
+                Latency = 0,
+                Duration = 0,
+                ErrorMessage = null,
+                Price = null,
+                FinishReason = ChatFinishReason.Stop,
+                Annotations = null,
+                AdditionalProperties = null
+            };
+        }
+    }
+
+    public ILLMAPIEndpoint Endpoint { get; }
+}
 
 public class EmptyLlmModelClient : ILLMChatClient
 {

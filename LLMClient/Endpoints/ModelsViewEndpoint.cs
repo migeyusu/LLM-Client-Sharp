@@ -3,9 +3,12 @@ using LLMClient.Component.CustomControl;
 
 namespace LLMClient.Endpoints;
 
-public class StubEndPoint : ILLMAPIEndpoint
+/// <summary>
+/// 用于展示可用模型的集合，通常作为一个特殊的endpoint存在，允许用户选择不同的模型进行对话。
+/// </summary>
+public class ModelsViewEndpoint : ILLMAPIEndpoint
 {
-    public StubEndPoint(IReadOnlyCollection<IEndpointModel> availableModels)
+    public ModelsViewEndpoint(IReadOnlyCollection<IEndpointModel> availableModels)
     {
         AvailableModels = availableModels;
     }

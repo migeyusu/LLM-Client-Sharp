@@ -496,7 +496,7 @@ public static class Extension
         }
 
         //prevent recursive call
-        if (endpoint is EmptyLLMEndpoint or StubEndPoint)
+        if (endpoint is EmptyLLMEndpoint or ModelsViewEndpoint)
         {
             return null;
         }
