@@ -137,8 +137,10 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             {
                 _historyEndPoint,
                 _suggestedEndPoint,
-                _testEndPoint,
             };
+#if DEBUG
+            list.Add(_testEndPoint);
+#endif
             list.AddRange(Endpoints);
             return list;
         }

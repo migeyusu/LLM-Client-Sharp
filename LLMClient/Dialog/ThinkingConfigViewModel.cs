@@ -98,7 +98,7 @@ public class ThinkingConfigViewModel : NotifyDataErrorInfoViewModelBase, IThinki
 
     public void ApplyThinking(ChatOptions options)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
     public bool Validate()
     {
