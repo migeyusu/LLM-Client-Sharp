@@ -1,10 +1,18 @@
-﻿using System.Windows.Markup;
+﻿using System.ComponentModel;
+using System.Windows.Markup;
 
 namespace LLMClient.Component.Extension;
 
+public enum EnumSortOrder
+{
+    Default,
+    ByName,
+}
 
 public class EnumBindingSourceExtension : MarkupExtension
 {
+    public EnumSortOrder SortOrder { get; set; } = EnumSortOrder.Default;
+
     private Type? _enumType;
 
     public Type? EnumType
@@ -35,17 +43,29 @@ public class EnumBindingSourceExtension : MarkupExtension
 
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
-        var type1 = !(null == this._enumType)
-            ? Nullable.GetUnderlyingType(this._enumType)
-            : throw new InvalidOperationException("EnumType必须指定的");
-        if (type1 == null)
-            type1 = this._enumType;
-        Type type2 = type1;
-        Array values = Enum.GetValues(type2);
-        if (type2 == this._enumType)
-            return (object)values;
-        Array instance = Array.CreateInstance(type2, values.Length + 1);
-        values.CopyTo(instance, 1);
-        return (object)instance;
+        if (this._enumType == null)
+            throw new InvalidOperationException("EnumType必须指定的");
+
+        var underlyingType = Nullable.GetUnderlyingType(this._enumType) ?? this._enumType;
+
+        var values = Enum.GetValues(underlyingType).Cast<object>();
+
+        values = SortOrder switch
+        {
+            EnumSortOrder.ByName => values.OrderBy(v => v.ToString()),
+            _ => values, // Default：保持枚举定义顺序
+        };
+
+        var result = values.ToArray();
+
+        // 处理可空枚举：在头部插入 null 占位
+        if (underlyingType != this._enumType)
+        {
+            var instance = Array.CreateInstance(underlyingType, result.Length + 1);
+            result.CopyTo(instance, 1);
+            return instance;
+        }
+
+        return result;
     }
 }

@@ -44,7 +44,7 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Background="{TemplateBinding Background}"
                             Margin="{TemplateBinding Padding}">
-                        <customControl:ScrollViewerEx x:Name="PART_ContentHost" 
+                        <customControl:ScrollViewerEx x:Name="PART_ContentHost"
                                                       CanContentScroll="True"
                                                       HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                       VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
@@ -185,9 +185,10 @@
                 <ControlTemplate TargetType="{x:Type customControl:SearchBox}">
                     <materialDesign:ColorZone Padding="8,4,8,4"
                                               Panel.ZIndex="1"
-                                              materialDesign:ElevationAssist.Elevation="Dp2"
                                               CornerRadius="6"
-                                              Mode="Standard">
+                                              Mode="Standard"
+                                              x:Name="ColorZone"
+                                              materialDesign:ElevationAssist.Elevation="Dp0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -203,6 +204,7 @@
                             </Button>
                             <TextBox Grid.Column="1"
                                      Width="120"
+                                     x:Name="PART_InputBox"
                                      Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Text,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                                      AcceptsReturn="True"
                                      Margin="8,0,0,0"
@@ -227,6 +229,14 @@
                             </Button>
                         </Grid>
                     </materialDesign:ColorZone>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocusWithin"
+                                 Value="True">
+                            <Setter TargetName="ColorZone"
+                                    Property="materialDesign:ElevationAssist.Elevation"
+                                    Value="Dp2" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

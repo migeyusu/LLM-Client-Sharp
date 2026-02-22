@@ -49,6 +49,7 @@ public enum ModelIconType : int
     Ollama,
     Alibaba,
     Deepmind,
+    ModelScope,
 }
 
 public class DarkModeAttribute : Attribute

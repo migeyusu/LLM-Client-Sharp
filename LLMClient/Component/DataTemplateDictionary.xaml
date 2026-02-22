@@ -66,8 +66,6 @@
                 </StackPanel>
             </DataTemplate>
         </component:DataTemplateTypePair>
-        <component:DataTemplateTypePair>
-        </component:DataTemplateTypePair>
     </component:TypeBasedDataTemplateSelector>
     <DataTemplate x:Key="FunctionTreeDataTemplate"
                   DataType="{x:Type toolCall:AIFunctionTreeSelectorViewModel}">
@@ -465,6 +463,7 @@
                     <TreeView SelectedItemChanged="TreeView_OnSelectedItemChanged"
                               HorizontalAlignment="Stretch"
                               VerticalAlignment="Stretch"
+                              MouseDoubleClick="TreeView_OnMouseDoubleClick"
                               ItemsSource="{Binding Source={StaticResource EndpointService},Path=CandidateEndpoints,Mode=OneWay}"
                               ItemTemplateSelector="{StaticResource ModelsDataTemplateSelector}" />
                 </TabItem>
@@ -472,6 +471,7 @@
                     <TreeView SelectedItemChanged="TreeView_OnSelectedItemChanged"
                               HorizontalAlignment="Stretch"
                               VerticalAlignment="Stretch"
+                              MouseDoubleClick="TreeView_OnMouseDoubleClick"
                               ItemsSource="{Binding Source={x:Static endpoints:ModelRegister.ProviderEntries},Mode=OneWay}">
                         <TreeView.Resources>
                             <HierarchicalDataTemplate DataType="{x:Type endpoints:ProviderEntry}"
@@ -530,6 +530,12 @@
                                 </StackPanel>
                             </DataTemplate>
                         </TreeView.Resources>
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="MouseDoubleClick">
+                                <b:InvokeCommandAction CommandParameter="{Binding }"
+                                                       Command="{x:Static viewModel:BaseModelSelectionViewModel.CreateDefaultCommand}" />
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
                     </TreeView>
                 </TabItem>
             </TabControl>

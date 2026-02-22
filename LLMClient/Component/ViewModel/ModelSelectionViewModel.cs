@@ -9,8 +9,8 @@ public class ModelSelectionViewModel : BaseModelSelectionViewModel
         SuccessAction = successAction;
     }
 
-    protected override void SelectModel(BaseModelSelectionViewModel client)
+    protected override void ApplyModel()
     {
-        SuccessAction?.Invoke(client);
+        SuccessAction?.Invoke(this);
     }
 }

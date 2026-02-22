@@ -24,9 +24,9 @@ public class ModelSelectionPopupViewModel : ModelSelectionViewModel
 
     public RoutedCommand? SuccessRoutedCommand { get; set; } = DialogHost.CloseDialogCommand;
 
-    protected override void SelectModel(BaseModelSelectionViewModel client)
+    protected override void ApplyModel()
     {
-        SuccessAction?.Invoke(client);
+        SuccessAction?.Invoke(this);
         SuccessRoutedCommand?.Execute(true, null);
     }
     

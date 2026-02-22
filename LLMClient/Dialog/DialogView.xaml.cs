@@ -41,4 +41,10 @@ public partial class DialogView : UserControl
             ViewModel.Requester.Summarize(requestViewItem);
         }
     }
+
+    private void FindCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        SearchBox.Focus();
+        SearchBox.SelectAll(); 
+    }
 }

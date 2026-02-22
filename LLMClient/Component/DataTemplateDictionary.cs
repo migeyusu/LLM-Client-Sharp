@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Navigation;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
@@ -16,7 +17,7 @@ public partial class DataTemplateDictionary : ResourceDictionary
         Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
         e.Handled = true;
     }
-    
+
 
     private void ResearchClientsSelector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -29,6 +30,18 @@ public partial class DataTemplateDictionary : ResourceDictionary
         if (newValue is IEndpointModel modelInfo)
         {
             ((BaseModelSelectionViewModel)((TreeView)sender).DataContext).SelectedModel = modelInfo;
+        }
+    }
+
+    private void TreeView_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is TreeView treeView)
+        {
+            var selectedItem = treeView.SelectedItem;
+            if (selectedItem is IEndpointModel modelInfo)
+            {
+                ((BaseModelSelectionViewModel)treeView.DataContext).CreateByModelCommand.Execute(modelInfo);
+            }
         }
     }
 }

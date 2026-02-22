@@ -16,6 +16,12 @@
              d:DataContext="{d:DesignInstance dialog:DialogViewModel}"
              d:DesignHeight="600"
              d:DesignWidth="1600">
+    <UserControl.InputBindings>
+        <KeyBinding Key="F" Modifiers="Control" Command="ApplicationCommands.Find" />
+    </UserControl.InputBindings>
+    <UserControl.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.Find" Executed="FindCommand_OnExecuted" />
+    </UserControl.CommandBindings>
     <Grid Margin="10,0,10,6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -55,6 +61,14 @@
                                             Content="{Binding SystemPrompt,Mode=OneWay}"
                                             Command="{x:Static utility:CommonCommands.CreatePromptEditViewModel}"
                                             CommandParameter="{Binding Mode=OneTime}">
+                    <materialDesign:SplitButton.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Command="{x:Static utility:CommonCommands.CopyCommand}"
+                                      CommandParameter="{Binding SystemPrompt,Mode=OneWay}"
+                                      Header="Copy"
+                                      Icon="{materialDesign:PackIcon Copyleft}" />
+                        </ContextMenu>
+                    </materialDesign:SplitButton.ContextMenu>
                     <materialDesign:SplitButton.ContentTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}"
@@ -110,6 +124,7 @@
                                              Padding="8,4,8,4"
                                              Panel.ZIndex="1"
                                              VerticalAlignment="Center"
+                                             x:Name="SearchBox"
                                              Text="{Binding SearchText,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                                              SearchCommand="{Binding SearchCommand}"
                                              GoToNextCommand="{Binding GoToNextHighlightCommand}"

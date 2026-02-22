@@ -6,6 +6,7 @@ using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LLMClient.Component.ViewModel;
@@ -63,7 +64,7 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
             {
                 try
                 {
-                    o?.SelectModel(o);
+                    o?.ApplyModel();
                 }
                 catch (Exception e)
                 {
@@ -73,6 +74,34 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
             });
         }
     }
+
+    private ICommand? _createByModelCommand;
+
+    public ICommand CreateByModelCommand
+    {
+        get
+        {
+            return _createByModelCommand ??= new RelayCommand<IEndpointModel>(o =>
+            {
+                try
+                {
+                    if (o == null)
+                    {
+                        return;
+                    }
+
+                    this.SelectedModel = o;
+                    this.ApplyModel();
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show($"Error Create Client:{e.Message}", "Error", MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            });
+        }
+    }
+
 
     public ILLMChatClient CreateClient()
     {
@@ -92,9 +121,7 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
         return chatClient;
     }
 
-    protected abstract void SelectModel(BaseModelSelectionViewModel model);
-
-    public string Name { get; } = "Fake Client";
+    protected abstract void ApplyModel();
 
     public IEndpointModel Model => SelectedModel ?? EmptyLLMChatModel.Instance;
 }
