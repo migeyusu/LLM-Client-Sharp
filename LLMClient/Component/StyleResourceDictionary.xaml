@@ -519,6 +519,8 @@
                 Value="Center" />
         <Setter Property="VerticalContentAlignment"
                 Value="Center" />
+        <Setter Property="IsCancel"
+                Value="True"/>
         <Setter Property="CommandParameter">
             <Setter.Value>
                 <system:Boolean>False</system:Boolean>

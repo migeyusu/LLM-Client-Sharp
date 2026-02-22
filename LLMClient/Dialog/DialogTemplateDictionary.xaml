@@ -189,10 +189,6 @@
                                VerticalAlignment="Center" />
                 </StackPanel>
             </materialDesign:Card>
-            <RichTextBox  FontFamily="Segoe UI Emoji"
-                          BorderThickness="0">
-                
-            </RichTextBox>
             <customControl:FlowDocumentScrollViewerEx
                 FontFamily="Segoe UI Emoji"
                 BorderThickness="0"

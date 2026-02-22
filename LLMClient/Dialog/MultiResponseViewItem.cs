@@ -337,6 +337,8 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         {
             this.AcceptedIndex = 0;
         }
+
+        this.IsMultiResponse = Items.Count > 1;
     }
 
     public void RemoveAt(int index)
@@ -346,5 +348,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         {
             this.AcceptedIndex = this.Items.Count - 1;
         }
+
+        this.IsMultiResponse = Items.Count > 1;
     }
 }
