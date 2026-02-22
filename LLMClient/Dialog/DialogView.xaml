@@ -66,7 +66,7 @@
                             <MenuItem Command="{x:Static utility:CommonCommands.CopyCommand}"
                                       CommandParameter="{Binding SystemPrompt,Mode=OneWay}"
                                       Header="Copy"
-                                      Icon="{materialDesign:PackIcon Copyleft}" />
+                                      Icon="{materialDesign:PackIcon ContentCopy}" />
                         </ContextMenu>
                     </materialDesign:SplitButton.ContextMenu>
                     <materialDesign:SplitButton.ContentTemplate>
