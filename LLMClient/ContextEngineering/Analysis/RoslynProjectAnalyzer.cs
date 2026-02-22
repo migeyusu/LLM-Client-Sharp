@@ -396,10 +396,10 @@ public partial class RoslynProjectAnalyzer : IDisposable
                 cachedResult.FilePath == documentFilePath &&
                 cachedResult.SourceEditTime == fileInfo.LastWriteTimeUtc)) != null)
         {
-            _symbolIndexService.InvalidateByFile(documentFilePath);
             return result;
         }
 
+        _symbolIndexService.InvalidateByFile(documentFilePath);
         var relativePath = document.Folders.Count > 0
             ? Path.Combine(Path.Combine(document.Folders.ToArray()), document.Name)
             : document.Name;

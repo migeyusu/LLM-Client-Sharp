@@ -1,11 +1,20 @@
 ﻿using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Media;
 using TextMateSharp.Grammars;
 
 namespace LLMClient.Component.Render;
 
 public class TextmateColoredRun : Run
 {
+    private static readonly Dictionary<string, TokenStyleCache> StyleCache = new();
+    private class TokenStyleCache
+    {
+        public Brush Foreground { get; set; }
+        public FontStyle? FontStyle { get; set; }
+        public FontWeight? FontWeight { get; set; }
+        public TextDecorationCollection TextDecorations { get; set; }
+    }
     public IToken? Token { get; }
 
     public static readonly DependencyProperty ThemeColorsProperty = DependencyProperty.Register(

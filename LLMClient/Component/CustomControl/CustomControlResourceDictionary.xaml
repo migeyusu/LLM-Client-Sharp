@@ -44,7 +44,8 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Background="{TemplateBinding Background}"
                             Margin="{TemplateBinding Padding}">
-                        <customControl:ScrollViewerEx x:Name="PART_ContentHost" CanContentScroll="True"
+                        <customControl:ScrollViewerEx x:Name="PART_ContentHost" 
+                                                      CanContentScroll="True"
                                                       HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                       VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>

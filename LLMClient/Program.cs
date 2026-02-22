@@ -112,13 +112,28 @@ public class Program
 #endif
             serviceProvider = collection.BuildServiceProvider();
             BaseViewModel.ServiceLocator = serviceProvider;
-#if DEBUG
-            //禁止在Debug模式下注册LoggerTraceListener，避免重复日志
-#else
-            //注册LoggerFactory到Listeners
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-            var traceListener = new LLMClient.Log.LoggerTraceListener(loggerFactory);
-            Trace.Listeners.Add(traceListener);
+#if RELEASE
+
+        //禁止在Debug模式下注册LoggerTraceListener，避免重复日志
+        //注册LoggerFactory到Listeners
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        var traceListener = new LLMClient.Log.LoggerTraceListener(loggerFactory);
+        Trace.Listeners.Add(traceListener);
+
+        AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) =>
+        {
+            var ex = (Exception)eventArgs.ExceptionObject;
+            MessageBox.Show("发生未处理的异常: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            var logger = serviceProvider?.GetService<ILogger<Program>>();
+            logger?.LogCritical(ex, "发生未处理的异常，应用程序即将终止");
+        };
+        TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
+        {
+            var ex = eventArgs.Exception;
+            MessageBox.Show("发生未观察到的任务异常: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            var logger = serviceProvider?.GetService<ILogger<Program>>();
+            logger?.LogError(ex, "发生未观察到的任务异常");
+        };
 #endif
             AnalyzerExtension.RegisterMsBuild();
             App app = new App();

@@ -189,6 +189,10 @@
                                VerticalAlignment="Center" />
                 </StackPanel>
             </materialDesign:Card>
+            <RichTextBox  FontFamily="Segoe UI Emoji"
+                          BorderThickness="0">
+                
+            </RichTextBox>
             <customControl:FlowDocumentScrollViewerEx
                 FontFamily="Segoe UI Emoji"
                 BorderThickness="0"
@@ -599,7 +603,7 @@
            BasedOn="{StaticResource {x:Type ListBox}}">
         <Setter Property="Margin" Value="0,0,5,5" />
         <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
-        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Standard" />
         <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Item" />
         <Setter Property="VirtualizingPanel.CacheLength" Value="15,15" />
         <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
