@@ -7,6 +7,7 @@ using LLMClient.Agent;
 using LLMClient.Component;
 using LLMClient.ContextEngineering;
 using LLMClient.ContextEngineering.Prompt;
+using LLMClient.Dialog.Models;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;

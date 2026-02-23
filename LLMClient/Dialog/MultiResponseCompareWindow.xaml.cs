@@ -6,6 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Dialog.Models;
 
 namespace LLMClient.Dialog;
 

@@ -1,4 +1,5 @@
 ﻿using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 
 namespace LLMClient.Abstraction;
 

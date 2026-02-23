@@ -3,10 +3,12 @@ using System.Windows.Controls;
 using LLMClient.Component.Utility;
 using LLMClient.Data;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Project;
 using LLMClient.Rag;
 using LLMClient.ToolCall;
+using LLMClient.ToolCall.MCP;
 using Microsoft.Win32;
 
 namespace LLMClient.Configuration;

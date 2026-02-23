@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using LLMClient.Data;
+using LLMClient.Dialog.Models;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
 

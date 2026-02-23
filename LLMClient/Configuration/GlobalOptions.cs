@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;

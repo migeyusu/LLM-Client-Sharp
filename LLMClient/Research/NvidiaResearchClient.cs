@@ -6,6 +6,7 @@ using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Configuration;
 using LLMClient.Endpoints;
+using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.Servers;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel.Data;

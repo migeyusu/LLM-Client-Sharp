@@ -3,6 +3,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Dialog.Models;
 
 namespace LLMClient.Dialog.Controls;
 

@@ -15,6 +15,7 @@ using LLMClient.ContextEngineering;
 using LLMClient.ContextEngineering.Prompt;
 using LLMClient.Data;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;

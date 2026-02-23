@@ -5,6 +5,7 @@ using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
+using LLMClient.ToolCall.MCP;
 
 namespace LLMClient;
 

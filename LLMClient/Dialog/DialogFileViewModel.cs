@@ -6,6 +6,7 @@ using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Data;
+using LLMClient.Dialog.Models;
 
 namespace LLMClient.Dialog;
 

@@ -1,6 +1,7 @@
 ﻿using System.Windows.Controls;
 using System.Windows.Input;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 
 namespace LLMClient.Project;
 

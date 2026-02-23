@@ -28,6 +28,7 @@
                               xmlns:render="clr-namespace:LLMClient.Component.Render"
                               xmlns:controls="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf"
                               xmlns:controls1="clr-namespace:LLMClient.Dialog.Controls"
+                              xmlns:mcp="clr-namespace:LLMClient.ToolCall.MCP"
                               mc:Ignorable="d"
                               FontFamily="Microsoft YaHei UI"
                               Title="LLM Client"
@@ -68,8 +69,8 @@
                                                              MaxWidth="1000" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
-                                <DataTemplate DataType="{x:Type dialog:ModelSelectionPopupViewModel}">
-                                    <dialog:ModelSelectionView Width="800"
+                                <DataTemplate DataType="{x:Type userControls:ModelSelectionPopupViewModel}">
+                                    <userControls:ModelSelectionView Width="800"
                                                                Height="600" />
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type viewModel:PromptEditorViewModel}">
@@ -131,10 +132,10 @@
                                                             Height="600"
                                                             ContentTemplate="{StaticResource ApiModelInfoDataTemplate}" />
                                 </DataTemplate>
-                                <DataTemplate DataType="{x:Type toolCall:McpServiceCollection}">
+                                <DataTemplate DataType="{x:Type mcp:McpServiceCollection}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="MCP Server">
-                                        <toolCall:MCPServiceCollectionView Width="800"
+                                        <mcp:MCPServiceCollectionView Width="800"
                                                                            Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>

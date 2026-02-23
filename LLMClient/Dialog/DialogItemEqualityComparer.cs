@@ -1,4 +1,6 @@
-﻿namespace LLMClient.Dialog;
+﻿using LLMClient.Dialog.Models;
+
+namespace LLMClient.Dialog;
 
 public class DialogItemEqualityComparer : IEqualityComparer<IDialogItem>
 {

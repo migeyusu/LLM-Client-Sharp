@@ -1,5 +1,7 @@
 ﻿using System.Windows;
+using LLMClient.Component.UserControls;
 using LLMClient.Dialog.Controls;
+using LLMClient.Dialog.Models;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Dialog;

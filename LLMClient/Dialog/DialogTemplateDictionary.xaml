@@ -10,7 +10,9 @@
                     xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
                     xmlns:component="clr-namespace:LLMClient.Component"
                     xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
-                    xmlns:controls="clr-namespace:LLMClient.Dialog.Controls">
+                    xmlns:controls="clr-namespace:LLMClient.Dialog.Controls"
+                    xmlns:models="clr-namespace:LLMClient.Dialog.Models"
+                    xmlns:userControls="clr-namespace:LLMClient.Component.UserControls">
     <Style x:Key="SmallIconButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignIconButton}">
@@ -29,7 +31,7 @@
         </Style.Triggers>
     </Style>
     <DataTemplate x:Key="DefaultRequestViewItemDataTemplate"
-                  DataType="{x:Type dialog:RequestViewItem}">
+                  DataType="{x:Type models:RequestViewItem}">
         <Grid HorizontalAlignment="Right"
               Margin="50,0,0,0">
             <Grid.ColumnDefinitions>
@@ -132,14 +134,14 @@
                               HorizontalAlignment="Right"
                               Visibility="{Binding HasAttachments,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}">
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type dialog:Attachment}">
+                        <DataTemplate DataType="{x:Type models:Attachment}">
                             <materialDesign:Chip IsDeletable="False"
                                                  MaxWidth="140"
                                                  Margin="0"
                                                  ToolTipService.InitialShowDelay="0"
                                                  ToolTip="{Binding OriUri,Mode=OneTime}"
                                                  Content="{Binding  Name,Mode=OneTime}"
-                                                 Command="{x:Static dialog:Attachment.OpenFileCommand}"
+                                                 Command="{x:Static models:Attachment.OpenFileCommand}"
                                                  CommandParameter="{Binding}">
                                 <materialDesign:Chip.Icon>
                                     <materialDesign:PackIcon
@@ -172,7 +174,7 @@
             </StackPanel>
         </Grid>
     </DataTemplate>
-    <DataTemplate x:Key="ResponseContentTemplate" DataType="{x:Type dialog:ResponseViewItem}">
+    <DataTemplate x:Key="ResponseContentTemplate" DataType="{x:Type models:ResponseViewItem}">
         <StackPanel>
             <materialDesign:Card Padding="8"
                                  Visibility="{Binding IsResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
@@ -242,7 +244,7 @@
         </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="EraseDataTemplate"
-                  DataType="{x:Type dialog:EraseViewItem}">
+                  DataType="{x:Type models:EraseViewItem}">
         <Grid Height="30">
             <Grid.ContextMenu>
                 <ContextMenu>
@@ -314,7 +316,7 @@
         </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="MultiResponseViewItemDataTemplate"
-                  DataType="{x:Type dialog:MultiResponseViewItem}">
+                  DataType="{x:Type models:MultiResponseViewItem}">
         <StackPanel>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -336,7 +338,7 @@
                              ItemsSource="{Binding Items,Mode=OneWay}"
                              ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
                         <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type dialog:ResponseViewItem}">
+                            <DataTemplate DataType="{x:Type models:ResponseViewItem}">
                                 <StackPanel Orientation="Horizontal"
                                             Margin="3"
                                             ToolTipService.InitialShowDelay="0"
@@ -393,7 +395,7 @@
                                             Template="{StaticResource ItemDeleteButtonTemplate}">
                                         <Button.Visibility>
                                             <MultiBinding
-                                                Converter="{x:Static dialog:MultiResponseViewItem.DeleteItemConverter}">
+                                                Converter="{x:Static models:MultiResponseViewItem.DeleteItemConverter}">
                                                 <Binding Path="IsResponding" Mode="OneWay" />
                                                 <Binding
                                                     RelativeSource="{RelativeSource FindAncestor,AncestorType=ListBoxItem}"
@@ -427,12 +429,12 @@
                                           Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                           Command="{Binding ClearOthersCommand}" />
                                 <MenuItem Header="移除之后消息"
-                                          Command="{x:Static dialog:MultiResponseViewItem.RebaseCommand}"
+                                          Command="{x:Static models:MultiResponseViewItem.RebaseCommand}"
                                           CommandParameter="{Binding Mode=OneTime}"
                                           ToolTip="保留当前消息并删除所有之后的消息"
                                           Icon="{materialDesign:PackIcon Kind=WaveArrowDown}" />
                                 <MenuItem Header="查看日志"
-                                          Command="{x:Static dialog:ResponseViewItem.ShowTempResponseCommand}"
+                                          Command="{x:Static models:ResponseViewItem.ShowTempResponseCommand}"
                                           CommandParameter="{Binding AcceptedResponse,Mode=OneWay}" />
                                 <MenuItem Header="标记为有效回复"
                                           IsCheckable="True"
@@ -470,13 +472,13 @@
                                                  ToggleContent="{materialDesign:PackIcon Kind=AddBold,Size=20}"
                                                  Style="{StaticResource MaterialDesignToolPopupBox}"
                                                  Opened="AppendModel_PopupBox_OnOpened"
-                                                 PopupContent="{x:Static dialog:ModelSelectionPopupViewModel.PopupShared}"
+                                                 PopupContent="{x:Static userControls:ModelSelectionPopupViewModel.PopupShared}"
                                                  PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
                                 VerticalAlignment="Center"
                                 Margin="6,0,0,0"
                                 ToolTip="重试"
-                                Command="{x:Static  dialog:MultiResponseViewItem.RetryCurrentCommand}"
+                                Command="{x:Static  models:MultiResponseViewItem.RetryCurrentCommand}"
                                 CommandParameter="{Binding}"
                                 Content="{materialDesign:PackIcon Kind=Refresh,Size=20}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
@@ -494,7 +496,7 @@
                                 ToolTip="复制（仅文本）"
                                 Content="{materialDesign:PackIcon Kind=ContentCopy,Size=20}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
-                                Command="{x:Static dialog:MultiResponseViewItem.CompareAllCommand}"
+                                Command="{x:Static models:MultiResponseViewItem.CompareAllCommand}"
                                 Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                 CommandParameter="{Binding Mode=OneTime}"
                                 VerticalAlignment="Center"
@@ -515,7 +517,7 @@
                             Margin="16,0,0,0">
                     <CheckBox VerticalAlignment="Center"
                               Margin="6,0"
-                              Command="{x:Static dialog:ResponseViewItem.SetAsAvailableCommand}"
+                              Command="{x:Static models:ResponseViewItem.SetAsAvailableCommand}"
                               CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                               ToolTip="通过将当前回复设置为在上下文中有效，可以跳过一些回复，减少上下文的长度"
                               IsChecked="{Binding AcceptedResponse.IsAvailableInContext,Mode=OneWay}">
@@ -565,7 +567,7 @@
         <component:DataTemplateTypePair Template="{StaticResource DefaultRequestViewItemDataTemplate}" />
         <component:DataTemplateTypePair Template="{StaticResource MultiResponseViewItemDataTemplate}" />
         <component:DataTemplateTypePair>
-            <DataTemplate DataType="{x:Type dialog:SummaryRequestViewItem}">
+            <DataTemplate DataType="{x:Type models:SummaryRequestViewItem}">
                 <Grid HorizontalAlignment="Right"
                       Margin="50,0,0,0">
                     <Grid.ContextMenu>

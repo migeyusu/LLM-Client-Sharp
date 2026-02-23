@@ -2,6 +2,7 @@ using System.ComponentModel;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;
 

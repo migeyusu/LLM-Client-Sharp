@@ -15,6 +15,7 @@ using LLMClient.Abstraction;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;

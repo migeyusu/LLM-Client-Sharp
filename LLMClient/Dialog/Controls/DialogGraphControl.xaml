@@ -8,6 +8,7 @@
              xmlns:dialog="clr-namespace:LLMClient.Dialog"
              xmlns:component="clr-namespace:LLMClient.Component"
              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:models="clr-namespace:LLMClient.Dialog.Models"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DialogGraphViewModel}">
     <UserControl.Resources>
@@ -37,7 +38,7 @@
                     <ContentPresenter.ContentTemplateSelector>
                         <component:TypeBasedDataTemplateSelector>
                             <component:DataTemplateTypePair>
-                                <DataTemplate DataType="{x:Type dialog:RequestViewItem}">
+                                <DataTemplate DataType="{x:Type models:RequestViewItem}">
                                     <materialDesign:Card>
                                         <Grid>
                                             <Grid.RowDefinitions>
@@ -65,7 +66,7 @@
                                 </DataTemplate>
                             </component:DataTemplateTypePair>
                             <component:DataTemplateTypePair>
-                                <DataTemplate DataType="{x:Type dialog:MultiResponseViewItem}">
+                                <DataTemplate DataType="{x:Type models:MultiResponseViewItem}">
                                     <materialDesign:Card>
                                         <Grid>
                                             <Grid.RowDefinitions>
@@ -103,7 +104,7 @@
                                 </DataTemplate>
                             </component:DataTemplateTypePair>
                             <component:DataTemplateTypePair>
-                                <DataTemplate DataType="{x:Type dialog:EraseViewItem}">
+                                <DataTemplate DataType="{x:Type models:EraseViewItem}">
                                     <materialDesign:PackIcon Kind="ScissorsCutting"
                                                              VerticalAlignment="Center"
                                                              HorizontalAlignment="Center"

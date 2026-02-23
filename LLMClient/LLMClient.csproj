@@ -185,9 +185,6 @@
         <Page Update="MCP\KeyValueConfigWindow.xaml">
             <Generator>MSBuild:Compile</Generator>
         </Page>
-        <Page Update="Dialog\ModelSelectionView.xaml">
-            <Generator>MSBuild:Compile</Generator>
-        </Page>
         <Page Update="Dialog\DialogView.xaml">
             <Generator>MSBuild:Compile</Generator>
         </Page>
@@ -293,6 +290,31 @@
         </Page>
         <Page Update="Component\DefinitionResourceDictionary.xaml">
             <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Update="ToolCall\MCP\MCPServiceCollectionView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+          <XamlRuntime>Wpf</XamlRuntime>
+          <SubType>Designer</SubType>
+        </Page>
+        <Page Update="Component\UserControls\JsonEditorWindow.xaml">
+          <Generator>MSBuild:Compile</Generator>
+          <XamlRuntime>Wpf</XamlRuntime>
+          <SubType>Designer</SubType>
+        </Page>
+        <Page Update="Component\UserControls\EnvironmentVariablesWindow.xaml">
+          <Generator>MSBuild:Compile</Generator>
+          <XamlRuntime>Wpf</XamlRuntime>
+          <SubType>Designer</SubType>
+        </Page>
+        <Page Update="Component\UserControls\KeyValueConfigWindow.xaml">
+          <Generator>MSBuild:Compile</Generator>
+          <XamlRuntime>Wpf</XamlRuntime>
+          <SubType>Designer</SubType>
+        </Page>
+        <Page Update="Component\UserControls\ModelSelectionView.xaml">
+          <Generator>MSBuild:Compile</Generator>
+          <XamlRuntime>Wpf</XamlRuntime>
+          <SubType>Designer</SubType>
         </Page>
     </ItemGroup>
 

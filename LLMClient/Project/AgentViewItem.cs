@@ -1,4 +1,5 @@
 ﻿using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Project;

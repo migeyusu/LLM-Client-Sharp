@@ -12,6 +12,7 @@
              xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
              xmlns:component="clr-namespace:LLMClient.Component"
              xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
+             xmlns:models="clr-namespace:LLMClient.Dialog.Models"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
              d:DesignHeight="110" d:DesignWidth="1600"
@@ -86,7 +87,7 @@
                                       ItemsSource="{Binding Attachments,Mode=OneWay}"
                                       ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type local:Attachment}">
+                                <DataTemplate DataType="{x:Type models:Attachment}">
                                     <materialDesign:Chip IsDeletable="True"
                                                          MaxWidth="160"
                                                          Margin="0,0,5,0"
@@ -94,7 +95,7 @@
                                                          IconForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
                                                          ToolTipService.InitialShowDelay="0"
                                                          ToolTip="{Binding OriUri,Mode=OneTime}"
-                                                         Command="{x:Static local:Attachment.OpenFileCommand}"
+                                                         Command="{x:Static models:Attachment.OpenFileCommand}"
                                                          CommandParameter="{Binding}"
                                                          Content="{Binding Name,Mode=OneTime}"
                                                          DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"
@@ -163,7 +164,7 @@
                                                                  PopupContent="{Binding SearchConfig,Mode=OneWay}"
                                                                  Style="{StaticResource MaterialDesignToolPopupBox}">
                                             <materialDesign:PopupBox.PopupContentTemplate>
-                                                <DataTemplate DataType="{x:Type toolCall:SearchConfigViewModel}">
+                                                <DataTemplate DataType="{x:Type local:SearchConfigViewModel}">
                                                     <ListBox
                                                         ItemsSource="{Binding SelectableSearchOptions,Mode=OneWay}"
                                                         SelectedItem="{Binding SelectedSearchService,Mode=TwoWay}"

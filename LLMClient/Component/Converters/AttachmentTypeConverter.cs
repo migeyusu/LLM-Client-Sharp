@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Windows.Data;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Component.Converters;

@@ -4,6 +4,7 @@ using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Component;
 using LLMClient.Configuration;
+using LLMClient.Dialog.Models;
 
 namespace LLMClient.Dialog;
 

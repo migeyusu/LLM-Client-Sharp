@@ -4,6 +4,7 @@ using System.Text.Json;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 

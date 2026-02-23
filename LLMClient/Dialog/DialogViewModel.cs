@@ -7,6 +7,7 @@ using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.Servers;

@@ -1,6 +1,7 @@
 ﻿using System.Windows.Input;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Dialog.Models;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;

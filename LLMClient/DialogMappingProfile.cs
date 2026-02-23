@@ -6,6 +6,7 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Project;

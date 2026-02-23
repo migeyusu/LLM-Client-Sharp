@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.Servers;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;

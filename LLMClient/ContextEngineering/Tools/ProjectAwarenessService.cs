@@ -1,4 +1,5 @@
 ﻿using LLMClient.ContextEngineering.Analysis;
+using LLMClient.ContextEngineering.Prompt;
 
 namespace LLMClient.ContextEngineering.Tools;
 

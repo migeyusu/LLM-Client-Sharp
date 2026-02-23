@@ -1,4 +1,5 @@
 ﻿using LLMClient.Component.ViewModel;
+using LLMClient.Dialog.Models;
 
 // 引用你的数据结构命名空间
 
