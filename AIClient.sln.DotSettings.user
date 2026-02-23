@@ -320,12 +320,7 @@
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.UnitTest1.TestFormatFunc&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=1364ce65_002D2859_002D46c2_002Da543_002Dc5d8a7747022/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Format_EmptyPaths_OutputsHeaderAndEmptyCodeBlock" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.FileTreeFormatterTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.PromptContext.FileTree&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
+	
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=1de3248a_002Def22_002D45d9_002Da916_002Dae2e2d364b26/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="TestBuild" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.PromptContext.TestBuild&lt;/TestId&gt;&#xD;
@@ -353,7 +348,7 @@
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.McpTest.ConnectRider&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=e6a196f4_002D330f_002D4d33_002Da3de_002D50a92554ef01/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="TestGenerateImage" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=e6a196f4_002D330f_002D4d33_002Da3de_002D50a92554ef01/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="TestGenerateImage" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.ImageTest.Base64Uri&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;

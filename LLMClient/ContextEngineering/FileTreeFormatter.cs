@@ -142,6 +142,7 @@ public class FileTreeFormatter
                     next = new TreeNode { Name = part, IsFile = i == parts.Length - 1 };
                     current.Children[part] = next;
                 }
+
                 current = next;
             }
         }
@@ -160,32 +161,54 @@ public class FileTreeFormatter
         int maxDepth,
         int maxFilesPerFolder)
     {
-        // 根节点：只迭代子节点
+        // ── 根节点：不打印自身，但同样应用排序与截断 ───────────────────────
         if (node.Name == "__root__")
         {
-            var keys = node.Children.Keys.OrderBy(k => k).ToList();
-            for (var i = 0; i < keys.Count; i++)
-                PrintNode(node.Children[keys[i]], "", i == keys.Count - 1,
-                    sb, currentDepth, maxDepth, maxFilesPerFolder);
+            var rootChildren = node.Children.Values
+                .OrderBy(c => c.IsFile ? 1 : 0) // Fix 1：目录优先
+                .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (rootChildren.Count > maxFilesPerFolder) // Fix 2：根节点截断
+            {
+                var visible = rootChildren.Take(maxFilesPerFolder).ToList();
+                var hiddenCount = rootChildren.Count - maxFilesPerFolder;
+
+                for (var i = 0; i < visible.Count; i++)
+                    PrintNode(visible[i], "", i == visible.Count - 1 && hiddenCount == 0,
+                        sb, currentDepth, maxDepth, maxFilesPerFolder);
+
+                if (hiddenCount > 0)
+                    sb.AppendLine($"└── ... ({hiddenCount} more items)");
+            }
+            else
+            {
+                for (var i = 0; i < rootChildren.Count; i++)
+                    PrintNode(rootChildren[i], "", i == rootChildren.Count - 1,
+                        sb, currentDepth, maxDepth, maxFilesPerFolder);
+            }
+
             return;
         }
 
+        // ── 普通节点 ──────────────────────────────────────────────────────
         sb.Append(indent).Append(isLast ? "└── " : "├── ").AppendLine(node.Name);
 
         if (node.Children.Count == 0) return;
 
         var childIndent = indent + (isLast ? "    " : "│   ");
 
-        // 深度超限：只统计，不递归
-        if (currentDepth >= maxDepth - 1)
+        // Fix 3：改为 >= maxDepth，让第 maxDepth 层节点仍可打印自身，
+        //         仅折叠其子节点（即第 maxDepth+1 层）
+        if (currentDepth >= maxDepth)
         {
             sb.Append(childIndent)
-              .AppendLine($"└── ... ({node.Children.Count} items, depth limit {maxDepth})");
+                .AppendLine($"└── ... ({node.Children.Count} items, depth limit {maxDepth})");
             return;
         }
 
         var children = node.Children.Values
-            .OrderBy(c => c.IsFile ? 1 : 0)  // 目录在文件前
+            .OrderBy(c => c.IsFile ? 1 : 0)
             .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 

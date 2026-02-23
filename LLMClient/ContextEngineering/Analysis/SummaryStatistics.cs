@@ -1,6 +1,4 @@
-﻿using LLMClient.ContextEngineering.Analysis;
-
-namespace LLMClient.ContextEngineering;
+﻿namespace LLMClient.ContextEngineering.Analysis;
 
 public class SummaryStatistics : ProjectStatistics
 {

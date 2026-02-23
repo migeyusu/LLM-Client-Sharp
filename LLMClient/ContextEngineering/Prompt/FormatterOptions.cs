@@ -1,4 +1,4 @@
-﻿namespace LLMClient.ContextEngineering;
+﻿namespace LLMClient.ContextEngineering.Prompt;
 
 // 内部使用的结果模型
 
