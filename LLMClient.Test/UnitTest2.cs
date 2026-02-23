@@ -21,7 +21,6 @@ using LLMClient.Rag;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.MCP;
-using LLMClient.ToolCall.Servers;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel.Connectors.SqliteVec;

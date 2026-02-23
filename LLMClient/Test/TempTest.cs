@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using LLMClient.ToolCall.DefaultPlugins;
-using LLMClient.ToolCall.Servers;
 using Microsoft.SemanticKernel.Data;
 
 namespace LLMClient.Test;

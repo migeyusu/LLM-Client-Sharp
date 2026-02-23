@@ -10,7 +10,6 @@ using LLMClient.Configuration;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
-using LLMClient.ToolCall.Servers;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Dialog;

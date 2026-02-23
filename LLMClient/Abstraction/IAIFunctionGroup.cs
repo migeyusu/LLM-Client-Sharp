@@ -1,8 +1,6 @@
 ﻿using System.Text.Json.Serialization;
-using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.MCP;
-using LLMClient.ToolCall.Servers;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;
@@ -22,6 +20,9 @@ public interface IAIFunctionGroup : ICloneable
 {
     string Name { get; }
 
+    /// <summary>
+    /// insert in system prompt
+    /// </summary>
     string? AdditionPrompt { get; }
 
     /// <summary>

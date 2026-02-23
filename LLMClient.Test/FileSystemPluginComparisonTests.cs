@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using LLMClient.ToolCall.Servers;
+using LLMClient.ToolCall.DefaultPlugins;
 using ModelContextProtocol.Client;
 using Xunit.Abstractions;
 

@@ -7,7 +7,6 @@ using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.MCP;
-using LLMClient.ToolCall.Servers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 

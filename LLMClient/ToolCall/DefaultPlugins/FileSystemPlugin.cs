@@ -23,11 +23,10 @@ using LLMClient;
 using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
-using LLMClient.ToolCall.Servers;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.SemanticKernel;
 
-namespace LLMClient.ToolCall.Servers;
+namespace LLMClient.ToolCall.DefaultPlugins;
 
 /// <summary>
 /// A Kernel Plugin for interacting with the local file system in a secure manner.
