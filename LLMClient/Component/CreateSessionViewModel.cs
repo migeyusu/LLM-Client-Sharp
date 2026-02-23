@@ -6,6 +6,7 @@ using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog;
 using LLMClient.Project;
 using LLMClient.Research;
+using LLMClient.Workflow.Research;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Component;

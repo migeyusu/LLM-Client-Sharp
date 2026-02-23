@@ -29,6 +29,7 @@
                               xmlns:controls="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf"
                               xmlns:controls1="clr-namespace:LLMClient.Dialog.Controls"
                               xmlns:mcp="clr-namespace:LLMClient.ToolCall.MCP"
+                              xmlns:research1="clr-namespace:LLMClient.Workflow.Research"
                               mc:Ignorable="d"
                               FontFamily="Microsoft YaHei UI"
                               Title="LLM Client"
@@ -199,10 +200,10 @@
                                                               Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
-                                <DataTemplate DataType="{x:Type research:ResearchClient}">
+                                <DataTemplate DataType="{x:Type research1:ResearchClient}">
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="Prompt Template">
-                                        <research:ResearchClientView Width="900"
+                                        <research1:ResearchClientView Width="900"
                                                                      Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>

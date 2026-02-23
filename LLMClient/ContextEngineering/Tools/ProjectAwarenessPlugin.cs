@@ -166,7 +166,7 @@ public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
         => raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
 
-    public override string? AdditionPrompt { get; }
+    public override string? AdditionPrompt { get; }//todo:
 
     public override object Clone()
     {

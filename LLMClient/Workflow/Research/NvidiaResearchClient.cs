@@ -10,7 +10,7 @@ using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel.Data;
 
-namespace LLMClient.Research;
+namespace LLMClient.Workflow.Research;
 
 public class NvidiaResearchClient : ResearchClient
 {

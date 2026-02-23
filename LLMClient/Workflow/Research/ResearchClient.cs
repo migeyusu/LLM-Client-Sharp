@@ -2,7 +2,7 @@
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 
-namespace LLMClient.Research;
+namespace LLMClient.Workflow.Research;
 
 public abstract class ResearchClient : BaseViewModel, IChatEndpoint
 {

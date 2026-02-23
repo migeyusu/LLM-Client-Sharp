@@ -5,7 +5,7 @@ using LLMClient.Configuration;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 
-namespace LLMClient.Research;
+namespace LLMClient.Workflow.Research;
 
 public class NvidiaResearchClientOption : BaseViewModel, IResearchCreationOption
 {

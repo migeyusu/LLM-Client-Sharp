@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="LLMClient.Research.ResearchClientView"
+﻿<UserControl x:Class="LLMClient.Workflow.Research.ResearchClientView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -11,6 +11,5 @@
             <RowDefinition Height="Auto" />
             <RowDefinition />
         </Grid.RowDefinitions>
-        <openAiapi:LlmClientBaseView Grid.Row="0" />
     </Grid>
 </UserControl>

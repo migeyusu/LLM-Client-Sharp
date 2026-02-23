@@ -8,6 +8,7 @@
              xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:research="clr-namespace:LLMClient.Research"
+             xmlns:research1="clr-namespace:LLMClient.Workflow.Research"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="700"
              d:DataContext="{d:DesignInstance local:CreateSessionViewModel}">
@@ -85,7 +86,7 @@
                              BorderThickness="0,0,0,1"
                              Margin="10">
                         <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type research:IResearchCreationOption}">
+                            <DataTemplate DataType="{x:Type research1:IResearchCreationOption}">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
                                            Width="20"

@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace LLMClient.Research;
+namespace LLMClient.Workflow.Research;
 
 public partial class ResearchClientView : UserControl
 {
