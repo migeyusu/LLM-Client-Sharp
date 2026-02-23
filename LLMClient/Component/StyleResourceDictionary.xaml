@@ -358,7 +358,7 @@
             </DataTrigger>
         </Style.Triggers>
     </Style>-->
-    <Style x:Key="HoverDeleteItemButtonStyle"
+    <Style x:Key="ListBoxItemHoverButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignIconButton}">
         <Setter Property="Background"
@@ -407,6 +407,19 @@
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
+    <Style x:Key="ItemDeleteButtonStyle"
+           TargetType="{x:Type Button}">
+        <Setter Property="HorizontalAlignment"
+                Value="Right" />
+        <Setter Property="VerticalAlignment"
+                Value="Top" />
+        <Setter Property="Width"
+                Value="20" />
+        <Setter Property="Height"
+                Value="20" />
+        <Setter Property="Template"
+                Value="{StaticResource ItemDeleteButtonTemplate}" />
+    </Style>
     <Style x:Key="HorizontalArrowScrollViewer"
            TargetType="{x:Type ScrollViewer}">
         <Style.Resources>
@@ -520,7 +533,7 @@
         <Setter Property="VerticalContentAlignment"
                 Value="Center" />
         <Setter Property="IsCancel"
-                Value="True"/>
+                Value="True" />
         <Setter Property="CommandParameter">
             <Setter.Value>
                 <system:Boolean>False</system:Boolean>

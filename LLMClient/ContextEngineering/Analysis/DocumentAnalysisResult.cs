@@ -5,6 +5,8 @@ namespace LLMClient.ContextEngineering.Analysis;
 public class DocumentAnalysisResult
 {
     public required string FilePath { get; set; }
+    
+    public FileEntryInfo? FileEntry { get; set; }
     public List<NamespaceInfo> Namespaces { get; set; } = new();
     public int LinesOfCode { get; set; }
     public int TypeCount { get; set; }

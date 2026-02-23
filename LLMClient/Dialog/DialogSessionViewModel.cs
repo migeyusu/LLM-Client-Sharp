@@ -20,7 +20,7 @@ using ConfirmView = LLMClient.Component.UserControls.ConfirmView;
 namespace LLMClient.Dialog;
 
 public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase, ITextDialogSession,
-    INavigationViewModel
+    IDialogGraphViewModel
 {
     /// <summary>
     /// indicate whether data is changed after loading.
@@ -322,9 +322,9 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public ICommand ClearDialogCommand { get; }
 
+
     public virtual void DeleteItem(IDialogItem item)
     {
-        var previousItem = item.PreviousItem;
         if (item is IRequestItem requestItem)
         {
             requestItem.DeleteInteraction();
@@ -334,14 +334,18 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             eraseViewItem.Delete();
         }
 
-        //检查leaf可达性
-        if (!CurrentLeaf.CanReachRoot())
+        if (this.DialogItems.Contains(item))
         {
-            CurrentLeaf = previousItem ?? RootNode;
-        }
-        else
-        {
-            RebuildLinearItems();
+            //检查leaf可达性
+            if (!CurrentLeaf.CanReachRoot())
+            {
+                var previousItem = item.PreviousItem;
+                CurrentLeaf = previousItem ?? RootNode;
+            }
+            else
+            {
+                RebuildLinearItems();
+            }
         }
     }
 

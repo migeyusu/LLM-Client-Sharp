@@ -13,6 +13,7 @@ public class RequestBlockParser : SingleTagBlockParser<RequestBlock>
 
     protected override void PostProcess(RequestBlock block)
     {
-        block.ContentBuilder.Append(block.Lines.ToString());
+        var value = block.Lines.ToString();
+        block.ContentBuilder.Append(value);
     }
 }

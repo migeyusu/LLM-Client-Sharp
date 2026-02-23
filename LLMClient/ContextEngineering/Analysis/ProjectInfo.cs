@@ -27,4 +27,19 @@ public class ProjectInfo
     public string Version { get; set; } = "1.0";
 
     [JsonIgnore] public TimeSpan GenerationTime { get; set; }
+    
+    /// <summary>
+    /// 项目内文件索引（项目感知工具需要）
+    /// </summary>
+    public List<FileEntryInfo> Files { get; set; } = new();
+    
+    /// <summary>
+    /// 项目约定/配置探测结果（项目感知工具需要）
+    /// </summary>
+    public ConventionInfo Conventions { get; set; } = new();
+    
+    /// <summary>
+    /// 供工具层识别项目：优先使用 ProjectFilePath 作为稳定 id
+    /// </summary>
+    public string ProjectId => ProjectFilePath;
 }

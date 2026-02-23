@@ -13,4 +13,6 @@ public class SolutionInfo
     public SummaryStatistics Statistics { get; set; } = new();
 
     [JsonIgnore] public TimeSpan GenerationTime { get; set; }
+    
+    public ConventionInfo Conventions { get; set; } = new();
 }

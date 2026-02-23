@@ -384,7 +384,7 @@ public class DialogMappingProfile : Profile
     }
 
     private static void BuildTreeFromFlatList(IMapperBase mapper, DialogSessionPersistModel source,
-        INavigationViewModel destination)
+        IDialogGraphViewModel destination)
     {
         List<IDialogItem> vmList = [];
         var flatPersistItems = source.DialogItems;
@@ -455,7 +455,7 @@ public class DialogMappingProfile : Profile
         }
     }
 
-    private static void FlattenTreeForSave(INavigationViewModel source, DialogSessionPersistModel destination,
+    private static void FlattenTreeForSave(IDialogGraphViewModel source, DialogSessionPersistModel destination,
         IMapperBase mapper)
     {
         var flatList = new List<IDialogPersistItem>();

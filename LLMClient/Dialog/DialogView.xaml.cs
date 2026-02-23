@@ -10,7 +10,7 @@ public partial class DialogView : UserControl
         InitializeComponent();
     }
 
-    DialogViewModel ViewModel => (DialogViewModel)DataContext;
+    private DialogViewModel ViewModel => (DialogViewModel)DataContext;
 
     private void OnDeleteExecuted(object sender, ExecutedRoutedEventArgs e)
     {

@@ -1,9 +1,6 @@
 ﻿using System.Text.Json.Serialization;
-using LLMClient.ContextEngineering.Analysis;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.FindSymbols;
 
-namespace LLMClient.ContextEngineering.Tools.Models;
+namespace LLMClient.ContextEngineering.Analysis;
 
 /// <summary>
 /// 核心符号标识符 - LLM 调用工具时的核心参数

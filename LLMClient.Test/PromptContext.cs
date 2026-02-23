@@ -35,7 +35,7 @@ public class PromptContext
     {
         using var analyzer = new RoslynProjectAnalyzer(null, _analyzerConfig);
         var projectInfo = await analyzer.AnalyzeProjectAsync(projectPath);
-        var fileTreeFormatter = new CompactFileTreeFormatter();
+        var fileTreeFormatter = new FileTreeFormatter();
         var format = fileTreeFormatter.Format(projectInfo);
         var outputPath = "filetree.md";
         await File.WriteAllTextAsync(outputPath, format);

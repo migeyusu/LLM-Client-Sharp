@@ -1,10 +1,12 @@
 ﻿namespace LLMClient.Dialog;
 
-public interface INavigationViewModel
+public interface IDialogGraphViewModel
 {
     IDialogItem RootNode { get; }
 
     IDialogItem CurrentLeaf { get; set; }
 
     bool IsNodeSelectable(IDialogItem item);
+
+    void DeleteItem(IDialogItem item);
 }

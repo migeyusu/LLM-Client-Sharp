@@ -4,155 +4,208 @@ using LLMClient.ContextEngineering.Analysis;
 namespace LLMClient.ContextEngineering;
 
 /// <summary>
-/// 生成极简的文件目录树结构，大幅节省 Tokens
+/// 将文件路径列表渲染为 ASCII 目录树。
+/// 核心方法接受已计算好的相对路径集合，Solution/Project 重载负责路径提取。
 /// </summary>
 public class FileTreeFormatter
 {
-    private const int MaxDepth = 5; // 限制深度，防止过深
-    private const int MaxFilesPerFolder = 30; // 限制单文件夹文件数
+    private const int DefaultMaxFilesPerFolder = 30;
 
-    public string Format(SolutionInfo solution)
+    // ── 核心方法：从外部传入已相对化的路径列表 ──────────────────────────
+
+    /// <param name="header">树顶部的标题行，为空则不输出</param>
+    /// <param name="relativePaths">相对于某个基准目录的路径集合</param>
+    /// <param name="maxDepth">最大渲染深度，超出时折叠并注明</param>
+    /// <param name="excludePatterns">路径片段黑名单（大小写不敏感子串匹配）</param>
+    /// <param name="maxFilesPerFolder">每级目录最多显示的条目数</param>
+    public string Format(
+        string header,
+        IEnumerable<string> relativePaths,
+        int maxDepth = 5,
+        ICollection<string>? excludePatterns = null,
+        int maxFilesPerFolder = DefaultMaxFilesPerFolder)
     {
         var sb = new StringBuilder();
+
+        if (!string.IsNullOrWhiteSpace(header))
+            sb.AppendLine(header).AppendLine();
+
+        sb.AppendLine("```");
+
+        var filtered = relativePaths
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Where(p => excludePatterns == null || !excludePatterns.Any(ep =>
+                p.Contains(ep, StringComparison.OrdinalIgnoreCase)))
+            .Distinct()
+            .OrderBy(p => p)
+            .ToList();
+
+        var root = BuildTree(filtered);
+        PrintNode(root, "", true, sb, currentDepth: 0, maxDepth, maxFilesPerFolder);
+
+        sb.AppendLine("```");
+        return sb.ToString();
+    }
+
+    // ── Solution 重载：每个 Project 单独一节，路径相对于 Solution 根目录 ──
+
+    public string Format(
+        SolutionInfo solution,
+        int maxDepth = 5,
+        ICollection<string>? excludePatterns = null)
+    {
+        var solutionDir = Path.GetDirectoryName(solution.SolutionPath) ?? string.Empty;
+        var sb = new StringBuilder();
+
         sb.AppendLine($"# Solution Map: {solution.SolutionName}");
-        
-        // 1. 核心依赖概览 (只列出最重要的，不要列出几百个包)
-        // 这里可以做个筛选，或者只列出 TargetFrameworks
+
         var allFrameworks = solution.Projects
             .SelectMany(p => p.TargetFrameworks)
-            .Distinct();
+            .Distinct()
+            .OrderBy(x => x);
         sb.AppendLine($"> Frameworks: {string.Join(", ", allFrameworks)}");
         sb.AppendLine();
 
-        // 2. 构建所有文件的路径列表
         foreach (var project in solution.Projects.OrderBy(p => p.Name))
         {
-             sb.AppendLine($"### [Project] {project.Name} ({project.OutputType})");
-             // 提取该项目下的所有唯一文件路径
-             // 注意：这里需要你确保 ProjectInfo 里能拿到所有 FilePath
-             // 目前你的结构是 Project -> Namespaces -> Types -> FilePath
-             // 我们需要把它们铺平
-             
-             var files = project.Namespaces
-                 .SelectMany(n => n.Types)
-                 .Select(t => t.RelativePath) // 假设你有 RelativePath，之前代码里看到了 extract
-                 .Where(p => !string.IsNullOrEmpty(p))
-                 .Distinct()
-                 .OrderBy(p => p)
-                 .ToList();
-
-             sb.AppendLine("```"); // 使用代码块包裹树状图防止Markdown渲染混乱
-             RenderAsciiTree(files, sb);
-             sb.AppendLine("```");
-             sb.AppendLine();
+            sb.AppendLine($"### [Project] {project.Name} ({project.OutputType})");
+            var paths = ExtractRelativePaths(project, solutionDir);
+            sb.Append(Format(string.Empty, paths, maxDepth, excludePatterns));
+            sb.AppendLine();
         }
 
         return sb.ToString();
     }
-    
-    public string Format(ProjectInfo project)
+
+    // ── Project 重载：路径相对于 Project 根目录 ─────────────────────────
+
+    public string Format(
+        ProjectInfo project,
+        int maxDepth = 5,
+        ICollection<string>? excludePatterns = null)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"# Project Map: {project.Name}");
-        
-        var files = project.Namespaces
-             .SelectMany(n => n.Types)
-             .Select(t => t.RelativePath)
-             .Where(p => !string.IsNullOrEmpty(p))
-             .Distinct()
-             .OrderBy(p => p)
-             .ToList();
-
-        sb.AppendLine("```");
-        RenderAsciiTree(files, sb);
-        sb.AppendLine("```");
-        
+        var paths = ExtractRelativePaths(project, project.FullRootDir);
+        sb.Append(Format(string.Empty, paths, maxDepth, excludePatterns));
         return sb.ToString();
     }
 
-    private void RenderAsciiTree(List<string> filePaths, StringBuilder sb)
-    {
-        // 1. 将路径列表转换为树节点结构
-        var root = BuildTree(filePaths);
+    // ── 路径提取（优先 Files 索引，回退到 Type 位置）──────────────────────
 
-        // 2. 递归打印
-        PrintNode(root, "", true, sb);
+    private static IEnumerable<string> ExtractRelativePaths(ProjectInfo project, string baseDir)
+    {
+        if (project.Files.Count > 0)
+        {
+            return project.Files
+                .Select(f => Path.GetRelativePath(baseDir, f.FilePath))
+                .Where(p => !string.IsNullOrWhiteSpace(p) && p != ".");
+        }
+
+        // Fallback：从 Type 的 RelativePath 推算（旧行为兼容）
+        return project.Namespaces
+            .SelectMany(n => n.Types)
+            .Select(t =>
+            {
+                var absPath = Path.IsPathRooted(t.RelativePath)
+                    ? t.RelativePath
+                    : Path.Combine(project.FullRootDir, t.RelativePath);
+                return Path.GetRelativePath(baseDir, absPath);
+            })
+            .Where(p => !string.IsNullOrWhiteSpace(p) && p != ".")
+            .Distinct();
     }
 
-    private class Node
+    // ── 树构建 ────────────────────────────────────────────────────────────
+
+    private sealed class TreeNode
     {
-        public string Name { get; set; } = string.Empty;
-        public Dictionary<string, Node> Children { get; } = new();
-        public bool IsFile { get; set; }
+        public string Name { get; init; } = string.Empty;
+        public Dictionary<string, TreeNode> Children { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public bool IsFile { get; init; }
     }
 
-    private Node BuildTree(List<string> paths)
+    private static TreeNode BuildTree(IEnumerable<string> paths)
     {
-        var root = new Node { Name = "root" };
+        var root = new TreeNode { Name = "__root__" };
+
         foreach (var path in paths)
         {
             var parts = path.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
             var current = root;
-            for (int i = 0; i < parts.Length; i++)
+
+            for (var i = 0; i < parts.Length; i++)
             {
                 var part = parts[i];
                 if (!current.Children.TryGetValue(part, out var next))
                 {
-                    next = new Node 
-                    { 
-                        Name = part, 
-                        IsFile = (i == parts.Length - 1) // 简单假定最后一段是文件
-                    };
+                    next = new TreeNode { Name = part, IsFile = i == parts.Length - 1 };
                     current.Children[part] = next;
                 }
                 current = next;
             }
         }
+
         return root;
     }
 
-    private void PrintNode(Node node, string indent, bool isLast, StringBuilder sb, int depth = 0)
+    // ── 树打印（深度限制 + 条目截断）────────────────────────────────────
+
+    private static void PrintNode(
+        TreeNode node,
+        string indent,
+        bool isLast,
+        StringBuilder sb,
+        int currentDepth,
+        int maxDepth,
+        int maxFilesPerFolder)
     {
-        // 根节点本身不打印，只打印子节点
-        if (node.Name == "root")
+        // 根节点：只迭代子节点
+        if (node.Name == "__root__")
         {
             var keys = node.Children.Keys.OrderBy(k => k).ToList();
-            for (int i = 0; i < keys.Count; i++)
-            {
-                PrintNode(node.Children[keys[i]], "", i == keys.Count - 1, sb, depth + 1);
-            }
+            for (var i = 0; i < keys.Count; i++)
+                PrintNode(node.Children[keys[i]], "", i == keys.Count - 1,
+                    sb, currentDepth, maxDepth, maxFilesPerFolder);
             return;
         }
 
-        sb.Append(indent);
-        sb.Append(isLast ? "└── " : "├── ");
-        sb.AppendLine(node.Name);
+        sb.Append(indent).Append(isLast ? "└── " : "├── ").AppendLine(node.Name);
 
-        var children = node.Children.Values.OrderBy(x => x.IsFile ? 1 : 0).ThenBy(x => x.Name).ToList(); // 文件夹在前，文件在后
-        
-        // 截断逻辑：如果文件太多
-        if (children.Count > MaxFilesPerFolder)
+        if (node.Children.Count == 0) return;
+
+        var childIndent = indent + (isLast ? "    " : "│   ");
+
+        // 深度超限：只统计，不递归
+        if (currentDepth >= maxDepth - 1)
         {
-             var visible = children.Take(MaxFilesPerFolder).ToList();
-             var invisible = children.Count - MaxFilesPerFolder;
-             
-             for (int i = 0; i < visible.Count; i++)
-             {
-                 PrintNode(visible[i], indent + (isLast ? "    " : "│   "), i == visible.Count - 1 && invisible == 0, sb, depth + 1);
-             }
-             
-             if (invisible > 0)
-             {
-                 sb.Append(indent + (isLast ? "    " : "│   "));
-                 sb.AppendLine($"└── ... ({invisible} more items)");
-             }
+            sb.Append(childIndent)
+              .AppendLine($"└── ... ({node.Children.Count} items, depth limit {maxDepth})");
+            return;
+        }
+
+        var children = node.Children.Values
+            .OrderBy(c => c.IsFile ? 1 : 0)  // 目录在文件前
+            .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (children.Count > maxFilesPerFolder)
+        {
+            var visible = children.Take(maxFilesPerFolder).ToList();
+            var hiddenCount = children.Count - maxFilesPerFolder;
+
+            for (var i = 0; i < visible.Count; i++)
+                PrintNode(visible[i], childIndent, i == visible.Count - 1 && hiddenCount == 0,
+                    sb, currentDepth + 1, maxDepth, maxFilesPerFolder);
+
+            if (hiddenCount > 0)
+                sb.Append(childIndent).AppendLine($"└── ... ({hiddenCount} more items)");
         }
         else
         {
-            for (int i = 0; i < children.Count; i++)
-            {
-                PrintNode(children[i], indent + (isLast ? "    " : "│   "), i == children.Count - 1, sb, depth + 1);
-            }
+            for (var i = 0; i < children.Count; i++)
+                PrintNode(children[i], childIndent, i == children.Count - 1,
+                    sb, currentDepth + 1, maxDepth, maxFilesPerFolder);
         }
     }
 }

@@ -85,7 +85,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
             stopwatch.Stop();
             summary.GenerationTime = stopwatch.Elapsed;
             _logger?.LogInformation($"Analysis completed in {stopwatch.ElapsedMilliseconds}ms");
-
+            summary.Conventions = MergeSolutionConventions(summary.Projects);
             return summary;
         }
         catch (Exception ex)
@@ -97,6 +97,27 @@ public partial class RoslynProjectAnalyzer : IDisposable
         {
             _workspace.CloseSolution();
         }
+    }
+
+    private static ConventionInfo MergeSolutionConventions(List<ProjectInfo> projects)
+    {
+        var c = new ConventionInfo();
+
+        var anyEditorConfig = projects.Select(p => p.Conventions.EditorConfigPath)
+            .FirstOrDefault(p => !string.IsNullOrWhiteSpace(p));
+        if (anyEditorConfig != null)
+        {
+            c.HasEditorConfig = true;
+            c.EditorConfigPath = anyEditorConfig;
+        }
+
+        c.UsesNullable = projects.Any(p => p.Conventions.UsesNullable);
+        c.UsesImplicitUsings = projects.Any(p => p.Conventions.UsesImplicitUsings);
+        c.TestFrameworkHint = projects
+            .Select(p => p.Conventions.TestFrameworkHint)
+            .FirstOrDefault(x => x != "Unknown") ?? "Unknown";
+
+        return c;
     }
 
     public async Task<ProjectInfo> AnalyzeProjectAsync(string csprojPath)
@@ -233,8 +254,83 @@ public partial class RoslynProjectAnalyzer : IDisposable
         // 计算项目统计
         CalculateProjectStatistics(info);
         info.GenerationTime = stopwatch.Elapsed;
+        info.Conventions = DetectProjectConventions(info, project);
         stopwatch.Stop();
         return info;
+    }
+
+    private ConventionInfo DetectProjectConventions(ProjectInfo info, Microsoft.CodeAnalysis.Project project)
+    {
+        var conv = new ConventionInfo();
+
+        // 1) .editorconfig
+        var rootDir = info.FullRootDir;
+        var editorConfigPath = FindUpward(rootDir, ".editorconfig", maxDepth: 6);
+        if (editorConfigPath != null)
+        {
+            conv.HasEditorConfig = true;
+            conv.EditorConfigPath = editorConfigPath;
+        }
+
+        // 2) Nullable / ImplicitUsings (从 compilation options 或 parse options 能部分推断)
+        // Roslyn 不直接暴露 csproj 属性，这里仅做启发式：查看是否引用 System.Runtime 且语言版本>=8 等没意义
+        // 更稳妥：读取 csproj 文本（仍属于项目感知）
+        TryDetectFromCsproj(info.ProjectFilePath, conv);
+
+        // 3) test framework hint
+        conv.TestFrameworkHint = GuessTestFramework(info);
+
+        // 4) notable docs
+        var candidates = new[] { "README.md", "readme.md", "docs", "ADR", "adr" };
+        foreach (var c in candidates)
+        {
+            var path = Path.Combine(rootDir, c);
+            if (File.Exists(path) || Directory.Exists(path))
+                conv.NotableFiles.Add(path);
+        }
+
+        // 5) namespace style：从抽样类型的 Namespace 前缀推断
+        var ns = info.Namespaces
+            .Select(n => n.Name)
+            .Where(n => !string.IsNullOrWhiteSpace(n) && n != "<Global>")
+            .OrderByDescending(n => n.Length)
+            .FirstOrDefault();
+        conv.DefaultNamespaceStyle = ns;
+
+        return conv;
+    }
+
+    private static void TryDetectFromCsproj(string csprojPath, ConventionInfo conv)
+    {
+        if (!File.Exists(csprojPath)) return;
+
+        var text = File.ReadAllText(csprojPath);
+
+        conv.UsesNullable = text.Contains("<Nullable>enable</Nullable>", StringComparison.OrdinalIgnoreCase);
+        conv.UsesImplicitUsings =
+            text.Contains("<ImplicitUsings>enable</ImplicitUsings>", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GuessTestFramework(ProjectInfo info)
+    {
+        var pkgs = info.PackageReferences.Select(p => p.Name).ToList();
+        if (pkgs.Any(n => n.Contains("xunit", StringComparison.OrdinalIgnoreCase))) return "xUnit";
+        if (pkgs.Any(n => n.Contains("nunit", StringComparison.OrdinalIgnoreCase))) return "NUnit";
+        if (pkgs.Any(n => n.Contains("mstest", StringComparison.OrdinalIgnoreCase))) return "MSTest";
+        return "Unknown";
+    }
+
+    private static string? FindUpward(string startDir, string fileName, int maxDepth)
+    {
+        var dir = new DirectoryInfo(startDir);
+        for (var i = 0; i <= maxDepth && dir != null; i++)
+        {
+            var candidate = Path.Combine(dir.FullName, fileName);
+            if (File.Exists(candidate)) return candidate;
+            dir = dir.Parent;
+        }
+
+        return null;
     }
 
     private static void ExtractTargetFrameworks(Microsoft.CodeAnalysis.Project project, ProjectInfo info)
@@ -414,6 +510,17 @@ public partial class RoslynProjectAnalyzer : IDisposable
                 FilePath = documentFilePath,
                 LinesOfCode = syntaxRoot.GetText().Lines.Count,
                 SourceEditTime = fileInfo.LastWriteTimeUtc,
+                FileEntry = new FileEntryInfo
+                {
+                    FilePath = documentFilePath,
+                    RelativePath = relativePath,
+                    ProjectFilePath = document.Project.FilePath ?? string.Empty,
+                    Extension = Path.GetExtension(documentFilePath),
+                    SizeBytes = fileInfo.Length,
+                    LinesOfCode = syntaxRoot.GetText().Lines.Count,
+                    LastWriteTimeUtc = fileInfo.LastWriteTimeUtc,
+                    Kind = InferFileKind(documentFilePath)
+                }
             };
 
             // 提取所有命名空间（包括文件范围命名空间）
@@ -484,6 +591,25 @@ public partial class RoslynProjectAnalyzer : IDisposable
             _logger?.LogError($"Error analyzing document {documentFilePath}: {ex.Message}");
             return null;
         }
+    }
+
+    private static string InferFileKind(string path)
+    {
+        var name = Path.GetFileName(path);
+
+        if (name.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase) ||
+            name.EndsWith(".Designer.cs", StringComparison.OrdinalIgnoreCase))
+            return "Generated";
+
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        return ext switch
+        {
+            ".cs" => "Source",
+            ".json" or ".xml" or ".config" => "Config",
+            ".md" or ".txt" => "Doc",
+            ".resx" => "Resource",
+            _ => "Other"
+        };
     }
 
     private TypeInfo? ExtractTypeInfo(
@@ -913,6 +1039,16 @@ public partial class RoslynProjectAnalyzer : IDisposable
                     Types = namespaceInfo.Types.ToList(),
                 };
                 projectInfo.Namespaces.Add(info);
+            }
+        }
+
+        if (result.FileEntry != null)
+        {
+            // 去重：按 RelativePath 或 FilePath
+            if (!projectInfo.Files.Any(f =>
+                    string.Equals(f.FilePath, result.FileEntry.FilePath, StringComparison.OrdinalIgnoreCase)))
+            {
+                projectInfo.Files.Add(result.FileEntry);
             }
         }
 

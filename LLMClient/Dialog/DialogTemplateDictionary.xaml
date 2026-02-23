@@ -94,7 +94,6 @@
                              Height="18"
                              Visibility="{Binding IsFormatting,Mode=TwoWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
             </StackPanel>
-
             <StackPanel Grid.Column="1"
                         Margin="10,0,0,0">
                 <materialDesign:Card Padding="0"

@@ -44,7 +44,11 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition />
                                             </Grid.RowDefinitions>
-                                            <TextBlock Text="{Binding Role,Mode=OneTime}"
+                                            <Button Style="{StaticResource ItemDeleteButtonStyle}"
+                                                    Command="Delete" 
+                                                    CommandParameter="{Binding}"/>
+                                            <TextBlock Grid.Row="0"
+                                                       Text="{Binding Role,Mode=OneTime}"
                                                        HorizontalAlignment="Left"
                                                        Foreground="{Binding Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToForeground}}"
                                                        Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
@@ -139,6 +143,7 @@
             <!-- 绑定到扁平化列表 -->
             <ListBox ItemsSource="{Binding FlatNodes,Mode=OneWay}"
                      ItemTemplate="{StaticResource NodeTemplate}"
+                     MouseDoubleClick="Control_OnMouseDoubleClick"
                      SelectedItem="{Binding SelectedLeaf,Mode=TwoWay}">
                 <ListBox.LayoutTransform>
                     <ScaleTransform ScaleX="{Binding Value, ElementName=ZoomSlider}"
@@ -208,6 +213,10 @@
                                 Value="{Binding VerticalContentAlignment, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}, FallbackValue=Center}" />
                     </Style>
                 </ListBox.ItemContainerStyle>
+                <ListBox.CommandBindings>
+                    <CommandBinding Command="Delete"
+                                    Executed="Delete_CommandBinding_OnExecuted" />
+                </ListBox.CommandBindings>
             </ListBox>
         </ScrollViewer>
         <Border Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Right"
