@@ -9,7 +9,9 @@ namespace LLMClient.Dialog.Controls;
 public class DialogGraphViewModel : BaseViewModel
 {
     private readonly IDialogGraphViewModel _dialogGraph;
-    
+
+    private IDialogItem _initialRootNode;
+
     private GraphNodeViewModel? _selectedLeaf;
 
     public GraphNodeViewModel? SelectedLeaf
@@ -33,14 +35,15 @@ public class DialogGraphViewModel : BaseViewModel
 
     public ICommand SelectCommand { get; }
 
-    public DialogGraphViewModel(IDialogGraphViewModel viewModel, IDialogItem? rootNode = null)
+    public DialogGraphViewModel(IDialogGraphViewModel dialogGraph, IDialogItem? rootNode = null)
     {
-        _dialogGraph = viewModel;
-        LoadTree(rootNode ?? viewModel.RootNode);
+        _dialogGraph = dialogGraph;
+        _initialRootNode = rootNode ?? dialogGraph.RootNode;
+        LoadTree(_initialRootNode);
         SelectCommand = new RelayCommand(() =>
         {
             if (SelectedLeaf == null || !_dialogGraph.IsNodeSelectable(SelectedLeaf.Data)) return;
-            viewModel.CurrentLeaf = SelectedLeaf.Data;
+            dialogGraph.CurrentLeaf = SelectedLeaf.Data;
             MessageEventBus.Publish("您已切换到所选节点。");
         });
     }
@@ -48,6 +51,12 @@ public class DialogGraphViewModel : BaseViewModel
     public void DeleteRequestItem(IRequestItem item)
     {
         _dialogGraph.DeleteItem(item);
+        if (!_initialRootNode.CanReachRoot())
+        {
+            _initialRootNode = _dialogGraph.RootNode;
+        }
+
+        LoadTree(_initialRootNode);
     }
 
     // 当树变化时调用此方法

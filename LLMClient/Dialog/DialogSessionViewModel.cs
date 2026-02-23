@@ -347,6 +347,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 RebuildLinearItems();
             }
         }
+
+        this.IsDataChanged = true;
     }
 
     public async void RemoveAfter(MultiResponseViewItem responseViewItem)
