@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using LLMClient.ContextEngineering.Analysis;
 
-namespace LLMClient.ContextEngineering;
+namespace LLMClient.ContextEngineering.Prompt;
 
 public class MarkdownSummaryFormatter
 {

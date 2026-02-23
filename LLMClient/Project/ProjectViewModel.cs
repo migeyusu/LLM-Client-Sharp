@@ -12,6 +12,7 @@ using LLMClient.Component.Converters;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering;
+using LLMClient.ContextEngineering.Prompt;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;

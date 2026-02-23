@@ -1,7 +1,7 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 
-namespace LLMClient.ContextEngineering;
+namespace LLMClient.ContextEngineering.Prompt;
 
 public static class PromptTemplateRenderer
 {

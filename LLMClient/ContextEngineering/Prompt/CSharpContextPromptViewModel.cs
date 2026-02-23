@@ -2,7 +2,7 @@
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.Project;
 
-namespace LLMClient.ContextEngineering;
+namespace LLMClient.ContextEngineering.Prompt;
 
 /// <summary>
 /// C#项目代码上下文提示构建器

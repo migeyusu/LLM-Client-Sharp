@@ -5,6 +5,7 @@ using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering;
+using LLMClient.ContextEngineering.Prompt;
 
 namespace LLMClient.Project;
 

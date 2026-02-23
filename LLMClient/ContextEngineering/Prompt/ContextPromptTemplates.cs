@@ -1,6 +1,6 @@
 // ContextPromptTemplates.cs
 
-namespace LLMClient.ContextEngineering;
+namespace LLMClient.ContextEngineering.Prompt;
 
 /// <summary>
 /// 上下文工程的 Prompt 模板集合
