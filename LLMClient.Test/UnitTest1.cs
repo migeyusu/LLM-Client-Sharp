@@ -45,7 +45,7 @@ public class UnitTest1
             .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
             .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
             .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
-            .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()
+            .AddSingleton<BuiltInFunctionsCollection>()
             .AddMap().BuildServiceProvider();
         BaseViewModel.ServiceLocator = serviceProvider;
     }

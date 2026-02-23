@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
+using LLMClient.Abstraction;
 using Microsoft.SemanticKernel;
 using ReverseMarkdown;
 
@@ -13,7 +14,7 @@ namespace LLMClient.ToolCall.DefaultPlugins;
 /// Provides functions for getting raw HTML, clean text, Markdown, or JSON from a given URL.
 /// Includes security measures to prevent access to private network resources.
 /// </summary>
-public class UrlFetcherPlugin : KernelFunctionGroup
+public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 {
     // 遵循最佳实践，使用静态HttpClient实例以避免套接字耗尽。
     // 在实际应用中，更推荐通过依赖注入来管理HttpClient的生命周期。

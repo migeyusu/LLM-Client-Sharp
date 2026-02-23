@@ -20,6 +20,7 @@ using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using LLMClient;
+using LLMClient.Abstraction;
 using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
@@ -33,7 +34,7 @@ namespace LLMClient.ToolCall.DefaultPlugins;
 /// It provides functions for reading, writing, editing, and managing files and directories
 /// within a set of allowed directories.
 /// </summary>
-public class FileSystemPlugin : KernelFunctionGroup
+public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
 {
     public Guid Id =Guid.NewGuid();
     

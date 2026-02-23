@@ -11,6 +11,7 @@ using LLMClient.Abstraction;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -267,8 +268,9 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
                 return;
             }
 
-            var builtinPluginNames = ServiceLocator.GetService<IBuiltInFunctionsCollection>()!
-                .Select((group => group.Name))
+            var builtinPluginNames = ServiceLocator.GetService<BuiltInFunctionsCollection>()!
+                .OfType<KernelFunctionGroup>()
+                .Select(group => group.Name)
                 .ToArray();
             foreach (var item in Items)
             {

@@ -14,7 +14,7 @@ using Microsoft.SemanticKernel.Data;
 
 namespace LLMClient.ToolCall.DefaultPlugins;
 
-public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption
+public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption,IBuiltInFunctionGroup
 {
     #region plugin
 

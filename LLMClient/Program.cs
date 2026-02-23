@@ -7,6 +7,7 @@ using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering;
 using LLMClient.ContextEngineering.Analysis;
+using LLMClient.ContextEngineering.Tools;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Rag;
@@ -61,10 +62,12 @@ public class Program
                 .AddSingleton<IRagSourceCollection, RagSourceCollection>()
                 .AddTransient<NvidiaResearchClientOption>()
                 .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
-                .AddSingleton<IBuiltInFunctionsCollection, BuiltInFunctionsCollection>()
+                .AddSingleton<BuiltInFunctionsCollection>()
                 .AddSingleton<CreateSessionViewModel>()
                 .AddSingleton<ITokensCounter, DefaultTokensCounter>()
                 .AddSingleton<DialogMappingProfile>()
+                .AddTransient<RoslynProjectAnalyzer>()
+                .AddTransient<IProjectAwarenessService, ProjectAwarenessService>()
                 .AddMap();
 #if DEBUG
             var resourceBuilder = ResourceBuilder
@@ -114,7 +117,6 @@ public class Program
             serviceProvider = collection.BuildServiceProvider();
             BaseViewModel.ServiceLocator = serviceProvider;
 #if RELEASE
-
         //禁止在Debug模式下注册LoggerTraceListener，避免重复日志
         //注册LoggerFactory到Listeners
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();

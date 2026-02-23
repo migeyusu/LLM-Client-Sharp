@@ -114,7 +114,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
     public AIFunctionTreeSelectorViewModel ConnectDefault()
     {
         return ConnectSource(ServiceLocator.GetService<IMcpServiceCollection>() as McpServiceCollection)
-            .ConnectSource(ServiceLocator.GetService<IBuiltInFunctionsCollection>() as BuiltInFunctionsCollection);
+            .ConnectSource(ServiceLocator.GetService<BuiltInFunctionsCollection>());
     }
 
     /*/// <summary>

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Text.Json;
+using LLMClient.ToolCall;
 using Microsoft.SemanticKernel;
 
 namespace LLMClient.ContextEngineering.Tools;
@@ -10,7 +11,7 @@ namespace LLMClient.ContextEngineering.Tools;
 /// 内部由 ProjectAwarenessService 负责与绝对路径的互转。
 /// 所有方法统一返回 string（JSON 或错误消息），便于 LLM 直接消费。
 /// </summary>
-public sealed class ProjectAwarenessPlugin
+public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
 {
     private readonly IProjectAwarenessService _service;
 
@@ -21,7 +22,7 @@ public sealed class ProjectAwarenessPlugin
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
-    public ProjectAwarenessPlugin(IProjectAwarenessService service)
+    public ProjectAwarenessPlugin(IProjectAwarenessService service) : base("ProjectAwareness")
     {
         _service = service;
     }
@@ -164,4 +165,11 @@ public sealed class ProjectAwarenessPlugin
     private static List<string> ParsePatterns(string raw)
         => raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
+
+    public override string? AdditionPrompt { get; }
+
+    public override object Clone()
+    {
+        throw new NotImplementedException();
+    }
 }

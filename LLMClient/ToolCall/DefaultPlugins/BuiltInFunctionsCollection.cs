@@ -4,7 +4,7 @@ using LLMClient.Abstraction;
 
 namespace LLMClient.ToolCall.DefaultPlugins;
 
-public class BuiltInFunctionsCollection : IBuiltInFunctionsCollection, IFunctionGroupSource
+public class BuiltInFunctionsCollection : IEnumerable<IBuiltInFunctionGroup>, IFunctionGroupSource
 {
     public BuiltInFunctionsCollection()
     {
@@ -31,6 +31,7 @@ public class BuiltInFunctionsCollection : IBuiltInFunctionsCollection, IFunction
 
     public IEnumerable<IAIFunctionGroup> GetFunctionGroups()
     {
-        return this;
+        // ReSharper disable once SuspiciousTypeConversion.Global
+        return KernelFunctionGroups.OfType<KernelFunctionGroup>();
     }
 }

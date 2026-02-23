@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using LLMClient.Abstraction;
 using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
 using Microsoft.SemanticKernel;
@@ -12,7 +13,7 @@ namespace LLMClient.ToolCall.DefaultPlugins;
 /// 注意：出于安全考虑，此插件采用“拒绝列表”（黑名单）机制。
 /// 默认会阻止一组已知的危险命令，您可以自定义此列表。
 /// </summary>
-public sealed class WinCLIPlugin : KernelFunctionGroup
+public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 {
     public HashSet<string> VerifyRequiredCommands { get; set; }
 

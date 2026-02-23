@@ -1,6 +1,9 @@
-﻿namespace LLMClient.Abstraction;
+namespace LLMClient.Abstraction;
 
-public interface IBuiltInFunctionGroup : IAIFunctionGroup
+/// <summary>
+/// session independent functions 
+/// </summary>
+public interface IBuiltInFunctionGroup
 {
     
-}
+}  

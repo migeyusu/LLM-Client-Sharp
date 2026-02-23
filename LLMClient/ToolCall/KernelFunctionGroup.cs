@@ -6,7 +6,7 @@ using Microsoft.SemanticKernel;
 
 namespace LLMClient.ToolCall;
 
-public abstract class KernelFunctionGroup : BaseViewModel, IBuiltInFunctionGroup
+public abstract class KernelFunctionGroup : BaseViewModel, IAIFunctionGroup
 {
     public abstract string? AdditionPrompt { get; }
 
