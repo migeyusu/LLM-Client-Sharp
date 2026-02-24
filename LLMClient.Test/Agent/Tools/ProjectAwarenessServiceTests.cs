@@ -167,7 +167,6 @@ public class ProjectAwarenessServiceTests
     {
         var svc    = CreateService(TestFixtures.BuildSolution());
         var result = svc.GetFileTree("NonExistentFolder", 4, null);
-
         Assert.Contains("Error", result, StringComparison.OrdinalIgnoreCase);
     }
 

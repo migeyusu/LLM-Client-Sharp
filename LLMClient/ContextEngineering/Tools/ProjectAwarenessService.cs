@@ -62,8 +62,6 @@ public sealed class ProjectAwarenessService : IProjectAwarenessService
     public SolutionInfoView GetSolutionInfoView()
     {
         var s = RequireSolution();
-        var solutionDir = RequireSolutionDir();
-
         return new SolutionInfoView
         {
             SolutionName = s.SolutionName,

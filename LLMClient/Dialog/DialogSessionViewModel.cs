@@ -16,7 +16,6 @@ using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
-using ConfirmView = LLMClient.Component.UserControls.ConfirmView;
 
 namespace LLMClient.Dialog;
 
@@ -326,6 +325,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public virtual void DeleteItem(IDialogItem item)
     {
+        var oriPreviousItem = item.PreviousItem;
         if (item is IRequestItem requestItem)
         {
             requestItem.DeleteInteraction();
@@ -340,8 +340,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             //检查leaf可达性
             if (!CurrentLeaf.CanReachRoot())
             {
-                var previousItem = item.PreviousItem;
-                CurrentLeaf = previousItem ?? RootNode;
+                CurrentLeaf = oriPreviousItem ?? RootNode;
             }
             else
             {

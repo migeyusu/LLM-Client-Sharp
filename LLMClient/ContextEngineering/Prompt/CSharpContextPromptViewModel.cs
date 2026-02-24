@@ -17,15 +17,11 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
 
     public SolutionInfo? SolutionInfo { get; set; }
 
-    public CSharpContextPromptViewModel(CSharpProjectViewModel projectViewModel, ITokensCounter tokensCounter)
+    public CSharpContextPromptViewModel(RoslynProjectAnalyzer analyzer, CSharpProjectViewModel projectViewModel,
+        ITokensCounter tokensCounter)
         : base(projectViewModel, tokensCounter)
     {
-        _analyzer = new Analysis.RoslynProjectAnalyzer(null, new AnalyzerConfig()
-        {
-            IncludeTestProjects = true,
-            IncludePrivateMembers = true,
-            MaxConcurrency = 4
-        });
+        _analyzer = analyzer;
     }
 
     protected override async Task<string> BuildProjectContextAsync()
@@ -132,8 +128,8 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
             mainVariables);
     }
 
-    private readonly Analysis.RoslynProjectAnalyzer _analyzer;
-    
+    private readonly RoslynProjectAnalyzer _analyzer;
+
     public override void Dispose()
     {
         _analyzer.Dispose();

@@ -2,7 +2,7 @@
 
 public class AnalyzerConfig
 {
-    public bool IncludeTestProjects { get; set; } = false;
+    public bool IncludeTestProjects { get; set; } = true;
     public bool IncludeSampleProjects { get; set; } = false;
     public bool IncludePrivateMembers { get; set; } = false;
     public bool IncludeInternalMembers { get; set; } = true;

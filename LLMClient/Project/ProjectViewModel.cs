@@ -11,7 +11,9 @@ using LLMClient.Abstraction;
 using LLMClient.Component.Converters;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
+using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.Prompt;
+using LLMClient.ContextEngineering.Tools;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
@@ -291,7 +293,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
     public ICommand NewSessionCommand => new ActionCommand(_ =>
     {
-        AddSession(new ProjectSessionViewModel(this, _mapper){Name = "Empty Dialog"});
+        AddSession(new ProjectSessionViewModel(this, _mapper) { Name = "Empty Dialog" });
     });
 
     public void AddSession(ProjectSessionViewModel session)
@@ -345,9 +347,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         nameof(SelectedSession)
     ];
 
-
     private string? _userSystemPrompt;
-
 
     public ProjectViewModel(ProjectOption projectOption, ILLMChatClient modelClient, IMapper mapper,
         GlobalOptions options, IViewModelFactory factory, IEnumerable<ProjectSessionViewModel>? sessions = null)

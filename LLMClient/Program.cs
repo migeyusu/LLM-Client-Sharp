@@ -66,6 +66,8 @@ public class Program
                 .AddSingleton<DialogMappingProfile>()
                 .AddTransient<RoslynProjectAnalyzer>()
                 .AddTransient<IProjectAwarenessService, ProjectAwarenessService>()
+                .AddTransient<ProjectAwarenessPlugin>()
+                .AddTransient<AnalyzerConfig>()
                 .AddMap();
 #if DEBUG
             var resourceBuilder = ResourceBuilder

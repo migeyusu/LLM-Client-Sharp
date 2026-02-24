@@ -4,8 +4,10 @@ using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
-using LLMClient.ContextEngineering;
+using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.Prompt;
+using LLMClient.ContextEngineering.Tools;
+using LLMClient.ToolCall;
 
 namespace LLMClient.Project;
 
@@ -56,12 +58,20 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     public override ContextPromptViewModel ProjectContextPrompt => _projectContextPrompt;
 
+    private readonly ProjectAwarenessService _projectAwarenessService;
+
     public CSharpProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, ITokensCounter tokensCounter,
+        GlobalOptions options, ITokensCounter tokensCounter, RoslynProjectAnalyzer projectAnalyzer,
         IViewModelFactory factory, IEnumerable<ProjectSessionViewModel>? tasks = null)
         : base(option, modelClient, mapper, options, factory, tasks)
     {
-        _projectContextPrompt = new CSharpContextPromptViewModel(this, tokensCounter);
+        _projectAwarenessService = new ProjectAwarenessService(projectAnalyzer);
+        IAIFunctionGroup[] projectFunctions =
+        [
+            new ProjectAwarenessPlugin(_projectAwarenessService)
+        ];
+        Requester.FunctionTreeSelector.ConnectSource(new ProxyFunctionGroupSource(() => projectFunctions));
+        _projectContextPrompt = new CSharpContextPromptViewModel(projectAnalyzer, this, tokensCounter);
         SelectPathCommand = new RelayCommand(() =>
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
