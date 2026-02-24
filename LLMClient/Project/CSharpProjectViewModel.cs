@@ -13,19 +13,6 @@ namespace LLMClient.Project;
 
 public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 {
-    private string? _projectFilePath;
-
-    public string? ProjectFilePath
-    {
-        get => _projectFilePath;
-        set
-        {
-            if (value == _projectFilePath) return;
-            _projectFilePath = value;
-            OnPropertyChanged();
-        }
-    }
-
     private string? _solutionFilePath;
 
     public string? SolutionFilePath
@@ -35,19 +22,6 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         {
             if (value == _solutionFilePath) return;
             _solutionFilePath = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private bool _isSolutionMode = false;
-
-    public bool IsSolutionMode
-    {
-        get => _isSolutionMode;
-        set
-        {
-            if (value == _isSolutionMode) return;
-            _isSolutionMode = value;
             OnPropertyChanged();
         }
     }
@@ -76,20 +50,13 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = IsSolutionMode ? "Solution Files|*.sln" : "C# Project Files|*.csproj",
+                Filter = "Solution Files|*.sln",
                 DefaultDirectory = this.Option.RootPath,
             };
             var result = dialog.ShowDialog();
             if (result == true)
             {
-                if (IsSolutionMode)
-                {
-                    SolutionFilePath = dialog.FileName;
-                }
-                else
-                {
-                    ProjectFilePath = dialog.FileName;
-                }
+                SolutionFilePath = dialog.FileName;
             }
         });
     }

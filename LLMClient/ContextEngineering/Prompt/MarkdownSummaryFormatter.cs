@@ -58,30 +58,6 @@ public class MarkdownSummaryFormatter
         return sb.ToString();
     }
 
-
-    public string Format(ProjectInfo summary)
-    {
-        var sb = new StringBuilder();
-
-        // 头部信息
-        sb.AppendLine($"# Project Summary: {summary.Name}");
-        sb.AppendLine();
-
-        // 统计概览
-        sb.AppendLine("## Overview");
-        sb.AppendLine();
-        sb.AppendLine($"- **Files**: {summary.Statistics.FilesCount}");
-        sb.AppendLine($"- **Types**: {summary.Statistics.TypesCount}");
-        sb.AppendLine($"- **Methods**: {summary.Statistics.MethodsCount}");
-        sb.AppendLine($"- **Lines of Code**: {summary.Statistics.LinesOfCode:N0}");
-        sb.AppendLine();
-
-        // 项目详情
-        FormatProject(sb, summary);
-
-        return sb.ToString();
-    }
-
     private void FormatProject(StringBuilder sb, ProjectInfo project, bool isTopLevel = true)
     {
         sb.AppendLine($"### {project.Name}");

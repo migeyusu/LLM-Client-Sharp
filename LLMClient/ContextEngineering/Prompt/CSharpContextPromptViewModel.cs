@@ -13,8 +13,6 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
 
     public List<RelevantSnippet>? RelevantSnippets { get; set; }
 
-    public ProjectInfo? ProjectInfo { get; set; }
-
     public SolutionInfo? SolutionInfo { get; set; }
 
     public CSharpContextPromptViewModel(RoslynProjectAnalyzer analyzer, CSharpProjectViewModel projectViewModel,
@@ -32,34 +30,14 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
             IncludeMembers = true,
             IncludePackages = true
         });
-        if (ProjectViewModel.IsSolutionMode)
+        if (string.IsNullOrEmpty(ProjectViewModel.SolutionFilePath))
         {
-            if (string.IsNullOrEmpty(ProjectViewModel.SolutionFilePath))
-            {
-                throw new NotSupportedException("Solution file path cannot be null or empty.");
-            }
-
-            var solutionInfo = await _analyzer.AnalyzeSolutionAsync(ProjectViewModel.SolutionFilePath);
-            this.SolutionInfo = solutionInfo;
-            this.ProjectInfo = null;
-        }
-        else
-        {
-            if (string.IsNullOrEmpty(ProjectViewModel.ProjectFilePath))
-            {
-                throw new NotSupportedException("Project file path cannot be null or empty.");
-            }
-
-            var projectInfo = await _analyzer.AnalyzeProjectAsync(ProjectViewModel.ProjectFilePath);
-            this.ProjectInfo = projectInfo;
-            this.SolutionInfo = null;
+            throw new NotSupportedException("Solution file path cannot be null or empty.");
         }
 
-        if (ProjectInfo != null)
-        {
-            projectContext = markdownSummaryFormatter.Format(ProjectInfo);
-        }
-        else if (SolutionInfo != null)
+        var solutionInfo = await _analyzer.AnalyzeSolutionAsync(ProjectViewModel.SolutionFilePath);
+        this.SolutionInfo = solutionInfo;
+       if (SolutionInfo != null)
         {
             projectContext = markdownSummaryFormatter.Format(SolutionInfo);
         }

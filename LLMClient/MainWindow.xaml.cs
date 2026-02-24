@@ -11,7 +11,6 @@ using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using MaterialDesignThemes.Wpf;
-using ConfirmView = LLMClient.Component.UserControls.ConfirmView;
 using LoggerWindow = LLMClient.Log.LoggerWindow;
 
 namespace LLMClient;

@@ -28,8 +28,7 @@ public abstract class ProjectPersistModel
 
     public double TotalPrice { get; set; }
 
-    [JsonPropertyName("Tasks")]
-    public ProjectSessionPersistModel[]? Sessions { get; set; }
+    [JsonPropertyName("Tasks")] public ProjectSessionPersistModel[]? Sessions { get; set; }
 }
 
 public class GeneralProjectPersistModel : ProjectPersistModel
@@ -38,11 +37,7 @@ public class GeneralProjectPersistModel : ProjectPersistModel
 
 public class CSharpProjectPersistModel : ProjectPersistModel
 {
-    public bool IsSolutionMode { get; set; }
-
     public string? SolutionFilePath { get; set; }
-
-    public string? ProjectFilePath { get; set; }
 }
 
 public class CppProjectPersistModel : ProjectPersistModel

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using LLMClient.Dialog;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -19,7 +18,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
     private readonly ConcurrentDictionary<string, IList<DocumentAnalysisResult>> _docCache = new();
     private readonly SymbolIndexService _symbolIndexService = new();
 
-    public RoslynProjectAnalyzer(ILogger? logger, AnalyzerConfig? config = null)
+    public RoslynProjectAnalyzer(ILogger<RoslynProjectAnalyzer>? logger, AnalyzerConfig? config = null)
     {
         _config = config ?? new AnalyzerConfig();
         _logger = logger;
@@ -118,24 +117,6 @@ public partial class RoslynProjectAnalyzer : IDisposable
             .FirstOrDefault(x => x != "Unknown") ?? "Unknown";
 
         return c;
-    }
-
-    public async Task<ProjectInfo> AnalyzeProjectAsync(string csprojPath)
-    {
-        if (!File.Exists(csprojPath))
-            throw new FileNotFoundException($"Project file not found: {csprojPath}");
-        var project = await _workspace.OpenProjectAsync(csprojPath);
-        try
-        {
-            var projectInfo = await AnalyzeProjectAsync(project, CancellationToken.None);
-            if (projectInfo == null)
-                throw new Exception($"Failed to analyze project: {csprojPath}");
-            return projectInfo;
-        }
-        finally
-        {
-            _workspace.CloseSolution();
-        }
     }
 
     private bool ShouldIncludeProject(Microsoft.CodeAnalysis.Project? project)

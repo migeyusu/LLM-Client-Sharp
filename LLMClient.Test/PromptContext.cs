@@ -15,8 +15,7 @@ public class PromptContext
     private ITestOutputHelper _output;
 
     const string solutionPath = @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\AIClient.sln";
-
-    const string projectPath = @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\LLMClient\LLMClient.csproj";
+    
 
     public PromptContext(ITestOutputHelper output)
     {
@@ -35,7 +34,7 @@ public class PromptContext
     public async Task FileTree()
     {
         using var analyzer = new RoslynProjectAnalyzer(null, _analyzerConfig);
-        var projectInfo = await analyzer.AnalyzeProjectAsync(projectPath);
+        var projectInfo = await analyzer.AnalyzeSolutionAsync(solutionPath);
         var fileTreeFormatter = new FileTreeFormatter();
         var format = fileTreeFormatter.Format(projectInfo);
         var outputPath = "filetree.md";
@@ -60,11 +59,9 @@ public class PromptContext
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            var summary = await analyzer.AnalyzeProjectAsync(projectPath);
+            var summary = await analyzer.AnalyzeSolutionAsync(solutionPath);
             _output.WriteLine($"First analysis completed in {stopwatch.ElapsedMilliseconds}ms");
-            _output.WriteLine(summary.Name);
             stopwatch.Restart();
-            summary = await analyzer.AnalyzeProjectAsync(projectPath);
             /*var summary = await cacheManager.GetOrGenerateAsync(
                 solutionPath,
                 async () => await analyzer.AnalyzeSolutionAsync(solutionPath)
