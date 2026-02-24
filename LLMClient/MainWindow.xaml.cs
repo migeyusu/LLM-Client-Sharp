@@ -60,7 +60,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
                 return;
             }
 
-            if ((await DialogHost.Show(new ConfirmView() { Header = "删除该会话吗？" })) is true)
+            if (await Extension.ShowConfirm("删除该会话吗？"))
             {
                 _mainWindowViewModel.DeleteSession(session);
             }

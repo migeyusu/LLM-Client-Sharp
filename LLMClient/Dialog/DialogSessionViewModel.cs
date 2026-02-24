@@ -361,7 +361,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
         if (responseViewItem.Children.Count > 1)
         {
-            if ((await DialogHost.Show(new ConfirmView() { Header = "该节点后包含分支，依然清空？" })) is not true)
+            if (!await Extension.ShowConfirm("该节点后包含分支，依然清空？"))
             {
                 return;
             }
@@ -633,7 +633,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         ClearContextCommand = new ActionCommand(_ => { CutContext(); });
         ClearDialogCommand = new ActionCommand(async void (_) =>
         {
-            if (await DialogHost.Show(new ConfirmView() { Header = "清空会话？" }) is true)
+            if (await Extension.ShowConfirm("清空会话？"))
             {
                 RootNode.ClearChildren();
                 CurrentLeaf = RootNode;

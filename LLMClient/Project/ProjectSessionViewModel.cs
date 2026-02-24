@@ -1,9 +1,14 @@
 using System.ComponentModel;
+using System.Windows;
+using System.Windows.Input;
 using AutoMapper;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.UserControls;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.ToolCall;
+using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Project;
 
@@ -81,6 +86,33 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
             if (value == _summary) return;
             _summary = value;
             OnPropertyChanged();
+        }
+    }
+
+    private static ICommand? _removeFromProjectCommand;
+
+    public static ICommand RemoveFromProjectCommand
+    {
+        get
+        {
+            return _removeFromProjectCommand ??= new RelayCommand<ProjectSessionViewModel>(async projectSession =>
+            {
+                if (!await Extension.ShowConfirm(
+                        "Are you sure to remove this session from project? This action cannot be undone."))
+                {
+                    return;
+                }
+
+                try
+                {
+                    projectSession?.ParentProject.RemoveSession(projectSession);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Failed to remove session from project: " + e.Message, "Error", MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            });
         }
     }
 

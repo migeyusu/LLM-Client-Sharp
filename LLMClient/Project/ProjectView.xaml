@@ -51,7 +51,7 @@
                                             PopupUniformCornerRadius="6"
                                             Style="{StaticResource MaterialDesignFlatSplitButton}"
                                             PopupContent="{Binding Context,Mode=OneWay}"
-                                            Content="{Binding Context,Mode=OneWay}">
+                                            Content="{Binding Mode=OneWay}">
                     <materialDesign:SplitButton.ContentTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Context,Mode=OneWay}"
@@ -102,15 +102,25 @@
                                       SelectedItem="{Binding SelectedSession,Mode=TwoWay}"
                                       IsEditable="True"
                                       TextSearch.TextPath="Name"
-                                      Width="200">
-                                <ComboBox.Text>
-                                    <Binding Path="SelectedSession.Name"
-                                             UpdateSourceTrigger="PropertyChanged"
-                                             Mode="TwoWay" />
-                                </ComboBox.Text>
+                                      Width="200"
+                                      Text="{Binding Path=SelectedSession.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate DataType="{x:Type local:ProjectSessionViewModel}">
-                                        <TextBlock Text="{Binding Name,Mode=OneWay}" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Name,Mode=OneWay,TargetNullValue=未设置名称}"
+                                                       VerticalAlignment="Center"
+                                                       TextWrapping="NoWrap"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <Button Grid.Column="1"
+                                                    Style="{StaticResource ItemDeleteButtonStyle}"
+                                                    Command="{Binding RemoveFromProjectCommand}"
+                                                    CommandParameter="{Binding Mode=OneTime}"
+                                                    VerticalAlignment="Center" />
+                                        </Grid>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
