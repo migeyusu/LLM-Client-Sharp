@@ -16,7 +16,7 @@ public partial class ProjectView : UserControl
     {
         if (e.Parameter is IDialogItem dialogViewItem)
         {
-            ViewModel.SelectedTask?.DeleteItem(dialogViewItem);
+            ViewModel.SelectedSession?.DeleteItem(dialogViewItem);
         }
     }
 
@@ -24,25 +24,17 @@ public partial class ProjectView : UserControl
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
-            ViewModel.SelectedTask?.CutContext(requestViewItem);
+            ViewModel.SelectedSession?.CutContext(requestViewItem);
         }
     }
 
     ProjectViewModel ViewModel => (DataContext as ProjectViewModel)!;
 
-    private void TaskDelete_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.Parameter is ProjectSessionViewModel task)
-        {
-            ViewModel.RemoveTask(task);
-        }
-    }
-
     private void ConclusionBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
-            var indexOf = this.ViewModel.SelectedTask?.DialogItems.IndexOf(requestViewItem);
+            var indexOf = this.ViewModel.SelectedSession?.DialogItems.IndexOf(requestViewItem);
             if (indexOf <= 0)
             {
                 return;

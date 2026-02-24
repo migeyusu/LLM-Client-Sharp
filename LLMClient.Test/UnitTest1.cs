@@ -180,12 +180,12 @@ public class UnitTest1
     {
         var projectPersistModel = new GeneralProjectPersistModel()
         {
-            Tasks =
+            Sessions =
             [
                 new ProjectSessionPersistModel()
                 {
-                    DialogItems = new IDialogPersistItem[]
-                    {
+                    DialogItems =
+                    [
                         new RequestPersistItem()
                         {
                             /*FunctionGroups = new List<IAIFunctionGroup>()
@@ -199,8 +199,8 @@ public class UnitTest1
                         },
                         new MultiResponsePersistItem()
                         {
-                            ResponseItems = new ResponsePersistItem[]
-                            {
+                            ResponseItems =
+                            [
                                 new ResponsePersistItem()
                                 {
                                     ResponseMessages = new List<ChatMessagePO>()
@@ -237,9 +237,9 @@ public class UnitTest1
                                         }
                                     }
                                 }
-                            }
+                            ]
                         }
-                    }
+                    ]
                 }
             ]
         };

@@ -636,8 +636,8 @@
                 <TextBox Grid.Row="0" Grid.Column="2"
                          TextWrapping="NoWrap"
                          Margin="5,0"
-                         materialDesign:HintAssist.Hint="输入项目文件夹路径"
-                         Text="{Binding FolderPath,Mode=TwoWay}"
+                         materialDesign:HintAssist.Hint="选择项目根目录"
+                         Text="{Binding RootPath,Mode=TwoWay}"
                          TextAlignment="Left" />
                 <Button Grid.Row="0" Grid.Column="2"
                         HorizontalAlignment="Right"
@@ -665,7 +665,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0"
                            Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                           Text="项目可访问路径："
+                           Text="工具可访问路径："
                            VerticalAlignment="Center" />
                 <ListBox Grid.Column="1"
                          ItemsSource="{Binding AllowedFolderPaths,Mode=OneWay}">

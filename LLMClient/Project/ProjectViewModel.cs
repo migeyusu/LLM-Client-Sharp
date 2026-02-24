@@ -42,16 +42,16 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
     public override bool IsDataChanged
     {
-        get { return Tasks.Any(task => task.IsDataChanged) || Requester.IsDataChanged || _isDataChanged; }
+        get { return Session.Any(session => session.IsDataChanged) || Requester.IsDataChanged || _isDataChanged; }
         set
         {
             _isDataChanged = value;
             if (!value)
             {
                 //用于重置子项的变更状态
-                foreach (var projectTask in this.Tasks)
+                foreach (var session in this.Session)
                 {
-                    projectTask.IsDataChanged = value;
+                    session.IsDataChanged = value;
                 }
 
                 Requester.IsDataChanged = value;
@@ -61,7 +61,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
     public override bool IsBusy
     {
-        get { return Tasks.Any(task => task.IsBusy); }
+        get { return Session.Any(session => session.IsBusy); }
     }
 
     private static readonly Lazy<string> SaveFolderPathLazy = new(() => Path.GetFullPath(SaveDir));
@@ -226,7 +226,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
             _systemPromptBuilder.AppendLine("# 项目背景");
             _systemPromptBuilder.AppendFormat("这是一个名为{0}的{1}项目，项目代码位于文件夹{2}。", Option.Name,
-                Option.Type.GetEnumDescription(), Option.FolderPath);
+                Option.Type.GetEnumDescription(), Option.RootPath);
             _systemPromptBuilder.AppendLine();
             _systemPromptBuilder.AppendLine(Option.Description);
             if (this.ProjectContextPrompt is { IncludeContext: true })
@@ -236,17 +236,17 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 _systemPromptBuilder.AppendLine(ProjectContextPrompt.TotalContext);
             }
 
-            var contextTasks = this.Tasks
+            var contextSessions = this.Session
                 .Where(model => model.EnableInContext && string.IsNullOrEmpty(model.Summary))
                 .ToArray();
-            if (contextTasks.Length != 0)
+            if (contextSessions.Length != 0)
             {
                 _systemPromptBuilder.AppendLine("以下是曾经完成的任务信息：");
-                foreach (var projectTaskViewModel in contextTasks)
+                foreach (var contextSession in contextSessions)
                 {
                     _systemPromptBuilder.Append("#");
-                    _systemPromptBuilder.AppendLine(projectTaskViewModel.Name);
-                    _systemPromptBuilder.AppendLine(projectTaskViewModel.Summary);
+                    _systemPromptBuilder.AppendLine(contextSession.Name);
+                    _systemPromptBuilder.AppendLine(contextSession.Summary);
                 }
             }
 
@@ -287,23 +287,26 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
     #endregion
 
-    #region tasks
+    #region sessions
 
-    public ICommand NewTaskCommand => new ActionCommand(_ => { AddTask(new ProjectSessionViewModel(this, _mapper)); });
-
-    public void AddTask(ProjectSessionViewModel task)
+    public ICommand NewSessionCommand => new ActionCommand(_ =>
     {
-        task.PropertyChanged += OnTaskPropertyChanged;
-        this.Tasks.Add(task);
+        AddSession(new ProjectSessionViewModel(this, _mapper){Name = "Empty Dialog"});
+    });
+
+    public void AddSession(ProjectSessionViewModel session)
+    {
+        session.PropertyChanged += OnSessionPropertyChanged;
+        this.Session.Add(session);
     }
 
-    public void RemoveTask(ProjectSessionViewModel task)
+    public void RemoveSession(ProjectSessionViewModel session)
     {
-        task.PropertyChanged -= OnTaskPropertyChanged;
-        this.Tasks.Remove(task);
+        session.PropertyChanged -= OnSessionPropertyChanged;
+        this.Session.Remove(session);
     }
 
-    private void OnTaskPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnSessionPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         var propertyName = e.PropertyName;
         switch (propertyName)
@@ -317,17 +320,17 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         }
     }
 
-    public ObservableCollection<ProjectSessionViewModel> Tasks { get; set; }
+    public ObservableCollection<ProjectSessionViewModel> Session { get; set; }
 
-    private ProjectSessionViewModel? _selectedTask;
+    private ProjectSessionViewModel? _selectedSession;
 
-    public ProjectSessionViewModel? SelectedTask
+    public ProjectSessionViewModel? SelectedSession
     {
-        get => _selectedTask;
+        get => _selectedSession;
         set
         {
-            if (Equals(value, _selectedTask)) return;
-            _selectedTask = value;
+            if (Equals(value, _selectedSession)) return;
+            _selectedSession = value;
             OnPropertyChanged();
             Requester.FunctionGroupSource = value;
             Requester.FunctionTreeSelector.Reset();
@@ -339,7 +342,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
     private readonly string[] _notTrackingProperties =
     [
         nameof(EditTime),
-        nameof(SelectedTask)
+        nameof(SelectedSession)
     ];
 
 
@@ -347,7 +350,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
 
     public ProjectViewModel(ProjectOption projectOption, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, IViewModelFactory factory, IEnumerable<ProjectSessionViewModel>? tasks = null)
+        GlobalOptions options, IViewModelFactory factory, IEnumerable<ProjectSessionViewModel>? sessions = null)
     {
         this._mapper = mapper;
         _factory = factory;
@@ -357,19 +360,19 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
             (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>>)GetResponse);
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
-            .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedTask?.SelectedFunctionGroups));
+            .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedSession?.SelectedFunctionGroups));
         functionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
         Requester.RequestCompleted += response =>
         {
             this.TokensConsumption += response.Tokens;
             this.TotalPrice += (response.Price ?? 0);
         };
-        this.Tasks = [];
-        if (tasks != null)
+        this.Session = [];
+        if (sessions != null)
         {
-            foreach (var projectTask in tasks)
+            foreach (var session in sessions)
             {
-                this.AddTask(projectTask);
+                this.AddSession(session);
             }
         }
 
@@ -384,7 +387,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
             this.EditTime = DateTime.Now;
             IsDataChanged = true;
         };
-        Tasks.CollectionChanged += OnCollectionChanged;
+        Session.CollectionChanged += OnCollectionChanged;
         _extendedSystemPrompts.CollectionChanged += ExtendedSystemPromptsOnCollectionChanged;
     }
 
@@ -396,7 +399,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 OnPropertyChanged(nameof(Context));
                 OnPropertyChanged(nameof(UserSystemPrompt));
                 break;
-            case nameof(Option.FolderPath):
+            case nameof(Option.RootPath):
                 OnPropertyChanged(nameof(Context));
                 break;
         }
@@ -412,12 +415,12 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
     private void FunctionTreeSelectorOnAfterSelect()
     {
-        if (this.SelectedTask == null)
+        if (this.SelectedSession == null)
         {
             return;
         }
 
-        this.SelectedTask.SelectedFunctionGroups =
+        this.SelectedSession.SelectedFunctionGroups =
             this.Requester.FunctionTreeSelector.FunctionGroups.Where(tree => tree.IsSelected != false)
                 .Select((tree => (CheckableFunctionGroupTree)tree.Clone())).ToArray();
         PopupBox.ClosePopupCommand.Execute(null, null);
@@ -427,7 +430,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         IRequestItem? insertViewItem = null,
         CancellationToken token = default)
     {
-        if (SelectedTask == null)
+        if (SelectedSession == null)
         {
             throw new NotSupportedException("未选择任务");
         }
@@ -440,7 +443,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.ReadyForRequest();
         if (this.ProjectContextPrompt is { IncludeContext: true })
             await this.ProjectContextPrompt.BuildAsync();
-        return await SelectedTask.NewResponse(arg1, arg2, insertViewItem, token);
+        return await SelectedSession.NewResponse(arg1, arg2, insertViewItem, token);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -450,7 +453,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
     public void ReadyForRequest()
     {
-        var functionGroups = this.SelectedTask?.SelectedFunctionGroups;
+        var functionGroups = this.SelectedSession?.SelectedFunctionGroups;
         if (functionGroups != null)
         {
             foreach (var aiFunctionGroup in functionGroups)

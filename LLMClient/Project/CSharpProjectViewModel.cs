@@ -66,7 +66,8 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = IsSolutionMode ? "Solution Files|*.sln" : "C# Project Files|*.csproj"
+                Filter = IsSolutionMode ? "Solution Files|*.sln" : "C# Project Files|*.csproj",
+                DefaultDirectory = this.Option.RootPath,
             };
             var result = dialog.ShowDialog();
             if (result == true)
@@ -81,7 +82,6 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
                 }
             }
         });
-
     }
 
     public void Dispose()

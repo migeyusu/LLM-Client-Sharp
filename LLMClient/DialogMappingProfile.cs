@@ -184,7 +184,7 @@ public class DialogMappingProfile : Profile
             .Include<GeneralProjectPersistModel, GeneralProjectViewModel>()
             .Include<CSharpProjectPersistModel, CSharpProjectViewModel>()
             .Include<CppProjectPersistModel, CppProjectViewModel>()
-            .ForMember(dest => dest.Tasks, opt => opt.Ignore())
+            .ForMember(dest => dest.Session, opt => opt.Ignore())
             .ForMember(dest => dest.ExtendedSystemPrompts,
                 opt =>
                 {
@@ -347,13 +347,13 @@ public class DialogMappingProfile : Profile
 
         try
         {
-            if (source.Tasks != null && source.Tasks.Length != 0)
+            if (source.Sessions != null && source.Sessions.Length != 0)
             {
-                dest.Tasks.Clear();
-                var tasks = context.Mapper.Map<IEnumerable<ProjectSessionViewModel>>(source.Tasks);
-                foreach (var task in tasks)
+                dest.Session.Clear();
+                var sessionViewModels = context.Mapper.Map<IEnumerable<ProjectSessionViewModel>>(source.Sessions);
+                foreach (var sessionViewModel in sessionViewModels)
                 {
-                    dest.AddTask(task);
+                    dest.AddSession(sessionViewModel);
                 }
             }
         }

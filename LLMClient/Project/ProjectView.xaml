@@ -78,7 +78,8 @@
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
-                            IsEnabled="{Binding IsBusy,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}">
+                            Margin="0,0,4,0">
+                    <!--IsEnabled="{Binding IsBusy,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}"-->
                     <StackPanel.Resources>
                         <Style TargetType="{x:Type Button}"
                                BasedOn="{StaticResource MaterialDesignIconButton}">
@@ -96,14 +97,14 @@
                                          Style="{StaticResource MaterialDesignOutlinedCard}">
                         <StackPanel Orientation="Horizontal"
                                     VerticalAlignment="Center">
-                            <ComboBox ItemsSource="{Binding  Tasks,Mode=OneWay}"
-                                      SelectedItem="{Binding SelectedTask,Mode=TwoWay}"
-                                      IsEnabled="{Binding SelectedTask,Mode=OneWay,Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}"
+                            <!--IsEnabled="{Binding SelectedTask,Mode=OneWay,Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}"-->
+                            <ComboBox ItemsSource="{Binding  Session,Mode=OneWay}"
+                                      SelectedItem="{Binding SelectedSession,Mode=TwoWay}"
                                       IsEditable="True"
                                       TextSearch.TextPath="Name"
                                       Width="200">
                                 <ComboBox.Text>
-                                    <Binding Path="SelectedTask.Name"
+                                    <Binding Path="SelectedSession.Name"
                                              UpdateSourceTrigger="PropertyChanged"
                                              Mode="TwoWay" />
                                 </ComboBox.Text>
@@ -113,8 +114,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Button Content="{materialDesign:PackIcon Kind=Add,Size=16}"
-                                    Command="{Binding NewTaskCommand}"
+                            <Button Content="{materialDesign:PackIcon Kind=AddThick,Size=16}"
+                                    Command="{Binding NewSessionCommand}"
                                     Margin="6,0,0,0"
                                     ToolTip="Add Tasks" />
                         </StackPanel>
@@ -188,7 +189,7 @@
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                             CommandParameter="{Binding Mode=OneTime}" />
                     <StackPanel Orientation="Horizontal"
-                                DataContext="{Binding SelectedTask,Mode=OneWay}"
+                                DataContext="{Binding SelectedSession,Mode=OneWay}"
                                 IsEnabled="{Binding Mode=OneWay,Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}">
                         <StackPanel.Resources>
                             <Style TargetType="{x:Type Button}"
@@ -225,9 +226,9 @@
                         <StackPanel MaxWidth="200"
                                     MaxHeight="200">
                             <Button Content="导出对话为Markdown"
-                                    Command="{Binding SelectedTask.ExportCommand}" />
+                                    Command="{Binding SelectedSession.ExportCommand}" />
                             <Button Content="打开项目文件夹"
-                                    CommandParameter="{Binding Option.FolderPath,Mode=OneWay}"
+                                    CommandParameter="{Binding Option.RootPath,Mode=OneWay}"
                                     Command="{x:Static utility:CommonCommands.OpenFolderCommand}" />
                             <Button Content="定位到源文件"
                                     Command="{x:Static utility:CommonCommands.OpenSource}" />
@@ -244,7 +245,7 @@
         </materialDesign:Card>
         <Grid Grid.Row="1"
               Margin="0,4"
-              DataContext="{Binding SelectedTask,Mode=OneWay}"
+              DataContext="{Binding SelectedSession,Mode=OneWay}"
               Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
             <customControl:ListBoxEx Grid.Row="0"
                                      Style="{StaticResource DialogListBoxStyle}"
@@ -259,11 +260,12 @@
                                     Executed="ConclusionBefore_OnExecuted" />
                 </ListBox.CommandBindings>
             </customControl:ListBoxEx>
-            <TextBlock Text="Add Tasks First"
-                       Style="{StaticResource MaterialDesignHeadline1TextBlock}"
+            <TextBlock Text="Please Add And Select Tasks First"
+                       Style="{StaticResource MaterialDesignHeadline2TextBlock}"
+                       TextWrapping="Wrap"
                        VerticalAlignment="Center"
                        HorizontalAlignment="Center"
-                       Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}" />
+                       Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.NotCollapsedInstance}}" />
             <StackPanel Grid.Row="0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom"
@@ -295,7 +297,7 @@
         </Grid>
         <Border Grid.Row="2"
                 BorderThickness="0"
-                Visibility="{Binding SelectedTask,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                Visibility="{Binding SelectedSession,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                 Margin="0,4,0,0">
             <dialog:RequesterView DataContext="{Binding Requester,Mode=OneTime}" />
         </Border>

@@ -55,14 +55,14 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         var dialog = new System.Windows.Forms.FolderBrowserDialog
         {
             Description = "请选择项目文件夹",
-            SelectedPath = string.IsNullOrEmpty(FolderPath)
+            SelectedPath = string.IsNullOrEmpty(RootPath)
                 ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                : FolderPath
+                : RootPath
         };
 
         if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
         {
-            FolderPath = dialog.SelectedPath;
+            RootPath = dialog.SelectedPath;
         }
     });
 
@@ -71,9 +71,9 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         var dialog = new System.Windows.Forms.FolderBrowserDialog
         {
             Description = "请选择允许的文件夹路径",
-            SelectedPath = string.IsNullOrEmpty(FolderPath)
+            SelectedPath = string.IsNullOrEmpty(RootPath)
                 ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                : FolderPath
+                : RootPath
         };
 
         if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -96,17 +96,17 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
 
     public ObservableCollection<string> AllowedFolderPaths { get; set; } = new();
 
-    private string? _folderPath;
+    private string? _rootPath;
 
     /// <summary>
     /// 项目路径，项目所在文件夹路径
     /// </summary>
-    public string? FolderPath
+    public string? RootPath
     {
-        get => _folderPath;
+        get => _rootPath;
         set
         {
-            if (value == _folderPath) return;
+            if (value == _rootPath) return;
             this.ClearError();
             if (string.IsNullOrEmpty(value))
             {
@@ -119,17 +119,17 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
                 this.AddError("FolderPath does not exist.");
             }
 
-            if (!string.IsNullOrEmpty(_folderPath))
+            if (!string.IsNullOrEmpty(_rootPath))
             {
-                AllowedFolderPaths.Remove(_folderPath);
+                AllowedFolderPaths.Remove(_rootPath);
             }
 
-            _folderPath = value;
+            _rootPath = value;
+            OnPropertyChanged();
             if (!AllowedFolderPaths.Contains(value))
             {
                 AllowedFolderPaths.Add(value);
             }
-            OnPropertyChanged();
         }
     }
 
@@ -165,7 +165,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         };
     }
 
-    [MemberNotNullWhen(true, nameof(Name), nameof(FolderPath), nameof(Description))]
+    [MemberNotNullWhen(true, nameof(Name), nameof(RootPath), nameof(Description))]
     public bool Check()
     {
         if (this.HasErrors)
@@ -178,9 +178,9 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
             this.AddError("Name cannot be null or empty.", nameof(Name));
         }
 
-        if (string.IsNullOrEmpty(FolderPath))
+        if (string.IsNullOrEmpty(RootPath))
         {
-            this.AddError("FolderPath cannot be null or empty.", nameof(FolderPath));
+            this.AddError("FolderPath cannot be null or empty.", nameof(RootPath));
         }
 
         if (string.IsNullOrEmpty(Description))
@@ -202,7 +202,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         return new ProjectOption()
         {
             Description = this.Description,
-            FolderPath = this.FolderPath,
+            RootPath = this.RootPath,
             AllowedFolderPaths = new ObservableCollection<string>(this.AllowedFolderPaths.ToArray()),
             Name = this.Name,
             Type = this.Type,

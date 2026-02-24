@@ -10,7 +10,6 @@ using LLMClient.ContextEngineering.Tools;
 using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Rag;
-using LLMClient.Research;
 using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.MCP;
 using LLMClient.Workflow.Research;

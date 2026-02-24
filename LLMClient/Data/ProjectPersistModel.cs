@@ -28,7 +28,8 @@ public abstract class ProjectPersistModel
 
     public double TotalPrice { get; set; }
 
-    public ProjectSessionPersistModel[]? Tasks { get; set; }
+    [JsonPropertyName("Tasks")]
+    public ProjectSessionPersistModel[]? Sessions { get; set; }
 }
 
 public class GeneralProjectPersistModel : ProjectPersistModel

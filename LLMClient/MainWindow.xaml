@@ -14,7 +14,6 @@
                               xmlns:dialog="clr-namespace:LLMClient.Dialog"
                               xmlns:project="clr-namespace:LLMClient.Project"
                               xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
-                              xmlns:research="clr-namespace:LLMClient.Research"
                               xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
                               xmlns:configuration="clr-namespace:LLMClient.Configuration"
                               xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
