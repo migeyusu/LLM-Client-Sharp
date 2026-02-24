@@ -35,9 +35,8 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
             throw new NotSupportedException("Solution file path cannot be null or empty.");
         }
 
-        var solutionInfo = await _analyzer.AnalyzeSolutionAsync(ProjectViewModel.SolutionFilePath);
-        this.SolutionInfo = solutionInfo;
-       if (SolutionInfo != null)
+        this.SolutionInfo = await _analyzer.AnalyzeSolutionAsync(ProjectViewModel.SolutionFilePath);
+        if (SolutionInfo != null)
         {
             projectContext = markdownSummaryFormatter.Format(SolutionInfo);
         }

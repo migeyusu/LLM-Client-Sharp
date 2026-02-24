@@ -2,6 +2,9 @@
 
 namespace LLMClient.ContextEngineering.Analysis;
 
+/// <summary>
+/// 文档分析结果，用于缓存
+/// </summary>
 public class DocumentAnalysisResult
 {
     public required string FilePath { get; set; }

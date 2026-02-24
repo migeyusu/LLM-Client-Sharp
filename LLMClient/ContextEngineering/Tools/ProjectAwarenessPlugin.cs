@@ -166,10 +166,13 @@ public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
         => raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
 
-    public override string? AdditionPrompt { get; }//todo:
+    public override string? AdditionPrompt { get; } =
+        "ProjectAwarenessPlugin provides structured information about the loaded solution, projects, and files. " +
+        "Use it to explore the codebase and understand its structure and conventions before generating or modifying code. " +
+        "All methods return JSON strings with the requested information or an error message.";
 
     public override object Clone()
     {
-        throw new NotImplementedException();
+        return new ProjectAwarenessPlugin(this._service);
     }
 }

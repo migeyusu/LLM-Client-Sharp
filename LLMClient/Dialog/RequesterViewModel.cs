@@ -12,6 +12,7 @@ using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 

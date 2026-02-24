@@ -2,7 +2,6 @@
 using System.Windows.Documents;
 using System.Windows.Threading;
 using Markdig;
-using Markdig.Renderers;
 using Markdig.Syntax;
 using Block = System.Windows.Documents.Block;
 
@@ -14,7 +13,6 @@ public class MarkdownStreamer
     private readonly MarkdownPipeline _pipeline;
     private readonly StringBuilder _accumulator = new();
     private readonly Dispatcher _uiDispatcher;
-    
 
     public MarkdownStreamer(FlowDocument targetDocument, MarkdownPipeline? pipeline = null)
     {
