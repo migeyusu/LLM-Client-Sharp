@@ -38,8 +38,18 @@ public class OpenAIChatClientEx : ChatClient
 
                     if (clientContext.ShowRequestJson)
                     {
+                        // 1. 创建用于格式化输出的选项
+                        var jsonOptions = new JsonSerializerOptions
+                        {
+                            WriteIndented = true, // 开启格式化换行和缩进
+                            // 非常关键：取消对特殊字符（包括中文）的转义
+                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+                        };
+
+                        // 2. 使用 ToJsonString 生成人类可读的 Json 字符串
+                        var formattedJson = jsonNode.ToJsonString(jsonOptions);
                         clientContext.Interactor?.WriteLine("<request>");
-                        clientContext.Interactor?.WriteLine(jsonNode.ToString());
+                        clientContext.Interactor?.WriteLine(formattedJson);
                         clientContext.Interactor?.WriteLine("</request>");
                     }
 

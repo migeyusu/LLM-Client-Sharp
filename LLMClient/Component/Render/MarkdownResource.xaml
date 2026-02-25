@@ -10,7 +10,7 @@
                     xmlns:dialog="clr-namespace:LLMClient.Dialog"
                     xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
                     xmlns:converters="clr-namespace:LLMClient.Component.Converters"
-                    xmlns:render1="clr-namespace:LLMClient.Component.Render"
+                    xmlns:render="clr-namespace:LLMClient.Component.Render"
                     xmlns:utility="clr-namespace:LLMClient.Component.Utility"
                     xmlns:component="clr-namespace:LLMClient.Component"
                     mc:Ignorable="d">
@@ -234,12 +234,12 @@
     </Style>
 
     <Style TargetType="{x:Type ContentControl}"
-           x:Key="{x:Static render1:TextMateCodeRenderer.CodeBlockHeaderStyleKey}">
+           x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockHeaderStyleKey}">
         <Setter Property="HorizontalAlignment"
                 Value="Stretch" />
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type render1:CodeViewModel}">
+                <DataTemplate DataType="{x:Type render:CodeViewModel}">
                     <Grid Height="40" Background="{DynamicResource MaterialDesign.Brush.Background}">
                         <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.Background}"
                                    HorizontalAlignment="Stretch"
@@ -251,7 +251,7 @@
                                    VerticalAlignment="Center" />
                         <StackPanel HorizontalAlignment="Right"
                                     Orientation="Horizontal">
-                            <Button Command="{x:Static render1:CodeCompareViewModel.AddToCompareCommand}"
+                            <Button Command="{x:Static render:CodeCompareViewModel.AddToCompareCommand}"
                                     CommandParameter="{Binding}"
                                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                                     Style="{StaticResource MaterialDesignFlatLightButton}">
@@ -266,7 +266,7 @@
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource MaterialDesignIconButton}"
-                                    Command="{x:Static render1:CodeViewModel.RunCommand}"
+                                    Command="{x:Static render:CodeViewModel.RunCommand}"
                                     CommandParameter="{Binding Mode=OneTime}"
                                     Margin="10,0,0,0"
                                     Content="{materialDesign:PackIcon Kind=Play,Size=26}"
@@ -275,7 +275,7 @@
                                     Foreground="Green"
                                     Visibility="{Binding CanRun,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <Button Style="{StaticResource MaterialDesignFlatLightButton}"
-                                    Command="{x:Static render1:CodeViewModel.SaveCommand}"
+                                    Command="{x:Static render:CodeViewModel.SaveCommand}"
                                     CommandParameter="{Binding Mode=OneTime}"
                                     Margin="10,0,0,0"
                                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
@@ -301,14 +301,14 @@
         </Setter>
     </Style>
 
-    <Style TargetType="{x:Type render1:TextmateColoredRun}"
-           x:Key="{x:Static render1:TextMateCodeRenderer.TokenStyleKey}">
+    <Style TargetType="{x:Type render:TextmateColoredRun}"
+           x:Key="{x:Static render:TextMateCodeRenderer.TokenStyleKey}">
         <Setter Property="ThemeColors"
                 Value="{DynamicResource CodeBlock.TextMateSharp.Theme}" />
     </Style>
 
     <Style TargetType="{x:Type ToggleButton}"
-           x:Key="{x:Static render1:ThinkBlockRenderer.ThinkBlockToggleStyleKey}">
+           x:Key="{x:Static render:ThinkBlockRenderer.ThinkBlockToggleStyleKey}">
         <Setter Property="FocusVisualStyle"
                 Value="{StaticResource ExpanderHeaderFocusVisual}" />
         <Setter Property="Background" Value="Transparent" /> <!--{DynamicResource MaterialDesign.Brush.Background}-->
@@ -387,7 +387,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render1:CustomMarkdownRenderer.FunctionCallStyleKey}">
+           x:Key="{x:Static render:CustomMarkdownRenderer.FunctionCallStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
@@ -433,7 +433,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static  render1:ToolCallBlockRenderer.ToolCallStyleKey}">
+           x:Key="{x:Static  render:ToolCallBlockRenderer.ToolCallStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
@@ -456,12 +456,12 @@
         </Setter>
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type  render1:ToolCallBlock}">
+                <DataTemplate DataType="{x:Type  render:ToolCallBlock}">
                     <StackPanel>
                         <ItemsControl ItemsSource="{Binding ToolCalls.ToolCalls}"
                                       Visibility="{Binding ToolCalls,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type render1:ToolCallElement}">
+                                <DataTemplate DataType="{x:Type render:ToolCallElement}">
                                     <TextBlock Foreground="DarkGray"
                                                FontStyle="Italic"
                                                TextWrapping="Wrap">
@@ -485,7 +485,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render1:CustomMarkdownRenderer.FunctionResultStyleKey}">
+           x:Key="{x:Static render:CustomMarkdownRenderer.FunctionResultStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
@@ -523,10 +523,10 @@
     </Style>
 
     <Style TargetType="{x:Type ContentControl}"
-           x:Key="{x:Static render1:MathBlockRenderer.MathBlockStyleKey}">
+           x:Key="{x:Static render:MathBlockRenderer.MathBlockStyleKey}">
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type render1:MathBlockContext}">
+                <DataTemplate DataType="{x:Type render:MathBlockContext}">
                     <Image Source="{Binding Image.CurrentSource,Mode=OneWay}"
                            Stretch="None"
                            ToolTip="{Binding Latex,Mode=OneTime}"
@@ -547,10 +547,10 @@
     </Style>
 
     <Style TargetType="{x:Type ContentControl}"
-           x:Key="{x:Static render1:MathBlockInlineRenderer.MathInlineStyleKey}">
+           x:Key="{x:Static render:MathBlockInlineRenderer.MathInlineStyleKey}">
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type render1:MathInlineContext}">
+                <DataTemplate DataType="{x:Type render:MathInlineContext}">
                     <Image Source="{Binding Image.CurrentSource,Mode=OneWay}"
                            Stretch="None"
                            ToolTip="{Binding Latex,Mode=OneTime}"
@@ -572,7 +572,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render1:ToolCallResultBlockRenderer.ToolCallResultStyleKey}">
+           x:Key="{x:Static render:ToolCallResultBlockRenderer.ToolCallResultStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
@@ -594,12 +594,12 @@
         </Setter>
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type  render1:ToolCallResultBlock}">
+                <DataTemplate DataType="{x:Type  render:ToolCallResultBlock}">
                     <StackPanel>
                         <ItemsControl ItemsSource="{Binding ToolCallResults.ToolCalls}"
                                       Visibility="{Binding ToolCallResults,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type render1:ToolCallResultElement}">
+                                <DataTemplate DataType="{x:Type render:ToolCallResultElement}">
                                     <TextBlock Foreground="DarkGray"
                                                FontStyle="Italic"
                                                TextWrapping="Wrap">
@@ -623,7 +623,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render1:CustomMarkdownRenderer.PermissionRequestStyleKey}">
+           x:Key="{x:Static render:CustomMarkdownRenderer.PermissionRequestStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
@@ -695,7 +695,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static render1:CustomMarkdownRenderer.AnnotationStyleKey}">
+           x:Key="{x:Static render:CustomMarkdownRenderer.AnnotationStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
         <Setter Property="HeaderTemplate">
@@ -867,7 +867,7 @@
         </Setter>
     </Style>
 
-    <Style TargetType="{x:Type Section}" x:Key="{x:Static render1:ThinkBlockRenderer.ThinkBlockSectionStyleKey}">
+    <Style TargetType="{x:Type Section}" x:Key="{x:Static render:ThinkBlockRenderer.ThinkBlockSectionStyleKey}">
         <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Card.Border}" />
         <Setter Property="BorderThickness" Value="1,0,1,1" />
         <!-- <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Chip.OutlineBorder}" /> -->
@@ -876,7 +876,7 @@
 
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource AIContentExpander}"
-           x:Key="{x:Static  render1:RequestBlockRenderer.RequestStyleKey}">
+           x:Key="{x:Static  render:RequestBlockRenderer.RequestStyleKey}">
         <Setter Property="Padding" Value="16" />
         <Setter Property="HeaderTemplate">
             <Setter.Value>
@@ -897,11 +897,12 @@
         </Setter>
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type render1:RequestBlock}">
+                <DataTemplate DataType="{x:Type render:RequestBlock}">
                     <TextBlock Foreground="DarkGray"
                                FontStyle="Italic"
+                               FontFamily="Consolas"
                                TextWrapping="Wrap"
-                               Text="{Binding Content,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToJsonConverter}}" />
+                               Text="{Binding Content,Mode=OneTime}" />
                 </DataTemplate>
             </Setter.Value>
         </Setter>

@@ -235,6 +235,7 @@ public static class ModelRegister
                         "Gemini 2.5 Flash Lite",
                         "Gemini 3 Pro",
                         "Gemini 3 Flash",
+                        "Gemini 3.1 Pro",
                     ]
                 },
                 new()
@@ -294,7 +295,10 @@ public static class ModelRegister
                         "Qwen3-Coder-Plus",
                         "Qwen3-Coder-Next",
                         "Qwen3-Max",
-                        "Qwen3.5 397B A17B"
+                        "Qwen3.5 397B A17B",
+                        "Qwen3.5-122B-A10B",
+                        "Qwen3.5-35B-A3B",
+                        "Qwen3.5-27B"
                     ]
                 },
 
@@ -321,7 +325,7 @@ public static class ModelRegister
                         "GLM-4.6",
                         "GLM-4.7",
                         "GLM 4.7 Flash",
-                        
+                        "GLM 5"
                     ]
                 },
 
