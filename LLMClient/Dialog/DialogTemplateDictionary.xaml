@@ -233,6 +233,10 @@
                     </ContextMenu>
                 </customControl:FlowDocumentScrollViewerEx.ContextMenu>
             </customControl:FlowDocumentScrollViewerEx>
+            <customControl:MarkdownTextBlock TextWrapping="Wrap"
+                                             VerticalAlignment="Top"
+                                             Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                             Source="{Binding  TempResponseText,Mode=OneTime}" />
             <TextBox IsReadOnly="True"
                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                      BorderThickness="0"

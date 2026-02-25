@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -190,7 +191,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
     {
         o?.SwitchAvailableInContext();
     });
-    
+
     private FlowDocument? _tempDocument;
 
     private async Task<FlowDocument?> GetPreDocumentAsync()
@@ -375,6 +376,8 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
             OnPropertyChanged(nameof(IsAvailableInContext));
         }
     }
+    
+    public ObservableCollection<string> TempResponseText { get; } = new();
 
     /// <summary>
     /// 切换在上下文中的可用性
@@ -492,94 +495,78 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
     {
         private readonly BlockingCollection<string> _blockingCollection = new();
         private readonly Task _task;
-
-        // 替换原本直接的 Renderer 操作
         private readonly CustomMarkdownRenderer _customRenderer;
+        private readonly StreamingRenderSession _session;
+        private readonly Action<string> _outputAction;
 
         public ResponseViewItemInteractor(FlowDocument flowDocument, ResponseViewItem responseViewItem)
         {
-            var markdownStreamer =
-                // 初始化流式处理器
-                new MarkdownStreamer(flowDocument, CustomMarkdownRenderer.DefaultPipeline);
             _customRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
+
+            _session = new StreamingRenderSession(
+                flowDocument,
+                clearTail: () => Dispatch(() => responseViewItem.TempResponseText.Clear())
+            );
+
             _task = Task.Run(() =>
             {
-                // 简单的消费者循环
-                foreach (var message in _blockingCollection.GetConsumingEnumerable())
-                {
-                    // 这里可以直接调用，MetricsHandling 建议在 ProcessStream 内部做一个简单的 Throttle (节流)
-                    // 比如每 50ms 更新一次 UI，避免 CPU 占用过高，但对于文本来说通常直接更新也很快。
-                    markdownStreamer.ProcessStream(message);
-                }
+                RendererExtensions.StreamParse(
+                    _blockingCollection,
+                    (_, block) => _session.OnBlockClosed(block));
             });
 
             _outputAction = message =>
             {
+                if (_blockingCollection.IsAddingCompleted) return;
+
                 _blockingCollection.Add(message);
+
+                // Normal 优先级，确保在 Background 级别的 OnBlockClosed 之前执行
                 Dispatch(() =>
                 {
-                    // 更新内存中的 History 用于 Save/Copy
+                    responseViewItem.TempResponseText.Add(message);
                     responseViewItem._responseHistory.Append(message);
                 });
             };
         }
 
-        // ... 其余代码 (Info, Error, WriteLine, DisposeAsync) 保持不变 ...
-
-        private readonly Action<string> _outputAction;
-
-        public void Info(string message)
-        {
-            _outputAction(message);
-        }
-
-        public void Error(string message)
-        {
-            _outputAction(message);
-        }
-
-        public void Warning(string message)
-        {
-            _outputAction(message);
-        }
-
-        public void Write(string message)
-        {
-            _outputAction(message);
-        }
+        public void Info(string message) => _outputAction(message);
+        public void Error(string message) => _outputAction(message);
+        public void Warning(string message) => _outputAction(message);
+        public void Write(string message) => _outputAction(message);
 
         public void WriteLine(string? message = null)
         {
-            if (string.IsNullOrEmpty(message))
-            {
-                _outputAction(Environment.NewLine);
-            }
-            else
-            {
-                _outputAction(message + Environment.NewLine);
-            }
+            _outputAction(string.IsNullOrEmpty(message)
+                ? Environment.NewLine
+                : message + Environment.NewLine);
         }
 
         public Task<bool> WaitForPermission(string title, string message)
         {
-            var permissionViewModel = new PermissionViewModel() { Title = title, Content = message };
-            _customRenderer.AppendExpanderItem(permissionViewModel,
-                CustomMarkdownRenderer.PermissionRequestStyleKey);
-            return permissionViewModel.Task;
+            var vm = new PermissionViewModel { Title = title, Content = message };
+            _customRenderer.AppendExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);
+            return vm.Task;
         }
 
         public Task<bool> WaitForPermission(object content)
         {
-            var permissionViewModel = new PermissionViewModel() { Content = content };
-            _customRenderer.AppendExpanderItem(permissionViewModel,
-                CustomMarkdownRenderer.PermissionRequestStyleKey);
-            return permissionViewModel.Task;
+            var vm = new PermissionViewModel { Content = content };
+            _customRenderer.AppendExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);
+            return vm.Task;
         }
 
         public async ValueTask DisposeAsync()
         {
             _blockingCollection.CompleteAdding();
-            await _task.WaitAsync(CancellationToken.None);
+
+            // 等待 StreamParse 完成（含 CloseAll，所有 Closed 事件均已触发并 dispatch）
+            await _task;
+
+            // 使用 ContextIdle 确保所有 Background 级别的 OnBlockClosed 调度先执行完
+            await _session.CompleteAsync();
+
+            _session.Dispose();
             _blockingCollection.Dispose();
         }
     }
