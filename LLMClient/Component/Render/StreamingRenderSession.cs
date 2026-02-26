@@ -60,7 +60,7 @@ public sealed class StreamingRenderSession : IDisposable
     private void CreateLivingUI()
     {
         _livingSubDocument = new FlowDocument();
-        _livingSubRenderer = CustomMarkdownRenderer.NewRenderer(_livingSubDocument);
+        _livingSubRenderer = CustomMarkdownRenderer.NewRenderer(_livingSubDocument, enableTextMate: false);
 
         _livingSubViewer = new RichTextBox
         {

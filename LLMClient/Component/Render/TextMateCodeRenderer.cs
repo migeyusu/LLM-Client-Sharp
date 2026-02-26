@@ -76,6 +76,12 @@ public class TextMateCodeRenderer : CodeBlockRenderer
 
     protected override void Write(WpfRenderer renderer, CodeBlock codeBlock)
     {
+        if (renderer is CustomMarkdownRenderer { EnableTextMateHighlighting: false })
+        {
+            base.Write(renderer, codeBlock);
+            return;
+        }
+
         #region header
 
         var blockUiContainer = new BlockUIContainer();

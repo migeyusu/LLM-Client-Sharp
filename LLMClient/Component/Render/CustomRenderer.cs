@@ -13,6 +13,9 @@ namespace LLMClient.Component.Render;
 
 public class CustomMarkdownRenderer : WpfRenderer
 {
+    // 新增：控制是否启用 TextMate 高亮
+    public bool EnableTextMateHighlighting { get; set; } = true;
+
     public static CustomMarkdownRenderer Instance => Renderer;
 
     private static readonly CustomMarkdownRenderer Renderer;
@@ -39,12 +42,14 @@ public class CustomMarkdownRenderer : WpfRenderer
     public static ComponentResourceKey PermissionRequestStyleKey =>
         new(typeof(CustomMarkdownRenderer), nameof(PermissionRequestStyleKey));
 
-    public static CustomMarkdownRenderer NewRenderer(FlowDocument flowDocument)
+    public static CustomMarkdownRenderer NewRenderer(FlowDocument flowDocument, bool? enableTextMate = null)
     {
         var renderer = new CustomMarkdownRenderer();
         renderer.Initialize();
         DefaultPipeline.Setup(renderer);
         renderer.LoadDocument(flowDocument);
+        if (enableTextMate.HasValue)
+            renderer.EnableTextMateHighlighting = enableTextMate.Value;
         return renderer;
     }
 
@@ -55,7 +60,8 @@ public class CustomMarkdownRenderer : WpfRenderer
     public static ComponentResourceKey FunctionResultStyleKey { get; } =
         new(typeof(CustomMarkdownRenderer), (object)nameof(FunctionResultStyleKey));
 
-    public static ComponentResourceKey AnnotationStyleKey => new(typeof(CustomMarkdownRenderer), nameof(AnnotationStyleKey));
+    public static ComponentResourceKey AnnotationStyleKey =>
+        new(typeof(CustomMarkdownRenderer), nameof(AnnotationStyleKey));
 
     public void AppendExpanderItem<T>(T obj, ComponentResourceKey styleKey)
     {
