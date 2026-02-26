@@ -18,6 +18,9 @@ namespace LLMClient.Component.Render;
 
 public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
 {
+    // 渲染状态管理
+    private Paragraph? _codeParagraph;
+
     public CodeViewModel(WpfRenderer renderer,
         StringLineGroup codeGroup, string? extension, string? name,
         IGrammar? grammar = null)
@@ -28,7 +31,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
         CodeGroup = codeGroup;
         Grammar = grammar;
         _codeStringLazy = new Lazy<string>(codeGroup.ToString);
-        RenderCode(renderer, grammar, codeGroup);
+        InitializeRender(renderer, grammar, codeGroup);
     }
 
     public IGrammar? Grammar { get; }
@@ -45,6 +48,8 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
     private readonly string[] _supportedRunExtensions = new[] { "bash", "powershell", "html" };
 
     public string NameLower { get; }
+
+    #region code extension
 
     public bool CanRun
     {
@@ -262,7 +267,6 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
         }
     }
 
-
     /// <summary>
     /// 将 Windows 路径转换为 Git Bash 格式 (C:\path -> /c/path)
     /// </summary>
@@ -305,7 +309,164 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
         return fullPath.Replace('\\', '/');
     }
 
-    private static void RenderCode(WpfRenderer wpfRenderer, IGrammar? grammar, StringLineGroup codeGroup)
+    #endregion
+
+    private void InitializeRender(WpfRenderer renderer, IGrammar? grammar, StringLineGroup codeGroup)
+    {
+        var paragraph = new Paragraph();
+        paragraph.SetResourceReference(
+            FrameworkContentElement.StyleProperty,
+            Styles.CodeBlockStyleKey);
+
+        // Push 将 paragraph 注册到 FlowDocument；
+        // 返回后 Write 中的最终 renderer.Pop() 会关闭它
+        renderer.Push(paragraph);
+
+        if (grammar == null)
+        {
+            // 无语法高亮：WriteRawLines 需要 renderer 当前容器为 paragraph，
+            // 必须同步执行，但它本身很快，不需要异步
+            paragraph.BeginInit();
+            renderer.WriteRawLines(codeGroup);
+            paragraph.EndInit();
+        }
+        else
+        {
+            // 有语法高亮：分词耗时，放到后台；paragraph 暂为空，稍后填充
+            _codeParagraph = paragraph;
+            _ = TokenizeAndPopulateAsync(codeGroup, grammar);
+        }
+    }
+
+    /// <summary>
+    /// 后台分词 → UI 线程批量创建 Run。
+    /// 全程不阻塞 UI，也不影响 DynamicResource 的懒更新特性。
+    /// </summary>
+    private async Task TokenizeAndPopulateAsync(StringLineGroup codeGroup, IGrammar grammar)
+    {
+        // 后台线程：纯 CPU 计算，不涉及任何 WPF 对象
+        // List 中 null 表示换行，非 null 表示一个合并后的 Token
+        var lines = await Task.Run(() => BuildMergedTokens(codeGroup, grammar));
+
+        // UI 线程：批量创建 Run 并填充 Paragraph
+        if (_codeParagraph == null) return;
+
+        // BeginInit 阻止每次 Add 触发独立的布局计算，EndInit 后统一布局
+        _codeParagraph.BeginInit();
+        try
+        {
+            foreach (var token in lines)
+            {
+                if (token == null)
+                {
+                    _codeParagraph.Inlines.Add(new LineBreak());
+                }
+                else
+                {
+                    var run = new TextmateColoredRun(token.Text, token.Scopes);
+                    // 保留 DynamicResource 绑定：进入可视树后自动获取当前主题
+                    run.SetResourceReference(
+                        FrameworkContentElement.StyleProperty,
+                        TextMateCodeRenderer.TokenStyleKey);
+                    _codeParagraph.Inlines.Add(run);
+                }
+            }
+        }
+        finally
+        {
+            _codeParagraph.EndInit();
+        }
+    }
+    
+    private static readonly TimeSpan TokenizeTimeout = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// 在后台线程执行分词并合并相邻 scopesKey 相同的 Token。
+    ///
+    /// 合并策略：
+    /// - 相邻 token 的 scopesKey 完全相同 → 文本拼接，减少 Run 数量（通常可降低 50~80%）
+    /// - scopesKey 不同 → 提交前一个合并组，开始新组
+    /// - 每行末尾插入 null（换行标记）
+    ///
+    /// 返回值中 null 表示换行，非 null 表示合并后的 Token。
+    /// </summary>
+    private static List<MergedToken?> BuildMergedTokens(StringLineGroup codeGroup, IGrammar grammar)
+    {
+        var result = new List<MergedToken?>();
+        if (codeGroup.Lines == null) return result;
+        lock (grammar)
+        {
+            IStateStack? ruleStack = null;
+
+            // 复用 StringBuilder，避免每行分配
+            var sb = new System.Text.StringBuilder();
+
+            string? pendingKey = null;
+            List<string>? pendingScopes = null;
+
+            void FlushPending()
+            {
+                if (pendingKey == null || sb.Length == 0) return;
+                result.Add(new MergedToken(sb.ToString(), pendingScopes!, pendingKey));
+                sb.Clear();
+                pendingKey = null;
+                pendingScopes = null;
+            }
+
+            for (var i = 0; i < codeGroup.Count; i++)
+            {
+                var blockLine = codeGroup.Lines[i];
+                var line = blockLine.Slice.ToString();
+
+                if (string.IsNullOrEmpty(line))
+                {
+                    FlushPending();
+                    result.Add(null); // 换行
+                    continue;
+                }
+
+                var tokenResult = grammar.TokenizeLine(line, ruleStack, TokenizeTimeout);
+                ruleStack = tokenResult.RuleStack;
+
+                var lineLen = line.Length;
+
+                foreach (var token in tokenResult.Tokens)
+                {
+                    var start = Math.Min(token.StartIndex, lineLen);
+                    var end = Math.Min(token.EndIndex, lineLen);
+                    if (start >= end) continue;
+
+                    var text = line.Substring(start, end - start);
+
+                    // ScopesKey：用 \u001F（Unit Separator）拼接，该字符不会出现在正常代码中
+                    var key = string.Join('\u001F', token.Scopes);
+
+                    if (key == pendingKey)
+                    {
+                        // 与上一个 token 的 scopes 相同 → 直接追加文本，合并为一个 Run
+                        sb.Append(text);
+                    }
+                    else
+                    {
+                        // scopes 变化 → 提交上一组，开始新组
+                        FlushPending();
+                        pendingKey = key;
+                        pendingScopes = token.Scopes;
+                        sb.Append(text);
+                    }
+                }
+
+                // 每行结束后，先提交本行最后一组，再插入换行标记
+                FlushPending();
+                result.Add(null);
+            }
+        }
+
+        return result;
+    }
+
+
+    /*private static void RenderCode(WpfRenderer wpfRenderer, IGrammar? grammar, StringLineGroup codeGroup)
     {
         var paragraph = new Paragraph();
         paragraph.BeginInit();
@@ -359,9 +520,33 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
             addChild.AddChild(new LineBreak());
         }
     }
+    */
 
     public string GetCopyText()
     {
         return CodeString;
+    }
+}
+
+/// <summary>
+/// 合并后的 Token 数据，仅含纯数据字段，不依赖任何 WPF 类型。
+/// 由后台线程生成，传递给 UI 线程批量创建 TextmateColoredRun。
+/// </summary>
+internal sealed class MergedToken
+{
+    /// <summary>合并后的文本（相邻 scopesKey 相同的 token 文本拼接）</summary>
+    public string Text { get; }
+
+    /// <summary>原始 scopes 数组（保留首个 token 的 scopes，相同 key 的 scopes 必然相同）</summary>
+    public List<string> Scopes { get; }
+
+    /// <summary>由 scopes 拼接的稳定 key，供 ThemeMatchCache 查询</summary>
+    public string ScopesKey { get; }
+
+    public MergedToken(string text, List<string> scopes, string scopesKey)
+    {
+        Text = text;
+        Scopes = scopes;
+        ScopesKey = scopesKey;
     }
 }

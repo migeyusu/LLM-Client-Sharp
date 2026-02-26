@@ -1,14 +1,10 @@
 ﻿using System.Windows;
 using System.Windows.Documents;
-using System.Windows.Media;
-using TextMateSharp.Grammars;
 
 namespace LLMClient.Component.Render;
 
 public class TextmateColoredRun : Run
 {
-    public IToken? Token { get; }
-
     public static readonly DependencyProperty ThemeColorsProperty = DependencyProperty.Register(
         nameof(ThemeColors), typeof(TextMateThemeColors), typeof(TextmateColoredRun),
         new FrameworkPropertyMetadata(null,
@@ -18,7 +14,7 @@ public class TextmateColoredRun : Run
     {
         if (d is TextmateColoredRun textmateRun && e.NewValue is TextMateThemeColors themeColors)
         {
-            textmateRun.Color(themeColors);
+            textmateRun.ApplyThemeStyle(themeColors);
         }
     }
 
@@ -28,85 +24,71 @@ public class TextmateColoredRun : Run
         set { SetValue(ThemeColorsProperty, value); }
     }
 
+    // 缓存 Scope 用于主题切换时重新计算颜色
+    public List<string>? Scopes { get; }
+
+    private readonly string? _scopesKey;
+
+    private TokenStyle _currentStyle = TokenStyle.Default;
+
     public TextmateColoredRun()
     {
     }
 
-    public TextmateColoredRun(string text, IToken token) : base(text)
+    public TextmateColoredRun(string text, List<string> scopes) : base(text)
     {
-        Token = token;
+        _scopesKey = string.Join("\u001F", scopes);
+        this.Scopes = scopes;
     }
 
-    protected override void OnInitialized(EventArgs e)
+    public void ApplyThemeStyle(TextMateThemeColors textMateThemeColors)
     {
-        base.OnInitialized(e);
-        this.Color(this.ThemeColors);
-    }
-
-    private void Color(TextMateThemeColors textMateThemeColors)
-    {
-        if (this.Token == null)
+        if (this.Scopes == null || this._scopesKey == null)
         {
             return;
         }
 
-        var foreground = -1;
-        // var background = -1;
-        // var textMateThemeColors = this.ThemeColors;
-        var themeColorsTheme = textMateThemeColors.Theme;
-        var fontStyle = TextMateSharp.Themes.FontStyle.None;
-        var rules = themeColorsTheme.Match(this.Token.Scopes);
-        foreach (var themeRule in rules)
+        var style = textMateThemeColors.GetOrComputeStyle(_scopesKey, this.Scopes);
+        if (style == _currentStyle) return;
+        _currentStyle = style;
+        var newBrush = textMateThemeColors.GetBrush(style.ForegroundId);
+        if (!ReferenceEquals(Foreground, newBrush))
         {
-            if (foreground == -1 && themeRule.foreground > 0)
-                foreground = themeRule.foreground;
-
-            /*if (background == -1 && themeRule.background > 0)
-                background = themeRule.background;*/
-
-            if (themeRule.fontStyle > 0)
-                fontStyle |= themeRule.fontStyle;
+            if (newBrush != null) Foreground = newBrush;
+            else ClearValue(ForegroundProperty);
         }
 
-        // var backgroundColor = textMateThemeColors.GetBrush(background);
-        var foregroundColor = textMateThemeColors.GetBrush(foreground);
-        if (foregroundColor != null)
-        {
-            this.Foreground = foregroundColor;
-        }
-        else
-        {
-            this.ClearValue(ForegroundProperty);
-        }
+        ApplyFontStyle(style.FontStyle);
+    }
 
-        /*if (backgroundColor != null)
-        {
-            this.Background = backgroundColor;
-        }*/
-        this.ClearValue(TextDecorationsProperty);
-        this.ClearValue(FontWeightProperty);
-        this.ClearValue(FontStyleProperty);
-        if (fontStyle != TextMateSharp.Themes.FontStyle.NotSet && fontStyle != TextMateSharp.Themes.FontStyle.None)
-        {
-            if (fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Italic))
-            {
-                this.FontStyle = FontStyles.Italic;
-            }
+    private void ApplyFontStyle(TextMateSharp.Themes.FontStyle fontStyle)
+    {
+        var isNone = fontStyle is TextMateSharp.Themes.FontStyle.None or TextMateSharp.Themes.FontStyle.NotSet;
 
-            if (fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Bold))
-            {
-                this.FontWeight = FontWeights.Bold;
-            }
+        // FontStyle (Italic)
+        var newItalic = !isNone && fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Italic)
+            ? FontStyles.Italic
+            : FontStyles.Normal;
+        if (FontStyle != newItalic) FontStyle = newItalic;
 
+        // FontWeight (Bold)
+        var newWeight = !isNone && fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Bold)
+            ? FontWeights.Bold
+            : FontWeights.Normal;
+        if (FontWeight != newWeight) FontWeight = newWeight;
+
+        // TextDecorations —— 仅支持单一装饰（Underline / Strikethrough 不共存）
+        TextDecorationCollection? newDecorations = null;
+        if (!isNone)
+        {
             if (fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Underline))
-            {
-                this.TextDecorations = System.Windows.TextDecorations.Underline;
-            }
-
-            if (fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Strikethrough))
-            {
-                this.TextDecorations = System.Windows.TextDecorations.Strikethrough;
-            }
+                newDecorations = System.Windows.TextDecorations.Underline;
+            else if (fontStyle.HasFlag(TextMateSharp.Themes.FontStyle.Strikethrough))
+                newDecorations = System.Windows.TextDecorations.Strikethrough;
         }
+
+        // TextDecorationCollection 是引用类型，WPF 内置集合实例可用 ReferenceEquals 比较
+        if (!ReferenceEquals(TextDecorations, newDecorations))
+            TextDecorations = newDecorations;
     }
 }

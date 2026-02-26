@@ -15,10 +15,10 @@ namespace LLMClient.Component.Render;
 public class TextMateCodeRenderer : CodeBlockRenderer
 {
     public static ComponentResourceKey TokenStyleKey { get; } =
-        new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(TokenStyleKey));
+        new(typeof(TextMateCodeRenderer), nameof(TokenStyleKey));
 
     public static ComponentResourceKey CodeBlockHeaderStyleKey { get; } =
-        new ComponentResourceKey(typeof(TextMateCodeRenderer), (object)nameof(CodeBlockHeaderStyleKey));
+        new(typeof(TextMateCodeRenderer), nameof(CodeBlockHeaderStyleKey));
 
     private class TextMateCodeRendererSettings
     {
@@ -26,8 +26,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
 
         public Registry Registry { get; }
 
-        private readonly Dictionary<ThemeName, TextMateThemeColors>
-            _themes = new Dictionary<ThemeName, TextMateThemeColors>();
+        private readonly Dictionary<ThemeName, TextMateThemeColors> _themes = new();
 
         public TextMateCodeRendererSettings()
         {
