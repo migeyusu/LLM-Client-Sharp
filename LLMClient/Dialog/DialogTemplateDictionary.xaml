@@ -432,11 +432,7 @@
                                           Icon="{materialDesign:PackIcon Kind=Clear}"
                                           Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                           Command="{Binding ClearOthersCommand}" />
-                                <MenuItem Header="移除之后消息"
-                                          Command="{x:Static models:MultiResponseViewItem.RebaseCommand}"
-                                          CommandParameter="{Binding Mode=OneTime}"
-                                          ToolTip="保留当前消息并删除所有之后的消息"
-                                          Icon="{materialDesign:PackIcon Kind=WaveArrowDown}" />
+                                <!--x:Static models:MultiResponseViewItem.RebaseCommand-->
                                 <MenuItem Header="查看日志"
                                           Command="{x:Static models:ResponseViewItem.ShowTempResponseCommand}"
                                           CommandParameter="{Binding AcceptedResponse,Mode=OneWay}" />
@@ -482,8 +478,8 @@
                                 VerticalAlignment="Center"
                                 Margin="6,0,0,0"
                                 ToolTip="重试"
-                                Command="{x:Static  models:MultiResponseViewItem.RetryCurrentCommand}"
-                                CommandParameter="{Binding}"
+                                Command="{Binding RetryCommand}"
+                                CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                 Content="{materialDesign:PackIcon Kind=Refresh,Size=20}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
                                 Command="{x:Static utility:CommonCommands.EditDialogItemCommand}"
@@ -509,7 +505,7 @@
                                 Content="{materialDesign:PackIcon Kind=Compare,Size=20}" />
                         <Button ToolTip="由此创建新分支"
                                 Margin="6,0,0,0"
-                                Command="{Binding NewBranchCommand}"
+                                Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type dialog:SessionView}},Path=DataContext.SetLeafCommand}"
                                 Content="{materialDesign:PackIcon SourceBranchPlus,Size=20}"
                                 Style="{StaticResource SmallIconButtonStyle}" />
                     </StackPanel>

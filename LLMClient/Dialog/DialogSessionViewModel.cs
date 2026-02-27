@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
@@ -229,6 +230,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public ICommand GoToPreviousHighlightCommand { get; }
 
+    public ICommand SetLeafCommand { get; }
+
     #endregion
 
     #region items management
@@ -351,25 +354,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         this.IsDataChanged = true;
     }
 
-    public async void RemoveAfter(MultiResponseViewItem responseViewItem)
-    {
-        if (responseViewItem.Children.Count == 0)
-        {
-            return;
-        }
-
-        if (responseViewItem.Children.Count > 1)
-        {
-            if (!await Extension.ShowConfirm("该节点后包含分支，依然清空？"))
-            {
-                return;
-            }
-        }
-
-        responseViewItem.ClearChildren();
-        CurrentLeaf = responseViewItem;
-    }
-
     #endregion
 
     public long CurrentContextTokens
@@ -487,6 +471,14 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             {
                 await DialogHost.Show(new DialogGraphViewModel(this, this.RootNode.Children.FirstOrDefault()));
             });
+        SetLeafCommand = new RelayCommand<MultiResponseViewItem>(o =>
+        {
+            if (o == null)
+            {
+                return;
+            }
+            ForkPreTask(o);
+        });
         SearchCommand = new ActionCommand(_ =>
         {
             foreach (var dialogViewItem in this.DialogItems.OfType<ISearchableDialogItem>())

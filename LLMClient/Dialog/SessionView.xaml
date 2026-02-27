@@ -1,0 +1,69 @@
+﻿<UserControl x:Class="LLMClient.Dialog.SessionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LLMClient.Dialog"
+             xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:utility="clr-namespace:LLMClient.Component.Utility"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance local:DialogSessionViewModel}"
+             d:DesignHeight="300" d:DesignWidth="300">
+    <Grid>
+        <customControl:ListBoxEx Style="{StaticResource DialogListBoxStyle}"
+                                 CurrentViewItem="{Binding ScrollViewItem,Mode=TwoWay}"
+                                 ItemsSource="{Binding DialogItems,Mode=OneWay}"
+                                 x:Name="DialogItemList">
+            <!--component:ListBoxHelper.CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"-->
+            <ListBox.CommandBindings>
+                <CommandBinding Command="Delete"
+                                Executed="OnDeleteExecuted" />
+                <CommandBinding Command="{x:Static utility:CommonCommands.Exclude}"
+                                Executed="OnExcludeExecuted" />
+            </ListBox.CommandBindings>
+        </customControl:ListBoxEx>
+        <StackPanel HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,26,10">
+            <StackPanel.Resources>
+                <Style TargetType="{x:Type Button}"
+                       BasedOn="{StaticResource MaterialDesignFloatingActionMiniDarkButton}">
+                    <Setter Property="Margin"
+                            Value="0,10,0,0" />
+                    <Setter Property="Width"
+                            Value="26" />
+                    <Setter Property="Height"
+                            Value="26" />
+                    <Setter Property="HorizontalAlignment"
+                            Value="Right" />
+                </Style>
+            </StackPanel.Resources>
+            <Button Command="{x:Static customControl:ListBoxEx.ScrollToTopCommand}"
+                    CommandTarget="{Binding ElementName=DialogItemList}"
+                    Content="{materialDesign:PackIcon Kind=FormatVerticalAlignTop}" />
+            <Button Command="{x:Static customControl:ListBoxEx.ScrollToPreviousItemCommand}"
+                    CommandTarget="{Binding ElementName=DialogItemList}"
+                    Content="{materialDesign:PackIcon Kind=ArrowUpBold}" />
+            <Button Command="{x:Static customControl:ListBoxEx.ScrollToNextItemCommand}"
+                    CommandTarget="{Binding ElementName=DialogItemList}"
+                    Content="{materialDesign:PackIcon Kind=ArrowDownBold}" />
+            <Button Command="{x:Static customControl:ListBoxEx.ScrollToBottomCommand}"
+                    CommandTarget="{Binding ElementName=DialogItemList}"
+                    Content="{materialDesign:PackIcon Kind=FormatVerticalAlignBottom}" />
+            <StackPanel Margin="0,10,0,0"
+                        Orientation="Horizontal"
+                        DataContext="{Binding CurrentResponseViewItem,Mode=OneWay}"
+                        Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.HiddenInstance}}">
+                <Button Content="{materialDesign:PackIcon Kind=ArrowLeftBold}"
+                        Margin="0"
+                        Command="{Binding GotoPreviousCommand}"
+                        IsEnabled="{Binding CanGotoPrevious,Mode=OneWay}" />
+                <Button Content="{materialDesign:PackIcon Kind=ArrowRightBold}"
+                        Margin="10,0,0,0"
+                        Command="{Binding GotoNextCommand}"
+                        IsEnabled="{Binding CanGoToNext,Mode=OneWay}" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>

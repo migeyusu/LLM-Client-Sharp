@@ -268,7 +268,8 @@ public class UnitTest1
         var client = new EmptyLlmModelClient();
         var viewModelFactory = serviceProvider.GetService<IViewModelFactory>()!;
         var dialogViewModel =
-            new DialogViewModel("test", client, mapper, new GlobalOptions(),
+            new DialogViewModel("test", client, mapper, new Summarizer(new GlobalOptions()),
+                new GlobalOptions(),
                 viewModelFactory);
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
@@ -293,8 +294,8 @@ public class UnitTest1
         var client = new EmptyLlmModelClient();
         var viewModelFactory = serviceProvider.GetService<IViewModelFactory>()!;
         var dialogViewModel =
-            new DialogViewModel("test", client, mapper, new GlobalOptions(),
-                viewModelFactory);
+            new DialogViewModel("test", client, mapper, new Summarizer(new GlobalOptions()),
+                new GlobalOptions(), viewModelFactory);
         var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));

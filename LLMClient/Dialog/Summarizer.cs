@@ -8,7 +8,7 @@ using LLMClient.Dialog.Models;
 
 namespace LLMClient.Dialog;
 
-public readonly struct Summarizer
+public class Summarizer
 {
     private readonly GlobalOptions _options;
 
@@ -45,8 +45,14 @@ public readonly struct Summarizer
         }
     }
 
-    public string SummarizeContent()
+    public SummaryRequestViewItem CreateRequest()
     {
-        throw new NotImplementedException();
+        return new SummaryRequestViewItem()
+        {
+            SummaryPrompt = _options.ContextSummarizePrompt,
+            OutputLength = _options.ContextSummarizeWordsCount,
+            InteractionId = Guid.NewGuid(),
+            IsSummarizing = true,
+        };
     }
 }

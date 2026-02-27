@@ -238,12 +238,14 @@ public class RequesterViewModel : BaseViewModel
         _getResponse;
 
     private readonly GlobalOptions _options;
+    private readonly Summarizer _summarizer;
 
     private readonly ITokensCounter _tokensCounter;
 
     public RequesterViewModel(ILLMChatClient modelClient,
         Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>> getResponse,
-        GlobalOptions options, IRagSourceCollection ragSourceCollection, ITokensCounter tokensCounter)
+        GlobalOptions options, Summarizer summarizer, IRagSourceCollection ragSourceCollection,
+        ITokensCounter tokensCounter)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
@@ -251,6 +253,7 @@ public class RequesterViewModel : BaseViewModel
         this._defaultClient = modelClient;
         this._getResponse = getResponse;
         _options = options;
+        _summarizer = summarizer;
         _ragSourceCollection = ragSourceCollection;
         _tokensCounter = tokensCounter;
         this.BindClient(modelClient);
@@ -317,13 +320,7 @@ public class RequesterViewModel : BaseViewModel
     public async void Summarize(IRequestItem? insertBefore = null)
     {
         IsNewResponding = true;
-        var summaryRequest = new SummaryRequestViewItem()
-        {
-            SummaryPrompt = _options.ContextSummarizePrompt,
-            OutputLength = _options.ContextSummarizeWordsCount,
-            InteractionId = Guid.NewGuid(),
-            IsSummarizing = true,
-        };
+        var summaryRequest = _summarizer.CreateRequest();
         try
         {
             var summarizeModel = _options.CreateContextSummarizeClient() ?? this.DefaultClient;

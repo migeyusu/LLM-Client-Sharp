@@ -86,6 +86,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
     }
 
     private string _topic;
+    private readonly Summarizer _summarizer;
     private readonly GlobalOptions _options;
 
     public string Topic
@@ -148,11 +149,12 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
 
     public RequesterViewModel Requester { get; }
 
-    public DialogViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
+    public DialogViewModel(string topic, ILLMChatClient modelClient, IMapper mapper, Summarizer summarizer,
         GlobalOptions options, IViewModelFactory factory, IDialogItem? rootNode = null, IDialogItem? currentLeaf = null)
         : base(rootNode, currentLeaf)
     {
         _topic = topic;
+        _summarizer = summarizer;
         _options = options;
         ((INotifyCollectionChanged)this.RootNode.Children).CollectionChanged += OnRootCollectionChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
@@ -211,8 +213,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
             //不要wait
             SummarizeTask = Task.Run(async () =>
             {
-                var summarizer = new Summarizer(_options);
-                var newTopic = await summarizer.SummarizeTopicAsync(this, TopicTimeOut);
+                var newTopic = await _summarizer.SummarizeTopicAsync(this, TopicTimeOut);
                 if (!string.IsNullOrEmpty(newTopic))
                 {
                     this.Topic = newTopic;

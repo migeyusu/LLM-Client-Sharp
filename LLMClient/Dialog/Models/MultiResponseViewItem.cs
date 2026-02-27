@@ -68,7 +68,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
     public bool HasAvailableMessage
     {
-        get { return Items.Any((item => item.IsAvailableInContext)); }
+        get { return Items.Any(item => item.IsAvailableInContext); }
     }
 
     [Bindable(false)]
@@ -133,22 +133,9 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
     public ModelSelectionPopupViewModel SelectionPopup { get; }
 
-    public static ICommand RebaseCommand { get; } =
-        new RelayCommand<MultiResponseViewItem>(o =>
-        {
-            if (o == null)
-            {
-                return;
-            }
-
-            o.ParentSession.RemoveAfter(o);
-        });
-
     public ICommand ClearOthersCommand { get; }
 
-    public static ICommand RetryCurrentCommand { get; } =
-        new RelayCommand<MultiResponseViewItem>(o => o?.RetryCurrent());
-
+    public ICommand RetryCommand { get; }
 
     private int _acceptedIndex = -1;
 
@@ -210,8 +197,6 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
     public ICommand RemoveResponseCommand { get; }
 
-    public ICommand NewBranchCommand { get; }
-
     public MultiResponseViewItem(IEnumerable<ResponseViewItem> items, DialogSessionViewModel parentSession)
     {
         ParentSession = parentSession;
@@ -226,6 +211,27 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
+        RetryCommand = new RelayCommand<ResponseViewItem>(async void (responseViewItem) =>
+        {
+            try
+            {
+                if (responseViewItem == null)
+                {
+                    return;
+                }
+
+                if (responseViewItem.IsResponding)
+                {
+                    return;
+                }
+
+                await ParentSession.InvokeRequest(responseViewItem, this);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        });
         RemoveResponseCommand = new RelayCommand<ResponseViewItem>(o =>
         {
             if (o == null)
@@ -279,29 +285,18 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
             this.AcceptedIndex = index - 1;
         });
-        NewBranchCommand = new ActionCommand(o => { this.ParentSession.ForkPreTask(this); });
     }
 
     public MultiResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)
     {
     }
 
-    public async void RetryCurrent()
+    /*public Task<CompletedResult> InvokeRequest(ResponseViewItem responseViewItem)
     {
-        // var index = multiResponseViewItem.AcceptedIndex;
-        var responseViewItem = this.AcceptedResponse;
-        if (responseViewItem == null)
-        {
-            return;
-        }
-
-        if (responseViewItem.IsResponding)
-        {
-            return;
-        }
-
-        await ParentSession.InvokeRequest(responseViewItem, this);
-    }
+        var dialogItems = this.GetChatHistory().ToArray();
+        var dialogContext = new DialogContext(dialogItems, this.ParentSession.SystemPrompt);
+        return responseViewItem.ProcessRequest(dialogContext);
+    }*/
 
     public Task<CompletedResult> AppendResponse(ILLMChatClient chatClient, CancellationToken token = default)
     {

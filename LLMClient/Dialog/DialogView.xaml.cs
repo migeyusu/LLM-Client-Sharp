@@ -13,20 +13,10 @@ public partial class DialogView : UserControl
 
     private DialogViewModel ViewModel => (DialogViewModel)DataContext;
 
-    private void OnDeleteExecuted(object sender, ExecutedRoutedEventArgs e)
+    private void FindCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is IDialogItem dialogViewItem)
-        {
-            ViewModel.DeleteItem(dialogViewItem);
-        }
-    }
-
-    private void OnExcludeExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.Parameter is RequestViewItem requestViewItem)
-        {
-            ViewModel.CutContext(requestViewItem);
-        }
+        SearchBox.Focus();
+        SearchBox.SelectAll();
     }
 
     private void ConclusionBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
@@ -41,11 +31,5 @@ public partial class DialogView : UserControl
 
             ViewModel.Requester.Summarize(requestViewItem);
         }
-    }
-
-    private void FindCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        SearchBox.Focus();
-        SearchBox.SelectAll(); 
     }
 }

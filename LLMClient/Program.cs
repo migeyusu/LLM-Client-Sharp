@@ -8,6 +8,7 @@ using LLMClient.Configuration;
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.Tools;
 using LLMClient.Data;
+using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Rag;
 using LLMClient.ToolCall.DefaultPlugins;
@@ -68,6 +69,7 @@ public class Program
                 .AddTransient<IProjectAwarenessService, ProjectAwarenessService>()
                 .AddTransient<ProjectAwarenessPlugin>()
                 .AddTransient<AnalyzerConfig>()
+                .AddSingleton<Summarizer>()
                 .AddMap();
 #if DEBUG
             var resourceBuilder = ResourceBuilder
