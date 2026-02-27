@@ -18,6 +18,10 @@ public partial class RoslynProjectAnalyzer : IDisposable
     private readonly ConcurrentDictionary<string, IList<DocumentAnalysisResult>> _docCache = new();
     private readonly SymbolIndexService _symbolIndexService = new();
 
+    private Solution? _currentSolution;
+
+    public Solution? CurrentSolution => _currentSolution;
+
     public RoslynProjectAnalyzer(ILogger<RoslynProjectAnalyzer>? logger, AnalyzerConfig? config = null)
     {
         _config = config ?? new AnalyzerConfig();
@@ -54,6 +58,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
         try
         {
             var solution = await _workspace.OpenSolutionAsync(solutionPath, cancellationToken: cancellationToken);
+            _currentSolution = solution;
             // 过滤并并行分析项目
             var projects = solution.Projects
                 .Where(ShouldIncludeProject)
@@ -83,7 +88,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
 
             stopwatch.Stop();
             summary.GenerationTime = stopwatch.Elapsed;
-            _logger?.LogInformation($"Analysis completed in {stopwatch.ElapsedMilliseconds}ms");
+            _logger?.LogDebug($"Analysis completed in {stopwatch.ElapsedMilliseconds}ms");
             summary.Conventions = MergeSolutionConventions(summary.Projects);
             return summary;
         }
@@ -94,7 +99,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
         }
         finally
         {
-            _workspace.CloseSolution();
+            // _workspace.CloseSolution();
         }
     }
 
@@ -1068,9 +1073,21 @@ public partial class RoslynProjectAnalyzer : IDisposable
             .ToDictionary(g => g.Key, g => g.Count());
     }
 
+    public void CloseCurrentSolution()
+    {
+        if (_currentSolution == null)
+        {
+            return;
+        }
+
+        _currentSolution = null;
+        _workspace.CloseSolution();
+    }
+
     public void Dispose()
     {
-        _workspace?.Dispose();
+        CloseCurrentSolution();
+        _workspace.Dispose();
     }
 
     [System.Text.RegularExpressions.GeneratedRegex(@"(\d+\.\d+)")]

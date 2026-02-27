@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using LLMClient.ContextEngineering.Analysis;
 
-namespace LLMClient.ContextEngineering.Prompt;
+namespace LLMClient.ContextEngineering.PromptGeneration;
 
 /// <summary>
 /// 将文件路径列表渲染为 ASCII 目录树。

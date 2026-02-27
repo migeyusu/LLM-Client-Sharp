@@ -7,7 +7,7 @@ using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Project;
 
-namespace LLMClient.ContextEngineering.Prompt;
+namespace LLMClient.ContextEngineering.PromptGeneration;
 
 public abstract class ContextPromptViewModel : BaseViewModel, IDisposable
 {

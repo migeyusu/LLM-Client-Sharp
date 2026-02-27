@@ -1,4 +1,6 @@
-﻿namespace LLMClient.ContextEngineering.Tools;
+﻿using LLMClient.ContextEngineering.Tools.Models;
+
+namespace LLMClient.ContextEngineering.Tools;
 
 public interface IProjectAwarenessService
 {

@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using LLMClient.ContextEngineering.Tools;
+using LLMClient.ContextEngineering.Tools.Models;
 
 namespace LLMClient.Test.Agent.Tools;
 

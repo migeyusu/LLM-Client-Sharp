@@ -1,5 +1,5 @@
 ﻿using LLMClient.ContextEngineering;
-using LLMClient.ContextEngineering.Prompt;
+using LLMClient.ContextEngineering.PromptGeneration;
 
 namespace LLMClient.Test.Agent.Tools;
 

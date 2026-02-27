@@ -1,34 +1,25 @@
 ﻿using LLMClient.ContextEngineering.Analysis;
-using LLMClient.ContextEngineering.Prompt;
+using LLMClient.ContextEngineering.PromptGeneration;
+using LLMClient.ContextEngineering.Tools.Models;
 
 namespace LLMClient.ContextEngineering.Tools;
 
 public sealed class ProjectAwarenessService : IProjectAwarenessService
 {
-    private readonly RoslynProjectAnalyzer _analyzer;
     private readonly FileTreeFormatter _formatter = new();
+    private readonly SolutionContext _context;
 
-    private SolutionInfo? _current;
-    private string? _solutionDir;
-
-    public ProjectAwarenessService(RoslynProjectAnalyzer analyzer)
+    public ProjectAwarenessService(SolutionContext context)
     {
-        _analyzer = analyzer;
-    }
-
-    public async Task LoadSolutionAsync(string solutionPath, CancellationToken ct = default)
-    {
-        _current = await _analyzer.AnalyzeSolutionAsync(solutionPath, ct);
-        _solutionDir = Path.GetDirectoryName(solutionPath)
-                       ?? throw new ArgumentException("Invalid solution path");
+        _context = context;
     }
 
     private SolutionInfo RequireSolution()
-        => _current ?? throw new InvalidOperationException(
+        => _context.SolutionInfo ?? throw new InvalidOperationException(
             "No solution loaded. Call LoadSolutionAsync first.");
 
     private string RequireSolutionDir()
-        => _solutionDir ?? throw new InvalidOperationException(
+        => _context.SolutionDir ?? throw new InvalidOperationException(
             "No solution loaded. Call LoadSolutionAsync first.");
 
     // ── 路径工具（内部使用）──────────────────────────────────────────────
@@ -253,12 +244,4 @@ public sealed class ProjectAwarenessService : IProjectAwarenessService
         TestFrameworkHint = c.TestFrameworkHint,
         NotableFiles = c.NotableFiles.ToList()
     };
-    
-    // ── 测试入口（仅测试项目可见）────────────────────────────────────────
-    internal void SetCurrentForTesting(SolutionInfo info)
-    {
-        _current = info;
-        _solutionDir = Path.GetDirectoryName(info.SolutionPath)
-                       ?? throw new ArgumentException("Invalid SolutionPath in test data.");
-    }
 }

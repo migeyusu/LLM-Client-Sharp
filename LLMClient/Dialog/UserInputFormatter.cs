@@ -6,7 +6,7 @@ using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Component;
 using LLMClient.ContextEngineering;
-using LLMClient.ContextEngineering.Prompt;
+using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.Dialog.Models;
 using Microsoft.Extensions.AI;
 
