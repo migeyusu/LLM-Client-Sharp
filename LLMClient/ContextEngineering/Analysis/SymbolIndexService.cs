@@ -1,8 +1,9 @@
 ﻿using System.Collections.Concurrent;
+using Trace = System.Diagnostics.Trace;
 
 namespace LLMClient.ContextEngineering.Analysis;
 
-internal class SymbolIndexService
+public class SymbolIndexService
 {
     // 主键索引：SymbolKey -> Entry
     private readonly ConcurrentDictionary<string, SymbolInfo> _keyIndex = new();
@@ -14,8 +15,7 @@ internal class SymbolIndexService
     {
         try
         {
-            var keyStr = info.UniqueId ?? info.Signature;
-
+            var keyStr = info.SymbolId;
             // 防止重复索引
             if (!_keyIndex.TryAdd(keyStr, info)) return;
 
@@ -33,6 +33,7 @@ internal class SymbolIndexService
         catch (Exception ex)
         {
             // Log error
+            Trace.TraceError($"Failed to add symbol {info.Name} ({info.SymbolId}): {ex}");
         }
     }
 
@@ -46,7 +47,7 @@ internal class SymbolIndexService
     {
         var keysToRemove = _keyIndex.Values
             .Where(e => e.FilesPath.Contains(filePath))
-            .Select(e => e.UniqueId ?? e.Signature)
+            .Select(e => e.SymbolId)
             .ToList();
 
         foreach (var key in keysToRemove)
@@ -63,14 +64,44 @@ internal class SymbolIndexService
         }
     }
 
-    public List<SymbolInfo> Search(string query, int topN = 10)
+    public List<(SymbolInfo sym, double score)> Search(string query,
+        string? kind = null,
+        string? scope = null)
     {
-        // 极简搜索：名称完全匹配 > 名称包含 > 签名包含
-        // 实际生产可用 Lucene，这里保持轻量
-        return _keyIndex.Values
-            .Where(x => x.Name.Contains(query) || x.Signature.Contains(query))
-            .Take(topN)
-            .ToList();
+        var scored = new List<(SymbolInfo sym, double score)>();
+        foreach (var sym in _keyIndex.Values)
+        {
+            // kind 过滤（大小写不敏感）
+            if (!string.IsNullOrWhiteSpace(kind) &&
+                !sym.Kind.Equals(kind, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            // scope 过滤：匹配文件路径片段 或 签名前缀（命名空间）
+            if (!string.IsNullOrWhiteSpace(scope) &&
+                !sym.FilesPath.Any(fp => fp.Contains(scope, StringComparison.OrdinalIgnoreCase)) &&
+                !sym.Signature.Contains(scope, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var score = ScoreSymbol(sym, query);
+            if (score > 0)
+                scored.Add((sym, score));
+        }
+
+        return scored;
+    }
+
+    private static double ScoreSymbol(SymbolInfo sym, string query)
+    {
+        // 精确名称匹配权重最高，向下依次降级
+        if (sym.Name.Equals(query, StringComparison.OrdinalIgnoreCase)) return 1.0;
+        if (sym.Name.StartsWith(query, StringComparison.OrdinalIgnoreCase)) return 0.85;
+        if (sym.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) return 0.70;
+        if (sym.Signature.Contains(query, StringComparison.OrdinalIgnoreCase)) return 0.45;
+
+        var summary = sym.Summary;
+        if (summary?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return 0.30;
+
+        return 0;
     }
 
     public void Clear()

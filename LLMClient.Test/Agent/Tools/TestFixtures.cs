@@ -14,7 +14,7 @@ internal static class TestFixtures
     // ── Project 路径常量 ─────────────────────────────────────────────────
 
     public const string CoreProjectPath = @"C:\Projects\MyApp\MyApp.Core\MyApp.Core.csproj";
-    public const string ApiProjectPath  = @"C:\Projects\MyApp\MyApp.Api\MyApp.Api.csproj";
+    public const string ApiProjectPath = @"C:\Projects\MyApp\MyApp.Api\MyApp.Api.csproj";
 
     // ── Solution 构建 ────────────────────────────────────────────────────
 
@@ -24,16 +24,16 @@ internal static class TestFixtures
         {
             SolutionName = "MyApp",
             SolutionPath = SolutionPath,
-            GeneratedAt  = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-            Conventions  = new ConventionInfo
+            GeneratedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            Conventions = new ConventionInfo
             {
-                HasEditorConfig     = true,
-                EditorConfigPath    = @"C:\Projects\MyApp\.editorconfig",
-                UsesNullable        = true,
-                UsesImplicitUsings  = true,
+                HasEditorConfig = true,
+                EditorConfigPath = @"C:\Projects\MyApp\.editorconfig",
+                UsesNullable = true,
+                UsesImplicitUsings = true,
                 DefaultNamespaceStyle = "MyApp",
-                TestFrameworkHint   = "xUnit",
-                NotableFiles        = new List<string> { @"C:\Projects\MyApp\README.md" }
+                TestFrameworkHint = "xUnit",
+                NotableFiles = new List<string> { @"C:\Projects\MyApp\README.md" }
             }
         };
         s.Projects.AddRange(projects.Length > 0 ? projects : new[] { BuildCoreProject() });
@@ -50,19 +50,19 @@ internal static class TestFixtures
 
         var p = new ProjectInfo
         {
-            Name            = "MyApp.Core",
+            Name = "MyApp.Core",
             ProjectFilePath = CoreProjectPath,
             RelativeRootDir = @"MyApp.Core\MyApp.Core.csproj",
-            FullRootDir     = @"C:\Projects\MyApp\MyApp.Core",
-            OutputType      = "Library",
-            Language        = "C#",
+            FullRootDir = @"C:\Projects\MyApp\MyApp.Core",
+            OutputType = "Library",
+            Language = "C#",
             LanguageVersion = "12.0",
             Conventions = new ConventionInfo
             {
-                HasEditorConfig     = true,
-                UsesNullable        = true,
-                UsesImplicitUsings  = true,
-                TestFrameworkHint   = "Unknown",
+                HasEditorConfig = true,
+                UsesNullable = true,
+                UsesImplicitUsings = true,
+                TestFrameworkHint = "Unknown",
                 DefaultNamespaceStyle = "MyApp.Core"
             }
         };
@@ -76,15 +76,17 @@ internal static class TestFixtures
         // 文件索引
         p.Files.AddRange(files ?? new[]
         {
-            BuildFile(@"C:\Projects\MyApp\MyApp.Core", @"Services\UserService.cs",     "Source",  200, baseTime),
-            BuildFile(@"C:\Projects\MyApp\MyApp.Core", @"Services\OrderService.cs",    "Source",  150, baseTime.AddDays(-1)),
-            BuildFile(@"C:\Projects\MyApp\MyApp.Core", @"Models\User.cs",              "Source",   80, baseTime.AddDays(-2)),
-            BuildFile(@"C:\Projects\MyApp\MyApp.Core", @"Models\Order.cs",             "Source",   60, baseTime.AddDays(-3)),
-            BuildFile(@"C:\Projects\MyApp\MyApp.Core", @"Interfaces\IUserService.cs",  "Source",   30, baseTime.AddDays(-4)),
+            BuildFile(@"C:\Projects\MyApp\MyApp.Core", @"Services\UserService.cs", "Source", 200, baseTime),
+            BuildFile(@"C:\Projects\MyApp\MyApp.Core", @"Services\OrderService.cs", "Source", 150,
+                baseTime.AddDays(-1)),
+            BuildFile(@"C:\Projects\MyApp\MyApp.Core", @"Models\User.cs", "Source", 80, baseTime.AddDays(-2)),
+            BuildFile(@"C:\Projects\MyApp\MyApp.Core", @"Models\Order.cs", "Source", 60, baseTime.AddDays(-3)),
+            BuildFile(@"C:\Projects\MyApp\MyApp.Core", @"Interfaces\IUserService.cs", "Source", 30,
+                baseTime.AddDays(-4)),
         });
 
-        p.Statistics.FilesCount  = p.Files.Count;
-        p.Statistics.TypesCount  = 5;
+        p.Statistics.FilesCount = p.Files.Count;
+        p.Statistics.TypesCount = 5;
         p.Statistics.MethodsCount = 12;
         p.Statistics.LinesOfCode = p.Files.Sum(f => f.LinesOfCode);
 
@@ -92,14 +94,11 @@ internal static class TestFixtures
         var ns = new NamespaceInfo { Name = "MyApp.Core.Services", FilePath = CoreProjectPath };
         ns.Types.Add(new TypeInfo
         {
-            Name          = "UserService",
-            Kind          = "Class",
-            Signature     = "public class UserService",
+            Name = "UserService",
+            Kind = "Class",
+            Signature = "public class UserService",
             Accessibility = "Public",
-            FilePath      = @"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs",
-            RelativePath  = @"Services\UserService.cs",
-            LineNumber    = 1,
-            Locations     = new List<CodeLocation>()
+            Locations = [SymbolSemanticFixtures.Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 1, 40)]
         });
         p.Namespaces.Add(ns);
 
@@ -110,14 +109,14 @@ internal static class TestFixtures
     {
         var p = new ProjectInfo
         {
-            Name            = "MyApp.Api",
+            Name = "MyApp.Api",
             ProjectFilePath = ApiProjectPath,
             RelativeRootDir = @"MyApp.Api\MyApp.Api.csproj",
-            FullRootDir     = @"C:\Projects\MyApp\MyApp.Api",
-            OutputType      = "Exe",
-            Language        = "C#",
+            FullRootDir = @"C:\Projects\MyApp\MyApp.Api",
+            OutputType = "Exe",
+            Language = "C#",
             LanguageVersion = "12.0",
-            Conventions     = new ConventionInfo { UsesNullable = true, TestFrameworkHint = "Unknown" }
+            Conventions = new ConventionInfo { UsesNullable = true, TestFrameworkHint = "Unknown" }
         };
         p.TargetFrameworks.Add("net9.0");
         p.ProjectReferences.Add(new ProjectReference
@@ -128,10 +127,10 @@ internal static class TestFixtures
         p.Files.Add(BuildFile(@"C:\Projects\MyApp\MyApp.Api", @"Controllers\UserController.cs", "Source", 120,
             new DateTime(2025, 6, 2, 9, 0, 0, DateTimeKind.Utc)));
 
-        p.Statistics.FilesCount   = p.Files.Count;
-        p.Statistics.TypesCount   = 1;
+        p.Statistics.FilesCount = p.Files.Count;
+        p.Statistics.TypesCount = 1;
         p.Statistics.MethodsCount = 4;
-        p.Statistics.LinesOfCode  = p.Files.Sum(f => f.LinesOfCode);
+        p.Statistics.LinesOfCode = p.Files.Sum(f => f.LinesOfCode);
         return p;
     }
 
@@ -147,14 +146,14 @@ internal static class TestFixtures
         var absPath = Path.Combine(projectRoot, relativeFromProjectRoot);
         return new FileEntryInfo
         {
-            FilePath         = absPath,
-            RelativePath     = relativeFromProjectRoot,
-            ProjectFilePath  = Path.Combine(projectRoot, Path.GetFileName(projectRoot) + ".csproj"),
-            Extension        = Path.GetExtension(absPath),
-            SizeBytes        = lines * 40L,  // rough estimate
-            LinesOfCode      = lines,
+            FilePath = absPath,
+            RelativePath = relativeFromProjectRoot,
+            ProjectFilePath = Path.Combine(projectRoot, Path.GetFileName(projectRoot) + ".csproj"),
+            Extension = Path.GetExtension(absPath),
+            SizeBytes = lines * 40L, // rough estimate
+            LinesOfCode = lines,
             LastWriteTimeUtc = lastWrite,
-            Kind             = kind
+            Kind = kind
         };
     }
 }

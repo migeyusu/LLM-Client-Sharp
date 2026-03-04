@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using AutoMapper;
 using LLMClient.ContextEngineering;
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.PromptGeneration;
@@ -10,12 +11,13 @@ namespace LLMClient.Test;
 
 public class PromptContext
 {
-    private AnalyzerConfig _analyzerConfig;
+    private readonly AnalyzerConfig _analyzerConfig;
 
-    private ITestOutputHelper _output;
+    private readonly ITestOutputHelper _output;
 
-    const string solutionPath = @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\AIClient.sln";
-    
+    private const string SolutionPath = @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\AIClient.sln";
+
+    private IMapper _mapper;
 
     public PromptContext(ITestOutputHelper output)
     {
@@ -28,13 +30,16 @@ public class PromptContext
             IncludePrivateMembers = true,
             MaxConcurrency = 4
         };
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<RoslynMappingProfile>(),
+            LoggerFactory.Create(builder => builder.AddDebug()));
+        _mapper = config.CreateMapper();
     }
 
     [Fact]
     public async Task FileTree()
     {
-        using var analyzer = new RoslynProjectAnalyzer(null, _analyzerConfig);
-        var projectInfo = await analyzer.AnalyzeSolutionAsync(solutionPath);
+        using var analyzer = new RoslynProjectAnalyzer(null, _mapper, _analyzerConfig);
+        var projectInfo = await analyzer.AnalyzeSolutionAsync(SolutionPath);
         var fileTreeFormatter = new FileTreeFormatter();
         var format = fileTreeFormatter.Format(projectInfo);
         var outputPath = "filetree.md";
@@ -55,11 +60,11 @@ public class PromptContext
             // 缓存管理
             // var cacheManager = new InfoCacheManager();
             // 分析
-            using var analyzer = new RoslynProjectAnalyzer(iLogger, _analyzerConfig);
+            using var analyzer = new RoslynProjectAnalyzer(iLogger, _mapper, _analyzerConfig);
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            var summary = await analyzer.AnalyzeSolutionAsync(solutionPath);
+            var summary = await analyzer.AnalyzeSolutionAsync(SolutionPath);
             _output.WriteLine($"First analysis completed in {stopwatch.ElapsedMilliseconds}ms");
             stopwatch.Restart();
             /*var summary = await cacheManager.GetOrGenerateAsync(
@@ -71,7 +76,7 @@ public class PromptContext
             // 格式化输出
             var formatterOptions = new FormatterOptions
             {
-                IncludeMembers = false,
+                IncludeMembers = true,
                 IncludePackages = true
             };
 

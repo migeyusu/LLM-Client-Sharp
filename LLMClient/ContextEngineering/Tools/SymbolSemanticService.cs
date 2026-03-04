@@ -1,4 +1,6 @@
-﻿using LLMClient.ContextEngineering.Analysis;
+﻿using System.Runtime.CompilerServices;
+using AutoMapper;
+using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.Tools.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -11,10 +13,16 @@ using TypeInfo = LLMClient.ContextEngineering.Analysis.TypeInfo;
 
 namespace LLMClient.ContextEngineering.Tools;
 
-public sealed class SymbolSemanticService
+internal sealed class SymbolSemanticService
 {
+    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_IsWrittenTo")]
+    private static extern bool GetIsWrittenToInternal(ReferenceLocation location);
+
     private readonly SolutionContext _context;
     private readonly ILogger<SymbolSemanticService>? _logger;
+    private readonly IMapper _mapper;
+
+    private ISymbolIndex _symbolIndex;
 
     // 硬性上限，防止 LLM 被海量数据淹没
     private const int MaxCallers = 50;
@@ -22,10 +30,17 @@ public sealed class SymbolSemanticService
     private const int MaxUsages = 200;
     private const int MaxDerivedTypes = 50;
 
-    public SymbolSemanticService(SolutionContext context, ILogger<SymbolSemanticService>? logger = null)
+    public SymbolSemanticService(SolutionContext context, IMapper mapper, ILogger<SymbolSemanticService>? logger = null)
     {
         _context = context;
+        _mapper = mapper;
         _logger = logger;
+        _symbolIndex = new ContextSymbolIndex(context);
+    }
+
+    internal void SetIndexServiceForTesting(ISymbolIndex indexService)
+    {
+        _symbolIndex = indexService;
     }
 
     // ── search_symbols ────────────────────────────────────────────────────
@@ -36,71 +51,39 @@ public sealed class SymbolSemanticService
         string? scope = null,
         int topK = 20)
     {
-        var info = _context.RequireSolutionInfo();
-        topK = Math.Clamp(topK, 1, 100);
+        var info = _context.RequireSolutionInfoOrThrow();
 
-        var scored = new List<(SymbolInfo sym, double score)>();
-
-        foreach (var sym in EnumerateAllSymbols(info))
-        {
-            // kind 过滤（大小写不敏感）
-            if (!string.IsNullOrWhiteSpace(kind) &&
-                !sym.Kind.Equals(kind, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            // scope 过滤：匹配文件路径片段 或 签名前缀（命名空间）
-            if (!string.IsNullOrWhiteSpace(scope) &&
-                !sym.FilesPath.Any(fp => fp.Contains(scope, StringComparison.OrdinalIgnoreCase)) &&
-                !sym.Signature.Contains(scope, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            var score = ScoreSymbol(sym, query);
-            if (score > 0)
-                scored.Add((sym, score));
-        }
+        var scored = _symbolIndex.Search(query, kind, scope);
 
         return scored
-            .OrderByDescending(x => x.score)
+            .OrderByDescending(x => x.Score)
             .Take(topK)
-            .Select(x => ToSearchResult(x.sym, x.score, info))
+            .Select(x => ToSearchResult(x.Sym, x.Score, info))
             .ToList();
-    }
-
-    private static double ScoreSymbol(SymbolInfo sym, string query)
-    {
-        // 精确名称匹配权重最高，向下依次降级
-        if (sym.Name.Equals(query, StringComparison.OrdinalIgnoreCase)) return 1.0;
-        if (sym.Name.StartsWith(query, StringComparison.OrdinalIgnoreCase)) return 0.85;
-        if (sym.Name.Contains(query, StringComparison.OrdinalIgnoreCase)) return 0.70;
-        if (sym.Signature.Contains(query, StringComparison.OrdinalIgnoreCase)) return 0.45;
-
-        var summary = sym is MemberInfo mi ? mi.Comment : sym.Summary;
-        if (summary?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) return 0.30;
-
-        return 0;
     }
 
     // ── get_symbol_detail ─────────────────────────────────────────────────
 
     public SymbolDetailView GetSymbolDetail(string symbolId)
     {
-        var info = _context.RequireSolutionInfo();
-        var sym = ResolveSymbol(symbolId, info)
+        var info = _context.RequireSolutionInfoOrThrow();
+
+        var sym = _symbolIndex.GetByKey(symbolId)
                   ?? throw new ArgumentException(
                       $"Symbol '{symbolId}' not found. Use search_symbols to discover valid IDs.");
 
-        var (containingType, containingNs) = ResolveContaining(sym, info);
+        var (containingType, _) = ResolveContaining(sym, info);
 
         var view = new SymbolDetailView
         {
-            SymbolId = GetId(sym),
+            SymbolId = sym.SymbolId,
             Name = sym.Name,
             Kind = sym.Kind,
             Signature = sym.Signature,
             Accessibility = sym.Accessibility,
-            Summary = sym is MemberInfo m0 ? m0.Comment ?? sym.Summary : sym.Summary,
+            Summary = sym.Summary,
             Attributes = sym.Attributes.ToList(),
-            Locations = MapLocations(sym.Locations)
+            Locations = _mapper.Map<List<LocationView>>(sym.Locations)
         };
 
         if (sym is TypeInfo ti)
@@ -151,10 +134,10 @@ public sealed class SymbolSemanticService
         string? kindFilter = null,
         string? accessibilityFilter = null)
     {
-        var info = _context.RequireSolutionInfo();
-        var typeInfo = ResolveType(typeId, info)
-                       ?? throw new ArgumentException($"Type '{typeId}' not found.");
+        _context.RequireSolutionInfoOrThrow();
 
+        var byKey = _symbolIndex.GetByKey(typeId) as TypeInfo;
+        var typeInfo = byKey ?? throw new ArgumentException($"Type '{typeId}' not found.");
         var members = typeInfo.Members.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(kindFilter))
@@ -169,23 +152,11 @@ public sealed class SymbolSemanticService
 
         return new TypeMembersView
         {
-            TypeId = GetId(typeInfo),
+            TypeId = typeInfo.SymbolId,
             TypeName = typeInfo.Name,
             TypeSignature = typeInfo.Signature,
             TotalCount = list.Count,
-            Members = list.Select(m => new MemberSummaryView
-            {
-                SymbolId = GetId(m),
-                Name = m.Name,
-                Kind = m.Kind,
-                Signature = m.Signature,
-                Accessibility = m.Accessibility,
-                ReturnType = m.ReturnType,
-                Summary = m.Comment,
-                IsStatic = m.IsStatic,
-                IsAsync = m.IsAsync,
-                Location = MapLocations(m.Locations).FirstOrDefault()
-            }).ToList()
+            Members = _mapper.Map<List<MemberSummaryView>>(list)
         };
     }
 
@@ -195,13 +166,13 @@ public sealed class SymbolSemanticService
         string typeId,
         CancellationToken ct = default)
     {
-        var info = _context.RequireSolutionInfo();
-        var typeInfo = ResolveType(typeId, info)
-                       ?? throw new ArgumentException($"Type '{typeId}' not found.");
+        var info = _context.RequireSolutionInfoOrThrow();
+        var byKey = _symbolIndex.GetByKey(typeId) as TypeInfo;
+        var typeInfo = byKey ?? throw new ArgumentException($"Type '{typeId}' not found.");
 
         var baseView = new TypeHierarchyView
         {
-            TypeId = GetId(typeInfo),
+            TypeId = typeInfo.SymbolId,
             TypeName = typeInfo.Name,
             TypeSignature = typeInfo.Signature,
             BaseChain = typeInfo.BaseTypes.ToList(),
@@ -211,7 +182,7 @@ public sealed class SymbolSemanticService
         // 优先使用 Roslyn SymbolFinder（精确）
         try
         {
-            var solution = _context.RequireRoslynSolution();
+            var solution = _context.RequireRoslynSolutionOrThrow();
             var roslynType = await ResolveRoslynNamedTypeAsync(typeInfo, solution, ct);
             if (roslynType != null)
             {
@@ -247,20 +218,20 @@ public sealed class SymbolSemanticService
         string interfaceId,
         CancellationToken ct = default)
     {
-        var info = _context.RequireSolutionInfo();
-        var typeInfo = ResolveType(interfaceId, info)
+        var info = _context.RequireSolutionInfoOrThrow();
+        var typeInfo = _symbolIndex.GetByKey(interfaceId) as TypeInfo
                        ?? throw new ArgumentException($"Interface '{interfaceId}' not found.");
 
         try
         {
-            var solution = _context.RequireRoslynSolution();
+            var solution = _context.RequireRoslynSolutionOrThrow();
             var roslynType = await ResolveRoslynNamedTypeAsync(typeInfo, solution, ct);
             if (roslynType != null)
             {
                 var impls = await SymbolFinder.FindImplementationsAsync(roslynType, solution, cancellationToken: ct);
                 return new ImplementationsView
                 {
-                    InterfaceId = GetId(typeInfo),
+                    InterfaceId = typeInfo.SymbolId,
                     InterfaceName = typeInfo.Name,
                     Implementations = impls.Take(100).Select(ToBrief).ToList(),
                     Source = "Roslyn"
@@ -274,7 +245,7 @@ public sealed class SymbolSemanticService
 
         return new ImplementationsView
         {
-            InterfaceId = GetId(typeInfo),
+            InterfaceId = typeInfo.SymbolId,
             InterfaceName = typeInfo.Name,
             Implementations = FindImplementationsInIndex(typeInfo.Name, info),
             Source = "Index"
@@ -288,17 +259,17 @@ public sealed class SymbolSemanticService
         string? scope = null,
         CancellationToken ct = default)
     {
-        var info = _context.RequireSolutionInfo();
-        var sym = ResolveSymbol(symbolId, info)
+        _context.RequireSolutionInfoOrThrow();
+        var sym = _symbolIndex.GetByKey(symbolId)
                   ?? throw new ArgumentException($"Symbol '{symbolId}' not found.");
 
-        var solution = _context.RequireRoslynSolution();
+        var solution = _context.RequireRoslynSolutionOrThrow();
         var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct);
 
         if (roslynSym == null)
         {
             _logger?.LogWarning("Could not resolve Roslyn symbol for '{Id}'", symbolId);
-            return new CallersView { SymbolId = GetId(sym), SymbolName = sym.Name };
+            return new CallersView { SymbolId = sym.SymbolId, SymbolName = sym.Name };
         }
 
         var callerInfos = await SymbolFinder.FindCallersAsync(roslynSym, solution, ct);
@@ -308,7 +279,7 @@ public sealed class SymbolSemanticService
                          ci.CallingSymbol.Locations
                              .Any(l => l.IsInSource &&
                                        l.GetLineSpan().Path
-                                        .Contains(scope, StringComparison.OrdinalIgnoreCase)))
+                                           .Contains(scope, StringComparison.OrdinalIgnoreCase)))
             .Take(MaxCallers)
             .Select(ci => new CallerView
             {
@@ -317,22 +288,13 @@ public sealed class SymbolSemanticService
                 CallerName = ci.CallingSymbol.Name,
                 CallerSignature = ci.CallingSymbol.ToDisplayString(
                     SymbolDisplayFormat.MinimallyQualifiedFormat),
-                CallSites = ci.Locations.Select(loc =>
-                {
-                    var span = loc.GetLineSpan();
-                    return new LocationView
-                    {
-                        FilePath = span.Path,
-                        StartLine = span.StartLinePosition.Line + 1,
-                        EndLine = span.EndLinePosition.Line + 1
-                    };
-                }).ToList()
+                CallSites = _mapper.Map<List<LocationView>>(ci.Locations)
             })
             .ToList();
 
         return new CallersView
         {
-            SymbolId = GetId(sym),
+            SymbolId = sym.SymbolId,
             SymbolName = sym.Name,
             TotalCallers = callers.Count,
             Callers = callers
@@ -345,15 +307,15 @@ public sealed class SymbolSemanticService
         string symbolId,
         CancellationToken ct = default)
     {
-        var info = _context.RequireSolutionInfo();
-        var sym = ResolveSymbol(symbolId, info)
+        _context.RequireSolutionInfoOrThrow();
+        var sym = _symbolIndex.GetByKey(symbolId)
                   ?? throw new ArgumentException($"Symbol '{symbolId}' not found.");
 
-        var solution = _context.RequireRoslynSolution();
+        var solution = _context.RequireRoslynSolutionOrThrow();
         var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct);
 
         if (roslynSym == null)
-            return new CalleesView { SymbolId = GetId(sym), SymbolName = sym.Name };
+            return new CalleesView { SymbolId = sym.SymbolId, SymbolName = sym.Name };
 
         var callees = new List<SymbolBriefView>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -361,11 +323,11 @@ public sealed class SymbolSemanticService
         // 取第一个源码位置所在的文档进行语法树遍历
         var sourceLoc = roslynSym.Locations.FirstOrDefault(l => l.IsInSource);
         if (sourceLoc == null)
-            return new CalleesView { SymbolId = GetId(sym), SymbolName = sym.Name };
+            return new CalleesView { SymbolId = sym.SymbolId, SymbolName = sym.Name };
 
         var doc = solution.GetDocument(sourceLoc.SourceTree);
         if (doc == null)
-            return new CalleesView { SymbolId = GetId(sym), SymbolName = sym.Name };
+            return new CalleesView { SymbolId = sym.SymbolId, SymbolName = sym.Name };
 
         var semanticModel = await doc.GetSemanticModelAsync(ct);
         var root = await sourceLoc.SourceTree!.GetRootAsync(ct);
@@ -391,7 +353,7 @@ public sealed class SymbolSemanticService
 
         return new CalleesView
         {
-            SymbolId = GetId(sym),
+            SymbolId = sym.SymbolId,
             SymbolName = sym.Name,
             Callees = callees
         };
@@ -403,15 +365,15 @@ public sealed class SymbolSemanticService
         string symbolId,
         CancellationToken ct = default)
     {
-        var info = _context.RequireSolutionInfo();
-        var sym = ResolveSymbol(symbolId, info)
+        _context.RequireSolutionInfoOrThrow();
+        var sym = _symbolIndex.GetByKey(symbolId)
                   ?? throw new ArgumentException($"Symbol '{symbolId}' not found.");
 
-        var solution = _context.RequireRoslynSolution();
+        var solution = _context.RequireRoslynSolutionOrThrow();
         var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct);
 
         if (roslynSym == null)
-            return new UsagesView { SymbolId = GetId(sym), SymbolName = sym.Name };
+            return new UsagesView { SymbolId = sym.SymbolId, SymbolName = sym.Name };
 
         var references = await SymbolFinder.FindReferencesAsync(roslynSym, solution, ct);
 
@@ -420,19 +382,17 @@ public sealed class SymbolSemanticService
         {
             foreach (var refLoc in refGroup.Locations)
             {
-                
                 if (!refLoc.Location.IsInSource) continue;
-                
+
                 var lineSpan = refLoc.Location.GetLineSpan();
                 var snippet = await GetSnippetAsync(solution, refLoc, ct);
-
                 usages.Add(new UsageView
                 {
                     FilePath = lineSpan.Path,
                     Line = lineSpan.StartLinePosition.Line + 1,
                     Column = lineSpan.StartLinePosition.Character + 1,
                     Snippet = snippet,
-                    UsageKind = refLoc.IsWrittenTo ? "Write"
+                    UsageKind = GetIsWrittenToInternal(refLoc) ? "Write"
                         : refLoc.IsImplicit ? "Implicit"
                         : "Read"
                 });
@@ -445,7 +405,7 @@ public sealed class SymbolSemanticService
         var truncated = usages.Count > MaxUsages;
         return new UsagesView
         {
-            SymbolId = GetId(sym),
+            SymbolId = sym.SymbolId,
             SymbolName = sym.Name,
             TotalUsages = usages.Count,
             Truncated = truncated,
@@ -460,7 +420,7 @@ public sealed class SymbolSemanticService
 
     public DependencyGraphView GetDependencyGraph(string? projectName = null, int depth = 2)
     {
-        var info = _context.RequireSolutionInfo();
+        var info = _context.RequireSolutionInfoOrThrow();
         depth = Math.Clamp(depth, 1, 5);
 
         var roots = string.IsNullOrWhiteSpace(projectName)
@@ -526,7 +486,7 @@ public sealed class SymbolSemanticService
 
     public NamespaceTypesView GetNamespaceTypes(string namespaceName, bool includeSubNamespaces = true)
     {
-        var info = _context.RequireSolutionInfo();
+        var info = _context.RequireSolutionInfoOrThrow();
 
         var types = info.Projects
             .SelectMany(p => p.Namespaces)
@@ -542,17 +502,7 @@ public sealed class SymbolSemanticService
             Namespace = namespaceName,
             IncludesSubNamespaces = includeSubNamespaces,
             TotalCount = types.Count,
-            Types = types.Select(t => new TypeSummaryView
-                {
-                    SymbolId = GetId(t),
-                    Name = t.Name,
-                    Kind = t.Kind,
-                    Signature = t.Signature,
-                    Accessibility = t.Accessibility,
-                    Summary = t.Summary,
-                    MemberCount = t.Members.Count,
-                    Location = MapLocations(t.Locations).FirstOrDefault()
-                })
+            Types = _mapper.Map<List<TypeSummaryView>>(types)
                 .OrderBy(t => t.Kind)
                 .ThenBy(t => t.Name)
                 .ToList()
@@ -607,110 +557,33 @@ public sealed class SymbolSemanticService
 
     // ── 通用 helpers ────────────────────────────────────────────────────────
 
-    private static IEnumerable<SymbolInfo> EnumerateAllSymbols(SolutionInfo info)
-    {
-        foreach (var project in info.Projects)
-        foreach (var ns in project.Namespaces)
-        foreach (var type in ns.Types)
-        {
-            yield return type;
-            foreach (var member in type.Members)
-                yield return member;
-        }
-    }
-
-    /// <summary>
-    /// 按 symbolId 定位符号。优先精确 UniqueId/Signature 匹配，次之名称匹配。
-    /// </summary>
-    private static SymbolInfo? ResolveSymbol(string symbolId, SolutionInfo info)
-    {
-        SymbolInfo? nameMatch = null;
-
-        foreach (var sym in EnumerateAllSymbols(info))
-        {
-            var id = GetId(sym);
-            if (id == symbolId) return sym; // 精确命中
-
-            if (nameMatch == null &&
-                sym.Name.Equals(symbolId, StringComparison.OrdinalIgnoreCase))
-                nameMatch = sym;
-        }
-
-        return nameMatch;
-    }
-
-    private static TypeInfo? ResolveType(string typeId, SolutionInfo info)
-    {
-        TypeInfo? nameMatch = null;
-
-        foreach (var project in info.Projects)
-        foreach (var ns in project.Namespaces)
-        foreach (var type in ns.Types)
-        {
-            if (GetId(type) == typeId) return type;
-
-            if (nameMatch == null &&
-                type.Name.Equals(typeId, StringComparison.OrdinalIgnoreCase))
-                nameMatch = type;
-        }
-
-        return nameMatch;
-    }
-
     private static (string? containingType, string? containingNs) ResolveContaining(
         SymbolInfo sym, SolutionInfo info)
     {
-        var id = GetId(sym);
+        var id = sym.SymbolId;
         foreach (var project in info.Projects)
         foreach (var ns in project.Namespaces)
         foreach (var type in ns.Types)
         {
-            if (GetId(type) == id) return (null, ns.Name);
-            if (type.Members.Any(m => GetId(m) == id)) return (type.Name, ns.Name);
+            if (type.SymbolId == id) return (null, ns.Name);
+            if (type.Members.Any(m => m.SymbolId == id)) return (type.Name, ns.Name);
         }
 
         return (null, null);
     }
 
-    private static List<LocationView> MapLocations(IEnumerable<CodeLocation> locs)
-        => locs.Select(l => new LocationView
-        {
-            FilePath = l.FilePath,
-            StartLine = l.Location.Start.Line,
-            EndLine = l.Location.End.Line
-        }).ToList();
-
-    private static SymbolBriefView ToBrief(INamedTypeSymbol sym)
+    private SymbolBriefView ToBrief(INamedTypeSymbol sym)
         => ToBrief((ISymbol)sym);
 
-    private static SymbolBriefView ToBrief(ISymbol sym)
+    private SymbolBriefView ToBrief(ISymbol sym)
     {
-        var loc = sym.Locations.FirstOrDefault(l => l.IsInSource);
-        LocationView? locView = null;
-        if (loc != null)
-        {
-            var span = loc.GetLineSpan();
-            locView = new LocationView
-            {
-                FilePath = span.Path,
-                StartLine = span.StartLinePosition.Line + 1,
-                EndLine = span.EndLinePosition.Line + 1
-            };
-        }
-
-        return new SymbolBriefView
-        {
-            SymbolId = sym.GetDocumentationCommentId() ?? sym.ToDisplayString(),
-            Name = sym.Name,
-            Signature = sym.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
-            Location = locView
-        };
+        return _mapper.Map<SymbolBriefView>(sym);
     }
 
-    private static void AddCalleeIfNew(ISymbol? sym, HashSet<string> seen, List<SymbolBriefView> callees)
+    private void AddCalleeIfNew(ISymbol? sym, HashSet<string> seen, List<SymbolBriefView> callees)
     {
         if (sym == null) return;
-        var id = sym.GetDocumentationCommentId() ?? sym.ToDisplayString();
+        var id = sym.GetSymbolId();
         if (seen.Add(id))
             callees.Add(ToBrief(sym));
     }
@@ -734,46 +607,49 @@ public sealed class SymbolSemanticService
         }
     }
 
-    private static List<SymbolBriefView> FindDerivedInIndex(string baseName, SolutionInfo info)
+    private List<SymbolBriefView> FindDerivedInIndex(string baseName, SolutionInfo info)
         => info.Projects
             .SelectMany(p => p.Namespaces).SelectMany(n => n.Types)
             .Where(t => t.BaseTypes.Any(bt => bt.Contains(baseName, StringComparison.OrdinalIgnoreCase)) ||
                         t.ImplementedInterfaces.Any(i => i.Contains(baseName, StringComparison.OrdinalIgnoreCase)))
             .Take(MaxDerivedTypes)
-            .Select(t => new SymbolBriefView
-            {
-                SymbolId = GetId(t), Name = t.Name, Signature = t.Signature,
-                Location = MapLocations(t.Locations).FirstOrDefault()
-            }).ToList();
+            .Select(t => _mapper.Map<SymbolBriefView>(t))
+            .ToList();
 
-    private static List<SymbolBriefView> FindImplementationsInIndex(string ifaceName, SolutionInfo info)
+    private List<SymbolBriefView> FindImplementationsInIndex(string ifaceName, SolutionInfo info)
         => info.Projects
             .SelectMany(p => p.Namespaces).SelectMany(n => n.Types)
             .Where(t => t.ImplementedInterfaces.Any(i => i.Contains(ifaceName, StringComparison.OrdinalIgnoreCase)))
             .Take(100)
-            .Select(t => new SymbolBriefView
-            {
-                SymbolId = GetId(t), Name = t.Name, Signature = t.Signature,
-                Location = MapLocations(t.Locations).FirstOrDefault()
-            }).ToList();
+            .Select(t => _mapper.Map<SymbolBriefView>(t))
+            .ToList();
 
     private SymbolSearchResult ToSearchResult(SymbolInfo sym, double score, SolutionInfo info)
     {
         var (containingType, containingNs) = ResolveContaining(sym, info);
-        return new SymbolSearchResult
+        return _mapper.Map<SymbolSearchResult>(sym, opts =>
         {
-            SymbolId = GetId(sym),
-            Name = sym.Name,
-            Kind = sym.Kind,
-            Signature = sym.Signature,
-            Accessibility = sym.Accessibility,
-            ContainingType = containingType,
-            ContainingNamespace = containingNs,
-            Summary = sym is MemberInfo mi ? mi.Comment ?? sym.Summary : sym.Summary,
-            Locations = MapLocations(sym.Locations),
-            Score = Math.Round(score, 2)
-        };
+            opts.Items["Score"] = Math.Round(score, 2);
+            opts.Items["ContainingType"] = containingType;
+            opts.Items["ContainingNamespace"] = containingNs;
+        });
     }
 
-    private static string GetId(SymbolInfo sym) => sym.UniqueId ?? sym.Signature;
+    internal interface ISymbolIndex
+    {
+        IEnumerable<(SymbolInfo Sym, double Score)> Search(string query, string? kind, string? scope);
+        SymbolInfo? GetByKey(string key);
+    }
+
+    private class ContextSymbolIndex : ISymbolIndex
+    {
+        private readonly SolutionContext _ctx;
+        public ContextSymbolIndex(SolutionContext ctx) => _ctx = ctx;
+
+        public IEnumerable<(SymbolInfo Sym, double Score)> Search(string query, string? kind, string? scope)
+            => _ctx.Analyzer.IndexService.Search(query, kind, scope);
+
+        public SymbolInfo? GetByKey(string key)
+            => _ctx.Analyzer.IndexService.GetByKey(key);
+    }
 }

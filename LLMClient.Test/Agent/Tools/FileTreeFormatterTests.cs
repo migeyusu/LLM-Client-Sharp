@@ -201,18 +201,6 @@ public class FileTreeFormatterTests
         Assert.Contains("MyApp.Core", result);
     }
 
-    [Fact]
-    public void Format_ProjectInfo_WhenFilesEmpty_FallsBackToTypes()
-    {
-        var project = TestFixtures.BuildCoreProject();
-        project.Files.Clear(); // 强制触发 fallback
-
-        var result = _formatter.Format(project);
-
-        // fallback 从 Types.RelativePath 读取
-        Assert.Contains("UserService.cs", result);
-    }
-
     // ── SolutionInfo 重载 ────────────────────────────────────────────────
 
     [Fact]

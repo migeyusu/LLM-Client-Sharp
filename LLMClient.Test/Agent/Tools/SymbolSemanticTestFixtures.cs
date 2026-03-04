@@ -4,361 +4,226 @@ using Microsoft.CodeAnalysis.Text;
 namespace LLMClient.Test.Agent.Tools;
 
 /// <summary>
-/// 扩展 TestFixtures：构建含完整符号树的测试数据。
-/// 继承 TestFixtures 的路径常量，保持一致性。
+/// 为符号语义分析测试提供富数据 SolutionInfo。
+/// 与 TestFixtures 互补：TestFixtures 侧重项目/文件结构，本类侧重命名空间/类型/成员。
 /// </summary>
-internal static class SymbolSemanticTestFixtures
+internal static class SymbolSemanticFixtures
 {
-    // ── 符号 ID 常量（测试断言复用）────────────────────────────────────
+    // ── DocumentId 常量 ──────────────────────────────────────────────────
+    public const string UserServiceId      = "T:MyApp.Core.Services.UserService";
+    public const string IUserServiceId     = "T:MyApp.Core.Services.IUserService";
+    public const string OrderServiceId     = "T:MyApp.Core.Services.OrderService";
+    public const string UserModelId        = "T:MyApp.Core.Models.User";
+    public const string UserControllerId   = "T:MyApp.Api.Controllers.UserController";
 
-    public const string UserServiceTypeId = "T:MyApp.Core.Services.UserService";
-    public const string IUserServiceTypeId = "T:MyApp.Core.Services.IUserService";
-    public const string UserTypeId = "T:MyApp.Core.Models.User";
-    public const string OrderServiceTypeId = "T:MyApp.Core.Services.OrderService";
+    public const string SaveAsyncId        = "M:MyApp.Core.Services.UserService.SaveAsync(MyApp.Core.Models.User)";
+    public const string GetByIdId          = "M:MyApp.Core.Services.UserService.GetById(System.Int32)";
+    public const string NamePropertyId     = "P:MyApp.Core.Services.UserService.Name";
+    public const string RepositoryFieldId  = "F:MyApp.Core.Services.UserService._repository";
 
-    public const string SaveAsyncMemberId = "M:MyApp.Core.Services.UserService.SaveAsync(MyApp.Core.Models.User)";
-    public const string GetByIdMemberId = "M:MyApp.Core.Services.UserService.GetByIdAsync(System.Int32)";
-    public const string DeleteMemberId = "M:MyApp.Core.Services.UserService.Delete(System.Int32)";
-    public const string UserIdPropId = "P:MyApp.Core.Models.User.Id";
+    // ── Member 构建器 ────────────────────────────────────────────────────
 
-    // ── 主入口 ────────────────────────────────────────────────────────
+    public static MemberInfo SaveAsync() => new()
+    {
+        UniqueId      = SaveAsyncId,
+        Name          = "SaveAsync",
+        Kind          = "Method",
+        Signature     = "public async Task<bool> SaveAsync(User user)",
+        Accessibility = "Public",
+        IsAsync       = true,
+        IsVirtual     = true,
+        IsOverride    = false,
+        IsStatic      = false,
+        ReturnType    = "Task<bool>",
+        Summary       = "Saves a user entity asynchronously.",
+        Parameters    = [new() { Name = "user", Type = "User", HasDefaultValue = false, DefaultValue = null }],
+        Attributes    = [],
+        Locations     = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 20, 30)]
+    };
 
-    /// <summary>构建含三个命名空间、两个项目、完整类型树的 SolutionInfo。</summary>
+    public static MemberInfo GetById() => new()
+    {
+        UniqueId      = GetByIdId,
+        Name          = "GetById",
+        Kind          = "Method",
+        Signature     = "public User? GetById(int id)",
+        Accessibility = "Public",
+        IsAsync       = false,
+        IsVirtual     = false,
+        IsOverride    = false,
+        IsStatic      = false,
+        ReturnType    = "User?",
+        Summary       = "Gets user by identifier.",
+        Parameters    = [new() { Name = "id", Type = "int", HasDefaultValue = false, DefaultValue = null }],
+        Attributes    = [],
+        Locations     = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 35, 40)]
+    };
+
+    public static MemberInfo NameProperty() => new()
+    {
+        UniqueId      = NamePropertyId,
+        Name          = "Name",
+        Kind          = "Property",
+        Signature     = "public string Name { get; set; }",
+        Accessibility = "Public",
+        IsAsync       = false,
+        IsVirtual     = false,
+        IsOverride    = false,
+        IsStatic      = false,
+        ReturnType    = "string",
+        Attributes    = [],
+        Locations     = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 10, 10)]
+    };
+
+    public static MemberInfo RepositoryField() => new()
+    {
+        UniqueId      = RepositoryFieldId,
+        Name          = "_repository",
+        Kind          = "Field",
+        Signature     = "private readonly IUserRepository _repository",
+        Accessibility = "Private",
+        IsAsync       = false,
+        IsVirtual     = false,
+        IsOverride    = false,
+        IsStatic      = false,
+        ReturnType    = "IUserRepository",
+        Attributes    = [],
+        Locations     = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 5, 5)]
+    };
+
+    // ── Type 构建器 ──────────────────────────────────────────────────────
+
+    public static TypeInfo UserService()
+    {
+        var t = new TypeInfo
+        {
+            UniqueId              = UserServiceId,
+            Name                  = "UserService",
+            Kind                  = "Class",
+            Signature             = "public class UserService",
+            Accessibility         = "Public",
+            Summary               = "Handles user business logic.",
+            IsPartial             = false,
+            IsAbstract            = false,
+            IsSealed              = false,
+            ImplementedInterfaces = ["IUserService"],
+            Attributes            = [],
+            Locations             = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 1, 55)]
+        };
+        t.Members.Add(SaveAsync());
+        t.Members.Add(GetById());
+        t.Members.Add(NameProperty());
+        t.Members.Add(RepositoryField());
+        return t;
+    }
+
+    public static TypeInfo IUserService() => new()
+    {
+        UniqueId              = IUserServiceId,
+        Name                  = "IUserService",
+        Kind                  = "Interface",
+        Signature             = "public interface IUserService",
+        Accessibility         = "Public",
+        Summary               = "Contract for user operations.",
+        IsPartial             = false,
+        IsAbstract            = false,
+        IsSealed              = false,
+        ImplementedInterfaces = [],
+        Attributes            = [],
+        Locations             = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\IUserService.cs", 1, 15)]
+    };
+
+    public static TypeInfo OrderService() => new()
+    {
+        UniqueId              = OrderServiceId,
+        Name                  = "OrderService",
+        Kind                  = "Class",
+        Signature             = "public class OrderService",
+        Accessibility         = "Public",
+        Summary               = "Handles order business logic.",
+        IsPartial             = false,
+        IsAbstract            = false,
+        IsSealed              = false,
+        ImplementedInterfaces = [],
+        Attributes            = [],
+        Locations             = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\OrderService.cs", 1, 40)]
+    };
+
+    public static TypeInfo UserModel() => new()
+    {
+        UniqueId              = UserModelId,
+        Name                  = "User",
+        Kind                  = "Record",
+        Signature             = "public record User",
+        Accessibility         = "Public",
+        Summary               = "Represents a user entity.",
+        IsPartial             = false,
+        IsAbstract            = false,
+        IsSealed              = false,
+        ImplementedInterfaces = [],
+        Attributes            = [],
+        Locations             = [Loc(@"C:\Projects\MyApp\MyApp.Core\Models\User.cs", 1, 10)]
+    };
+
+    public static TypeInfo UserController()
+    {
+        var t = new TypeInfo
+        {
+            UniqueId              = UserControllerId,
+            Name                  = "UserController",
+            Kind                  = "Class",
+            Signature             = "public class UserController",
+            Accessibility         = "Public",
+            Summary               = "HTTP endpoints for user operations.",
+            IsPartial             = false,
+            IsAbstract            = false,
+            IsSealed              = false,
+            ImplementedInterfaces = [],
+            Attributes            = ["ApiController", "Route"],
+            Locations             = [Loc(@"C:\Projects\MyApp\MyApp.Api\Controllers\UserController.cs", 1, 80)]
+        };
+        return t;
+    }
+
+    // ── Solution 构建器 ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// 含两个项目、四个命名空间、六个类型（含成员）的完整解决方案。
+    /// 用于所有 SymbolSemanticService 测试。
+    /// </summary>
     public static SolutionInfo BuildRichSolution()
     {
-        var core = BuildRichCoreProject();
-        var api = BuildRichApiProject();
+        var core = TestFixtures.BuildCoreProject();
+        core.Namespaces.Clear(); // 替换 BuildCoreProject 内的简单占位数据
+
+        var servicesNs = new NamespaceInfo
+            { Name = "MyApp.Core.Services", FilePath = TestFixtures.CoreProjectPath };
+        servicesNs.Types.Add(UserService());
+        servicesNs.Types.Add(IUserService());
+        servicesNs.Types.Add(OrderService());
+        core.Namespaces.Add(servicesNs);
+
+        var modelsNs = new NamespaceInfo
+            { Name = "MyApp.Core.Models", FilePath = TestFixtures.CoreProjectPath };
+        modelsNs.Types.Add(UserModel());
+        core.Namespaces.Add(modelsNs);
+
+        var api = TestFixtures.BuildApiProject();
+        var controllersNs = new NamespaceInfo
+            { Name = "MyApp.Api.Controllers", FilePath = TestFixtures.ApiProjectPath };
+        controllersNs.Types.Add(UserController());
+        api.Namespaces.Add(controllersNs);
+
         return TestFixtures.BuildSolution(core, api);
     }
 
-    // ── Core Project ──────────────────────────────────────────────────
+    // ── 内部工具 ─────────────────────────────────────────────────────────
 
-    public static ProjectInfo BuildRichCoreProject()
-    {
-        var p = TestFixtures.BuildCoreProject();   // 继承基础文件索引
-        p.Namespaces.Clear();                       // 替换为更丰富的类型树
-
-        p.Namespaces.Add(BuildServicesNamespace());
-        p.Namespaces.Add(BuildModelsNamespace());
-        p.Namespaces.Add(BuildInterfacesNamespace());
-
-        return p;
-    }
-
-    // ── Namespaces ────────────────────────────────────────────────────
-
-    private static NamespaceInfo BuildServicesNamespace()
-    {
-        var ns = new NamespaceInfo
-        {
-            Name = "MyApp.Core.Services",
-            FilePath = TestFixtures.CoreProjectPath
-        };
-        ns.Types.Add(BuildUserServiceType());
-        ns.Types.Add(BuildOrderServiceType());
-        return ns;
-    }
-
-    private static NamespaceInfo BuildModelsNamespace()
-    {
-        var ns = new NamespaceInfo
-        {
-            Name = "MyApp.Core.Models",
-            FilePath = TestFixtures.CoreProjectPath
-        };
-        ns.Types.Add(BuildUserType());
-        return ns;
-    }
-
-    private static NamespaceInfo BuildInterfacesNamespace()
-    {
-        var ns = new NamespaceInfo
-        {
-            Name = "MyApp.Core.Services",   // 同一命名空间，跨文件
-            FilePath = @"C:\Projects\MyApp\MyApp.Core\Interfaces\IUserService.cs"
-        };
-        ns.Types.Add(BuildIUserServiceType());
-        return ns;
-    }
-
-    // ── Types ─────────────────────────────────────────────────────────
-
-    public static TypeInfo BuildUserServiceType() => new()
-    {
-        UniqueId = UserServiceTypeId,
-        Name = "UserService",
-        Kind = "Class",
-        Signature = "public class UserService",
-        Accessibility = "Public",
-        Summary = "Handles user business logic.",
-        FilePath = @"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs",
-        RelativePath = @"Services\UserService.cs",
-        LineNumber = 5,
-        IsPartial = false,
-        IsAbstract = false,
-        IsSealed = false,
-        ImplementedInterfaces = ["IUserService"],
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 5, 80)],
-        Attributes = ["Injectable"],
-        Members =
-        {
-            BuildSaveAsyncMember(),
-            BuildGetByIdMember(),
-            BuildDeleteMember(),
-            BuildPrivateHelperMember()
-        }
-    };
-
-    public static TypeInfo BuildOrderServiceType() => new()
-    {
-        UniqueId = OrderServiceTypeId,
-        Name = "OrderService",
-        Kind = "Class",
-        Signature = "public class OrderService",
-        Accessibility = "Public",
-        Summary = "Handles order processing.",
-        FilePath = @"C:\Projects\MyApp\MyApp.Core\Services\OrderService.cs",
-        RelativePath = @"Services\OrderService.cs",
-        LineNumber = 1,
-        IsPartial = false,
-        IsAbstract = false,
-        IsSealed = false,
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\OrderService.cs", 1, 50)],
-        Members =
-        {
-            BuildPlaceOrderMember()
-        }
-    };
-
-    public static TypeInfo BuildUserType() => new()
-    {
-        UniqueId = UserTypeId,
-        Name = "User",
-        Kind = "Class",
-        Signature = "public class User",
-        Accessibility = "Public",
-        Summary = "Domain model for a user.",
-        FilePath = @"C:\Projects\MyApp\MyApp.Core\Models\User.cs",
-        RelativePath = @"Models\User.cs",
-        LineNumber = 1,
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Models\User.cs", 1, 25)],
-        Members =
-        {
-            BuildUserIdProp(),
-            BuildUserNameProp()
-        }
-    };
-
-    public static TypeInfo BuildIUserServiceType() => new()
-    {
-        UniqueId = IUserServiceTypeId,
-        Name = "IUserService",
-        Kind = "Interface",
-        Signature = "public interface IUserService",
-        Accessibility = "Public",
-        Summary = "Contract for user operations.",
-        FilePath = @"C:\Projects\MyApp\MyApp.Core\Interfaces\IUserService.cs",
-        RelativePath = @"Interfaces\IUserService.cs",
-        LineNumber = 1,
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Interfaces\IUserService.cs", 1, 15)],
-        Members =
-        {
-            BuildSaveAsyncInterfaceMember()
-        }
-    };
-
-    // ── Members ────────────────────────────────────────────────────────
-
-    public static MemberInfo BuildSaveAsyncMember() => new()
-    {
-        UniqueId = SaveAsyncMemberId,
-        Name = "SaveAsync",
-        Kind = "Method",
-        Signature = "public async Task<bool> SaveAsync(User user)",
-        Accessibility = "Public",
-        ReturnType = "Task<bool>",
-        IsAsync = true,
-        IsStatic = false,
-        IsVirtual = false,
-        IsOverride = false,
-        Comment = "Persists a user entity.",
-        Parameters =
-        [
-            new ParameterInfo { Name = "user", Type = "User", DefaultValue = null }
-        ],
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 10, 25)],
-        Attributes = []
-    };
-
-    public static MemberInfo BuildGetByIdMember() => new()
-    {
-        UniqueId = GetByIdMemberId,
-        Name = "GetByIdAsync",
-        Kind = "Method",
-        Signature = "public async Task<User?> GetByIdAsync(int id)",
-        Accessibility = "Public",
-        ReturnType = "Task<User?>",
-        IsAsync = true,
-        IsStatic = false,
-        IsVirtual = false,
-        IsOverride = false,
-        Comment = "Retrieves a user by primary key.",
-        Parameters =
-        [
-            new ParameterInfo { Name = "id", Type = "int", DefaultValue = null }
-        ],
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 28, 40)],
-        Attributes = []
-    };
-
-    public static MemberInfo BuildDeleteMember() => new()
-    {
-        UniqueId = DeleteMemberId,
-        Name = "Delete",
-        Kind = "Method",
-        Signature = "public bool Delete(int id)",
-        Accessibility = "Public",
-        ReturnType = "bool",
-        IsAsync = false,
-        IsStatic = false,
-        IsVirtual = false,
-        IsOverride = false,
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 43, 55)],
-        Attributes = []
-    };
-
-    public static MemberInfo BuildPrivateHelperMember() => new()
-    {
-        UniqueId = "M:MyApp.Core.Services.UserService.ValidateInternal(MyApp.Core.Models.User)",
-        Name = "ValidateInternal",
-        Kind = "Method",
-        Signature = "private bool ValidateInternal(User user)",
-        Accessibility = "Private",
-        ReturnType = "bool",
-        IsAsync = false,
-        IsStatic = false,
-        IsVirtual = false,
-        IsOverride = false,
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\UserService.cs", 58, 70)],
-        Attributes = []
-    };
-
-    private static MemberInfo BuildSaveAsyncInterfaceMember() => new()
-    {
-        UniqueId = "M:MyApp.Core.Services.IUserService.SaveAsync(MyApp.Core.Models.User)",
-        Name = "SaveAsync",
-        Kind = "Method",
-        Signature = "Task<bool> SaveAsync(User user)",
-        Accessibility = "Public",
-        ReturnType = "Task<bool>",
-        IsAsync = false,
-        IsStatic = false,
-        IsVirtual = false,
-        IsOverride = false,
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Interfaces\IUserService.cs", 3, 4)],
-        Attributes = []
-    };
-
-    private static MemberInfo BuildPlaceOrderMember() => new()
-    {
-        UniqueId = "M:MyApp.Core.Services.OrderService.PlaceOrderAsync(System.Int32)",
-        Name = "PlaceOrderAsync",
-        Kind = "Method",
-        Signature = "public async Task PlaceOrderAsync(int userId)",
-        Accessibility = "Public",
-        ReturnType = "Task",
-        IsAsync = true,
-        IsStatic = false,
-        IsVirtual = false,
-        IsOverride = false,
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Services\OrderService.cs", 5, 30)],
-        Attributes = []
-    };
-
-    private static MemberInfo BuildUserIdProp() => new()
-    {
-        UniqueId = UserIdPropId,
-        Name = "Id",
-        Kind = "Property",
-        Signature = "public int Id { get; set; }",
-        Accessibility = "Public",
-        ReturnType = "int",
-        IsStatic = false,
-        IsVirtual = false,
-        IsOverride = false,
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Models\User.cs", 5, 5)],
-        Attributes = []
-    };
-
-    private static MemberInfo BuildUserNameProp() => new()
-    {
-        UniqueId = "P:MyApp.Core.Models.User.Name",
-        Name = "Name",
-        Kind = "Property",
-        Signature = "public string Name { get; set; }",
-        Accessibility = "Public",
-        ReturnType = "string",
-        IsStatic = false,
-        IsVirtual = false,
-        IsOverride = false,
-        Locations = [Loc(@"C:\Projects\MyApp\MyApp.Core\Models\User.cs", 6, 6)],
-        Attributes = []
-    };
-
-    // ── API Project ────────────────────────────────────────────────────
-
-    private static ProjectInfo BuildRichApiProject()
-    {
-        var p = TestFixtures.BuildApiProject();
-        p.Namespaces.Add(new NamespaceInfo
-        {
-            Name = "MyApp.Api.Controllers",
-            FilePath = TestFixtures.ApiProjectPath,
-            Types =
-            {
-                new TypeInfo
-                {
-                    UniqueId = "T:MyApp.Api.Controllers.UserController",
-                    Name = "UserController",
-                    Kind = "Class",
-                    Signature = "public class UserController",
-                    Accessibility = "Public",
-                    FilePath = @"C:\Projects\MyApp\MyApp.Api\Controllers\UserController.cs",
-                    RelativePath = @"Controllers\UserController.cs",
-                    LineNumber = 1,
-                    Locations = [Loc(@"C:\Projects\MyApp\MyApp.Api\Controllers\UserController.cs", 1, 60)],
-                    Members =
-                    {
-                        new MemberInfo
-                        {
-                            UniqueId = "M:MyApp.Api.Controllers.UserController.GetUser(System.Int32)",
-                            Name = "GetUser",
-                            Kind = "Method",
-                            Signature = "public async Task<IActionResult> GetUser(int id)",
-                            Accessibility = "Public",
-                            ReturnType = "Task<IActionResult>",
-                            IsAsync = true,
-                            IsStatic = false,
-                            IsVirtual = false,
-                            IsOverride = false,
-                            Locations =
-                                [Loc(@"C:\Projects\MyApp\MyApp.Api\Controllers\UserController.cs", 10, 25)],
-                            Attributes = ["HttpGet"]
-                        }
-                    }
-                }
-            }
-        });
-        return p;
-    }
-
-    // ── 工具方法 ──────────────────────────────────────────────────────
-
-    private static CodeLocation Loc(string file, int start, int end) => new()
+    public static CodeLocation Loc(string file, int startLine, int endLine) => new()
     {
         FilePath = file,
         Location = new LinePositionSpan(
-            new LinePosition(start, 1),
-            new LinePosition(end, 1))
+            new LinePosition(startLine, 0),
+            new LinePosition(endLine, 1))
     };
 }

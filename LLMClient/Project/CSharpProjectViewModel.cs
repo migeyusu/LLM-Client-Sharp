@@ -8,6 +8,7 @@ using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.ContextEngineering.Tools;
 using LLMClient.ToolCall;
+using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Project;
 
@@ -32,17 +33,20 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     public override ContextPromptViewModel ProjectContextPrompt => _projectContextPrompt;
 
-    private readonly ProjectAwarenessService _projectAwarenessService;
+    private readonly SolutionContext _solutionContext;
 
     public CSharpProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
+        ILoggerFactory loggerFactory,
         GlobalOptions options, ITokensCounter tokensCounter, RoslynProjectAnalyzer projectAnalyzer,
         IViewModelFactory factory, IEnumerable<ProjectSessionViewModel>? tasks = null)
         : base(option, modelClient, mapper, options, factory, tasks)
     {
-        _projectAwarenessService = new ProjectAwarenessService(projectAnalyzer);
+        _solutionContext = new SolutionContext(projectAnalyzer);
         IAIFunctionGroup[] projectFunctions =
         [
-            new ProjectAwarenessPlugin(_projectAwarenessService)
+            new ProjectAwarenessPlugin(new ProjectAwarenessService(_solutionContext)),
+            new SymbolSemanticPlugin(new SymbolSemanticService(_solutionContext, mapper,
+                loggerFactory.CreateLogger<SymbolSemanticService>()))
         ];
         Requester.FunctionTreeSelector.ConnectSource(new ProxyFunctionGroupSource(() => projectFunctions));
         _projectContextPrompt = new CSharpContextPromptViewModel(projectAnalyzer, this, tokensCounter);

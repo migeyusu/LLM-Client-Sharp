@@ -101,19 +101,7 @@ public class FileTreeFormatter
                 .Select(f => Path.GetRelativePath(baseDir, f.FilePath))
                 .Where(p => !string.IsNullOrWhiteSpace(p) && p != ".");
         }
-
-        // Fallback：从 Type 的 RelativePath 推算（旧行为兼容）
-        return project.Namespaces
-            .SelectMany(n => n.Types)
-            .Select(t =>
-            {
-                var absPath = Path.IsPathRooted(t.RelativePath)
-                    ? t.RelativePath
-                    : Path.Combine(project.FullRootDir, t.RelativePath);
-                return Path.GetRelativePath(baseDir, absPath);
-            })
-            .Where(p => !string.IsNullOrWhiteSpace(p) && p != ".")
-            .Distinct();
+        return [];
     }
 
     // ── 树构建 ────────────────────────────────────────────────────────────

@@ -154,12 +154,15 @@ public static class Extension
     {
         return collection.AddAutoMapper((provider, expression) =>
             {
-                var dialogMappingProfile = provider.GetService<DialogMappingProfile>();
+                var registeredProfiles = provider.GetServices<DialogMappingProfile>();
+                foreach (var profile in registeredProfiles)
+                {
+                    expression.AddProfile(profile);
+                }
                 // 可以在这里添加全局配置
                 expression.AllowNullCollections = true;
                 // cfg.Advanced.AllowAdditiveTypeMapCreation = true; // 如有需要\
                 // var viewModelFactory = provider.GetRequiredService<IViewModelFactory>();
-                expression.AddProfile(dialogMappingProfile);
             },
             Enumerable.Empty<Assembly>());
     }

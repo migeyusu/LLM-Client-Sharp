@@ -6,7 +6,7 @@ namespace LLMClient.ContextEngineering.Analysis;
 /// 跨 Service 共享的解决方案状态。
 /// 由 ProjectAwarenessService.LoadSolutionAsync 写入，所有 Analysis Service 只读消费。
 /// </summary>
-public sealed class SolutionContext
+internal sealed class SolutionContext
 {
     private volatile SolutionInfo? _solutionInfo;
     private volatile Solution? _roslynSolution;
@@ -17,23 +17,23 @@ public sealed class SolutionContext
 
     public bool IsLoaded => _solutionInfo != null && _roslynSolution != null;
 
-    private readonly RoslynProjectAnalyzer _analyzer;
+    public RoslynProjectAnalyzer Analyzer { get; }
 
     public string? SolutionDir { get; private set; }
 
     public SolutionContext(RoslynProjectAnalyzer analyzer)
     {
-        _analyzer = analyzer;
+        Analyzer = analyzer;
     }
 
     public async Task LoadSolutionAsync(string solutionPath, CancellationToken ct = default)
     {
-        _analyzer.CloseCurrentSolution();
-        var info = await _analyzer.AnalyzeSolutionAsync(solutionPath, ct);
+        Analyzer.CloseCurrentSolution();
+        var info = await Analyzer.AnalyzeSolutionAsync(solutionPath, ct);
         _solutionInfo = info;
         SolutionDir = Path.GetDirectoryName(solutionPath)
                        ?? throw new ArgumentException("Invalid solution path");
-        _roslynSolution = _analyzer.CurrentSolution;
+        _roslynSolution = Analyzer.CurrentRawSolution;
     }
 
     internal void Clear()
@@ -42,6 +42,7 @@ public sealed class SolutionContext
         _roslynSolution = null;
     }
 
+    
     internal void SetForTesting(SolutionInfo info)
     {
         _solutionInfo = info;
@@ -50,11 +51,18 @@ public sealed class SolutionContext
     }
 
 
-    public SolutionInfo RequireSolutionInfo()
+    public SolutionInfo RequireSolutionInfoOrThrow()
         => _solutionInfo ?? throw new InvalidOperationException(
             "No solution loaded. Call LoadSolutionAsync first.");
 
-    public Solution RequireRoslynSolution()
+    public Solution RequireRoslynSolutionOrThrow()
         => _roslynSolution ?? throw new InvalidOperationException(
             "No live Roslyn solution. Call LoadSolutionAsync first.");
+    
+    public string RequireSolutionDirOrThrow()
+    {
+        var info = RequireSolutionInfoOrThrow();
+        return Path.GetDirectoryName(info.SolutionPath)
+               ?? throw new InvalidOperationException("Cannot determine solution directory from solution path.");
+    }
 }

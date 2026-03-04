@@ -10,7 +10,6 @@ public class MemberInfo: SymbolInfo
     public bool IsOverride { get; set; }
     public string? ReturnType { get; set; }
     public List<ParameterInfo>? Parameters { get; set; }
-    public string? Comment { get; set; }
 }
 
 public class CodeLocation

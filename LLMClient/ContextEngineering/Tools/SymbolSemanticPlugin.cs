@@ -21,7 +21,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
-    public SymbolSemanticPlugin(SymbolSemanticService service) : base("SymbolSemantic")
+    internal SymbolSemanticPlugin(SymbolSemanticService service) : base("SymbolSemantic")
     {
         _service = service;
     }

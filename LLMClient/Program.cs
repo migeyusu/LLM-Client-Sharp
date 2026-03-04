@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Windows;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component;
 using LLMClient.Component.ViewModel;
@@ -64,10 +65,9 @@ public class Program
                 .AddSingleton<BuiltInFunctionsCollection>()
                 .AddSingleton<CreateSessionViewModel>()
                 .AddSingleton<ITokensCounter, DefaultTokensCounter>()
-                .AddSingleton<DialogMappingProfile>()
+                .AddSingleton<Profile, DialogMappingProfile>()
+                .AddSingleton<Profile, RoslynMappingProfile>()
                 .AddTransient<RoslynProjectAnalyzer>()
-                .AddTransient<IProjectAwarenessService, ProjectAwarenessService>()
-                .AddTransient<ProjectAwarenessPlugin>()
                 .AddTransient<AnalyzerConfig>()
                 .AddSingleton<Summarizer>()
                 .AddMap();

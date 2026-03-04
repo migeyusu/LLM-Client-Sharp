@@ -4,7 +4,7 @@ using LLMClient.ContextEngineering.Tools.Models;
 
 namespace LLMClient.ContextEngineering.Tools;
 
-public sealed class ProjectAwarenessService : IProjectAwarenessService
+internal sealed class ProjectAwarenessService : IProjectAwarenessService
 {
     private readonly FileTreeFormatter _formatter = new();
     private readonly SolutionContext _context;

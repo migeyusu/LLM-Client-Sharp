@@ -129,7 +129,7 @@ public class MarkdownSummaryFormatter
 
                 foreach (var type in ns.Types.Where(IsImportantType).Take(_options.MaxTypesPerNamespace))
                 {
-                    FormatType(sb, type, 2);
+                    FormatType(sb, type, 2, project.FullRootDir);
                 }
 
                 var remainingCount = ns.Types.Count - _options.MaxTypesPerNamespace;
@@ -143,7 +143,7 @@ public class MarkdownSummaryFormatter
         }
     }
 
-    private void FormatType(StringBuilder stringBuilder, TypeInfo type, int indent)
+    private void FormatType(StringBuilder stringBuilder, TypeInfo type, int indent, string rootPath)
     {
         var indentStr = new string(' ', indent);
 
@@ -151,7 +151,7 @@ public class MarkdownSummaryFormatter
         stringBuilder.Append($"{indentStr}- `{type.Name}` ({type.Kind})")
             .Append(" ")
             .Append("*")
-            .Append($"@{type.RelativePath}:{type.LineNumber}")
+            .Append($"@{type.GetRelativePath(rootPath)}:{type.StartLineNumber()}")
             .Append("*");
         stringBuilder.AppendLine();
         // 摘要
@@ -168,7 +168,7 @@ public class MarkdownSummaryFormatter
 
             foreach (var member in importantMembers)
             {
-                stringBuilder.AppendLine($"{indentStr}  - {member.Signature} ({member.Kind})");
+                stringBuilder.AppendLine($"{indentStr}  - {member.Name} ({member.Kind})");
             }
         }
     }
