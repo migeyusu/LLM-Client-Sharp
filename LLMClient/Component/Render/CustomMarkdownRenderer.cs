@@ -16,9 +16,7 @@ public class CustomMarkdownRenderer : WpfRenderer
     // 新增：控制是否启用 TextMate 高亮
     public bool EnableTextMateHighlighting { get; set; } = true;
 
-    public static CustomMarkdownRenderer Instance => Renderer;
-
-    private static readonly CustomMarkdownRenderer Renderer;
+    public static CustomMarkdownRenderer Instance { get; }
 
     public static readonly MarkdownPipeline DefaultPipeline =
         new MarkdownPipelineBuilder()
@@ -34,9 +32,9 @@ public class CustomMarkdownRenderer : WpfRenderer
 
     static CustomMarkdownRenderer()
     {
-        Renderer = new CustomMarkdownRenderer();
-        Renderer.Initialize();
-        DefaultPipeline.Setup(Renderer);
+        Instance = new CustomMarkdownRenderer();
+        Instance.Initialize();
+        DefaultPipeline.Setup(Instance);
     }
 
     public static ComponentResourceKey PermissionRequestStyleKey =>

@@ -10,7 +10,7 @@ namespace LLMClient.Endpoints;
 public class ChatCallResult : IResponse
 {
     public static readonly ChatCallResult Empty = new();
-    
+
     private Exception? _exception;
 
     public UsageDetails? Usage { get; set; }
@@ -38,11 +38,23 @@ public class ChatCallResult : IResponse
     }
 
     public string? ErrorMessage { get; private set; }
-    
+
     /// <summary>
     /// 每千个token的平均延迟，单位ms
     /// </summary>
-    public float? AvgLatencyPerTokens { get; set; }
+    public float? AvgLatencyPerTokens
+    {
+        get
+        {
+            long? usageInputTokenCount = 0;
+            if (this.Latency != 0 && this.Usage != null && (usageInputTokenCount = this.Usage.InputTokenCount) > 0)
+            {
+                return this.Latency / (float)usageInputTokenCount;
+            }
+
+            return null;
+        }
+    }
 
     public bool IsCanceled => Exception is OperationCanceledException;
 

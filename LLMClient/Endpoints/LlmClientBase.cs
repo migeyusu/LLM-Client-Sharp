@@ -138,7 +138,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         return false;
     }
 
-    private readonly Stopwatch _stopwatch = new Stopwatch();
+    private readonly Stopwatch _durationStopwatch = new();
+
+    private readonly Stopwatch _latencyStopwatch = new();
 
 
     const string ToolCalls = "ToolCalls";
@@ -151,7 +153,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 #if DEBUG
         interactor ??= new DebugInvokeInteractor();
 #endif
-        float avgLatencyPerTokens = 0;
         var result = new ChatCallResult();
         try
         {
@@ -286,7 +287,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             Exception? exception = null;
-            int? latency = null;
+            int? totalLatency = null;
             var chatClient = GetChatClient();
             //本次响应的消息列表
             var responseMessages = new List<ChatMessage>();
@@ -313,30 +314,30 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
             var chatContext = new ChatContext(interactor, tempAdditionalProperties)
                 { Streaming = streaming, ShowRequestJson = requestViewItem?.IsDebugMode ?? false };
+            _durationStopwatch.Reset();
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
                 while (true)
                 {
-                    _stopwatch.Reset();
-                    int? loopLatency = null;
                     cancellationToken.ThrowIfCancellationRequested();
                     UsageDetails? loopUsageDetails = null;
                     try
                     {
-                        if (!_stopwatch.IsRunning)
+                        _latencyStopwatch.Restart();
+                        if (!_durationStopwatch.IsRunning)
                         {
-                            _stopwatch.Start();
+                            _durationStopwatch.Start();
                         }
 
                         ChatResponse? preResponse;
                         if (streaming)
                         {
+                            int? loopLatency = null;
                             await foreach (var update in chatClient
                                                .GetStreamingResponseAsync(chatHistory, requestOptions,
                                                    cancellationToken))
                             {
-                                latency ??= (int)_stopwatch.ElapsedMilliseconds;
-                                loopLatency ??= (int)_stopwatch.ElapsedMilliseconds;
+                                loopLatency ??= (int)_latencyStopwatch.ElapsedMilliseconds;
                                 update.TryAddExtendedData();
                                 preUpdates.Add(update);
                                 chatContext.CompleteStreamResponse(result, update);
@@ -345,6 +346,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             }
 
                             preResponse = preUpdates.MergeResponse();
+                            if (totalLatency == null)
+                                totalLatency = loopLatency;
+                            else
+                                totalLatency += loopLatency;
                             preUpdates.Clear();
                         }
                         else
@@ -356,7 +361,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             await chatContext.CompleteResponse(preResponse, result);
                         }
 
-                        _stopwatch.Stop();
+                        _durationStopwatch.Stop();
                         var preResponseMessages = preResponse.Messages;
                         foreach (var preResponseMessage in preResponseMessages)
                         {
@@ -393,18 +398,13 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             }
                         }
 
+                        result.ValidCallTimes++;
                         chatHistory.AddRange(preResponseMessages);
                         responseMessages.AddRange(preResponseMessages);
                         loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
                         if (loopUsageDetails != null)
                         {
                             totalUsageDetails.Add(loopUsageDetails);
-                            if (loopLatency != null)
-                            {
-                                avgLatencyPerTokens = loopUsageDetails.InputTokenCount > 0
-                                    ? loopLatency.Value / (float)loopUsageDetails.InputTokenCount
-                                    : avgLatencyPerTokens;
-                            }
                         }
 
                         finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();
@@ -591,16 +591,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     }
 
                     interactor?.WriteLine();
-                    result.ValidCallTimes++;
                 }
             }
 
-            var duration = (int)Math.Ceiling(_stopwatch.ElapsedMilliseconds / 1000f);
+            var duration = (int)Math.Ceiling(_durationStopwatch.ElapsedMilliseconds / 1000f);
             var price = this.Model.PriceCalculator?.Calculate(totalUsageDetails);
             result.Usage = totalUsageDetails;
             result.ResponseMessages = responseMessages;
             result.Exception = exception;
-            result.Latency = latency ?? 0;
+            result.Latency = totalLatency ?? 0;
             result.Duration = duration;
             result.FinishReason = finishReason;
             result.Price = price;
