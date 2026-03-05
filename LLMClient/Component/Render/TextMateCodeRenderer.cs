@@ -5,7 +5,6 @@ using System.Windows.Markup;
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using TextMateSharp.Grammars;
 using TextMateSharp.Registry;
 using TextMateSharp.Themes;
@@ -107,7 +106,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
         string? name = null;
         if (block is FencedCodeBlock fencedCodeBlock)
         {
-            HtmlAttributes htmlAttributes = fencedCodeBlock.GetAttributes();
+            //HtmlAttributes htmlAttributes = fencedCodeBlock.GetAttributes();
             name = fencedCodeBlock.Info;
             if (name != null)
             {

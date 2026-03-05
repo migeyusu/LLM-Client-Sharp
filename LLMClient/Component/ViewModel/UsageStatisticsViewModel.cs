@@ -114,6 +114,28 @@ public class UsageStatisticsViewModel : BaseViewModel
         }
     }
 
+    public int TotalErrorTimes
+    {
+        get => _totalErrorTimes;
+        set
+        {
+            if (value == _totalErrorTimes) return;
+            _totalErrorTimes = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ISeries[] ErrorTimesSeries
+    {
+        get => _errorTimesSeries;
+        private set
+        {
+            if (Equals(value, _errorTimesSeries)) return;
+            _errorTimesSeries = value;
+            OnPropertyChanged();
+        }
+    }
+
     public float MeanAvgTps
     {
         get => _meanAvgTps;
@@ -121,6 +143,17 @@ public class UsageStatisticsViewModel : BaseViewModel
         {
             if (value.Equals(_meanAvgTps)) return;
             _meanAvgTps = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public float MeanAvgLatencyPerTokens
+    {
+        get => _meanAvgLatencyPerTokens;
+        set
+        {
+            if (value.Equals(_meanAvgLatencyPerTokens)) return;
+            _meanAvgLatencyPerTokens = value;
             OnPropertyChanged();
         }
     }
@@ -134,6 +167,19 @@ public class UsageStatisticsViewModel : BaseViewModel
         {
             if (Equals(value, _averageTpsSeries)) return;
             _averageTpsSeries = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private ISeries[]? _avgLatencyPerTokensSeries;
+
+    public ISeries[]? AvgLatencyPerTokensSeries
+    {
+        get => _avgLatencyPerTokensSeries;
+        private set
+        {
+            if (Equals(value, _avgLatencyPerTokensSeries)) return;
+            _avgLatencyPerTokensSeries = value;
             OnPropertyChanged();
         }
     }
@@ -195,10 +241,13 @@ public class UsageStatisticsViewModel : BaseViewModel
     private long _totalCompletionTokens;
     private int _totalCallTimes;
     private double _totalPrice;
+    private int _totalErrorTimes;
     private float _meanAvgTps;
+    private float _meanAvgLatencyPerTokens;
     private ISeries[] _completionTokensSeries = [];
     private ISeries[] _callTimesSeries = [];
     private ISeries[] _priceSeries = [];
+    private ISeries[] _errorTimesSeries = [];
     private int _criteriaIndex = 0;
 
     private void UpdateSource()
@@ -234,14 +283,20 @@ public class UsageStatisticsViewModel : BaseViewModel
         TotalCompletionTokens = models.Sum(m => m.Usage.CompletionTokens);
         TotalCallTimes = models.Sum(m => m.Usage.CallTimes);
         TotalPrice = models.Sum(m => m.Usage.Price);
+        TotalErrorTimes = models.Sum(m => m.Usage.ErrorTimes);
         MeanAvgTps = models.Count > 0
             ? models.Average(m => m.Usage.AverageTps)
             : 0;
+        MeanAvgLatencyPerTokens = models.Count > 0
+            ? models.Average(m => m.Usage.AvgLatencyPerTokens)
+            : 0;
+
         if (IsPieChart)
         {
             CompletionTokensSeries = CreatePieSeries(models, m => m.Usage.CompletionTokens);
             CallTimesSeries = CreatePieSeries(models, m => m.Usage.CallTimes);
             PriceSeries = CreatePieSeries(models, m => m.Usage.Price, "C2");
+            ErrorTimesSeries = CreatePieSeries(models, m => m.Usage.ErrorTimes);
         }
         else
         {
@@ -249,9 +304,11 @@ public class UsageStatisticsViewModel : BaseViewModel
                 CreateRowSeries(models, (m, i) => { return new Coordinate(i, m.Data.CompletionTokens); });
             CallTimesSeries = CreateRowSeries(models, (m, i) => new Coordinate(i, m.Data.CallTimes));
             PriceSeries = CreateRowSeries(models, (m, i) => new Coordinate(i, m.Data.Price));
+            ErrorTimesSeries = CreateRowSeries(models, (m, i) => new Coordinate(i, m.Data.ErrorTimes));
         }
 
         AverageTpsSeries = CreateRowSeries(models, (m, i) => new Coordinate(i, m.Data.AverageTps));
+        AvgLatencyPerTokensSeries = CreateRowSeries(models, (m, i) => new Coordinate(i, m.Data.AvgLatencyPerTokens), "N2");
     }
 
     /// <summary>

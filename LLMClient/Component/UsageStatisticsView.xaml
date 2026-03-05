@@ -123,6 +123,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -302,6 +303,98 @@
                                 <Setter Property="Content">
                                     <Setter.Value>
                                         <lvc:CartesianChart Series="{Binding AverageTpsSeries}"
+                                                            Tooltip="{StaticResource UsageStatsTooltip}"
+                                                            Background="Transparent">
+                                            <lvc:CartesianChart.XAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis SeparatorsPaint="#dcdcdc" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.XAxes>
+                                            <lvc:CartesianChart.YAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis IsVisible="False" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.YAxes>
+                                        </lvc:CartesianChart>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+                </Grid>
+            </Border>
+
+            <!-- Error Times -->
+            <Border Grid.Row="2" Grid.Column="0" Margin="5" BorderBrush="{DynamicResource MaterialDesignDivider}"
+                    BorderThickness="1" CornerRadius="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                               Margin="10,5">
+                        <Run Text="Error Times" />
+                        <Run Text="{Binding TotalErrorTimes,Mode=OneWay,StringFormat=：{0} @Total}" />
+                    </TextBlock>
+                    <ContentControl Grid.Row="1">
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Setter Property="Content">
+                                    <Setter.Value>
+                                        <lvc:CartesianChart Series="{Binding ErrorTimesSeries}"
+                                                            Tooltip="{StaticResource UsageStatsTooltip}"
+                                                            Background="Transparent">
+                                            <lvc:CartesianChart.XAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis SeparatorsPaint="#dcdcdc" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.XAxes>
+                                            <lvc:CartesianChart.YAxes>
+                                                <lvc:AxesCollection>
+                                                    <lvc:XamlAxis IsVisible="False" />
+                                                </lvc:AxesCollection>
+                                            </lvc:CartesianChart.YAxes>
+                                        </lvc:CartesianChart>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPieChart}" Value="True">
+                                        <Setter Property="Content">
+                                            <Setter.Value>
+                                                <lvc:PieChart Series="{Binding ErrorTimesSeries}"
+                                                              Tooltip="{StaticResource UsageStatsTooltip}"
+                                                              Background="Transparent" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+                </Grid>
+            </Border>
+
+            <!-- Average Latency Per Tokens -->
+            <Border Grid.Row="2" Grid.Column="1" Margin="5"
+                    BorderBrush="{DynamicResource MaterialDesignDivider}"
+                    BorderThickness="1" CornerRadius="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                               Margin="10,5">
+                        <Run Text="Avg Latency/Token (ms)" />
+                        <Run Text="{Binding MeanAvgLatencyPerTokens,Mode=OneWay,StringFormat=：{0:N2} @Mean}" />
+                    </TextBlock>
+                    <ContentControl Grid.Row="1">
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Setter Property="Content">
+                                    <Setter.Value>
+                                        <lvc:CartesianChart Series="{Binding AvgLatencyPerTokensSeries}"
                                                             Tooltip="{StaticResource UsageStatsTooltip}"
                                                             Background="Transparent">
                                             <lvc:CartesianChart.XAxes>
