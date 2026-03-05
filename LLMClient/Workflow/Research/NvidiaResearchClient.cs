@@ -32,7 +32,7 @@ public class NvidiaResearchClient : ResearchClient
     }
 
     [Experimental("SKEXP0110")]
-    public override async Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
+    public override async Task<ChatCallResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
         var prompt = context.Request?.RawTextMessage;
@@ -210,7 +210,7 @@ public class NvidiaResearchClient : ResearchClient
             var finalReport = finalReportBuilder.ToString();
             Information("Report completed.");
 
-            return new CompletedResult
+            return new ChatCallResult
             {
                 Usage = agent.Usage,
                 Latency = 0,
@@ -226,11 +226,11 @@ public class NvidiaResearchClient : ResearchClient
         }
         catch (Exception e)
         {
-            return new CompletedResult()
+            return new ChatCallResult()
             {
                 //todo:
                 Usage = agent?.Usage,
-                ErrorMessage = e.HierarchicalMessage()
+                Exception = e
             };
         }
     }

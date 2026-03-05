@@ -10,6 +10,7 @@ public class UsageCounter : BaseViewModel
     private double _price;
     private float _averageTps;
     private int _errorTimes;
+    private float _avgLatencyPerTokens;
 
     public long CompletionTokens
     {
@@ -66,11 +67,25 @@ public class UsageCounter : BaseViewModel
         }
     }
 
+    /// <summary>
+    /// 每千个token的平均延迟，单位ms
+    /// </summary>
+    public float AvgLatencyPerTokens
+    {
+        get => _avgLatencyPerTokens;
+        set
+        {
+            if (value.Equals(_avgLatencyPerTokens)) return;
+            _avgLatencyPerTokens = value;
+            OnPropertyChanged();
+        }
+    }
+
     public UsageCounter()
     {
     }
 
-    public UsageCounter(CompletedResult result)
+    public UsageCounter(ChatCallResult result)
     {
         this.ErrorTimes = result is { IsInterrupt: true, IsCanceled: false } ? 1 : 0;
         this.CallTimes = result.ValidCallTimes;
@@ -83,6 +98,7 @@ public class UsageCounter : BaseViewModel
         }
 
         this.AverageTps = tps;
+        this.AvgLatencyPerTokens = result.AvgLatencyPerTokens ?? 0f;
     }
 
     public UsageCounter(UsageCounter other)
@@ -92,9 +108,10 @@ public class UsageCounter : BaseViewModel
         this.CompletionTokens = other.CompletionTokens;
         this.Price = other.Price;
         this.AverageTps = other.AverageTps;
+        this.AvgLatencyPerTokens = other.AvgLatencyPerTokens;
     }
 
-    public void Add(CompletedResult result)
+    public void Add(ChatCallResult result)
     {
         this.ErrorTimes += result is { IsInterrupt: true, IsCanceled: false } ? 1 : 0;
         this.CallTimes += result.ValidCallTimes;
@@ -106,13 +123,30 @@ public class UsageCounter : BaseViewModel
             return;
         }
 
-        this.AverageTps = (this.AverageTps + tps) / 2f;
+        //加权平均
+        this.AverageTps = (this.AverageTps * this.CallTimes + tps * result.ValidCallTimes) /
+                          (this.CallTimes + result.ValidCallTimes);
+        var latencyPerTokens = result.AvgLatencyPerTokens ?? 0f;
+        var avgLatencyPerTokens = this.AvgLatencyPerTokens;
+        if (!float.IsNaN(latencyPerTokens) && !float.IsInfinity(latencyPerTokens) && latencyPerTokens > 0
+            && !float.IsNaN(avgLatencyPerTokens) && !float.IsInfinity(avgLatencyPerTokens) &&
+            avgLatencyPerTokens > 0)
+        {
+            this.AvgLatencyPerTokens = (avgLatencyPerTokens * this.CompletionTokens +
+                                        latencyPerTokens * (result.Usage?.OutputTokenCount ?? 0)) /
+                                       (this.CompletionTokens + (result.Usage?.OutputTokenCount ?? 0));
+        }
+        else if (avgLatencyPerTokens == 0f || float.IsNaN(avgLatencyPerTokens) || float.IsInfinity(avgLatencyPerTokens))
+        {
+            this.AvgLatencyPerTokens = latencyPerTokens;
+        }
     }
 
     public void Add(UsageCounter other)
     {
         this.ErrorTimes += other.ErrorTimes;
-        this.CallTimes += other.CallTimes;
+        var otherCallTimes = other.CallTimes;
+        this.CallTimes += otherCallTimes;
         this.CompletionTokens += other.CompletionTokens;
         this.Price += other.Price;
         if (float.IsNaN(other.AverageTps) || float.IsInfinity(other.AverageTps) || other.AverageTps <= 0)
@@ -120,7 +154,23 @@ public class UsageCounter : BaseViewModel
             return;
         }
 
-        this.AverageTps = (this.AverageTps + other.AverageTps) / 2f;
+        //加权平均
+        this.AverageTps = (this.AverageTps * this.CallTimes + other.AverageTps * otherCallTimes) /
+                          (this.CallTimes + otherCallTimes);
+        var otherAvgLatencyPerTokens = other.AvgLatencyPerTokens;
+        var avgLatencyPerTokens = this.AvgLatencyPerTokens;
+        if (!float.IsNaN(otherAvgLatencyPerTokens) && !float.IsInfinity(otherAvgLatencyPerTokens) &&
+            otherAvgLatencyPerTokens > 0 && !float.IsNaN(avgLatencyPerTokens) &&
+            !float.IsInfinity(avgLatencyPerTokens) && avgLatencyPerTokens > 0)
+        {
+            this.AvgLatencyPerTokens = (avgLatencyPerTokens * this.CompletionTokens +
+                                        otherAvgLatencyPerTokens * other.CompletionTokens) /
+                                       (this.CompletionTokens + other.CompletionTokens);
+        }
+        else if (avgLatencyPerTokens == 0f || float.IsNaN(avgLatencyPerTokens) || float.IsInfinity(avgLatencyPerTokens))
+        {
+            this.AvgLatencyPerTokens = otherAvgLatencyPerTokens;
+        }
     }
 
     //操作符重载

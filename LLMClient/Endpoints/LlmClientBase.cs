@@ -144,15 +144,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     const string ToolCalls = "ToolCalls";
 
     [Experimental("SKEXP0001")]
-    public virtual async Task<CompletedResult> SendRequest(DialogContext context,
+    public virtual async Task<ChatCallResult> SendRequest(DialogContext context,
         IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
 #if DEBUG
         interactor ??= new DebugInvokeInteractor();
 #endif
-
-        var result = new CompletedResult();
+        float avgLatencyPerTokens = 0;
+        var result = new ChatCallResult();
         try
         {
             IsResponding = true;
@@ -315,9 +315,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 { Streaming = streaming, ShowRequestJson = requestViewItem?.IsDebugMode ?? false };
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
-                _stopwatch.Reset();
                 while (true)
                 {
+                    _stopwatch.Reset();
+                    int? loopLatency = null;
                     cancellationToken.ThrowIfCancellationRequested();
                     UsageDetails? loopUsageDetails = null;
                     try
@@ -335,6 +336,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                                    cancellationToken))
                             {
                                 latency ??= (int)_stopwatch.ElapsedMilliseconds;
+                                loopLatency ??= (int)_stopwatch.ElapsedMilliseconds;
                                 update.TryAddExtendedData();
                                 preUpdates.Add(update);
                                 chatContext.CompleteStreamResponse(result, update);
@@ -397,6 +399,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         if (loopUsageDetails != null)
                         {
                             totalUsageDetails.Add(loopUsageDetails);
+                            if (loopLatency != null)
+                            {
+                                avgLatencyPerTokens = loopUsageDetails.InputTokenCount > 0
+                                    ? loopLatency.Value / (float)loopUsageDetails.InputTokenCount
+                                    : avgLatencyPerTokens;
+                            }
                         }
 
                         finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();

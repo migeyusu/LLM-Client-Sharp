@@ -414,9 +414,9 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
 
     public CancellationTokenSource? RequestTokenSource { get; private set; }
 
-    public async Task<CompletedResult> ProcessRequest(DialogContext context, CancellationToken token = default)
+    public async Task<ChatCallResult> ProcessRequest(DialogContext context, CancellationToken token = default)
     {
-        var completedResult = CompletedResult.Empty;
+        var completedResult = ChatCallResult.Empty;
         try
         {
             if (Client == null)

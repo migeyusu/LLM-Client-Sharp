@@ -21,6 +21,6 @@ public abstract class ResearchClient : BaseViewModel, IChatEndpoint
         }
     }
 
-    public abstract Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? stream = null,
+    public abstract Task<ChatCallResult> SendRequest(DialogContext context, IInvokeInteractor? stream = null,
         CancellationToken cancellationToken = default);
 }

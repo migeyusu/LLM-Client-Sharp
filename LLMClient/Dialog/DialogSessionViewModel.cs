@@ -387,7 +387,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region core methods
 
-    public virtual async Task<CompletedResult> InvokeRequest(ResponseViewItem responseViewItem,
+    public virtual async Task<ChatCallResult> InvokeRequest(ResponseViewItem responseViewItem,
         MultiResponseViewItem multiResponseViewItem)
     {
         RespondingCount++;
@@ -406,7 +406,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
     }
 
-    public async Task<CompletedResult> NewResponse(ILLMChatClient client, IRequestItem requestViewItem,
+    public async Task<ChatCallResult> NewResponse(ILLMChatClient client, IRequestItem requestViewItem,
         IRequestItem? insertBefore = null, CancellationToken token = default)
     {
         var multiResponseViewItem = new MultiResponseViewItem(this)

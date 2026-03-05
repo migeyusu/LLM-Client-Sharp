@@ -298,7 +298,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
         return responseViewItem.ProcessRequest(dialogContext);
     }*/
 
-    public Task<CompletedResult> AppendResponse(ILLMChatClient chatClient, CancellationToken token = default)
+    public Task<ChatCallResult> AppendResponse(ILLMChatClient chatClient, CancellationToken token = default)
     {
         var responseViewItem = new ResponseViewItem(chatClient);
         this.AppendResponse(responseViewItem);

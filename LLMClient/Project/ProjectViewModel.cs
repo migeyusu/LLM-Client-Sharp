@@ -357,7 +357,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
-            (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>>)GetResponse);
+            (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>>)GetResponse);
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedSession?.SelectedFunctionGroups));
@@ -426,7 +426,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
-    protected virtual async Task<CompletedResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
+    protected virtual async Task<ChatCallResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
         IRequestItem? insertViewItem = null,
         CancellationToken token = default)
     {

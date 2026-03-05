@@ -28,17 +28,17 @@ public class PromptBasedAgent : IAgent
 
     public Duration Timeout { get; set; } = Duration.Forever;
 
-    public Task<CompletedResult> SendRequestAsync(ITextDialogSession session,
+    public Task<ChatCallResult> SendRequestAsync(ITextDialogSession session,
         CancellationToken cancellationToken = default)
     {
         var context = new DialogContext(session.DialogItems, session.SystemPrompt);
         return SendRequestAsync(context, cancellationToken);
     }
 
-    public async Task<CompletedResult> SendRequestAsync(DialogContext context,
+    public async Task<ChatCallResult> SendRequestAsync(DialogContext context,
         CancellationToken cancellationToken = default)
     {
-        CompletedResult? completedResult = null;
+        ChatCallResult? completedResult = null;
         var tryCount = 0;
         while (tryCount < RetryCount && !cancellationToken.IsCancellationRequested)
         {

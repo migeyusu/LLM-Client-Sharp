@@ -93,7 +93,7 @@ public class EmptyLlmModelClient : ILLMChatClient
         this._fakeFilePath = fakeFilePath;
     }
 
-    public async Task<CompletedResult> SendRequest(DialogContext context,
+    public async Task<ChatCallResult> SendRequest(DialogContext context,
         IInvokeInteractor? stream = null,
         CancellationToken cancellationToken = default)
     {
@@ -120,7 +120,7 @@ public class EmptyLlmModelClient : ILLMChatClient
             }
         }
 
-        return new CompletedResult
+        return new ChatCallResult
         {
             Usage = new UsageDetails
             {
@@ -131,7 +131,7 @@ public class EmptyLlmModelClient : ILLMChatClient
             },
             Latency = 0,
             Duration = 0,
-            ErrorMessage = null,
+            Exception = null,
             Price = null,
             FinishReason = ChatFinishReason.Stop,
             ResponseMessages =

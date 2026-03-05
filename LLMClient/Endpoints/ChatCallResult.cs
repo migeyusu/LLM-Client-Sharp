@@ -7,9 +7,10 @@ using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Endpoints;
 
-public class CompletedResult : IResponse
+public class ChatCallResult : IResponse
 {
-    public static readonly CompletedResult Empty = new();
+    public static readonly ChatCallResult Empty = new();
+    
     private Exception? _exception;
 
     public UsageDetails? Usage { get; set; }
@@ -37,6 +38,11 @@ public class CompletedResult : IResponse
     }
 
     public string? ErrorMessage { get; private set; }
+    
+    /// <summary>
+    /// 每千个token的平均延迟，单位ms
+    /// </summary>
+    public float? AvgLatencyPerTokens { get; set; }
 
     public bool IsCanceled => Exception is OperationCanceledException;
 

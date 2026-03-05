@@ -234,7 +234,7 @@ public class RequesterViewModel : BaseViewModel
 
     #endregion
 
-    private readonly Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>>
+    private readonly Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>>
         _getResponse;
 
     private readonly GlobalOptions _options;
@@ -243,7 +243,7 @@ public class RequesterViewModel : BaseViewModel
     private readonly ITokensCounter _tokensCounter;
 
     public RequesterViewModel(ILLMChatClient modelClient,
-        Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>> getResponse,
+        Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>> getResponse,
         GlobalOptions options, Summarizer summarizer, IRagSourceCollection ragSourceCollection,
         ITokensCounter tokensCounter)
     {

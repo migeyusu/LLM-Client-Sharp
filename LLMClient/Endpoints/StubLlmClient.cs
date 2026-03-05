@@ -12,7 +12,7 @@ public class StubLlmClient : ILLMChatClient
     public string Name { get; } = "StubLlmClient";
     public bool IsResponding { get; set; }
 
-    public async Task<CompletedResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
+    public async Task<ChatCallResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
 #if DEBUG
@@ -40,7 +40,7 @@ public class StubLlmClient : ILLMChatClient
                 await Task.Delay(100, cancellationToken);
             }
 
-            return new CompletedResult()
+            return new ChatCallResult()
             {
                 ResponseMessages = [new ChatMessage(ChatRole.Assistant, str)],
                 Usage = new UsageDetails(),
@@ -49,7 +49,7 @@ public class StubLlmClient : ILLMChatClient
         }
         else
         {
-            return new CompletedResult()
+            return new ChatCallResult()
             {
                 ResponseMessages = [new ChatMessage(ChatRole.Assistant, str)],
                 Usage = new UsageDetails
@@ -61,7 +61,7 @@ public class StubLlmClient : ILLMChatClient
                 },
                 Latency = 0,
                 Duration = 0,
-                ErrorMessage = null,
+                Exception = null,
                 Price = null,
                 FinishReason = ChatFinishReason.Stop,
                 Annotations = null,

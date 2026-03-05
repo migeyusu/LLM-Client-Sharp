@@ -40,7 +40,7 @@ public class ChatContext
 
     private static PropertyInfo? _choiceAdditional;
 
-    public void CompleteStreamResponse(CompletedResult result, ChatResponseUpdate update)
+    public void CompleteStreamResponse(ChatCallResult result, ChatResponseUpdate update)
     {
         result.Annotations ??= new List<ChatAnnotation>();
         result.AdditionalProperties ??= new AdditionalPropertiesDictionary();
@@ -116,7 +116,7 @@ public class ChatContext
         }
     }
 
-    public async Task CompleteResponse(ChatResponse response, CompletedResult result)
+    public async Task CompleteResponse(ChatResponse response, ChatCallResult result)
     {
         if (this.Result == null)
         {

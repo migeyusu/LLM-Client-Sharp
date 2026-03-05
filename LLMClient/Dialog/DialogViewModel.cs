@@ -158,7 +158,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         _options = options;
         ((INotifyCollectionChanged)this.RootNode.Children).CollectionChanged += OnRootCollectionChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
-            (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<CompletedResult>>)
+            (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>>)
             NewResponse);
         Requester.FunctionGroupSource = this;
         Requester.FunctionTreeSelector.Reset();
@@ -199,7 +199,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
 
     public Task? SummarizeTask = null;
 
-    public override async Task<CompletedResult> InvokeRequest(ResponseViewItem responseViewItem,
+    public override async Task<ChatCallResult> InvokeRequest(ResponseViewItem responseViewItem,
         MultiResponseViewItem multiResponseViewItem)
     {
         var completedResult = await base.InvokeRequest(responseViewItem, multiResponseViewItem);
