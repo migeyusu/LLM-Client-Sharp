@@ -376,7 +376,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                         if (modelNode.TryGetPropertyValue("Telemetry", out var modelTelemetry))
                         {
                             model.Telemetry =
-                                modelTelemetry.Deserialize<UsageCount>(Extension.DefaultJsonSerializerOptions);
+                                modelTelemetry.Deserialize<UsageCounter>(Extension.DefaultJsonSerializerOptions);
                         }
                     }
                 }

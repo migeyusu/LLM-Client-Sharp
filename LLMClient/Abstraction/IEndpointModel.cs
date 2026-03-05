@@ -70,5 +70,5 @@ public interface IEndpointModel : IModel
 
     IPriceCalculator? PriceCalculator { get; }
 
-    UsageCount? Telemetry { get; set; }
+    UsageCounter? Telemetry { get; set; }
 }

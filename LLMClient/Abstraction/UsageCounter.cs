@@ -3,12 +3,13 @@ using LLMClient.Endpoints;
 
 namespace LLMClient.Abstraction;
 
-public class UsageCount : BaseViewModel
+public class UsageCounter : BaseViewModel
 {
     private long _completionTokens;
     private int _callTimes;
     private double _price;
     private float _averageTps;
+    private int _errorTimes;
 
     public long CompletionTokens
     {
@@ -54,13 +55,25 @@ public class UsageCount : BaseViewModel
         }
     }
 
-    public UsageCount()
+    public int ErrorTimes
+    {
+        get => _errorTimes;
+        set
+        {
+            if (value == _errorTimes) return;
+            _errorTimes = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public UsageCounter()
     {
     }
 
-    public UsageCount(CompletedResult result)
+    public UsageCounter(CompletedResult result)
     {
-        this.CallTimes = 1;
+        this.ErrorTimes = result is { IsInterrupt: true, IsCanceled: false } ? 1 : 0;
+        this.CallTimes = result.ValidCallTimes;
         this.CompletionTokens = result.Usage?.OutputTokenCount ?? 0;
         this.Price = result.Price ?? 0d;
         var tps = result.CalculateTps();
@@ -72,8 +85,9 @@ public class UsageCount : BaseViewModel
         this.AverageTps = tps;
     }
 
-    public UsageCount(UsageCount other)
+    public UsageCounter(UsageCounter other)
     {
+        this.ErrorTimes = other.ErrorTimes;
         this.CallTimes = other.CallTimes;
         this.CompletionTokens = other.CompletionTokens;
         this.Price = other.Price;
@@ -82,7 +96,8 @@ public class UsageCount : BaseViewModel
 
     public void Add(CompletedResult result)
     {
-        this.CallTimes++;
+        this.ErrorTimes += result is { IsInterrupt: true, IsCanceled: false } ? 1 : 0;
+        this.CallTimes += result.ValidCallTimes;
         this.CompletionTokens += result.Usage?.OutputTokenCount ?? 0;
         this.Price += result.Price ?? 0d;
         var tps = result.CalculateTps();
@@ -94,8 +109,9 @@ public class UsageCount : BaseViewModel
         this.AverageTps = (this.AverageTps + tps) / 2f;
     }
 
-    public void Add(UsageCount other)
+    public void Add(UsageCounter other)
     {
+        this.ErrorTimes += other.ErrorTimes;
         this.CallTimes += other.CallTimes;
         this.CompletionTokens += other.CompletionTokens;
         this.Price += other.Price;
@@ -108,9 +124,9 @@ public class UsageCount : BaseViewModel
     }
 
     //操作符重载
-    public static UsageCount operator +(UsageCount a, UsageCount b)
+    public static UsageCounter operator +(UsageCounter a, UsageCounter b)
     {
-        var result = new UsageCount
+        var result = new UsageCounter
         {
             CallTimes = a.CallTimes + b.CallTimes,
             CompletionTokens = a.CompletionTokens + b.CompletionTokens,

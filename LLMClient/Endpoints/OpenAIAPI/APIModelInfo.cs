@@ -584,7 +584,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
 
     public IPriceCalculator? PriceCalculator { get; init; } = new TokenBasedPriceCalculator();
 
-    [JsonIgnore] public UsageCount? Telemetry { get; set; }
+    [JsonIgnore] public UsageCounter? Telemetry { get; set; }
 
     public float FrequencyPenalty
     {

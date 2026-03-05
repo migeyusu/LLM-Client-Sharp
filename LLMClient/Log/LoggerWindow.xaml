@@ -5,6 +5,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:diagnostics="clr-namespace:System.Diagnostics;assembly=System.Diagnostics.TraceSource"
         xmlns:log="clr-namespace:LLMClient.Log"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:utility="clr-namespace:LLMClient.Component.Utility"
         mc:Ignorable="d"
         Title="Log" Height="450" Width="800"
         d:DataContext="{d:DesignInstance log:LoggerWindow}">
@@ -23,6 +25,14 @@
                     <DataTemplate DataType="{x:Type log:LogItem}">
                         <TextBlock Text="{Binding }"
                                    TextWrapping="Wrap">
+                            <TextBlock.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Copy"
+                                              Icon="{materialDesign:PackIcon Kind=ContentCopy}"
+                                              Command="{x:Static utility:CommonCommands.CopyCommand}"
+                                              CommandParameter="{Binding }" />
+                                </ContextMenu>
+                            </TextBlock.ContextMenu>
                             <TextBlock.Style>
                                 <Style TargetType="{x:Type TextBlock}"
                                        BasedOn="{StaticResource MaterialDesignBody2TextBlock}">

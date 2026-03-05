@@ -154,7 +154,7 @@ public static class Extension
     {
         return collection.AddAutoMapper((provider, expression) =>
             {
-                var registeredProfiles = provider.GetServices<DialogMappingProfile>();
+                var registeredProfiles = provider.GetServices<Profile>();
                 foreach (var profile in registeredProfiles)
                 {
                     expression.AddProfile(profile);

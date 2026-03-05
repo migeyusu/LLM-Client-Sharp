@@ -14,7 +14,6 @@ public interface IChatEndpoint
     /// <summary>
     /// 
     /// </summary>
-    /// <exception cref="OutOfContextWindowException">超过LLM窗口大小，不需要重试</exception>
     /// <param name="context"></param>
     /// <param name="interactor"></param>
     /// <param name="cancellationToken"></param>

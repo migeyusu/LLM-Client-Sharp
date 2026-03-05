@@ -227,7 +227,7 @@ public class AzureModelInfo : IEndpointModel
 
     public IPriceCalculator? PriceCalculator { get; } = null;
 
-    [JsonIgnore] public UsageCount? Telemetry { get; set; }
+    [JsonIgnore] public UsageCounter? Telemetry { get; set; }
 
     [JsonIgnore]
     public float FrequencyPenalty

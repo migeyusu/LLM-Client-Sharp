@@ -217,7 +217,7 @@ public class UsageStatisticsViewModel : BaseViewModel
         }
     }
 
-    private void UpdateStatistics(IList<(string Name, UsageCount Usage)> models)
+    private void UpdateStatistics(IList<(string Name, UsageCounter Usage)> models)
     {
         _existingItemsCount = models.Count;
         models = models.OrderByDescending(tuple => tuple.Usage.CompletionTokens)
@@ -259,7 +259,7 @@ public class UsageStatisticsViewModel : BaseViewModel
     /// </summary>
     private void UpdateSeriesStatistics()
     {
-        IList<(string Name, UsageCount Usage)> series = new List<(string Name, UsageCount Usage)>();
+        IList<(string Name, UsageCounter Usage)> series = new List<(string Name, UsageCounter Usage)>();
         foreach (var endpoint in _endpointService.AvailableEndpoints)
         {
             foreach (var model in endpoint.AvailableModels)
@@ -274,7 +274,7 @@ public class UsageStatisticsViewModel : BaseViewModel
                     }
                     else
                     {
-                        var usage = new UsageCount(model.Telemetry);
+                        var usage = new UsageCounter(model.Telemetry);
                         series.Add((name, usage));
                     }
                 }
@@ -289,17 +289,17 @@ public class UsageStatisticsViewModel : BaseViewModel
     /// </summary>
     private void UpdateEndpointStatistics()
     {
-        IList<(string Name, UsageCount Usage)> endpoints = new List<(string Name, UsageCount Usage)>();
+        IList<(string Name, UsageCounter Usage)> endpoints = new List<(string Name, UsageCounter Usage)>();
         foreach (var endpoint in _endpointService.AvailableEndpoints)
         {
-            UsageCount? usage = null;
+            UsageCounter? usage = null;
             foreach (var model in endpoint.AvailableModels)
             {
                 if (model.Telemetry != null && model.Telemetry.CallTimes > 0)
                 {
                     if (usage == null)
                     {
-                        usage = new UsageCount(model.Telemetry);
+                        usage = new UsageCounter(model.Telemetry);
                     }
                     else
                     {
@@ -322,7 +322,7 @@ public class UsageStatisticsViewModel : BaseViewModel
     /// </summary>
     private void UpdateModelsStatistics()
     {
-        IList<(string Name, UsageCount Usage)> models = new List<(string Name, UsageCount Usage)>();
+        IList<(string Name, UsageCounter Usage)> models = new List<(string Name, UsageCounter Usage)>();
         foreach (var endpoint in _endpointService.AvailableEndpoints)
         {
             foreach (var model in endpoint.AvailableModels)
@@ -338,20 +338,20 @@ public class UsageStatisticsViewModel : BaseViewModel
         UpdateStatistics(models);
     }
 
-    private ISeries[] CreateRowSeries(IList<(string Name, UsageCount Usage)> models,
-        Func<PilotInfo<UsageCount>, int, Coordinate> mapping, string format = "N0")
+    private ISeries[] CreateRowSeries(IList<(string Name, UsageCounter Usage)> models,
+        Func<PilotInfo<UsageCounter>, int, Coordinate> mapping, string format = "N0")
     {
         return models.Select((m, index) =>
         {
             var color = GetModelColor(m.Name);
             var paint = new SolidColorPaint(color);
 
-            return new RowSeries<PilotInfo<UsageCount>>()
+            return new RowSeries<PilotInfo<UsageCounter>>()
             {
                 Name = m.Name,
                 Values =
                 [
-                    new PilotInfo<UsageCount>(
+                    new PilotInfo<UsageCounter>(
                         m.Name,
                         m.Usage,
                         paint,
@@ -374,8 +374,8 @@ public class UsageStatisticsViewModel : BaseViewModel
         }).Cast<ISeries>().ToArray();
     }
 
-    private ISeries[] CreatePieSeries<T>(IList<(string Name, UsageCount Usage)> models,
-        Func<(string Name, UsageCount Usage), T> valueSelector, string format = "N0")
+    private ISeries[] CreatePieSeries<T>(IList<(string Name, UsageCounter Usage)> models,
+        Func<(string Name, UsageCounter Usage), T> valueSelector, string format = "N0")
     {
         var total = models.Sum(m => Convert.ToDouble(valueSelector(m)));
         if (total <= 0) return [];

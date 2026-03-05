@@ -105,16 +105,21 @@ public static class CommonCommands
             return _copyCommand ??= new ActionCommand((o =>
             {
                 string copyText;
-                switch (o)
+                if (o is ICopyable copyable)
                 {
-                    case ICopyable copyable:
-                        copyText = copyable.GetCopyText();
-                        break;
-                    case string s:
-                        copyText = s;
-                        break;
-                    default:
-                        return;
+                    copyText = copyable.GetCopyText();
+                }
+                else if (o is string s)
+                {
+                    copyText = s;
+                }
+                else if (o != null)
+                {
+                    copyText = o.ToString() ?? string.Empty;
+                }
+                else
+                {
+                    return;
                 }
 
                 if (!string.IsNullOrEmpty(copyText))

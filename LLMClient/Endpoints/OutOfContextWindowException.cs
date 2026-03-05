@@ -11,6 +11,10 @@ public class LlmBadRequestException : Exception
     public LlmBadRequestException(string message) : base(message)
     {
     }
+
+    public LlmBadRequestException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
 }
 
 /// <summary>
@@ -21,6 +25,11 @@ public class OutOfContextWindowException : LlmBadRequestException
     public ChatResponse? ChatResponse { get; set; }
 
     public OutOfContextWindowException() : base("Exceeded maximum response length.")
+    {
+    }
+
+    public OutOfContextWindowException(Exception innerException) : base("Exceeded maximum response length.",
+        innerException)
     {
     }
 }

@@ -52,7 +52,7 @@ public class EmptyLLMChatModel : IEndpointModel
     public bool FunctionCallOnStreaming { get; set; }
     public IPriceCalculator? PriceCalculator { get; init; }
 
-    public UsageCount? Telemetry { get; set; }
+    public UsageCounter? Telemetry { get; set; }
     public bool Streaming { get; set; }
     public string? SystemPrompt { get; set; }
     public float TopP { get; set; }

@@ -25,7 +25,7 @@
                     IsItemsHost="True" />
     </ItemsPanelTemplate>
     <DataTemplate x:Key="UsageCountDataTemplate"
-                  DataType="{x:Type abstraction:UsageCount}">
+                  DataType="{x:Type abstraction:UsageCounter}">
         <TextBlock FontSize="12"
                    Margin="0,5,0,0">
             <TextBlock.Text>

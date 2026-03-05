@@ -11,7 +11,6 @@ using LLMClient.Dialog;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Rag;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -47,9 +46,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             OnPropertyChanged();
         }
     }
-
-    private Lazy<ITokensCounter> _tokensCounterLazy =
-        new Lazy<ITokensCounter>(() => ServiceLocator.GetService<ITokensCounter>()!);
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 
@@ -289,7 +285,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            string? errorMessage = null;
+            Exception? exception = null;
             int? latency = null;
             var chatClient = GetChatClient();
             //本次响应的消息列表
@@ -427,10 +423,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             else if (finishReason == ChatFinishReason.Length)
                             {
                                 interactor?.Info("Exceeded maximum response length.");
-                                throw new OutOfContextWindowException()
+                                exception = new OutOfContextWindowException()
                                 {
                                     ChatResponse = preResponse
                                 };
+                                break;
                             }
                             else if (finishReason == ChatFinishReason.ContentFilter)
                             {
@@ -452,8 +449,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                         if (kernelPluginCollection.Count == 0)
                         {
-                            errorMessage =
-                                $"No functions available to call. But {preFunctionCalls.Count} function calls were requested.";
+                            exception =
+                                new Exception(
+                                    $"No functions available to call. But {preFunctionCalls.Count} function calls were requested.");
                             break;
                         }
 
@@ -475,7 +473,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                     { Exception = new Exception("Function not exist") });
                                 if (IsQuitWhenFunctionCallFailed)
                                 {
-                                    errorMessage = $"Function '{functionCallContent.Name}' not exist.";
+                                    exception = new Exception($"Function '{functionCallContent.Name}' not exist.");
                                     break;
                                 }
                             }
@@ -518,8 +516,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                             { Exception = e });
                                     if (IsQuitWhenFunctionCallFailed)
                                     {
-                                        errorMessage =
-                                            $"Function '{functionCallContent.Name}' invocation failed: {e.HierarchicalMessage()}";
+                                        exception =
+                                            new Exception(
+                                                $"Function '{functionCallContent.Name}' invocation failed: {e.HierarchicalMessage()}");
                                         break;
                                     }
                                 }
@@ -530,9 +529,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                         #endregion
                     }
-                    catch (OperationCanceledException)
+                    catch (OperationCanceledException canceledException)
                     {
-                        errorMessage = "Operation was canceled.";
+                        exception = canceledException;
                         if (preUpdates.Count != 0)
                         {
                             responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
@@ -540,10 +539,32 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                         break;
                     }
-                    catch (LlmBadRequestException)
+                    catch (HttpOperationException httpOperationException)
                     {
-                        //对于错误请求，直接抛出，因为此时输入已经错误
-                        throw;
+                        exception = new Exception($"Response Content: {httpOperationException.ResponseContent}",
+                            httpOperationException);
+                        if (exception.Message.Contains("context_length_exceeded", StringComparison.OrdinalIgnoreCase))
+                        {
+                            exception = new OutOfContextWindowException(httpOperationException);
+                        }
+                    }
+                    catch (ClientResultException clientResultException)
+                    {
+                        var errorMessage = string.Empty;
+                        var pipelineResponse = clientResultException.GetRawResponse();
+                        var s = pipelineResponse?.Content.ToString();
+                        if (!string.IsNullOrEmpty(s))
+                        {
+                            errorMessage += $"Response Content: {s}";
+                        }
+
+                        exception = clientResultException.Status == 400
+                            ? new LlmBadRequestException(errorMessage)
+                            : new Exception(errorMessage, clientResultException);
+                        if (exception.Message.Contains("context_length_exceeded", StringComparison.OrdinalIgnoreCase))
+                        {
+                            exception = new OutOfContextWindowException(clientResultException);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -552,39 +573,17 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
                         }
 
-                        errorMessage = ex.HierarchicalMessage();
-                        if (ex is HttpOperationException { ResponseContent: not null } httpOperationException)
-                        {
-                            errorMessage += $"\nResponse Content: {httpOperationException.ResponseContent}";
-                        }
-                        else if (ex is ClientResultException clientResultException)
-                        {
-                            var pipelineResponse = clientResultException.GetRawResponse();
-                            var s = pipelineResponse?.Content.ToString();
-                            if (!string.IsNullOrEmpty(s))
-                            {
-                                errorMessage += $"\nResponse Content: {s}";
-                            }
-
-                            if (clientResultException.Status == 400)
-                            {
-                                throw new LlmBadRequestException(errorMessage);
-                            }
-                        }
-
+                        exception = ex;
                         interactor?.Error($"Error during response: {ex}");
-                        if (errorMessage.Contains("context_length_exceeded"))
-                        {
-                            throw new OutOfContextWindowException();
-                        }
                     }
 
-                    if (errorMessage != null)
+                    if (exception != null)
                     {
                         break;
                     }
 
                     interactor?.WriteLine();
+                    result.ValidCallTimes++;
                 }
             }
 
@@ -592,7 +591,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var price = this.Model.PriceCalculator?.Calculate(totalUsageDetails);
             result.Usage = totalUsageDetails;
             result.ResponseMessages = responseMessages;
-            result.ErrorMessage = errorMessage;
+            result.Exception = exception;
             result.Latency = latency ?? 0;
             result.Duration = duration;
             result.FinishReason = finishReason;
@@ -602,7 +601,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 var modelTelemetry = this.Model.Telemetry;
                 if (modelTelemetry == null)
                 {
-                    this.Model.Telemetry = new UsageCount(result);
+                    this.Model.Telemetry = new UsageCounter(result);
                 }
                 else
                 {

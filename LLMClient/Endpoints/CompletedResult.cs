@@ -1,4 +1,5 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Text;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
@@ -8,8 +9,8 @@ namespace LLMClient.Endpoints;
 
 public class CompletedResult : IResponse
 {
-    public static readonly CompletedResult Empty =
-        new CompletedResult();
+    public static readonly CompletedResult Empty = new();
+    private Exception? _exception;
 
     public UsageDetails? Usage { get; set; }
 
@@ -22,7 +23,22 @@ public class CompletedResult : IResponse
 
     public int Duration { get; set; }
 
-    public string? ErrorMessage { get; set; }
+    public Exception? Exception
+    {
+        get => _exception;
+        set
+        {
+            _exception = value;
+            if (value != null)
+            {
+                ErrorMessage = value.HierarchicalMessage();
+            }
+        }
+    }
+
+    public string? ErrorMessage { get; private set; }
+
+    public bool IsCanceled => Exception is OperationCanceledException;
 
     public double? Price { get; set; }
 
@@ -32,6 +48,11 @@ public class CompletedResult : IResponse
     }
 
     public ChatFinishReason? FinishReason { get; set; }
+
+    /// <summary>
+    /// 有效调用次数
+    /// </summary>
+    public int ValidCallTimes { get; set; } = 0;
 
     public string? FirstTextResponse
     {
