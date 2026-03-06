@@ -10,7 +10,7 @@ namespace LLMClient.Dialog;
 
 public class EditableTextContent : BaseViewModel
 {
-    public ICommand RecoverCommand => new ActionCommand(() =>
+    public ICommand RollbackCommand => new ActionCommand(() =>
     {
         this.Text = _textContent.Text;
         this.HasEdit = false;

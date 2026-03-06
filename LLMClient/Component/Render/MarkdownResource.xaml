@@ -242,7 +242,7 @@
            BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static render:TextMateCodeRenderer.EditCodeBlockStyleKey}">
         <Setter Property="Background"
-                Value="{DynamicResource MaterialDesign.Brush.Card.Background}"/>
+                Value="{DynamicResource MaterialDesign.Brush.Card.Background}" />
         <Setter Property="IsExpanded"
                 Value="True" />
         <Setter Property="ContentTemplate">
@@ -278,6 +278,19 @@
                                 </MultiBinding>
                             </TextBlock.Text>
                         </TextBlock>
+                        <Button Content="{materialDesign:PackIcon Kind=Undo}"
+                                Command="{Binding RollbackCommand}"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Right"
+                                Margin="5"
+                                Width="30"
+                                Height="30"
+                                ToolTip="Revert to original string"
+                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}" />
+                        <!--Visibility="{Binding HasEdit,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"-->
+                        <!--<Button Style="{StaticResource ItemDeleteButtonStyle}"
+                                VerticalAlignment="Center"
+                                Command="{Binding DeleteCommand}" />-->
                     </StackPanel>
                 </DataTemplate>
             </Setter.Value>

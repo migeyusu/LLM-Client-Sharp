@@ -1,6 +1,10 @@
-﻿using ICSharpCode.AvalonEdit.Highlighting;
+﻿using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Markup;
+using ICSharpCode.AvalonEdit.Highlighting;
 using LLMClient.Component.ViewModel.Base;
 using Markdig.Helpers;
+using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Component.Render;
 
@@ -36,11 +40,16 @@ public class EditableCodeViewModel : BaseViewModel
         }
     }
 
+    /*public ICommand DeleteCommand { get; }*/
+
+    public ICommand RollbackCommand { get; }
+    
     public EditableCodeViewModel(StringLineGroup codeGroup, string? extension, string? name)
     {
         _codeGroup = codeGroup;
         _code = codeGroup.ToString();
         Extension = extension;
         Name = name;
+        RollbackCommand = new ActionCommand(o => { Code = _codeGroup.ToString(); });
     }
 }

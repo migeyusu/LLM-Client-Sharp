@@ -506,6 +506,7 @@
                         <Button ToolTip="由此创建新分支"
                                 Margin="6,0,0,0"
                                 Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type dialog:SessionView}},Path=DataContext.SetLeafCommand}"
+                                CommandParameter="{Binding}"
                                 Content="{materialDesign:PackIcon SourceBranchPlus,Size=20}"
                                 Style="{StaticResource SmallIconButtonStyle}" />
                     </StackPanel>

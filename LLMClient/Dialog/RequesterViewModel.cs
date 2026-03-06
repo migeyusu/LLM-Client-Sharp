@@ -149,31 +149,11 @@ public class RequesterViewModel : BaseViewModel
     public ObservableCollection<Attachment> Attachments { get; set; } =
         new();
 
-    public ICommand AddImageCommand => new ActionCommand(o =>
-    {
-        var openFileDialog = new OpenFileDialog()
-        {
-            Filter = "Image files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg",
-            Multiselect = true
-        };
-        if (openFileDialog.ShowDialog() != true)
-        {
-            return;
-        }
+    public ICommand AddCodeFileCommand { get; }
 
-        foreach (var fileName in openFileDialog.FileNames)
-        {
-            this.Attachments.Add(Attachment.CreateFromLocal(fileName, AttachmentType.Image));
-        }
-    });
+    public ICommand AddImageCommand { get; }
 
-    public ICommand RemoveAttachmentCommand => new ActionCommand(o =>
-    {
-        if (o is Attachment attachment)
-        {
-            this.Attachments.Remove(attachment);
-        }
-    });
+    public ICommand RemoveAttachmentCommand { get; }
 
     #endregion
 
@@ -258,6 +238,47 @@ public class RequesterViewModel : BaseViewModel
         _tokensCounter = tokensCounter;
         this.BindClient(modelClient);
         CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
+        AddCodeFileCommand = new ActionCommand((o =>
+        {
+            //可以添加代码文件，并已markdown格式插入到输入框中
+            var openFileDialog = new OpenFileDialog()
+            {
+                Filter = "Text files (*.*)|*.*",
+                Multiselect = true
+            };
+            if (openFileDialog.ShowDialog() != true)
+            {
+                return;
+            }
+            foreach (var fileName in openFileDialog.FileNames)
+            {
+                
+            }
+        }));
+        AddImageCommand = new ActionCommand(_ =>
+        {
+            var openFileDialog = new OpenFileDialog()
+            {
+                Filter = "Image files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg",
+                Multiselect = true
+            };
+            if (openFileDialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            foreach (var fileName in openFileDialog.FileNames)
+            {
+                this.Attachments.Add(Attachment.CreateFromLocal(fileName, AttachmentType.Image));
+            }
+        });
+        RemoveAttachmentCommand = new ActionCommand(o =>
+        {
+            if (o is Attachment attachment)
+            {
+                this.Attachments.Remove(attachment);
+            }
+        });
         this.PropertyChanged += (sender, args) =>
         {
             if (args.PropertyName == nameof(EstimatedTokens))
