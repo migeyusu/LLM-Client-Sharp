@@ -1,8 +1,11 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text;
+using System.Windows.Controls;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.Render;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
@@ -238,8 +241,13 @@ public class RequesterViewModel : BaseViewModel
         _tokensCounter = tokensCounter;
         this.BindClient(modelClient);
         CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
-        AddCodeFileCommand = new ActionCommand((o =>
+        AddCodeFileCommand = new RelayCommand<TextBox>((o =>
         {
+            if (o == null)
+            {
+                return;
+            }
+
             //可以添加代码文件，并已markdown格式插入到输入框中
             var openFileDialog = new OpenFileDialog()
             {
@@ -250,10 +258,24 @@ public class RequesterViewModel : BaseViewModel
             {
                 return;
             }
+
+            var settingsOptions = TextMateCodeRenderer.Settings.Options;
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine();
             foreach (var fileName in openFileDialog.FileNames)
             {
-                
+                var extension = Path.GetExtension(fileName);
+                var language = settingsOptions.GetLanguageByExtension(extension)?.Id ?? extension;
+                stringBuilder.Append("```")
+                    .Append(language)
+                    .Append($" file=\"{fileName}\"");
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine(File.ReadAllText(fileName));
+                stringBuilder.AppendLine("```");
             }
+
+            o.Focus();
+            o.SelectedText = stringBuilder.ToString();
         }));
         AddImageCommand = new ActionCommand(_ =>
         {

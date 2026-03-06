@@ -26,7 +26,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
         new(typeof(TextMateCodeRenderer), nameof(EditCodeBlockStyleKey));
 
 
-    private class TextMateCodeRendererSettings
+    public class TextMateCodeRendererSettings
     {
         public RegistryOptions Options { get; }
 
@@ -70,7 +70,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
         sourceDictionary[ThemeColorResourceKey] = Settings.GetOrAddTheme(themeName);
     }
 
-    private static TextMateCodeRendererSettings Settings =>
+    public static TextMateCodeRendererSettings Settings =>
         _settings ??= new TextMateCodeRendererSettings();
 
     private static TextMateCodeRendererSettings? _settings = null;

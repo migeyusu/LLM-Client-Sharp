@@ -282,6 +282,7 @@
                                     Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                     Command="{Binding AddCodeFileCommand}"
+                                    CommandParameter="{Binding ElementName=PromptTextBox}"
                                     VerticalAlignment="Center" 
                                     Margin="10,0,0,0"
                                     Height="32"
