@@ -296,12 +296,11 @@
                                        HorizontalAlignment="Left"
                                        VerticalAlignment="Center" />
                             <ToggleButton IsChecked="{Binding IsCollapsed, Mode=OneWayToSource}"
-                                          materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=ChevronDown}"
-                                          Content="{materialDesign:PackIcon Kind=ChevronUp}"
+                                          Content="{materialDesign:PackIcon Kind=CardOffOutline}"
                                           Margin="10,0,0,0"
                                           Width="30"
                                           Height="30"
-                                          Style="{StaticResource MaterialDesignActionToggleButton}" />
+                                          Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"/>
                         </StackPanel>
                         <StackPanel HorizontalAlignment="Right"
                                     Orientation="Horizontal">
