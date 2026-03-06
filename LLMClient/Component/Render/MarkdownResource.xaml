@@ -96,7 +96,8 @@
     </Style>
 
     <!--content无法参与Flowdocument渲染，用于不关心内部信息的显示-->
-    <Style x:Key="AIContentExpander" TargetType="{x:Type Expander}">
+    <Style x:Key="ContentExpander"
+           TargetType="{x:Type Expander}">
         <Setter Property="Background" Value="Transparent" /> <!--{DynamicResource MaterialDesign.Brush.Background}-->
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
@@ -237,41 +238,47 @@
                 Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
     </Style>
 
-    <Style TargetType="{x:Type ContentControl}"
+    <Style TargetType="{x:Type Expander}"
+           BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static render:TextMateCodeRenderer.EditCodeBlockStyleKey}">
+        <Setter Property="Background"
+                Value="{DynamicResource MaterialDesign.Brush.Card.Background}"/>
+        <Setter Property="IsExpanded"
+                Value="True" />
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type render:EditableCodeViewModel}">
-                    <Expander>
-                        <Expander.Header>
-                            <StackPanel HorizontalAlignment="Left"
-                                        Orientation="Horizontal">
-                                <TextBlock Text="{Binding  Extension,Mode=OneTime}"
-                                           Padding="10,0,0,0"
-                                           Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
-                                           HorizontalAlignment="Left"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Expander.Header>
-
-                        <Border BorderBrush="{DynamicResource MaterialDesignDividerBrush}"
-                                BorderThickness="1"
-                                Background="{DynamicResource MaterialDesignPaper}"
-                                Margin="0,5,0,10"
-                                CornerRadius="4">
-                            <avalonedit:TextEditor FontFamily="Consolas"
-                                                   FontSize="14"
-                                                   SyntaxHighlighting="{Binding SyntaxHighlighting,Mode=OneTime}"
-                                                   Margin="0,10"
-                                                   MinHeight="200"
-                                                   ShowLineNumbers="True">
-                                <i:Interaction.Behaviors>
-                                    <render:TextEditorBehavior
-                                        Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                </i:Interaction.Behaviors>
-                            </avalonedit:TextEditor>
-                        </Border>
-                    </Expander>
+                    <avalonedit:TextEditor FontFamily="Consolas"
+                                           FontSize="14"
+                                           SyntaxHighlighting="{Binding SyntaxHighlighting,Mode=OneTime}"
+                                           Margin="0,10"
+                                           MinHeight="200"
+                                           ShowLineNumbers="True">
+                        <i:Interaction.Behaviors>
+                            <render:TextEditorBehavior
+                                Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </i:Interaction.Behaviors>
+                    </avalonedit:TextEditor>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="HeaderTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type render:EditableCodeViewModel}">
+                    <StackPanel HorizontalAlignment="Left"
+                                Orientation="Horizontal">
+                        <TextBlock Padding="10,0,0,0"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Center">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="{}{0}/{1}">
+                                    <Binding Path="Extension" Mode="OneTime" TargetNullValue="Unknown" />
+                                    <Binding Path="Name" Mode="OneTime" TargetNullValue="Unknown" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </StackPanel>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
@@ -300,7 +307,7 @@
                                           Margin="10,0,0,0"
                                           Width="30"
                                           Height="30"
-                                          Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}"/>
+                                          Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}" />
                         </StackPanel>
                         <StackPanel HorizontalAlignment="Right"
                                     Orientation="Horizontal">
@@ -439,7 +446,7 @@
     </Style>
 
     <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource AIContentExpander}"
+           BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static render:CustomMarkdownRenderer.FunctionCallStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
@@ -485,7 +492,7 @@
     </Style>
 
     <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource AIContentExpander}"
+           BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static  render:ToolCallBlockRenderer.ToolCallStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
@@ -537,7 +544,7 @@
     </Style>
 
     <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource AIContentExpander}"
+           BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static render:CustomMarkdownRenderer.FunctionResultStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
@@ -624,7 +631,7 @@
     </Style>
 
     <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource AIContentExpander}"
+           BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static render:ToolCallResultBlockRenderer.ToolCallResultStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
@@ -675,7 +682,7 @@
     </Style>
 
     <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource AIContentExpander}"
+           BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static render:CustomMarkdownRenderer.PermissionRequestStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
@@ -747,7 +754,7 @@
     </Style>
 
     <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource AIContentExpander}"
+           BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static render:CustomMarkdownRenderer.AnnotationStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
@@ -928,7 +935,7 @@
     </Style>
 
     <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource AIContentExpander}"
+           BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static  render:RequestBlockRenderer.RequestStyleKey}">
         <Setter Property="Padding" Value="16" />
         <Setter Property="HeaderTemplate">

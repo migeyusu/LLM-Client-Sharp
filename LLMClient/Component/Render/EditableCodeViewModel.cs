@@ -24,6 +24,8 @@ public class EditableCodeViewModel : BaseViewModel
 
     public string? Name { get; }
 
+    public string? FileLocation { get; set; }
+
     public IHighlightingDefinition? SyntaxHighlighting
     {
         get

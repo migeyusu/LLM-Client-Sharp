@@ -92,11 +92,12 @@ public class TextMateCodeRenderer : CodeBlockRenderer
         if (customMarkdownRenderer.EditMode)
         {
             var blockUiContainer = new BlockUIContainer();
-            var contentControl = new ContentControl();
-            contentControl.SetResourceReference(FrameworkElement.StyleProperty, EditCodeBlockStyleKey);
+            var expander = new Expander();
+            expander.SetResourceReference(FrameworkElement.StyleProperty, EditCodeBlockStyleKey);
             var codeContext = CreateEditableCodeContext(codeBlock);
-            contentControl.Content = codeContext;
-            ((IAddChild)blockUiContainer).AddChild(contentControl);
+            expander.Content = codeContext;
+            expander.Header = codeContext;
+            ((IAddChild)blockUiContainer).AddChild(expander);
             renderer.Push(blockUiContainer);
             renderer.Pop();
         }
