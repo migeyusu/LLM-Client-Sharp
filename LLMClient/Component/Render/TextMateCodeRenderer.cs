@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
+using ICSharpCode.AvalonEdit;
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
@@ -15,11 +16,15 @@ namespace LLMClient.Component.Render;
 
 public class TextMateCodeRenderer : CodeBlockRenderer
 {
-    public static ComponentResourceKey TokenStyleKey { get; } =
-        new(typeof(TextMateCodeRenderer), nameof(TokenStyleKey));
+    public static ComponentResourceKey CodeTokenStyleKey { get; } =
+        new(typeof(TextMateCodeRenderer), nameof(CodeTokenStyleKey));
 
-    public static ComponentResourceKey CodeBlockHeaderStyleKey { get; } =
-        new(typeof(TextMateCodeRenderer), nameof(CodeBlockHeaderStyleKey));
+    public static ComponentResourceKey DisplayCodeBlockHeaderStyleKey { get; } =
+        new(typeof(TextMateCodeRenderer), nameof(DisplayCodeBlockHeaderStyleKey));
+
+    public static ComponentResourceKey EditCodeBlockStyleKey { get; } =
+        new(typeof(TextMateCodeRenderer), nameof(EditCodeBlockStyleKey));
+
 
     private class TextMateCodeRendererSettings
     {
@@ -77,29 +82,68 @@ public class TextMateCodeRenderer : CodeBlockRenderer
 
     protected override void Write(WpfRenderer renderer, CodeBlock codeBlock)
     {
-        if (renderer is CustomMarkdownRenderer { EnableTextMateHighlighting: false })
+        if (renderer is not CustomMarkdownRenderer customMarkdownRenderer ||
+            !customMarkdownRenderer.EnableTextMateHighlighting)
         {
             base.Write(renderer, codeBlock);
             return;
         }
 
-        #region header
+        if (customMarkdownRenderer.EditMode)
+        {
+            var blockUiContainer = new BlockUIContainer();
+            var contentControl = new ContentControl();
+            contentControl.SetResourceReference(FrameworkElement.StyleProperty, EditCodeBlockStyleKey);
+            var codeContext = CreateEditableCodeContext(codeBlock);
+            contentControl.Content = codeContext;
+            ((IAddChild)blockUiContainer).AddChild(contentControl);
+            renderer.Push(blockUiContainer);
+            renderer.Pop();
+        }
+        else
+        {
+            //渲染高亮后的只读代码块
 
-        var blockUiContainer = new BlockUIContainer();
-        var contentControl = new ContentControl();
-        contentControl.SetResourceReference(FrameworkElement.StyleProperty, CodeBlockHeaderStyleKey);
-        ((IAddChild)blockUiContainer).AddChild(contentControl);
-        renderer.Push(blockUiContainer);
-        renderer.Pop();
+            #region header
 
-        #endregion
+            var blockUiContainer = new BlockUIContainer();
+            var contentControl = new ContentControl();
+            contentControl.SetResourceReference(FrameworkElement.StyleProperty, DisplayCodeBlockHeaderStyleKey);
+            ((IAddChild)blockUiContainer).AddChild(contentControl);
+            renderer.Push(blockUiContainer);
+            renderer.Pop();
 
-        var codeContext = CreateCodeContext(codeBlock, renderer);
-        contentControl.Content = codeContext;
-        renderer.Pop();
+            #endregion
+
+            var codeContext = CreateReadOnlyCodeContext(codeBlock, renderer);
+            contentControl.Content = codeContext;
+        }
     }
 
-    private DisplayCodeViewModel CreateCodeContext(LeafBlock block, WpfRenderer renderer)
+    private static EditableCodeViewModel CreateEditableCodeContext(LeafBlock block)
+    {
+        string? extension = null;
+        string? name = null;
+        if (block is FencedCodeBlock fencedCodeBlock)
+        {
+            //HtmlAttributes htmlAttributes = fencedCodeBlock.GetAttributes();
+            name = fencedCodeBlock.Info;
+            if (name != null)
+            {
+                var rendererSettings = Settings;
+                var options = rendererSettings.Options;
+                var scope = options.GetScopeByLanguageId(name) ?? options.GetScopeByExtension("." + name);
+                if (!string.IsNullOrEmpty(scope))
+                {
+                    extension = Path.GetExtension(scope);
+                }
+            }
+        }
+
+        return new EditableCodeViewModel(block.Lines, extension, name);
+    }
+
+    private static DisplayCodeViewModel CreateReadOnlyCodeContext(LeafBlock block, WpfRenderer renderer)
     {
         string? extension = null;
         IGrammar? grammar = null;

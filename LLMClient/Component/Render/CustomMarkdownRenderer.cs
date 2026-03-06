@@ -16,6 +16,8 @@ public class CustomMarkdownRenderer : WpfRenderer
     // 新增：控制是否启用 TextMate 高亮
     public bool EnableTextMateHighlighting { get; set; } = true;
 
+    public bool EditMode { get; set; } = false;
+
     public static CustomMarkdownRenderer Instance { get; }
 
     public static readonly MarkdownPipeline DefaultPipeline =
@@ -40,7 +42,8 @@ public class CustomMarkdownRenderer : WpfRenderer
     public static ComponentResourceKey PermissionRequestStyleKey =>
         new(typeof(CustomMarkdownRenderer), nameof(PermissionRequestStyleKey));
 
-    public static CustomMarkdownRenderer NewRenderer(FlowDocument flowDocument, bool? enableTextMate = null)
+    public static CustomMarkdownRenderer NewRenderer(FlowDocument flowDocument, bool? enableTextMate = null,
+        bool? editMode = null)
     {
         var renderer = new CustomMarkdownRenderer();
         renderer.Initialize();
@@ -48,6 +51,8 @@ public class CustomMarkdownRenderer : WpfRenderer
         renderer.LoadDocument(flowDocument);
         if (enableTextMate.HasValue)
             renderer.EnableTextMateHighlighting = enableTextMate.Value;
+        if (editMode.HasValue) 
+            renderer.EditMode = editMode.Value;
         return renderer;
     }
 
@@ -105,7 +110,7 @@ public class CustomMarkdownRenderer : WpfRenderer
             return;
         }
 
-        var markdown = await Task.Run(() =>  Markdown.Parse(raw, DefaultPipeline));
+        var markdown = await Task.Run(() => Markdown.Parse(raw, DefaultPipeline));
         this.Render(markdown);
     }
 

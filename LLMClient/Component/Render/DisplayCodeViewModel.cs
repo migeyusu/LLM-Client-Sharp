@@ -337,7 +337,7 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
 
     #endregion
 
-    private Section _rootSection;
+    private readonly Section _rootSection;
 
     private void InitializeRender(WpfRenderer renderer, IGrammar? grammar, StringLineGroup codeGroup)
     {
@@ -349,7 +349,6 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
         renderer.Push(_rootSection);
         // Push 将 paragraph 注册到 FlowDocument；
         renderer.Push(_codeParagraph);
-        renderer.Pop();
         if (grammar == null)
         {
             // 无语法高亮：WriteRawLines 需要 renderer 当前容器为 paragraph，
@@ -363,6 +362,9 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
             // 有语法高亮：分词耗时，放到后台；paragraph 暂为空，稍后填充
             _ = TokenizeAndPopulateAsync(codeGroup, grammar);
         }
+
+        renderer.Pop();
+        renderer.Pop();
     }
 
     /// <summary>
@@ -394,7 +396,7 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
                     // 保留 DynamicResource 绑定：进入可视树后自动获取当前主题
                     run.SetResourceReference(
                         FrameworkContentElement.StyleProperty,
-                        TextMateCodeRenderer.TokenStyleKey);
+                        TextMateCodeRenderer.CodeTokenStyleKey);
                     _codeParagraph.Inlines.Add(run);
                 }
             }

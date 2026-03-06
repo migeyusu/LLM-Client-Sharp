@@ -51,6 +51,24 @@ public class UnitTest1
     }
 
     [Fact]
+    public async Task GitHubCopilotModels()
+    {
+        var environmentVariable = Environment.GetEnvironmentVariable("COPILOT_API_KEY");
+        /*curl -L \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer <YOUR-TOKEN>" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        https://models.github.ai/catalog/models*/
+        var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {environmentVariable}");
+        httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+        var response = await httpClient.GetAsync("https://models.github.ai/catalog/models");
+        var content = await response.Content.ReadAsStringAsync();
+        await File.WriteAllTextAsync("github_copilot_models.json", content);
+    }
+
+    [Fact]
     public void Convert()
     {
         if (Uri.TryCreate("./syntaxes/qml.tmLanguage.json", UriKind.RelativeOrAbsolute, out var uri))

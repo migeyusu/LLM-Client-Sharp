@@ -20,7 +20,8 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type local:EditableTextContent}">
                         <Grid>
-                            <RichTextBox>
+                            <!--<FlowDocumentReader Document="{Binding Document,Mode=OneWay}" />-->
+                            <RichTextBox IsDocumentEnabled="True">
                                 <b:Interaction.Behaviors>
                                     <render:RichTextBoxBehaviour Document="{Binding Document,Mode=OneWay}" />
                                 </b:Interaction.Behaviors>

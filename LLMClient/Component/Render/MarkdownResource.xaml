@@ -13,6 +13,8 @@
                     xmlns:render="clr-namespace:LLMClient.Component.Render"
                     xmlns:utility="clr-namespace:LLMClient.Component.Utility"
                     xmlns:component="clr-namespace:LLMClient.Component"
+                    xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
+                    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
                     mc:Ignorable="d">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary
@@ -234,9 +236,49 @@
         <Setter Property="Foreground"
                 Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
     </Style>
-    
+
     <Style TargetType="{x:Type ContentControl}"
-           x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockHeaderStyleKey}">
+           x:Key="{x:Static render:TextMateCodeRenderer.EditCodeBlockStyleKey}">
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type render:EditableCodeViewModel}">
+                    <Expander>
+                        <Expander.Header>
+                            <StackPanel HorizontalAlignment="Left"
+                                        Orientation="Horizontal">
+                                <TextBlock Text="{Binding  Extension,Mode=OneTime}"
+                                           Padding="10,0,0,0"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Expander.Header>
+
+                        <Border BorderBrush="{DynamicResource MaterialDesignDividerBrush}"
+                                BorderThickness="1"
+                                Background="{DynamicResource MaterialDesignPaper}"
+                                Margin="0,5,0,10"
+                                CornerRadius="4">
+                            <avalonedit:TextEditor FontFamily="Consolas"
+                                                   FontSize="14"
+                                                   SyntaxHighlighting="{Binding SyntaxHighlighting,Mode=OneTime}"
+                                                   Margin="0,10"
+                                                   MinHeight="200"
+                                                   ShowLineNumbers="True">
+                                <i:Interaction.Behaviors>
+                                    <render:TextEditorBehavior
+                                        Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </i:Interaction.Behaviors>
+                            </avalonedit:TextEditor>
+                        </Border>
+                    </Expander>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ContentControl}"
+           x:Key="{x:Static render:TextMateCodeRenderer.DisplayCodeBlockHeaderStyleKey}">
         <Setter Property="HorizontalAlignment"
                 Value="Stretch" />
         <Setter Property="ContentTemplate">
@@ -314,7 +356,7 @@
     </Style>
 
     <Style TargetType="{x:Type render:TextmateColoredRun}"
-           x:Key="{x:Static render:TextMateCodeRenderer.TokenStyleKey}">
+           x:Key="{x:Static render:TextMateCodeRenderer.CodeTokenStyleKey}">
         <Setter Property="ThemeColors"
                 Value="{DynamicResource CodeBlock.TextMateSharp.Theme}" />
     </Style>

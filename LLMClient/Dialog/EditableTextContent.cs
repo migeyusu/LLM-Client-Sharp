@@ -53,7 +53,7 @@ public class EditableTextContent : BaseViewModel
                 }
 
                 var flowDocument = new FlowDocument();
-                var customMarkdownRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
+                var customMarkdownRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument, editMode: true);
                 await customMarkdownRenderer.RenderMarkdown(_text);
                 return flowDocument;
             }), null);
@@ -84,6 +84,7 @@ public class EditableTextContent : BaseViewModel
     }
 
     private readonly TextContent _textContent;
+
     private bool _hasEdit;
 
     public EditableTextContent(TextContent textContent, string? messageId)
