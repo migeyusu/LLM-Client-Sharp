@@ -249,9 +249,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
                         renderer.Render(markdownDocument);
                         break;
                     case TextContent textContent:
-                        var document = await Task.Run(() =>
-                            Markdown.Parse(textContent.Text, CustomMarkdownRenderer.DefaultPipeline));
-                        renderer.Render(document);
+                        await renderer.RenderMarkdown(textContent.Text);
                         break;
                     case FunctionCallContent functionCallContent:
                         renderer.AppendExpanderItem(functionCallContent,

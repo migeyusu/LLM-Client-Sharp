@@ -92,6 +92,8 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!--content无法参与Flowdocument渲染，用于不关心内部信息的显示-->
     <Style x:Key="AIContentExpander" TargetType="{x:Type Expander}">
         <Setter Property="Background" Value="Transparent" /> <!--{DynamicResource MaterialDesign.Brush.Background}-->
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -244,11 +246,21 @@
                         <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.Background}"
                                    HorizontalAlignment="Stretch"
                                    VerticalAlignment="Stretch" />
-                        <TextBlock Text="{Binding  Extension,Mode=OneTime}"
-                                   Padding="10,0,0,0"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Center" />
+                        <StackPanel HorizontalAlignment="Left"
+                                    Orientation="Horizontal">
+                            <TextBlock Text="{Binding  Extension,Mode=OneTime}"
+                                       Padding="10,0,0,0"
+                                       Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Center" />
+                            <ToggleButton IsChecked="{Binding IsCollapsed, Mode=OneWayToSource}"
+                                          materialDesign:ToggleButtonAssist.OnContent="{materialDesign:PackIcon Kind=ChevronDown}"
+                                          Content="{materialDesign:PackIcon Kind=ChevronUp}"
+                                          Margin="10,0,0,0"
+                                          Width="30"
+                                          Height="30"
+                                          Style="{StaticResource MaterialDesignActionToggleButton}" />
+                        </StackPanel>
                         <StackPanel HorizontalAlignment="Right"
                                     Orientation="Horizontal">
                             <Button Command="{x:Static render:CodeCompareViewModel.AddToCompareCommand}"

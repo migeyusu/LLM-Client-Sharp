@@ -18,6 +18,29 @@ namespace LLMClient.Component.Render;
 
 public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
 {
+    public bool IsCollapsed
+    {
+        get => _isCollapsed;
+        set
+        {
+            if (value == _isCollapsed) return;
+            _isCollapsed = value;
+            if (value)
+            {
+                _rootSection.BeginInit();
+                _rootSection.Blocks.Clear();
+                _rootSection.EndInit();
+            }
+            else
+            {
+                _rootSection.BeginInit();
+                _rootSection.Blocks.Clear();
+                ((IAddChild)_rootSection).AddChild(_codeParagraph);
+                _rootSection.EndInit();
+            }
+        }
+    }
+
     // 渲染状态管理
     private Paragraph? _codeParagraph;
 
@@ -31,6 +54,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
         CodeGroup = codeGroup;
         Grammar = grammar;
         _codeStringLazy = new Lazy<string>(codeGroup.ToString);
+        _rootSection = new Section();
         InitializeRender(renderer, grammar, codeGroup);
     }
 
@@ -46,6 +70,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
     public StringLineGroup CodeGroup { get; }
 
     private readonly string[] _supportedRunExtensions = new[] { "bash", "powershell", "html" };
+    private bool _isCollapsed;
 
     public string NameLower { get; }
 
@@ -267,6 +292,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
         }
     }
 
+
     /// <summary>
     /// 将 Windows 路径转换为 Git Bash 格式 (C:\path -> /c/path)
     /// </summary>
@@ -311,29 +337,30 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
 
     #endregion
 
+    private Section _rootSection;
+
     private void InitializeRender(WpfRenderer renderer, IGrammar? grammar, StringLineGroup codeGroup)
     {
-        var paragraph = new Paragraph();
-        paragraph.SetResourceReference(
+        _codeParagraph = new Paragraph();
+        _codeParagraph.SetResourceReference(
             FrameworkContentElement.StyleProperty,
             Styles.CodeBlockStyleKey);
-
-        // Push 将 paragraph 注册到 FlowDocument；
         // 返回后 Write 中的最终 renderer.Pop() 会关闭它
-        renderer.Push(paragraph);
-
+        renderer.Push(_rootSection);
+        // Push 将 paragraph 注册到 FlowDocument；
+        renderer.Push(_codeParagraph);
+        renderer.Pop();
         if (grammar == null)
         {
             // 无语法高亮：WriteRawLines 需要 renderer 当前容器为 paragraph，
             // 必须同步执行，但它本身很快，不需要异步
-            paragraph.BeginInit();
+            _codeParagraph.BeginInit();
             renderer.WriteRawLines(codeGroup);
-            paragraph.EndInit();
+            _codeParagraph.EndInit();
         }
         else
         {
             // 有语法高亮：分词耗时，放到后台；paragraph 暂为空，稍后填充
-            _codeParagraph = paragraph;
             _ = TokenizeAndPopulateAsync(codeGroup, grammar);
         }
     }
@@ -377,7 +404,7 @@ public class CodeViewModel : BaseViewModel, CommonCommands.ICopyable
             _codeParagraph.EndInit();
         }
     }
-    
+
     private static readonly TimeSpan TokenizeTimeout = TimeSpan.FromSeconds(5);
 
     /// <summary>

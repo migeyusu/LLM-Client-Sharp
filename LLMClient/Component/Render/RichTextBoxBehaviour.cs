@@ -14,7 +14,7 @@ public class RichTextBoxBehaviour : Behavior<RichTextBox>
 
     public FlowDocument Document
     {
-        get => (System.Windows.Documents.FlowDocument)GetValue(DocumentProperty);
+        get => (FlowDocument)GetValue(DocumentProperty);
         set => SetValue(DocumentProperty, value);
     }
 

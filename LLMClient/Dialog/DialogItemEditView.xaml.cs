@@ -2,9 +2,9 @@
 
 namespace LLMClient.Dialog;
 
-public partial class ResponseViewItemEditView : UserControl
+public partial class DialogItemEditView : UserControl
 {
-    public ResponseViewItemEditView()
+    public DialogItemEditView()
     {
         InitializeComponent();
     }

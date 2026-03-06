@@ -1,4 +1,6 @@
-﻿using System.Windows.Input;
+﻿using System.Windows.Documents;
+using System.Windows.Input;
+using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.AI;
@@ -36,6 +38,25 @@ public class EditableTextContent : BaseViewModel
             _text = value;
             OnPropertyChanged();
             HasEdit = true;
+        }
+    }
+
+    public FlowDocument? Document
+    {
+        get
+        {
+            return GetAsyncProperty((async () =>
+            {
+                if (string.IsNullOrEmpty(_text))
+                {
+                    return null;
+                }
+
+                var flowDocument = new FlowDocument();
+                var customMarkdownRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
+                await customMarkdownRenderer.RenderMarkdown(_text);
+                return flowDocument;
+            }), null);
         }
     }
 

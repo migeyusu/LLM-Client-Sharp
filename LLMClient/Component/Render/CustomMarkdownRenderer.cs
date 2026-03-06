@@ -98,15 +98,15 @@ public class CustomMarkdownRenderer : WpfRenderer
     }
 
 
-    public FlowDocument? RenderRaw(string raw)
+    public async Task RenderMarkdown(string raw)
     {
         if (string.IsNullOrEmpty(raw.Trim()))
         {
-            return this.Document;
+            return;
         }
 
-        var markdown = Markdown.Parse(raw, DefaultPipeline);
-        return (FlowDocument?)this.Render(markdown);
+        var markdown = await Task.Run(() =>  Markdown.Parse(raw, DefaultPipeline));
+        this.Render(markdown);
     }
 
     /*public async Task RenderRawAsync(string raw)

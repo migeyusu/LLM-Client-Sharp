@@ -10,7 +10,7 @@ namespace LLMClient.Dialog;
 
 public class DialogItemEditViewModel : BaseViewModel
 {
-    public List<EditableTextContent> TextContents { get; } = new();
+    public List<EditableTextContent> TextContents { get; } = [];
 
     public ICommand SaveCommand => new ActionCommand(() =>
     {

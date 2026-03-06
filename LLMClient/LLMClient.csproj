@@ -194,7 +194,7 @@
         <Page Update="Dialog\RequesterView.xaml">
             <Generator>MSBuild:Compile</Generator>
         </Page>
-        <Page Update="Dialog\ResponseViewItemEditView.xaml">
+        <Page Update="Dialog\DialogItemEditView.xaml">
             <Generator>MSBuild:Compile</Generator>
         </Page>
         <Page Update="Project\ProjectView.xaml">

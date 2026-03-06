@@ -61,7 +61,7 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
             _formattedTextMessage = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(TextMessage));
-            OnPropertyChanged(nameof(SearchableDocument));
+            InvalidateAsyncProperty(nameof(SearchableDocument));
             var dialogSessionViewModel = this.ParentSession;
             if (dialogSessionViewModel != null) dialogSessionViewModel.IsDataChanged = true;
         }
@@ -74,27 +74,23 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
 
     public ICommand FormatTextCommand { get; }
 
-    private SearchableDocument? _document = null;
-
     public SearchableDocument? SearchableDocument
     {
         get
         {
-            if (_document != null)
+            return GetAsyncProperty(async () =>
             {
-                return _document;
-            }
+                var textMessage = TextMessage;
+                if (!string.IsNullOrEmpty(textMessage))
+                {
+                    var flowDocument = new FlowDocument();
+                    var renderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
+                    await renderer.RenderMarkdown(textMessage);
+                    return new SearchableDocument(flowDocument);
+                }
 
-            var textMessage = TextMessage;
-            if (!string.IsNullOrEmpty(textMessage))
-            {
-                var flowDocument = new FlowDocument();
-                var renderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
-                renderer.RenderRaw(textMessage);
-                _document = new SearchableDocument(flowDocument);
-            }
-
-            return _document;
+                return null;
+            }, null);
         }
     }
 
@@ -200,7 +196,7 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
                         this.ParentSession?.SystemPrompt, CancellationToken.None);
                 if (!string.IsNullOrEmpty(userPrompt))
                 {
-                    _document = null;
+                    this.InvalidateAsyncProperty(nameof(SearchableDocument));
                     this.FormattedTextMessage = userPrompt;
                 }
             }
@@ -257,12 +253,11 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
     {
         _message = null;
         _formattedTextMessage = null;
-        _document = null;
         OnPropertyChanged(nameof(RawTextMessage));
         OnPropertyChanged(nameof(FormattedTextMessage));
         OnPropertyChanged(nameof(TextMessage));
-        OnPropertyChanged(nameof(SearchableDocument));
         InvalidateAsyncProperty(nameof(Tokens));
+        InvalidateAsyncProperty(nameof(SearchableDocument));
         var dialogSessionViewModel = this.ParentSession;
         if (dialogSessionViewModel != null) dialogSessionViewModel.IsDataChanged = true;
     }
