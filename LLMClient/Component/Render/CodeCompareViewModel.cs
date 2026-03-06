@@ -9,7 +9,7 @@ public class CodeCompareViewModel : BaseViewModel
 {
     public static CodeCompareViewModel Instance { get; } = new();
 
-    public static ICommand AddToCompareCommand = new RelayCommand<CodeViewModel>((o) =>
+    public static ICommand AddToCompareCommand = new RelayCommand<DisplayCodeViewModel>((o) =>
     {
         if (o != null)
         {
@@ -17,10 +17,10 @@ public class CodeCompareViewModel : BaseViewModel
         }
     });
 
-    private readonly ObservableCollection<CodeViewModel> _codeViewModels = new();
+    private readonly ObservableCollection<DisplayCodeViewModel> _codeViewModels = new();
     private bool _hasMember;
 
-    public ReadOnlyObservableCollection<CodeViewModel> PendingList { get; }
+    public ReadOnlyObservableCollection<DisplayCodeViewModel> PendingList { get; }
 
     public bool HasMember
     {
@@ -80,7 +80,7 @@ public class CodeCompareViewModel : BaseViewModel
             OnPropertyChanged(nameof(ComparedRight));
             
         });
-        PendingList = new ReadOnlyObservableCollection<CodeViewModel>(_codeViewModels);
+        PendingList = new ReadOnlyObservableCollection<DisplayCodeViewModel>(_codeViewModels);
         ClearCommand = new RelayCommand(() =>
         {
             _codeViewModels.Clear();
@@ -90,7 +90,7 @@ public class CodeCompareViewModel : BaseViewModel
         });
     }
 
-    public void AddCode(CodeViewModel model)
+    public void AddCode(DisplayCodeViewModel model)
     {
         if (_codeViewModels.Count == 2)
         {

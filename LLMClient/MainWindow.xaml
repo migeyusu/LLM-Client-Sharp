@@ -525,7 +525,7 @@
                     <ItemsControl ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}"
                                   ItemsSource="{Binding PendingList,Mode=OneTime}">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type render:CodeViewModel}">
+                            <DataTemplate DataType="{x:Type render:DisplayCodeViewModel}">
                                 <materialDesign:Chip IsDeletable="True"
                                                      MaxWidth="180"
                                                      Height="32"

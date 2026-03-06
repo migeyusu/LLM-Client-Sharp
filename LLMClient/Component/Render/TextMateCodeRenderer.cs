@@ -99,7 +99,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
         renderer.Pop();
     }
 
-    private CodeViewModel CreateCodeContext(LeafBlock block, WpfRenderer renderer)
+    private DisplayCodeViewModel CreateCodeContext(LeafBlock block, WpfRenderer renderer)
     {
         string? extension = null;
         IGrammar? grammar = null;
@@ -122,6 +122,6 @@ public class TextMateCodeRenderer : CodeBlockRenderer
             }
         }
 
-        return new CodeViewModel(renderer, block.Lines, extension, name, grammar);
+        return new DisplayCodeViewModel(renderer, block.Lines, extension, name, grammar);
     }
 }

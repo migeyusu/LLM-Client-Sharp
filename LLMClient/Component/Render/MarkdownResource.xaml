@@ -234,14 +234,14 @@
         <Setter Property="Foreground"
                 Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
     </Style>
-
+    
     <Style TargetType="{x:Type ContentControl}"
            x:Key="{x:Static render:TextMateCodeRenderer.CodeBlockHeaderStyleKey}">
         <Setter Property="HorizontalAlignment"
                 Value="Stretch" />
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type render:CodeViewModel}">
+                <DataTemplate DataType="{x:Type render:DisplayCodeViewModel}">
                     <Grid Height="40" Background="{DynamicResource MaterialDesign.Brush.Background}">
                         <Rectangle Fill="{DynamicResource MaterialDesign.Brush.Chip.Background}"
                                    HorizontalAlignment="Stretch"
@@ -278,7 +278,7 @@
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource MaterialDesignIconButton}"
-                                    Command="{x:Static render:CodeViewModel.RunCommand}"
+                                    Command="{x:Static render:DisplayCodeViewModel.RunCommand}"
                                     CommandParameter="{Binding Mode=OneTime}"
                                     Margin="10,0,0,0"
                                     Content="{materialDesign:PackIcon Kind=Play,Size=26}"
@@ -287,7 +287,7 @@
                                     Foreground="Green"
                                     Visibility="{Binding CanRun,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <Button Style="{StaticResource MaterialDesignFlatLightButton}"
-                                    Command="{x:Static render:CodeViewModel.SaveCommand}"
+                                    Command="{x:Static render:DisplayCodeViewModel.SaveCommand}"
                                     CommandParameter="{Binding Mode=OneTime}"
                                     Margin="10,0,0,0"
                                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
