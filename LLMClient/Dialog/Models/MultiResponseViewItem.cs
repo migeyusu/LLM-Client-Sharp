@@ -133,6 +133,39 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
 
     public ModelSelectionPopupViewModel SelectionPopup { get; }
 
+    public static ICommand SplitResponseCommand = new RelayCommand<MultiResponseViewItem>((async mutiResponse =>
+    {
+        if (mutiResponse == null)
+        {
+            return;
+        }
+
+        //分裂回复集合为多个分支
+        if (mutiResponse.Items.Count < 2)
+        {
+            return;
+        }
+
+        if (mutiResponse.HasFork)
+        {
+            await DialogHost.Show("只能对没有子节点的回复进行分裂");
+            return;
+        }
+
+        if (mutiResponse.PreviousItem is RequestViewItem requestViewItem)
+        {
+            while (mutiResponse.Items.Count > 1)
+            {
+                var responseItem = mutiResponse.Items[1];
+                mutiResponse.RemoveAt(1);
+                var newMultiResponse = new MultiResponseViewItem(mutiResponse.ParentSession)
+                    { InteractionId = mutiResponse.InteractionId };
+                newMultiResponse.AppendResponse(responseItem);
+                requestViewItem.AppendChild(newMultiResponse);
+            }
+        }
+    }));
+
     public ICommand ClearOthersCommand { get; }
 
     public ICommand RetryCommand { get; }

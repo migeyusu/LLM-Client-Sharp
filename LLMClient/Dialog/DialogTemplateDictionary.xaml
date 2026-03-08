@@ -505,11 +505,18 @@
                                 Margin="6,0,0,0"
                                 ToolTip="对比所有响应"
                                 Content="{materialDesign:PackIcon Kind=Compare,Size=20}" />
-                        <Button ToolTip="由此创建新分支"
+                        <Button ToolTip="当前设为分支Head"
                                 Margin="6,0,0,0"
                                 Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type dialog:SessionView}},Path=DataContext.SetLeafCommand}"
                                 CommandParameter="{Binding}"
                                 Content="{materialDesign:PackIcon SourceBranchPlus,Size=20}"
+                                Style="{StaticResource SmallIconButtonStyle}" />
+                        <Button ToolTip="将所有回复分成不同分支"
+                                Margin="6,0,0,0"
+                                Command="{x:Static models:MultiResponseViewItem.SplitResponseCommand}"
+                                CommandParameter="{Binding Mode=OneTime}"
+                                Content="{materialDesign:PackIcon ArrowSplitVertical,Size=20}"
+                                Visibility="{Binding HasFork,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
                                 Style="{StaticResource SmallIconButtonStyle}" />
                     </StackPanel>
                 </Grid>

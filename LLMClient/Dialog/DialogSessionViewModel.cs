@@ -231,6 +231,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     public ICommand GoToPreviousHighlightCommand { get; }
 
     public ICommand SetLeafCommand { get; }
+    
 
     #endregion
 

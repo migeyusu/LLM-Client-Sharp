@@ -219,7 +219,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
                 {
                     this.Topic = newTopic;
                 }
-            });
+            }, CancellationToken.None);
         }
 
         return completedResult;
