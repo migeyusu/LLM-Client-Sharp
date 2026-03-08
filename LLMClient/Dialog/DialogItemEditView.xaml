@@ -7,6 +7,7 @@
              xmlns:local="clr-namespace:LLMClient.Dialog"
              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:render="clr-namespace:LLMClient.Component.Render"
+             xmlns:extension="clr-namespace:LLMClient.Component.Extension"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DialogItemEditViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">
@@ -18,20 +19,15 @@
         <ScrollViewer>
             <ItemsControl ItemsSource="{Binding TextContents,Mode=OneTime}">
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="{x:Type local:EditableTextContent}">
+                    <DataTemplate DataType="{x:Type local:TextContentCodeEditViewModel}">
                         <Grid>
-                            <!--<FlowDocumentReader Document="{Binding Document,Mode=OneWay}" />-->
                             <RichTextBox IsDocumentEnabled="True">
                                 <b:Interaction.Behaviors>
                                     <render:RichTextBoxBehaviour Document="{Binding Document,Mode=OneWay}" />
+                                    <extension:RichTextBoxTrackingBehavior
+                                        IsTextChanged="{Binding  HasEdit,Mode=OneWayToSource}" />
                                 </b:Interaction.Behaviors>
                             </RichTextBox>
-                            <!--<TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     AcceptsReturn="True"
-                                     VerticalScrollBarVisibility="Auto"
-                                     AcceptsTab="True"
-                                     TextWrapping="Wrap"
-                                     Margin="5" />-->
                             <Button Content="{materialDesign:PackIcon Kind=Undo}"
                                     Command="{Binding RollbackCommand}"
                                     Visibility="{Binding HasEdit,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"

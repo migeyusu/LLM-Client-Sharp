@@ -69,6 +69,42 @@ public class BaseViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// 判断异步属性是否已生成值
+    /// </summary>
+    protected bool IsAsyncPropertyInitialized([CallerMemberName] string? propertyName = null)
+    {
+        if (string.IsNullOrEmpty(propertyName))
+        {
+            return false;
+        }
+
+        if (_asyncPropertyStates.TryGetValue(propertyName, out var state))
+        {
+            return state.IsGenerated;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 等待异步属性生成值。如果属性尚未触发计算，会尝试触发（前提是已注册工厂）。
+    /// 如果属性不存在或未关联工厂且未生成值，将一直等待直到被赋值。
+    /// </summary>
+    protected Task<T> WaitAsyncProperty<T>([CallerMemberName] string? propertyName = null)
+    {
+        if (string.IsNullOrEmpty(propertyName))
+        {
+            return Task.FromResult(default(T)!);
+        }
+
+        var state = (AsyncPropertyState<T>)_asyncPropertyStates.GetOrAdd(
+            propertyName,
+            _ => new AsyncPropertyState<T>(null, default!, this, propertyName));
+
+        return state.WaitAsync();
+    }
+
+    /// <summary>
     /// 使异步属性失效，触发重新计算
     /// </summary>
     public void InvalidateAsyncProperty([CallerMemberName] string? propertyName = null)
@@ -87,11 +123,14 @@ public class BaseViewModel : INotifyPropertyChanged
     private interface IAsyncPropertyState
     {
         void Invalidate();
+        bool IsGenerated { get; }
     }
 
     private class AsyncPropertyState<T> : IAsyncPropertyState
     {
         private T _value;
+
+        private TaskCompletionSource<T> _completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         // 移除 readonly，允许迟绑定
         private Func<Task<T>>? _calculateAsync;
@@ -129,6 +168,23 @@ public class BaseViewModel : INotifyPropertyChanged
             }
         }
 
+        public Task<T> WaitAsync()
+        {
+            // 如果已经生成，直接返回
+            if (IsGenerated)
+            {
+                return Task.FromResult(_value);
+            }
+
+            // 如果没生成，尝试触发计算
+            if (_calculateAsync != null && _semaphore.CurrentCount > 0)
+            {
+                _ = CalculateAsync();
+            }
+
+            return _completionSource.Task;
+        }
+
         public T GetValue()
         {
             // 如果已经被赋值（非默认值），直接返回，不触发计算
@@ -153,6 +209,13 @@ public class BaseViewModel : INotifyPropertyChanged
             // 我们假设Setter主要由UI线程或初始化代码调用
             // 如果需要支持多线程并发Set，才需要加锁
             _value = newValue;
+
+            // 如果设置了有效值，通知等待者
+            if (!IsDefaultValue(_value))
+            {
+                _completionSource.TrySetResult(_value);
+            }
+
             // 触发通知
             _viewModel.OnPropertyChanged(_propertyName);
             return true;
@@ -182,15 +245,32 @@ public class BaseViewModel : INotifyPropertyChanged
             // 如果在计算过程中，外部已经Set了有效值，则放弃本次计算结果（以最新Set为准）
             if (!IsDefaultValue(_value)) return;
             _value = newValue;
+
+            // 只有有效值才 SetResult
+            if (!IsDefaultValue(_value))
+            {
+                _completionSource.TrySetResult(_value);
+            }
+
             _viewModel.OnPropertyChanged(_propertyName);
         }
 
         public void Invalidate()
         {
             _value = _defaultValue;
+
+            // 如果当前的 TCS 已经完结（说明之前有过值），现在值无效了
+            // 需要重置 TCS 以便下一次 WaitAsync 可以等待新的值
+            if (_completionSource.Task.IsCompleted)
+            {
+                _completionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+
             // 触发通知，让UI重新Get，从而触发CalculateAsync
             _viewModel.OnPropertyChangedAsync(_propertyName);
         }
+
+        public bool IsGenerated => !IsDefaultValue(_value);
 
         private bool IsDefaultValue(T value)
         {

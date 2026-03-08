@@ -265,8 +265,7 @@
         <Setter Property="HeaderTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type render:EditableCodeViewModel}">
-                    <StackPanel HorizontalAlignment="Left"
-                                Orientation="Horizontal">
+                    <Grid>
                         <TextBlock Padding="10,0,0,0"
                                    Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
                                    HorizontalAlignment="Left"
@@ -291,7 +290,7 @@
                         <!--<Button Style="{StaticResource ItemDeleteButtonStyle}"
                                 VerticalAlignment="Center"
                                 Command="{Binding DeleteCommand}" />-->
-                    </StackPanel>
+                    </Grid>
                 </DataTemplate>
             </Setter.Value>
         </Setter>

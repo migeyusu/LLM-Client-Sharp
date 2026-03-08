@@ -1,6 +1,7 @@
-﻿using System.Windows.Documents;
+﻿using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Markup;
+using CommunityToolkit.Mvvm.Input;
 using ICSharpCode.AvalonEdit.Highlighting;
 using LLMClient.Component.ViewModel.Base;
 using Markdig.Helpers;
@@ -10,7 +11,6 @@ namespace LLMClient.Component.Render;
 
 public class EditableCodeViewModel : BaseViewModel
 {
-    private readonly StringLineGroup _codeGroup;
     private string _code;
 
     public string Code
@@ -40,16 +40,29 @@ public class EditableCodeViewModel : BaseViewModel
         }
     }
 
-    /*public ICommand DeleteCommand { get; }*/
+    public ICommand DeleteCommand { get; }
 
     public ICommand RollbackCommand { get; }
-    
+
     public EditableCodeViewModel(StringLineGroup codeGroup, string? extension, string? name)
     {
-        _codeGroup = codeGroup;
         _code = codeGroup.ToString();
         Extension = extension;
         Name = name;
-        RollbackCommand = new ActionCommand(o => { Code = _codeGroup.ToString(); });
+        RollbackCommand = new ActionCommand(o => { Code = codeGroup.ToString(); });
+        DeleteCommand = new RelayCommand<BlockUIContainer>(o =>
+        {
+            if (o == null)
+            {
+                return;
+            }
+
+            if (o.Parent is FlowDocument document)
+            {
+                document.Blocks.Remove(o);
+            }
+        });
     }
+    
+    
 }

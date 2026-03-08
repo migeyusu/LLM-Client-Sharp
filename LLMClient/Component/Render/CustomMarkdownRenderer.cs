@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
 using Markdig;
+using Markdig.Parsers;
 using Markdig.Renderers;
 using Markdig.Renderers.Wpf;
 using Markdig.Syntax;
@@ -18,7 +19,7 @@ public class CustomMarkdownRenderer : WpfRenderer
 
     public bool EditMode { get; set; } = false;
 
-    public static CustomMarkdownRenderer Instance { get; }
+    public static CustomMarkdownRenderer DefaultInstance { get; }
 
     public static readonly MarkdownPipeline DefaultPipeline =
         new MarkdownPipelineBuilder()
@@ -32,26 +33,49 @@ public class CustomMarkdownRenderer : WpfRenderer
             .UseGenericAttributes()
             .Build();
 
+    private static readonly Lazy<MarkdownPipeline> EditModePipelineLazy = new Lazy<MarkdownPipeline>(() =>
+    {
+        // 编辑模式下的 MarkdownPipeline，禁用除代码块以外的所有解析器
+        var builder = new MarkdownPipelineBuilder();
+        builder.BlockParsers.Clear();
+        builder.InlineParsers.Clear();
+        builder.BlockParsers.Add(new FencedCodeBlockParser());
+        builder.BlockParsers.Add(new ParagraphBlockParser());
+        return builder.Build();
+    });
+
+    public static readonly MarkdownPipeline EditModePipeline = EditModePipelineLazy.Value;
+
     static CustomMarkdownRenderer()
     {
-        Instance = new CustomMarkdownRenderer();
-        Instance.Initialize();
-        DefaultPipeline.Setup(Instance);
+        DefaultInstance = new CustomMarkdownRenderer() { Pipeline = DefaultPipeline };
+        DefaultInstance.Initialize();
+        DefaultPipeline.Setup(DefaultInstance);
     }
 
     public static ComponentResourceKey PermissionRequestStyleKey =>
         new(typeof(CustomMarkdownRenderer), nameof(PermissionRequestStyleKey));
 
+    public static CustomMarkdownRenderer EditRenderer(FlowDocument flowDocument)
+    {
+        var renderer = new CustomMarkdownRenderer() { Pipeline = EditModePipeline };
+        renderer.Initialize();
+        EditModePipeline.Setup(renderer);
+        renderer.LoadDocument(flowDocument);
+        renderer.EditMode = true;
+        return renderer;
+    }
+
     public static CustomMarkdownRenderer NewRenderer(FlowDocument flowDocument, bool? enableTextMate = null,
         bool? editMode = null)
     {
-        var renderer = new CustomMarkdownRenderer();
+        var renderer = new CustomMarkdownRenderer() { Pipeline = DefaultPipeline };
         renderer.Initialize();
         DefaultPipeline.Setup(renderer);
         renderer.LoadDocument(flowDocument);
         if (enableTextMate.HasValue)
             renderer.EnableTextMateHighlighting = enableTextMate.Value;
-        if (editMode.HasValue) 
+        if (editMode.HasValue)
             renderer.EditMode = editMode.Value;
         return renderer;
     }
@@ -59,12 +83,13 @@ public class CustomMarkdownRenderer : WpfRenderer
     public static ComponentResourceKey FunctionCallStyleKey { get; } =
         new(typeof(CustomMarkdownRenderer), nameof(FunctionCallStyleKey));
 
-
     public static ComponentResourceKey FunctionResultStyleKey { get; } =
         new(typeof(CustomMarkdownRenderer), (object)nameof(FunctionResultStyleKey));
 
     public static ComponentResourceKey AnnotationStyleKey =>
         new(typeof(CustomMarkdownRenderer), nameof(AnnotationStyleKey));
+
+    public required MarkdownPipeline Pipeline { get; init; }
 
     public void AppendExpanderItem<T>(T obj, ComponentResourceKey styleKey)
     {
@@ -98,7 +123,7 @@ public class CustomMarkdownRenderer : WpfRenderer
             LoadDocument(document);
         }
 
-        var markdown = Markdown.Parse(raw, DefaultPipeline);
+        var markdown = Markdown.Parse(raw, this.Pipeline);
         this.Render(markdown);
     }
 
@@ -110,21 +135,10 @@ public class CustomMarkdownRenderer : WpfRenderer
             return;
         }
 
-        var markdown = await Task.Run(() => Markdown.Parse(raw, DefaultPipeline));
+        var markdown = await Task.Run(() => Markdown.Parse(raw, this.Pipeline));
         this.Render(markdown);
     }
-
-    /*public async Task RenderRawAsync(string raw)
-    {
-        if (string.IsNullOrEmpty(raw.Trim()))
-        {
-            return;
-        }
-
-        var markdownDocument = await Task.Run(() => Markdown.Parse(raw, DefaultPipeline));
-        this.Render(markdownDocument);
-    }*/
-
+    
     public override void LoadDocument(FlowDocument document)
     {
         Document = document;

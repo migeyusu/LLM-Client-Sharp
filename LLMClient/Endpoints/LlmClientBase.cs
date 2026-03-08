@@ -5,13 +5,16 @@ using System.Text;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Component;
+using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Rag;
+using Markdig.Renderers.Html;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
+using WinRT;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
@@ -319,6 +322,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             {
                 while (true)
                 {
+                    var reasoningStart = false;
+                    var reasoningEnd = false;
                     cancellationToken.ThrowIfCancellationRequested();
                     UsageDetails? loopUsageDetails = null;
                     try
@@ -342,7 +347,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                 preUpdates.Add(update);
                                 chatContext.CompleteStreamResponse(result, update);
                                 //只收集文本内容
-                                interactor?.Info(update.GetText());
+                                interactor?.Info(GetText(update, ref reasoningStart, ref reasoningEnd));
                             }
 
                             preResponse = preUpdates.MergeResponse();
@@ -603,17 +608,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             result.Duration = duration;
             result.FinishReason = finishReason;
             result.Price = price;
-            if (!result.IsInterrupt)
+            var modelTelemetry = this.Model.Telemetry;
+            if (modelTelemetry == null)
             {
-                var modelTelemetry = this.Model.Telemetry;
-                if (modelTelemetry == null)
-                {
-                    this.Model.Telemetry = new UsageCounter(result);
-                }
-                else
-                {
-                    modelTelemetry.Add(result);
-                }
+                this.Model.Telemetry = new UsageCounter(result);
+            }
+            else
+            {
+                modelTelemetry.Add(result);
             }
 
             return result;
@@ -621,6 +623,36 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         finally
         {
             IsResponding = false;
+        }
+
+        string GetText(ChatResponseUpdate update, ref bool reasoningStart, ref bool reasoningEnd)
+        {
+            var stringBuilder = new StringBuilder();
+            foreach (var content in update.Contents)
+            {
+                if (content is TextContent textContent)
+                {
+                    if (reasoningStart && !reasoningEnd)
+                    {
+                        stringBuilder.AppendLine(ThinkBlockParser.CloseTag);
+                        reasoningEnd = true;
+                    }
+
+                    stringBuilder.Append(textContent.Text);
+                }
+                else if (content is TextReasoningContent reasoningContent)
+                {
+                    if (!reasoningStart)
+                    {
+                        stringBuilder.AppendLine(ThinkBlockParser.OpenTag);
+                        reasoningStart = true;
+                    }
+
+                    stringBuilder.Append(reasoningContent.Text);
+                }
+            }
+
+            return stringBuilder.ToString();
         }
     }
 }

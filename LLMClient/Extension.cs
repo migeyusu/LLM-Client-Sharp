@@ -68,24 +68,6 @@ public static class Extension
             : (resultContent.Result?.ToString() ?? "(null)"));
     }
 
-    public static string GetText(this ChatResponseUpdate update)
-    {
-        var stringBuilder = new StringBuilder();
-        foreach (var content in update.Contents)
-        {
-            if (content is TextContent textContent)
-            {
-                stringBuilder.Append(textContent.Text);
-            }
-            else if (content is TextReasoningContent reasoningContent)
-            {
-                stringBuilder.Append(reasoningContent.Text);
-            }
-        }
-
-        return stringBuilder.ToString();
-    }
-
     #endregion
 
     public static async Task<bool> ShowConfirm(string question)

@@ -10,9 +10,9 @@ namespace LLMClient.Dialog;
 
 public class DialogItemEditViewModel : BaseViewModel
 {
-    public List<EditableTextContent> TextContents { get; } = [];
+    public List<TextContentEditViewModel> TextContents { get; } = [];
 
-    public ICommand SaveCommand => new ActionCommand(() =>
+    public ICommand SaveCommand => new ActionCommand(async () =>
     {
         if (TextContents.Any(textContent => !textContent.Check()))
         {
@@ -21,7 +21,7 @@ public class DialogItemEditViewModel : BaseViewModel
 
         foreach (var textContent in TextContents)
         {
-            textContent.ApplyText();
+            await textContent.ApplyText();
         }
 
         MessageEventBus.Publish("文本内容已更改");
@@ -31,7 +31,7 @@ public class DialogItemEditViewModel : BaseViewModel
 
     private readonly IEditableDialogItem _item;
 
-    public DialogItemEditViewModel(IEditableDialogItem response)
+    public DialogItemEditViewModel(IEditableDialogItem response, bool rawMode = true)
     {
         this._item = response;
         var messages = response.GetMessagesAsync(CancellationToken.None)
@@ -43,7 +43,14 @@ public class DialogItemEditViewModel : BaseViewModel
             {
                 if (content is TextContent textContent)
                 {
-                    TextContents.Add(new EditableTextContent(textContent, messageId));
+                    if (rawMode)
+                    {
+                        TextContents.Add(new TextContentRawEditViewModel(textContent, messageId));
+                    }
+                    else
+                    {
+                        TextContents.Add(new TextContentCodeEditViewModel(textContent, messageId));
+                    }
                 }
             }
         }

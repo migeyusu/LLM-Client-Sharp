@@ -327,7 +327,7 @@ public static class RendererExtensions
     public static FlowDocument RenderOnFlowDocument(this string raw, FlowDocument? result = null)
     {
         result ??= new FlowDocument();
-        CustomMarkdownRenderer.Instance.RenderRaw(raw, result);
+        CustomMarkdownRenderer.DefaultInstance.RenderRaw(raw, result);
         return result;
     }
 

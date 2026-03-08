@@ -240,9 +240,11 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
                         var markdownDocument = await Task.Run(() =>
                         {
                             var stringBuilder = new StringBuilder();
-                            stringBuilder.Append("\n:::think\n");
-                            stringBuilder.Append(reasoningContent.Text);
-                            stringBuilder.Append("\n:::\n");
+                            stringBuilder.AppendLine(ThinkBlockParser.OpenTag);
+                            // stringBuilder.Append("\n:::think\n");
+                            stringBuilder.AppendLine(reasoningContent.Text);
+                            // stringBuilder.Append("\n:::\n");
+                            stringBuilder.AppendLine(ThinkBlockParser.CloseTag);
                             var s = stringBuilder.ToString();
                             return Markdown.Parse(s, CustomMarkdownRenderer.DefaultPipeline);
                         });
@@ -374,7 +376,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
             OnPropertyChanged(nameof(IsAvailableInContext));
         }
     }
-    
+
     public ObservableCollection<string> TempResponseText { get; } = new();
 
     /// <summary>
