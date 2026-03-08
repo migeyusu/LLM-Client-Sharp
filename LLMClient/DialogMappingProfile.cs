@@ -113,7 +113,7 @@ public class DialogMappingProfile : Profile
             .IncludeBase<IDialogPersistItem, IDialogItem>();
         CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
             .IncludeBase<IDialogPersistItem, IDialogItem>()
-            .ConstructUsing((item, context) =>
+            .ConstructUsing((_, context) =>
             {
                 var contextItems = context.Items;
                 if (!contextItems.TryGetValue(parentDialogViewModelKey, out var parentDialogViewModel)
@@ -219,7 +219,7 @@ public class DialogMappingProfile : Profile
                         }
                     );
                 })
-            .ForMember(dest => dest.UserPrompt, opt => opt.MapFrom(src => src.Requester.PromptString));
+            .ForMember(dest => dest.UserPrompt, opt => opt.MapFrom(src => src.Requester.PromptEditViewModel.FinalText));
         CreateMap<GeneralProjectViewModel, GeneralProjectPersistModel>()
             .IncludeBase<ProjectViewModel, ProjectPersistModel>();
         CreateMap<CSharpProjectViewModel, CSharpProjectPersistModel>()
@@ -253,7 +253,8 @@ public class DialogMappingProfile : Profile
                     PromptReference = s.ExtendedSystemPrompts.Select(entry => entry.Id).ToArray(),
                 });
             })
-            .ForMember(model => model.PromptString, opt => opt.MapFrom(src => src.Requester.PromptString))
+            .ForMember(model => model.PromptString,
+                opt => opt.MapFrom(src => src.Requester.PromptEditViewModel.FinalText))
             .ForMember(model => model.Client, opt => opt.MapFrom(src => src.Requester.DefaultClient));
 
         CreateMap<ProjectSessionViewModel, ProjectSessionPersistModel>()
@@ -290,7 +291,8 @@ public class DialogMappingProfile : Profile
                 var llmClient = model.Client == null
                     ? EmptyLlmModelClient.Instance
                     : context.Mapper.Map<ParameterizedLLMModelPO, ILLMChatClient>(model.Client);
-                return _viewModelFactory.CreateViewModel<DialogViewModel>(model.Topic, llmClient);
+                var modelPromptString = model.PromptString ?? string.Empty;
+                return _viewModelFactory.CreateViewModel<DialogViewModel>(model.Topic, modelPromptString, llmClient);
             })
             //destination.Requester.DefaultClient
             .ForMember(dest => dest.ExtendedSystemPrompts,
@@ -298,12 +300,11 @@ public class DialogMappingProfile : Profile
                 {
                     opt.PreCondition(src => src.ExtendedPrompts != null);
                     opt.MapFrom(src => MapPrompts(src.ExtendedPrompts, promptsResource));
-                })
-            .AfterMap((src, dest, ctx) => { dest.Requester.PromptString = src.PromptString; });
+                });
 
         CreateMap<ProjectSessionPersistModel, ProjectSessionViewModel>()
             .IncludeBase<DialogSessionPersistModel, DialogSessionViewModel>()
-            .ConstructUsing((src, ctx) =>
+            .ConstructUsing((_, ctx) =>
             {
                 if (!ctx.Items.TryGetValue(AutoMapModelTypeConverter.ParentProjectViewModelKey,
                         out var parentProjectViewModel)
@@ -333,7 +334,7 @@ public class DialogMappingProfile : Profile
         var client = source.Client == null
             ? EmptyLlmModelClient.Instance
             : context.Mapper.Map<ILLMChatClient>(source.Client);
-        return _viewModelFactory.CreateViewModel<TViewModel>(projectOption, client);
+        return _viewModelFactory.CreateViewModel<TViewModel>(projectOption, source.UserPrompt ?? string.Empty, client);
     }
 
     /// <summary>
@@ -342,7 +343,6 @@ public class DialogMappingProfile : Profile
     private static void AfterMapProjectViewModel(ProjectPersistModel source, ProjectViewModel dest,
         ResolutionContext context)
     {
-        dest.Requester.PromptString = source.UserPrompt;
         context.Items[AutoMapModelTypeConverter.ParentProjectViewModelKey] = dest;
 
         try

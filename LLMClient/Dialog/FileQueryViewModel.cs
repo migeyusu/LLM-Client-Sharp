@@ -124,11 +124,10 @@ public class FileQueryViewModel : BaseViewModel
 
         var builder =
             new StringBuilder(
-                $"The following sections are retrieved from the source of '{this.SelectedSource.ResourceName}', you can take use of them to answer the user query.\n\n");
+                $"\r\nThe following sections are retrieved from the source of '{this.SelectedSource.ResourceName}', you can take use of them to answer the user query.\n\n");
         var view = selectedNodes.GetView();
         builder.Append(view);
-        Requester.PromptString =
-            Requester.PromptString == null ? builder.ToString() : Requester.PromptString + "\n" + builder;
+        Requester.PromptEditViewModel.AppendTempText(builder.ToString());
         foreach (var selectedNode in selectedNodes)
         {
             RecursiveAddAttachment(selectedNode, Requester.Attachments, builder);

@@ -1,11 +1,17 @@
 ﻿using System.Text;
 using System.Windows;
-using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
 using LLMClient.Data;
 using LLMClient.Dialog.Models;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
+using Clipboard = System.Windows.Clipboard;
+using DataFormats = System.Windows.DataFormats;
+using DragDropEffects = System.Windows.DragDropEffects;
+using DragEventArgs = System.Windows.DragEventArgs;
+using UserControl = System.Windows.Controls.UserControl;
 
 namespace LLMClient.Dialog;
 
@@ -23,22 +29,6 @@ public partial class RequesterView : UserControl
         if (sender is PopupBox { PopupContent: AIFunctionTreeSelectorViewModel selector })
         {
             await selector.InitializeAsync();
-        }
-    }
-
-    private void EnterKeyInputBinding_OnChecked(object sender, RoutedEventArgs e)
-    {
-        if (this.FindResource("PromptKeyBinding") is InputBinding inputBinding)
-        {
-            PromptTextBox.InputBindings.Add(inputBinding);
-        }
-    }
-
-    private void EnterKeyInputBinding_OnUnchecked(object sender, RoutedEventArgs e)
-    {
-        if (this.FindResource("PromptKeyBinding") is InputBinding inputBinding)
-        {
-            PromptTextBox.InputBindings.Remove(inputBinding);
         }
     }
 
@@ -78,10 +68,10 @@ public partial class RequesterView : UserControl
                 this.ViewModel.Attachments.Add(attachment);
             }
         }
-        else if (Clipboard.ContainsText())
+        else if (Clipboard.ContainsText() && sender is TextBoxBase textBoxBase)
         {
             // 默认文本粘贴
-            PromptTextBox.Paste();
+            textBoxBase.Paste();
         }
     }
 
@@ -90,8 +80,7 @@ public partial class RequesterView : UserControl
         ViewModel.NotifyRagSelection();
     }
 
-
-    private void PromptTextBox_OnDragEnter(object sender, DragEventArgs e)
+    private void PromptBox_OnDragEnter(object sender, DragEventArgs e)
     {
         if (e.Data.GetDataPresent(DataFormats.FileDrop))
         {
@@ -101,7 +90,7 @@ public partial class RequesterView : UserControl
         e.Handled = true;
     }
 
-    private void PromptTextBox_OnDrop(object sender, DragEventArgs e)
+    private async void PromptBox_OnDrop(object sender, DragEventArgs e)
     {
         var dataObject = e.Data;
         if (dataObject.GetDataPresent(DataFormats.FileDrop))
@@ -114,17 +103,26 @@ public partial class RequesterView : UserControl
                 {
                     if (File.Exists(path))
                     {
-                        var readAllText = File.ReadAllText(path);
+                        var readAllText = await File.ReadAllTextAsync(path);
                         stringBuilder.AppendLine(readAllText);
                     }
                 }
 
-                (this.DataContext as RequesterViewModel)!.PromptString += stringBuilder.ToString();
+                if (this.DataContext is RequesterViewModel requesterViewModel)
+                {
+                    requesterViewModel.PromptEditViewModel.AppendTempText(stringBuilder.ToString());
+                }
             }
         }
     }
 
     private void UIElement_OnDragLeave(object sender, DragEventArgs e)
     {
+    }
+
+    private async void PromptEditor_OnLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        await this.ViewModel.PromptEditViewModel.ApplyText();
+        this.ViewModel.InvalidateAsyncProperty(nameof(RequesterViewModel.EstimatedTokens));
     }
 }

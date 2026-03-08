@@ -302,7 +302,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     {
         var responseViewItem = new ResponseViewItem(chatClient);
         this.AppendResponse(responseViewItem);
-        return ParentSession.InvokeRequest(responseViewItem, this);
+        return ParentSession.InvokeRequest(responseViewItem, this, token);
     }
 
     public void AppendResponse(ResponseViewItem viewItem)

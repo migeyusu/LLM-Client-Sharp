@@ -35,11 +35,12 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     private readonly SolutionContext _solutionContext;
 
-    public CSharpProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
+    public CSharpProjectViewModel(ProjectOption option, string initialPrompt, ILLMChatClient modelClient,
+        IMapper mapper,
         ILoggerFactory loggerFactory,
         GlobalOptions options, ITokensCounter tokensCounter, RoslynProjectAnalyzer projectAnalyzer,
         IViewModelFactory factory, IEnumerable<ProjectSessionViewModel>? tasks = null)
-        : base(option, modelClient, mapper, options, factory, tasks)
+        : base(option, initialPrompt, modelClient, mapper, options, factory, tasks)
     {
         _solutionContext = new SolutionContext(projectAnalyzer);
         IAIFunctionGroup[] projectFunctions =

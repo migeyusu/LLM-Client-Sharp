@@ -12,7 +12,9 @@
                     xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
                     xmlns:controls="clr-namespace:LLMClient.Dialog.Controls"
                     xmlns:models="clr-namespace:LLMClient.Dialog.Models"
-                    xmlns:userControls="clr-namespace:LLMClient.Component.UserControls">
+                    xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
+                    xmlns:render="clr-namespace:LLMClient.Component.Render"
+                    xmlns:extension="clr-namespace:LLMClient.Component.Extension">
     <Style x:Key="SmallIconButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignIconButton}">
@@ -713,4 +715,75 @@
                       IsChecked="{Binding ShowThinking,Mode=TwoWay}" />
         </Grid>
     </DataTemplate>
+    <component:TypeBasedDataTemplateSelector x:Key="TextEditTemplateSelector">
+        <component:DataTemplateTypePair>
+            <DataTemplate DataType="{x:Type dialog:TextContentCodeEditViewModel}">
+                <Grid>
+                    <RichTextBox IsDocumentEnabled="True"
+                                 AcceptsReturn="True"
+                                 AcceptsTab="True"
+                                 AllowDrop="True"
+                                 Background="Transparent"
+                                 VerticalScrollBarVisibility="Auto"
+                                 BorderThickness="0"
+                                 materialDesign:TextFieldAssist.DecorationVisibility="Collapsed">
+                        <b:Interaction.Behaviors>
+                            <render:RichTextBoxBehaviour Document="{Binding EditDocument,Mode=OneWay}" />
+                            <extension:RichTextBoxTrackingBehavior
+                                IsTextChanged="{Binding  HasEdit,Mode=OneWayToSource}" />
+                        </b:Interaction.Behaviors>
+                    </RichTextBox>
+                    <Button Content="{materialDesign:PackIcon Kind=Undo}"
+                            Command="{Binding RollbackCommand}"
+                            VerticalAlignment="Top"
+                            HorizontalAlignment="Right"
+                            Margin="5"
+                            Width="30"
+                            Height="30"
+                            ToolTip="Revert to original string"
+                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}">
+                        <Button.Visibility>
+                            <MultiBinding
+                                Converter="{x:Static dialog:TextContentEditViewModel.MultiBooleanToVisibilityConverter}">
+                                <Binding Path="IsRollbackEnabled" Mode="OneTime" />
+                                <Binding Path="HasEdit" Mode="OneWay" />
+                            </MultiBinding>
+                        </Button.Visibility>
+                    </Button>
+                </Grid>
+            </DataTemplate>
+        </component:DataTemplateTypePair>
+        <component:DataTemplateTypePair>
+            <DataTemplate DataType="{x:Type dialog:TextContentRawEditViewModel}">
+                <Grid>
+                    <TextBox Text="{Binding Text,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                             AcceptsReturn="True"
+                             AcceptsTab="True"
+                             AllowDrop="True"
+                             TextWrapping="Wrap"
+                             Background="Transparent"
+                             VerticalScrollBarVisibility="Auto"
+                             BorderThickness="0"
+                             materialDesign:TextFieldAssist.DecorationVisibility="Collapsed" />
+                    <Button Content="{materialDesign:PackIcon Kind=Undo}"
+                            Command="{Binding RollbackCommand}"
+                            VerticalAlignment="Top"
+                            HorizontalAlignment="Right"
+                            Margin="5"
+                            Width="30"
+                            Height="30"
+                            ToolTip="Revert to original string"
+                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}">
+                        <Button.Visibility>
+                            <MultiBinding
+                                Converter="{x:Static dialog:TextContentEditViewModel.MultiBooleanToVisibilityConverter}">
+                                <Binding Path="IsRollbackEnabled" Mode="OneTime" />
+                                <Binding Path="HasEdit" Mode="OneWay" />
+                            </MultiBinding>
+                        </Button.Visibility>
+                    </Button>
+                </Grid>
+            </DataTemplate>
+        </component:DataTemplateTypePair>
+    </component:TypeBasedDataTemplateSelector>
 </ResourceDictionary>

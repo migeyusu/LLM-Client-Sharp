@@ -129,16 +129,21 @@ public class BaseViewModel : INotifyPropertyChanged
     private class AsyncPropertyState<T> : IAsyncPropertyState
     {
         private T _value;
-
-        private TaskCompletionSource<T> _completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        // 移除 readonly，允许迟绑定
-        private Func<Task<T>>? _calculateAsync;
-        private readonly SemaphoreSlim _semaphore = new(1, 1);
         private readonly T _defaultValue;
         private readonly BaseViewModel _viewModel;
         private readonly string _propertyName;
-        private readonly bool _isValueType;
+        
+        // 核心状态标志：明确区分"是否有值"，不再依赖 value != defaultValue
+        private bool _isLoaded;
+        // 标记计算是否正在进行，防止重复触发
+        private bool _isLoading;
+        
+        // 核心等待机制：用于 WaitAsync
+        private TaskCompletionSource<T> _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        
+        // 计算工厂
+        private Func<Task<T>>? _calculateAsync;
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
 
         public AsyncPropertyState(
             Func<Task<T>>? calculateAsync,
@@ -151,132 +156,129 @@ public class BaseViewModel : INotifyPropertyChanged
             _viewModel = viewModel;
             _propertyName = propertyName;
             _value = defaultValue;
-
-            // 优化：缓存类型判断结果
-            _isValueType = typeof(T).IsValueType;
+            _isLoaded = false;
         }
 
-        /// <summary>
-        /// 确保计算方法已关联（解决先Set后Get导致工厂丢失的问题）
-        /// </summary>
         public void EnsureFactoryAttached(Func<Task<T>> factory)
         {
+            // 只有当工厂为空时才赋值，避免覆盖
             if (_calculateAsync == null)
             {
-                // 原子操作赋值，无需加锁（引用赋值是原子的）
                 _calculateAsync = factory;
             }
         }
 
-        public Task<T> WaitAsync()
-        {
-            // 如果已经生成，直接返回
-            if (IsGenerated)
-            {
-                return Task.FromResult(_value);
-            }
-
-            // 如果没生成，尝试触发计算
-            if (_calculateAsync != null && _semaphore.CurrentCount > 0)
-            {
-                _ = CalculateAsync();
-            }
-
-            return _completionSource.Task;
-        }
+        public bool IsGenerated => _isLoaded;
 
         public T GetValue()
         {
-            // 如果已经被赋值（非默认值），直接返回，不触发计算
-            if (!IsDefaultValue(_value))
-                return _value;
+            // 1. 如果已加载，直接返回
+            if (_isLoaded) return _value;
 
-            // 尝试触发计算（如果缺少工厂方法则跳过，等待下次Get提供）
-            if (_calculateAsync != null && _semaphore.CurrentCount > 0)
-            {
-                _ = CalculateAsync();
-            }
+            // 2. 尝试触发加载（惰性）
+            TriggerLoading();
 
+            // 3. 返回默认值（此时还在加载中或无法加载）
             return _value;
         }
 
         public bool SetValue(T newValue)
         {
-            // 对比是否变化
-            if (EqualityComparer<T>.Default.Equals(_value, newValue))
-                return false;
-            // 这里不需要异步锁，因为这是UI/主线程直接设置值
-            // 我们假设Setter主要由UI线程或初始化代码调用
-            // 如果需要支持多线程并发Set，才需要加锁
-            _value = newValue;
-
-            // 如果设置了有效值，通知等待者
-            if (!IsDefaultValue(_value))
+            // 如果已加载且值未变，则无需更新
+            // 注意：如果之前是未加载状态(_isLoaded=false)，即使 newValue 等于 _defaultValue，
+            // 我们也要执行 Set 逻辑，将其标记为 _isLoaded=true。
+            if (_isLoaded && EqualityComparer<T>.Default.Equals(_value, newValue))
             {
-                _completionSource.TrySetResult(_value);
+                return false;
             }
 
-            // 触发通知
+            _value = newValue;
+            _isLoaded = true;
+            // Set 操作视为加载结束（或覆盖了正在进行的加载结果）
+            _isLoading = false; 
+
+            // 通知所有等待该属性的任务
+            _tcs.TrySetResult(newValue);
+
             _viewModel.OnPropertyChanged(_propertyName);
             return true;
         }
 
-        private async Task CalculateAsync()
+        public Task<T> WaitAsync()
         {
-            await _semaphore.WaitAsync();
-            try
-            {
-                // 双重检查
-                if (!IsDefaultValue(_value) || _calculateAsync == null)
-                    return;
-
-                var newValue = await _calculateAsync();
-                // 再次检查以防止计算过程中被Set了新值
-                await _viewModel.DispatchAsync(() => UpdateValue(newValue));
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        private void UpdateValue(T newValue)
-        {
-            // 如果在计算过程中，外部已经Set了有效值，则放弃本次计算结果（以最新Set为准）
-            if (!IsDefaultValue(_value)) return;
-            _value = newValue;
-
-            // 只有有效值才 SetResult
-            if (!IsDefaultValue(_value))
-            {
-                _completionSource.TrySetResult(_value);
-            }
-
-            _viewModel.OnPropertyChanged(_propertyName);
+            // 如果已经 Loaded，TCS 应该已经是 Completed 状态，可以直接 await 它
+            // 如果没 Loaded，尝试触发加载，然后返回 TCS 让调用者等待
+            TriggerLoading();
+            return _tcs.Task;
         }
 
         public void Invalidate()
         {
             _value = _defaultValue;
+            _isLoading = false;
+            _isLoaded = false;
 
-            // 如果当前的 TCS 已经完结（说明之前有过值），现在值无效了
-            // 需要重置 TCS 以便下一次 WaitAsync 可以等待新的值
-            if (_completionSource.Task.IsCompleted)
+            // 关键：如果 TCS 已经完结（说明之前有过值），现在变为无效
+            // 需要重置 TCS，以便下一次 WaitAsync 可以等待新的计算结果
+            if (_tcs.Task.IsCompleted)
             {
-                _completionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
 
-            // 触发通知，让UI重新Get，从而触发CalculateAsync
             _viewModel.OnPropertyChangedAsync(_propertyName);
         }
 
-        public bool IsGenerated => !IsDefaultValue(_value);
-
-        private bool IsDefaultValue(T value)
+        private void TriggerLoading()
         {
-            if (_isValueType)
-                return EqualityComparer<T>.Default.Equals(value, _defaultValue);
-            return value == null || EqualityComparer<T>.Default.Equals(value, _defaultValue);
+            // 如果已经加载、正在加载或没有工厂，则不执行
+            if (_isLoaded || _isLoading || _calculateAsync == null) return;
+
+            _isLoading = true;
+            
+            // Fire and forget, 但在 UI 线程处理回调
+            _ = CalculateAsyncInternal();
+        }
+
+        private async Task CalculateAsyncInternal()
+        {
+            await _semaphore.WaitAsync();
+            try
+            {
+                //再次检查状态：如果等待锁的过程中被 Loaded (Set) 了，或者工厂没了，就退出
+                if (_isLoaded || _calculateAsync == null)
+                    return;
+
+                var result = await _calculateAsync();
+
+                // 切换回 UI 线程更新状态
+                await _viewModel.DispatchAsync(() =>
+                {
+                    // 最终检查：如果在计算过程中被 SetValue 抢占了，则丢弃本次计算结果
+                    if (_isLoaded) return;
+
+                    _value = result;
+                    _isLoaded = true;
+                    _isLoading = false;
+
+                    // 完成 TCS，唤醒 WaitAsync
+                    _tcs.TrySetResult(result);
+
+                    _viewModel.OnPropertyChanged(_propertyName);
+                });
+            }
+            catch (Exception ex)
+            {
+                // 计算失败，是否需要重置 _isLoading 允许重试？
+                // 或者将异常传给 TCS？
+                // 这里选择重置 Loading 状态并在 Debug 输出，避免应用程序崩溃
+                _isLoading = false;
+                Debug.WriteLine($"Error calculating async property {_propertyName}: {ex}");
+                // _tcs.TrySetException(ex); // 可选：让等待者知道出错了
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
     }
 

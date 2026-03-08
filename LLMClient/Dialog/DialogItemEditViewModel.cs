@@ -14,14 +14,9 @@ public class DialogItemEditViewModel : BaseViewModel
 
     public ICommand SaveCommand => new ActionCommand(async () =>
     {
-        if (TextContents.Any(textContent => !textContent.Check()))
+        if (TextContents.Any(textContent => !textContent.ApplyAndCheck().Result))
         {
             return;
-        }
-
-        foreach (var textContent in TextContents)
-        {
-            await textContent.ApplyText();
         }
 
         MessageEventBus.Publish("文本内容已更改");

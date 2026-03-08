@@ -149,7 +149,8 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
 
     public RequesterViewModel Requester { get; }
 
-    public DialogViewModel(string topic, ILLMChatClient modelClient, IMapper mapper, Summarizer summarizer,
+    public DialogViewModel(string topic, string initialPrompt, ILLMChatClient modelClient,
+        IMapper mapper, Summarizer summarizer,
         GlobalOptions options, IViewModelFactory factory, IDialogItem? rootNode = null, IDialogItem? currentLeaf = null)
         : base(rootNode, currentLeaf)
     {
@@ -157,7 +158,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         _summarizer = summarizer;
         _options = options;
         ((INotifyCollectionChanged)this.RootNode.Children).CollectionChanged += OnRootCollectionChanged;
-        Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
+        Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
             (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>>)
             NewResponse);
         Requester.FunctionGroupSource = this;
@@ -200,9 +201,9 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
     public Task? SummarizeTask = null;
 
     public override async Task<ChatCallResult> InvokeRequest(ResponseViewItem responseViewItem,
-        MultiResponseViewItem multiResponseViewItem)
+        MultiResponseViewItem multiResponseViewItem, CancellationToken token = default)
     {
-        var completedResult = await base.InvokeRequest(responseViewItem, multiResponseViewItem);
+        var completedResult = await base.InvokeRequest(responseViewItem, multiResponseViewItem, token);
         //判断是否需要进行主题总结
         if (this.Topic == "新建会话" &&
             this.DialogItems.FirstOrDefault(item => item is MultiResponseViewItem) == multiResponseViewItem

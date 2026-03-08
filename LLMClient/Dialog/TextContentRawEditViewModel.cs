@@ -1,5 +1,4 @@
-﻿using LLMClient.Component.Utility;
-using Microsoft.Extensions.AI;
+﻿using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 
@@ -24,17 +23,6 @@ public class TextContentRawEditViewModel : TextContentEditViewModel
         this._text = textContent.Text;
     }
 
-    public override bool Check()
-    {
-        if (string.IsNullOrEmpty(Text))
-        {
-            MessageEventBus.Publish($"{MessageId}：文本内容不能为空");
-            return false;
-        }
-
-        return true;
-    }
-
     public override Task ApplyText()
     {
         if (!HasEdit)
@@ -42,13 +30,18 @@ public class TextContentRawEditViewModel : TextContentEditViewModel
             return Task.CompletedTask;
         }
 
-        TextContent.Text = Text;
+        Content.Text = Text;
         return Task.CompletedTask;
+    }
+
+    public override void AppendTempText(string tempText)
+    {
+        Text += tempText;
     }
 
     protected override void Rollback()
     {
-        this.Text = TextContent.Text;
+        this.Text = Content.Text;
         this.HasEdit = false;
     }
 }

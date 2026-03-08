@@ -15,9 +15,10 @@ using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
-using Microsoft.CodeAnalysis.FindSymbols;
+using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using TextBoxBase = System.Windows.Controls.Primitives.TextBoxBase;
 
 namespace LLMClient.Dialog;
 
@@ -34,7 +35,7 @@ public class RequesterViewModel : BaseViewModel
     {
         try
         {
-            var requestViewItem = this.NewRequest();
+            var requestViewItem = await this.NewRequest();
             if (requestViewItem == null)
             {
                 return;
@@ -61,6 +62,17 @@ public class RequesterViewModel : BaseViewModel
             IsNewResponding = false;
         }
     });
+
+    public bool RawEditMode
+    {
+        get => _rawEditMode;
+        set
+        {
+            if (value == _rawEditMode) return;
+            _rawEditMode = value;
+            OnPropertyChanged();
+        }
+    }
 
     public ICommand SummarizeCommand => new ActionCommand(_ => { Summarize(); });
 
@@ -170,17 +182,14 @@ public class RequesterViewModel : BaseViewModel
 
     #region input
 
-    private string? _promptString;
-
-    public string? PromptString
+    public TextContentEditViewModel PromptEditViewModel
     {
-        get => _promptString;
-        set
+        get => _promptEditViewModel;
+        private set
         {
-            if (value == _promptString) return;
-            _promptString = value;
+            if (Equals(value, _promptEditViewModel)) return;
+            _promptEditViewModel = value;
             OnPropertyChanged();
-            InvalidateAsyncProperty(nameof(EstimatedTokens));
         }
     }
 
@@ -190,12 +199,13 @@ public class RequesterViewModel : BaseViewModel
         {
             return GetAsyncProperty(async () =>
             {
-                if (string.IsNullOrEmpty(_promptString))
+                var contentText = PromptEditViewModel.FinalText;
+                if (string.IsNullOrEmpty(contentText))
                 {
                     return 0;
                 }
 
-                return await _tokensCounter.CountTokens(_promptString);
+                return await _tokensCounter.CountTokens(contentText);
             });
         }
     }
@@ -215,6 +225,21 @@ public class RequesterViewModel : BaseViewModel
         }
     }
 
+    private bool _isNewResponding;
+
+    public bool IsNewResponding
+    {
+        get => _isNewResponding;
+        private set
+        {
+            if (value == _isNewResponding) return;
+            _isNewResponding = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public IFunctionGroupSource? FunctionGroupSource { get; set; }
+
     #endregion
 
     private readonly Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>>
@@ -225,13 +250,14 @@ public class RequesterViewModel : BaseViewModel
 
     private readonly ITokensCounter _tokensCounter;
 
-    public RequesterViewModel(ILLMChatClient modelClient,
+    public RequesterViewModel(string initialPrompt, ILLMChatClient modelClient,
         Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>> getResponse,
         GlobalOptions options, Summarizer summarizer, IRagSourceCollection ragSourceCollection,
         ITokensCounter tokensCounter)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
+        _promptEditViewModel = new TextContentCodeEditViewModel(new TextContent(initialPrompt), null);
         QueryViewModel = new FileQueryViewModel(this);
         this._defaultClient = modelClient;
         this._getResponse = getResponse;
@@ -241,9 +267,9 @@ public class RequesterViewModel : BaseViewModel
         _tokensCounter = tokensCounter;
         this.BindClient(modelClient);
         CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
-        AddCodeFileCommand = new RelayCommand<TextBox>((o =>
+        AddCodeFileCommand = new RelayCommand<object>((o =>
         {
-            if (o == null)
+            if (o is not TextBoxBase textBoxBase)
             {
                 return;
             }
@@ -274,8 +300,15 @@ public class RequesterViewModel : BaseViewModel
                 stringBuilder.AppendLine("```");
             }
 
-            o.Focus();
-            o.SelectedText = stringBuilder.ToString();
+            textBoxBase.Focus();
+            if (textBoxBase is TextBox textBox)
+            {
+                textBox.SelectedText = stringBuilder.ToString();
+            }
+            else if (textBoxBase is RichTextBox richTextBox)
+            {
+                richTextBox.Selection.Text = stringBuilder.ToString();
+            }
         }));
         AddImageCommand = new ActionCommand(_ =>
         {
@@ -301,7 +334,7 @@ public class RequesterViewModel : BaseViewModel
                 this.Attachments.Remove(attachment);
             }
         });
-        this.PropertyChanged += (sender, args) =>
+        this.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(EstimatedTokens))
             {
@@ -337,28 +370,36 @@ public class RequesterViewModel : BaseViewModel
             ];
     }
 
-    public void ClearRequest()
+    private async void RefreshEditor(bool rawMode)
     {
-        this.Attachments.Clear();
-        this.PromptString = null;
-    }
-
-    private bool _isNewResponding;
-
-    public bool IsNewResponding
-    {
-        get => _isNewResponding;
-        private set
+        if (rawMode && PromptEditViewModel is TextContentCodeEditViewModel codeVm)
         {
-            if (value == _isNewResponding) return;
-            _isNewResponding = value;
-            OnPropertyChanged();
+            await codeVm.ApplyText();
+            PromptEditViewModel = new TextContentRawEditViewModel(new TextContent(codeVm.FinalText),
+                codeVm.MessageId);
+        }
+        else if (!rawMode && PromptEditViewModel is TextContentRawEditViewModel rawVm)
+        {
+            await rawVm.ApplyText();
+            PromptEditViewModel = new TextContentCodeEditViewModel(new TextContent(rawVm.FinalText),
+                rawVm.MessageId);
         }
     }
 
-    public IFunctionGroupSource? FunctionGroupSource { get; set; }
+    public void ClearRequest()
+    {
+        this.Attachments.Clear();
+        var textContent = new TextContent(string.Empty);
+        this.PromptEditViewModel = this.RawEditMode
+            ? new TextContentRawEditViewModel(textContent, null)
+            : new TextContentCodeEditViewModel(textContent, null);
+        InvalidateAsyncProperty(nameof(EstimatedTokens));
+    }
+
 
     private CancellationTokenSource? _tokenSource;
+    private TextContentEditViewModel _promptEditViewModel;
+    private bool _rawEditMode;
 
     public async void Summarize(IRequestItem? insertBefore = null)
     {
@@ -383,9 +424,9 @@ public class RequesterViewModel : BaseViewModel
         }
     }
 
-    public RequestViewItem? NewRequest(string additionalPrompt = "")
+    public async Task<RequestViewItem?> NewRequest(string additionalPrompt = "")
     {
-        if (string.IsNullOrEmpty(this.PromptString))
+        if (!await PromptEditViewModel.ApplyAndCheck())
         {
             return null;
         }
@@ -396,7 +437,7 @@ public class RequesterViewModel : BaseViewModel
             promptBuilder.Append(additionalPrompt);
         }
 
-        promptBuilder.Append(PromptString);
+        promptBuilder.Append(PromptEditViewModel.FinalText);
         IList<CheckableFunctionGroupTree>? tools = null;
         if (this.FunctionTreeSelector.FunctionSelected)
         {

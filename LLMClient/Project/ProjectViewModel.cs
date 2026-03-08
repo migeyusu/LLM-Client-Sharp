@@ -349,14 +349,15 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
     private string? _userSystemPrompt;
 
-    public ProjectViewModel(ProjectOption projectOption, ILLMChatClient modelClient, IMapper mapper,
-        GlobalOptions options, IViewModelFactory factory, IEnumerable<ProjectSessionViewModel>? sessions = null)
+    protected ProjectViewModel(ProjectOption projectOption, string initialPrompt, ILLMChatClient modelClient,
+        IMapper mapper, GlobalOptions options, IViewModelFactory factory,
+        IEnumerable<ProjectSessionViewModel>? sessions = null)
     {
         this._mapper = mapper;
         _factory = factory;
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
-        Requester = factory.CreateViewModel<RequesterViewModel>(modelClient,
+        Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
             (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>>)GetResponse);
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()

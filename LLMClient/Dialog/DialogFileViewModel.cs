@@ -84,11 +84,11 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
 
     private IMapper _mapper;
 
-    public DialogFileViewModel(string topic, ILLMChatClient modelClient, IMapper mapper,
+    public DialogFileViewModel(string topic, string initialPrompt, ILLMChatClient modelClient, IMapper mapper,
         GlobalOptions options, Summarizer summarizer, IRagSourceCollection ragSourceCollection,
         IViewModelFactory factory,
         IDialogItem? rootNode = null, IDialogItem? leaf = null) :
-        this(new DialogViewModel(topic, modelClient, mapper, summarizer,
+        this(new DialogViewModel(topic, initialPrompt, modelClient, mapper, summarizer,
             options, factory, rootNode, leaf), mapper, factory)
     {
         _factory = factory;

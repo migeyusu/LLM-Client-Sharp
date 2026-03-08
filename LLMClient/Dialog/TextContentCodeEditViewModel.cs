@@ -5,6 +5,7 @@ using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using Markdig.Renderers.Html;
 using Microsoft.Extensions.AI;
+using ZstdSharp.Unsafe;
 
 namespace LLMClient.Dialog;
 
@@ -17,14 +18,13 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
 
     public async Task<string?> GetPrompt(bool includeFilePath = false)
     {
-        var doc = await WaitAsyncProperty<FlowDocument?>(nameof(Document));
-        if (doc == null)
+        var doc = await WaitAsyncProperty<FlowDocument>(nameof(EditDocument));
+        if (!doc.Blocks.Any())
         {
             return null;
         }
 
         var sb = new StringBuilder();
-
         foreach (var block in doc.Blocks)
         {
             // 判断是否为代码块 UI 容器
@@ -60,26 +60,30 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
         return sb.ToString().TrimEnd(); // 去掉末尾多余的空行
     }
 
-    public FlowDocument? Document
+    public FlowDocument EditDocument
     {
         get
         {
+            //只初始化一次，后续通过绑定直接修改 FlowDocument 内容
             return GetAsyncProperty(async () =>
             {
-                if (string.IsNullOrEmpty(_originalText))
+                var textContentText = Content.Text;
+                if (string.IsNullOrEmpty(textContentText))
                 {
-                    return null;
+                    return Document;
                 }
 
-                var flowDocument = new FlowDocument();
-                var renderer = CustomMarkdownRenderer.EditRenderer(flowDocument);
-                await renderer.RenderMarkdown(_originalText);
-                return flowDocument;
-            });
+                var renderer = CustomMarkdownRenderer.EditRenderer(Document);
+                await renderer.RenderMarkdown(textContentText);
+                return Document;
+            }, Document);
         }
     }
 
-    private string? _originalText;
+    private readonly string? _originalText;
+
+    private readonly Lazy<FlowDocument> _docLazy = new(() => new FlowDocument());
+    private FlowDocument Document => _docLazy.Value;
 
     public TextContentCodeEditViewModel(TextContent textContent, string? messageId) : base(textContent, messageId)
     {
@@ -88,28 +92,29 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
 
     protected override void Rollback()
     {
-        TextContent.Text = _originalText;
+        Content.Text = _originalText;
         this.HasEdit = false;
     }
 
-    public override bool Check()
-    {
-        if (string.IsNullOrEmpty(GetPrompt().Result))
-        {
-            MessageEventBus.Publish($"{MessageId}：文本内容不能为空");
-            return false;
-        }
-
-        return true;
-    }
 
     public override async Task ApplyText()
     {
-        if (!HasEdit)
+        Content.Text = await GetPrompt() ?? string.Empty;
+    }
+
+    public override void AppendTempText(string tempText)
+    {
+        if (EditDocument.Blocks.LastBlock is Paragraph paragraph)
         {
-            return;
+            if (paragraph.Inlines.LastInline is Run run)
+            {
+                run.Text += tempText;
+                return;
+            }
+
+            paragraph.Inlines.Add(new Run(tempText));
         }
 
-        TextContent.Text = await GetPrompt() ?? "";
+        EditDocument.Blocks.Add(new Paragraph(new Run(tempText)));
     }
 }

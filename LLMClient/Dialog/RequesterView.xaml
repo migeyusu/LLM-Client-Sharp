@@ -7,7 +7,6 @@
              xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
              xmlns:local="clr-namespace:LLMClient.Dialog"
              xmlns:rag="clr-namespace:LLMClient.Rag"
-             xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
              xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
              xmlns:component="clr-namespace:LLMClient.Component"
@@ -17,69 +16,51 @@
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
              d:DesignHeight="110" d:DesignWidth="1600"
              AllowDrop="True">
-    <UserControl.Resources>
-        <KeyBinding x:Key="PromptKeyBinding"
-                    Key="Enter"
-                    Command="{Binding NewRequestCommand}" />
-    </UserControl.Resources>
     <Border CornerRadius="8"
             ClipToBounds="True"
             AllowDrop="True"
-            DragEnter="PromptTextBox_OnDragEnter"
+            DragEnter="PromptBox_OnDragEnter"
             DragLeave="UIElement_OnDragLeave"
-            Drop="PromptTextBox_OnDrop"
+            Drop="PromptBox_OnDrop"
             Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
             BorderThickness="1.5">
         <Border.Style>
             <Style TargetType="{x:Type Border}">
+                <Setter Property="MaxHeight" Value="100" />
                 <Setter Property="BorderBrush"
                         Value="{DynamicResource MaterialDesign.Brush.TextBox.Border}" />
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding ElementName=PromptTextBox,Path=IsFocused,Mode=OneWay}"
+                    <DataTrigger Binding="{Binding ElementName=PromptEditor,Path=IsFocused,Mode=OneWay}"
                                  Value="True">
                         <DataTrigger.Setters>
                             <Setter Property="BorderBrush"
                                     Value="{DynamicResource MaterialDesign.Brush.Primary.Light}" />
                         </DataTrigger.Setters>
                     </DataTrigger>
+                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                        <Setter Property="MaxHeight" Value="500" />
+                    </Trigger>
                 </Style.Triggers>
             </Style>
         </Border.Style>
-        <StackPanel Orientation="Vertical">
-            <TextBox x:Name="PromptTextBox"
-                     Margin="8"
-                     materialDesign:HintAssist.Hint="输入Prompt"
-                     materialDesign:HintAssist.HintHorizontalAlignment="Left"
-                     AllowDrop="True"
-                     AcceptsReturn="True"
-                     AcceptsTab="True"
-                     VerticalAlignment="Stretch"
-                     HorizontalAlignment="Stretch"
-                     MinHeight="40"
-                     Background="Transparent"
-                     BorderThickness="0"
-                     Text="{Binding  PromptString,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
-                     TextWrapping="Wrap"
-                     VerticalScrollBarVisibility="Auto">
-                <TextBox.CommandBindings>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ContentPresenter ContentTemplateSelector="{StaticResource TextEditTemplateSelector}"
+                              Content="{Binding PromptEditViewModel,Mode=OneWay}"
+                              Margin="8"
+                              MinHeight="40"
+                              x:Name="PromptEditor"
+                              LostKeyboardFocus="PromptEditor_OnLostKeyboardFocus">
+                <ContentPresenter.CommandBindings>
                     <CommandBinding Command="ApplicationCommands.Paste"
                                     Executed="PasteCommandBinding_OnExecuted" />
-                </TextBox.CommandBindings>
-                <TextBox.Style>
-                    <Style TargetType="TextBox"
-                           BasedOn="{StaticResource MaterialDesignTextBoxBase}">
-                        <Setter Property="materialDesign:TextFieldAssist.DecorationVisibility"
-                                Value="Collapsed" />
-                        <Setter Property="MaxHeight" Value="40" />
-                        <Style.Triggers>
-                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter Property="MaxHeight" Value="500" />
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBox.Style>
-            </TextBox>
-            <Border Background="{DynamicResource MaterialDesignTextFieldBoxBackground}">
+                </ContentPresenter.CommandBindings>
+            </ContentPresenter>
+            <Border Grid.Row="1"
+                    Background="{DynamicResource MaterialDesignTextFieldBoxBackground}">
                 <StackPanel Margin="8,0">
                     <ScrollViewer Style="{StaticResource HorizontalArrowScrollViewer}"
                                   Visibility="{Binding  Attachments.Count,Converter={x:Static converters:SnapConverters.CountToVisibilityConverter}}">
@@ -282,13 +263,12 @@
                                     Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                     Command="{Binding AddCodeFileCommand}"
-                                    CommandParameter="{Binding ElementName=PromptTextBox}"
-                                    VerticalAlignment="Center" 
+                                    CommandParameter="{Binding ElementName=PromptEditor}"
+                                    VerticalAlignment="Center"
                                     Margin="10,0,0,0"
                                     Height="32"
                                     Width="32"
-                                    Content="{materialDesign:PackIcon Kind=FileDocumentPlusOutline,Size=20}"
-                                    Visibility="{Binding DefaultClient.Model.SupportImageInput,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    Content="{materialDesign:PackIcon Kind=FileDocumentPlusOutline,Size=20}" />
                             <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                     Height="32"
                                     Width="32"
@@ -322,12 +302,11 @@
                                           Width="18"
                                           Height="45"
                                           Padding="0">
-                                    <MenuItem Header="回车发送"
+                                    <MenuItem Header="Raw Edit Mode"
+                                              ToolTip="When enabled, the prompt editor will switch to raw text editing mode, allowing you to edit the prompt as plain text. This is useful for advanced users who want more control over the prompt formatting."
                                               IsCheckable="True"
-                                              ToolTip="When enabled, pressing Enter key will send the request. When disabled, pressing Enter key will insert a new line. You can also press Ctrl+Enter to send the request when this option is disabled."
                                               materialDesign:CheckBoxAssist.CheckBoxSize="30"
-                                              Checked="EnterKeyInputBinding_OnChecked"
-                                              Unchecked="EnterKeyInputBinding_OnUnchecked" />
+                                              IsChecked="{Binding RawEditMode,Mode=TwoWay}" />
                                     <MenuItem Header="显示请求Json"
                                               ToolTip="When enabled, the request JSON will be displayed in the response area. This is useful for debugging and understanding the request structure."
                                               IsCheckable="True"
@@ -381,6 +360,6 @@
                     </Grid>
                 </StackPanel>
             </Border>
-        </StackPanel>
+        </Grid>
     </Border>
 </UserControl>

@@ -388,14 +388,14 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     #region core methods
 
     public virtual async Task<ChatCallResult> InvokeRequest(ResponseViewItem responseViewItem,
-        MultiResponseViewItem multiResponseViewItem)
+        MultiResponseViewItem multiResponseViewItem, CancellationToken token = default)
     {
         RespondingCount++;
         try
         {
             var dialogItems = multiResponseViewItem.GetChatHistory().ToArray();
             var dialogContext = new DialogContext(dialogItems, this.SystemPrompt);
-            var completedResult = await responseViewItem.ProcessRequest(dialogContext);
+            var completedResult = await responseViewItem.ProcessRequest(dialogContext, token);
             this.TokensConsumption += completedResult.Usage?.TotalTokenCount ?? 0;
             this.TotalPrice += completedResult.Price ?? 0;
             return completedResult;
@@ -477,6 +477,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             {
                 return;
             }
+
             ForkPreTask(o);
         });
         SearchCommand = new ActionCommand(_ =>

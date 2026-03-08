@@ -7,10 +7,10 @@ namespace LLMClient.Project;
 
 public class CppProjectViewModel : ProjectViewModel
 {
-    public CppProjectViewModel(ProjectOption option, ILLMChatClient modelClient, IMapper mapper,
+    public CppProjectViewModel(ProjectOption option, string initialPrompt, ILLMChatClient modelClient, IMapper mapper,
         GlobalOptions options, IViewModelFactory factory,
         IEnumerable<ProjectSessionViewModel>? tasks = null)
-        : base(option, modelClient, mapper, options, factory, tasks)
+        : base(option, initialPrompt, modelClient, mapper, options, factory, tasks)
     {
     }
 }
