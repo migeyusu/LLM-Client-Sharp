@@ -94,7 +94,8 @@ public class CreateSessionViewModel : BaseViewModel
                 {
                     case 0:
                         var chatClient = ModelSelection.CreateClient();
-                        session = factory.CreateViewModel<DialogFileViewModel>(this.DialogTitle, chatClient);
+                        session = factory.CreateViewModel<DialogFileViewModel>(this.DialogTitle, string.Empty,
+                            chatClient);
                         break;
                     case 1:
                         if (!Project.Check())
@@ -108,13 +109,16 @@ public class CreateSessionViewModel : BaseViewModel
                         switch (projectOption.Type)
                         {
                             case ProjectType.CSharp:
-                                session = factory.CreateViewModel<CSharpProjectViewModel>(projectOption, client);
+                                session = factory.CreateViewModel<CSharpProjectViewModel>(projectOption, string.Empty,
+                                    client);
                                 break;
                             case ProjectType.Default:
-                                session = factory.CreateViewModel<GeneralProjectViewModel>(projectOption, client);
+                                session = factory.CreateViewModel<GeneralProjectViewModel>(projectOption, string.Empty,
+                                    client);
                                 break;
                             case ProjectType.Cpp:
-                                session = factory.CreateViewModel<CppProjectViewModel>(projectOption, client);
+                                session = factory.CreateViewModel<CppProjectViewModel>(projectOption, string.Empty,
+                                    client);
                                 break;
                             default:
                                 throw new NotSupportedException();

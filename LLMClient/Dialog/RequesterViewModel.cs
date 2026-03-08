@@ -71,6 +71,7 @@ public class RequesterViewModel : BaseViewModel
             if (value == _rawEditMode) return;
             _rawEditMode = value;
             OnPropertyChanged();
+            RefreshEditor(value);
         }
     }
 
