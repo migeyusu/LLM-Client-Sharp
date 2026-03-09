@@ -13,7 +13,6 @@ namespace LLMClient.Dialog;
 
 public class TextContentCodeEditViewModel : TextContentEditViewModel
 {
-
     public Task<string?> GetPersistString()
     {
         return GetPrompt(true);
@@ -70,6 +69,7 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
             //只初始化一次，后续通过绑定直接修改 FlowDocument 内容
             return GetAsyncProperty(async () =>
             {
+                Document.Blocks.Clear();
                 var textContentText = Content.Text;
                 if (string.IsNullOrEmpty(textContentText))
                 {
@@ -83,17 +83,14 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
         }
     }
 
-    private readonly string? _originalText;
-
     private readonly Lazy<FlowDocument> _docLazy = new(() => new FlowDocument());
     private FlowDocument Document => _docLazy.Value;
 
     public TextContentCodeEditViewModel(TextContent textContent, string? messageId) : base(textContent, messageId)
     {
-        this._originalText = textContent.Text;
         AddCodeFileCommand = new RelayCommand<object>(AddCodeFile);
     }
-    
+
     private async void AddCodeFile(object? o)
     {
         RichTextBox? richTextBox = null;
@@ -169,6 +166,7 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
     public override async Task ApplyText()
     {
         Content.Text = await GetPrompt() ?? string.Empty;
+        InvalidateAsyncProperty(nameof(EditDocument));
     }
 
     public override void AppendTempText(string tempText)

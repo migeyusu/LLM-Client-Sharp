@@ -120,9 +120,12 @@ public partial class RequesterView : UserControl
     {
     }
 
-    private async void PromptEditor_OnLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    private async void PromptEditor_OnLostKeyboardFocus(object sender, DependencyPropertyChangedEventArgs e)
     {
-        await this.ViewModel.PromptEditViewModel.ApplyText();
-        this.ViewModel.InvalidateAsyncProperty(nameof(RequesterViewModel.EstimatedTokens));
+        if (e.NewValue is false)
+        {
+            await this.ViewModel.PromptEditViewModel.ApplyText();
+            this.ViewModel.InvalidateAsyncProperty(nameof(RequesterViewModel.EstimatedTokens));
+        }
     }
 }

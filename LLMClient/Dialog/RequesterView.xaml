@@ -52,8 +52,9 @@
                               Content="{Binding PromptEditViewModel,Mode=OneWay}"
                               Margin="8"
                               MinHeight="40"
+                              
                               x:Name="PromptEditor"
-                              LostKeyboardFocus="PromptEditor_OnLostKeyboardFocus">
+                              IsKeyboardFocusWithinChanged="PromptEditor_OnLostKeyboardFocus">
                 <ContentPresenter.CommandBindings>
                     <CommandBinding Command="ApplicationCommands.Paste"
                                     Executed="PasteCommandBinding_OnExecuted" />
