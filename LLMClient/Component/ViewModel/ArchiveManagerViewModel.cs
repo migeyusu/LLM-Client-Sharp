@@ -48,6 +48,8 @@ public class ArchiveManagerViewModel : BaseViewModel
     public ICommand DeleteCommand { get; }
     public ICommand RefreshCommand { get; }
 
+    public event EventHandler<string>? RestoreCompleted;
+
     public ArchiveManagerViewModel()
     {
         RestoreCommand = new RelayCommand(RestoreAction);
@@ -95,6 +97,8 @@ public class ArchiveManagerViewModel : BaseViewModel
             
             File.Copy(SelectedArchive.FullPath, targetPath, true);
             MessageEventBus.Publish($"已还原 {targetFileName}");
+            
+            RestoreCompleted?.Invoke(this, targetPath);
         }
         catch(Exception e)
         {

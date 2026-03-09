@@ -233,6 +233,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
         try
         {
             var archiveManager = new ArchiveManagerViewModel();
+            archiveManager.RestoreCompleted += (_, filePath) => _ = _mainWindowViewModel.ReloadSession(filePath);
             DialogHost.OpenDialogCommand.Execute(archiveManager, sender as IInputElement);
         }
         catch (Exception exception)

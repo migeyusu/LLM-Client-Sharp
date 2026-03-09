@@ -111,6 +111,27 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
         return new FileInfo(FileFullPath);
     }
 
+    public static async Task<T?> LoadFromFile<T>(string filePath, IMapper mapper)
+        where T : FileBasedSessionBase, ILLMSessionLoader<T>
+    {
+        var info = new FileInfo(filePath);
+        if (!info.Exists) return null;
+
+        await using (var fileStream = info.OpenRead())
+        {
+            var model = await T.LoadFromStream(fileStream, mapper);
+            if (model != null)
+            {
+                model.FileFullPath = info.FullName;
+                model.IsDataChanged = false;
+                return model;
+            }
+
+            Trace.TraceWarning($"Load session from {info.FullName} returned null.");
+            return null;
+        }
+    }
+
     public static async Task<IEnumerable<T>> LoadFromLocal<T>(IMapper mapper, string folderPath)
         where T : FileBasedSessionBase, ILLMSessionLoader<T>
     {
@@ -125,19 +146,10 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
         {
             if (info.Exists)
             {
-                await using (var fileStream = info.OpenRead())
+                var model = await LoadFromFile<T>(info.FullName, mapper);
+                if (model != null)
                 {
-                    var model = await T.LoadFromStream(fileStream, mapper);
-                    if (model != null)
-                    {
-                        model.FileFullPath = info.FullName;
-                        model.IsDataChanged = false;
-                        concurrentBag.Add(model);
-                    }
-                    else
-                    {
-                        Trace.TraceWarning($"Load session from {info.FullName} returned null.");
-                    }
+                    concurrentBag.Add(model);
                 }
             }
         }));
@@ -170,22 +182,10 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
                     else
                     {
                         File.Copy(fileInfo.FullName, newFilePath, true);
-                        var info = new FileInfo(newFilePath);
-                        if (info.Exists)
+                        session = await LoadFromFile<T>(newFilePath, mapper);
+                        if (session == null)
                         {
-                            await using (var fileStream = info.OpenRead())
-                            {
-                                session = await T.LoadFromStream(fileStream, mapper);
-                                if (session != null)
-                                {
-                                    session.FileFullPath = info.FullName;
-                                    session.IsDataChanged = false;
-                                }
-                                else
-                                {
-                                    MessageEventBus.Publish($"Load session from {info.FullName} returned null.");
-                                }
-                            }
+                            MessageEventBus.Publish($"Load session from {newFilePath} returned null.");
                         }
                     }
                 }

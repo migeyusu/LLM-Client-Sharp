@@ -91,6 +91,30 @@ public class CustomMarkdownRenderer : WpfRenderer
 
     public required MarkdownPipeline Pipeline { get; init; }
 
+    public void InsertExpanderItem<T>(T obj, ComponentResourceKey styleKey)
+    {
+        var expander = new Expander()
+        {
+            IsExpanded = false,
+        };
+        expander.SetResourceReference(FrameworkElement.StyleProperty, styleKey);
+        expander.Content = obj;
+        expander.Header = obj;
+        var blockUiContainer = new BlockUIContainer(expander);
+        if (Document == null)
+        {
+            return;
+        }
+
+        if (Document.Blocks.FirstBlock == null)
+        {
+            Document.Blocks.Add(blockUiContainer);
+            return;
+        }
+
+        Document!.Blocks.InsertBefore(Document.Blocks.FirstBlock, blockUiContainer);
+    }
+
     public void AppendExpanderItem<T>(T obj, ComponentResourceKey styleKey)
     {
         var expander = new Expander()
@@ -138,7 +162,7 @@ public class CustomMarkdownRenderer : WpfRenderer
         var markdown = await Task.Run(() => Markdown.Parse(raw, this.Pipeline));
         this.Render(markdown);
     }
-    
+
     public override void LoadDocument(FlowDocument document)
     {
         Document = document;

@@ -183,6 +183,51 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     #endregion
 
+    public async Task ReloadSession(string filePath)
+    {
+        try
+        {
+            var fileInfo = new FileInfo(filePath);
+            if (!fileInfo.Exists) return;
+
+            FileBasedSessionBase? session = null;
+            var directory = fileInfo.DirectoryName ?? string.Empty;
+            
+            // Trim ending directory separator if exists for robust comparison
+            directory = directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var dialogDir = DialogFileViewModel.SaveFolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var projectDir = ProjectViewModel.SaveFolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            if (directory.Equals(dialogDir, StringComparison.OrdinalIgnoreCase))
+            {
+                session = await FileBasedSessionBase.LoadFromFile<DialogFileViewModel>(fileInfo.FullName, _mapper);
+            }
+            else if (directory.Equals(projectDir, StringComparison.OrdinalIgnoreCase))
+            {
+                session = await FileBasedSessionBase.LoadFromFile<ProjectViewModel>(fileInfo.FullName, _mapper);
+            }
+
+            if (session != null)
+            {
+                // IsDataChanged and FileFullPath are already set in LoadFromFile
+                
+                // Check if already exists in list and replace it
+                var existing = SessionViewModels.FirstOrDefault(s => s.FileFullPath.Equals(session.FileFullPath, StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
+                {
+                    SessionViewModels.Remove(existing);
+                }
+
+                AddSession(session);
+                PreSession = session;
+            }
+        }
+        catch (Exception e)
+        {
+            MessageQueue.Enqueue($"Failed to load session: {e.Message}");
+        }
+    }
+
     public ObservableCollection<FileBasedSessionBase> SessionViewModels { get; set; } = new();
 
     private ILLMSession? _preSession;
@@ -467,3 +512,4 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         MessageQueue.Dispose();
     }
 }
+

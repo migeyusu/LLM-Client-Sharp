@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -270,7 +271,8 @@ public class RequesterViewModel : BaseViewModel
         CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
         AddCodeFileCommand = new RelayCommand<object>((o =>
         {
-            if (o is not TextBoxBase textBoxBase)
+            var textBoxBase = ((UIElement?)o)?.FindVisualChild<TextBoxBase>();
+            if (textBoxBase == null)
             {
                 return;
             }
