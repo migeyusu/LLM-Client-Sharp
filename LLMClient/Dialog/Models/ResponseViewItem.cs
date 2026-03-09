@@ -545,14 +545,14 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
         public Task<bool> WaitForPermission(string title, string message)
         {
             var vm = new PermissionViewModel { Title = title, Content = message };
-            _customRenderer.AppendExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);
+            _customRenderer.InsertExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);
             return vm.Task;
         }
 
         public Task<bool> WaitForPermission(object content)
         {
             var vm = new PermissionViewModel { Content = content };
-            _customRenderer.AppendExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);
+            _customRenderer.InsertExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);
             return vm.Task;
         }
 

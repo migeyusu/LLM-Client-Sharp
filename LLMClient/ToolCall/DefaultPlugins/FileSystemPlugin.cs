@@ -154,7 +154,7 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
         stringBuilder.AppendLine(content);
         if (!await RequestPermission(fullPath,stringBuilder.ToString() , checkParentOnly: true))
         {
-            throw new UnauthorizedAccessException();
+            throw new UnauthorizedAccessException("Permission denied to write to the specified file.");
         }
         await File.WriteAllTextAsync(fullPath, content);
         return $"Successfully wrote to {path}";

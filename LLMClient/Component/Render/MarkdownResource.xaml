@@ -698,20 +698,42 @@
            x:Key="{x:Static render:CustomMarkdownRenderer.PermissionRequestStyleKey}">
         <Setter Property="Padding"
                 Value="16" />
+        <Setter Property="IsExpanded"
+                Value="False" />
         <Setter Property="HeaderTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type dialog:PermissionViewModel}">
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
                         <materialDesign:PackIcon Kind="LockOpenOutline"
                                                  Width="20"
                                                  Height="20" />
-                        <TextBlock Text="{Binding Title,Mode=OneTime,StringFormat=权限请求：{0},TargetNullValue=权限请求}"
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Title,Mode=OneTime,StringFormat=权限请求：{0},TargetNullValue=权限请求}"
                                    VerticalAlignment="Center"
                                    Margin="6,0,0,0"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
-                    </StackPanel>
+                        <StackPanel Grid.Column="3" 
+                                    Orientation="Horizontal"
+                                    Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
+                            <Button Content="Decline"
+                                    Margin="0,8,8,0"
+                                    IsCancel="True"
+                                    Command="{Binding RejectCommand}"
+                                    Style="{StaticResource MaterialDesignOutlinedSecondaryButton}" />
+                            <Button Margin="0,8,0,0"
+                                    Command="{Binding PermitCommand}"
+                                    Content="YES"
+                                    IsDefault="True"
+                                    Style="{StaticResource MaterialDesignFlatMidBgButton}" />
+                        </StackPanel>
+                    </Grid>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
@@ -745,20 +767,6 @@
                                 </component:TypeBasedDataTemplateSelector>
                             </ContentPresenter.ContentTemplateSelector>
                         </ContentPresenter>
-                        <StackPanel HorizontalAlignment="Right"
-                                    Orientation="Horizontal"
-                                    Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
-                            <Button Content="Decline"
-                                    Margin="0,8,8,0"
-                                    IsCancel="True"
-                                    Command="{Binding RejectCommand}"
-                                    Style="{StaticResource MaterialDesignOutlinedSecondaryButton}" />
-                            <Button Margin="0,8,0,0"
-                                    Command="{Binding PermitCommand}"
-                                    Content="YES"
-                                    IsDefault="True"
-                                    Style="{StaticResource MaterialDesignFlatMidBgButton}" />
-                        </StackPanel>
                     </StackPanel>
                 </DataTemplate>
             </Setter.Value>

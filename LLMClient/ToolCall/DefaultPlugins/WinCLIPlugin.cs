@@ -86,7 +86,7 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             if (await interactor.WaitForPermission("安全警告",
                     $"请求执行命令：{command}\n该命令被列为危险命令，可能会对系统造成损害。是否继续？"))
             {
-                throw new UnauthorizedAccessException("用户拒绝执行危险命令。");
+                throw new UnauthorizedAccessException("用户拒绝执行命令: " + command);
             }
         }
 
