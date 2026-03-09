@@ -7,6 +7,7 @@
              xmlns:local="clr-namespace:LLMClient.Dialog"
              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:render="clr-namespace:LLMClient.Component.Render"
+             xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              xmlns:extension="clr-namespace:LLMClient.Component.Extension"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DialogItemEditViewModel}"
@@ -16,14 +17,29 @@
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ScrollViewer>
-            <ItemsControl ItemsSource="{Binding TextContents,Mode=OneTime}"
-                          ItemTemplateSelector="{StaticResource TextEditTemplateSelector}" />
-        </ScrollViewer>
-        <Button Grid.Row="1"
-                Content="确认更改"
-                HorizontalAlignment="Right"
-                Margin="5"
-                Command="{Binding  SaveCommand}" />
+        <ListBox x:Name="EditorListBox"
+                 ItemsSource="{Binding TextContents,Mode=OneTime}"
+                 SelectedItem="{Binding SelectedTextContent,Mode=TwoWay}"
+                 ItemTemplateSelector="{StaticResource TextEditTemplateSelector}"
+                 Style="{StaticResource MaterialDesignListBox}">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
+                    <Setter Property="Padding" Value="0" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="5">
+            <Button Content="{materialDesign:PackIcon Kind=FileDocumentPlusOutline}"
+                    Command="{Binding SelectedTextContent.AddCodeFileCommand}"
+                    CommandParameter="{Binding SelectedTextContent, Converter={x:Static converters:ItemToContainerConverter.Instance}, ConverterParameter={x:Reference EditorListBox}}"
+                    Visibility="{Binding SelectedTextContent, Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                    Margin="0,0,8,0"
+                    ToolTip="Add file as code block" />
+            <Button Content="确认更改"
+                    Command="{Binding  SaveCommand}" />
+        </StackPanel>
     </Grid>
 </UserControl>

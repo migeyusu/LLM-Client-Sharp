@@ -167,8 +167,6 @@ public class RequesterViewModel : BaseViewModel
     public ObservableCollection<Attachment> Attachments { get; set; } =
         new();
 
-    public ICommand AddCodeFileCommand { get; }
-
     public ICommand AddImageCommand { get; }
 
     public ICommand RemoveAttachmentCommand { get; }
@@ -270,96 +268,6 @@ public class RequesterViewModel : BaseViewModel
         _tokensCounter = tokensCounter;
         this.BindClient(modelClient);
         CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
-        AddCodeFileCommand = new RelayCommand<object>((o =>
-        {
-            var textBoxBase = ((UIElement?)o)?.FindVisualChild<TextBoxBase>();
-            if (textBoxBase == null)
-            {
-                return;
-            }
-
-            //可以添加代码文件，并已markdown格式插入到输入框中
-            var openFileDialog = new OpenFileDialog()
-            {
-                Filter = "Text files (*.*)|*.*",
-                Multiselect = true
-            };
-            if (openFileDialog.ShowDialog() != true)
-            {
-                return;
-            }
-
-            var settingsOptions = TextMateCodeRenderer.Settings.Options;
-
-            if (textBoxBase is RichTextBox richTextBox)
-            {
-                foreach (var fileName in openFileDialog.FileNames)
-                {
-                    var content = File.ReadAllText(fileName);
-                    var extension = Path.GetExtension(fileName);
-                    var language = settingsOptions.GetLanguageByExtension(extension)?.Id ?? extension.TrimStart('.');
-
-                    var codeVm = new EditableCodeViewModel(content, extension, language)
-                    {
-                        FileLocation = fileName
-                    };
-                    
-                    var expander = new Expander
-                    {
-                        Content = codeVm,
-                        IsExpanded = true,
-                        Header = codeVm
-                    };
-
-                    expander.SetResourceReference(FrameworkElement.StyleProperty, TextMateCodeRenderer.EditCodeBlockStyleKey);
-
-                    var block = new BlockUIContainer(expander);
-
-                    if (richTextBox.CaretPosition.Paragraph != null)
-                    {
-                        richTextBox.CaretPosition = richTextBox.CaretPosition.InsertParagraphBreak();
-                    }
-
-                    var paragraph = richTextBox.CaretPosition.Paragraph;
-                    if (paragraph != null)
-                    {
-                        richTextBox.Document.Blocks.InsertBefore(paragraph, block);
-                    }
-                    else
-                    {
-                        richTextBox.Document.Blocks.Add(block);
-                    }
-
-                    richTextBox.CaretPosition = block.ElementEnd.GetInsertionPosition(LogicalDirection.Forward);
-                }
-                
-                richTextBox.Focus();
-            }
-            else
-            {
-                var stringBuilder = new StringBuilder();
-                stringBuilder.AppendLine();
-                foreach (var fileName in openFileDialog.FileNames)
-                {
-                    var extension = Path.GetExtension(fileName);
-                    var language = settingsOptions.GetLanguageByExtension(extension)?.Id ?? extension;
-                    stringBuilder.Append("```")
-                        .Append(language)
-                        .Append($" file=\"{fileName}\"");
-                    stringBuilder.AppendLine();
-                    stringBuilder.AppendLine(File.ReadAllText(fileName));
-                    stringBuilder.AppendLine("```");
-                }
-
-                textBoxBase.Focus();
-                if (textBoxBase is TextBox textBox)
-                {
-                    textBox.SelectedText = stringBuilder.ToString();
-                }
-            }
-
-            this.IsDataChanged = true;
-        }));
         AddImageCommand = new ActionCommand(_ =>
         {
             var openFileDialog = new OpenFileDialog()

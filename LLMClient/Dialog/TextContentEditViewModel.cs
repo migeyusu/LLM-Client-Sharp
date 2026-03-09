@@ -28,6 +28,8 @@ public abstract class TextContentEditViewModel : BaseViewModel
         }
     }
 
+    public ICommand AddCodeFileCommand { get; protected set; }
+
     public ICommand RollbackCommand { get; }
 
     public string FinalText => Content.Text;

@@ -49,5 +49,20 @@ public class DialogItemEditViewModel : BaseViewModel
                 }
             }
         }
+        
+        SelectedTextContent = TextContents.FirstOrDefault();
+    }
+
+    private TextContentEditViewModel? _selectedTextContent;
+
+    public TextContentEditViewModel? SelectedTextContent
+    {
+        get => _selectedTextContent;
+        set
+        {
+            if (Equals(value, _selectedTextContent)) return;
+            _selectedTextContent = value;
+            OnPropertyChanged();
+        }
     }
 }

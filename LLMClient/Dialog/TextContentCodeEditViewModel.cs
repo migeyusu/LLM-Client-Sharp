@@ -5,12 +5,16 @@ using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using Markdig.Renderers.Html;
 using Microsoft.Extensions.AI;
-using ZstdSharp.Unsafe;
+using Microsoft.Win32;
+using System.Windows;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 
 namespace LLMClient.Dialog;
 
 public class TextContentCodeEditViewModel : TextContentEditViewModel
 {
+
     public Task<string?> GetPersistString()
     {
         return GetPrompt(true);
@@ -88,6 +92,79 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
     public TextContentCodeEditViewModel(TextContent textContent, string? messageId) : base(textContent, messageId)
     {
         this._originalText = textContent.Text;
+        AddCodeFileCommand = new RelayCommand<object>(AddCodeFile);
+    }
+    
+    private async void AddCodeFile(object? o)
+    {
+        RichTextBox? richTextBox = null;
+        if (o is RichTextBox rtb)
+        {
+            richTextBox = rtb;
+        }
+
+        richTextBox ??= ((DependencyObject?)o)?.FindVisualChild<RichTextBox>();
+
+        if (richTextBox == null)
+        {
+            return;
+        }
+
+        var openFileDialog = new OpenFileDialog()
+        {
+            Filter = "Text files (*.*)|*.*",
+            Multiselect = true
+        };
+        if (openFileDialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        var settingsOptions = TextMateCodeRenderer.Settings.Options;
+
+        foreach (var fileName in openFileDialog.FileNames)
+        {
+            var content = await File.ReadAllTextAsync(fileName);
+            var extension = Path.GetExtension(fileName);
+            var language = settingsOptions.GetLanguageByExtension(extension)?.Id ?? extension.TrimStart('.');
+
+            var codeVm = new EditableCodeViewModel(content, extension, language)
+            {
+                FileLocation = fileName
+            };
+
+            var expander = new Expander
+            {
+                Content = codeVm,
+                IsExpanded = true,
+                Header = codeVm
+            };
+
+            expander.SetResourceReference(FrameworkElement.StyleProperty,
+                TextMateCodeRenderer.EditCodeBlockStyleKey);
+
+            var block = new BlockUIContainer(expander);
+
+            if (richTextBox.CaretPosition.Paragraph != null)
+            {
+                richTextBox.CaretPosition = richTextBox.CaretPosition.InsertParagraphBreak();
+            }
+
+            var paragraph = richTextBox.CaretPosition.Paragraph;
+            if (paragraph != null)
+            {
+                richTextBox.Document.Blocks.InsertBefore(paragraph, block);
+            }
+            else
+            {
+                richTextBox.Document.Blocks.Add(block);
+            }
+
+            richTextBox.CaretPosition = block.ElementEnd.GetInsertionPosition(LogicalDirection.Forward);
+        }
+
+        richTextBox.Focus();
+        await ApplyText();
     }
 
     protected override void Rollback()
