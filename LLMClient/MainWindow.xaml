@@ -80,6 +80,13 @@
                                                                     Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
+                                <DataTemplate DataType="{x:Type viewModel:ArchiveManagerViewModel}">
+                                    <HeaderedContentControl Header="存档管理"
+                                                            Style="{StaticResource DialogContentControlStyle}">
+                                        <component:ArchiveManagerView Width="900"
+                                                                    Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
                                 <DataTemplate DataType="{x:Type viewModel:UsageStatisticsViewModel}">
                                     <component:UsageStatisticsView Width="1200"
                                                                    Height="800" />
@@ -485,6 +492,17 @@
                                        Margin="5,0,0,0"
                                        VerticalAlignment="Center" />
                         </StackPanel>
+                    </Button>
+                    <Button Click="OpenArchiveManager_OnClick" 
+                            ToolTip="Archives"
+                            Margin="6,0,0,0" 
+                            Padding="12,6">
+                         <StackPanel Orientation="Horizontal">
+                             <materialDesign:PackIcon Kind="ArchiveOutline" />
+                             <TextBlock Text="Archives"
+                                        Margin="5,0,0,0"
+                                        VerticalAlignment="Center" />
+                         </StackPanel>
                     </Button>
                     <!--<Button Content="测试"
                             Click="ButtonBase_OnClick"/>-->

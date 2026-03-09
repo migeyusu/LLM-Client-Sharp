@@ -10,6 +10,8 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
+using LLMClient.Dialog;
+using LLMClient.Project;
 using MaterialDesignThemes.Wpf;
 using LoggerWindow = LLMClient.Log.LoggerWindow;
 
@@ -223,7 +225,20 @@ public partial class MainWindow : ExtendedWindow, IDisposable
     private void OpenStatistics_OnClick(object sender, RoutedEventArgs e)
     {
         var statsViewModel = new UsageStatisticsViewModel(_mainWindowViewModel.EndpointsViewModel);
-        DialogHost.OpenDialogCommand.Execute(statsViewModel, null);
+        DialogHost.OpenDialogCommand.Execute(statsViewModel, sender as IInputElement);
+    }
+
+    private void OpenArchiveManager_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var archiveManager = new ArchiveManagerViewModel();
+            DialogHost.OpenDialogCommand.Execute(archiveManager, sender as IInputElement);
+        }
+        catch (Exception exception)
+        {
+            _mainWindowViewModel.MessageQueue.Enqueue("无法打开归档管理: " + exception.Message);
+        }
     }
 
     /// <summary>
@@ -243,6 +258,8 @@ public partial class MainWindow : ExtendedWindow, IDisposable
     }
 
     private const string BackupFolderName = "Archive";
+    private const string DialogArchive = "DialogArchive";
+    private const string ProjectArchive = "ProjectArchive";
 
     private async void Backup_CommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
@@ -252,10 +269,31 @@ public partial class MainWindow : ExtendedWindow, IDisposable
             if (e.Parameter is FileBasedSessionBase sessionBase)
             {
                 var fullPath = Path.GetFullPath(BackupFolderName);
-                var fileName = Path.GetFileName(sessionBase.FileFullPath);
-                var path = Path.GetFullPath(fileName, fullPath);
+                string specificArchive = "";
+                if (sessionBase is DialogFileViewModel)
+                {
+                    specificArchive = DialogArchive;
+                    fullPath = Path.Combine(fullPath, specificArchive);
+                }
+                else if (sessionBase is ProjectViewModel)
+                {
+                    specificArchive = ProjectArchive;
+                    fullPath = Path.Combine(fullPath, specificArchive);
+                }
+                
+                if (!Directory.Exists(fullPath))
+                {
+                    Directory.CreateDirectory(fullPath);
+                }
+
+                var fileName = Path.GetFileNameWithoutExtension(sessionBase.FileFullPath);
+                var extension = Path.GetExtension(sessionBase.FileFullPath);
+                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var backupFileName = $"{fileName}_{timestamp}{extension}";
+
+                var path = Path.Combine(fullPath, backupFileName);
                 await sessionBase.SaveAs(path);
-                MessageEventBus.Publish("已备份");
+                MessageEventBus.Publish($"已备份");
             }
         }
         catch (Exception exception)

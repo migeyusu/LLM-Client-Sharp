@@ -12,28 +12,12 @@
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
+        <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    
+
     <StackPanel>
-        
-        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        <ContentControl Design.DataContext="">
-            <ContentControl.DataTemplates>
-                <DataTemplate >
-                    
-                </DataTemplate>
-            </ContentControl.DataTemplates>
-            <ContentControl.Styles>
-                <Style Animations="" ></Style>
-            </ContentControl.Styles>
-            <ContentControl.Template>
-                <ControlTemplate>
-                    
-                </ControlTemplate>
-            </ContentControl.Template>
-        </ContentControl>
+        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center" />
     </StackPanel>
 
 </Window>
