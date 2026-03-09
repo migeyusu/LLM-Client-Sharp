@@ -253,7 +253,10 @@
                                            SyntaxHighlighting="{Binding SyntaxHighlighting,Mode=OneTime}"
                                            Margin="0,10"
                                            MinHeight="200"
-                                           ShowLineNumbers="True">
+                                           ShowLineNumbers="True"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                           Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
+                                           LineNumbersForeground="{DynamicResource MaterialDesign.Brush.Foreground}">
                         <i:Interaction.Behaviors>
                             <render:TextEditorBehavior
                                 Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
@@ -269,14 +272,8 @@
                         <TextBlock Padding="10,0,0,0"
                                    Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
                                    HorizontalAlignment="Left"
-                                   VerticalAlignment="Center">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}{0}/{1}">
-                                    <Binding Path="Extension" Mode="OneTime" TargetNullValue="Unknown" />
-                                    <Binding Path="Name" Mode="OneTime" TargetNullValue="Unknown" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
+                                   VerticalAlignment="Center"
+                                   Text="{Binding DisplayHeader, Mode=OneWay}" />
                         <Button Content="{materialDesign:PackIcon Kind=Undo}"
                                 Command="{Binding RollbackCommand}"
                                 VerticalAlignment="Center"

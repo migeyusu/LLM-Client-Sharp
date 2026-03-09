@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
@@ -289,29 +290,75 @@ public class RequesterViewModel : BaseViewModel
             }
 
             var settingsOptions = TextMateCodeRenderer.Settings.Options;
-            var stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine();
-            foreach (var fileName in openFileDialog.FileNames)
+
+            if (textBoxBase is RichTextBox richTextBox)
             {
-                var extension = Path.GetExtension(fileName);
-                var language = settingsOptions.GetLanguageByExtension(extension)?.Id ?? extension;
-                stringBuilder.Append("```")
-                    .Append(language)
-                    .Append($" file=\"{fileName}\"");
+                foreach (var fileName in openFileDialog.FileNames)
+                {
+                    var content = File.ReadAllText(fileName);
+                    var extension = Path.GetExtension(fileName);
+                    var language = settingsOptions.GetLanguageByExtension(extension)?.Id ?? extension.TrimStart('.');
+
+                    var codeVm = new EditableCodeViewModel(content, extension, language)
+                    {
+                        FileLocation = fileName
+                    };
+                    
+                    var expander = new Expander
+                    {
+                        Content = codeVm,
+                        IsExpanded = true,
+                        Header = codeVm
+                    };
+
+                    expander.SetResourceReference(FrameworkElement.StyleProperty, TextMateCodeRenderer.EditCodeBlockStyleKey);
+
+                    var block = new BlockUIContainer(expander);
+
+                    if (richTextBox.CaretPosition.Paragraph != null)
+                    {
+                        richTextBox.CaretPosition = richTextBox.CaretPosition.InsertParagraphBreak();
+                    }
+
+                    var paragraph = richTextBox.CaretPosition.Paragraph;
+                    if (paragraph != null)
+                    {
+                        richTextBox.Document.Blocks.InsertBefore(paragraph, block);
+                    }
+                    else
+                    {
+                        richTextBox.Document.Blocks.Add(block);
+                    }
+
+                    richTextBox.CaretPosition = block.ElementEnd.GetInsertionPosition(LogicalDirection.Forward);
+                }
+                
+                richTextBox.Focus();
+            }
+            else
+            {
+                var stringBuilder = new StringBuilder();
                 stringBuilder.AppendLine();
-                stringBuilder.AppendLine(File.ReadAllText(fileName));
-                stringBuilder.AppendLine("```");
+                foreach (var fileName in openFileDialog.FileNames)
+                {
+                    var extension = Path.GetExtension(fileName);
+                    var language = settingsOptions.GetLanguageByExtension(extension)?.Id ?? extension;
+                    stringBuilder.Append("```")
+                        .Append(language)
+                        .Append($" file=\"{fileName}\"");
+                    stringBuilder.AppendLine();
+                    stringBuilder.AppendLine(File.ReadAllText(fileName));
+                    stringBuilder.AppendLine("```");
+                }
+
+                textBoxBase.Focus();
+                if (textBoxBase is TextBox textBox)
+                {
+                    textBox.SelectedText = stringBuilder.ToString();
+                }
             }
 
-            textBoxBase.Focus();
-            if (textBoxBase is TextBox textBox)
-            {
-                textBox.SelectedText = stringBuilder.ToString();
-            }
-            else if (textBoxBase is RichTextBox richTextBox)
-            {
-                richTextBox.Selection.Text = stringBuilder.ToString();
-            }
+            this.IsDataChanged = true;
         }));
         AddImageCommand = new ActionCommand(_ =>
         {

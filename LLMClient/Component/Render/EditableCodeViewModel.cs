@@ -1,5 +1,4 @@
-﻿using System.Windows.Controls;
-using System.Windows.Documents;
+﻿using System.Windows.Documents;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using ICSharpCode.AvalonEdit.Highlighting;
@@ -30,6 +29,8 @@ public class EditableCodeViewModel : BaseViewModel
 
     public string? FileLocation { get; set; }
 
+    public string DisplayHeader => !string.IsNullOrEmpty(FileLocation) ? Path.GetFileName(FileLocation) : $"{Extension}/{Name}";
+
     public IHighlightingDefinition? SyntaxHighlighting
     {
         get
@@ -45,11 +46,16 @@ public class EditableCodeViewModel : BaseViewModel
     public ICommand RollbackCommand { get; }
 
     public EditableCodeViewModel(StringLineGroup codeGroup, string? extension, string? name)
+        : this(codeGroup.ToString(), extension, name)
     {
-        _code = codeGroup.ToString();
+    }
+
+    public EditableCodeViewModel(string code, string? extension, string? name)
+    {
+        _code = code;
         Extension = extension;
         Name = name;
-        RollbackCommand = new ActionCommand(o => { Code = codeGroup.ToString(); });
+        RollbackCommand = new ActionCommand(o => { Code = code; });
         DeleteCommand = new RelayCommand<BlockUIContainer>(o =>
         {
             if (o == null)
