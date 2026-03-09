@@ -18,6 +18,9 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <ListBox x:Name="EditorListBox"
+                 MaxHeight="600"
+                 ScrollViewer.CanContentScroll="False"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                  ItemsSource="{Binding TextContents,Mode=OneTime}"
                  SelectedItem="{Binding SelectedTextContent,Mode=TwoWay}"
                  ItemTemplateSelector="{StaticResource TextEditTemplateSelector}"
