@@ -176,7 +176,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public DialogFileViewModel AddNewDialog(ILLMChatClient client, string dialogName = "新建会话")
     {
-        var dialogSession = _viewModelFactory.CreateViewModel<DialogFileViewModel>(dialogName, client);
+        var dialogSession = _viewModelFactory.CreateViewModel<DialogFileViewModel>(dialogName, string.Empty, client);
         AddSession(dialogSession);
         return dialogSession;
     }
@@ -429,7 +429,8 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
             await McpServiceCollection.LoadAsync();
             await RagSourceCollection.LoadAsync();
             await EndpointsViewModel.Initialize();
-            await ModelRegister.Initialize(EndpointsViewModel.AvailableEndpoints.SelectMany((endpoint => endpoint.AvailableModels)));
+            await ModelRegister.Initialize(
+                EndpointsViewModel.AvailableEndpoints.SelectMany((endpoint => endpoint.AvailableModels)));
             await PromptsResource.Initialize();
             await InitialSessionsFromLocal();
             if (SessionViewModels.Any())
