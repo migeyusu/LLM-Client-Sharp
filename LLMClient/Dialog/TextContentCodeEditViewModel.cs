@@ -7,7 +7,6 @@ using Markdig.Renderers.Html;
 using Microsoft.Extensions.AI;
 using Microsoft.Win32;
 using System.Windows;
-using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 
 namespace LLMClient.Dialog;
@@ -166,13 +165,6 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
         richTextBox.Focus();
         await ApplyText();
     }
-
-    protected override void Rollback()
-    {
-        Content.Text = _originalText;
-        this.HasEdit = false;
-    }
-
 
     public override async Task ApplyText()
     {

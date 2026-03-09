@@ -11,16 +11,9 @@ namespace LLMClient.Dialog;
 
 public class TextContentRawEditViewModel : TextContentEditViewModel
 {
-    private string? _originalText;
-
-    protected override void Rollback()
-    {
-        Text = _originalText ?? string.Empty;
-        this.HasEdit = false;
-    }
-
     public override Task ApplyText()
     {
+        this.Content.Text = Text;
         return Task.CompletedTask;
     }
 
@@ -37,13 +30,11 @@ public class TextContentRawEditViewModel : TextContentEditViewModel
             if (value == Content.Text) return;
             Content.Text = value;
             OnPropertyChanged();
-            HasEdit = true;
         }
     }
 
     public TextContentRawEditViewModel(TextContent textContent, string? messageId) : base(textContent, messageId)
     {
-        _originalText = textContent.Text;
         AddCodeFileCommand = new RelayCommand<object>(AddCodeFile);
     }
 

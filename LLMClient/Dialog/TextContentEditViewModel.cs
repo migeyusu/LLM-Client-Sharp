@@ -5,7 +5,6 @@ using LambdaConverters;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.AI;
-using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
 
@@ -15,22 +14,7 @@ public abstract class TextContentEditViewModel : BaseViewModel
         MultiValueConverter.Create<bool, Visibility>(args =>
             args.Values[0] && args.Values[1] ? Visibility.Visible : Visibility.Collapsed);
 
-    private bool _isRollbackEnabled;
-
-    public bool IsRollbackEnabled
-    {
-        get => _isRollbackEnabled;
-        set
-        {
-            if (value == _isRollbackEnabled) return;
-            _isRollbackEnabled = value;
-            OnPropertyChanged();
-        }
-    }
-
     public ICommand AddCodeFileCommand { get; protected set; }
-
-    public ICommand RollbackCommand { get; }
 
     public string FinalText => Content.Text;
 
@@ -38,27 +22,11 @@ public abstract class TextContentEditViewModel : BaseViewModel
 
     public string? MessageId { get; }
 
-    private bool _hasEdit;
-
-    public bool HasEdit
-    {
-        get => _hasEdit;
-        set
-        {
-            if (value == _hasEdit) return;
-            _hasEdit = value;
-            OnPropertyChanged();
-        }
-    }
-
     protected TextContentEditViewModel(TextContent textContent, string? messageId)
     {
         this.Content = textContent;
         this.MessageId = messageId;
-        RollbackCommand = new ActionCommand(Rollback);
     }
-
-    protected abstract void Rollback();
 
     public async Task<bool> ApplyAndCheck()
     {
