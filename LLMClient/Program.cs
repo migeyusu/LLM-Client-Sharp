@@ -3,6 +3,7 @@ using System.Windows;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
@@ -36,7 +37,7 @@ public class Program
         if (!Debugger.IsAttached && !Mutex.WaitOne(TimeSpan.Zero, true))
         {
             // 如果获取失败，则表示已有实例在运行
-            MessageBox.Show("程序已经在运行！", "提示");
+            MessageBoxes.Info("程序已经在运行！", "提示");
             return;
         }
 
@@ -128,14 +129,14 @@ public class Program
         AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) =>
         {
             var ex = (Exception)eventArgs.ExceptionObject;
-            MessageBox.Show("发生未处理的异常: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBoxes.Error("发生未处理的异常: " + ex.Message, "错误");
             var logger = serviceProvider?.GetService<ILogger<Program>>();
             logger?.LogCritical(ex, "发生未处理的异常，应用程序即将终止");
         };
         TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
         {
             var ex = eventArgs.Exception;
-            MessageBox.Show("发生未观察到的任务异常: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBoxes.Error("发生未观察到的任务异常: " + ex.Message, "错误");
             var logger = serviceProvider?.GetService<ILogger<Program>>();
             logger?.LogError(ex, "发生未观察到的任务异常");
         };
@@ -149,7 +150,7 @@ public class Program
         }
         catch (Exception e)
         {
-            MessageBox.Show("An error occured: " + e + "process will be terminated.");
+            MessageBoxes.Error("An error occured: " + e + "process will be terminated.", "Error");
             var logger = serviceProvider?.GetService<ILogger<Program>>();
             logger?.LogCritical(e, "Application terminated unexpectedly");
             try

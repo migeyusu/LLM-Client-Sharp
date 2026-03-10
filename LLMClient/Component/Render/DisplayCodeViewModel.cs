@@ -4,6 +4,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Markup;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
@@ -177,7 +178,7 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
             var environments = BashEnvironmentDetector.GetAvailableEnvironments();
             if (environments.Count == 0)
             {
-                MessageBox.Show("未找到任何可执行 Bash 的环境。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxes.Error("未找到任何可执行 Bash 的环境。", "错误");
                 return;
             }
 
@@ -287,7 +288,7 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"执行出错: {ex.Message}");
+                MessageBoxes.Error($"执行出错: {ex.Message}");
             }
         }
     }

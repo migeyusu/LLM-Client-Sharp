@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using LLMClient.Component.CustomControl;
 using LLMClient.Dialog.Models;
 using MaterialDesignThemes.Wpf;
 
@@ -56,8 +57,15 @@ public partial class DialogGraphControl : UserControl
 
     private void Delete_CommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (this.DataContext is not DialogGraphViewModel dialogGraphViewModel) return;
-        if (e.Parameter is not RequestViewItem requestViewItem) return;
-        dialogGraphViewModel.DeleteRequestItem(requestViewItem);
+        try
+        {
+            if (this.DataContext is not DialogGraphViewModel dialogGraphViewModel) return;
+            if (e.Parameter is not RequestViewItem requestViewItem) return;
+            dialogGraphViewModel.DeleteRequestItem(requestViewItem);
+        }
+        catch (Exception exception)
+        {
+            MessageBoxes.Error($"删除请求失败: {exception.Message}", "错误");
+        }
     }
 }

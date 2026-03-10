@@ -1,5 +1,6 @@
 ﻿using System.Windows.Controls;
 using System.Windows.Input;
+using LLMClient.Component.Utility;
 using LLMClient.Dialog.Models;
 
 namespace LLMClient.Dialog;
@@ -15,9 +16,16 @@ public partial class SessionView : UserControl
 
     private void OnDeleteExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is IDialogItem dialogViewItem)
+        try
         {
-            ViewModel.DeleteItem(dialogViewItem);
+            if (e.Parameter is IDialogItem dialogViewItem)
+            {
+                ViewModel.DeleteItem(dialogViewItem);
+            }
+        }
+        catch (Exception exception)
+        {
+            MessageEventBus.Publish($"删除失败：{exception.Message}");
         }
     }
 

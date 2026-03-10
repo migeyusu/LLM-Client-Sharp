@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.Log;
@@ -202,9 +203,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
         {
             if (Status == RagStatus.Constructed)
             {
-                if (MessageBox.Show("是否要重新构建？", "提示",
-                        MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No,
-                        MessageBoxOptions.DefaultDesktopOnly) != MessageBoxResult.Yes)
+                if (!MessageBoxes.Question("是否要重新构建？", "提示"))
                 {
                     return;
                 }
@@ -270,7 +269,7 @@ public abstract class RagFileBase : BaseViewModel, IRagFileSource
             ConstructionLogs.LogError("构建过程中发生错误: {ErrorMessage}", e.Message);
             ErrorMessage = e.Message;
             Status = RagStatus.Error;
-            MessageBox.Show(e.Message);
+            MessageBoxes.Error(e.Message);
         }
     }
 

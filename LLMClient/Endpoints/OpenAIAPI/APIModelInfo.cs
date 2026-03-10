@@ -627,7 +627,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
         }
         catch (Exception ex)
         {
-            MessageBox.Show("复制失败: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBoxes.Error("复制失败: " + ex.Message, "错误");
         }
     });
 }

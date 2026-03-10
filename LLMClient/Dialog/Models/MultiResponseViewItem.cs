@@ -7,6 +7,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LambdaConverters;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.ViewModel;
 using LLMClient.Endpoints;
@@ -262,7 +263,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxes.Error(e.Message, "Error");
             }
         });
         RemoveResponseCommand = new RelayCommand<ResponseViewItem>(o =>

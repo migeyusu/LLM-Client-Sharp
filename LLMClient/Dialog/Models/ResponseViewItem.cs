@@ -451,7 +451,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
         }
         catch (Exception exception)
         {
-            MessageBox.Show(exception.Message, "发送失败", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBoxes.Error(exception.Message, "发送失败");
             this.ErrorMessage = exception.Message;
         }
         finally

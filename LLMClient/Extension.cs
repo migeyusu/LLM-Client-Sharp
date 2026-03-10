@@ -194,31 +194,6 @@ public static class Extension
         }
     }
 
-
-    /// <summary>
-    /// 删除一次回复
-    /// </summary>
-    /// <param name="requestItem"></param>
-    /// <exception cref="InvalidOperationException"></exception>
-    public static void DeleteInteraction(this IRequestItem requestItem)
-    {
-        var previousItem = requestItem.PreviousItem;
-        if (previousItem == null)
-        {
-            throw new InvalidOperationException("PreviousItem 不能为空");
-        }
-
-        previousItem.RemoveChild(requestItem);
-        var firstOrDefault = requestItem.Children.FirstOrDefault();
-        if (firstOrDefault is MultiResponseViewItem responseViewItem)
-        {
-            foreach (var request in responseViewItem.Children)
-            {
-                previousItem.AppendChild(request);
-            }
-        }
-    }
-
     /// <summary>
     /// 
     /// </summary>

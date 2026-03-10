@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Data;
 using LLMClient.Dialog;
@@ -32,7 +33,7 @@ public partial class GlobalOptionsView : UserControl
             var tryLoadDoc = await EndPointsConfig.TryLoadDoc(fileName);
             if (tryLoadDoc == null)
             {
-                MessageBox.Show("导入失败，文件格式不正确或文件不存在。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxes.Error("导入失败，文件格式不正确或文件不存在。", "错误");
                 return;
             }
 
@@ -85,7 +86,7 @@ public partial class GlobalOptionsView : UserControl
             }
             catch (Exception exception)
             {
-                MessageBox.Show("保存工作区配置文件失败: " + exception.Message);
+                MessageBoxes.Error("保存工作区配置文件失败: " + exception.Message);
             }
         }
 

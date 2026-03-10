@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog;
@@ -144,7 +145,7 @@ public class CreateSessionViewModel : BaseViewModel
             }
             catch (Exception e)
             {
-                MessageBox.Show("Failed to create session: " + e.Message);
+                MessageBoxes.Error("Failed to create session: " + e.Message);
             }
         });
         ResearchCreationOptions = new List<IResearchCreationOption>

@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using LLMClient.Component.CustomControl;
 using LLMClient.Data;
 
 namespace LLMClient.Rag.Document;
@@ -90,7 +91,7 @@ public class MarkdownExtractorViewModel : DocumentExtractorViewModel<MarkdownNod
         }
         catch (Exception e)
         {
-            MessageBox.Show(e.Message);
+            MessageBoxes.Error(e.Message);
         }
     }
 }

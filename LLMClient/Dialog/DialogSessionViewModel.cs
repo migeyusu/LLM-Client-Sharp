@@ -231,7 +231,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     public ICommand GoToPreviousHighlightCommand { get; }
 
     public ICommand SetLeafCommand { get; }
-    
 
     #endregion
 
@@ -332,7 +331,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         var oriPreviousItem = item.PreviousItem;
         if (item is IRequestItem requestItem)
         {
-            requestItem.DeleteInteraction();
+            DeleteChain(requestItem);
         }
         else if (item is EraseViewItem eraseViewItem)
         {
@@ -353,6 +352,51 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
 
         this.IsDataChanged = true;
+    }
+
+    /// <summary>
+    /// 删除整个请求链（请求及其所有响应），如果存在分叉则提示是否删除整个节点树
+    /// <para>由于多种分叉情况，理想状态下的将后继节点连接到前回复是困难且会丢失语义的</para>
+    /// </summary>
+    /// <param name="requestItem"></param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static void DeleteChain(IRequestItem requestItem)
+    {
+        var previousItem = requestItem.PreviousItem;
+        if (previousItem == null)
+        {
+            throw new InvalidOperationException("PreviousItem 不能为空");
+        }
+        
+        if (requestItem.HasFork)
+        {
+            if (!MessageBoxes.Question("存在多个分叉，是否要删除整个节点树？", "提示"))
+            {
+                return;
+            }
+        }
+        else
+        {
+            int GetDepth(IDialogItem item)
+            {
+                if (!item.Children.Any())
+                {
+                    return 1;
+                }
+        
+                return 1 + item.Children.Max(GetDepth);
+            }
+        
+            if (GetDepth(requestItem) > 2)
+            {
+                if (!MessageBoxes.Question("当前节点后包含较长对话，是否要删除整个节点树？", "提示"))
+                {
+                    return;
+                }
+            }
+        }
+        
+        previousItem.RemoveChild(requestItem);
     }
 
     #endregion
@@ -620,7 +664,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
+                MessageBoxes.Error(e.Message);
             }
         });
         ClearContextCommand = new ActionCommand(_ => { CutContext(); });

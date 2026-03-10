@@ -9,6 +9,7 @@ using Windows.UI.ViewManagement;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
@@ -158,7 +159,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         }
         catch (Exception e)
         {
-            MessageBox.Show(e.Message);
+            MessageBoxes.Error(e.Message);
         }
     }));
 

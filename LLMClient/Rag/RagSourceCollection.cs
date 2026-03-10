@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using Microsoft.Win32;
@@ -65,8 +66,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
                     source = new MarkdownFile(fileInfo);
                     break;
                 default:
-                    MessageBox.Show("不支持的文件类型，请选择文本、Markdown、JSON、CSV、PDF或Word文档。", "错误", MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    MessageBoxes.Error("不支持的文件类型，请选择文本、Markdown、JSON、CSV、PDF或Word文档。", "错误");
                     return;
             }
 
@@ -78,7 +78,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
         }
         catch (Exception e)
         {
-            MessageBox.Show($"添加文件失败: {e.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBoxes.Error($"添加文件失败: {e.Message}", "错误");
         }
     }));
 
@@ -110,9 +110,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
     {
         try
         {
-            if (MessageBox.Show("请确认是否删除文件？", "提示",
-                    MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No,
-                    MessageBoxOptions.DefaultDesktopOnly) != MessageBoxResult.Yes)
+            if (!MessageBoxes.Question("请确认是否删除文件？", "提示"))
             {
                 return;
             }
@@ -121,7 +119,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
             {
                 if (fileSource.Status == RagStatus.Constructing)
                 {
-                    MessageBox.Show("文件正在构建中，请停止后删除。", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBoxes.Warning("文件正在构建中，请停止后删除。", "提示");
                     return;
                     // await fileSource.StopConstruct();
                 }
@@ -135,7 +133,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
         }
         catch (Exception e)
         {
-            MessageBox.Show("删除文件失败: " + e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBoxes.Error("删除文件失败: " + e.Message, "错误");
         }
     });
 
@@ -165,7 +163,7 @@ public class RagSourceCollection : BaseViewModel, IRagSourceCollection
         }
         catch (Exception e)
         {
-            MessageBox.Show("保存Rag配置失败: " + e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBoxes.Error("保存Rag配置失败: " + e.Message, "错误");
         }
     });
 

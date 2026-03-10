@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using LLMClient.Component.CustomControl;
 using LLMClient.Data;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
@@ -519,7 +520,7 @@ public class PDFExtractorViewModel : DocumentExtractorViewModel<PDFNode, PDFPage
         }
         catch (Exception e)
         {
-            MessageBox.Show(e.Message);
+            MessageBoxes.Error(e.Message);
         }
     }
 }

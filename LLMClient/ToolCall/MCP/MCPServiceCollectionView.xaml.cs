@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 
 namespace LLMClient.ToolCall.MCP;
@@ -18,8 +19,7 @@ public partial class MCPServiceCollectionView : UserControl
     {
         if (e.Parameter is McpServerItem mcpServerItem)
         {
-            if (MessageBox.Show("确认删除该服务？", "确认", MessageBoxButton.OKCancel, MessageBoxImage.Question) ==
-                MessageBoxResult.OK)
+            if (MessageBoxes.Question("确认删除该服务？", "确认"))
             {
                 this.McpServiceCollection?.DeleteServerItem(mcpServerItem);
             }

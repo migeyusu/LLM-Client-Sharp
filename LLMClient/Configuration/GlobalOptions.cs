@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
@@ -14,7 +15,6 @@ using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel.Data;
 using Microsoft.Xaml.Behaviors.Core;
-using MessageBox = System.Windows.MessageBox;
 
 namespace LLMClient.Configuration;
 
@@ -266,7 +266,7 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         }
         catch (Exception e)
         {
-            MessageBox.Show("Failed to save global configuration: " + e.Message, "Error");
+            MessageBoxes.Error("Failed to save global configuration: " + e.Message, "Error");
         }
 
         MessageEventBus.Publish("Global configuration saved successfully.");

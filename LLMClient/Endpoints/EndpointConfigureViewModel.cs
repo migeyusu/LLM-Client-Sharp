@@ -6,6 +6,7 @@ using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
@@ -17,7 +18,6 @@ using LLMClient.Endpoints.OpenAIAPI;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
-using MessageBox = System.Windows.MessageBox;
 
 namespace LLMClient.Endpoints;
 
@@ -48,9 +48,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
     {
         if (o is APIEndPoint endpoint)
         {
-            if (MessageBox.Show($"Sure to remove the endpoint {endpoint.DisplayName} ?", "warning",
-                    MessageBoxButton.YesNo)
-                != MessageBoxResult.Yes)
+            if (!MessageBoxes.Question($"Sure to remove the endpoint {endpoint.DisplayName} ?", "warning"))
             {
                 return;
             }
@@ -67,7 +65,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             var difference = distinctEndpoints.Except(Endpoints).ToList();
             if (difference.Count != 0)
             {
-                difference.ForEach(endpoint => { MessageBox.Show("Endpoint name must be unique:" + endpoint.Name); });
+                difference.ForEach(endpoint => { MessageBoxes.Error("Endpoint name must be unique:" + endpoint.Name); });
                 return;
             }
 
@@ -84,7 +82,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             {
                 if (!ep.Validate(out var msg))
                 {
-                    MessageBox.Show("保存失败: " + msg, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxes.Error("保存失败: " + msg, "错误");
                     return;
                 }
             }
@@ -111,7 +109,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
         catch (Exception e)
         {
-            MessageBox.Show("保存失败: " + e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBoxes.Error("保存失败: " + e.Message, "错误");
         }
     });
 

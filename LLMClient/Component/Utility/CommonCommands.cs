@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
@@ -66,12 +67,12 @@ public static class CommonCommands
                         }
                         else
                         {
-                            MessageBox.Show("File does not exist.");
+                            MessageBoxes.Error("File does not exist.");
                         }
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show(e.Message);
+                        MessageBoxes.Error(e.Message);
                     }
                 }
             }));
@@ -131,7 +132,7 @@ public static class CommonCommands
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show(e.Message);
+                        MessageBoxes.Error(e.Message);
                     }
                 }
             }));
@@ -169,7 +170,7 @@ public static class CommonCommands
                         }
                         catch (Exception e)
                         {
-                            MessageBox.Show("Export failed: " + e.Message);
+                            MessageBoxes.Error("Export failed: " + e.Message);
                         }
                     }
                 }
@@ -196,12 +197,12 @@ public static class CommonCommands
                         }
                         else
                         {
-                            MessageBox.Show("Directory does not exist.");
+                            MessageBoxes.Error("Directory does not exist.");
                         }
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show(e.Message);
+                        MessageBoxes.Error(e.Message);
                     }
                 }
             });

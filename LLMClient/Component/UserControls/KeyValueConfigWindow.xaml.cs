@@ -5,6 +5,9 @@ using System.Windows;
 using System.Windows.Input;
 using LLMClient.ToolCall;
 using Microsoft.Xaml.Behaviors.Core;
+using LLMClient.Component.CustomControl;
+using LLMClient.Component.Utility;
+using LLMClient.ContextEngineering.PromptGeneration;
 
 namespace LLMClient.Component.UserControls;
 
@@ -94,15 +97,13 @@ public partial class KeyValueConfigWindow : Window, INotifyPropertyChanged
     {
         if (UserVariables.DistinctBy((item => item.Name)).Count() < UserVariables.Count())
         {
-            MessageBox.Show("Variable must have unique names.", "Error", MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            MessageBoxes.Error("Variable must have unique names.", "Error");
             return;
         }
 
         if (UserVariables.Any((item => string.IsNullOrWhiteSpace(item.Name))))
         {
-            MessageBox.Show("Variable must have non-empty names.", "Error", MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            MessageBoxes.Error("Variable must have non-empty names.", "Error");
             return;
         }
 

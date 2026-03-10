@@ -3,6 +3,7 @@ using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
@@ -68,8 +69,7 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show($"Error Create Client:{e.Message}", "Error", MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    MessageBoxes.Error($"Error Create Client:{e.Message}", "Error");
                 }
             });
         }
@@ -95,8 +95,7 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show($"Error Create Client:{e.Message}", "Error", MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    MessageBoxes.Error($"Error Create Client:{e.Message}", "Error");
                 }
             });
         }

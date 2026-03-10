@@ -100,7 +100,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
         }
         catch (Exception e)
         {
-            MessageBox.Show("无法粘贴，出现错误:" + e.Message);
+            MessageBoxes.Error("无法粘贴，出现错误:" + e.Message);
         }
     });
 
@@ -121,7 +121,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show("无法粘贴，数据格式错误:" + e.Message);
+                        MessageBoxes.Error("无法粘贴，数据格式错误:" + e.Message);
                     }
                 }
             }

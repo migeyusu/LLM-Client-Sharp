@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Endpoints;
@@ -131,8 +132,7 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
 
     public ICommand ClearCacheCommand => new ActionCommand((o) =>
     {
-        if (MessageBox.Show("是否清除缓存？", "确认", MessageBoxButton.OKCancel, MessageBoxImage.Question)
-            == MessageBoxResult.OK)
+        if (MessageBoxes.Question("是否清除缓存？", "确认"))
         {
             this.PromptsCache.Clear();
         }
@@ -208,13 +208,13 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
                                 throw;
                             }
                         });
-                    MessageBox.Show("Summary generated successfully!");
+                    MessageBoxes.Info("Summary generated successfully!");
                 }
                 catch (Exception e)
                 {
                     IsSummaryFailed = true;
                     // await promptsCache.SaveAsync();
-                    MessageBox.Show($"Failed to generate summary: {e.Message}");
+                    MessageBoxes.Error($"Failed to generate summary: {e.Message}");
                 }
                 finally
                 {
@@ -253,7 +253,7 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
         }
         catch (Exception exception)
         {
-            MessageBox.Show(exception.Message);
+            MessageBoxes.Error(exception.Message);
         }
         finally
         {

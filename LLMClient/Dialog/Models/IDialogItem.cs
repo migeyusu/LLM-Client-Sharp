@@ -14,6 +14,8 @@ public interface IDialogItem : ITokenizable
     Guid? PreviousItemId => PreviousItem?.Id;
 
     IReadOnlyCollection<IDialogItem> Children { get; }
+    
+    bool HasFork { get; }
 
     IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken);
 

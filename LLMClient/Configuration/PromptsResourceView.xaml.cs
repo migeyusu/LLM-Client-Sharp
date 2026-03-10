@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 
 namespace LLMClient.Configuration;
@@ -23,7 +24,7 @@ public partial class PromptsResourceView : UserControl
             }
             catch (Exception exception)
             {
-                MessageBox.Show(exception.Message);
+                MessageBoxes.Error(exception.Message);
             }
         }
     }

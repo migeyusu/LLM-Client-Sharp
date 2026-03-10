@@ -5,10 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:LLMClient.Dialog"
-             xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
-             xmlns:render="clr-namespace:LLMClient.Component.Render"
-             xmlns:converters="clr-namespace:LLMClient.Component.Converters"
-             xmlns:extension="clr-namespace:LLMClient.Component.Extension"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DialogItemEditViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">

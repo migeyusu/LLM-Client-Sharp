@@ -4,10 +4,11 @@ using System.Windows.Documents;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using Markdig.Renderers.Html;
-using Microsoft.Extensions.AI;
 using Microsoft.Win32;
 using System.Windows;
-using CommunityToolkit.Mvvm.Input;
+using System.Windows.Media.Imaging;
+using Microsoft.SemanticKernel;
+using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Dialog;
 
@@ -46,6 +47,18 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
                 sb.AppendLine(codeVm.Code);
                 sb.AppendLine("```");
             }
+            // 情况 B：图片容器（粘贴产生的），暂不支持
+            /*else if (block is BlockUIContainer imgContainer && imgContainer.Child is Image img)
+            {
+                if (img.Source is BitmapSource bitmapSource)
+                {
+                    /*if (!string.IsNullOrEmpty(base64))
+                    {
+                        // 构造 Microsoft.Extensions.AI 的图片内容
+                        contents.Add(new ImageContent(base64, "image/png"));
+                    }#1#
+                }
+            }*/
             else if (block is Paragraph paragraph)
             {
                 // 非代码块直接提取纯文本（因为在正向渲染时我们保留了原始 Markdown 符号）

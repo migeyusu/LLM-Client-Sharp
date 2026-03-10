@@ -4,6 +4,7 @@ using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.UserControls;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
@@ -109,8 +110,7 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("Failed to remove session from project: " + e.Message, "Error", MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    MessageBoxes.Error("Failed to remove session from project: " + e.Message, "Error");
                 }
             });
         }
