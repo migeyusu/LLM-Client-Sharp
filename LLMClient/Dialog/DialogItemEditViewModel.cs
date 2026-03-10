@@ -10,6 +10,8 @@ namespace LLMClient.Dialog;
 
 public class DialogItemEditViewModel : BaseViewModel
 {
+    public bool IsMultiContent { get; }
+
     public List<TextContentEditViewModel> TextContents { get; } = [];
 
     public ICommand SaveCommand => new ActionCommand(async () =>
@@ -49,7 +51,8 @@ public class DialogItemEditViewModel : BaseViewModel
                 }
             }
         }
-        
+
+        IsMultiContent = TextContents.Count > 1;
         SelectedTextContent = TextContents.FirstOrDefault();
     }
 

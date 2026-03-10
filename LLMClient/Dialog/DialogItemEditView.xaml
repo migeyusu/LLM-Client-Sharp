@@ -17,27 +17,25 @@
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ListBox x:Name="EditorListBox"
-                 MaxHeight="600"
-                 ScrollViewer.CanContentScroll="False"
-                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 ItemsSource="{Binding TextContents,Mode=OneTime}"
-                 SelectedItem="{Binding SelectedTextContent,Mode=TwoWay}"
-                 ItemTemplateSelector="{StaticResource TextEditTemplateSelector}"
-                 Style="{StaticResource MaterialDesignListBox}">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
-                    <Setter Property="Padding" Value="0" />
-                </Style>
-            </ListBox.ItemContainerStyle>
-        </ListBox>
+        <ContentPresenter x:Name="Editor"
+                          Content="{Binding SelectedTextContent,Mode=OneWay}"
+                          ContentTemplateSelector="{StaticResource TextEditTemplateSelector}" />
+        <ComboBox Grid.Row="1"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Center"
+                  Width="200"
+                  Visibility="{Binding IsMultiContent,Mode=OneTime, Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
+                  ItemsSource="{Binding TextContents,Mode=OneTime}"
+                  DisplayMemberPath="FinalText"
+                  SelectedItem="{Binding SelectedTextContent,Mode=TwoWay}"
+                  Style="{StaticResource MaterialDesignOutlinedComboBox}" />
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="5">
             <Button Content="{materialDesign:PackIcon Kind=FileDocumentPlusOutline}"
                     Command="{Binding SelectedTextContent.AddCodeFileCommand}"
-                    CommandParameter="{Binding SelectedTextContent, Converter={x:Static converters:ItemToContainerConverter.Instance}, ConverterParameter={x:Reference EditorListBox}}"
+                    CommandParameter="{Binding ElementName=Editor}"
                     Visibility="{Binding SelectedTextContent, Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                     Margin="0,0,8,0"
                     ToolTip="Add file as code block" />
