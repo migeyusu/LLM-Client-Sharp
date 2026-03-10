@@ -8,7 +8,6 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering.Analysis;
-using LLMClient.ContextEngineering.Tools;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
@@ -31,13 +30,13 @@ public class Program
     private static readonly Mutex Mutex = new Mutex(true, "LLMClient.WPF");
 
     [STAThread]
-    static void Main(string[] args)
+    static void Main()
     {
         // 尝试获得互斥量的所有权
         if (!Debugger.IsAttached && !Mutex.WaitOne(TimeSpan.Zero, true))
         {
             // 如果获取失败，则表示已有实例在运行
-            MessageBoxes.Info("程序已经在运行！", "提示");
+            MessageBox.Show("程序已经在运行！", "提示");
             return;
         }
 
@@ -129,14 +128,14 @@ public class Program
         AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) =>
         {
             var ex = (Exception)eventArgs.ExceptionObject;
-            MessageBoxes.Error("发生未处理的异常: " + ex.Message, "错误");
+            MessageBox.Show("发生未处理的异常: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             var logger = serviceProvider?.GetService<ILogger<Program>>();
             logger?.LogCritical(ex, "发生未处理的异常，应用程序即将终止");
         };
         TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
         {
             var ex = eventArgs.Exception;
-            MessageBoxes.Error("发生未观察到的任务异常: " + ex.Message, "错误");
+            MessageBox.Show("发生未观察到的任务异常: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             var logger = serviceProvider?.GetService<ILogger<Program>>();
             logger?.LogError(ex, "发生未观察到的任务异常");
         };
@@ -150,7 +149,8 @@ public class Program
         }
         catch (Exception e)
         {
-            MessageBoxes.Error("An error occured: " + e + "process will be terminated.", "Error");
+            MessageBox.Show("An error occured: " + e + "process will be terminated.", "Error", MessageBoxButton.OK,
+                MessageBoxImage.Error);
             var logger = serviceProvider?.GetService<ILogger<Program>>();
             logger?.LogCritical(e, "Application terminated unexpectedly");
             try
