@@ -12,7 +12,11 @@
         SizeToContent="WidthAndHeight"
         ResizeMode="NoResize"
         Title="Message">
-    <materialDesign:Card UniformCornerRadius="8" Margin="10" Padding="20" Background="{DynamicResource MaterialDesignPaper}">
+    <materialDesign:Card UniformCornerRadius="8" Margin="15" Padding="20" 
+                         Background="{DynamicResource MaterialDesignPaper}"
+                         materialDesign:ElevationAssist.Elevation="Dp4"
+                         BorderThickness="1"
+                         BorderBrush="{DynamicResource MaterialDesignDivider}">
         <Grid MaxWidth="500" MinWidth="350">
              <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
