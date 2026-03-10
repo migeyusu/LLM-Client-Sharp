@@ -14,14 +14,9 @@
              xmlns:models="clr-namespace:LLMClient.Dialog.Models"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
-             d:DesignHeight="110" d:DesignWidth="1600"
-             AllowDrop="True">
+             d:DesignHeight="110" d:DesignWidth="1600">
     <Border CornerRadius="8"
             ClipToBounds="True"
-            AllowDrop="True"
-            DragEnter="PromptBox_OnDragEnter"
-            DragLeave="UIElement_OnDragLeave"
-            Drop="PromptBox_OnDrop"
             Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
             BorderThickness="1.5">
         <Border.Style>
@@ -50,9 +45,8 @@
             </Grid.RowDefinitions>
             <ContentPresenter ContentTemplateSelector="{StaticResource TextEditTemplateSelector}"
                               Content="{Binding PromptEditViewModel,Mode=OneWay}"
-                              Margin="8"
                               MinHeight="40"
-                              
+                              AllowDrop="True"
                               x:Name="PromptEditor"
                               IsKeyboardFocusWithinChanged="PromptEditor_OnLostKeyboardFocus">
                 <ContentPresenter.CommandBindings>

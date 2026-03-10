@@ -1,7 +1,5 @@
-﻿using System.Windows;
-using System.Windows.Data;
-using System.Windows.Input;
-using LambdaConverters;
+﻿using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using Microsoft.Extensions.AI;
@@ -10,11 +8,7 @@ namespace LLMClient.Dialog;
 
 public abstract class TextContentEditViewModel : BaseViewModel
 {
-    public static IMultiValueConverter MultiBooleanToVisibilityConverter =
-        MultiValueConverter.Create<bool, Visibility>(args =>
-            args.Values[0] && args.Values[1] ? Visibility.Visible : Visibility.Collapsed);
-
-    public ICommand AddCodeFileCommand { get; protected set; }
+    public ICommand AddCodeFileCommand { get; }
 
     public string FinalText => Content.Text;
 
@@ -26,7 +20,10 @@ public abstract class TextContentEditViewModel : BaseViewModel
     {
         this.Content = textContent;
         this.MessageId = messageId;
+        AddCodeFileCommand = new RelayCommand<object>(AddCodeFile);
     }
+
+    protected abstract void AddCodeFile(object? obj);
 
     public async Task<bool> ApplyAndCheck()
     {
@@ -43,4 +40,6 @@ public abstract class TextContentEditViewModel : BaseViewModel
     public abstract Task ApplyText();
 
     public abstract void AppendTempText(string tempText);
+
+    public abstract void DropFiles(IEnumerable<string> filePaths, object? o);
 }

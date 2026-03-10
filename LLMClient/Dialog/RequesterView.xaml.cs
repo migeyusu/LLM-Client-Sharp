@@ -80,46 +80,6 @@ public partial class RequesterView : UserControl
         ViewModel.NotifyRagSelection();
     }
 
-    private void PromptBox_OnDragEnter(object sender, DragEventArgs e)
-    {
-        if (e.Data.GetDataPresent(DataFormats.FileDrop))
-        {
-            e.Effects = DragDropEffects.Move;
-        }
-
-        e.Handled = true;
-    }
-
-    private async void PromptBox_OnDrop(object sender, DragEventArgs e)
-    {
-        var dataObject = e.Data;
-        if (dataObject.GetDataPresent(DataFormats.FileDrop))
-        {
-            var data = e.Data.GetData(DataFormats.FileDrop, true);
-            if (data is IEnumerable<string> paths)
-            {
-                var stringBuilder = new StringBuilder();
-                foreach (var path in paths)
-                {
-                    if (File.Exists(path))
-                    {
-                        var readAllText = await File.ReadAllTextAsync(path);
-                        stringBuilder.AppendLine(readAllText);
-                    }
-                }
-
-                if (this.DataContext is RequesterViewModel requesterViewModel)
-                {
-                    requesterViewModel.PromptEditViewModel.AppendTempText(stringBuilder.ToString());
-                }
-            }
-        }
-    }
-
-    private void UIElement_OnDragLeave(object sender, DragEventArgs e)
-    {
-    }
-
     private async void PromptEditor_OnLostKeyboardFocus(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (e.NewValue is false)

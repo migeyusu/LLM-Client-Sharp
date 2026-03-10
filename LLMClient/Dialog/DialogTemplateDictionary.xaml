@@ -730,9 +730,15 @@
                                  AcceptsReturn="True"
                                  AcceptsTab="True"
                                  AllowDrop="True"
+                                 Padding="8,8,4,4"
                                  Background="Transparent"
                                  VerticalScrollBarVisibility="Auto"
                                  BorderThickness="0"
+                                 BorderBrush="DodgerBlue"
+                                 PreviewDragEnter="TextBox_OnDragEnter"
+                                 PreviewDragLeave="TextBox_OnDragLeave"
+                                 Drop="TextBox_OnDrop"
+                                 PreviewDragOver="TextBox_OnPreviewDragOver"
                                  materialDesign:TextFieldAssist.DecorationVisibility="Collapsed">
                         <b:Interaction.Behaviors>
                             <render:RichTextBoxBehaviour Document="{Binding EditDocument,Mode=OneWay}" />
@@ -748,6 +754,11 @@
                              AcceptsReturn="True"
                              AcceptsTab="True"
                              AllowDrop="True"
+                             BorderBrush="DodgerBlue"
+                             DragEnter="TextBox_OnDragEnter"
+                             DragLeave="TextBox_OnDragLeave"
+                             Drop="TextBox_OnDrop"
+                             Padding="8,8,4,4"
                              TextWrapping="Wrap"
                              Background="Transparent"
                              VerticalScrollBarVisibility="Auto"

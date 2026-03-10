@@ -18,7 +18,7 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
         return GetPrompt(true);
     }
 
-    public async Task<string?> GetPrompt(bool includeFilePath = false)
+    public async Task<string?> GetPrompt(bool includeFilePath = true)
     {
         var doc = await WaitAsyncProperty<FlowDocument>(nameof(EditDocument));
         if (!doc.Blocks.Any())
@@ -41,11 +41,8 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
                     var codeBlockAttributes = htmlAttributes.ToCodeBlockAttributes();
                     sb.Append($" {codeBlockAttributes}");
                 }
-                else
-                {
-                    sb.AppendLine();
-                }
 
+                sb.AppendLine();
                 sb.AppendLine(codeVm.Code);
                 sb.AppendLine("```");
             }
@@ -88,10 +85,9 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
 
     public TextContentCodeEditViewModel(TextContent textContent, string? messageId) : base(textContent, messageId)
     {
-        AddCodeFileCommand = new RelayCommand<object>(AddCodeFile);
     }
 
-    private async void AddCodeFile(object? o)
+    protected override async void AddCodeFile(object? o)
     {
         RichTextBox? richTextBox = null;
         if (o is RichTextBox rtb)
@@ -116,9 +112,43 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
             return;
         }
 
-        var settingsOptions = TextMateCodeRenderer.Settings.Options;
+        InsertFilesAsTexts(openFileDialog.FileNames, richTextBox);
+    }
 
-        foreach (var fileName in openFileDialog.FileNames)
+    public override async Task ApplyText()
+    {
+        Content.Text = await GetPrompt(true) ?? string.Empty;
+        InvalidateAsyncProperty(nameof(EditDocument));
+    }
+
+    public override void AppendTempText(string tempText)
+    {
+        if (EditDocument.Blocks.LastBlock is Paragraph paragraph)
+        {
+            if (paragraph.Inlines.LastInline is Run run)
+            {
+                run.Text += tempText;
+                return;
+            }
+
+            paragraph.Inlines.Add(new Run(tempText));
+        }
+
+        EditDocument.Blocks.Add(new Paragraph(new Run(tempText)));
+    }
+
+    public override void DropFiles(IEnumerable<string> filePaths, object? o)
+    {
+        if (o is RichTextBox richTextBox)
+        {
+            InsertFilesAsTexts(filePaths, richTextBox);
+        }
+    }
+
+    private async void InsertFilesAsTexts(IEnumerable<string> fileNames, RichTextBox richTextBox)
+    {
+        var settingsOptions = TextMateCodeRenderer.Settings.Options;
+        foreach (var fileName in fileNames)
         {
             var content = await File.ReadAllTextAsync(fileName);
             var extension = Path.GetExtension(fileName);
@@ -138,9 +168,7 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
 
             expander.SetResourceReference(FrameworkElement.StyleProperty,
                 TextMateCodeRenderer.EditCodeBlockStyleKey);
-
             var block = new BlockUIContainer(expander);
-
             if (richTextBox.CaretPosition.Paragraph != null)
             {
                 richTextBox.CaretPosition = richTextBox.CaretPosition.InsertParagraphBreak();
@@ -161,27 +189,5 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
 
         richTextBox.Focus();
         await ApplyText();
-    }
-
-    public override async Task ApplyText()
-    {
-        Content.Text = await GetPrompt() ?? string.Empty;
-        InvalidateAsyncProperty(nameof(EditDocument));
-    }
-
-    public override void AppendTempText(string tempText)
-    {
-        if (EditDocument.Blocks.LastBlock is Paragraph paragraph)
-        {
-            if (paragraph.Inlines.LastInline is Run run)
-            {
-                run.Text += tempText;
-                return;
-            }
-
-            paragraph.Inlines.Add(new Run(tempText));
-        }
-
-        EditDocument.Blocks.Add(new Paragraph(new Run(tempText)));
     }
 }

@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Component.Render;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Win32;
 using Microsoft.Extensions.AI;
 
@@ -11,17 +12,7 @@ namespace LLMClient.Dialog;
 
 public class TextContentRawEditViewModel : TextContentEditViewModel
 {
-    public override Task ApplyText()
-    {
-        this.Content.Text = Text;
-        return Task.CompletedTask;
-    }
-
-    public override void AppendTempText(string tempText)
-    {
-        Text += tempText;
-    }
-
+    
     public string Text
     {
         get => Content.Text;
@@ -35,10 +26,9 @@ public class TextContentRawEditViewModel : TextContentEditViewModel
 
     public TextContentRawEditViewModel(TextContent textContent, string? messageId) : base(textContent, messageId)
     {
-        AddCodeFileCommand = new RelayCommand<object>(AddCodeFile);
     }
 
-    private void AddCodeFile(object? o)
+    protected override void AddCodeFile(object? o)
     {
         TextBoxBase? textBoxBase = null;
         if (o is TextBoxBase tb)
@@ -63,10 +53,45 @@ public class TextContentRawEditViewModel : TextContentEditViewModel
             return;
         }
 
+        InsertFilesAsTexts(openFileDialog.FileNames, textBoxBase);
+    }
+    
+    public override Task ApplyText()
+    {
+        this.Content.Text = Text;
+        return Task.CompletedTask;
+    }
+
+    public override void AppendTempText(string tempText)
+    {
+        Text += tempText;
+    }
+
+    public override void DropFiles(IEnumerable<string> filePaths, object? o)
+    {
+        TextBoxBase? textBoxBase = null;
+        if (o is TextBoxBase tb)
+        {
+            textBoxBase = tb;
+        }
+
+        textBoxBase ??= ((DependencyObject?)o)?.FindVisualChild<TextBoxBase>();
+
+        if (textBoxBase == null)
+        {
+            return;
+        }
+        
+        InsertFilesAsTexts(filePaths, textBoxBase);
+    }
+    
+
+    private static void InsertFilesAsTexts(IEnumerable<string> fileNames, TextBoxBase textBoxBase)
+    {
         var settingsOptions = TextMateCodeRenderer.Settings.Options;
         var stringBuilder = new StringBuilder();
         stringBuilder.AppendLine();
-        foreach (var fileName in openFileDialog.FileNames)
+        foreach (var fileName in fileNames)
         {
             var extension = Path.GetExtension(fileName);
             var language = settingsOptions.GetLanguageByExtension(extension)?.Id ?? extension;

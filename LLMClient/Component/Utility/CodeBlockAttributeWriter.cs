@@ -64,8 +64,6 @@ public static class CodeBlockAttributeWriter
         if (string.IsNullOrEmpty(value))
             return string.Empty;
 
-        return value
-            .Replace("\\", "\\\\")
-            .Replace("\"", "\\\"");
+        return value.Replace("\"", "\\\"");
     }
 }

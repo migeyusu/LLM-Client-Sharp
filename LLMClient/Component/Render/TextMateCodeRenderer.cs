@@ -1,4 +1,4 @@
-﻿using System.Windows;
+﻿﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
@@ -125,9 +125,21 @@ public class TextMateCodeRenderer : CodeBlockRenderer
     {
         string? extension = null;
         string? name = null;
+        string? fileLocation = null;
         if (block is FencedCodeBlock fencedCodeBlock)
         {
-            //HtmlAttributes htmlAttributes = fencedCodeBlock.GetAttributes();
+            var htmlAttributes = fencedCodeBlock.GetAttributes();
+            if (htmlAttributes.Properties != null)
+            {
+                foreach (var property in htmlAttributes.Properties)
+                {
+                    if (property.Key == "fileLocation" && property.Value != null)
+                    {
+                        fileLocation = property.Value;
+                    }
+                }
+            }
+
             name = fencedCodeBlock.Info;
             if (name != null)
             {
@@ -141,7 +153,10 @@ public class TextMateCodeRenderer : CodeBlockRenderer
             }
         }
 
-        return new EditableCodeViewModel(block.Lines, extension, name);
+        return new EditableCodeViewModel(block.Lines, extension, name)
+        {
+            FileLocation = fileLocation
+        };
     }
 
     private static DisplayCodeViewModel CreateReadOnlyCodeContext(LeafBlock block, WpfRenderer renderer)

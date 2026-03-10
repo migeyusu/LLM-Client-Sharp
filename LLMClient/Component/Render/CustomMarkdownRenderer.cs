@@ -1,4 +1,4 @@
-﻿using System.Windows;
+﻿﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
@@ -41,6 +41,7 @@ public class CustomMarkdownRenderer : WpfRenderer
         builder.InlineParsers.Clear();
         builder.BlockParsers.Add(new FencedCodeBlockParser());
         builder.BlockParsers.Add(new ParagraphBlockParser());
+        builder.UseGenericAttributes();
         return builder.Build();
     });
 

@@ -27,9 +27,21 @@ public class EditableCodeViewModel : BaseViewModel
 
     public string? Name { get; }
 
-    public string? FileLocation { get; set; }
+    private string? _fileLocation;
 
-    public string DisplayHeader => !string.IsNullOrEmpty(FileLocation) ? Path.GetFileName(FileLocation) : $"{Extension}/{Name}";
+    public string? FileLocation
+    {
+        get => _fileLocation;
+        set
+        {
+            if (_fileLocation == value) return;
+            _fileLocation = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(DisplayHeader));
+        }
+    }
+
+    public string DisplayHeader => !string.IsNullOrEmpty(FileLocation) ? $"{FileLocation}({Name})" : $"{Extension}/{Name}";
 
     public IHighlightingDefinition? SyntaxHighlighting
     {

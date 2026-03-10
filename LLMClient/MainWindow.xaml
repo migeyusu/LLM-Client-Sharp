@@ -71,7 +71,7 @@
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type userControls:ModelSelectionPopupViewModel}">
                                     <userControls:ModelSelectionView Width="800"
-                                                               Height="600" />
+                                                                     Height="600" />
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type viewModel:PromptEditorViewModel}">
                                     <HeaderedContentControl Header="更改系统Prompt"
@@ -84,7 +84,7 @@
                                     <HeaderedContentControl Header="存档管理"
                                                             Style="{StaticResource DialogContentControlStyle}">
                                         <component:ArchiveManagerView Width="900"
-                                                                    Height="600" />
+                                                                      Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type viewModel:UsageStatisticsViewModel}">
@@ -143,7 +143,7 @@
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="MCP Server">
                                         <mcp:MCPServiceCollectionView Width="800"
-                                                                           Height="600" />
+                                                                      Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type project:CSharpProjectViewModel}">
@@ -176,7 +176,7 @@
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="内容编辑">
                                         <dialog:DialogItemEditView Width="900"
-                                                                         Height="600" />
+                                                                   Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type rag:RagSourceCollection}">
@@ -210,7 +210,7 @@
                                     <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
                                                             Header="Prompt Template">
                                         <research1:ResearchClientView Width="900"
-                                                                     Height="600" />
+                                                                      Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
                             </materialDesign:DialogHost.Resources>
@@ -441,6 +441,7 @@
                            Margin="10,0,8,0" />
                 <ComboBox ItemsSource="{Binding Source={StaticResource DataFromEnum}}"
                           SelectedItem="{Binding ThemeName,Mode=TwoWay}"
+                          Style="{StaticResource MaterialDesignFilledComboBox}"
                           WindowChrome.IsHitTestVisibleInChrome="True" />
             </StackPanel>
             <ToolBarTray Grid.Column="1"
@@ -493,16 +494,16 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Click="OpenArchiveManager_OnClick" 
+                    <Button Click="OpenArchiveManager_OnClick"
                             ToolTip="Archives"
-                            Margin="6,0,0,0" 
+                            Margin="6,0,0,0"
                             Padding="12,6">
-                         <StackPanel Orientation="Horizontal">
-                             <materialDesign:PackIcon Kind="ArchiveOutline" />
-                             <TextBlock Text="Archives"
-                                        Margin="5,0,0,0"
-                                        VerticalAlignment="Center" />
-                         </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ArchiveOutline" />
+                            <TextBlock Text="Archives"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
                     </Button>
                     <!--<Button Content="测试"
                             Click="ButtonBase_OnClick"/>-->
