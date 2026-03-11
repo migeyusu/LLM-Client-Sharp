@@ -48,12 +48,7 @@
                               MinHeight="40"
                               AllowDrop="True"
                               x:Name="PromptEditor"
-                              IsKeyboardFocusWithinChanged="PromptEditor_OnLostKeyboardFocus">
-                <ContentPresenter.CommandBindings>
-                    <CommandBinding Command="ApplicationCommands.Paste"
-                                    Executed="PasteCommandBinding_OnExecuted" />
-                </ContentPresenter.CommandBindings>
-            </ContentPresenter>
+                              IsKeyboardFocusWithinChanged="PromptEditor_OnLostKeyboardFocus"/>
             <Border Grid.Row="1"
                     Background="{DynamicResource MaterialDesignTextFieldBoxBackground}">
                 <StackPanel Margin="8,0">

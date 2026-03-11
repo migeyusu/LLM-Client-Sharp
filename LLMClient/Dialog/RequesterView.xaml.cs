@@ -37,44 +37,6 @@ public partial class RequesterView : UserControl
         ViewModel.RefreshRagSources();
     }
 
-    private void PasteCommandBinding_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (Clipboard.ContainsFileDropList())
-        {
-            var fileDropList = Clipboard.GetFileDropList();
-            foreach (var file in fileDropList)
-            {
-                if (string.IsNullOrEmpty(file))
-                {
-                    continue;
-                }
-
-                var extension = Path.GetExtension(file);
-                if (!ImageExtensions.IsSupportedImageExtension(extension))
-                {
-                    continue;
-                }
-
-                var attachment = Attachment.CreateFromLocal(file, AttachmentType.Image);
-                this.ViewModel.Attachments.Add(attachment);
-            }
-        }
-
-        if (Clipboard.ContainsImage())
-        {
-            var attachment = Attachment.CreateFromClipBoards();
-            if (attachment != null)
-            {
-                this.ViewModel.Attachments.Add(attachment);
-            }
-        }
-        else if (Clipboard.ContainsText() && sender is TextBoxBase textBoxBase)
-        {
-            // 默认文本粘贴
-            textBoxBase.Paste();
-        }
-    }
-
     private void RagPopupBox_OnClosed(object sender, RoutedEventArgs e)
     {
         ViewModel.NotifyRagSelection();

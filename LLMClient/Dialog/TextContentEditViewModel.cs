@@ -10,6 +10,16 @@ public abstract class TextContentEditViewModel : BaseViewModel
 {
     public ICommand AddCodeFileCommand { get; }
 
+    public ICommand PastFileCommand => new RelayCommand<object>(enumerable =>
+    {
+        if (enumerable == null)
+        {
+            return;
+        }
+
+        DropFiles(enumerable as IEnumerable<string>, null);
+    });
+
     public string FinalText => Content.Text;
 
     protected TextContent Content { get; }
@@ -41,5 +51,10 @@ public abstract class TextContentEditViewModel : BaseViewModel
 
     public abstract void AppendTempText(string tempText);
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="filePaths"></param>
+    /// <param name="o">如果为空默认添加到尾部</param>
     public abstract void DropFiles(IEnumerable<string> filePaths, object? o);
 }

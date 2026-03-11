@@ -7,6 +7,7 @@ using Markdig.Renderers.Html;
 using Microsoft.Win32;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using LLMClient.Data;
 using Microsoft.SemanticKernel;
 using TextContent = Microsoft.Extensions.AI.TextContent;
 
@@ -150,21 +151,28 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
         EditDocument.Blocks.Add(new Paragraph(new Run(tempText)));
     }
 
-    public override void DropFiles(IEnumerable<string> filePaths, object? o)
+    public override async void DropFiles(IEnumerable<string> filePaths, object? o)
     {
         if (o is RichTextBox richTextBox)
         {
-            InsertFilesAsTexts(filePaths, richTextBox);
+            await InsertFilesAsTexts(filePaths, richTextBox);
         }
     }
 
-    private async void InsertFilesAsTexts(IEnumerable<string> fileNames, RichTextBox richTextBox)
+    private async Task InsertFilesAsTexts(IEnumerable<string> fileNames, RichTextBox richTextBox)
     {
         var settingsOptions = TextMateCodeRenderer.Settings.Options;
         foreach (var fileName in fileNames)
         {
-            var content = await File.ReadAllTextAsync(fileName);
             var extension = Path.GetExtension(fileName);
+            if (!ImageExtensions.IsSupportedImageExtension(extension))
+            {
+                MessageEventBus.Publish($"不支持的文件类型: {extension}，仅支持文本文件。");
+                return;
+            }
+
+            var content = await File.ReadAllTextAsync(fileName);
+
             var language = settingsOptions.GetLanguageByExtension(extension)?.Id ?? extension.TrimStart('.');
 
             var codeVm = new EditableCodeViewModel(content, extension, language)
