@@ -14,13 +14,12 @@ public class MessageBoxes
             {
                 return dispatcher.Invoke(() => Show(message, caption, button, icon));
             }
-
             var msgBox = new CustomMessageBoxWindow(message, caption, button, icon);
             msgBox.ShowDialog();
             return msgBox.Result;
         }
 
-        return System.Windows.MessageBox.Show(message, caption, button, icon);
+        return MessageBox.Show(message, caption, button, icon);
     }
 
     private static bool CanUseCustomDialog()

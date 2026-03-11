@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <!--<TargetFramework>net8.0-windows</TargetFramework>-->
-        <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+        <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 
@@ -13,22 +13,23 @@
 
     <ItemGroup>
         <PackageReference Include="Betalgo.Ranul.OpenAI" Version="9.2.6" />
-        <PackageReference Include="coverlet.collector" Version="6.0.4">
+        <PackageReference Include="coverlet.collector" Version="8.0.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="ClangSharp" Version="20.1.2.4" />
-        <PackageReference Include="libClangSharp" Version="20.1.2" />
-        <PackageReference Include="libClangSharp.runtime.win-x64" Version="20.1.2" />
-        <PackageReference Include="Microsoft.Build" Version="17.14.28" ExcludeAssets="runtime"/>
-        <PackageReference Include="Microsoft.Build.Locator" Version="1.10.2"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Features" Version="5.0.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.0.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+        <PackageReference Include="ClangSharp" Version="21.1.8.2" />
+        <PackageReference Include="libClangSharp" Version="21.1.8.2" />
+        <PackageReference Include="libClangSharp.runtime.win-x64" Version="21.1.8.2" />
+        <PackageReference Include="Microsoft.Build" Version="18.4.0" ExcludeAssets="runtime" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.Build.Framework" Version="18.4.0" ExcludeAssets="runtime" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.Build.Locator" Version="1.11.2"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Features" Version="5.3.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.3.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
         <PackageReference Include="Moq" Version="4.20.72" />
         <PackageReference Include="xunit" Version="2.9.3" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1">
+        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
