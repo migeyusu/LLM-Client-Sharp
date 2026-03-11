@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Markup;
@@ -126,6 +127,34 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
             MessageEventBus.Publish(e.Message);
         }
     }));
+
+    public static ICommand ScrollToNextCodeCommand { get; } = new RelayCommand<FrameworkElement>(o =>
+    {
+        if (o is not ContentControl contentControl) return;
+
+        // Try to find the BlockUIContainer that contains this header
+        if (contentControl.Parent is not BlockUIContainer currentContainer) return;
+
+        Block currentBlock = currentContainer;
+
+        while (currentBlock.NextBlock != null)
+        {
+            currentBlock = currentBlock.NextBlock;
+
+            // We are looking for another code block header.
+            // A code block header is a BlockUIContainer 
+            // whose Child is a ContentControl 
+            // whose Content is a DisplayCodeViewModel.
+
+            if (currentBlock is BlockUIContainer nextContainer &&
+                nextContainer.Child is ContentControl nextContentControl &&
+                nextContentControl.Content is DisplayCodeViewModel)
+            {
+                nextContainer.BringIntoView();
+                return;
+            }
+        }
+    });
 
     public static ICommand SaveCommand { get; } = new RelayCommand<DisplayCodeViewModel>(o =>
     {
