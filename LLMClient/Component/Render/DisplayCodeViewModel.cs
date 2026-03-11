@@ -226,7 +226,26 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
                     {
                         // CMD 走 .cmd，保持 Windows 换行（CRLF）
                         extension = ".cmd";
-                        finalContent = scriptContent; // 保留原样
+
+                        // 预处理：将 Bash 风格的注释 (#) 转换为批处理注释 (REM)
+                        // 避免 cmd.exe 执行时报错
+                        var lines = scriptContent.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                        for (int i = 0; i < lines.Length; i++)
+                        {
+                            var line = lines[i];
+                            var trimmed = line.TrimStart();
+                            if (trimmed.StartsWith("#"))
+                            {
+                                // 找到第一个 # 的位置
+                                int hashIndex = line.IndexOf('#');
+                                if (hashIndex >= 0)
+                                {
+                                    // 替换为 REM，保留之前的空白
+                                    lines[i] = line.Substring(0, hashIndex) + "REM " + line.Substring(hashIndex + 1);
+                                }
+                            }
+                        }
+                        finalContent = string.Join("\r\n", lines);
                     }
                     else
                     {
@@ -236,7 +255,7 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
                     }
                 }
 
-                string tempFile = Path.ChangeExtension(
+                var tempFile = Path.ChangeExtension(
                     Path.Combine(folder, Path.GetRandomFileName()), extension);
                 // 统一转为 Unix 换行符写入，防止 Bash 报错 '\r' command not found
                 File.WriteAllText(tempFile, finalContent);
