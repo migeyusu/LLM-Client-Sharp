@@ -11,9 +11,6 @@
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="700"
              d:DataContext="{d:DesignInstance local:CreateSessionViewModel}">
-    <UserControl.Resources>
-        <converters:ListToStringConverter x:Key="StringToListConverter" />
-    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition />

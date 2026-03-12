@@ -9,6 +9,7 @@
                     xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
                     xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
                     xmlns:component="clr-namespace:LLMClient.Component"
+                    xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
                     xmlns:viewModel="clr-namespace:LLMClient.Component.ViewModel"
                     xmlns:extension="clr-namespace:LLMClient.Component.Extension"
                     xmlns:converters="clr-namespace:LLMClient.Component.Converters"
@@ -450,7 +451,6 @@
                                       Document="{Binding Description,Mode=OneWay, Converter={x:Static converters:MarkdownToDocumentConverter.Instance}}" />
         </Grid>
     </DataTemplate>
-
     <DataTemplate x:Key="FullModelSelectionDataTemplate"
                   DataType="{x:Type viewModel:BaseModelSelectionViewModel}">
         <Grid>
@@ -458,7 +458,10 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <TabControl Width="300">
+            <!--materialDesign:TabAssist.HeaderBehavior="Wrapping" 可以修复DialogHost的问题-->
+            <TabControl Width="300"
+                        materialDesign:DialogHost.RestoreFocusElement="{x:Null}"
+                        materialDesign:TabAssist.HeaderBehavior="Wrapping">
                 <TabItem Header="Endpoints View">
                     <TreeView SelectedItemChanged="TreeView_OnSelectedItemChanged"
                               HorizontalAlignment="Stretch"
@@ -722,7 +725,7 @@
                               ContentTemplate="{StaticResource ProjectConfigDataTemplate}" />
             <TextBox Grid.Row="1"
                      materialDesign:HintAssist.Hint="Solution File Path (.sln)"
-                     Text="{Binding SolutionFilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                     Text="{Binding SolutionFilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Grid.Row="1"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
