@@ -14,45 +14,11 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
         _context = context;
     }
 
-    private SolutionInfo RequireSolution()
-        => _context.SolutionInfo ?? throw new InvalidOperationException(
-            "No solution loaded. Call LoadSolutionAsync first.");
-
-    private string RequireSolutionDir()
-        => _context.SolutionDir ?? throw new InvalidOperationException(
-            "No solution loaded. Call LoadSolutionAsync first.");
-
-    // ── 路径工具（内部使用）──────────────────────────────────────────────
-
-    /// <summary>
-    /// 将 Plugin 传入的相对路径（或 "." / 空串）解析为绝对路径。
-    /// 绝对路径直接返回，相对路径以 solution 根目录为 base。
-    /// </summary>
-    private string ResolveToAbsolute(string input)
-    {
-        var baseDir = RequireSolutionDir();
-
-        if (string.IsNullOrWhiteSpace(input) || input is ".")
-            return baseDir;
-
-        if (Path.IsPathRooted(input))
-            return input;
-
-        return Path.GetFullPath(Path.Combine(baseDir, input));
-    }
-
-    /// <summary>
-    /// 将绝对路径转换为相对于 solution 根目录的路径，
-    /// 供 View 层输出（LLM 看到短路径，节省 tokens）。
-    /// </summary>
-    private string ToSolutionRelative(string absolutePath)
-        => Path.GetRelativePath(RequireSolutionDir(), absolutePath);
-
     // ── get_solution_info ────────────────────────────────────────────────
 
     public SolutionInfoView GetSolutionInfoView()
     {
-        var s = RequireSolution();
+        var s = _context.RequireSolutionInfoOrThrow();
         return new SolutionInfoView
         {
             SolutionName = s.SolutionName,
@@ -71,7 +37,7 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
                     ProjectId = p.ProjectId,
                     Name = p.Name,
                     // 输出相对路径，比绝对路径节省 tokens
-                    ProjectFilePath = ToSolutionRelative(p.ProjectFilePath),
+                    ProjectFilePath = _context.ToSolutionRelative(p.ProjectFilePath),
                     OutputType = p.OutputType,
                     TargetFrameworks = p.TargetFrameworks.ToList(),
                     FilesCount = p.Files.Count
@@ -84,8 +50,8 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
 
     public ProjectMetadataView GetProjectMetadataView(string nameOrId)
     {
-        var s = RequireSolution();
-        var solutionDir = RequireSolutionDir();
+        var s = _context.RequireSolutionInfoOrThrow();
+        var solutionDir = _context.RequireSolutionDirOrThrow();
 
         // 同时支持项目名称和路径（相对/绝对均可）
         var resolvedId = Path.IsPathRooted(nameOrId)
@@ -105,7 +71,7 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
         {
             ProjectId = p.ProjectId,
             Name = p.Name,
-            ProjectFilePath = ToSolutionRelative(p.ProjectFilePath),
+            ProjectFilePath = _context.ToSolutionRelative(p.ProjectFilePath),
             FullRootDir = p.FullRootDir,
             Language = p.Language,
             LanguageVersion = p.LanguageVersion,
@@ -115,7 +81,7 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
                 .Select(r => new ProjectReferenceView
                 {
                     ProjectName = r.ProjectName,
-                    ProjectPath = ToSolutionRelative(r.ProjectPath)
+                    ProjectPath = _context.ToSolutionRelative(r.ProjectPath)
                 })
                 .ToList(),
             PackageReferences = p.PackageReferences
@@ -140,9 +106,9 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
     /// </summary>
     public string GetFileTree(string relativeRootPath, int maxDepth, ICollection<string>? excludePatterns)
     {
-        var s = RequireSolution();
-        var absRoot = ResolveToAbsolute(relativeRootPath);
-        var solutionDir = RequireSolutionDir();
+        var s = _context.RequireSolutionInfoOrThrow();
+        var absRoot = _context.ResolveToAbsolute(relativeRootPath);
+        var solutionDir = _context.RequireSolutionDirOrThrow();
 
         if (!Directory.Exists(absRoot))
             return $"> Error: path not found — `{relativeRootPath}`";
@@ -166,8 +132,8 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
 
     public FileMetadataView GetFileMetadata(string pathInput)
     {
-        var s = RequireSolution();
-        var absPath = ResolveToAbsolute(pathInput);
+        var s = _context.RequireSolutionInfoOrThrow();
+        var absPath = _context.ResolveToAbsolute(pathInput);
 
         var entry = s.Projects
             .SelectMany(p => p.Files)
@@ -178,7 +144,7 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
             return new FileMetadataView
             {
                 FilePath = entry.FilePath,
-                RelativePath = ToSolutionRelative(entry.FilePath), // 统一相对 solution root
+                RelativePath = _context.ToSolutionRelative(entry.FilePath), // 统一相对 solution root
                 Extension = entry.Extension,
                 Kind = entry.Kind,
                 SizeBytes = entry.SizeBytes,
@@ -195,7 +161,7 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
         return new FileMetadataView
         {
             FilePath = fi.FullName,
-            RelativePath = ToSolutionRelative(fi.FullName),
+            RelativePath = _context.ToSolutionRelative(fi.FullName),
             Extension = fi.Extension,
             Kind = "Other",
             SizeBytes = fi.Length,
@@ -207,13 +173,13 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
     // ── detect_conventions ───────────────────────────────────────────────
 
     public ConventionView DetectConventions()
-        => Map(RequireSolution().Conventions);
+        => Map(_context.RequireSolutionInfoOrThrow().Conventions);
 
     // ── get_recently_modified_files ──────────────────────────────────────
 
     public List<RecentFileView> GetRecentlyModifiedFiles(DateTime? sinceUtc = null, int count = 30)
     {
-        var s = RequireSolution();
+        var s = _context.RequireSolutionInfoOrThrow();
         var q = s.Projects.SelectMany(p => p.Files).AsEnumerable();
 
         if (sinceUtc.HasValue)
@@ -224,7 +190,7 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
             .Select(f => new RecentFileView
             {
                 FilePath = f.FilePath,
-                RelativePath = ToSolutionRelative(f.FilePath),
+                RelativePath = _context.ToSolutionRelative(f.FilePath),
                 LastWriteTimeUtc = f.LastWriteTimeUtc,
                 SizeBytes = f.SizeBytes,
                 Kind = f.Kind

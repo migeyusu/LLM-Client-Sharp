@@ -1,7 +1,7 @@
 // CodeReadingService.cs
+using AutoMapper;
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.Tools.Models;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Logging;
 using SymbolInfo = LLMClient.ContextEngineering.Analysis.SymbolInfo;
@@ -11,6 +11,7 @@ namespace LLMClient.ContextEngineering.Tools;
 internal sealed class CodeReadingService : ICodeReadingService
 {
     private readonly SolutionContext _context;
+    private readonly IMapper _mapper;
     private readonly ILogger<CodeReadingService>? _logger;
 
     /// <summary>粗略估算：4字符约1个token</summary>
@@ -18,9 +19,10 @@ internal sealed class CodeReadingService : ICodeReadingService
     private const int DefaultMaxTokens = 8000;
     private const int MaxFileListCount = 500;
 
-    public CodeReadingService(SolutionContext context, ILogger<CodeReadingService>? logger = null)
+    public CodeReadingService(SolutionContext context, IMapper mapper, ILogger<CodeReadingService>? logger = null)
     {
         _context = context;
+        _mapper = mapper;
         _logger = logger;
     }
 
@@ -32,7 +34,7 @@ internal sealed class CodeReadingService : ICodeReadingService
         int? endLine = null,
         int? maxTokens = null)
     {
-        var absPath = ResolveToAbsolute(path);
+        var absPath = _context.ResolveToAbsolute(path);
         if (!File.Exists(absPath))
             throw new FileNotFoundException($"File not found: {path}");
 
@@ -77,7 +79,7 @@ internal sealed class CodeReadingService : ICodeReadingService
         return new ReadFileResult
         {
             FilePath = absPath,
-            RelativePath = TryGetRelative(absPath),
+            RelativePath = _context.ToSolutionRelative(absPath),
             TotalLines = totalLines,
             StartLine = fromIdx + 1,
             EndLine = toIdx + 1,
@@ -117,7 +119,7 @@ internal sealed class CodeReadingService : ICodeReadingService
             source    = "Index";
         }
 
-        var fileLines = File.ReadAllLines(filePath);
+        var fileLines = await File.ReadAllLinesAsync(filePath, ct);
         var totalLines = fileLines.Length;
 
         contextLines = Math.Max(0, contextLines);
@@ -133,7 +135,7 @@ internal sealed class CodeReadingService : ICodeReadingService
             SymbolName     = sym.Name,
             Signature      = sym.Signature,
             FilePath       = filePath,
-            RelativePath   = TryGetRelative(filePath),
+            RelativePath   = _context.ToSolutionRelative(filePath),
             BodyStartLine  = bodyStart,
             BodyEndLine    = bodyEnd,
             ContentStartLine = contentStart,
@@ -206,7 +208,7 @@ internal sealed class CodeReadingService : ICodeReadingService
 
     public FileOutlineView GetFileOutline(string path)
     {
-        var absPath = ResolveToAbsolute(path);
+        var absPath = _context.ResolveToAbsolute(path);
         if (!File.Exists(absPath))
             throw new FileNotFoundException($"File not found: {path}");
 
@@ -238,7 +240,6 @@ internal sealed class CodeReadingService : ICodeReadingService
                 Types = x.Types
                     .Select(t =>
                     {
-                        // 取该文件中该类型的起止行
                         var typeLocs = t.Locations
                             .Where(l => string.Equals(l.FilePath, absPath, StringComparison.OrdinalIgnoreCase))
                             .ToList();
@@ -247,39 +248,42 @@ internal sealed class CodeReadingService : ICodeReadingService
                         var typeEnd = typeLocs.Count > 0
                             ? typeLocs.Max(l => l.Location.End.Line) : 0;
 
+                        var mappedType = _mapper.Map<TypeOutlineView>(t);
+                        var memberViews = t.Members
+                            .Where(m => m.Locations.Any(l =>
+                                string.Equals(l.FilePath, absPath, StringComparison.OrdinalIgnoreCase)))
+                            .Select(m =>
+                            {
+                                var memberLoc = m.Locations
+                                    .Where(l => string.Equals(l.FilePath, absPath, StringComparison.OrdinalIgnoreCase))
+                                    .OrderBy(l => l.Location.Start.Line)
+                                    .FirstOrDefault();
+                                var mappedMember = _mapper.Map<MemberOutlineView>(m);
+                                return new MemberOutlineView
+                                {
+                                    SymbolId = mappedMember.SymbolId,
+                                    Name = mappedMember.Name,
+                                    Kind = mappedMember.Kind,
+                                    Signature = mappedMember.Signature,
+                                    Accessibility = mappedMember.Accessibility,
+                                    Summary = mappedMember.Summary,
+                                    StartLine = memberLoc?.Location.Start.Line ?? 0
+                                };
+                            })
+                            .OrderBy(m => m.StartLine)
+                            .ToList();
+
                         return new TypeOutlineView
                         {
-                            SymbolId      = t.SymbolId,
-                            Name          = t.Name,
-                            Kind          = t.Kind,
-                            Signature     = t.Signature,
-                            Accessibility = t.Accessibility,
-                            Summary       = t.Summary,
-                            StartLine     = typeStart,
-                            EndLine       = typeEnd,
-                            Members       = t.Members
-                                .Where(m => m.Locations.Any(l =>
-                                    string.Equals(l.FilePath, absPath, StringComparison.OrdinalIgnoreCase)))
-                                .Select(m =>
-                                {
-                                    var memberLoc = m.Locations
-                                        .Where(l => string.Equals(l.FilePath, absPath, StringComparison.OrdinalIgnoreCase))
-                                        .OrderBy(l => l.Location.Start.Line)
-                                        .FirstOrDefault();
-
-                                    return new MemberOutlineView
-                                    {
-                                        SymbolId      = m.SymbolId,
-                                        Name          = m.Name,
-                                        Kind          = m.Kind,
-                                        Signature     = m.Signature,
-                                        Accessibility = m.Accessibility,
-                                        Summary       = m.Summary,
-                                        StartLine     = memberLoc?.Location.Start.Line ?? 0
-                                    };
-                                })
-                                .OrderBy(m => m.StartLine)
-                                .ToList()
+                            SymbolId = mappedType.SymbolId,
+                            Name = mappedType.Name,
+                            Kind = mappedType.Kind,
+                            Signature = mappedType.Signature,
+                            Accessibility = mappedType.Accessibility,
+                            Summary = mappedType.Summary,
+                            StartLine = typeStart,
+                            EndLine = typeEnd,
+                            Members = memberViews
                         };
                     })
                     .OrderBy(t => t.StartLine)
@@ -290,7 +294,7 @@ internal sealed class CodeReadingService : ICodeReadingService
         return new FileOutlineView
         {
             FilePath     = absPath,
-            RelativePath = TryGetRelative(absPath),
+            RelativePath = _context.ToSolutionRelative(absPath),
             TotalLines   = totalLines,
             Namespaces   = nsViews
         };
@@ -305,7 +309,7 @@ internal sealed class CodeReadingService : ICodeReadingService
         int maxCount = 300)
     {
         var info = _context.RequireSolutionInfoOrThrow();
-        var absRoot = ResolveToAbsolute(path);
+        var absRoot = _context.ResolveToAbsolute(path);
 
         maxCount = Math.Clamp(maxCount, 1, MaxFileListCount);
 
@@ -339,46 +343,21 @@ internal sealed class CodeReadingService : ICodeReadingService
 
         var files = all
             .Take(maxCount)
-            .Select(f => new FileMetadataView
+            .Select(f =>
             {
-                FilePath         = f.FilePath,
-                RelativePath     = TryGetRelative(f.FilePath),
-                Extension        = f.Extension,
-                Kind             = f.Kind,
-                SizeBytes        = f.SizeBytes,
-                LinesOfCode      = f.LinesOfCode,
-                LastWriteTimeUtc = f.LastWriteTimeUtc
+                var view = _mapper.Map<FileMetadataView>(f);
+                view.RelativePath = _context.ToSolutionRelative(f.FilePath);
+                return view;
             })
             .ToList();
 
         return new FileListResult
         {
-            RootPath   = TryGetRelative(absRoot),
+            RootPath   = _context.ToSolutionRelative(absRoot),
             TotalCount = all.Count,
             Truncated  = truncated,
             Files      = files
         };
     }
-
-    // ── 内部路径工具 ──────────────────────────────────────────────────────
-
-    private string ResolveToAbsolute(string input)
-    {
-        var baseDir = _context.RequireSolutionDirOrThrow();
-
-        if (string.IsNullOrWhiteSpace(input) || input == ".")
-            return baseDir;
-
-        return Path.IsPathRooted(input)
-            ? input
-            : Path.GetFullPath(Path.Combine(baseDir, input));
-    }
-
-    private string TryGetRelative(string absPath)
-    {
-        var dir = _context.SolutionDir;
-        return dir is not null
-            ? Path.GetRelativePath(dir, absPath)
-            : absPath;
-    }
+    
 }

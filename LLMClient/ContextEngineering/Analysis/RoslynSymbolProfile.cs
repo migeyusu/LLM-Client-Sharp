@@ -14,6 +14,9 @@ public class RoslynMappingProfile : Profile
 {
     public RoslynMappingProfile()
     {
+        CreateMap<FileEntryInfo, FileMetadataView>()
+            .ForMember(d => d.RelativePath, o => o.Ignore());
+
         CreateMap<IParameterSymbol, ParameterInfo>()
             .ForMember(d => d.Type,
                 o => o.MapFrom(s => s.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)))
@@ -228,6 +231,14 @@ public class RoslynMappingProfile : Profile
             .ForMember(d => d.ContainingNamespace,
                 o => o.MapFrom((_, _, _, context) =>
                     context.Items.TryGetValue("ContainingNamespace", out var val) ? val : null));
+
+        CreateMap<TypeInfo, TypeOutlineView>()
+            .ForMember(d => d.StartLine, o => o.Ignore())
+            .ForMember(d => d.EndLine, o => o.Ignore())
+            .ForMember(d => d.Members, o => o.Ignore());
+
+        CreateMap<MemberInfo, MemberOutlineView>()
+            .ForMember(d => d.StartLine, o => o.Ignore());
     }
 
     // ==================== 辅助方法 ====================

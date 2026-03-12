@@ -32,7 +32,7 @@ internal sealed class SolutionContext
         var info = await Analyzer.AnalyzeSolutionAsync(solutionPath, ct);
         _solutionInfo = info;
         SolutionDir = Path.GetDirectoryName(solutionPath)
-                       ?? throw new ArgumentException("Invalid solution path");
+                      ?? throw new ArgumentException("Invalid solution path");
         _roslynSolution = Analyzer.CurrentRawSolution;
     }
 
@@ -42,7 +42,7 @@ internal sealed class SolutionContext
         _roslynSolution = null;
     }
 
-    
+
     internal void SetForTesting(SolutionInfo info)
     {
         _solutionInfo = info;
@@ -58,11 +58,55 @@ internal sealed class SolutionContext
     public Solution RequireRoslynSolutionOrThrow()
         => _roslynSolution ?? throw new InvalidOperationException(
             "No live Roslyn solution. Call LoadSolutionAsync first.");
-    
+
     public string RequireSolutionDirOrThrow()
     {
-        var info = RequireSolutionInfoOrThrow();
-        return Path.GetDirectoryName(info.SolutionPath)
-               ?? throw new InvalidOperationException("Cannot determine solution directory from solution path.");
+        return SolutionDir ??
+               throw new InvalidOperationException("Cannot determine solution directory from solution path.");
+    }
+
+    public string ToSolutionRelative(string absolutePath)
+    {
+        var solutionDir = RequireSolutionDirOrThrow();
+        return Path.GetRelativePath(solutionDir, absolutePath);
+    }
+
+    /// <summary>
+    /// 将 Plugin 传入的相对路径（或 "." / 空串）解析为绝对路径。
+    /// 绝对路径直接返回，相对路径以 solution 根目录为 base。
+    /// </summary>
+    public string ResolveToAbsolute(string input)
+    {
+        var baseDir = RequireSolutionDirOrThrow();
+        if (string.IsNullOrWhiteSpace(input) || input is ".")
+            return baseDir;
+
+        if (Path.IsPathRooted(input))
+            return input;
+        return Path.GetFullPath(Path.Combine(baseDir, input));
+    }
+    
+    /// <summary>
+    /// 解析文件过滤器字符串为扩展名列表
+    /// </summary>
+    public static List<string> ParseFileExtensions(string? filter)
+    {
+        if (string.IsNullOrWhiteSpace(filter))
+            return new List<string>();
+
+        return filter.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(ext => ext.StartsWith('.') ? ext : "." + ext)
+            .ToList();
+    }
+
+    /// <summary>
+    /// 检查符号是否包含指定位置
+    /// </summary>
+    public static bool SymbolContainsLocation(SymbolInfo symbol, string filePath, int lineNumber)
+    {
+        return symbol.Locations.Any(loc =>
+            string.Equals(loc.FilePath, filePath, StringComparison.OrdinalIgnoreCase) &&
+            lineNumber >= loc.Location.Start.Line &&
+            lineNumber <= loc.Location.End.Line);
     }
 }
