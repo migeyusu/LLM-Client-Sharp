@@ -165,7 +165,7 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
         foreach (var fileName in fileNames)
         {
             var extension = Path.GetExtension(fileName);
-            if (!ImageExtensions.IsSupportedImageExtension(extension))
+            if (ImageExtensions.IsSupportedImageExtension(extension))
             {
                 MessageEventBus.Publish($"不支持的文件类型: {extension}，仅支持文本文件。");
                 return;
