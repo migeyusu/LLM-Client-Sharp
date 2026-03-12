@@ -8,10 +8,21 @@ using Xunit;
 
 namespace LLMClient.Test.Agent.Tools;
 
+/// <summary>
+/// 测试插件层，验证 JSON 序列化/反序列化及工具调用
+/// </summary>
 public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 {
     private readonly CodeSearchTestFixture _fixture;
     private readonly CodeSearchPlugin _plugin;
+
+    // ✅ 添加反序列化选项，必须与 Plugin 中的序列化选项一致
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
 
     public CodeSearchPluginTests(CodeSearchTestFixture fixture)
     {
@@ -32,7 +43,7 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Assert
         Assert.NotNull(json);
-        var result = JsonSerializer.Deserialize<TextSearchView>(json);
+        var result = JsonSerializer.Deserialize<TextSearchView>(json, JsonOptions); // ✅ 使用 JsonOptions
         Assert.NotNull(result);
         Assert.Equal(pattern, result.Query);
         Assert.True(result.TotalMatches > 0);
@@ -53,7 +64,7 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Assert
         Assert.NotNull(json);
-        var result = JsonSerializer.Deserialize<TextSearchView>(json);
+        var result = JsonSerializer.Deserialize<TextSearchView>(json, JsonOptions); // ✅
         Assert.NotNull(result);
         Assert.Equal(pattern, result.Query);
         Assert.All(result.Results, r => Assert.EndsWith(".cs", r.FilePath));
@@ -72,7 +83,7 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
         // Assert
         Assert.NotNull(json);
         // 应该返回有效结果或空结果，不应抛出异常
-        var result = JsonSerializer.Deserialize<TextSearchView>(json);
+        var result = JsonSerializer.Deserialize<TextSearchView>(json, JsonOptions); // ✅
         Assert.NotNull(result);
     }
 
@@ -89,7 +100,7 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Assert
         Assert.NotNull(json);
-        var result = JsonSerializer.Deserialize<SemanticSearchView>(json);
+        var result = JsonSerializer.Deserialize<SemanticSearchView>(json, JsonOptions); // ✅
         Assert.NotNull(result);
         Assert.Equal(query, result.Query);
         Assert.True(result.TotalResults > 0);
@@ -107,7 +118,7 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Assert
         Assert.NotNull(json);
-        var result = JsonSerializer.Deserialize<SemanticSearchView>(json);
+        var result = JsonSerializer.Deserialize<SemanticSearchView>(json, JsonOptions); // ✅
         Assert.NotNull(result);
         Assert.True(result.Results.Count <= topK);
     }
@@ -125,7 +136,7 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Assert
         Assert.NotNull(json);
-        var result = JsonSerializer.Deserialize<SemanticSearchView>(json);
+        var result = JsonSerializer.Deserialize<SemanticSearchView>(json, JsonOptions); // ✅
         Assert.NotNull(result);
     }
 
@@ -142,9 +153,9 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Assert
         Assert.NotNull(json);
-        var result = JsonSerializer.Deserialize<AttributeSearchView>(json);
+        var result = JsonSerializer.Deserialize<AttributeSearchView>(json, JsonOptions); // ✅
         Assert.NotNull(result);
-        Assert.Equal(attributeName, result.AttributeName);
+        Assert.Equal(attributeName, result.AttributeName); // ✅ 现在应该匹配了
         Assert.True(result.TotalCount >= 1);
     }
 
@@ -157,12 +168,22 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Act
         var json = _plugin.FindByAttribute(attributeName, scope);
+        var result = JsonSerializer.Deserialize<AttributeSearchView>(json, JsonOptions); // ✅
 
         // Assert
-        Assert.NotNull(json);
-        var result = JsonSerializer.Deserialize<AttributeSearchView>(json);
         Assert.NotNull(result);
-        Assert.True(result.TotalCount >= 1);
+        Assert.Equal(attributeName, result.AttributeName);
+        Assert.True(result.TotalCount >= 1); // ✅ 现在应该能匹配到
+        // ✅ 可选：验证结果都在指定 scope 内
+        if (result.Results.Count > 0)
+        {
+            Assert.All(result.Results, r =>
+            {
+                Assert.NotNull(r.Location);
+                // 验证文件路径包含 scope（不区分大小写）
+                Assert.Contains(scope, r.Location.FilePath, StringComparison.OrdinalIgnoreCase);
+            });
+        }
     }
 
     [Fact]
@@ -173,10 +194,9 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Act
         var json = _plugin.FindByAttribute(attributeName);
+        var result = JsonSerializer.Deserialize<AttributeSearchView>(json, JsonOptions); // ✅
 
         // Assert
-        Assert.NotNull(json);
-        var result = JsonSerializer.Deserialize<AttributeSearchView>(json);
         Assert.NotNull(result);
         Assert.Equal(0, result.TotalCount);
         Assert.Empty(result.Results);
@@ -193,12 +213,12 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Act
         var json = _plugin.SearchInFile(filePath, pattern);
+        var result = JsonSerializer.Deserialize<TextSearchView>(json, JsonOptions); // ✅
 
         // Assert
-        Assert.NotNull(json);
-        var result = JsonSerializer.Deserialize<TextSearchView>(json);
         Assert.NotNull(result);
         Assert.Equal(pattern, result.Query);
+        Assert.Equal("Text", result.SearchMode); // ✅ 现在应该是 "Text"
         Assert.True(result.TotalMatches >= 1);
     }
 
@@ -212,12 +232,11 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Act
         var json = _plugin.SearchInFile(filePath, pattern, useRegex);
+        var result = JsonSerializer.Deserialize<TextSearchView>(json, JsonOptions); // ✅
 
         // Assert
-        Assert.NotNull(json);
-        var result = JsonSerializer.Deserialize<TextSearchView>(json);
         Assert.NotNull(result);
-        Assert.Equal("Regex", result.SearchMode);
+        Assert.Equal("Regex", result.SearchMode); // ✅ 现在应该是 "Regex"
         Assert.True(result.TotalMatches > 0);
     }
 
@@ -262,7 +281,7 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
     // ── Error Handling Tests ──────────────────────────────────────────
 
     [Fact]
-    public async Task SearchSemanticAsync_WithException_ReturnsErrorJson()
+    public async Task SearchSemanticAsync_WithException_ReturnsFallbackJson()
     {
         // Arrange
         _fixture.MockEmbeddingService
@@ -273,13 +292,11 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
 
         // Act
         var json = await _plugin.SearchSemanticAsync(query);
+        var result = JsonSerializer.Deserialize<SemanticSearchView>(json, JsonOptions); // ✅
 
         // Assert
-        Assert.NotNull(json);
-        // 应该 fallback 到文本搜索，不返回错误
-        var result = JsonSerializer.Deserialize<SemanticSearchView>(json);
         Assert.NotNull(result);
-        Assert.Equal("Fallback", result.Source);
+        Assert.Equal("Fallback", result.Source); // ✅ 应该降级到文本搜索
     }
 
     // ── Integration Tests ─────────────────────────────────────────────
@@ -289,14 +306,14 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
     {
         // Step 1: 文本搜索找到感兴趣的代码
         var searchJson = _plugin.SearchText("HttpClient");
-        var searchResult = JsonSerializer.Deserialize<TextSearchView>(searchJson);
+        var searchResult = JsonSerializer.Deserialize<TextSearchView>(searchJson, JsonOptions); // ✅
         Assert.NotNull(searchResult);
-        Assert.True(searchResult.TotalMatches > 0);
+        Assert.True(searchResult.TotalMatches > 0, "应至少找到一个匹配 'HttpClient' 的结果");
 
         // Step 2: 提取代码片段进行相似代码搜索
         var snippet = searchResult.Results.First().LineContent;
         var similarJson = await _plugin.FindSimilarCodeAsync(snippet);
-        var similarResult = JsonSerializer.Deserialize<SemanticSearchView>(similarJson);
+        var similarResult = JsonSerializer.Deserialize<SemanticSearchView>(similarJson, JsonOptions); // ✅
         Assert.NotNull(similarResult);
     }
 
@@ -305,9 +322,9 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
     {
         // Step 1: 查找所有 Obsolete 成员
         var attrJson = _plugin.FindByAttribute("Obsolete");
-        var attrResult = JsonSerializer.Deserialize<AttributeSearchView>(attrJson);
+        var attrResult = JsonSerializer.Deserialize<AttributeSearchView>(attrJson, JsonOptions); // ✅
         Assert.NotNull(attrResult);
-        Assert.True(attrResult.TotalCount > 0);
+        Assert.True(attrResult.TotalCount >= 1, "应至少找到一个标记为 Obsolete 的符号");
 
         // Step 2: 对找到的文件进行详细搜索
         var firstResult = attrResult.Results.First();
@@ -315,7 +332,7 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
         {
             var relPath = _fixture.Context.ToSolutionRelative(firstResult.Location.FilePath);
             var fileJson = _plugin.SearchInFile(relPath, "Obsolete");
-            var fileResult = JsonSerializer.Deserialize<TextSearchView>(fileJson);
+            var fileResult = JsonSerializer.Deserialize<TextSearchView>(fileJson, JsonOptions); // ✅
             Assert.NotNull(fileResult);
             Assert.True(fileResult.TotalMatches > 0);
         }

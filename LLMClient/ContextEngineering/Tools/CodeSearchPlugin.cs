@@ -33,11 +33,13 @@ internal sealed class CodeSearchPlugin : KernelFunctionGroup
     [Description(
         "Performs full-text or regex search across all indexed source files in the solution. " +
         "Returns matching lines with file path, line number, column, and optional surrounding context. " +
+        "Empty or whitespace-only patterns return zero results. " + 
         "Use this to locate specific code patterns, variable names, method calls, or error messages. " +
         "For semantic intent-based search, use search_semantic instead.")]
     public string SearchText(
         [Description(
             "Search pattern: plain text or regex pattern (if useRegex=true). " +
+            "Must be non-empty. " + 
             "Examples: 'UserService', 'async Task.*HttpClient', 'TODO:'. " +
             "Case-insensitive by default.")]
         string pattern,

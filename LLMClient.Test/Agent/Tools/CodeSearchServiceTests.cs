@@ -1,9 +1,7 @@
 ﻿// File: LLMClient.Test/Agent/Tools/CodeSearchServiceTests.cs
 
 using LLMClient.ContextEngineering.Tools;
-using LLMClient.ContextEngineering.Tools.Models;
 using Moq;
-using Xunit;
 
 namespace LLMClient.Test.Agent.Tools;
 
@@ -382,5 +380,86 @@ public sealed class CodeSearchServiceTests : IClassFixture<CodeSearchTestFixture
         // Assert
         Assert.NotNull(result);
         Assert.InRange(result.Results.Count, 0, 50); // MaxSemanticResults = 50
+    }
+    
+    // ── 新增边界测试 ──────────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("\t")]
+    [InlineData(null)]
+    public void SearchText_WithInvalidPattern_ReturnsEmpty(string? pattern)
+    {
+        // Act
+        var result = _service.SearchText(pattern ?? string.Empty);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(0, result.TotalMatches);
+        Assert.Equal(0, result.FilesSearched);
+        Assert.Empty(result.Results);
+    }
+
+    [Fact]
+    public void SearchText_WithInvalidRegexPattern_HandlesGracefully()
+    {
+        // Arrange
+        var invalidPattern = "[unclosed"; // 无效的正则表达式
+
+        // Act
+        var result = _service.SearchText(invalidPattern, useRegex: true);
+
+        // Assert
+        Assert.NotNull(result);
+        // 应该返回 0 匹配或捕获异常后返回空结果
+        Assert.Equal(0, result.TotalMatches);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void SearchInFile_WithInvalidPattern_ReturnsEmpty(string? pattern)
+    {
+        // Arrange
+        var filePath = "TestProject/Services/UserService.cs";
+
+        // Act
+        var result = _service.SearchInFile(filePath, pattern ?? string.Empty);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(0, result.TotalMatches);
+        Assert.Equal(1, result.FilesSearched); // 文件存在，所以 FilesSearched = 1
+        Assert.Empty(result.Results);
+    }
+
+    [Fact]
+    public void SearchText_WithVeryLongPattern_WorksCorrectly()
+    {
+        // Arrange
+        var longPattern = new string('x', 1000); // 1000 个字符
+
+        // Act
+        var result = _service.SearchText(longPattern);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(0, result.TotalMatches); // 不太可能匹配到
+    }
+
+    [Fact]
+    public void SearchText_WithSpecialCharacters_WorksCorrectly()
+    {
+        // Arrange
+        var pattern = "\"api/users/{userId}\""; // 包含引号和斜杠
+
+        // Act
+        var result = _service.SearchText(pattern);
+
+        // Assert
+        Assert.NotNull(result);
+        // 应该能正常搜索，不抛出异常
     }
 }

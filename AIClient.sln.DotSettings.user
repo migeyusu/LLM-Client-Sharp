@@ -399,7 +399,7 @@
 &lt;/AssemblyExplorer&gt;</s:String>
 	<s:String x:Key="/Default/Environment/Hierarchy/Build/BuildTool/CustomBuildToolPath/@EntryValue">C:\Program Files\dotnet\sdk\9.0.305\MSBuild.dll</s:String>
 	<s:String x:Key="/Default/Environment/Hierarchy/Build/BuildTool/DotNetCliExePath/@EntryValue">C:\Program Files\dotnet\dotnet.exe</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=0869af1a_002Df810_002D4529_002Dbde4_002D403cb3f5e0ef/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="FileTreeFormatterTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=0869af1a_002Df810_002D4529_002Dbde4_002D403cb3f5e0ef/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="FileTreeFormatterTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.FileTreeFormatterTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.ProjectAwarenessPluginTests&lt;/TestId&gt;&#xD;
@@ -414,9 +414,10 @@
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.SymbolSemanticPluginTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.CodeReadingServiceTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.CodeSearchServiceTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.CodeSearchPluginTests&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=5633b960_002Dcba7_002D42ae_002Da12a_002D5742baee6b86/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="GitHubCopilotModels" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=5633b960_002Dcba7_002D42ae_002Da12a_002D5742baee6b86/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="GitHubCopilotModels" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.UnitTest1.GitHubCopilotModels&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;

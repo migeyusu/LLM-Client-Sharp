@@ -17,6 +17,9 @@ public sealed class CodeSearchTestFixture : IDisposable
     internal CodeSearchService SearchService { get; }
     public string TestSolutionDir { get; }
     public string TestSolutionPath { get; }
+    
+    // ✅ 暴露真实的 IndexService，用于手动填充测试数据
+    public SymbolIndexService IndexService { get; }
 
     // 测试用临时文件
     private readonly List<string> _tempFiles = new();
@@ -28,16 +31,24 @@ public sealed class CodeSearchTestFixture : IDisposable
         Directory.CreateDirectory(TestSolutionDir);
         TestSolutionPath = Path.Combine(TestSolutionDir, "TestSolution.sln");
 
+        // ✅ 创建真实的 IndexService
+        IndexService = new SymbolIndexService();
+
         // 创建模拟的 SolutionInfo
         var solutionInfo = CreateMockSolutionInfo();
 
         // 创建实际的测试文件（供文本搜索使用）
         CreateTestFiles();
 
-        // 配置 SolutionContext
+        // ✅ 配置 Mock Analyzer 返回真实的 IndexService
         var mockAnalyzer = new Mock<RoslynProjectAnalyzer>(null, null, null);
+        mockAnalyzer.SetupGet(a => a.IndexService).Returns(IndexService);
+
         Context = new SolutionContext(mockAnalyzer.Object);
         Context.SetForTesting(solutionInfo);
+
+        // ✅ 手动填充索引（从 solutionInfo 提取符号）
+        PopulateIndexFromSolutionInfo(solutionInfo);
 
         // 配置 Mock EmbeddingService
         MockEmbeddingService = new Mock<IEmbeddingService>();
@@ -89,7 +100,7 @@ public sealed class CodeSearchTestFixture : IDisposable
             Signature = "public void LegacyMethod()",
             Kind = "Method",
             Accessibility = "Public",
-            Attributes = new List<string> { "Obsolete" },
+            Attributes = new List<string> { "Obsolete" }, // ✅ 确保有 Obsolete 特性
             Summary = "Deprecated method",
             Locations = new List<CodeLocation>
             {
@@ -223,6 +234,28 @@ public sealed class CodeSearchTestFixture : IDisposable
         };
     }
 
+    // ✅ 新增：从 SolutionInfo 手动填充索引
+    private void PopulateIndexFromSolutionInfo(SolutionInfo solutionInfo)
+    {
+        foreach (var project in solutionInfo.Projects)
+        {
+            foreach (var ns in project.Namespaces)
+            {
+                foreach (var type in ns.Types)
+                {
+                    // 添加类型
+                    IndexService.AddSymbol(type);
+
+                    // 添加成员
+                    foreach (var member in type.Members)
+                    {
+                        IndexService.AddSymbol(member);
+                    }
+                }
+            }
+        }
+    }
+
     private void CreateTestFiles()
     {
         var projectDir = Path.Combine(TestSolutionDir, "TestProject");
@@ -307,7 +340,6 @@ namespace TestProject.Services
 
     private void SetupDefaultEmbeddingBehavior()
     {
-        // 默认返回模拟的语义搜索结果
         MockEmbeddingService
             .Setup(s => s.SearchByEmbeddingAsync(
                 It.IsAny<string>(),

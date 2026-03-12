@@ -17,7 +17,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
     private readonly IMapper _mapper;
     private readonly ConcurrentDictionary<string, IList<DocumentAnalysisResult>> _docCache = new();
 
-    public SymbolIndexService IndexService { get; } = new();
+    public virtual SymbolIndexService IndexService { get; } = new();
     public Solution? CurrentRawSolution { get; private set; }
 
     public RoslynProjectAnalyzer(ILogger<RoslynProjectAnalyzer>? logger, IMapper mapper, AnalyzerConfig? config = null)

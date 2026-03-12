@@ -104,6 +104,26 @@ public class SymbolIndexService
         return 0;
     }
 
+    /// <summary>
+    /// 获取所有已索引的符号（用于需要遍历全集的场景，如特性查找）
+    /// </summary>
+    public IEnumerable<SymbolInfo> GetAllSymbols()
+    {
+        return _keyIndex.Values;
+    }
+
+    /// <summary>
+    /// 按文件路径和行号范围查找符号（用于代码位置反向定位）
+    /// </summary>
+    public SymbolInfo? FindByLocation(string filePath, int lineNumber)
+    {
+        return _keyIndex.Values.FirstOrDefault(sym =>
+            sym.Locations.Any(loc =>
+                string.Equals(loc.FilePath, filePath, StringComparison.OrdinalIgnoreCase) &&
+                lineNumber >= loc.Location.Start.Line &&
+                lineNumber <= loc.Location.End.Line));
+    }
+
     public void Clear()
     {
         _keyIndex.Clear();

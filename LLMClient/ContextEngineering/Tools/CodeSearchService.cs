@@ -14,6 +14,9 @@ internal sealed class CodeSearchService
     private readonly IEmbeddingService? _embeddingService;
     private readonly ILogger<CodeSearchService>? _logger;
 
+    // 直接通过 SolutionContext 访问索引服务
+    private SymbolIndexService IndexService => _context.Analyzer.IndexService;
+
     // 硬性上限，防止结果集过大
     private const int MaxTextSearchResults = 500;
     private const int MaxSemanticResults = 50;
@@ -38,6 +41,19 @@ internal sealed class CodeSearchService
         bool useRegex = false,
         int contextLines = 1)
     {
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return new TextSearchView
+            {
+                Query = pattern ?? string.Empty,
+                SearchMode = useRegex ? "Regex" : "Text",
+                TotalMatches = 0,
+                FilesSearched = 0,
+                Truncated = false,
+                Results = new List<TextSearchResult>()
+            };
+        }
+
         var info = _context.RequireSolutionInfoOrThrow();
         var solutionDir = _context.RequireSolutionDirOrThrow();
 
@@ -203,7 +219,7 @@ internal sealed class CodeSearchService
 
     public AttributeSearchView FindByAttribute(string attributeName, string? scope = null)
     {
-        var info = _context.RequireSolutionInfoOrThrow();
+        _context.RequireSolutionInfoOrThrow();
 
         // 规范化特性名称（移除 "Attribute" 后缀）
         var normalizedName = attributeName.EndsWith("Attribute", StringComparison.OrdinalIgnoreCase)
@@ -212,45 +228,37 @@ internal sealed class CodeSearchService
 
         var results = new List<AttributeSearchResult>();
 
-        // 遍历所有符号，查找标注了该特性的
-        foreach (var project in info.Projects)
+        // 直接遍历索引中的所有符号（无需嵌套循环遍历 SolutionInfo）
+        var allSymbols = GetAllSymbolsFromIndex();
+
+        foreach (var sym in allSymbols)
         {
-            // 可选：限制搜索范围到特定项目
-            if (!string.IsNullOrWhiteSpace(scope) &&
-                !project.Name.Equals(scope, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            foreach (var ns in project.Namespaces)
+            // scope 过滤：如果指定了 scope，检查符号是否在该范围内
+            if (!string.IsNullOrWhiteSpace(scope))
             {
-                // 搜索类型级别的特性
-                foreach (var type in ns.Types)
-                {
-                    if (HasAttribute(type.Attributes, normalizedName))
-                    {
-                        results.Add(MapToAttributeSearchResult(type));
-                    }
+                var inScope = sym.FilesPath.Any(fp =>
+                                  fp.Contains(scope, StringComparison.OrdinalIgnoreCase)) ||
+                              sym.Signature.Contains(scope, StringComparison.OrdinalIgnoreCase);
 
-                    // 搜索成员级别的特性
-                    foreach (var member in type.Members)
-                    {
-                        if (HasAttribute(member.Attributes, normalizedName))
-                        {
-                            results.Add(MapToAttributeSearchResult(member));
-                        }
+                if (!inScope)
+                    continue;
+            }
 
-                        if (results.Count >= MaxAttributeResults)
-                            goto done;
-                    }
-                }
+            // 检查是否具有目标特性
+            if (HasAttribute(sym.Attributes, normalizedName))
+            {
+                results.Add(MapToAttributeSearchResult(sym));
+
+                if (results.Count >= MaxAttributeResults)
+                    break;
             }
         }
 
-        done:
         return new AttributeSearchView
         {
             AttributeName = attributeName,
             TotalCount = results.Count,
-            Results = results.Take(MaxAttributeResults).ToList()
+            Results = results
         };
     }
 
@@ -266,6 +274,19 @@ internal sealed class CodeSearchService
 
         if (!File.Exists(absPath))
             throw new FileNotFoundException($"File not found: {filePath}");
+
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return new TextSearchView
+            {
+                Query = pattern ?? string.Empty,
+                SearchMode = useRegex ? "Regex" : "Text",
+                TotalMatches = 0,
+                FilesSearched = 1,
+                Truncated = false,
+                Results = []
+            };
+        }
 
         var matches = SearchInFileInternal(absPath, pattern, useRegex, contextLines);
 
@@ -296,67 +317,105 @@ internal sealed class CodeSearchService
         SearchInFileInternal(string filePath, string pattern, bool useRegex, int contextLines)
     {
         var results = new List<(string, int, int, string, string?, string?)>();
+
+        // ✅ 防御性检查（虽然上层已检查，但这里再检查一次更安全）
+        if (string.IsNullOrWhiteSpace(pattern))
+            return results;
+
         var lines = File.ReadAllLines(filePath);
 
         for (int i = 0; i < lines.Length; i++)
         {
             var line = lines[i];
-            var matchIndex = -1;
+            bool isMatch;
 
             if (useRegex)
             {
-                var match = Regex.Match(line, pattern, RegexOptions.IgnoreCase);
-                if (match.Success)
-                    matchIndex = match.Index;
+                try
+                {
+                    var match = Regex.Match(line, pattern, RegexOptions.IgnoreCase);
+                    isMatch = match.Success;
+
+                    if (isMatch)
+                    {
+                        var column = match.Index + 1;
+                        var contextBefore = ExtractContextBefore(lines, i, contextLines);
+                        var contextAfter = ExtractContextAfter(lines, i, contextLines);
+                        results.Add((filePath, i + 1, column, line.Trim(), contextBefore, contextAfter));
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    // 无效的正则表达式，跳过此行
+                    continue;
+                }
             }
             else
             {
-                matchIndex = line.IndexOf(pattern, StringComparison.OrdinalIgnoreCase);
+                var index = line.IndexOf(pattern, StringComparison.OrdinalIgnoreCase);
+                isMatch = index >= 0;
+
+                if (isMatch)
+                {
+                    var column = index + 1;
+                    var contextBefore = ExtractContextBefore(lines, i, contextLines);
+                    var contextAfter = ExtractContextAfter(lines, i, contextLines);
+                    results.Add((filePath, i + 1, column, line.Trim(), contextBefore, contextAfter));
+                }
             }
-
-            if (matchIndex < 0)
-                continue;
-
-            var column = matchIndex + 1;
-
-            var contextBefore = contextLines > 0 && i > 0
-                ? string.Join("\n", lines.Skip(Math.Max(0, i - contextLines)).Take(contextLines))
-                : null;
-
-            var contextAfter = contextLines > 0 && i < lines.Length - 1
-                ? string.Join("\n", lines.Skip(i + 1).Take(Math.Min(contextLines, lines.Length - i - 1)))
-                : null;
-
-            results.Add((filePath, i + 1, column, line.Trim(), contextBefore, contextAfter));
         }
 
         return results;
     }
 
-    private (string? symbolId, string? symbolName, string? summary) TryResolveSymbol(string filePath, int lineNumber)
+    private static string? ExtractContextBefore(string[] lines, int currentIndex, int contextLines)
     {
-        var info = _context.RequireSolutionInfoOrThrow();
+        if (contextLines <= 0 || currentIndex <= 0)
+            return null;
 
-        // 尝试从索引中找到该位置对应的符号
-        foreach (var project in info.Projects)
-        {
-            foreach (var ns in project.Namespaces)
-            {
-                foreach (var type in ns.Types)
-                {
-                    if (IsInLocation(type, filePath, lineNumber))
-                        return (type.SymbolId, type.Name, type.Summary);
+        var startIndex = Math.Max(0, currentIndex - contextLines);
+        var count = currentIndex - startIndex;
+        return string.Join("\n", lines.Skip(startIndex).Take(count));
+    }
 
-                    foreach (var member in type.Members)
-                    {
-                        if (IsInLocation(member, filePath, lineNumber))
-                            return (member.SymbolId, member.Name, member.Summary);
-                    }
-                }
-            }
-        }
+    private static string? ExtractContextAfter(string[] lines, int currentIndex, int contextLines)
+    {
+        if (contextLines <= 0 || currentIndex >= lines.Length - 1)
+            return null;
 
-        return (null, null, null);
+        var count = Math.Min(contextLines, lines.Length - currentIndex - 1);
+        return string.Join("\n", lines.Skip(currentIndex + 1).Take(count));
+    }
+
+
+    private (string? symbolId, string? symbolName, string? summary) TryResolveSymbol(
+        string filePath,
+        int lineNumber)
+    {
+        var sym = IndexService.FindByLocation(filePath, lineNumber);
+
+        return sym != null
+            ? (sym.SymbolId, sym.Name, sym.Summary)
+            : (null, null, null);
+    }
+
+
+    // ── 新增：从索引获取所有符号 ────────────────────────────────────────
+
+    /// <summary>
+    /// 从索引服务获取所有已索引的符号（内存中已加载，性能优于遍历 SolutionInfo）
+    /// </summary>
+    private IEnumerable<SymbolInfo> GetAllSymbolsFromIndex()
+    {
+        // 利用索引的 Search 方法获取所有符号
+        // 传入空字符串查询会返回所有符号（ScoreSymbol 会返回 0，但我们不关心分数）
+        // 更高效的方式是直接暴露 _keyIndex.Values，但当前 API 下可以这样做：
+
+        // 方案1：使用 Search 返回所有（如果 query 为空会返回空集，需要特殊处理）
+        // 方案2：直接通过反射或添加新 API 获取 _keyIndex.Values
+
+        // 推荐：在 SymbolIndexService 中添加一个 GetAllSymbols() 方法
+        return IndexService.GetAllSymbols();
     }
 
     private static bool IsInLocation(SymbolInfo symbol, string filePath, int lineNumber)
