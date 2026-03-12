@@ -141,6 +141,7 @@ public static class Extension
                 {
                     expression.AddProfile(profile);
                 }
+
                 // 可以在这里添加全局配置
                 expression.AllowNullCollections = true;
                 // cfg.Advanced.AllowAdditiveTypeMapCreation = true; // 如有需要\
@@ -292,7 +293,7 @@ public static class Extension
             }
             else if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
             {
-                if (multiResponseViewItem.IsResponding)
+                if (multiResponseViewItem.AcceptedResponse?.IsResponding == true)
                 {
                     throw new InvalidOperationException("无法生成包含正在响应的记录的历史");
                 }

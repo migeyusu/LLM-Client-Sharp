@@ -400,7 +400,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
 
     public bool IsAvailableInContext
     {
-        get { return (IsManualValid || !IsInterrupt) && IsAvailableInContextSwitch; }
+        get { return (IsManualValid || !IsInterrupt) && IsAvailableInContextSwitch && !IsResponding; }
     }
 
     public ResponseViewItem(ILLMChatClient client)
