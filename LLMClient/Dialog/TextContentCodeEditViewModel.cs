@@ -6,15 +6,21 @@ using LLMClient.Component.Utility;
 using Markdig.Renderers.Html;
 using Microsoft.Win32;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using Windows.Services.Maps.LocalSearch;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Data;
 using Microsoft.SemanticKernel;
+using Microsoft.Xaml.Behaviors.Core;
 using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Dialog;
 
 public class TextContentCodeEditViewModel : TextContentEditViewModel
 {
+    public ICommand PastCommand { get; }
+
     public Task<string?> GetPersistString()
     {
         return GetPrompt(true);
@@ -99,18 +105,71 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
 
     public TextContentCodeEditViewModel(TextContent textContent, string? messageId) : base(textContent, messageId)
     {
+        PastCommand = new RelayCommand<ExecutedRoutedEventArgs>((args =>
+        {
+            if (args == null)
+            {
+                return;
+            }
+
+            var objSource = args.Source;
+            var richTextBox = FindRichTextBox(objSource);
+            if (richTextBox == null)
+            {
+                return;
+            }
+
+            if (Clipboard.ContainsText())
+            {
+                var text = Clipboard.GetText();
+                if (IsLikelyCode(text))
+                {
+                    InsertCodeBlock(richTextBox, text, ".txt", "plaintext", string.Empty);
+                }
+                else
+                {
+                    richTextBox.Paste();
+                }
+                args.Handled = true;
+            }
+            else if (Clipboard.ContainsFileDropList())
+            {
+                AddCodeFile(objSource);
+                args.Handled = true;
+            }
+        }));
+    }
+
+    /// <summary>
+    /// 简单但有效的代码判断（可自行扩展）
+    /// </summary>
+    private static bool IsLikelyCode(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var lines = text.Split('\n');
+        return lines.Length >= 3 || // 多行
+               text.Contains('{') || text.Contains('}') || // 常见代码符号
+               text.Contains("public ") || text.Contains("function");
+    }
+
+    private static RichTextBox? FindRichTextBox(object? obj)
+    {
+        if (obj is RichTextBox rtb)
+        {
+            return rtb;
+        }
+
+        if (obj is DependencyObject dependencyObject)
+        {
+            return dependencyObject.FindVisualChild<RichTextBox>();
+        }
+
+        return null;
     }
 
     protected override async void AddCodeFile(object? o)
     {
-        RichTextBox? richTextBox = null;
-        if (o is RichTextBox rtb)
-        {
-            richTextBox = rtb;
-        }
-
-        richTextBox ??= ((DependencyObject?)o)?.FindVisualChild<RichTextBox>();
-
+        var richTextBox = FindRichTextBox(o);
         if (richTextBox == null)
         {
             return;
@@ -126,7 +185,7 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
             return;
         }
 
-        InsertFilesAsTexts(openFileDialog.FileNames, richTextBox);
+        await InsertFilesAsTexts(openFileDialog.FileNames, richTextBox);
     }
 
     public override async Task ApplyText()
@@ -172,43 +231,47 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
             }
 
             var content = await File.ReadAllTextAsync(fileName);
-
             var language = settingsOptions.GetLanguageByExtension(extension)?.Id ?? extension.TrimStart('.');
-
-            var codeVm = new EditableCodeViewModel(content, extension, language)
-            {
-                FileLocation = fileName
-            };
-
-            var expander = new Expander
-            {
-                Content = codeVm,
-                IsExpanded = true,
-                Header = codeVm
-            };
-
-            expander.SetResourceReference(FrameworkElement.StyleProperty,
-                TextMateCodeRenderer.EditCodeBlockStyleKey);
-            var block = new BlockUIContainer(expander);
-            if (richTextBox.CaretPosition.Paragraph != null)
-            {
-                richTextBox.CaretPosition = richTextBox.CaretPosition.InsertParagraphBreak();
-            }
-
-            var paragraph = richTextBox.CaretPosition.Paragraph;
-            if (paragraph != null)
-            {
-                richTextBox.Document.Blocks.InsertBefore(paragraph, block);
-            }
-            else
-            {
-                richTextBox.Document.Blocks.Add(block);
-            }
-
-            richTextBox.CaretPosition = block.ElementEnd.GetInsertionPosition(LogicalDirection.Forward);
+            InsertCodeBlock(richTextBox, content, extension, language, fileName);
         }
 
         richTextBox.Focus();
         await ApplyText();
+    }
+
+    private void InsertCodeBlock(RichTextBox richTextBox, string content, string extension, string language,
+        string fileName)
+    {
+        var codeVm = new EditableCodeViewModel(content, extension, language)
+        {
+            FileLocation = fileName
+        };
+
+        var expander = new Expander
+        {
+            Content = codeVm,
+            IsExpanded = true,
+            Header = codeVm
+        };
+
+        expander.SetResourceReference(FrameworkElement.StyleProperty,
+            TextMateCodeRenderer.EditCodeBlockStyleKey);
+        var block = new BlockUIContainer(expander);
+        if (richTextBox.CaretPosition.Paragraph != null)
+        {
+            richTextBox.CaretPosition = richTextBox.CaretPosition.InsertParagraphBreak();
+        }
+
+        var paragraph = richTextBox.CaretPosition.Paragraph;
+        if (paragraph != null)
+        {
+            richTextBox.Document.Blocks.InsertBefore(paragraph, block);
+        }
+        else
+        {
+            richTextBox.Document.Blocks.Add(block);
+        }
+
+        richTextBox.CaretPosition = block.ElementEnd.GetInsertionPosition(LogicalDirection.Forward);
     }
 }

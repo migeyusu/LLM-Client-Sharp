@@ -444,6 +444,17 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.IsDataChanged = true;
     }
 
+    public bool IsPreprocessing
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
+
     public virtual async Task PreviewProcessing(CancellationToken token = default)
     {
         if (!this.Option.Check())

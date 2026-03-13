@@ -9,17 +9,7 @@ namespace LLMClient.Dialog;
 public abstract class TextContentEditViewModel : BaseViewModel
 {
     public ICommand AddCodeFileCommand { get; }
-
-    public ICommand PastFileCommand => new RelayCommand<object>(enumerable =>
-    {
-        if (enumerable == null)
-        {
-            return;
-        }
-
-        DropFiles(enumerable as IEnumerable<string>, null);
-    });
-
+    
     public string FinalText => Content.Text;
 
     protected TextContent Content { get; }

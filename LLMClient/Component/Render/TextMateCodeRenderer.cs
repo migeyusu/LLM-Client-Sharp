@@ -1,4 +1,4 @@
-﻿﻿using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
@@ -75,6 +75,18 @@ public class TextMateCodeRenderer : CodeBlockRenderer
 
     private static TextMateCodeRendererSettings? _settings = null;
 
+    public static string GetLanguageExtensionByName(string name)
+    {
+        var options = Settings.Options;
+        var scope = options.GetScopeByLanguageId(name) ?? options.GetScopeByExtension("." + name);
+        if (!string.IsNullOrEmpty(scope))
+        {
+            return Path.GetExtension(scope);
+        }
+
+        return string.Empty;
+    }
+
     public static Task InitializeAsync()
     {
         return Task.Run(() => { _settings = new TextMateCodeRendererSettings(); });
@@ -143,13 +155,7 @@ public class TextMateCodeRenderer : CodeBlockRenderer
             name = fencedCodeBlock.Info;
             if (name != null)
             {
-                var rendererSettings = Settings;
-                var options = rendererSettings.Options;
-                var scope = options.GetScopeByLanguageId(name) ?? options.GetScopeByExtension("." + name);
-                if (!string.IsNullOrEmpty(scope))
-                {
-                    extension = Path.GetExtension(scope);
-                }
+                extension = GetLanguageExtensionByName(name);
             }
         }
 

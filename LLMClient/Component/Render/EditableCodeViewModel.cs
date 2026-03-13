@@ -23,25 +23,40 @@ public class EditableCodeViewModel : BaseViewModel
         }
     }
 
-    public string? Extension { get; }
-
-    public string? Name { get; }
-
-    private string? _fileLocation;
-
-    public string? FileLocation
+    public string? Extension
     {
-        get => _fileLocation;
+        get;
         set
         {
-            if (_fileLocation == value) return;
-            _fileLocation = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(DisplayHeader));
+            OnPropertyChanged(nameof(SyntaxHighlighting));
         }
     }
 
-    public string DisplayHeader => !string.IsNullOrEmpty(FileLocation) ? $"{FileLocation}({Name})" : $"{Extension}/{Name}";
+    public string? Name
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+            Extension = !string.IsNullOrEmpty(value) ? TextMateCodeRenderer.GetLanguageExtensionByName(value) : null;
+        }
+    }
+
+    public string? FileLocation
+    {
+        get;
+        set
+        {
+            if (field == value) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
 
     public IHighlightingDefinition? SyntaxHighlighting
     {
@@ -81,6 +96,4 @@ public class EditableCodeViewModel : BaseViewModel
             }
         });
     }
-    
-    
 }

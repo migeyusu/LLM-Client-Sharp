@@ -250,12 +250,12 @@
                 <DataTemplate DataType="{x:Type render:EditableCodeViewModel}">
                     <avalonedit:TextEditor FontFamily="Consolas"
                                            FontSize="14"
-                                           SyntaxHighlighting="{Binding SyntaxHighlighting,Mode=OneTime}"
-                                           Margin="0,10"
+                                           SyntaxHighlighting="{Binding SyntaxHighlighting,Mode=OneWay}"
+                                           Margin="5"
                                            MinHeight="200"
                                            ShowLineNumbers="True"
                                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                                           Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
+                                           Background="Transparent"
                                            LineNumbersForeground="{DynamicResource MaterialDesign.Brush.Foreground}">
                         <i:Interaction.Behaviors>
                             <render:TextEditorBehavior
@@ -268,13 +268,21 @@
         <Setter Property="HeaderTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type render:EditableCodeViewModel}">
-                    <Grid>
-                        <TextBlock Padding="10,0,0,0"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Header.Foreground}"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Center"
-                                   Text="{Binding DisplayHeader, Mode=OneWay}" />
-                        <Button Content="{materialDesign:PackIcon Kind=Undo}"
+                    <Grid Background="{DynamicResource MaterialDesign.Brush.Chip.Background}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox Padding="2,0"
+                                     HorizontalAlignment="Left"
+                                     VerticalAlignment="Center"
+                                     TextWrapping="NoWrap"
+                                     AcceptsReturn="False"
+                                     AcceptsTab="False"
+                                     Text="{Binding Name, Mode=TwoWay}" />
+                            <TextBlock Text="{Binding FileLocation,Mode=OneTime}"
+                                       Margin="30,0,0,0"
+                                       FontStyle="Italic" />
+                        </StackPanel>
+
+                        <!--<Button Content="{materialDesign:PackIcon Kind=Undo}"
                                 Command="{Binding RollbackCommand}"
                                 VerticalAlignment="Center"
                                 HorizontalAlignment="Right"
@@ -282,7 +290,7 @@
                                 Width="30"
                                 Height="30"
                                 ToolTip="Revert to original string"
-                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}" />
+                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}" />-->
                         <!--Visibility="{Binding HasEdit,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"-->
                         <!--<Button Style="{StaticResource ItemDeleteButtonStyle}"
                                 VerticalAlignment="Center"

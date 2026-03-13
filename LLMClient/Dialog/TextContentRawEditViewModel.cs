@@ -85,7 +85,6 @@ public class TextContentRawEditViewModel : TextContentEditViewModel
         InsertFilesAsTexts(filePaths, textBoxBase);
     }
     
-
     private static void InsertFilesAsTexts(IEnumerable<string> fileNames, TextBoxBase textBoxBase)
     {
         var settingsOptions = TextMateCodeRenderer.Settings.Options;

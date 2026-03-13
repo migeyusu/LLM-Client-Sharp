@@ -5,11 +5,11 @@ using Microsoft.Xaml.Behaviors;
 
 namespace LLMClient.Component.Render;
 
-public class RichTextBoxBehaviour : Behavior<RichTextBox>
+public class RichTextBoxDocumentBehaviour : Behavior<RichTextBox>
 {
     public static readonly DependencyProperty DocumentProperty =
         DependencyProperty.Register(nameof(Document), typeof(System.Windows.Documents.FlowDocument),
-            typeof(RichTextBoxBehaviour),
+            typeof(RichTextBoxDocumentBehaviour),
             new PropertyMetadata(null, OnDocumentChanged));
 
     public FlowDocument Document
@@ -20,7 +20,7 @@ public class RichTextBoxBehaviour : Behavior<RichTextBox>
 
     private static void OnDocumentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is RichTextBoxBehaviour behavior && behavior.AssociatedObject != null)
+        if (d is RichTextBoxDocumentBehaviour behavior && behavior.AssociatedObject != null)
         {
             if (e.NewValue is FlowDocument newDocument)
             {

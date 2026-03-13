@@ -741,7 +741,8 @@
                                  PreviewDragOver="TextBox_OnPreviewDragOver"
                                  materialDesign:TextFieldAssist.DecorationVisibility="Collapsed">
                         <b:Interaction.Behaviors>
-                            <render:RichTextBoxBehaviour Document="{Binding EditDocument,Mode=OneWay}" />
+                            <render:RichTextBoxDocumentBehaviour Document="{Binding EditDocument,Mode=OneWay}" />
+                            <render:RichTextBoxPasteCommandBehavior PasteCommand="{Binding PastCommand}" />
                         </b:Interaction.Behaviors>
                     </RichTextBox>
                 </Grid>
