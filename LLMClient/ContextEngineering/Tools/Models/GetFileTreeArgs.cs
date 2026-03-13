@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class GetFileTreeArgs
+public sealed record GetFileTreeArgs
 {
     public required string RootPath { get; set; }
     public int Depth { get; set; } = 4;

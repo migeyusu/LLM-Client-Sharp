@@ -502,7 +502,7 @@
                         <LineBreak />
                         <Run>Arguments:</Run>
                         <Run
-                            Text="{Binding Arguments,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToJsonConverter}}" />
+                            Text="{Binding Arguments,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
                     </TextBlock>
                 </DataTemplate>
             </Setter.Value>
@@ -590,7 +590,7 @@
                         <TextBlock Foreground="DarkGray"
                                    FontStyle="Italic"
                                    TextWrapping="Wrap"
-                                   Text="{Binding Result,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToJsonConverter}}" />
+                                   Text="{Binding Result,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
                         <TextBlock Foreground="Red"
                                    Visibility="{Binding Exception,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                    Text="{Binding Exception,Mode=OneTime,StringFormat=Exception:{0}}" />

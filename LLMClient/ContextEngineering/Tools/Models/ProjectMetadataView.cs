@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class ProjectMetadataView
+public sealed record ProjectMetadataView
 {
     public required string ProjectId { get; set; }
     public required string Name { get; set; }

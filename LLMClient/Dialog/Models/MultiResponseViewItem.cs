@@ -259,7 +259,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
                     return;
                 }
 
-                await ParentSession.InvokeRequest(responseViewItem, this);
+                await ParentSession.ProcessingRequest(responseViewItem, this);
             }
             catch (Exception e)
             {
@@ -336,7 +336,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     {
         var responseViewItem = new ResponseViewItem(chatClient);
         this.AppendResponse(responseViewItem);
-        return ParentSession.InvokeRequest(responseViewItem, this, token);
+        return ParentSession.ProcessingRequest(responseViewItem, this, token);
     }
 
     public void AppendResponse(ResponseViewItem viewItem)

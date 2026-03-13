@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class ParameterView
+public sealed record ParameterView
 {
     public string Name { get; init; } = "";
     public string Type { get; init; } = "";

@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class CallerView
+public sealed record CallerView
 {
     public string CallerSymbolId { get; init; } = "";
     public string CallerName { get; init; } = "";

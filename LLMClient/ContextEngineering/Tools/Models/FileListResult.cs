@@ -1,7 +1,7 @@
 // FileListResult.cs
 namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class FileListResult
+public sealed record FileListResult
 {
     public required string RootPath { get; init; }
     /// <summary>符合条件的文件总数（未截断前）</summary>

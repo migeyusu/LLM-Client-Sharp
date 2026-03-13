@@ -55,6 +55,16 @@ internal static class SnapConverters
             ? JsonSerializer.Serialize(e.Value, LLMClient.Extension.DefaultJsonSerializerOptions)
             : string.Empty);
 
+    public static readonly IValueConverter ObjectToPrettyJsonConverter =
+        ValueConverter.Create<object?, string>(e => e.Value != null
+            ? JsonSerializer.Serialize(e.Value,
+                options: new(LLMClient.Extension.DefaultJsonSerializerOptions)
+                {
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                })
+            : string.Empty);
+
     public static readonly IValueConverter CountToVisibilityConverter =
         ValueConverter.Create<int, Visibility>(e => e.Value > 0 ? Visibility.Visible : Visibility.Collapsed);
 

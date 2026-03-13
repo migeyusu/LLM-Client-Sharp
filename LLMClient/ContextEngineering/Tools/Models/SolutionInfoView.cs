@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class SolutionInfoView
+public sealed record SolutionInfoView
 {
     public required string SolutionName { get; set; }
     public required string SolutionPath { get; set; }

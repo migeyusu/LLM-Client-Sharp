@@ -329,13 +329,14 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     public virtual void DeleteItem(IDialogItem item)
     {
         var oriPreviousItem = item.PreviousItem;
-        if (item is IRequestItem requestItem)
+        switch (item)
         {
-            DeleteChain(requestItem);
-        }
-        else if (item is EraseViewItem eraseViewItem)
-        {
-            eraseViewItem.Delete();
+            case IRequestItem requestItem:
+                DeleteChain(requestItem);
+                break;
+            case EraseViewItem eraseViewItem:
+                eraseViewItem.Delete();
+                break;
         }
 
         if (this.DialogItems.Contains(item))
@@ -367,7 +368,13 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         {
             throw new InvalidOperationException("PreviousItem 不能为空");
         }
-        
+
+        if (IsRunning(requestItem))
+        {
+            MessageBoxes.Warning("当前节点后续存在正在回复的内容，无法删除", "提示");
+            return;
+        }
+
         if (requestItem.HasFork)
         {
             if (!MessageBoxes.Question("存在多个分叉，是否要删除整个节点树？", "提示"))
@@ -377,16 +384,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
         else
         {
-            int GetDepth(IDialogItem item)
-            {
-                if (!item.Children.Any())
-                {
-                    return 1;
-                }
-        
-                return 1 + item.Children.Max(GetDepth);
-            }
-        
             if (GetDepth(requestItem) > 2)
             {
                 if (!MessageBoxes.Question("当前节点后包含较长对话，是否要删除整个节点树？", "提示"))
@@ -395,8 +392,24 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 }
             }
         }
-        
+
         previousItem.RemoveChild(requestItem);
+        return;
+
+        int GetDepth(IDialogItem item)
+        {
+            if (item.Children.Count == 0)
+            {
+                return 1;
+            }
+
+            return 1 + item.Children.Max(GetDepth);
+        }
+
+        bool IsRunning(IDialogItem item)
+        {
+            return item is MultiResponseViewItem { IsResponding: true } || item.Children.Any(IsRunning);
+        }
     }
 
     #endregion
@@ -432,7 +445,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region core methods
 
-    public virtual async Task<ChatCallResult> InvokeRequest(ResponseViewItem responseViewItem,
+    public virtual async Task<ChatCallResult> ProcessingRequest(ResponseViewItem responseViewItem,
         MultiResponseViewItem multiResponseViewItem, CancellationToken token = default)
     {
         RespondingCount++;
@@ -440,7 +453,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         {
             var dialogItems = multiResponseViewItem.GetChatHistory().ToArray();
             var dialogContext = new DialogContext(dialogItems, this.SystemPrompt);
-            var completedResult = await responseViewItem.ProcessRequest(dialogContext, token);
+            var completedResult = await responseViewItem.Process(dialogContext, token);
             this.TokensConsumption += completedResult.Usage?.TotalTokenCount ?? 0;
             this.TotalPrice += completedResult.Price ?? 0;
             return completedResult;
@@ -451,7 +464,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
     }
 
-    public async Task<ChatCallResult> NewResponse(ILLMChatClient client, IRequestItem requestViewItem,
+    public async Task<ChatCallResult> AppendNewResponse(ILLMChatClient client, IRequestItem requestViewItem,
         IRequestItem? insertBefore = null, CancellationToken token = default)
     {
         var multiResponseViewItem = new MultiResponseViewItem(this)
@@ -512,9 +525,16 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         };
         this.DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
         OpenDialogRouteCommand =
-            new ActionCommand(async o =>
+            new ActionCommand(async void (o) =>
             {
-                await DialogHost.Show(new DialogGraphViewModel(this, this.RootNode.Children.FirstOrDefault()));
+                try
+                {
+                    await DialogHost.Show(new DialogGraphViewModel(this, this.RootNode.Children.FirstOrDefault()));
+                }
+                catch (Exception e)
+                {
+                    MessageBoxes.Error("无法打开对话路线图: " + e.Message);
+                }
             });
         SetLeafCommand = new RelayCommand<MultiResponseViewItem>(o =>
         {

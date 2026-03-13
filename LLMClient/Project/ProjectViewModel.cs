@@ -358,7 +358,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
-            (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>>)GetResponse);
+            (GetResponseHandler)GetResponse);
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedSession?.SelectedFunctionGroups));
@@ -427,7 +427,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
-    protected virtual async Task<ChatCallResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
+    private async Task<ChatCallResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
         IRequestItem? insertViewItem = null,
         CancellationToken token = default)
     {
@@ -436,15 +436,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
             throw new NotSupportedException("未选择任务");
         }
 
-        if (!this.Option.Check())
-        {
-            throw new InvalidOperationException("当前项目配置不合法");
-        }
-
-        this.ReadyForRequest();
-        if (this.ProjectContextPrompt is { IncludeContext: true })
-            await this.ProjectContextPrompt.BuildAsync();
-        return await SelectedSession.NewResponse(arg1, arg2, insertViewItem, token);
+        return await SelectedSession.AppendNewResponse(arg1, arg2, insertViewItem, token);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -452,8 +444,15 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.IsDataChanged = true;
     }
 
-    public void ReadyForRequest()
+    public virtual async Task PreviewProcessing(CancellationToken token = default)
     {
+        if (!this.Option.Check())
+        {
+            throw new InvalidOperationException("当前项目配置不合法");
+        }
+
+        if (this.ProjectContextPrompt is { IncludeContext: true })
+            await this.ProjectContextPrompt.BuildAsync();
         var functionGroups = this.SelectedSession?.SelectedFunctionGroups;
         if (functionGroups != null)
         {

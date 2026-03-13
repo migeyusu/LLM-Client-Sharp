@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class ConventionView
+public sealed record ConventionView
 {
     public bool HasEditorConfig { get; set; }
     public string? EditorConfigPath { get; set; }

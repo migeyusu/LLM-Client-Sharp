@@ -1,7 +1,7 @@
 // ReadFileResult.cs
 namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class ReadFileResult
+public sealed record ReadFileResult
 {
     public required string FilePath { get; init; }
     public string? RelativePath { get; init; }

@@ -1,13 +1,8 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
-using LLMClient.Component.Render;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
@@ -20,9 +15,10 @@ using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
-using TextBoxBase = System.Windows.Controls.Primitives.TextBoxBase;
 
 namespace LLMClient.Dialog;
+public delegate Task<ChatCallResult> GetResponseHandler(ILLMChatClient client, IRequestItem request,
+    IRequestItem? insertBefore, CancellationToken token);
 
 public class RequesterViewModel : BaseViewModel
 {
@@ -243,8 +239,7 @@ public class RequesterViewModel : BaseViewModel
 
     #endregion
 
-    private readonly Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>>
-        _getResponse;
+    private readonly GetResponseHandler _getResponse;
 
     private readonly GlobalOptions _options;
     private readonly Summarizer _summarizer;
@@ -252,7 +247,7 @@ public class RequesterViewModel : BaseViewModel
     private readonly ITokensCounter _tokensCounter;
 
     public RequesterViewModel(string initialPrompt, ILLMChatClient modelClient,
-        Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>> getResponse,
+        GetResponseHandler getResponse,
         GlobalOptions options, Summarizer summarizer, IRagSourceCollection ragSourceCollection,
         ITokensCounter tokensCounter)
     {

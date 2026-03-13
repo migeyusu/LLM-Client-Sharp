@@ -8,6 +8,7 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.UserControls;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
+using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
 
@@ -131,6 +132,13 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
         nameof(ScrollViewItem),
         nameof(SearchText)
     ];
+
+    public override async Task<ChatCallResult> ProcessingRequest(ResponseViewItem responseViewItem, MultiResponseViewItem multiResponseViewItem,
+        CancellationToken token = default)
+    {
+        await ParentProject.PreviewProcessing(token);
+        return await base.ProcessingRequest(responseViewItem, multiResponseViewItem, token);
+    }
 
     private bool _enableInContext;
 

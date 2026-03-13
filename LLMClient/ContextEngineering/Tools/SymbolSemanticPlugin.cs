@@ -192,7 +192,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
     [KernelFunction("get_namespace_types")]
     [Description(
         "Lists all types declared within a namespace (and optionally its sub-namespaces). " +
-        "Returns type name, kind, signature, accessibility, XML summary, member count, and location. " +
+        "Returns name, kind, signature, accessibility, XML summary, member count, and location. " +
         "Use this to get an overview of a logical module before diving into individual types.")]
     public string GetNamespaceTypes(
         [Description(

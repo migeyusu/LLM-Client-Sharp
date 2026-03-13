@@ -152,9 +152,9 @@ internal sealed class SymbolSemanticService
 
         return new TypeMembersView
         {
-            TypeId = typeInfo.SymbolId,
-            TypeName = typeInfo.Name,
-            TypeSignature = typeInfo.Signature,
+            SymbolId = typeInfo.SymbolId,
+            Name = typeInfo.Name,
+            Signature = typeInfo.Signature,
             TotalCount = list.Count,
             Members = _mapper.Map<List<MemberSummaryView>>(list)
         };
@@ -172,9 +172,9 @@ internal sealed class SymbolSemanticService
 
         var baseView = new TypeHierarchyView
         {
-            TypeId = typeInfo.SymbolId,
-            TypeName = typeInfo.Name,
-            TypeSignature = typeInfo.Signature,
+            SymbolId = typeInfo.SymbolId,
+            Name = typeInfo.Name,
+            Signature = typeInfo.Signature,
             BaseChain = typeInfo.BaseTypes.ToList(),
             ImplementedInterfaces = typeInfo.ImplementedInterfaces.ToList()
         };
@@ -231,8 +231,8 @@ internal sealed class SymbolSemanticService
                 var impls = await SymbolFinder.FindImplementationsAsync(roslynType, solution, cancellationToken: ct);
                 return new ImplementationsView
                 {
-                    InterfaceId = typeInfo.SymbolId,
-                    InterfaceName = typeInfo.Name,
+                    SymbolId = typeInfo.SymbolId,
+                    Name = typeInfo.Name,
                     Implementations = impls.Take(100).Select(ToBrief).ToList(),
                     Source = "Roslyn"
                 };
@@ -245,8 +245,8 @@ internal sealed class SymbolSemanticService
 
         return new ImplementationsView
         {
-            InterfaceId = typeInfo.SymbolId,
-            InterfaceName = typeInfo.Name,
+            SymbolId = typeInfo.SymbolId,
+            Name = typeInfo.Name,
             Implementations = FindImplementationsInIndex(typeInfo.Name, info),
             Source = "Index"
         };
@@ -269,7 +269,7 @@ internal sealed class SymbolSemanticService
         if (roslynSym == null)
         {
             _logger?.LogWarning("Could not resolve Roslyn symbol for '{Id}'", symbolId);
-            return new CallersView { SymbolId = sym.SymbolId, SymbolName = sym.Name };
+            return new CallersView { SymbolId = sym.SymbolId, Name = sym.Name, Signature = sym.Signature };
         }
 
         var callerInfos = await SymbolFinder.FindCallersAsync(roslynSym, solution, ct);
@@ -295,7 +295,8 @@ internal sealed class SymbolSemanticService
         return new CallersView
         {
             SymbolId = sym.SymbolId,
-            SymbolName = sym.Name,
+            Name = sym.Name,
+            Signature = sym.Signature,
             TotalCallers = callers.Count,
             Callers = callers
         };
@@ -315,7 +316,7 @@ internal sealed class SymbolSemanticService
         var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct);
 
         if (roslynSym == null)
-            return new CalleesView { SymbolId = sym.SymbolId, SymbolName = sym.Name };
+            return new CalleesView { SymbolId = sym.SymbolId, Name = sym.Name, Signature = sym.Signature };
 
         var callees = new List<SymbolBriefView>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -323,11 +324,11 @@ internal sealed class SymbolSemanticService
         // 取第一个源码位置所在的文档进行语法树遍历
         var sourceLoc = roslynSym.Locations.FirstOrDefault(l => l.IsInSource);
         if (sourceLoc == null)
-            return new CalleesView { SymbolId = sym.SymbolId, SymbolName = sym.Name };
+            return new CalleesView { SymbolId = sym.SymbolId, Name = sym.Name, Signature = sym.Signature };
 
         var doc = solution.GetDocument(sourceLoc.SourceTree);
         if (doc == null)
-            return new CalleesView { SymbolId = sym.SymbolId, SymbolName = sym.Name };
+            return new CalleesView { SymbolId = sym.SymbolId, Name = sym.Name, Signature = sym.Signature };
 
         var semanticModel = await doc.GetSemanticModelAsync(ct);
         var root = await sourceLoc.SourceTree!.GetRootAsync(ct);
@@ -354,7 +355,8 @@ internal sealed class SymbolSemanticService
         return new CalleesView
         {
             SymbolId = sym.SymbolId,
-            SymbolName = sym.Name,
+            Name = sym.Name,
+            Signature = sym.Signature,
             Callees = callees
         };
     }
@@ -373,7 +375,7 @@ internal sealed class SymbolSemanticService
         var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct);
 
         if (roslynSym == null)
-            return new UsagesView { SymbolId = sym.SymbolId, SymbolName = sym.Name };
+            return new UsagesView { SymbolId = sym.SymbolId, Name = sym.Name, Signature = sym.Signature };
 
         var references = await SymbolFinder.FindReferencesAsync(roslynSym, solution, ct);
 
@@ -406,7 +408,8 @@ internal sealed class SymbolSemanticService
         return new UsagesView
         {
             SymbolId = sym.SymbolId,
-            SymbolName = sym.Name,
+            Name = sym.Name,
+            Signature = sym.Signature,
             TotalUsages = usages.Count,
             Truncated = truncated,
             Usages = usages.Take(MaxUsages)

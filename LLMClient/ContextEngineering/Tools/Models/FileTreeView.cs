@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class FileTreeView
+public sealed record FileTreeView
 {
     public required string Root { get; set; }
     public int Depth { get; set; }

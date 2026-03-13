@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class UsageView
+public sealed record UsageView
 {
     public string FilePath { get; init; } = "";
     public int Line { get; init; }

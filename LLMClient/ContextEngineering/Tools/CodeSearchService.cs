@@ -153,7 +153,7 @@ internal sealed class CodeSearchService
                         CodeSnippet = r.snippet,
                         SimilarityScore = Math.Round(r.score, 3),
                         SymbolId = symbolId,
-                        SymbolName = symbolName,
+                        Name = symbolName,
                         Summary = summary
                     };
                 }).ToList();
@@ -189,7 +189,7 @@ internal sealed class CodeSearchService
                     CodeSnippet = r.LineContent,
                     SimilarityScore = 0,
                     SymbolId = symbolId,
-                    SymbolName = symbolName,
+                    Name = symbolName,
                     Summary = summary
                 };
             })

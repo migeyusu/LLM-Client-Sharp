@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class DependencyEdge
+public sealed record DependencyEdge
 {
     public string From { get; init; } = "";
     public string To { get; init; } = "";

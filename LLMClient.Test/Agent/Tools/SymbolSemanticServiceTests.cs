@@ -289,7 +289,7 @@ public class SymbolSemanticServiceTests
         var view = svc.GetTypeMembers(SymbolSemanticFixtures.UserServiceId);
 
         Assert.Equal(4, view.TotalCount);
-        Assert.Equal("UserService", view.TypeName);
+        Assert.Equal("UserService", view.Name);
     }
 
     [Fact]

@@ -47,7 +47,11 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         [
             new ProjectAwarenessPlugin(new ProjectAwarenessService(_solutionContext)),
             new SymbolSemanticPlugin(new SymbolSemanticService(_solutionContext, mapper,
-                loggerFactory.CreateLogger<SymbolSemanticService>()))
+                loggerFactory.CreateLogger<SymbolSemanticService>())),
+            new CodeSearchPlugin(new CodeSearchService(_solutionContext, null,
+                loggerFactory.CreateLogger<CodeSearchService>())),
+            new CodeReadingPlugin(new CodeReadingService(_solutionContext, mapper,
+                loggerFactory.CreateLogger<CodeReadingService>()))
         ];
         Requester.FunctionTreeSelector.ConnectSource(new ProxyFunctionGroupSource(() => projectFunctions));
         _projectContextPrompt = new CSharpContextPromptViewModel(projectAnalyzer, this, tokensCounter);
@@ -64,6 +68,17 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
                 SolutionFilePath = dialog.FileName;
             }
         });
+    }
+
+    public override async Task PreviewProcessing(CancellationToken token = default)
+    {
+        await base.PreviewProcessing(token);
+        if (string.IsNullOrEmpty(SolutionFilePath))
+        {
+            throw new InvalidOperationException("Please select a solution file before sending the request.");
+        }
+
+        await _solutionContext.LoadSolutionAsync(SolutionFilePath, token);
     }
 
     public void Dispose()

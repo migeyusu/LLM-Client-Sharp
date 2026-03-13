@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class ProjectBriefView
+public sealed record ProjectBriefView
 {
     public required string ProjectId { get; set; } // = ProjectFilePath
     public required string Name { get; set; }

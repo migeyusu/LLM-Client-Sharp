@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class TypeDetailExtra
+public sealed record TypeDetailExtra
 {
     public List<string> BaseTypes { get; init; } = [];
     public List<string> ImplementedInterfaces { get; init; } = [];

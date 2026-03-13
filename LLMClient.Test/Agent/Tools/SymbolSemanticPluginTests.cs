@@ -283,7 +283,7 @@ public class SymbolSemanticPluginTests
         var result = plugin.GetTypeMembers(SymbolSemanticFixtures.UserServiceId);
 
         var node = ParseJson(result);
-        Assert.Equal("UserService", node["typeName"]!.GetValue<string>());
+        Assert.Equal("UserService", node["name"]!.GetValue<string>());
         Assert.Equal(4, node["totalCount"]!.GetValue<int>());
 
         var members = node["members"]!.AsArray();

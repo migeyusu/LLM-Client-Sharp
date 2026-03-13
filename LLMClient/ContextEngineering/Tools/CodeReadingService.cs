@@ -132,7 +132,7 @@ internal sealed class CodeReadingService : ICodeReadingService
         return new SymbolBodyView
         {
             SymbolId       = sym.SymbolId,
-            SymbolName     = sym.Name,
+            Name           = sym.Name,
             Signature      = sym.Signature,
             FilePath       = filePath,
             RelativePath   = _context.ToSolutionRelative(filePath),
@@ -259,16 +259,8 @@ internal sealed class CodeReadingService : ICodeReadingService
                                     .OrderBy(l => l.Location.Start.Line)
                                     .FirstOrDefault();
                                 var mappedMember = _mapper.Map<MemberOutlineView>(m);
-                                return new MemberOutlineView
-                                {
-                                    SymbolId = mappedMember.SymbolId,
-                                    Name = mappedMember.Name,
-                                    Kind = mappedMember.Kind,
-                                    Signature = mappedMember.Signature,
-                                    Accessibility = mappedMember.Accessibility,
-                                    Summary = mappedMember.Summary,
-                                    StartLine = memberLoc?.Location.Start.Line ?? 0
-                                };
+                                mappedMember.StartLine = memberLoc?.Location.Start.Line ?? 0;
+                                return mappedMember;
                             })
                             .OrderBy(m => m.StartLine)
                             .ToList();
@@ -341,15 +333,8 @@ internal sealed class CodeReadingService : ICodeReadingService
         var all = query.OrderBy(f => f.FilePath).ToList();
         var truncated = all.Count > maxCount;
 
-        var files = all
-            .Take(maxCount)
-            .Select(f =>
-            {
-                var view = _mapper.Map<FileMetadataView>(f);
-                view.RelativePath = _context.ToSolutionRelative(f.FilePath);
-                return view;
-            })
-            .ToList();
+        var files = _mapper.Map<List<FileMetadataView>>(all.Take(maxCount));
+        files.ForEach(f => f.RelativePath = _context.ToSolutionRelative(f.FilePath));
 
         return new FileListResult
         {

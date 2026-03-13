@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class ProjectStatsView
+public sealed record ProjectStatsView
 {
     public int FilesCount { get; set; }
     public int TypesCount { get; set; }

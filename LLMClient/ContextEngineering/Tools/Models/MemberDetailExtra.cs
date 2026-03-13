@@ -1,6 +1,6 @@
-﻿namespace LLMClient.ContextEngineering.Tools.Models;
+﻿﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class MemberDetailExtra
+public sealed record MemberDetailExtra
 {
     public string? ReturnType { get; init; }
     public List<ParameterView>? Parameters { get; init; }

@@ -159,8 +159,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         _options = options;
         ((INotifyCollectionChanged)this.RootNode.Children).CollectionChanged += OnRootCollectionChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
-            (Func<ILLMChatClient, IRequestItem, IRequestItem?, CancellationToken, Task<ChatCallResult>>)
-            NewResponse);
+            (GetResponseHandler) AppendNewResponse);
         Requester.FunctionGroupSource = this;
         Requester.FunctionTreeSelector.Reset();
         var functionTreeSelector = Requester.FunctionTreeSelector;
@@ -200,10 +199,10 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
 
     public Task? SummarizeTask = null;
 
-    public override async Task<ChatCallResult> InvokeRequest(ResponseViewItem responseViewItem,
+    public override async Task<ChatCallResult> ProcessingRequest(ResponseViewItem responseViewItem,
         MultiResponseViewItem multiResponseViewItem, CancellationToken token = default)
     {
-        var completedResult = await base.InvokeRequest(responseViewItem, multiResponseViewItem, token);
+        var completedResult = await base.ProcessingRequest(responseViewItem, multiResponseViewItem, token);
         //判断是否需要进行主题总结
         if (this.Topic == "新建会话" &&
             this.DialogItems.FirstOrDefault(item => item is MultiResponseViewItem) == multiResponseViewItem

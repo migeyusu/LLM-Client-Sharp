@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.ContextEngineering.Tools.Models;
 
-public sealed class NamespaceTypesView
+public sealed record NamespaceTypesView
 {
     public string Namespace { get; init; } = "";
     public bool IncludesSubNamespaces { get; init; }

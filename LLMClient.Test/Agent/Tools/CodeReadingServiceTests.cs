@@ -236,7 +236,7 @@ public class CodeReadingServiceTests
             contextLines: contextLines);
 
         Assert.Equal(_fixture.AddMethodSymbolId, result.SymbolId);
-        Assert.Equal("Add", result.SymbolName);
+        Assert.Equal("Add", result.Name);
         Assert.Equal(_fixture.SourceFilePath, result.FilePath);
         // 测试环境通过 SetForTesting，SolutionContext.IsLoaded == false，因此 Source 应为 "Index"
         Assert.Equal("Index", result.Source);
