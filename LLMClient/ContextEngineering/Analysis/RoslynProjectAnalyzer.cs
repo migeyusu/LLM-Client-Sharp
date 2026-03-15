@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using AutoMapper;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -20,12 +21,20 @@ public partial class RoslynProjectAnalyzer : IDisposable
     public virtual SymbolIndexService IndexService { get; } = new();
     public Solution? CurrentRawSolution { get; private set; }
 
+    public string? SolutionDir { get; private set; }
+
+    public SolutionInfo? SolutionInfo { get; private set; }
+
+    [MemberNotNullWhen(true, nameof(SolutionInfo), nameof(CurrentRawSolution), nameof(SolutionDir))]
+    public bool IsLoaded => SolutionInfo != null;
+
     public RoslynProjectAnalyzer(ILogger<RoslynProjectAnalyzer>? logger, IMapper mapper, AnalyzerConfig? config = null)
     {
         _config = config ?? new AnalyzerConfig();
         _logger = logger;
         _mapper = mapper;
         _workspace = MSBuildWorkspace.Create();
+        
         _workspace.RegisterWorkspaceFailedHandler(args =>
         {
             var e = args.Diagnostic;
@@ -37,69 +46,81 @@ public partial class RoslynProjectAnalyzer : IDisposable
     }
 
 
-    public async Task<SolutionInfo> AnalyzeSolutionAsync(
+    public async Task LoadSolutionAsync(
         string solutionPath,
         CancellationToken cancellationToken = default)
     {
         if (!File.Exists(solutionPath))
             throw new FileNotFoundException($"Solution file not found: {solutionPath}");
-
         var stopwatch = Stopwatch.StartNew();
         _logger?.LogInformation($"Starting analysis of {Path.GetFileName(solutionPath)}...");
-
-        var summary = new SolutionInfo
-        {
-            SolutionName = Path.GetFileNameWithoutExtension(solutionPath),
-            SolutionPath = solutionPath,
-            GeneratedAt = DateTime.UtcNow
-        };
-
         try
         {
+            SolutionDir = Path.GetDirectoryName(solutionPath)
+                          ?? throw new ArgumentException("Invalid solution path");
             var solution = await _workspace.OpenSolutionAsync(solutionPath, cancellationToken: cancellationToken);
-            CurrentRawSolution = solution;
-            // 过滤并并行分析项目
-            var projects = solution.Projects
-                .Where(ShouldIncludeProject)
-                .ToList();
-            _logger?.LogInformation($"Found {projects.Count} projects to analyze");
-
-            var projectTasks = projects
-                .Select(async p =>
-                {
-                    try
-                    {
-                        return await AnalyzeProjectAsync(p, cancellationToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogError($"Failed to analyze project {p.Name}: {ex.Message}");
-                        return null;
-                    }
-                })
-                .ToArray();
-
-            var results = await Task.WhenAll(projectTasks);
-            summary.Projects = results.Where(r => r != null).OfType<ProjectInfo>().ToList();
-
-            // 计算统计信息
-            CalculateSummaryStatistics(summary);
-
+            var solutionInfo = new SolutionInfo
+            {
+                SolutionName = Path.GetFileNameWithoutExtension(solutionPath),
+                SolutionPath = solutionPath,
+                GeneratedAt = DateTime.UtcNow
+            };
+            await AnalysisSolutionAsync(solution, solutionInfo, cancellationToken);
             stopwatch.Stop();
-            summary.GenerationTime = stopwatch.Elapsed;
+            solutionInfo.GenerationTime = stopwatch.Elapsed;
             _logger?.LogDebug($"Analysis completed in {stopwatch.ElapsedMilliseconds}ms");
-            summary.Conventions = MergeSolutionConventions(summary.Projects);
-            return summary;
+            CurrentRawSolution = solution;
+            SolutionInfo = solutionInfo;
         }
         catch (Exception ex)
         {
+            CurrentRawSolution = null;
+            SolutionDir = null;
+            SolutionInfo = null;
+            _workspace.CloseSolution();
             _logger?.LogError($"Solution analysis failed: {ex}");
             throw;
         }
-        finally
+    }
+
+    public async Task AnalysisCurrentSolutionAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsLoaded)
         {
-            // _workspace.CloseSolution();
+            throw new InvalidOperationException("Solution is not loaded");
         }
+
+        await AnalysisSolutionAsync(CurrentRawSolution, SolutionInfo, cancellationToken);
+    }
+
+    private async Task AnalysisSolutionAsync(Solution solution, SolutionInfo solutionInfo,
+        CancellationToken cancellationToken = default)
+    {
+        // 过滤并并行分析项目
+        var projects = solution.Projects
+            .Where(ShouldIncludeProject)
+            .ToList();
+        _logger?.LogInformation($"Found {projects.Count} projects to analyze");
+        var projectTasks = projects
+            .Select(async p =>
+            {
+                try
+                {
+                    return await AnalyzeProjectAsync(p, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError($"Failed to analyze project {p.Name}: {ex.Message}");
+                    return null;
+                }
+            })
+            .ToArray();
+
+        var results = await Task.WhenAll(projectTasks);
+        solutionInfo.Projects = results.Where(r => r != null).OfType<ProjectInfo>().ToList();
+        // 计算统计信息
+        CalculateSummaryStatistics(solutionInfo);
+        solutionInfo.Conventions = MergeSolutionConventions(solutionInfo.Projects);
     }
 
     private static ConventionInfo MergeSolutionConventions(List<ProjectInfo> projects)
@@ -210,7 +231,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
         var documents = project.Documents
             .Where(d => d.SupportsSyntaxTree && ShouldIncludeFile(d))
             .ToList();
-
+        
         _logger?.LogDebug($"Analyzing {documents.Count} documents in {project.Name}");
 
         var semaphore = new SemaphoreSlim(_config.MaxConcurrency);
@@ -460,6 +481,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
         Document document, IList<DocumentAnalysisResult>? cachedResults,
         CancellationToken cancellationToken)
     {
+        
         var documentFilePath = document.FilePath;
         if (documentFilePath == null)
         {
@@ -481,7 +503,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
         }
 
         IndexService.InvalidateByFile(documentFilePath);
-        
+
         var relativePath = document.Folders.Count > 0
             ? Path.Combine(Path.Combine(document.Folders.ToArray()), document.Name)
             : document.Name;
@@ -631,7 +653,7 @@ public partial class RoslynProjectAnalyzer : IDisposable
         {
             return null;
         }
-        
+
         foreach (var member in typeDecl.Members)
         {
             if (ShouldIncludeMember(member, semanticModel))
@@ -768,13 +790,25 @@ public partial class RoslynProjectAnalyzer : IDisposable
 
     public void CloseCurrentSolution()
     {
-        if (CurrentRawSolution == null)
+        if (!IsLoaded)
         {
             return;
         }
 
-        CurrentRawSolution = null;
-        _workspace.CloseSolution();
+        try
+        {
+            _workspace.CloseSolution();
+        }
+        catch (Exception exception)
+        {
+            _logger?.LogError($"Error closing solution: {exception.Message}");
+        }
+        finally
+        {
+            CurrentRawSolution = null;
+            SolutionDir = null;
+            SolutionInfo = null;
+        }
     }
 
     public void Dispose()
@@ -785,4 +819,11 @@ public partial class RoslynProjectAnalyzer : IDisposable
 
     [System.Text.RegularExpressions.GeneratedRegex(@"(\d+\.\d+)")]
     private static partial System.Text.RegularExpressions.Regex MyRegex();
+
+    internal void SetForTesting(SolutionInfo info)
+    {
+        SolutionInfo = info;
+        CurrentRawSolution = null; // 让依赖 Roslyn 的分支走 catch/fallback
+        SolutionDir = Path.GetDirectoryName(info.SolutionPath);
+    }
 }

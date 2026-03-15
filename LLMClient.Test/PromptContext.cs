@@ -17,7 +17,7 @@ public class PromptContext
 
     private const string SolutionPath = @"E:\OpenSource\LLM-Client-Sharp\LLM-Client-Sharp\AIClient.sln";
 
-    private IMapper _mapper;
+    private readonly IMapper _mapper;
 
     public PromptContext(ITestOutputHelper output)
     {
@@ -39,7 +39,8 @@ public class PromptContext
     public async Task FileTree()
     {
         using var analyzer = new RoslynProjectAnalyzer(null, _mapper, _analyzerConfig);
-        var projectInfo = await analyzer.AnalyzeSolutionAsync(SolutionPath);
+        await analyzer.LoadSolutionAsync(SolutionPath);
+        var projectInfo = analyzer.SolutionInfo!.Projects.First();
         var fileTreeFormatter = new FileTreeFormatter();
         var format = fileTreeFormatter.Format(projectInfo);
         var outputPath = "filetree.md";
@@ -64,7 +65,8 @@ public class PromptContext
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            var summary = await analyzer.AnalyzeSolutionAsync(SolutionPath);
+            await analyzer.LoadSolutionAsync(SolutionPath);
+            var summary = analyzer.SolutionInfo;
             _output.WriteLine($"First analysis completed in {stopwatch.ElapsedMilliseconds}ms");
             stopwatch.Restart();
             /*var summary = await cacheManager.GetOrGenerateAsync(

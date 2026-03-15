@@ -8,6 +8,7 @@ using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.ContextEngineering.Tools;
 using LLMClient.ToolCall;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Project;
@@ -54,7 +55,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
                 loggerFactory.CreateLogger<CodeReadingService>()))
         ];
         Requester.FunctionTreeSelector.ConnectSource(new ProxyFunctionGroupSource(() => projectFunctions));
-        _projectContextPrompt = new CSharpContextPromptViewModel(projectAnalyzer, this, tokensCounter);
+        _projectContextPrompt = new CSharpContextPromptViewModel(_solutionContext, this, tokensCounter);
         SelectPathCommand = new RelayCommand(() =>
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
@@ -72,13 +73,21 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     public override async Task PreviewProcessing(CancellationToken token = default)
     {
-        await base.PreviewProcessing(token);
         if (string.IsNullOrEmpty(SolutionFilePath))
         {
             throw new InvalidOperationException("Please select a solution file before sending the request.");
         }
 
-        await _solutionContext.LoadSolutionAsync(SolutionFilePath, token);
+        if (_solutionContext.IsLoaded)
+        {
+            await _solutionContext.Analyzer.AnalysisCurrentSolutionAsync(token);
+        }
+        else
+        {
+            await _solutionContext.LoadSolutionAsync(SolutionFilePath, token);
+        }
+
+        await base.PreviewProcessing(token);
     }
 
     public void Dispose()

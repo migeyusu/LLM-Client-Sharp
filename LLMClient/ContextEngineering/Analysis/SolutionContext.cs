@@ -6,20 +6,13 @@ namespace LLMClient.ContextEngineering.Analysis;
 /// 跨 Service 共享的解决方案状态。
 /// 由 ProjectAwarenessService.LoadSolutionAsync 写入，所有 Analysis Service 只读消费。
 /// </summary>
-internal sealed class SolutionContext
+public sealed class SolutionContext
 {
-    private volatile SolutionInfo? _solutionInfo;
-    private volatile Solution? _roslynSolution;
+    public bool IsLoaded => Analyzer.IsLoaded;
 
-    public SolutionInfo? SolutionInfo => _solutionInfo;
+    public SymbolIndexService SymbolIndex => Analyzer.IndexService;
 
-    public Solution? RoslynSolution => _roslynSolution;
-
-    public bool IsLoaded => _solutionInfo != null && _roslynSolution != null;
-
-    public RoslynProjectAnalyzer Analyzer { get; }
-
-    public string? SolutionDir { get; private set; }
+    internal RoslynProjectAnalyzer Analyzer { get; }
 
     public SolutionContext(RoslynProjectAnalyzer analyzer)
     {
@@ -28,40 +21,37 @@ internal sealed class SolutionContext
 
     public async Task LoadSolutionAsync(string solutionPath, CancellationToken ct = default)
     {
+        if (solutionPath == Analyzer.SolutionDir)
+        {
+            return;
+        }
+
         Analyzer.CloseCurrentSolution();
-        var info = await Analyzer.AnalyzeSolutionAsync(solutionPath, ct);
-        _solutionInfo = info;
-        SolutionDir = Path.GetDirectoryName(solutionPath)
-                      ?? throw new ArgumentException("Invalid solution path");
-        _roslynSolution = Analyzer.CurrentRawSolution;
+        await Analyzer.LoadSolutionAsync(solutionPath, ct);
     }
 
-    internal void Clear()
+    public void Clear()
     {
-        _solutionInfo = null;
-        _roslynSolution = null;
+        Analyzer.CloseCurrentSolution();
     }
 
 
     internal void SetForTesting(SolutionInfo info)
     {
-        _solutionInfo = info;
-        _roslynSolution = null; // 让依赖 Roslyn 的分支走 catch/fallback
-        SolutionDir = Path.GetDirectoryName(info.SolutionPath);
+        Analyzer.SetForTesting(info);
     }
 
-
     public SolutionInfo RequireSolutionInfoOrThrow()
-        => _solutionInfo ?? throw new InvalidOperationException(
+        => Analyzer.SolutionInfo ?? throw new InvalidOperationException(
             "No solution loaded. Call LoadSolutionAsync first.");
 
     public Solution RequireRoslynSolutionOrThrow()
-        => _roslynSolution ?? throw new InvalidOperationException(
+        => Analyzer.CurrentRawSolution ?? throw new InvalidOperationException(
             "No live Roslyn solution. Call LoadSolutionAsync first.");
 
     public string RequireSolutionDirOrThrow()
     {
-        return SolutionDir ??
+        return Analyzer.SolutionDir ??
                throw new InvalidOperationException("Cannot determine solution directory from solution path.");
     }
 
@@ -85,7 +75,7 @@ internal sealed class SolutionContext
             return input;
         return Path.GetFullPath(Path.Combine(baseDir, input));
     }
-    
+
     /// <summary>
     /// 解析文件过滤器字符串为扩展名列表
     /// </summary>

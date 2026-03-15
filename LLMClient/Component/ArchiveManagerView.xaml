@@ -42,7 +42,8 @@
             </Grid.ColumnDefinitions>
             
             <TabControl Grid.Column="0" Style="{StaticResource MaterialDesignTabControl}">
-                <TabItem Header="Dialogs">
+                <TabItem Header="Dialogs"
+                         materialDesign:TabAssist.HeaderBehavior="Wrapping">
                     <Grid>
                          <Grid.RowDefinitions>
                               <RowDefinition Height="Auto"/>

@@ -15,7 +15,7 @@ internal sealed class CodeSearchService
     private readonly ILogger<CodeSearchService>? _logger;
 
     // 直接通过 SolutionContext 访问索引服务
-    private SymbolIndexService IndexService => _context.Analyzer.IndexService;
+    private SymbolIndexService IndexService => _context.SymbolIndex;
 
     // 硬性上限，防止结果集过大
     private const int MaxTextSearchResults = 500;

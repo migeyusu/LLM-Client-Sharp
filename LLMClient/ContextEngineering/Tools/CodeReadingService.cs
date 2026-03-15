@@ -96,7 +96,7 @@ internal sealed class CodeReadingService : ICodeReadingService
         int contextLines = 0,
         CancellationToken ct = default)
     {
-        var sym = _context.Analyzer.IndexService.GetByKey(symbolId)
+        var sym = _context.SymbolIndex.GetByKey(symbolId)
                   ?? throw new ArgumentException(
                       $"Symbol '{symbolId}' not found. Use search_symbols to discover valid IDs.");
 

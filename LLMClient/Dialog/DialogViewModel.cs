@@ -11,6 +11,7 @@ using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace LLMClient.Dialog;
 
@@ -144,7 +145,8 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
     private readonly string[] _notTrackingProperties =
     [
         nameof(ScrollViewItem),
-        nameof(SearchText)
+        nameof(SearchText),
+        nameof(CurrentResponseViewItem)
     ];
 
     public RequesterViewModel Requester { get; }

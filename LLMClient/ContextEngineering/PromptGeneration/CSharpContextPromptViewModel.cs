@@ -13,38 +13,23 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
 
     public List<RelevantSnippet>? RelevantSnippets { get; set; }
 
-    public SolutionInfo? SolutionInfo { get; set; }
-
-    public CSharpContextPromptViewModel(RoslynProjectAnalyzer analyzer, CSharpProjectViewModel projectViewModel,
+    public CSharpContextPromptViewModel(SolutionContext context, CSharpProjectViewModel projectViewModel,
         ITokensCounter tokensCounter)
         : base(projectViewModel, tokensCounter)
     {
-        _analyzer = analyzer;
+        _context = context;
     }
 
     protected override async Task<string> BuildProjectContextAsync()
     {
-        string projectContext;
         var markdownSummaryFormatter = new MarkdownSummaryFormatter(new FormatterOptions()
         {
             IncludeMembers = true,
             IncludePackages = true
         });
-        if (string.IsNullOrEmpty(ProjectViewModel.SolutionFilePath))
-        {
-            throw new NotSupportedException("Solution file path cannot be null or empty.");
-        }
 
-        this.SolutionInfo = await _analyzer.AnalyzeSolutionAsync(ProjectViewModel.SolutionFilePath);
-        if (SolutionInfo != null)
-        {
-            projectContext = markdownSummaryFormatter.Format(SolutionInfo);
-        }
-        else
-        {
-            return string.Empty;
-        }
-
+        var solutionInfo = _context.RequireSolutionInfoOrThrow();
+        var projectContext = markdownSummaryFormatter.Format(solutionInfo);
         return await PromptTemplateRenderer.RenderHandlebarsAsync(
             ContextPromptTemplates.ProjectStructureTemplate,
             new Dictionary<string, object?>
@@ -105,11 +90,10 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
             mainVariables);
     }
 
-    private readonly RoslynProjectAnalyzer _analyzer;
+    private readonly SolutionContext _context;
 
     public override void Dispose()
     {
-        _analyzer.Dispose();
         base.Dispose();
     }
 }

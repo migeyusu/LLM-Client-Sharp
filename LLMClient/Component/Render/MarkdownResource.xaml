@@ -244,7 +244,7 @@
         <Setter Property="Background"
                 Value="{DynamicResource MaterialDesign.Brush.Card.Background}" />
         <Setter Property="IsExpanded"
-                Value="True" />
+                Value="False" />
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type render:EditableCodeViewModel}">
@@ -268,7 +268,7 @@
         <Setter Property="HeaderTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type render:EditableCodeViewModel}">
-                    <Grid Background="{DynamicResource MaterialDesign.Brush.Chip.Background}">
+                    <Grid>
                         <StackPanel Orientation="Horizontal">
                             <TextBox Padding="2,0"
                                      HorizontalAlignment="Left"

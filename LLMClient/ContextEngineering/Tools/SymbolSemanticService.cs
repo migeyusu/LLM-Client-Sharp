@@ -557,6 +557,7 @@ internal sealed class SymbolSemanticService
 
         return null;
     }
+    
 
     // ── 通用 helpers ────────────────────────────────────────────────────────
 
@@ -608,6 +609,7 @@ internal sealed class SymbolSemanticService
         {
             return "";
         }
+        
     }
 
     private List<SymbolBriefView> FindDerivedInIndex(string baseName, SolutionInfo info)
@@ -650,9 +652,9 @@ internal sealed class SymbolSemanticService
         public ContextSymbolIndex(SolutionContext ctx) => _ctx = ctx;
 
         public IEnumerable<(SymbolInfo Sym, double Score)> Search(string query, string? kind, string? scope)
-            => _ctx.Analyzer.IndexService.Search(query, kind, scope);
+            => _ctx.SymbolIndex.Search(query, kind, scope);
 
         public SymbolInfo? GetByKey(string key)
-            => _ctx.Analyzer.IndexService.GetByKey(key);
+            => _ctx.SymbolIndex.GetByKey(key);
     }
 }

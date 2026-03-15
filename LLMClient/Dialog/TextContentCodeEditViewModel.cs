@@ -147,9 +147,8 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
     {
         if (string.IsNullOrWhiteSpace(text)) return false;
         var lines = text.Split('\n');
-        return lines.Length >= 3 || // 多行
-               text.Contains('{') || text.Contains('}') || // 常见代码符号
-               text.Contains("public ") || text.Contains("function");
+        return lines.Length >= 3 && // 多行
+               text.Contains('{') && text.Contains('}');
     }
 
     private static RichTextBox? FindRichTextBox(object? obj)
@@ -250,7 +249,7 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
         var expander = new Expander
         {
             Content = codeVm,
-            IsExpanded = true,
+            IsExpanded = false,
             Header = codeVm
         };
 
