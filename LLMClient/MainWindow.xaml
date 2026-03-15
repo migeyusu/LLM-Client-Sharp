@@ -712,9 +712,7 @@
                                                          BorderBrush="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
                                                          Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Dark}"
                                                          Minimum="0"
-                                                         Maximum="{Binding ChainStepCount,Mode=OneWay}"
-                                                         Value="{Binding ChainingStep,Mode=OneWay}"
-                                                         IsIndeterminate="{Binding IsChaining,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}"
+                                                         IsIndeterminate="True"
                                                          Visibility="{Binding IsBusy,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
                                         </Grid>
                                     </DataTemplate>

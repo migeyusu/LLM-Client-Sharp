@@ -1,7 +1,10 @@
 ﻿// #define TESTMODE
 
+// #define DATACHANGE_TRACE
+
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Text;
 using AutoMapper;
 using LLMClient.Abstraction;
@@ -11,12 +14,17 @@ using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace LLMClient.Dialog;
 
 public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPromptableSession
 {
+#if DATACHANGE_TRACE
+
+    public bool Log { get; set; }
+
+#endif
+
     //创建新实例后默认为changed
     private bool _isDataChanged = true;
 
@@ -27,6 +35,25 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         {
             _isDataChanged = value;
             Requester.IsDataChanged = value;
+#if DATACHANGE_TRACE
+            if (value && Log)
+            {
+                //记录调用堆栈
+                var stackTrace = new StackTrace();
+                var frames = stackTrace.GetFrames();
+                var stackInfo = new StringBuilder();
+                foreach (var frame in frames)
+                {
+                    var method = frame.GetMethod();
+                    if (method != null)
+                    {
+                        stackInfo.AppendLine($"{method.DeclaringType?.FullName}.{method.Name}");
+                    }
+                }
+
+                Debug.WriteLine($"{this.Name}, Data changed at {DateTime.Now}, StackTrace: {stackInfo}");
+            }
+#endif
         }
     }
 
@@ -101,52 +128,12 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         }
     }
 
-    #region request chain
-
-    public bool IsChaining
-    {
-        get => _isChaining;
-        set
-        {
-            if (value == _isChaining) return;
-            _isChaining = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public int ChainStepCount
-    {
-        get => _chainStepCount;
-        set
-        {
-            if (value == _chainStepCount) return;
-            _chainStepCount = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public int ChainingStep
-    {
-        get => _chainingStep;
-        set
-        {
-            if (value == _chainingStep) return;
-            _chainingStep = value;
-            OnPropertyChanged();
-        }
-    }
-
-    #endregion
-
-    private bool _isChaining;
-    private int _chainStepCount;
-    private int _chainingStep;
-
     private readonly string[] _notTrackingProperties =
     [
         nameof(ScrollViewItem),
         nameof(SearchText),
-        nameof(CurrentResponseViewItem)
+        nameof(CurrentResponseViewItem),
+        nameof(Shortcut)
     ];
 
     public RequesterViewModel Requester { get; }
@@ -161,7 +148,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         _options = options;
         ((INotifyCollectionChanged)this.RootNode.Children).CollectionChanged += OnRootCollectionChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
-            (GetResponseHandler) AppendNewResponse);
+            (GetResponseHandler)AppendNewResponse);
         Requester.FunctionGroupSource = this;
         Requester.FunctionTreeSelector.Reset();
         var functionTreeSelector = Requester.FunctionTreeSelector;

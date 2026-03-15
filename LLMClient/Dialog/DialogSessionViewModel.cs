@@ -518,12 +518,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
         RebuildLinearItems();
         SharedGraphViewModel = new DialogGraphViewModel(this);
-        DialogItemsObservable.CollectionChanged += (_, _) =>
-        {
-            OnPropertyChangedAsync(nameof(Shortcut));
-            OnPropertyChanged(nameof(CurrentContextTokens));
-        };
-        this.DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
+        DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
         OpenDialogRouteCommand =
             new ActionCommand(async void (o) =>
             {
@@ -702,5 +697,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     protected virtual void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         this.IsDataChanged = true;
+        OnPropertyChangedAsync(nameof(Shortcut));
+        OnPropertyChanged(nameof(CurrentContextTokens));
     }
 }

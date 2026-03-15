@@ -211,6 +211,7 @@
                                      VerticalAlignment="Center"
                                      materialDesign:HintAssist.Hint="Search"
                                      materialDesign:TextFieldAssist.DecorationVisibility="Hidden"
+                                     materialDesign:TextFieldAssist.HasClearButton="True"
                                      BorderThickness="0">
                                 <TextBox.InputBindings>
                                     <KeyBinding Key="Enter"
