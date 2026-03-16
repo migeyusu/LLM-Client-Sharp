@@ -10,8 +10,6 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DialogSessionViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">
-    <UserControl.InputBindings>
-    </UserControl.InputBindings>
     <Grid>
         <customControl:ListBoxEx Style="{StaticResource DialogListBoxStyle}"
                                  CurrentViewItem="{Binding ScrollViewItem,Mode=TwoWay}"
@@ -23,6 +21,10 @@
                                 Executed="OnDeleteExecuted" />
                 <CommandBinding Command="{x:Static utility:CommonCommands.Exclude}"
                                 Executed="OnExcludeExecuted" />
+                <CommandBinding Command="{x:Static utility:CommonCommands.ScrollToNextCodeBlock}"
+                                Executed="OnScrollToNextCodeBlock" />
+                <CommandBinding Command="{x:Static utility:CommonCommands.ScrollToPreviousCodeBlock}"
+                                Executed="OnScrollToPreviousCodeBlock" />
             </ListBox.CommandBindings>
         </customControl:ListBoxEx>
         <StackPanel HorizontalAlignment="Right"
@@ -41,6 +43,14 @@
                             Value="Right" />
                 </Style>
             </StackPanel.Resources>
+            <Button Command="{x:Static utility:CommonCommands.ScrollToPreviousCodeBlock}"
+                    CommandTarget="{Binding ElementName=DialogItemList}"
+                    Content="{materialDesign:PackIcon Kind=PanUp}"
+                    ToolTip="Jump to Previous Code Block" />
+            <Button Command="{x:Static utility:CommonCommands.ScrollToNextCodeBlock}"
+                    CommandTarget="{Binding ElementName=DialogItemList}"
+                    Content="{materialDesign:PackIcon Kind=PanDown}"
+                    ToolTip="Jump to Next Code Block" />
             <Button Command="{x:Static customControl:ListBoxEx.ScrollToTopCommand}"
                     CommandTarget="{Binding ElementName=DialogItemList}"
                     Content="{materialDesign:PackIcon Kind=FormatVerticalAlignTop}" />

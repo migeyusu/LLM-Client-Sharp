@@ -45,6 +45,12 @@ public static class CommonCommands
     public static RoutedCommand Conclusion =
         new RoutedUICommand("Conclusion", "Conclusion", typeof(CommonCommands));
 
+    public static RoutedCommand ScrollToNextCodeBlock =
+        new RoutedUICommand("ScrollToNextCodeBlock", "ScrollToNextCodeBlock", typeof(CommonCommands));
+
+    public static RoutedCommand ScrollToPreviousCodeBlock =
+        new RoutedUICommand("ScrollToPreviousCodeBlock", "ScrollToPreviousCodeBlock", typeof(CommonCommands));
+
     public static RoutedCommand OpenSource =
         new RoutedUICommand("OpenSource", "OpenSource", typeof(CommonCommands));
 

@@ -328,15 +328,6 @@
                         </StackPanel>
                         <StackPanel HorizontalAlignment="Right"
                                     Orientation="Horizontal">
-                            <Button Style="{StaticResource MaterialDesignIconButton}"
-                                    Command="{x:Static render:DisplayCodeViewModel.ScrollToNextCodeCommand}"
-                                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type ContentControl}}}"
-                                    Content="{materialDesign:PackIcon Kind=ArrowDownBold,Size=23}"
-                                    ToolTip="Next Code Block"
-                                    Height="35"
-                                    Width="35"
-                                    Margin="10,0,0,0"
-                                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
                             <Button Command="{x:Static render:CodeCompareViewModel.AddToCompareCommand}"
                                     CommandParameter="{Binding}"
                                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"

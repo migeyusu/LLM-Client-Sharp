@@ -1,7 +1,9 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using LLMClient.Component.CustomControl;
+using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Dialog.Models;
 
@@ -55,6 +57,103 @@ public partial class SessionView : UserControl
             if (string.IsNullOrEmpty(ViewModel.SearchText))
             {
                 ViewModel.IsSearchVisible = false;
+            }
+        }
+    }
+
+    private void OnScrollToNextCodeBlock(object sender, ExecutedRoutedEventArgs e)
+    {
+        ScrollToCodeBlock(true);
+    }
+
+    private void OnScrollToPreviousCodeBlock(object sender, ExecutedRoutedEventArgs e)
+    {
+        ScrollToCodeBlock(false);
+    }
+
+    private void ScrollToCodeBlock(bool isNext)
+    {
+        var currentItem = DialogItemList.CurrentViewItem;
+        if (currentItem == null) return;
+
+        var container = DialogItemList.ItemContainerGenerator.ContainerFromItem(currentItem) as FrameworkElement;
+        if (container == null) return;
+
+        var scrollViewer = FindVisualChild<ScrollViewer>(DialogItemList);
+        if (scrollViewer == null) return;
+
+        var codeBlocks = FindVisualChildren<ContentControl>(container)
+            .Where(cc => cc.Content is DisplayCodeViewModel)
+            .ToList();
+
+        if (codeBlocks.Count == 0) return;
+
+        // Find blocks relative to viewport
+        var relativeBlocks = codeBlocks.Select(b =>
+        {
+            try
+            {
+                var transform = b.TransformToAncestor(scrollViewer);
+                var point = transform.Transform(new Point(0, 0));
+                return new { Block = b, Top = point.Y };
+            }
+            catch
+            {
+                return null;
+            }
+        })
+        .Where(x => x != null)
+        .OrderBy(x => x!.Top)
+        .ToList();
+
+        if (isNext)
+        {
+            // Find first block strictly below the top slop
+            var target = relativeBlocks.FirstOrDefault(x => x!.Top > 10);
+            if (target != null)
+            {
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + target.Top);
+            }
+        }
+        else
+        {
+            // Find last block strictly above the top slop
+            var target = relativeBlocks.LastOrDefault(x => x!.Top < -10);
+            if (target != null)
+            {
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + target.Top);
+            }
+        }
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T t) return t;
+            
+            var result = FindVisualChild<T>(child);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
+    {
+        if (depObj == null) yield break;
+
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
+            if (child is T t)
+            {
+                yield return t;
+            }
+
+            foreach (T childOfChild in FindVisualChildren<T>(child))
+            {
+                yield return childOfChild;
             }
         }
     }

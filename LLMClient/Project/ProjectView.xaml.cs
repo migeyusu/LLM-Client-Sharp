@@ -26,4 +26,9 @@ public partial class ProjectView : UserControl
             ViewModel.Requester.Summarize(requestViewItem);
         }
     }
+
+    private void OnFindExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        ViewModel.SelectedSession?.ToggleSearchCommand.Execute(null);
+    }
 }

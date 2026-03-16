@@ -27,4 +27,9 @@ public partial class DialogView : UserControl
             ViewModel.Requester.Summarize(requestViewItem);
         }
     }
+
+    private void OnFindExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        ViewModel.ToggleSearchCommand.Execute(null);
+    }
 }

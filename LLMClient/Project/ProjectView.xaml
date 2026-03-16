@@ -15,8 +15,11 @@
              d:DataContext="{d:DesignInstance local:ProjectViewModel}"
              d:DesignHeight="800" d:DesignWidth="1200">
     <UserControl.InputBindings>
-        <KeyBinding Key="F" Modifiers="Control" Command="{Binding SelectedSession.ToggleSearchCommand}" />
+        <KeyBinding Key="F" Modifiers="Control" Command="ApplicationCommands.Find" />
     </UserControl.InputBindings>
+    <UserControl.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.Find" Executed="OnFindExecuted" />
+    </UserControl.CommandBindings>
     <Grid Margin="10,0,10,6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
