@@ -14,10 +14,9 @@
              d:DesignHeight="600"
              d:DesignWidth="1600">
     <UserControl.InputBindings>
-        <KeyBinding Key="F" Modifiers="Control" Command="ApplicationCommands.Find" />
+        <KeyBinding Key="F" Modifiers="Control" Command="{Binding ToggleSearchCommand}" />
     </UserControl.InputBindings>
     <UserControl.CommandBindings>
-        <CommandBinding Command="ApplicationCommands.Find" Executed="FindCommand_OnExecuted" />
     </UserControl.CommandBindings>
     <Grid Margin="10,0,10,6">
         <Grid.RowDefinitions>
@@ -117,15 +116,7 @@
                         <Run
                             Text="{Binding CurrentContextTokens,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}" />
                     </TextBlock>
-                    <customControl:SearchBox Margin="10,0"
-                                             Padding="8,4,8,4"
-                                             Panel.ZIndex="1"
-                                             VerticalAlignment="Center"
-                                             x:Name="SearchBox"
-                                             Text="{Binding SearchText,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
-                                             SearchCommand="{Binding SearchCommand}"
-                                             GoToNextCommand="{Binding GoToNextHighlightCommand}"
-                                             GoToPreviousCommand="{Binding GoToPreviousHighlightCommand}" />
+
                     <Button ToolTip="清空对话"
                             Command="{Binding ClearDialogCommand}">
                         <materialDesign:PackIcon Kind="Delete"

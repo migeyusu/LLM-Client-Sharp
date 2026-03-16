@@ -10,6 +10,8 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DialogSessionViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.InputBindings>
+    </UserControl.InputBindings>
     <Grid>
         <customControl:ListBoxEx Style="{StaticResource DialogListBoxStyle}"
                                  CurrentViewItem="{Binding ScrollViewItem,Mode=TwoWay}"
@@ -65,5 +67,32 @@
                         IsEnabled="{Binding CanGoToNext,Mode=OneWay}" />
             </StackPanel>
         </StackPanel>
+        <customControl:SearchBox Margin="0,10,24,0"
+                                 Padding="8,4,8,4"
+                                 Panel.ZIndex="1"
+                                 VerticalAlignment="Top"
+                                 HorizontalAlignment="Right"
+                                 Text="{Binding SearchText,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                 SearchCommand="{Binding SearchCommand}"
+                                 GoToNextCommand="{Binding GoToNextHighlightCommand}"
+                                 GoToPreviousCommand="{Binding GoToPreviousHighlightCommand}"
+                                 IsVisibleChanged="SearchBox_OnIsVisibleChanged"
+                                 LostFocus="SearchBox_OnLostFocus"
+                                 Visibility="{Binding IsSearchVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <customControl:SearchBox.Resources>
+                <Style TargetType="{x:Type customControl:SearchBox}" BasedOn="{StaticResource {x:Type customControl:SearchBox}}">
+                    <Style.Triggers>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect ShadowDepth="2" BlurRadius="5" Opacity="0.4"
+                                                      Color="{DynamicResource MaterialDesignShadow}" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </customControl:SearchBox.Resources>
+        </customControl:SearchBox>
     </Grid>
 </UserControl>

@@ -106,7 +106,7 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
                 return false;
             }
 
-            return FunctionGroups.Any(group => group.IsSelected != false && group.Functions.Count > 0);
+            return FunctionGroups.Any(group => group.Functions.Count > 0);
         }
     }
 

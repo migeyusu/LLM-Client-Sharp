@@ -140,6 +140,21 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region search
 
+    private bool _isSearchVisible;
+
+    public bool IsSearchVisible
+    {
+        get => _isSearchVisible;
+        set
+        {
+            if (value == _isSearchVisible) return;
+            _isSearchVisible = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ICommand ToggleSearchCommand { get; }
+
     private string? _highlightedText;
 
     private string? _searchText;
@@ -540,6 +555,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
             ForkPreTask(o);
         });
+
+        ToggleSearchCommand = new RelayCommand(() =>
+        {
+            IsSearchVisible = !IsSearchVisible;
+        });
+
         SearchCommand = new ActionCommand(_ =>
         {
             foreach (var dialogViewItem in this.DialogItems.OfType<ISearchableDialogItem>())

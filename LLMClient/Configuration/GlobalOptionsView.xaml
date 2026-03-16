@@ -19,7 +19,8 @@
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TabControl Padding="8">
+        <TabControl Padding="8"
+                    materialDesign:TabAssist.HeaderBehavior="Wrapping">
             <TabItem Header="Summary">
                 <ScrollViewer>
                     <StackPanel>

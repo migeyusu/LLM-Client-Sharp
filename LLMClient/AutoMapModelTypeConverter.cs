@@ -137,7 +137,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
         destination ??= new CheckableFunctionGroupTree(group);
         var virtualFunctionViewModels = source.SelectedFunctionNames
-            ?.Select(s => new VirtualFunctionViewModel(s, destination) { IsSelected = true })
+            ?.Select(functionName => new VirtualFunctionViewModel(functionName, destination) { IsSelected = true })
             .ToArray();
         destination.Functions.ResetWith(virtualFunctionViewModels ?? []);
         return destination;

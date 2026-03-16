@@ -14,6 +14,9 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:ProjectViewModel}"
              d:DesignHeight="800" d:DesignWidth="1200">
+    <UserControl.InputBindings>
+        <KeyBinding Key="F" Modifiers="Control" Command="{Binding SelectedSession.ToggleSearchCommand}" />
+    </UserControl.InputBindings>
     <Grid Margin="10,0,10,6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -211,14 +214,7 @@
                                         Value="36" />
                             </Style>
                         </StackPanel.Resources>
-                        <customControl:SearchBox Margin="10,0"
-                                                 Padding="8,4,8,4"
-                                                 Panel.ZIndex="1"
-                                                 VerticalAlignment="Center"
-                                                 Text="{Binding SearchText,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
-                                                 SearchCommand="{Binding SearchCommand}"
-                                                 GoToNextCommand="{Binding GoToNextHighlightCommand}"
-                                                 GoToPreviousCommand="{Binding GoToPreviousHighlightCommand}" />
+                        <!-- SearchBox removed -->
                         <Button ToolTip="清空对话"
                                 Command="{Binding ClearDialogCommand}">
                             <materialDesign:PackIcon Kind="Delete"

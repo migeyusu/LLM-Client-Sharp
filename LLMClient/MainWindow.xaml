@@ -436,13 +436,12 @@
                         </Style>
                     </ToggleButton.Style>
                 </ToggleButton>
-                <TextBlock Text="Code Highlight:"
-                           VerticalAlignment="Center"
-                           Margin="10,0,8,0" />
                 <ComboBox ItemsSource="{Binding Source={StaticResource DataFromEnum}}"
                           SelectedItem="{Binding ThemeName,Mode=TwoWay}"
                           Style="{StaticResource MaterialDesignFilledComboBox}"
-                          WindowChrome.IsHitTestVisibleInChrome="True" />
+                          Margin="10,0,0,0"
+                          WindowChrome.IsHitTestVisibleInChrome="True" 
+                          materialDesign:HintAssist.Hint="Code Highlight"/>
             </StackPanel>
             <ToolBarTray Grid.Column="1"
                          HorizontalAlignment="Left"

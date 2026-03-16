@@ -40,6 +40,11 @@ public class DialogItemEditViewModel : BaseViewModel
             {
                 if (content is TextContent textContent)
                 {
+                    if (string.IsNullOrEmpty(textContent.Text))
+                    {
+                        continue;
+                    }
+
                     if (rawMode)
                     {
                         TextContents.Add(new TextContentRawEditViewModel(textContent, messageId));

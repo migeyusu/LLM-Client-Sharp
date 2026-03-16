@@ -13,11 +13,6 @@ public partial class DialogView : UserControl
 
     private DialogViewModel ViewModel => (DialogViewModel)DataContext;
 
-    private void FindCommand_OnExecuted(object sender, ExecutedRoutedEventArgs e)
-    {
-        SearchBox.Focus();
-        SearchBox.SelectAll();
-    }
 
     private void ConclusionBefore_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {

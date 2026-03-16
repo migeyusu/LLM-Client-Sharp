@@ -163,9 +163,39 @@
                             HorizontalAlignment="Right">
                     <TextBlock Text="{Binding Tokens,Mode=OneWay,StringFormat=Estimated Tokens:{0}}"
                                Style="{StaticResource MaterialDesignOverlineTextBlock}" />
-                    <materialDesign:PackIcon Kind="Function"
+                    <materialDesign:PopupBox StaysOpen="True"
                                              Visibility="{Binding HasFunctions,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                             Margin="8,0,0,0" />
+                                             Margin="8,0,0,0"
+                                             Padding="0"
+                                             PlacementMode="LeftAndAlignTopEdges"
+                                             ToggleContent="{materialDesign:PackIcon Kind=Function}"
+                                             ToolTip="包含的函数">
+                        <materialDesign:Card MaxWidth="300"
+                                             Padding="10">
+                            <ScrollViewer MaxHeight="400"
+                                          VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding FunctionGroups,Mode=OneTime}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontWeight="Bold"
+                                                           Margin="0,4,0,2" />
+                                                <ItemsControl ItemsSource="{Binding Functions,Mode=OneTime}"
+                                                              Margin="10,0,0,0">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding FunctionName,Mode=OneTime}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </materialDesign:Card>
+                    </materialDesign:PopupBox>
                     <materialDesign:PackIcon Kind="Web"
                                              Visibility="{Binding SearchOption,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                              Margin="8,0,0,0" />

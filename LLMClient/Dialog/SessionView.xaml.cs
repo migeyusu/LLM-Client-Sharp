@@ -1,5 +1,7 @@
-﻿using System.Windows.Controls;
+﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Dialog.Models;
 
@@ -34,6 +36,26 @@ public partial class SessionView : UserControl
         if (e.Parameter is RequestViewItem requestViewItem)
         {
             ViewModel.CutContext(requestViewItem);
+        }
+    }
+
+    private void SearchBox_OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if ((bool)e.NewValue)
+        {
+            var searchBox = (Control)sender;
+            searchBox.Focus();
+        }
+    }
+
+    private void SearchBox_OnLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is SearchBox searchBox && !searchBox.IsKeyboardFocusWithin)
+        {
+            if (string.IsNullOrEmpty(ViewModel.SearchText))
+            {
+                ViewModel.IsSearchVisible = false;
+            }
         }
     }
 }

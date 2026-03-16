@@ -5,6 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:LLMClient.Dialog"
+             xmlns:converters="clr-namespace:LLMClient.Component.Converters"
+             xmlns:system="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:DialogItemEditViewModel}"
              d:DesignHeight="300" d:DesignWidth="300">
@@ -15,16 +17,34 @@
         </Grid.RowDefinitions>
         <ContentPresenter x:Name="Editor"
                           Content="{Binding SelectedTextContent,Mode=OneWay}"
-                          ContentTemplateSelector="{StaticResource TextEditTemplateSelector}" />
+                          ContentTemplateSelector="{StaticResource TextEditTemplateSelector}"
+                          VerticalAlignment="Stretch"
+                          HorizontalAlignment="Stretch" />
         <ComboBox Grid.Row="1"
                   HorizontalAlignment="Left"
                   VerticalAlignment="Center"
                   Width="200"
                   Visibility="{Binding IsMultiContent,Mode=OneTime, Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
                   ItemsSource="{Binding TextContents,Mode=OneTime}"
-                  DisplayMemberPath="FinalText"
                   SelectedItem="{Binding SelectedTextContent,Mode=TwoWay}"
-                  Style="{StaticResource MaterialDesignOutlinedComboBox}" />
+                  Style="{StaticResource MaterialDesignOutlinedComboBox}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type local:TextContentEditViewModel}">
+                    <TextBlock
+                        TextWrapping="NoWrap"
+                        TextTrimming="CharacterEllipsis">
+                        <TextBlock.Text>
+                            <Binding Path="FinalText" Mode="OneWay"
+                                     Converter="{x:Static converters:SnapConverters.TruncateTextConverter}">
+                                <Binding.ConverterParameter>
+                                    <system:Int32>10</system:Int32>
+                                </Binding.ConverterParameter>
+                            </Binding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"

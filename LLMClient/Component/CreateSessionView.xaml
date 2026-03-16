@@ -23,6 +23,7 @@
         <TabControl Grid.Row="1"
                     TabStripPlacement="Bottom"
                     HorizontalContentAlignment="Left"
+                    materialDesign:TabAssist.HeaderBehavior="Wrapping"
                     SelectedIndex="{Binding SelectedIndex,Mode=TwoWay}">
             <TabItem>
                 <TabItem.Header>
