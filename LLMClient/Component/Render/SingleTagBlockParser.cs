@@ -5,7 +5,7 @@ using Markdig.Syntax;
 namespace LLMClient.Component.Render;
 
 /// <summary>
-/// 以 tag开始和结束的块解析，但是要求开始和结束标签必须单独为一行
+/// 以 tag开始和结束的块解析，开始和结束标签必须单独为一行
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeafBlock
@@ -38,8 +38,10 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeaf
 
         // 检查当前行是否以 tag 开头(忽略大小写)
         var line = processor.Line;
-        int index;
-        if ((index = line.IndexOf(_openTag, 0, IgnoreCase)) < 0) // true for case-insensitive
+        if (!line.ToString().Equals(_openTag,
+                IgnoreCase
+                    ? StringComparison.CurrentCultureIgnoreCase
+                    : StringComparison.CurrentCulture)) // true for case-insensitive
         {
             return BlockState.None;
         }
@@ -50,7 +52,7 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeaf
         customBlock.Column = processor.Column;
         customBlock.Line = processor.LineIndex;
         customBlock.Span = new SourceSpan(line.Start, line.End);
-        line.Start = index + _openTag.Length; // 更新行的起始位置，跳过标签
+        line.Start = _openTag.Length; // 更新行的起始位置，跳过标签
         if (processor.TrackTrivia)
         {
             customBlock.LinesBefore = processor.LinesBefore;
@@ -60,14 +62,6 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeaf
 
         // 将新块推送到处理器中
         processor.NewBlocks.Push(customBlock);
-        // 检查是否在同一行就闭合了
-        if (line.IndexOf(_closeTag, 0, IgnoreCase) >= 0)
-        {
-            // 如果在同一行闭合，则直接关闭块
-            return BlockState.Break;
-        }
-
-        // 否则，继续处理下一行
         return BlockState.Continue;
     }
 
@@ -81,7 +75,8 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeaf
         }
 
         var line = processor.Line;
-        if (line.IndexOf(_closeTag, 0, IgnoreCase) >= 0)
+        if (line.ToString().Equals(_closeTag,
+                IgnoreCase ? StringComparison.CurrentCultureIgnoreCase : StringComparison.CurrentCulture))
         {
             // 找到结束标签，将当前行加入并关闭块
             return BlockState.Break;

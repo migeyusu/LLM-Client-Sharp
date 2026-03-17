@@ -36,81 +36,76 @@ public static class RendererExtensions
         }
     }
 
+    /// <summary>
+    /// 对 Markdig.Parsers.InlineProcessor.Rent 的高性能劫持调用
+    /// </summary>
+    /// <param name="dummy">占位符，JIT 需要它来确定目标类类型，调用时传 null</param>
+    [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "Rent")]
+    public static extern InlineProcessor RentInlineProcessor(
+        InlineProcessor? dummy,
+        MarkdownDocument document,
+        InlineParserList parsers,
+        bool preciseSourceLocation,
+        MarkdownParserContext? context,
+        bool trackTrivia);
+
+    [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "Release")]
+    public static extern void ReleaseInlineProcessor(InlineProcessor? dummy, InlineProcessor processor);
+
     public static void StreamParse(BlockingCollection<string> source, ProcessBlockDelegate blockParserCallback)
     {
-        var blockParsers = new BlockParser[]
-        {
-            new ThematicBreakParser(),
-            new HeadingBlockParser(),
-            new QuoteBlockParser(),
-            new ListBlockParser(),
-
-            new HtmlBlockParser(),
-            new FencedCodeBlockParser(),
-            new IndentedCodeBlockParser(),
-            new ParagraphBlockParser(),
-        };
-        var inlineParsers = new InlineParser[]
-        {
-            new HtmlEntityParser(),
-            new LinkInlineParser(),
-            new EscapeInlineParser(),
-            new EmphasisInlineParser(),
-            new CodeInlineParser(),
-            new AutolinkInlineParser(),
-            new LineBreakInlineParser(),
-        };
-
+        var defaultBuilder = CustomMarkdownRenderer.DefaultBuilder;
+        var blockParsers = defaultBuilder.BlockParsers;
+        var inlineParsers = defaultBuilder.InlineParsers;
         var document = new MarkdownDocument
         {
             LineStartIndexes = new List<int>(512)
         };
 
-        var processor = new InlineProcessor(document, new InlineParserList(inlineParsers), true, null);
-        foreach (var blockParser in blockParsers)
+        var inlineProcessor =
+            RentInlineProcessor(null, document, new InlineParserList(inlineParsers), true, null, false);
+        try
         {
-            blockParser.Closed += (processor1, block) =>
+            foreach (var blockParser in blockParsers)
             {
-                try
+                blockParser.Closed += (closedParser, block) =>
                 {
-                    if (block is ContainerBlock containerBlock)
+                    var rentInlineProcessor = RentInlineProcessor(null, document, new InlineParserList(inlineParsers),
+                        true, null, false);
+                    try
                     {
-                        ProcessInlines(processor, containerBlock);
-                    }
-                    else if (block is LeafBlock leafBlock)
-                    {
-                        ProcessInlines(processor, leafBlock);
-                    }
+                        switch (block)
+                        {
+                            case ContainerBlock containerBlock:
+                                ProcessInlines(inlineProcessor, containerBlock);
+                                break;
+                            case LeafBlock leafBlock:
+                                ProcessInlines(inlineProcessor, leafBlock);
+                                break;
+                        }
 
-                    blockParserCallback(processor1, block);
-                }
-                catch (Exception e)
-                {
-                    Trace.TraceWarning("Error processing block: " + e.Message);
-                }
-            };
+                        blockParserCallback(closedParser, block);
+                    }
+                    catch (Exception e)
+                    {
+                        Trace.TraceWarning("Error processing block: " + e.Message);
+                    }
+                    finally
+                    {
+                        ReleaseInlineProcessor(null, rentInlineProcessor);
+                    }
+                };
+            }
+        }
+        finally
+        {
+            ReleaseInlineProcessor(null, inlineProcessor);
         }
 
         var blockProcessor =
             new BlockProcessor(document, new BlockParserList(blockParsers), null);
         ProcessBlocksStreaming(blockProcessor, source);
         document.LineCount = blockProcessor.LineIndex;
-
-
-        /*var inlineProcessor = InlineProcessor.Rent(document, pipeline.InlineParsers, pipeline.PreciseSourceLocation,
-            context, pipeline.TrackTrivia);
-        inlineProcessor.DebugLog = pipeline.DebugLog;
-        try
-        {
-            ProcessInlines(inlineProcessor, document);
-        }
-        finally
-        {
-            InlineProcessor.Release(inlineProcessor);
-        }
-
-        // Allow to call a hook after processing a document
-        pipeline.DocumentProcessed?.Invoke(document);*/
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -119,10 +114,10 @@ public static class RendererExtensions
         var lineReader = new LineReaderBuffer();
         foreach (var block in blocks.GetConsumingEnumerable())
         {
-            var newLine = lineReader.AppendTextAndExtractLine(block);
-            if (newLine != null)
+            lineReader.AppendText(block);
+            foreach (var newLine in lineReader.ExtractLines())
             {
-                blockProcessor.ProcessLine(newLine.Value);
+                blockProcessor.ProcessLine(newLine);
             }
         }
 
@@ -139,7 +134,7 @@ public static class RendererExtensions
 
     public readonly struct LineReaderBuffer
     {
-        private readonly StringBuilder _buffer = new StringBuilder(4096);
+        private readonly StringBuilder _buffer = new(4096);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Markdig.Helpers.LineReader"/> class.
@@ -153,44 +148,65 @@ public static class RendererExtensions
         private const char CR = '\r';
         private const char LF = '\n';
 
-        public StringSlice? AppendTextAndExtractLine(string text)
+        public void AppendText(string text)
         {
             _buffer.Append(text);
-            var chunkEnumerator = _buffer.GetChunks();
-            if (chunkEnumerator.MoveNext())
+        }
+
+        public IEnumerable<StringSlice> ExtractLines()
+        {
+            while (true)
             {
-                var span = chunkEnumerator.Current.Span;
-                //如果text的换行符是分开的，可以接收这种错误
-                var newLine = NewLine.None; // 默认换行符类型
-                int end = 0;
-                if ((end = span.IndexOfAny(CR, LF)) >= 0)
+                int eolIndex = -1;
+                int offset = 0;
+
+                // 总是重新获取chunks进行扫描，因为在循环中会通过Remove修改buffer结构，
+                // 导致之前的迭代器或索引失效。
+                foreach (var chunk in _buffer.GetChunks())
                 {
-                    var newSourcePosition = end + 1;
-                    if (_buffer[end] == CR)
+                    var index = chunk.Span.IndexOfAny(CR, LF);
+                    if (index >= 0)
                     {
-                        // 检查回车后是否跟着换行符(\n)，识别为CRLF序列
-                        if ((uint)(newSourcePosition) < (uint)_buffer.Length && _buffer[newSourcePosition] == LF)
-                        {
-                            newLine = NewLine.CarriageReturnLineFeed; // \r\n
-                            newSourcePosition++; // 跳过\n
-                        }
-                        else
-                        {
-                            newLine = NewLine.CarriageReturn; // 仅\r
-                        }
+                        eolIndex = offset + index;
+                        break;
+                    }
+
+                    offset += chunk.Span.Length;
+                }
+
+                if (eolIndex < 0)
+                {
+                    yield break;
+                }
+
+                var newSourcePosition = eolIndex + 1;
+                var newLine = NewLine.None;
+
+                // 检查换行符类型
+                if (_buffer[eolIndex] == CR)
+                {
+                    if (newSourcePosition < _buffer.Length && _buffer[newSourcePosition] == LF)
+                    {
+                        newLine = NewLine.CarriageReturnLineFeed;
+                        newSourcePosition++;
                     }
                     else
                     {
-                        newLine = NewLine.LineFeed; // 仅\n
+                        newLine = NewLine.CarriageReturn;
                     }
-
-                    var line = _buffer.ToString(0, end);
-                    _buffer.Remove(0, newSourcePosition);
-                    return new StringSlice(line, 0, end - 1, newLine);
                 }
-            }
+                else
+                {
+                    newLine = NewLine.LineFeed;
+                }
 
-            return null;
+                // 提取行并从buffer中移除
+                var line = _buffer.ToString(0, eolIndex);
+                _buffer.Remove(0, newSourcePosition);
+
+                // StringSlice 的 end 是 inclusive 的，所以是 length - 1
+                yield return new StringSlice(line, 0, line.Length - 1, newLine);
+            }
         }
 
         public StringSlice? End()

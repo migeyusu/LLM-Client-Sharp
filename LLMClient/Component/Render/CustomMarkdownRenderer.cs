@@ -1,4 +1,4 @@
-﻿﻿using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
@@ -19,10 +19,24 @@ public class CustomMarkdownRenderer : WpfRenderer
 
     public bool EditMode { get; set; } = false;
 
-    public static CustomMarkdownRenderer DefaultInstance { get; }
+    public static CustomMarkdownRenderer DefaultInstance { get; } = CreateDefaultRenderer();
 
-    public static readonly MarkdownPipeline DefaultPipeline =
-        new MarkdownPipelineBuilder()
+    public static MarkdownPipelineBuilder DefaultBuilder { get; } = CreateDefaultPipelineBuilder();
+
+    public static MarkdownPipeline DefaultPipeline { get; } = DefaultBuilder.Build();
+
+    public static CustomMarkdownRenderer CreateDefaultRenderer()
+    {
+        var defaultPipeline = CreateDefaultPipelineBuilder().Build();
+        var renderer = new CustomMarkdownRenderer() { Pipeline = defaultPipeline };
+        renderer.Initialize();
+        defaultPipeline.Setup(renderer);
+        return renderer;
+    }
+
+    public static MarkdownPipelineBuilder CreateDefaultPipelineBuilder()
+    {
+        return new MarkdownPipelineBuilder()
             .UseAdvancedExtensions()
             .UseThinkBlock()
             .UseRequestBlock()
@@ -30,10 +44,10 @@ public class CustomMarkdownRenderer : WpfRenderer
             .UseCustomMathematics()
             .UseFunctionCallBlock()
             .UseFunctionResultBlock()
-            .UseGenericAttributes()
-            .Build();
+            .UseGenericAttributes();
+    }
 
-    private static readonly Lazy<MarkdownPipeline> EditModePipelineLazy = new Lazy<MarkdownPipeline>(() =>
+    private static readonly Lazy<MarkdownPipeline> EditModePipelineLazy = new(() =>
     {
         // 编辑模式下的 MarkdownPipeline，禁用除代码块以外的所有解析器
         var builder = new MarkdownPipelineBuilder();
@@ -46,13 +60,6 @@ public class CustomMarkdownRenderer : WpfRenderer
     });
 
     public static readonly MarkdownPipeline EditModePipeline = EditModePipelineLazy.Value;
-
-    static CustomMarkdownRenderer()
-    {
-        DefaultInstance = new CustomMarkdownRenderer() { Pipeline = DefaultPipeline };
-        DefaultInstance.Initialize();
-        DefaultPipeline.Setup(DefaultInstance);
-    }
 
     public static ComponentResourceKey PermissionRequestStyleKey =>
         new(typeof(CustomMarkdownRenderer), nameof(PermissionRequestStyleKey));
@@ -70,9 +77,7 @@ public class CustomMarkdownRenderer : WpfRenderer
     public static CustomMarkdownRenderer NewRenderer(FlowDocument flowDocument, bool? enableTextMate = null,
         bool? editMode = null)
     {
-        var renderer = new CustomMarkdownRenderer() { Pipeline = DefaultPipeline };
-        renderer.Initialize();
-        DefaultPipeline.Setup(renderer);
+        var renderer = CreateDefaultRenderer();
         renderer.LoadDocument(flowDocument);
         if (enableTextMate.HasValue)
             renderer.EnableTextMateHighlighting = enableTextMate.Value;
