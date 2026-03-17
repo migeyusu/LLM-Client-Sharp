@@ -550,6 +550,8 @@
                                                      Margin="0"
                                                      Padding="4,0,10,0"
                                                      ToolTipService.InitialShowDelay="0"
+                                                     ToolTipService.Placement="Bottom"
+                                                     ToolTipService.VerticalOffset="10"
                                                      ToolTip="{Binding CodeString,Mode=OneTime}"
                                                      DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveFromCompareCommand}"
                                                      DeleteCommandParameter="{Binding}"

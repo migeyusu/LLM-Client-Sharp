@@ -59,6 +59,11 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
         get { return ParentProject.Context; }
     }
 
+    /// <summary>
+    /// 工具是否可以选择
+    /// </summary>
+    public virtual bool IsToolsSelectable => true;
+
     public ProjectViewModel ParentProject { get; }
 
     /// <summary>
@@ -133,7 +138,8 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
         nameof(SearchText)
     ];
 
-    public override async Task<ChatCallResult> ProcessingRequest(ResponseViewItem responseViewItem, MultiResponseViewItem multiResponseViewItem,
+    public override async Task<ChatCallResult> ProcessingRequest(ResponseViewItem responseViewItem,
+        MultiResponseViewItem multiResponseViewItem,
         CancellationToken token = default)
     {
         await ParentProject.PreviewProcessing(token);
@@ -153,7 +159,7 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
         IsDataChanged = true;
     }
 
-    public IEnumerable<IAIFunctionGroup> GetFunctionGroups()
+    public virtual IEnumerable<IAIFunctionGroup> GetFunctionGroups()
     {
         if (SelectedFunctionGroups == null)
         {

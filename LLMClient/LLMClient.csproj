@@ -96,6 +96,7 @@
         <PackageReference Remove="chromiumembeddedframework.runtime.win-arm64" />
         <PackageReference Remove="chromiumembeddedframework.runtime.win-x64" />
         <PackageReference Remove="chromiumembeddedframework.runtime.win-x86" />
+        <PackageReference Include="YamlDotNet" Version="16.3.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -506,6 +507,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Resources\Agents\MiniSWE\" />
       <Folder Include="Workflow\Coding\" />
     </ItemGroup>
 

@@ -14,6 +14,8 @@ namespace LLMClient.ToolCall;
 
 public class AIFunctionTreeSelectorViewModel : BaseViewModel
 {
+    public bool IsEnable { get; set; }
+    
     private bool _functionSelected;
 
     public bool FunctionSelected
@@ -45,33 +47,6 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
         {
             if (value == _engineType) return;
             _engineType = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private IReadOnlyList<CheckableFunctionGroupTree> _mcpServices = [];
-
-    public IReadOnlyList<CheckableFunctionGroupTree> McpServices
-    {
-        get => _mcpServices;
-        set
-        {
-            if (Equals(value, _mcpServices)) return;
-            _mcpServices = value;
-            OnPropertyChanged();
-        }
-    }
-
-
-    private IReadOnlyList<CheckableFunctionGroupTree> _builtInFunctions = [];
-
-    public IReadOnlyList<CheckableFunctionGroupTree> BuiltInFunctions
-    {
-        get => _builtInFunctions;
-        set
-        {
-            if (Equals(value, _builtInFunctions)) return;
-            _builtInFunctions = value;
             OnPropertyChanged();
         }
     }
@@ -262,9 +237,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
             {
                 FunctionGroups.Remove(functionGroup);
             }
-
-            McpServices = FunctionGroups.Where((model => model.Data is McpServerItem)).ToArray();
-            BuiltInFunctions = FunctionGroups.Where((model => model.Data is IBuiltInFunctionGroup)).ToArray();
+            
             try
             {
                 using (_refreshSource = new CancellationTokenSource())
