@@ -62,8 +62,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
             InvalidateAsyncProperty(nameof(SearchableDocument));
         }
     }
-
-
+    
     /// <summary>
     /// 是否中断
     /// </summary>
@@ -241,9 +240,7 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
                         {
                             var stringBuilder = new StringBuilder();
                             stringBuilder.AppendLine(ThinkBlockParser.OpenTag);
-                            // stringBuilder.Append("\n:::think\n");
                             stringBuilder.AppendLine(reasoningContent.Text);
-                            // stringBuilder.Append("\n:::\n");
                             stringBuilder.AppendLine(ThinkBlockParser.CloseTag);
                             var s = stringBuilder.ToString();
                             return Markdown.Parse(s, CustomMarkdownRenderer.DefaultPipeline);

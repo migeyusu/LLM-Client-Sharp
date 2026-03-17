@@ -41,31 +41,40 @@ public static class RendererExtensions
     /// </summary>
     /// <param name="dummy">占位符，JIT 需要它来确定目标类类型，调用时传 null</param>
     [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "Rent")]
-    public static extern InlineProcessor RentInlineProcessor(
-        InlineProcessor? dummy,
-        MarkdownDocument document,
-        InlineParserList parsers,
-        bool preciseSourceLocation,
-        MarkdownParserContext? context,
-        bool trackTrivia);
+    public static extern InlineProcessor RentInlineProcessor(InlineProcessor? dummy, MarkdownDocument document,
+        InlineParserList parsers, bool preciseSourceLocation, MarkdownParserContext? context, bool trackTrivia);
 
     [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "Release")]
     public static extern void ReleaseInlineProcessor(InlineProcessor? dummy, InlineProcessor processor);
+    
+    [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "CloseAll")]
+    public static extern void CloseAllBlocks(BlockProcessor blockProcessor);
+
+    private static readonly ConcurrentStack<MarkdownPipelineBuilder> BuildPipelineStack = new();
+
+    private static MarkdownPipelineBuilder GetOrAddBuilder()
+    {
+        return BuildPipelineStack.TryPop(out var pipeline)
+            ? pipeline
+            : CustomMarkdownRenderer.CreateDefaultPipelineBuilder();
+    }
+
+    private static void ReturnBuilder(MarkdownPipelineBuilder pipeline)
+    {
+        BuildPipelineStack.Push(pipeline);
+    }
 
     public static void StreamParse(BlockingCollection<string> source, ProcessBlockDelegate blockParserCallback)
     {
-        var defaultBuilder = CustomMarkdownRenderer.DefaultBuilder;
-        var blockParsers = defaultBuilder.BlockParsers;
-        var inlineParsers = defaultBuilder.InlineParsers;
-        var document = new MarkdownDocument
-        {
-            LineStartIndexes = new List<int>(512)
-        };
-
-        var inlineProcessor =
-            RentInlineProcessor(null, document, new InlineParserList(inlineParsers), true, null, false);
+        var pipelineBuilder = GetOrAddBuilder();
         try
         {
+            var document = new MarkdownDocument
+            {
+                LineStartIndexes = new List<int>(512)
+            };
+            var blockParsers = pipelineBuilder.BlockParsers;
+            var inlineParsers = pipelineBuilder.InlineParsers;
             foreach (var blockParser in blockParsers)
             {
                 blockParser.Closed += (closedParser, block) =>
@@ -77,10 +86,10 @@ public static class RendererExtensions
                         switch (block)
                         {
                             case ContainerBlock containerBlock:
-                                ProcessInlines(inlineProcessor, containerBlock);
+                                ProcessInlines(rentInlineProcessor, containerBlock);
                                 break;
                             case LeafBlock leafBlock:
-                                ProcessInlines(inlineProcessor, leafBlock);
+                                ProcessInlines(rentInlineProcessor, leafBlock);
                                 break;
                         }
 
@@ -96,16 +105,17 @@ public static class RendererExtensions
                     }
                 };
             }
+
+
+            var blockProcessor =
+                new BlockProcessor(document, new BlockParserList(blockParsers), null);
+            ProcessBlocksStreaming(blockProcessor, source);
+            document.LineCount = blockProcessor.LineIndex;
         }
         finally
         {
-            ReleaseInlineProcessor(null, inlineProcessor);
+            ReturnBuilder(pipelineBuilder);
         }
-
-        var blockProcessor =
-            new BlockProcessor(document, new BlockParserList(blockParsers), null);
-        ProcessBlocksStreaming(blockProcessor, source);
-        document.LineCount = blockProcessor.LineIndex;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -127,9 +137,7 @@ public static class RendererExtensions
             blockProcessor.ProcessLine(lastSlice.Value);
         }
 
-        typeof(BlockProcessor).GetMethod("CloseAll",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            ?.Invoke(blockProcessor, [true]);
+        CloseAllBlocks(blockProcessor);
     }
 
     public readonly struct LineReaderBuffer

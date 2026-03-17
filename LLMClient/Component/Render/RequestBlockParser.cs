@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.Component.Render;
 
-public class RequestBlockParser : SingleTagBlockParser<RequestBlock>
+public class RequestBlockParser : SingleTagLeafBlockParser<RequestBlock>
 {
     public const string OpenTag = "<request>";
 

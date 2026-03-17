@@ -1,13 +1,12 @@
 ﻿using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
-using Markdig.Extensions.CustomContainers;
 using Markdig.Renderers;
 using Markdig.Renderers.Wpf;
 
 namespace LLMClient.Component.Render;
 
-public class ThinkBlockRenderer : WpfObjectRenderer<CustomContainer>
+public class ThinkBlockRenderer : WpfObjectRenderer<ThinkBlock>
 {
     public static ComponentResourceKey ThinkBlockToggleStyleKey { get; } =
         new(typeof(ThinkBlockRenderer), (object)nameof(ThinkBlockToggleStyleKey));
@@ -15,14 +14,8 @@ public class ThinkBlockRenderer : WpfObjectRenderer<CustomContainer>
     public static ComponentResourceKey ThinkBlockSectionStyleKey { get; } =
         new(typeof(ThinkBlockRenderer), (object)nameof(ThinkBlockSectionStyleKey));
 
-    protected override void Write(WpfRenderer renderer, CustomContainer obj)
+    protected override void Write(WpfRenderer renderer, ThinkBlock obj)
     {
-        if (obj.Info != "think")
-        {
-            renderer.WriteChildren(obj);
-            return;
-        }
-
         var blockUiContainer = new BlockUIContainer();
         renderer.Push(blockUiContainer);
         var toggleButton = new ToggleButton() { IsChecked = true };

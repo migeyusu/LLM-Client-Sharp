@@ -1,21 +1,18 @@
 ﻿using System.Diagnostics;
+using Markdig.Helpers;
 using Markdig.Parsers;
 using Markdig.Syntax;
 
 namespace LLMClient.Component.Render;
 
-/// <summary>
-/// 以 tag开始和结束的块解析，开始和结束标签必须单独为一行
-/// </summary>
-/// <typeparam name="T"></typeparam>
-public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeafBlock
+public abstract class SingleTagContainerBlockParser<T> : BlockParser where T : ContainerBlock
 {
     public bool IgnoreCase { get; set; } = true;
 
     private readonly string _openTag;
     private readonly string _closeTag;
 
-    public SingleTagBlockParser(string openTag, string closeTag)
+    public SingleTagContainerBlockParser(string openTag, string closeTag)
     {
         _openTag = openTag;
         _closeTag = closeTag;
@@ -38,10 +35,13 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeaf
 
         // 检查当前行是否以 tag 开头(忽略大小写)
         var line = processor.Line;
-        if (!line.ToString().Equals(_openTag,
-                IgnoreCase
-                    ? StringComparison.CurrentCultureIgnoreCase
-                    : StringComparison.CurrentCulture)) // true for case-insensitive
+        if (!line.Match(_openTag))
+        {
+            return BlockState.None;
+        }
+
+        int index;
+        if ((index = line.IndexOf(_openTag, 0, IgnoreCase)) < 0) // true for case-insensitive
         {
             return BlockState.None;
         }
@@ -52,16 +52,28 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeaf
         customBlock.Column = processor.Column;
         customBlock.Line = processor.LineIndex;
         customBlock.Span = new SourceSpan(line.Start, line.End);
-        line.Start = _openTag.Length; // 更新行的起始位置，跳过标签
+        line.Start = index + _openTag.Length; // 更新行的起始位置，跳过标签
+        processor.Line = line;
         if (processor.TrackTrivia)
         {
             customBlock.LinesBefore = processor.LinesBefore;
             processor.LinesBefore = null;
             customBlock.NewLine = processor.Line.NewLine;
+            customBlock.TriviaAfter = new StringSlice(line.Text, processor.Start + line.Start, processor.Line.End);
         }
 
         // 将新块推送到处理器中
         processor.NewBlocks.Push(customBlock);
+        // 检查是否在同一行就闭合了
+        var endIndex = line.IndexOf(_closeTag, 0, IgnoreCase);
+        if (endIndex >= 0)
+        {
+            customBlock.UpdateSpanEnd(endIndex + _closeTag.Length);
+            // 如果在同一行闭合，则直接关闭块
+            return BlockState.Break;
+        }
+
+        // 否则，继续处理下一行
         return BlockState.Continue;
     }
 
@@ -75,21 +87,21 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeaf
         }
 
         var line = processor.Line;
-        if (line.ToString().Equals(_closeTag,
-                IgnoreCase ? StringComparison.CurrentCultureIgnoreCase : StringComparison.CurrentCulture))
+        var endIndex = line.IndexOf(_closeTag, 0, IgnoreCase);
+        if (endIndex >= 0)
         {
+            block.UpdateSpanEnd(endIndex + _closeTag.Length);
             // 找到结束标签，将当前行加入并关闭块
             return BlockState.Break;
         }
 
         block.NewLine = processor.Line.NewLine;
-        block.UpdateSpanEnd(processor.Line.End);
         return BlockState.Continue;
     }
 
-    public override bool Close(BlockProcessor processor, Block block)
+    /*public override bool Close(BlockProcessor processor, Block block)
     {
-        if (block is T customBlock)
+        /*if (block is T customBlock)
         {
             // 在关闭块时，从最后一行移除标签
             ref var lastLine = ref customBlock.Lines.Lines[customBlock.Lines.Count - 1];
@@ -111,10 +123,10 @@ public abstract class SingleTagBlockParser<T> : BlockParser where T : CustomLeaf
             // 更新块的结束位置
             customBlock.UpdateSpanEnd(endIndex + _closeTag.Length);
             PostProcess(customBlock);
-        }
+        }#1#
 
         return true;
-    }
+    }*/
 
     /// <summary>
     /// called after the block is closed

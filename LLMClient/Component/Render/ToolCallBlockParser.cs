@@ -3,7 +3,7 @@ using System.Xml.Serialization;
 
 namespace LLMClient.Component.Render;
 
-public class ToolCallBlockParser : SingleTagBlockParser<ToolCallBlock>
+public class ToolCallBlockParser : SingleTagLeafBlockParser<ToolCallBlock>
 {
     public const string FunctionCallTag = "<tool_calls>";
 

@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.Component.Render;
 
-public class ThinkBlockParser : SingleTagBlockParser<ThinkBlock>
+public class ThinkBlockParser : SingleTagContainerBlockParser<ThinkBlock>
 {
     public const string OpenTag = "<think>";
 
@@ -8,6 +8,5 @@ public class ThinkBlockParser : SingleTagBlockParser<ThinkBlock>
 
     public ThinkBlockParser() : base(OpenTag, CloseTag)
     {
-        
     }
 }
