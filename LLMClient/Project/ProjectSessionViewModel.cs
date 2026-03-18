@@ -139,7 +139,7 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
     ];
 
     public override async Task<ChatCallResult> ProcessingRequest(ResponseViewItem responseViewItem,
-        MultiResponseViewItem multiResponseViewItem,
+        ParallelResponseViewItem multiResponseViewItem,
         CancellationToken token = default)
     {
         await ParentProject.PreviewProcessing(token);

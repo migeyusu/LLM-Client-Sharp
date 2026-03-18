@@ -100,7 +100,7 @@ public static class CommonCommands
             return;
         }
 
-        DialogHost.Show(new DialogItemEditViewModel(o, o is MultiResponseViewItem));
+        DialogHost.Show(new DialogItemEditViewModel(o, o is ParallelResponseViewItem));
     });
 
     private static ICommand? _copyCommand;

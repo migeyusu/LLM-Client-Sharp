@@ -16,8 +16,7 @@ public class LinearHistoryViewItem : BaseDialogItem, IResponseItem
     public override long Tokens => _tokensCount;
 
     public override ChatRole Role => ChatRole.System;
-
-    public ResponseViewItem Type { get; set; }
+    
 
     public override IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken)
     {

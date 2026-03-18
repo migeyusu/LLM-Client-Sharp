@@ -75,7 +75,7 @@ public class DialogMappingProfile : Profile
             .Include<RequestViewItem, RequestPersistItem>()
             .Include<SummaryRequestViewItem, SummaryRequestPersistItem>()
             .Include<EraseViewItem, ErasePersistItem>()
-            .Include<MultiResponseViewItem, MultiResponsePersistItem>();
+            .Include<ParallelResponseViewItem, MultiResponsePersistItem>();
 
         CreateMap<RequestViewItem, RequestPersistItem>()
             .IncludeBase<IDialogItem, IDialogPersistItem>();
@@ -83,7 +83,7 @@ public class DialogMappingProfile : Profile
             .IncludeBase<IDialogItem, IDialogPersistItem>();
         CreateMap<EraseViewItem, ErasePersistItem>()
             .IncludeBase<IDialogItem, IDialogPersistItem>();
-        CreateMap<MultiResponseViewItem, MultiResponsePersistItem>()
+        CreateMap<ParallelResponseViewItem, MultiResponsePersistItem>()
             .IncludeBase<IDialogItem, IDialogPersistItem>()
             .ForMember(item => item.ResponseItems, opt => opt.MapFrom(item => item.Items));
 
@@ -92,7 +92,7 @@ public class DialogMappingProfile : Profile
             .Include<RequestPersistItem, RequestViewItem>()
             .Include<SummaryRequestPersistItem, SummaryRequestViewItem>()
             .Include<ErasePersistItem, EraseViewItem>()
-            .Include<MultiResponsePersistItem, MultiResponseViewItem>();
+            .Include<MultiResponsePersistItem, ParallelResponseViewItem>();
 
         CreateMap<RequestPersistItem, RequestViewItem>()
             .ConstructUsing((item, context) =>
@@ -111,7 +111,7 @@ public class DialogMappingProfile : Profile
             .IncludeBase<IDialogPersistItem, IDialogItem>();
         CreateMap<ErasePersistItem, EraseViewItem>()
             .IncludeBase<IDialogPersistItem, IDialogItem>();
-        CreateMap<MultiResponsePersistItem, MultiResponseViewItem>()
+        CreateMap<MultiResponsePersistItem, ParallelResponseViewItem>()
             .IncludeBase<IDialogPersistItem, IDialogItem>()
             .ConstructUsing((_, context) =>
             {
@@ -122,7 +122,7 @@ public class DialogMappingProfile : Profile
                     throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
                 }
 
-                return new MultiResponseViewItem(parentViewModel);
+                return new ParallelResponseViewItem(parentViewModel);
             })
             .AfterMap((source, destination, context) =>
             {

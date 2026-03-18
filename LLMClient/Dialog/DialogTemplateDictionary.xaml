@@ -352,7 +352,7 @@
         </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="MultiResponseViewItemDataTemplate"
-                  DataType="{x:Type models:MultiResponseViewItem}">
+                  DataType="{x:Type models:ParallelResponseViewItem}">
         <StackPanel>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -431,7 +431,7 @@
                                             Template="{StaticResource ItemDeleteButtonTemplate}">
                                         <Button.Visibility>
                                             <MultiBinding
-                                                Converter="{x:Static models:MultiResponseViewItem.DeleteItemConverter}">
+                                                Converter="{x:Static models:ParallelResponseViewItem.DeleteItemConverter}">
                                                 <Binding Path="IsResponding" Mode="OneWay" />
                                                 <Binding
                                                     RelativeSource="{RelativeSource FindAncestor,AncestorType=ListBoxItem}"
@@ -528,7 +528,7 @@
                                 ToolTip="复制（仅文本）"
                                 Content="{materialDesign:PackIcon Kind=ContentCopy,Size=20}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
-                                Command="{x:Static models:MultiResponseViewItem.CompareAllCommand}"
+                                Command="{x:Static models:ParallelResponseViewItem.CompareAllCommand}"
                                 Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                 CommandParameter="{Binding Mode=OneTime}"
                                 VerticalAlignment="Center"
@@ -543,7 +543,7 @@
                                 Style="{StaticResource SmallIconButtonStyle}" />
                         <Button ToolTip="将所有回复分成不同分支"
                                 Margin="6,0,0,0"
-                                Command="{x:Static models:MultiResponseViewItem.SplitResponseCommand}"
+                                Command="{x:Static models:ParallelResponseViewItem.SplitResponseCommand}"
                                 CommandParameter="{Binding Mode=OneTime}"
                                 Content="{materialDesign:PackIcon ArrowSplitVertical,Size=20}"
                                 Visibility="{Binding HasFork,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"

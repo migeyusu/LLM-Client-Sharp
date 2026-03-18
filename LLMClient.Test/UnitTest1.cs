@@ -289,7 +289,7 @@ public class UnitTest1
             new DialogViewModel("test", string.Empty, client, mapper, new Summarizer(new GlobalOptions()),
                 new GlobalOptions(),
                 viewModelFactory);
-        var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
+        var multiResponseViewItem = new ParallelResponseViewItem(dialogViewModel);
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         // dialogViewModel.DialogItems.Add(multiResponseViewItem);
@@ -315,7 +315,7 @@ public class UnitTest1
             new DialogViewModel("test", string.Empty, client, mapper, 
                 new Summarizer(new GlobalOptions()),
                 new GlobalOptions(), viewModelFactory);
-        var multiResponseViewItem = new MultiResponseViewItem(dialogViewModel);
+        var multiResponseViewItem = new ParallelResponseViewItem(dialogViewModel);
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
         // dialogViewModel.DialogItems.Add(multiResponseViewItem);
@@ -332,7 +332,7 @@ public class UnitTest1
         var filePersistModel = JsonSerializer.Deserialize<DialogFilePersistModel>(serialize, serializerOptions);
         var viewModel =
             mapper.Map<DialogFilePersistModel, DialogFileViewModel>(filePersistModel!, (options => { }));
-        var multiResponseViewItemDe = viewModel.Dialog.DialogItems.First() as MultiResponseViewItem;
+        var multiResponseViewItemDe = viewModel.Dialog.DialogItems.First() as ParallelResponseViewItem;
         var responseViewItems = multiResponseViewItemDe!.Items.ToArray();
         Assert.Same(responseViewItems[0].Client, responseViewItems[1].Client);
     }

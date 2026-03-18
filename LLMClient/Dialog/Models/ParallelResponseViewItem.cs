@@ -16,7 +16,8 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
 
-public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IResponseItem, IEditableDialogItem
+
+public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, IResponseItem, IEditableDialogItem
 {
     public Guid InteractionId
     {
@@ -112,7 +113,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IRes
             return !values[0] && values[1] && values[1] ? Visibility.Visible : Visibility.Collapsed;
         });
 
-    public static ICommand CompareAllCommand { get; } = new RelayCommand<MultiResponseViewItem>((item =>
+    public static ICommand CompareAllCommand { get; } = new RelayCommand<ParallelResponseViewItem>((item =>
     {
         if (item == null)
         {
@@ -136,7 +137,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IRes
 
     public ModelSelectionPopupViewModel SelectionPopup { get; }
 
-    public static ICommand SplitResponseCommand = new RelayCommand<MultiResponseViewItem>((async mutiResponse =>
+    public static ICommand SplitResponseCommand = new RelayCommand<ParallelResponseViewItem>((async mutiResponse =>
     {
         if (mutiResponse == null)
         {
@@ -161,7 +162,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IRes
             {
                 var responseItem = mutiResponse.Items[1];
                 mutiResponse.RemoveAt(1);
-                var newMultiResponse = new MultiResponseViewItem(mutiResponse.ParentSession)
+                var newMultiResponse = new ParallelResponseViewItem(mutiResponse.ParentSession)
                     { InteractionId = mutiResponse.InteractionId };
                 newMultiResponse.AppendResponse(responseItem);
                 requestViewItem.AppendChild(newMultiResponse);
@@ -233,7 +234,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IRes
 
     public ICommand RemoveResponseCommand { get; }
 
-    public MultiResponseViewItem(IEnumerable<ResponseViewItem> items, DialogSessionViewModel parentSession)
+    public ParallelResponseViewItem(IEnumerable<ResponseViewItem> items, DialogSessionViewModel parentSession)
     {
         ParentSession = parentSession;
         Items = new ObservableCollection<ResponseViewItem>(items);
@@ -323,7 +324,7 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IRes
         });
     }
 
-    public MultiResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)
+    public ParallelResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)
     {
     }
 

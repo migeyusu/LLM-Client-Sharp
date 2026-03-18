@@ -17,9 +17,9 @@ public class DialogItemEqualityComparer : IEqualityComparer<IDialogItem>
             return requestViewItem.InteractionId == ((RequestViewItem)y).InteractionId;
         }
 
-        if (x is MultiResponseViewItem multiResponseViewItem)
+        if (x is ParallelResponseViewItem multiResponseViewItem)
         {
-            return multiResponseViewItem.InteractionId == ((MultiResponseViewItem)y).InteractionId;
+            return multiResponseViewItem.InteractionId == ((ParallelResponseViewItem)y).InteractionId;
         }
 
         return x.GetHashCode() == y.GetHashCode();

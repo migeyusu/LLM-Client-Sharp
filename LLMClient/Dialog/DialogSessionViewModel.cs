@@ -32,7 +32,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     {
         get
         {
-            var textContent = DialogItems.OfType<MultiResponseViewItem>()
+            var textContent = DialogItems.OfType<ParallelResponseViewItem>()
                 .FirstOrDefault(item => item.IsAvailableInContext)
                 ?.AcceptedResponse?.TextContent;
             return string.IsNullOrEmpty(textContent)
@@ -104,9 +104,9 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region scroll
 
-    private MultiResponseViewItem? _currentResponseViewItem;
+    private ParallelResponseViewItem? _currentResponseViewItem;
 
-    public MultiResponseViewItem? CurrentResponseViewItem
+    public ParallelResponseViewItem? CurrentResponseViewItem
     {
         get => _currentResponseViewItem;
         set
@@ -132,7 +132,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 viewItem.SearchableDocument?.EnsureSearch();
             }
 
-            CurrentResponseViewItem = value as MultiResponseViewItem;
+            CurrentResponseViewItem = value as ParallelResponseViewItem;
         }
     }
 
@@ -288,7 +288,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public bool IsNodeSelectable(IDialogItem item)
     {
-        return item is MultiResponseViewItem;
+        return item is ParallelResponseViewItem;
     }
 
     public IReadOnlyList<IDialogItem> DialogItems
@@ -423,7 +423,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
         bool IsRunning(IDialogItem item)
         {
-            return item is MultiResponseViewItem { IsResponding: true } || item.Children.Any(IsRunning);
+            return item is ParallelResponseViewItem { IsResponding: true } || item.Children.Any(IsRunning);
         }
     }
 
@@ -440,7 +440,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
             try
             {
-                if (CurrentLeaf is MultiResponseViewItem responseViewItem)
+                if (CurrentLeaf is ParallelResponseViewItem responseViewItem)
                 {
                     return responseViewItem.GetChatHistory().Append(CurrentLeaf).Sum(item => item.Tokens);
                 }
@@ -461,7 +461,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     #region core methods
 
     public virtual async Task<ChatCallResult> ProcessingRequest(ResponseViewItem responseViewItem,
-        MultiResponseViewItem multiResponseViewItem, CancellationToken token = default)
+        ParallelResponseViewItem multiResponseViewItem, CancellationToken token = default)
     {
         RespondingCount++;
         try
@@ -482,7 +482,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     public async Task<ChatCallResult> AppendNewResponse(ILLMChatClient client, IRequestItem requestViewItem,
         IRequestItem? insertBefore = null, CancellationToken token = default)
     {
-        var multiResponseViewItem = new MultiResponseViewItem(this)
+        var multiResponseViewItem = new ParallelResponseViewItem(this)
             { InteractionId = requestViewItem.InteractionId };
         if (insertBefore == null)
         {
@@ -509,7 +509,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         return await multiResponseViewItem.AppendResponse(client, token);
     }
 
-    public void ForkPreTask(MultiResponseViewItem dialogViewItem)
+    public void ForkPreTask(ParallelResponseViewItem dialogViewItem)
     {
         CurrentLeaf = dialogViewItem;
         MessageEventBus.Publish("您已创建新分支");
@@ -546,7 +546,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                     MessageBoxes.Error("无法打开对话路线图: " + e.Message);
                 }
             });
-        SetLeafCommand = new RelayCommand<MultiResponseViewItem>(o =>
+        SetLeafCommand = new RelayCommand<ParallelResponseViewItem>(o =>
         {
             if (o == null)
             {
@@ -673,7 +673,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             stringBuilder.AppendLine($"### {this.DefaultClient.Name}");*/
                 foreach (var viewItem in DialogItems.Where(item => item.IsAvailableInContext))
                 {
-                    if (viewItem is MultiResponseViewItem { AcceptedResponse: { } responseViewItem })
+                    if (viewItem is ParallelResponseViewItem { AcceptedResponse: { } responseViewItem })
                     {
                         var textContent = responseViewItem.TextContent;
                         stringBuilder.AppendLine("# **Assistant:**");

@@ -213,7 +213,7 @@ public static class Extension
         return previousItem;
     }
 
-    public static void DeleteAfter(this MultiResponseViewItem responseViewItem)
+    public static void DeleteAfter(this ParallelResponseViewItem responseViewItem)
     {
         responseViewItem.ClearChildren();
     }
@@ -256,12 +256,12 @@ public static class Extension
         return eraseViewItem;
     }
 
-    public static IEnumerable<IDialogItem> GetChatHistory(this MultiResponseViewItem lastItem)
+    public static IEnumerable<IDialogItem> GetChatHistory(this ParallelResponseViewItem lastItem)
     {
         return lastItem.GetChatHistoryInverse().Reverse();
     }
 
-    public static IEnumerable<IDialogItem> GetChatHistoryInverse(this MultiResponseViewItem lastItem)
+    public static IEnumerable<IDialogItem> GetChatHistoryInverse(this ParallelResponseViewItem lastItem)
     {
         Guid? interactionId = lastItem.InteractionId;
         for (var dialogViewItem = lastItem.PreviousItem;
@@ -291,7 +291,7 @@ public static class Extension
             {
                 yield break;
             }
-            else if (dialogViewItem is MultiResponseViewItem multiResponseViewItem)
+            else if (dialogViewItem is ParallelResponseViewItem multiResponseViewItem)
             {
                 if (multiResponseViewItem.AcceptedResponse?.IsResponding == true)
                 {
