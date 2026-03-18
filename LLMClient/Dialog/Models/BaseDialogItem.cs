@@ -12,15 +12,13 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
 
     public abstract ChatRole Role { get; }
 
-    private IDialogItem? _previousItem;
-
     public IDialogItem? PreviousItem
     {
-        get => _previousItem;
+        get;
         set
         {
-            if (Equals(value, _previousItem)) return;
-            _previousItem = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }

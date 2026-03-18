@@ -136,7 +136,9 @@ public class DialogMappingProfile : Profile
                 }
             });
 
-        CreateMap<IResponse, ResponseViewItem>();
+        CreateMap<IResponse, ResponseViewItemBase>()
+            .Include<IResponse, ResponseViewItem>();
+        /*.Include<IResponse, ResponseViewItem>();*/
         CreateMap<IModelParams, IModelParams>();
         CreateMap<IModelParams, DefaultModelParam>();
         CreateMap<DefaultModelParam, DefaultModelParam>();
@@ -156,9 +158,10 @@ public class DialogMappingProfile : Profile
             .ConvertUsing<AutoMapModelTypeConverter>();
         CreateMap<DialogFileViewModel, DialogFilePersistModel>()
             .ConvertUsing<AutoMapModelTypeConverter>();
-
+        
         CreateMap<ResponseViewItem, ResponsePersistItem>()
             .PreserveReferences();
+        
         CreateMap<ResponsePersistItem, ResponseViewItem>()
             .PreserveReferences()
             .ConstructUsing((source, context) =>

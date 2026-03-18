@@ -22,12 +22,11 @@ using Markdig;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
-using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Dialog.Models;
 
-public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IResponse
+public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
 {
     public ThemedIcon Icon
     {
@@ -53,55 +52,25 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
 
     public bool IsResponding
     {
-        get => _isResponding;
+        get;
         set
         {
-            if (value == _isResponding) return;
-            _isResponding = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             InvalidateAsyncProperty(nameof(SearchableDocument));
         }
     }
-    
-    /// <summary>
-    /// 是否中断
-    /// </summary>
-    public bool IsInterrupt
+
+    public override bool IsInterrupt
     {
-        get => _isInterrupt;
+        get;
         set
         {
-            if (value == _isInterrupt) return;
-            _isInterrupt = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsAvailableInContext));
-        }
-    }
-
-    public long Tokens
-    {
-        get => Usage?.OutputTokenCount ?? 0;
-    }
-
-    public int Latency
-    {
-        get => _latency;
-        set
-        {
-            if (value == _latency) return;
-            _latency = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public int Duration
-    {
-        get => _duration;
-        set
-        {
-            if (value == _duration) return;
-            _duration = value;
-            OnPropertyChanged();
         }
     }
 
@@ -113,39 +82,6 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
         get { return this.CalculateTps(); }
     }
 
-    public string? ErrorMessage
-    {
-        get => _errorMessage;
-        set
-        {
-            if (value == _errorMessage) return;
-            _errorMessage = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public double? Price
-    {
-        get => _price;
-        set
-        {
-            if (Nullable.Equals(value, _price)) return;
-            _price = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public UsageDetails? Usage
-    {
-        get => _usage;
-        set
-        {
-            if (Equals(value, _usage)) return;
-            _usage = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(Tokens));
-        }
-    }
 
     /// <summary>
     /// 在响应过程中，临时存储文本内容，不持久化
@@ -321,58 +257,19 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
     }
 
     /// <summary>
-    /// response messages 来源于回复，但是为了前向兼容，允许基于raw生成
-    /// </summary>
-    public IList<ChatMessage>? ResponseMessages
-    {
-        get => _responseMessages;
-        set
-        {
-            if (Equals(value, _responseMessages)) return;
-            _responseMessages = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(TextContent));
-        }
-    }
-
-    public ChatFinishReason? FinishReason
-    {
-        get => _finishReason;
-        set
-        {
-            if (Nullable.Equals(value, _finishReason)) return;
-            _finishReason = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public IList<ChatAnnotation>? Annotations { get; set; }
-
-    private bool _isManualValid = false;
-    private bool _isInterrupt;
-    private int _latency;
-    private int _duration;
-    private string? _errorMessage;
-    private double? _price;
-    private IList<ChatMessage>? _responseMessages;
-    private ChatFinishReason? _finishReason;
-    private bool _isResponding;
-    private UsageDetails? _usage;
-
-    /// <summary>
     /// 手动标记为有效 
     /// </summary>
     public bool IsManualValid
     {
-        get => _isManualValid;
+        get;
         set
         {
-            if (value == _isManualValid) return;
-            _isManualValid = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsAvailableInContext));
         }
-    }
+    } = false;
 
     public ObservableCollection<string> TempResponseText { get; } = new();
 
@@ -461,19 +358,6 @@ public class ResponseViewItem : BaseViewModel, CommonCommands.ICopyable, IRespon
     }
 
     #endregion
-
-    public async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
-        [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
-        if (ResponseMessages != null && ResponseMessages.Any())
-        {
-            foreach (var chatMessage in ResponseMessages)
-            {
-                yield return chatMessage;
-            }
-        }
-    }
 
     public void TriggerTextContentUpdate()
     {

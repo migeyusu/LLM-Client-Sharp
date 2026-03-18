@@ -13,11 +13,10 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Endpoints;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
-using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog.Models;
 
-public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInteractionItem, IEditableDialogItem
+public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IResponseItem, IEditableDialogItem
 {
     public Guid InteractionId
     {
@@ -35,15 +34,18 @@ public class MultiResponseViewItem : BaseDialogItem, ISearchableDialogItem, IInt
     public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (AcceptedResponse == null)
+        var responseMessages = AcceptedResponse?.ResponseMessages;
+        if (responseMessages == null)
         {
             yield break;
         }
 
-        await foreach (var chatMessage in AcceptedResponse.GetMessagesAsync(cancellationToken))
+        foreach (var chatMessage in responseMessages)
         {
             yield return chatMessage;
         }
+
+        yield break;
     }
 
     /// <summary>

@@ -46,9 +46,9 @@ public static class RendererExtensions
 
     [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "Release")]
     public static extern void ReleaseInlineProcessor(InlineProcessor? dummy, InlineProcessor processor);
-    
+
     [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "CloseAll")]
-    public static extern void CloseAllBlocks(BlockProcessor blockProcessor);
+    public static extern void CloseAllBlocks(BlockProcessor blockProcessor, bool force);
 
     private static readonly ConcurrentStack<MarkdownPipelineBuilder> BuildPipelineStack = new();
 
@@ -137,7 +137,7 @@ public static class RendererExtensions
             blockProcessor.ProcessLine(lastSlice.Value);
         }
 
-        CloseAllBlocks(blockProcessor);
+        CloseAllBlocks(blockProcessor, false);
     }
 
     public readonly struct LineReaderBuffer

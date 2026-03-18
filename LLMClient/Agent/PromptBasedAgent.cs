@@ -8,7 +8,7 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Agent;
 
-public class PromptBasedAgent : IAgent
+public class PromptBasedAgent
 {
     private readonly ILLMChatClient _chatClient;
 
