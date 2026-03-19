@@ -128,7 +128,7 @@ public class DialogMappingProfile : Profile
             {
                 var contextMapper = context.Mapper;
                 var items = source.ResponseItems.Select(x =>
-                    contextMapper.Map<ResponsePersistItem, ResponseViewItem>(x)).ToArray();
+                    contextMapper.Map<ResponsePersistItem, DocResponseViewItem>(x)).ToArray();
                 var responseViewItems = destination.Items;
                 foreach (var item in items)
                 {
@@ -137,7 +137,10 @@ public class DialogMappingProfile : Profile
             });
 
         CreateMap<IResponse, ResponseViewItemBase>()
-            .Include<IResponse, ResponseViewItem>();
+            .Include<IResponse, DocResponseViewItem>();
+        CreateMap<IResponse, DocResponseViewItem>()
+            .IncludeBase<IResponse, ResponseViewItemBase>();
+
         /*.Include<IResponse, ResponseViewItem>();*/
         CreateMap<IModelParams, IModelParams>();
         CreateMap<IModelParams, DefaultModelParam>();
@@ -158,11 +161,11 @@ public class DialogMappingProfile : Profile
             .ConvertUsing<AutoMapModelTypeConverter>();
         CreateMap<DialogFileViewModel, DialogFilePersistModel>()
             .ConvertUsing<AutoMapModelTypeConverter>();
-        
-        CreateMap<ResponseViewItem, ResponsePersistItem>()
+
+        CreateMap<DocResponseViewItem, ResponsePersistItem>()
             .PreserveReferences();
-        
-        CreateMap<ResponsePersistItem, ResponseViewItem>()
+
+        CreateMap<ResponsePersistItem, DocResponseViewItem>()
             .PreserveReferences()
             .ConstructUsing((source, context) =>
             {
@@ -173,7 +176,7 @@ public class DialogMappingProfile : Profile
                     llmClient = context.Mapper.Map<ParameterizedLLMModelPO, ILLMChatClient>(client);
                 }
 
-                return new ResponseViewItem(llmClient);
+                return new DocResponseViewItem(llmClient);
             });
 
 

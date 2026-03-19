@@ -43,7 +43,8 @@
             
             <TabControl Grid.Column="0" Style="{StaticResource MaterialDesignTabControl}">
                 <TabItem Header="Dialogs"
-                         materialDesign:TabAssist.HeaderBehavior="Wrapping">
+                         materialDesign:TabAssist.HeaderBehavior="Wrapping"
+                         materialDesign:DialogHost.RestoreFocusElement="{x:Null}">
                     <Grid>
                          <Grid.RowDefinitions>
                               <RowDefinition Height="Auto"/>

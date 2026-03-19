@@ -11,13 +11,10 @@ using LLMClient.Abstraction;
 using LLMClient.Component.Converters;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
-using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.PromptGeneration;
-using LLMClient.ContextEngineering.Tools;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
-using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using MaterialDesignThemes.Wpf;
@@ -427,7 +424,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
-    private async Task<ChatCallResult> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
+    private async Task<IResponse> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
         IRequestItem? insertViewItem = null,
         CancellationToken token = default)
     {
@@ -436,7 +433,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
             throw new NotSupportedException("未选择任务");
         }
 
-        return await SelectedSession.AppendNewResponse(arg1, arg2, insertViewItem, token);
+        return await SelectedSession.NewDefaultResponse(arg1, arg2, insertViewItem, token);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

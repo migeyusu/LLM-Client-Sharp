@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -26,7 +25,10 @@ using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Dialog.Models;
 
-public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
+/// <summary>
+/// 支持flowdocument富文本渲染的ResponseViewItem
+/// </summary>
+public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
 {
     public ThemedIcon Icon
     {
@@ -50,17 +52,6 @@ public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
 
     public ILLMChatClient? Client { get; }
 
-    public bool IsResponding
-    {
-        get;
-        set
-        {
-            if (value == field) return;
-            field = value;
-            OnPropertyChanged();
-            InvalidateAsyncProperty(nameof(SearchableDocument));
-        }
-    }
 
     public override bool IsInterrupt
     {
@@ -82,13 +73,12 @@ public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
         get { return this.CalculateTps(); }
     }
 
-
     /// <summary>
     /// 在响应过程中，临时存储文本内容，不持久化
     /// </summary>
     private readonly StringBuilder _responseHistory = new();
 
-    public static ICommand ShowTempResponseCommand { get; } = new RelayCommand<ResponseViewItem>(o =>
+    public static ICommand ShowTempResponseCommand { get; } = new RelayCommand<DocResponseViewItem>(o =>
     {
         if (o == null)
         {
@@ -111,7 +101,7 @@ public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
     });
 
     //标记为有效结果
-    public static ICommand MarkValidCommand { get; } = new RelayCommand<ResponseViewItem>((o =>
+    public static ICommand MarkValidCommand { get; } = new RelayCommand<DocResponseViewItem>((o =>
     {
         if (o == null)
         {
@@ -122,7 +112,7 @@ public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
     }));
 
 
-    public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<ResponseViewItem>(o =>
+    public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<DocResponseViewItem>(o =>
     {
         o?.SwitchAvailableInContext();
     });
@@ -297,7 +287,7 @@ public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
         get { return (IsManualValid || !IsInterrupt) && IsAvailableInContextSwitch; }
     }
 
-    public ResponseViewItem(ILLMChatClient client)
+    public DocResponseViewItem(ILLMChatClient client)
     {
         Client = client;
     }
@@ -327,6 +317,7 @@ public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
             ErrorMessage = null;
             _tempDocument = new FlowDocument();
             IsResponding = true;
+            InvalidateAsyncProperty(nameof(SearchableDocument));
             _responseHistory.Clear();
             RequestTokenSource = token != CancellationToken.None
                 ? CancellationTokenSource.CreateLinkedTokenSource(token)
@@ -337,7 +328,7 @@ public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
                 {
                     completedResult = await Client.SendRequest(context, interactor,
                         cancellationToken: RequestTokenSource.Token);
-                    ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItem>(completedResult, this);
+                    ServiceLocator.GetService<IMapper>()!.Map<IResponse, DocResponseViewItem>(completedResult, this);
                     //刷新tps
                     OnPropertyChangedAsync(nameof(TpS));
                 }
@@ -352,6 +343,7 @@ public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
         {
             _tempDocument = null;
             IsResponding = false;
+            InvalidateAsyncProperty(nameof(SearchableDocument));
         }
 
         return completedResult;
@@ -380,7 +372,7 @@ public class ResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
         private readonly StreamingRenderSession _session;
         private readonly Action<string> _outputAction;
 
-        public ResponseViewItemInteractor(FlowDocument flowDocument, ResponseViewItem responseViewItem)
+        public ResponseViewItemInteractor(FlowDocument flowDocument, DocResponseViewItem responseViewItem)
         {
             _customRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
 

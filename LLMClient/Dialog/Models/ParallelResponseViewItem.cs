@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Data;
@@ -16,39 +15,12 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
 
-
-public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, IResponseItem, IEditableDialogItem
+/// <summary>
+/// 表示一个包含多个平行回复的对话项，通常用于展示同一请求的多个不同回复版本，供用户选择或比较。
+/// </summary>
+public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewItem>, ISearchableDialogItem,
+    IEditableDialogItem
 {
-    public Guid InteractionId
-    {
-        get => _interactionId;
-        set
-        {
-            if (value.Equals(_interactionId)) return;
-            _interactionId = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public DialogSessionViewModel ParentSession { get; }
-
-    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
-        [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        var responseMessages = AcceptedResponse?.ResponseMessages;
-        if (responseMessages == null)
-        {
-            yield break;
-        }
-
-        foreach (var chatMessage in responseMessages)
-        {
-            yield return chatMessage;
-        }
-
-        yield break;
-    }
-
     /// <summary>
     /// warning: 禁止用于绑定，因为没有实现属性通知
     /// </summary>
@@ -87,14 +59,14 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
 
     public bool IsMultiResponse
     {
-        get => _isMultiResponse;
+        get;
         set
         {
-            if (value == _isMultiResponse) return;
-            _isMultiResponse = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = false;
 
     [Bindable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -103,8 +75,6 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
     {
         get { return AcceptedResponse?.SearchableDocument; }
     }
-
-    public ObservableCollection<ResponseViewItem> Items { get; }
 
     public static readonly IMultiValueConverter DeleteItemConverter =
         MultiValueConverter.Create<bool, Visibility>(args =>
@@ -128,12 +98,6 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
         var compareWindow = new MultiResponseCompareWindow(item.Items);
         compareWindow.ShowDialog();
     }));
-
-    private bool _isMultiResponse = false;
-
-    private bool _canGoToNext;
-    private Guid _interactionId;
-    private bool _canGotoPrevious;
 
     public ModelSelectionPopupViewModel SelectionPopup { get; }
 
@@ -164,7 +128,7 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
                 mutiResponse.RemoveAt(1);
                 var newMultiResponse = new ParallelResponseViewItem(mutiResponse.ParentSession)
                     { InteractionId = mutiResponse.InteractionId };
-                newMultiResponse.AppendResponse(responseItem);
+                newMultiResponse.AddResponse(responseItem);
                 requestViewItem.AppendChild(newMultiResponse);
             }
         }
@@ -174,15 +138,13 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
 
     public ICommand RetryCommand { get; }
 
-    private int _acceptedIndex = -1;
-
     public int AcceptedIndex
     {
-        get => _acceptedIndex;
+        get;
         set
         {
-            if (value == _acceptedIndex) return;
-            _acceptedIndex = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(AcceptedResponse));
             OnPropertyChanged(nameof(IsAvailableInContext));
@@ -191,9 +153,9 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
             CanGotoPrevious = value - 1 >= 0;
             CanGoToNext = value + 1 < Items.Count;
         }
-    }
+    } = -1;
 
-    public ResponseViewItem? AcceptedResponse
+    public DocResponseViewItem? AcceptedResponse
     {
         get
         {
@@ -208,11 +170,11 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
 
     public bool CanGoToNext
     {
-        get => _canGoToNext;
+        get;
         set
         {
-            if (value == _canGoToNext) return;
-            _canGoToNext = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -221,11 +183,11 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
 
     public bool CanGotoPrevious
     {
-        get => _canGotoPrevious;
+        get;
         set
         {
-            if (value == _canGotoPrevious) return;
-            _canGotoPrevious = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -234,21 +196,20 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
 
     public ICommand RemoveResponseCommand { get; }
 
-    public ParallelResponseViewItem(IEnumerable<ResponseViewItem> items, DialogSessionViewModel parentSession)
+    public ParallelResponseViewItem(IEnumerable<DocResponseViewItem> items, DialogSessionViewModel parentSession)
+        : base(items, parentSession)
     {
-        ParentSession = parentSession;
-        Items = new ObservableCollection<ResponseViewItem>(items);
         Items.CollectionChanged += (_, _) =>
         {
             this.ParentSession.IsDataChanged = true;
             this.IsMultiResponse = Items.Count > 1;
         };
         IsMultiResponse = Items.Count > 1;
-        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.AppendResponse(client.CreateClient()); })
+        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.NewResponse(client.CreateClient()); })
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
-        RetryCommand = new RelayCommand<ResponseViewItem>(async void (responseViewItem) =>
+        RetryCommand = new RelayCommand<DocResponseViewItem>(async void (responseViewItem) =>
         {
             try
             {
@@ -262,14 +223,14 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
                     return;
                 }
 
-                await ParentSession.ProcessingRequest(responseViewItem, this);
+                await this.ProcessResponseItem(responseViewItem, CancellationToken.None);
             }
             catch (Exception e)
             {
                 MessageBoxes.Error(e.Message, "Error");
             }
         });
-        RemoveResponseCommand = new RelayCommand<ResponseViewItem>(o =>
+        RemoveResponseCommand = new RelayCommand<DocResponseViewItem>(o =>
         {
             if (o == null)
             {
@@ -328,6 +289,23 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
     {
     }
 
+    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var responseMessages = AcceptedResponse?.ResponseMessages;
+        if (responseMessages == null)
+        {
+            yield break;
+        }
+
+        foreach (var chatMessage in responseMessages)
+        {
+            yield return chatMessage;
+        }
+
+        yield break;
+    }
+
     /*public Task<CompletedResult> InvokeRequest(ResponseViewItem responseViewItem)
     {
         var dialogItems = this.GetChatHistory().ToArray();
@@ -335,27 +313,27 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
         return responseViewItem.ProcessRequest(dialogContext);
     }*/
 
-    public Task<ChatCallResult> AppendResponse(ILLMChatClient chatClient, CancellationToken token = default)
+    public Task<IResponse> NewResponse(ILLMChatClient chatClient, CancellationToken token = default)
     {
-        var responseViewItem = new ResponseViewItem(chatClient);
-        this.AppendResponse(responseViewItem);
-        return ParentSession.ProcessingRequest(responseViewItem, this, token);
+        var responseViewItem = new DocResponseViewItem(chatClient);
+        this.AddResponse(responseViewItem);
+        return this.ProcessResponseItem(responseViewItem, token);
     }
 
-    public void AppendResponse(ResponseViewItem viewItem)
+    public void AddResponse(DocResponseViewItem viewItem)
     {
         this.Items.Add(viewItem);
         this.AcceptedIndex = this.Items.Count - 1;
         this.IsMultiResponse = Items.Count > 1;
     }
 
-    public void Insert(ResponseViewItem viewItem, int index)
+    public void Insert(DocResponseViewItem viewItem, int index)
     {
         this.Items.Insert(index, viewItem);
         this.AcceptedIndex = index;
     }
 
-    public void RemoveResponse(ResponseViewItem viewItem)
+    public void RemoveResponse(DocResponseViewItem viewItem)
     {
         var indexOf = this.Items.IndexOf(viewItem);
         if (indexOf < 0)
@@ -382,5 +360,24 @@ public class ParallelResponseViewItem : BaseDialogItem, ISearchableDialogItem, I
         }
 
         this.IsMultiResponse = Items.Count > 1;
+    }
+
+    private async Task<IResponse> ProcessResponseItem(DocResponseViewItem responseViewItem,
+        CancellationToken token = default)
+    {
+        var dialogItems = this.GetChatHistory().ToArray();
+        var dialogContext = new DialogContext(dialogItems, ParentSession.SystemPrompt);
+        ParentSession.RespondingCount++;
+        try
+        {
+            await ParentSession.OnPreviewRequest(dialogContext, token);
+            var completedResult = await responseViewItem.Process(dialogContext, token);
+            ParentSession.OnResponseCompleted(completedResult);
+            return completedResult;
+        }
+        finally
+        {
+            ParentSession.RespondingCount--;
+        }
     }
 }

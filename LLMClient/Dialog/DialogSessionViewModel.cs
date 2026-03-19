@@ -2,7 +2,6 @@
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Text;
-using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
@@ -12,7 +11,6 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog.Controls;
 using LLMClient.Dialog.Models;
-using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
@@ -49,83 +47,71 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         get => RespondingCount > 0;
     }
 
-    private int _respondingCount;
-
     public int RespondingCount
     {
-        get => _respondingCount;
-        protected set
+        get;
+        set
         {
-            if (value == _respondingCount) return;
-            _respondingCount = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsBusy));
         }
     }
 
-    private long _tokensConsumption;
-
     public long TokensConsumption
     {
-        get => _tokensConsumption;
+        get;
         set
         {
-            if (value == _tokensConsumption) return;
-            _tokensConsumption = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
-
-    private double _totalPrice;
 
     public double TotalPrice
     {
-        get => _totalPrice;
+        get;
         set
         {
-            if (value.Equals(_totalPrice)) return;
-            _totalPrice = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
-    private IList<CheckableFunctionGroupTree>? _selectedFunctionGroups;
-
     public IList<CheckableFunctionGroupTree>? SelectedFunctionGroups
     {
-        get => _selectedFunctionGroups;
+        get;
         set
         {
-            if (Equals(value, _selectedFunctionGroups)) return;
-            _selectedFunctionGroups = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     #region scroll
 
-    private ParallelResponseViewItem? _currentResponseViewItem;
-
     public ParallelResponseViewItem? CurrentResponseViewItem
     {
-        get => _currentResponseViewItem;
+        get;
         set
         {
-            if (Equals(value, _currentResponseViewItem)) return;
-            _currentResponseViewItem = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
-    private IDialogItem? _scrollViewItem;
-
     public IDialogItem? ScrollViewItem
     {
-        get => _scrollViewItem;
+        get;
         set
         {
-            if (Equals(value, _scrollViewItem)) return;
-            _scrollViewItem = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
             if (value is ISearchableDialogItem viewItem)
             {
@@ -140,15 +126,13 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region search
 
-    private bool _isSearchVisible;
-
     public bool IsSearchVisible
     {
-        get => _isSearchVisible;
+        get;
         set
         {
-            if (value == _isSearchVisible) return;
-            _isSearchVisible = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -174,14 +158,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     private int _currentHighlightIndex = 0;
 
-    private ISearchableDialogItem? _focusedResponse;
-
     private ISearchableDialogItem? FocusedHighlightItem
     {
-        get => _focusedResponse;
+        get;
         set
         {
-            _focusedResponse = value;
+            field = value;
             var document = value?.SearchableDocument;
             if (document is { HasMatched: true })
             {
@@ -460,26 +442,18 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region core methods
 
-    public virtual async Task<ChatCallResult> ProcessingRequest(ResponseViewItem responseViewItem,
-        ParallelResponseViewItem multiResponseViewItem, CancellationToken token = default)
+    public virtual Task OnPreviewRequest(DialogContext context, CancellationToken token)
     {
-        RespondingCount++;
-        try
-        {
-            var dialogItems = multiResponseViewItem.GetChatHistory().ToArray();
-            var dialogContext = new DialogContext(dialogItems, this.SystemPrompt);
-            var completedResult = await responseViewItem.Process(dialogContext, token);
-            this.TokensConsumption += completedResult.Usage?.TotalTokenCount ?? 0;
-            this.TotalPrice += completedResult.Price ?? 0;
-            return completedResult;
-        }
-        finally
-        {
-            RespondingCount--;
-        }
+        return Task.CompletedTask;
     }
 
-    public async Task<ChatCallResult> AppendNewResponse(ILLMChatClient client, IRequestItem requestViewItem,
+    public virtual void OnResponseCompleted(IResponse response)
+    {
+        this.TokensConsumption += response.Usage?.TotalTokenCount ?? 0;
+        this.TotalPrice += response.Price ?? 0;
+    }
+
+    public async Task<IResponse> NewDefaultResponse(ILLMChatClient client, IRequestItem requestViewItem,
         IRequestItem? insertBefore = null, CancellationToken token = default)
     {
         var multiResponseViewItem = new ParallelResponseViewItem(this)
@@ -506,7 +480,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
 
         this.ScrollViewItem = multiResponseViewItem;
-        return await multiResponseViewItem.AppendResponse(client, token);
+        return await multiResponseViewItem.NewResponse(client, token);
     }
 
     public void ForkPreTask(ParallelResponseViewItem dialogViewItem)
@@ -556,10 +530,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             ForkPreTask(o);
         });
 
-        ToggleSearchCommand = new RelayCommand(() =>
-        {
-            IsSearchVisible = !IsSearchVisible;
-        });
+        ToggleSearchCommand = new RelayCommand(() => { IsSearchVisible = !IsSearchVisible; });
 
         SearchCommand = new ActionCommand(_ =>
         {

@@ -23,6 +23,7 @@
         <TabControl Grid.Row="1"
                     TabStripPlacement="Bottom"
                     HorizontalContentAlignment="Left"
+                    materialDesign:DialogHost.RestoreFocusElement="{x:Null}"
                     materialDesign:TabAssist.HeaderBehavior="Wrapping"
                     SelectedIndex="{Binding SelectedIndex,Mode=TwoWay}">
             <TabItem>

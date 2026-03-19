@@ -290,8 +290,8 @@ public class UnitTest1
                 new GlobalOptions(),
                 viewModelFactory);
         var multiResponseViewItem = new ParallelResponseViewItem(dialogViewModel);
-        multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
-        multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
+        multiResponseViewItem.AddResponse(new DocResponseViewItem(client));
+        multiResponseViewItem.AddResponse(new DocResponseViewItem(client));
         // dialogViewModel.DialogItems.Add(multiResponseViewItem);
 
         var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper, viewModelFactory);
@@ -316,8 +316,8 @@ public class UnitTest1
                 new Summarizer(new GlobalOptions()),
                 new GlobalOptions(), viewModelFactory);
         var multiResponseViewItem = new ParallelResponseViewItem(dialogViewModel);
-        multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
-        multiResponseViewItem.AppendResponse(new ResponseViewItem(client));
+        multiResponseViewItem.AddResponse(new DocResponseViewItem(client));
+        multiResponseViewItem.AddResponse(new DocResponseViewItem(client));
         // dialogViewModel.DialogItems.Add(multiResponseViewItem);
         var dialogFileViewModel = new DialogFileViewModel(dialogViewModel, mapper, viewModelFactory);
         var dialogFilePersistModel =

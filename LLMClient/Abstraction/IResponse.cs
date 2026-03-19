@@ -5,7 +5,14 @@ using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Abstraction;
 
-public interface IResponse : ITokenizable
+public interface IChatUsage
+{
+    double? Price { get; }
+
+    UsageDetails? Usage { get; }
+}
+
+public interface IResponse : IChatUsage, ITokenizable
 {
     /// <summary>
     /// The latency of the response in ms
@@ -20,11 +27,7 @@ public interface IResponse : ITokenizable
     bool IsInterrupt { get; }
 
     string? ErrorMessage { get; }
-
-    double? Price { get; }
     
-    UsageDetails? Usage { get; }
-
     IList<ChatMessage>? ResponseMessages { get; }
 
     IList<ChatAnnotation>? Annotations { get; set; }

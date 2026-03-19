@@ -20,7 +20,6 @@ namespace LLMClient.Dialog;
 public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPromptableSession
 {
 #if DATACHANGE_TRACE
-
     public bool Log { get; set; }
 
 #endif
@@ -148,7 +147,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         _options = options;
         ((INotifyCollectionChanged)this.RootNode.Children).CollectionChanged += OnRootCollectionChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
-            (GetResponseHandler)AppendNewResponse);
+            (GetResponseHandler)NewDefaultResponse);
         Requester.FunctionGroupSource = this;
         Requester.FunctionTreeSelector.Reset();
         var functionTreeSelector = Requester.FunctionTreeSelector;
@@ -188,14 +187,14 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
 
     public Task? SummarizeTask = null;
 
-    public override async Task<ChatCallResult> ProcessingRequest(ResponseViewItem responseViewItem,
-        ParallelResponseViewItem multiResponseViewItem, CancellationToken token = default)
+    public override void OnResponseCompleted(IResponse response)
     {
-        var completedResult = await base.ProcessingRequest(responseViewItem, multiResponseViewItem, token);
+        base.OnResponseCompleted(response);
         //判断是否需要进行主题总结
         if (this.Topic == "新建会话" &&
-            this.DialogItems.FirstOrDefault(item => item is ParallelResponseViewItem) == multiResponseViewItem
-            && !completedResult.IsInterrupt
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            this.DialogItems.OfType<IResponse>().Count() == 1
+            && !response.IsInterrupt
             && _options.EnableAutoSubjectGeneration
             && (SummarizeTask == null || SummarizeTask.IsCompleted))
         {
@@ -209,8 +208,6 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
                 }
             }, CancellationToken.None);
         }
-
-        return completedResult;
     }
 
     private void FunctionTreeSelectorOnAfterSelect()

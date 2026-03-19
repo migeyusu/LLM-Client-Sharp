@@ -7,7 +7,7 @@ namespace LLMClient.Dialog.Models;
 
 public class ResponseViewItemBase : BaseViewModel, IResponse
 {
-    public long Tokens
+    public virtual long Tokens
     {
         get => Usage?.OutputTokenCount ?? 0;
     }
@@ -84,6 +84,16 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         }
     }
 
+    public bool IsResponding
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
 
     /// <summary>
     /// response messages 来源于回复，但是为了前向兼容，允许基于raw生成

@@ -17,7 +17,7 @@ using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace LLMClient.Dialog;
-public delegate Task<ChatCallResult> GetResponseHandler(ILLMChatClient client, IRequestItem request,
+public delegate Task<IResponse> GetResponseHandler(ILLMChatClient client, IRequestItem request,
     IRequestItem? insertBefore, CancellationToken token);
 
 public class RequesterViewModel : BaseViewModel

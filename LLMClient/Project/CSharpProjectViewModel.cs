@@ -8,7 +8,6 @@ using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.ContextEngineering.Tools;
 using LLMClient.ToolCall;
-using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace LLMClient.Project;

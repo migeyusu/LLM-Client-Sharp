@@ -1,16 +1,12 @@
 using System.ComponentModel;
-using System.Windows;
 using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
-using LLMClient.Component.UserControls;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
-using LLMClient.Endpoints;
 using LLMClient.ToolCall;
-using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Project;
 
@@ -31,14 +27,12 @@ namespace LLMClient.Project;
  */
 public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSource
 {
-    private string? _name;
-
     public override string? Name
     {
-        get => _name;
+        get;
         set
         {
-            if (value == _name) return;
+            if (value == field) return;
             ClearError();
             if (string.IsNullOrEmpty(value))
             {
@@ -46,7 +40,7 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
                 return;
             }
 
-            _name = value;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -71,38 +65,34 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
     /// </summary>
     public bool EnableInContext
     {
-        get => _enableInContext;
+        get;
         set
         {
-            if (value == _enableInContext) return;
-            _enableInContext = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
-
-    private string? _summary;
 
     /// <summary>
     /// summary of the task, when task end, generate for total context.
     /// </summary>
     public string? Summary
     {
-        get => _summary;
+        get;
         set
         {
-            if (value == _summary) return;
-            _summary = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
-
-    private static ICommand? _removeFromProjectCommand;
 
     public static ICommand RemoveFromProjectCommand
     {
         get
         {
-            return _removeFromProjectCommand ??= new RelayCommand<ProjectSessionViewModel>(async projectSession =>
+            return field ??= new RelayCommand<ProjectSessionViewModel>(async projectSession =>
             {
                 if (!await Extension.ShowConfirm(
                         "Are you sure to remove this session from project? This action cannot be undone."))
@@ -138,15 +128,10 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
         nameof(SearchText)
     ];
 
-    public override async Task<ChatCallResult> ProcessingRequest(ResponseViewItem responseViewItem,
-        ParallelResponseViewItem multiResponseViewItem,
-        CancellationToken token = default)
+    public override Task OnPreviewRequest(DialogContext context, CancellationToken token)
     {
-        await ParentProject.PreviewProcessing(token);
-        return await base.ProcessingRequest(responseViewItem, multiResponseViewItem, token);
+        return ParentProject.PreviewProcessing(token);
     }
-
-    private bool _enableInContext;
 
     private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {

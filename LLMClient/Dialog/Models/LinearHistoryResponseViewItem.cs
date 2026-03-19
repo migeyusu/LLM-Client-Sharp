@@ -1,27 +1,46 @@
-﻿using Microsoft.Extensions.AI;
+﻿using System.Runtime.CompilerServices;
+using LLMClient.Agent;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
 
 
+public class RawResponseViewItem : ResponseViewItemBase
+{
+    
+}
 
 /// <summary>
 /// 线性历史的ResponseViewItem
 /// </summary>
-public class LinearHistoryViewItem : BaseDialogItem, IResponseItem
+public class LinearHistoryViewItem : MultiResponseViewItem<RawResponseViewItem>
 {
-    public Guid InteractionId { get; set; }
-
     private long _tokensCount = 0;
-
     public override long Tokens => _tokensCount;
 
-    public override ChatRole Role => ChatRole.System;
-    
+    public override bool IsAvailableInContext { get; } = true;
 
-    public override IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken)
+    private IAgent _agent;
+
+    public LinearHistoryViewItem(IEnumerable<RawResponseViewItem> items, DialogSessionViewModel parentSession,
+        IAgent agent) : base(items, parentSession)
     {
-        throw new NotImplementedException();
+        _agent = agent;
     }
 
-    public override bool IsAvailableInContext { get; }
+    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        foreach (var responseViewItemBase in this.Items)
+        {
+            var responseMessages = responseViewItemBase.ResponseMessages;
+            if (responseMessages != null && responseMessages.Count > 0)
+            {
+                foreach (var responseMessage in responseMessages)
+                {
+                    yield return responseMessage;
+                }
+            }
+        }
+    }
 }

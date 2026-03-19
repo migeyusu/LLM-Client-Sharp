@@ -20,6 +20,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TabControl Padding="8"
+                    materialDesign:DialogHost.RestoreFocusElement="{x:Null}"
                     materialDesign:TabAssist.HeaderBehavior="Wrapping">
             <TabItem Header="Summary">
                 <ScrollViewer>
