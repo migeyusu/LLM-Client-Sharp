@@ -80,7 +80,7 @@
                                                        FontWeight="Bold"
                                                        Margin="0,0,0,10" />
                                             <TextBlock Grid.Row="1"
-                                                       Text="{Binding AcceptedResponse.TextContent,Mode=OneTime}"
+                                                       Text="{Binding AcceptedResponse.RawTextContent,Mode=OneTime}"
                                                        TextWrapping="Wrap"
                                                        MaxHeight="300"
                                                        Style="{StaticResource MaterialDesignBody2TextBlock}"
@@ -96,7 +96,7 @@
                                                     <TextBlock TextWrapping="Wrap"
                                                                Style="{StaticResource MaterialDesignBody2TextBlock}"
                                                                Margin="16"
-                                                               Text="{Binding AcceptedResponse.TextContent,Mode=OneTime}" />
+                                                               Text="{Binding AcceptedResponse.RawTextContent,Mode=OneTime}" />
                                                 </ScrollViewer>
                                             </materialDesign:PopupBox>
                                         </Grid>

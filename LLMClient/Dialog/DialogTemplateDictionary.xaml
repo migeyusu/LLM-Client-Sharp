@@ -256,7 +256,7 @@
                         <MenuItem Header="导出"
                                   ToolTip="导出为Markdown"
                                   Command="{x:Static utility:CommonCommands.ExportCommand}"
-                                  CommandParameter="{Binding TextContent,Mode=OneWay}">
+                                  CommandParameter="{Binding RawTextContent,Mode=OneWay}">
                             <MenuItem.Icon>
                                 <materialDesign:PackIcon
                                     Kind="Export" />

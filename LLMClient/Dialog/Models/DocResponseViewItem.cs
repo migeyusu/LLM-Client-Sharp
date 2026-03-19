@@ -52,7 +52,6 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
 
     public ILLMChatClient? Client { get; }
 
-
     public override bool IsInterrupt
     {
         get;
@@ -110,8 +109,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
 
         o.IsManualValid = true;
     }));
-
-
+    
     public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<DocResponseViewItem>(o =>
     {
         o?.SwitchAvailableInContext();
@@ -214,7 +212,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
 
     private string? _textContent = null;
 
-    public string? TextContent
+    public string? RawTextContent
     {
         get
         {
@@ -356,12 +354,12 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
         _fullResponseDocument = null;
         _textContent = null;
         InvalidateAsyncProperty(nameof(SearchableDocument));
-        OnPropertyChanged(nameof(TextContent));
+        OnPropertyChanged(nameof(RawTextContent));
     }
 
     public string GetCopyText()
     {
-        return TextContent ?? string.Empty;
+        return RawTextContent ?? string.Empty;
     }
 
     private class ResponseViewItemInteractor : BaseViewModel, IInvokeInteractor, IAsyncDisposable

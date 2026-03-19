@@ -32,7 +32,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         {
             var textContent = DialogItems.OfType<ParallelResponseViewItem>()
                 .FirstOrDefault(item => item.IsAvailableInContext)
-                ?.AcceptedResponse?.TextContent;
+                ?.AcceptedResponse?.RawTextContent;
             return string.IsNullOrEmpty(textContent)
                 ? null
                 : textContent?.Substring(0, int.Min(20, textContent.Length));
@@ -646,7 +646,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 {
                     if (viewItem is ParallelResponseViewItem { AcceptedResponse: { } responseViewItem })
                     {
-                        var textContent = responseViewItem.TextContent;
+                        var textContent = responseViewItem.RawTextContent;
                         stringBuilder.AppendLine("# **Assistant:**");
                         stringBuilder.Append(textContent ?? string.Empty);
                         stringBuilder.AppendLine();
