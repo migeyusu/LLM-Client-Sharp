@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,17 +15,14 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using LLMClient.Endpoints.Messages;
-using Markdig;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
-using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Dialog.Models;
 
 /// <summary>
-/// 支持flowdocument富文本渲染的ResponseViewItem
+/// 支持flowdocument富文本渲染和交互
 /// </summary>
 public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
 {
@@ -109,13 +105,15 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
 
         o.IsManualValid = true;
     }));
-    
+
     public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<DocResponseViewItem>(o =>
     {
         o?.SwitchAvailableInContext();
     });
 
     private FlowDocument? _tempDocument;
+
+    private FlowDocument? _fullResponseDocument;
 
     private async Task<FlowDocument?> GetPreDocumentAsync()
     {
@@ -132,72 +130,6 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
         return _fullResponseDocument;
     }
 
-    private FlowDocument? _fullResponseDocument;
-
-    private static async Task<FlowDocument?> CreateDocumentAsync(IList<ChatMessage>? responseMessages,
-        IList<ChatAnnotation>? annotations)
-    {
-        if (responseMessages == null || !responseMessages.Any())
-        {
-            return null;
-        }
-
-        var resultDocument = new FlowDocument();
-        var renderer = CustomMarkdownRenderer.NewRenderer(resultDocument);
-        if (annotations != null)
-        {
-            foreach (var annotation in annotations)
-            {
-                renderer.AppendExpanderItem(annotation,
-                    CustomMarkdownRenderer.AnnotationStyleKey);
-            }
-        }
-
-        foreach (var message in responseMessages)
-        {
-            foreach (var content in message.Contents)
-            {
-                switch (content)
-                {
-                    case TextReasoningContent reasoningContent:
-                        var markdownDocument = await Task.Run(() =>
-                        {
-                            var stringBuilder = new StringBuilder();
-                            stringBuilder.AppendLine(ThinkBlockParser.OpenTag);
-                            stringBuilder.AppendLine(reasoningContent.Text);
-                            stringBuilder.AppendLine(ThinkBlockParser.CloseTag);
-                            var s = stringBuilder.ToString();
-                            return Markdown.Parse(s, CustomMarkdownRenderer.DefaultPipeline);
-                        });
-                        renderer.Render(markdownDocument);
-                        break;
-                    case TextContent textContent:
-                        await renderer.RenderMarkdown(textContent.Text);
-                        break;
-                    case FunctionCallContent functionCallContent:
-                        renderer.AppendExpanderItem(functionCallContent,
-                            CustomMarkdownRenderer.FunctionCallStyleKey);
-                        break;
-                    case FunctionResultContent functionResultContent:
-                        renderer.AppendExpanderItem(functionResultContent,
-                            CustomMarkdownRenderer.FunctionResultStyleKey);
-                        break;
-
-                    default:
-                        Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");
-                        break;
-                }
-            }
-        }
-
-        return resultDocument;
-    }
-
-    public Task<FlowDocument?> CreateFullResponseDocumentAsync()
-    {
-        return CreateDocumentAsync(ResponseMessages, Annotations);
-    }
-
     public SearchableDocument? SearchableDocument
     {
         get
@@ -210,13 +142,13 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
         }
     }
 
-    private string? _textContent = null;
+    private string? _rawTextContent = null;
 
     public string? RawTextContent
     {
         get
         {
-            if (_textContent == null)
+            if (_rawTextContent == null)
             {
                 if (ResponseMessages != null && ResponseMessages.Any())
                 {
@@ -232,15 +164,15 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
                         }
                     }
 
-                    _textContent = sb.ToString();
+                    _rawTextContent = sb.ToString();
                 }
                 else
                 {
-                    _textContent = string.Empty;
+                    _rawTextContent = string.Empty;
                 }
             }
 
-            return _textContent;
+            return _rawTextContent;
         }
     }
 
@@ -259,7 +191,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
         }
     } = false;
 
-    public ObservableCollection<string> TempResponseText { get; } = new();
+    public ObservableCollection<string> ResponseBuffer { get; } = [];
 
     /// <summary>
     /// 切换在上下文中的可用性
@@ -352,7 +284,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
     public void TriggerTextContentUpdate()
     {
         _fullResponseDocument = null;
-        _textContent = null;
+        _rawTextContent = null;
         InvalidateAsyncProperty(nameof(SearchableDocument));
         OnPropertyChanged(nameof(RawTextContent));
     }
@@ -376,7 +308,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
 
             _session = new StreamingRenderSession(
                 flowDocument,
-                clearTail: () => Dispatch(() => responseViewItem.TempResponseText.Clear())
+                clearTail: () => Dispatch(() => responseViewItem.ResponseBuffer.Clear())
             );
 
             _task = Task.Run(() =>
@@ -395,7 +327,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
                 // Normal 优先级，确保在 Background 级别的 OnBlockClosed 之前执行
                 Dispatch(() =>
                 {
-                    responseViewItem.TempResponseText.Add(message);
+                    responseViewItem.ResponseBuffer.Add(message);
                     responseViewItem._responseHistory.Append(message);
                 });
             };
@@ -415,14 +347,14 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
 
         public Task<bool> WaitForPermission(string title, string message)
         {
-            var vm = new PermissionViewModel { Title = title, Content = message };
+            var vm = new AsyncPermissionViewModel { Title = title, Content = message };
             _customRenderer.InsertExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);
             return vm.Task;
         }
 
         public Task<bool> WaitForPermission(object content)
         {
-            var vm = new PermissionViewModel { Content = content };
+            var vm = new AsyncPermissionViewModel { Content = content };
             _customRenderer.InsertExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);
             return vm.Task;
         }

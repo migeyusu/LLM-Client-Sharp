@@ -4,6 +4,7 @@ using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints.Converters;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
@@ -53,11 +54,7 @@ public class GeekAISearchOption : BaseViewModel, ISearchOption
     public Task ApplySearch(DialogContext context)
     {
         var requestViewItem = context.Request;
-        if (requestViewItem == null)
-        {
-            return Task.CompletedTask;
-        }
-
+        requestViewItem.TempAdditionalProperties ??= new AdditionalPropertiesDictionary();
         requestViewItem.TempAdditionalProperties["enable_search"] = true;
         if (SearchEngine != null)
         {

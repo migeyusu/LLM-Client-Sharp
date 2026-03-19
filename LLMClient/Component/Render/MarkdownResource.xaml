@@ -707,7 +707,7 @@
                 Value="False" />
         <Setter Property="HeaderTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type dialog:PermissionViewModel}">
+                <DataTemplate DataType="{x:Type dialog:AsyncPermissionViewModel}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -744,7 +744,7 @@
         </Setter>
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type dialog:PermissionViewModel}">
+                <DataTemplate DataType="{x:Type dialog:AsyncPermissionViewModel}">
                     <StackPanel>
                         <ContentPresenter Margin="10"
                                           Content="{Binding Content,Mode=OneTime}">

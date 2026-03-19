@@ -117,7 +117,7 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
     /// <summary>
     /// 对Request附加的额外属性，不持久化
     /// </summary>
-    public AdditionalPropertiesDictionary TempAdditionalProperties { get; init; } = new();
+    public AdditionalPropertiesDictionary? TempAdditionalProperties { get; set; }
 
     private ChatMessage? _message = null;
 

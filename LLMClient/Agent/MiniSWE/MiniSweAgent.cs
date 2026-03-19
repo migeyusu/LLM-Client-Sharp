@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using LLMClient.Abstraction;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.Dialog.Models;
+using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Agent.MiniSWE;
@@ -13,7 +14,7 @@ namespace LLMClient.Agent.MiniSWE;
 /// Mini-SWE-Agent 核心实现
 /// 原汁原味的 ReAct 循环实现
 /// </summary>
-/*public class MiniSweAgent : ResponseViewItem
+public class MiniSweAgent : IAgent
 {
     private readonly IChatClient _chatClient;
     private readonly MiniSweAgentConfig _config;
@@ -106,6 +107,12 @@ namespace LLMClient.Agent.MiniSWE;
         Messages.AddRange(messages);
     }
 
+    public IAsyncEnumerable<ChatCallResult> Execute(DialogContext context, IInvokeInteractor? interactor = null,
+        CancellationToken cancellationToken = default)
+    {
+        
+    }
+    
     /// <summary>
     /// 运行 Agent 主循环
     /// 对应 Python 的 run 方法
@@ -533,7 +540,7 @@ namespace LLMClient.Agent.MiniSWE;
             }).ToList()
         };
     }
-}*/
+}
 
 /// <summary>
 /// Agent 运行结果

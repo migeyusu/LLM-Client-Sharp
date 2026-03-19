@@ -1,6 +1,11 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Diagnostics;
+using System.Text;
+using System.Windows.Documents;
+using LLMClient.Abstraction;
+using LLMClient.Component.Render;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints.Messages;
+using Markdig;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
@@ -68,8 +73,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             OnPropertyChanged(nameof(Tokens));
         }
     }
-
-
+    
     /// <summary>
     /// 是否中断
     /// </summary>
@@ -122,4 +126,68 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     }
 
     public IList<ChatAnnotation>? Annotations { get; set; }
+
+    protected static async Task<FlowDocument?> CreateDocumentAsync(IList<ChatMessage>? responseMessages,
+        IList<ChatAnnotation>? annotations)
+    {
+        if (responseMessages == null || !responseMessages.Any())
+        {
+            return null;
+        }
+
+        var resultDocument = new FlowDocument();
+        var renderer = CustomMarkdownRenderer.NewRenderer(resultDocument);
+        if (annotations != null)
+        {
+            foreach (var annotation in annotations)
+            {
+                renderer.AppendExpanderItem(annotation,
+                    CustomMarkdownRenderer.AnnotationStyleKey);
+            }
+        }
+
+        foreach (var message in responseMessages)
+        {
+            foreach (var content in message.Contents)
+            {
+                switch (content)
+                {
+                    case TextReasoningContent reasoningContent:
+                        var markdownDocument = await Task.Run(() =>
+                        {
+                            var stringBuilder = new StringBuilder();
+                            stringBuilder.AppendLine(ThinkBlockParser.OpenTag);
+                            stringBuilder.AppendLine(reasoningContent.Text);
+                            stringBuilder.AppendLine(ThinkBlockParser.CloseTag);
+                            var s = stringBuilder.ToString();
+                            return Markdown.Parse(s, CustomMarkdownRenderer.DefaultPipeline);
+                        });
+                        renderer.Render(markdownDocument);
+                        break;
+                    case TextContent textContent:
+                        await renderer.RenderMarkdown(textContent.Text);
+                        break;
+                    case FunctionCallContent functionCallContent:
+                        renderer.AppendExpanderItem(functionCallContent,
+                            CustomMarkdownRenderer.FunctionCallStyleKey);
+                        break;
+                    case FunctionResultContent functionResultContent:
+                        renderer.AppendExpanderItem(functionResultContent,
+                            CustomMarkdownRenderer.FunctionResultStyleKey);
+                        break;
+
+                    default:
+                        Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");
+                        break;
+                }
+            }
+        }
+
+        return resultDocument;
+    }
+    
+    public Task<FlowDocument?> CreateFullResponseDocumentAsync()
+    {
+        return CreateDocumentAsync(ResponseMessages, Annotations);
+    }
 }

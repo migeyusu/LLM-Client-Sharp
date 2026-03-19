@@ -163,7 +163,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var dialogItems = context.DialogItems;
             var systemPrompt = context.SystemPrompt;
             var requestViewItem = context.Request;
-            var searchService = requestViewItem?.SearchOption;
+            var searchService = requestViewItem.SearchOption;
             if (searchService != null)
             {
                 await searchService.ApplySearch(context);
@@ -172,7 +172,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var chatHistory = new List<ChatMessage>();
             var kernelPluginCollection = new KernelPluginCollection();
             var additionalPromptBuilder = new StringBuilder();
-            var functionGroups = requestViewItem?.FunctionGroups;
+            var functionGroups = requestViewItem.FunctionGroups;
             if (functionGroups != null)
             {
                 var toolsPromptBuilder = new StringBuilder();
@@ -184,7 +184,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            var ragSources = requestViewItem?.RagSources;
+            var ragSources = requestViewItem.RagSources;
             if (ragSources != null && ragSources.Any(source => source.IsAvailable))
             {
                 var resourceIndex = 0;
@@ -216,7 +216,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             var requestOptions = this.CreateChatOptions();
-            requestOptions.ResponseFormat = requestViewItem?.ResponseFormat;
+            requestOptions.ResponseFormat = requestViewItem.ResponseFormat;
             FunctionCallEngine functionCallEngine;
             if (!this.Model.SupportFunctionCall)
             {
@@ -227,8 +227,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             else
             {
                 functionCallEngine =
-                    FunctionCallEngine.Create(requestViewItem?.CallEngine ?? FunctionCallEngineType.OpenAI,
-                        kernelPluginCollection);
+                    FunctionCallEngine.Create(requestViewItem.CallEngine, kernelPluginCollection);
             }
 
             if (kernelPluginCollection.Count > 0)
@@ -276,7 +275,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     throw new ArgumentOutOfRangeException();
             }
 
-            var tempAdditionalProperties = requestViewItem?.TempAdditionalProperties;
+            var tempAdditionalProperties = requestViewItem.TempAdditionalProperties;
             var requestOptionsAdditionalProperties = requestOptions.AdditionalProperties;
             if (tempAdditionalProperties != null && requestOptionsAdditionalProperties != null)
             {
@@ -306,7 +305,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var softFunctionCall = false;
             if (kernelPluginCollection.Count > 0)
             {
-                softFunctionCall = requestViewItem?.CallEngine == FunctionCallEngineType.Prompt;
+                softFunctionCall = requestViewItem.CallEngine == FunctionCallEngineType.Prompt;
                 //在openai调用引擎下，如果不可流式输出，则关闭流式输出
                 if (!this.Model.FunctionCallOnStreaming &&
                     functionCallEngine.GetType() == typeof(DefaultFunctionCallEngine))
@@ -316,7 +315,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             var chatContext = new ChatContext(interactor, tempAdditionalProperties)
-                { Streaming = streaming, ShowRequestJson = requestViewItem?.IsDebugMode ?? false };
+                { Streaming = streaming, ShowRequestJson = requestViewItem.IsDebugMode};
             _durationStopwatch.Reset();
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {

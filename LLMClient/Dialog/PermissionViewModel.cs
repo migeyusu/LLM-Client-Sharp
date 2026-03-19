@@ -4,7 +4,7 @@ using LLMClient.Component.ViewModel.Base;
 
 namespace LLMClient.Dialog;
 
-public class PermissionViewModel : BaseViewModel
+public class AsyncPermissionViewModel : BaseViewModel
 {
     public string? Title { get; set; }
 
@@ -12,17 +12,16 @@ public class PermissionViewModel : BaseViewModel
 
     public bool IsCompleted
     {
-        get => _isCompleted;
+        get;
         set
         {
-            if (value == _isCompleted) return;
-            _isCompleted = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     private readonly TaskCompletionSource<bool> _tcs = new TaskCompletionSource<bool>();
-    private bool _isCompleted;
 
     public Task<bool> Task => _tcs.Task;
 

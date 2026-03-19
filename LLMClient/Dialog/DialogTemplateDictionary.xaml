@@ -268,7 +268,7 @@
             <customControl:MarkdownTextBlock TextWrapping="Wrap"
                                              VerticalAlignment="Top"
                                              Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                             Source="{Binding  TempResponseText,Mode=OneTime}" />
+                                             Source="{Binding  ResponseBuffer,Mode=OneTime}" />
             <TextBox IsReadOnly="True"
                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                      BorderThickness="0"

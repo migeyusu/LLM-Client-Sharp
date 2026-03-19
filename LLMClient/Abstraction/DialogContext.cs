@@ -10,15 +10,13 @@ public class DialogContext
     {
         DialogItems = history;
         SystemPrompt = systemPrompt;
-        if (DialogItems[^1] is RequestViewItem request)
-        {
-            Request = request;
-        }
+        this.Request = DialogItems.LastOrDefault((item => item is RequestViewItem)) as RequestViewItem ??
+                       throw new InvalidOperationException("RequestViewItem is null");
     }
 
     public string? SystemPrompt { get; }
 
     public IReadOnlyList<IDialogItem> DialogItems { get; }
 
-    public RequestViewItem? Request { get; }
+    public RequestViewItem Request { get; }
 }
