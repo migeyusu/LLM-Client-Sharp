@@ -1,4 +1,5 @@
-﻿using LLMClient.Endpoints.Messages;
+﻿using LLMClient.Dialog.Models;
+using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -12,7 +13,7 @@ public interface IChatUsage
     UsageDetails? Usage { get; }
 }
 
-public interface IResponse : IChatUsage, ITokenizable
+public interface IResponse : IChatUsage, IChatHistoryItem, ITokenizable
 {
     /// <summary>
     /// The latency of the response in ms
@@ -27,8 +28,6 @@ public interface IResponse : IChatUsage, ITokenizable
     bool IsInterrupt { get; }
 
     string? ErrorMessage { get; }
-    
-    IList<ChatMessage>? ResponseMessages { get; }
 
     IList<ChatAnnotation>? Annotations { get; set; }
 

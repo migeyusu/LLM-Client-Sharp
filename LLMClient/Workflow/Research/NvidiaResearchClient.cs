@@ -35,7 +35,7 @@ public class NvidiaResearchClient : ResearchClient
     public override async Task<ChatCallResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
-        var prompt = context.Request?.RawTextMessage;
+        var prompt = context.UserPrompt;
         if (prompt == null || string.IsNullOrWhiteSpace(prompt))
         {
             throw new ArgumentException("The dialog context must contain a non-empty request.");
@@ -216,7 +216,7 @@ public class NvidiaResearchClient : ResearchClient
                 Latency = 0,
                 Duration = stopwatch.Elapsed.Seconds,
                 Price = agent.Price,
-                ResponseMessages = [new ChatMessage(ChatRole.Assistant, finalReport)]
+                Messages = [new ChatMessage(ChatRole.Assistant, finalReport)]
             };
 
             void Information(string message)

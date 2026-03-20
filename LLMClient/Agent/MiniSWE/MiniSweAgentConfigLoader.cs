@@ -47,11 +47,6 @@ public static class MiniSweAgentConfigLoader
             {
                 config.StepLimit = Convert.ToInt32(stepLimit);
             }
-
-            if (agentDict.TryGetValue("cost_limit", out var costLimit))
-            {
-                config.CostLimit = Convert.ToDouble(costLimit);
-            }
         }
 
         if (yamlConfig.TryGetValue("model", out var modelObj) && modelObj is Dictionary<object, object> modelDict)
@@ -157,7 +152,6 @@ public static class MiniSweAgentConfigLoader
 
             UseToolCall = true,
             StepLimit = 0,
-            CostLimit = 3.0
         };
     }
 
@@ -261,7 +255,6 @@ public static class MiniSweAgentConfigLoader
 
             UseToolCall = false,
             StepLimit = 0,
-            CostLimit = 3.0
         };
     }
 }

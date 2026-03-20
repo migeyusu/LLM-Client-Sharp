@@ -23,7 +23,7 @@ public class RequestPersistItem : BaseDialogPersistItem
 
     public ChatResponseFormat? ResponseFormat { get; set; }
 
-    public FunctionCallEngineType CallEngine { get; set; }
+    public FunctionCallEngineType CallEngineType { get; set; }
     
     public long Tokens { get; set; }
 

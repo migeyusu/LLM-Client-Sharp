@@ -329,6 +329,7 @@ public class UnitTest2
                 }
             }
         };
+        
         var serialize = JsonSerializer.Serialize(requestViewItem, FileBasedSessionBase.SerializerOption);
         output.WriteLine(serialize);
     }

@@ -4,10 +4,7 @@ namespace LLMClient.Dialog.Models;
 
 public class EraseViewItem : BaseDialogItem
 {
-    public override IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException();
-    }
+    public override IEnumerable<ChatMessage> Messages => throw new NotSupportedException();
 
     public override bool IsAvailableInContext => false;
 

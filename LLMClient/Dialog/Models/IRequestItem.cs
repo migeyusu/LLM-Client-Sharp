@@ -1,5 +1,8 @@
-﻿namespace LLMClient.Dialog.Models;
+﻿using LLMClient.Abstraction;
 
-public interface IRequestItem : IEditableDialogItem, IInteractionItem
+namespace LLMClient.Dialog.Models;
+
+public interface IRequestItem : IEditableDialogItem, IInteractionItem, IChatRequest
 {
+    
 }

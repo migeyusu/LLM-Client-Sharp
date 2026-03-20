@@ -94,13 +94,11 @@ public class UserInputFormatter
             {
                 Timeout = TimeSpan.FromSeconds(30),
             };
+
             // 4. 配置 OpenAI JSON Mode
-            var completedResult = await promptAgent.SendRequestAsync(new DialogContext([
-                new RequestViewItem(message)
-                {
-                    ResponseFormat = ChatResponseFormat.ForJsonSchema<CodeBlockAnalysisResult>(),
-                }
-            ]), token);
+            var completedResult =
+                    await promptAgent.SendRequestAsync(DialogContext.CreateFromHistory([new RequestViewItem(message)],
+                        systemPrompt), token);
             var jsonResponse = completedResult.FirstTextResponse;
             if (string.IsNullOrEmpty(jsonResponse))
             {

@@ -134,7 +134,7 @@ public class EmptyLlmModelClient : ILLMChatClient
             Exception = null,
             Price = null,
             FinishReason = ChatFinishReason.Stop,
-            ResponseMessages =
+            Messages =
             [
                 new ChatMessage(ChatRole.Assistant, "This is a fake response from NullLlmModelClient.")
             ],

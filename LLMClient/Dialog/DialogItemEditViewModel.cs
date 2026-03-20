@@ -31,8 +31,13 @@ public class DialogItemEditViewModel : BaseViewModel
     public DialogItemEditViewModel(IEditableDialogItem response, bool rawMode = true)
     {
         this._item = response;
-        var messages = response.GetMessagesAsync(CancellationToken.None)
-            .ToBlockingEnumerable();
+
+        var messages = response.Messages;
+        if (messages == null)
+        {
+            return;
+        }
+
         foreach (var message in messages)
         {
             var messageId = message.MessageId;
@@ -61,15 +66,13 @@ public class DialogItemEditViewModel : BaseViewModel
         SelectedTextContent = TextContents.FirstOrDefault();
     }
 
-    private TextContentEditViewModel? _selectedTextContent;
-
     public TextContentEditViewModel? SelectedTextContent
     {
-        get => _selectedTextContent;
+        get;
         set
         {
-            if (Equals(value, _selectedTextContent)) return;
-            _selectedTextContent = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }

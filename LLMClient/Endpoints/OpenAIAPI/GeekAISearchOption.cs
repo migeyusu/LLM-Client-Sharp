@@ -53,12 +53,11 @@ public class GeekAISearchOption : BaseViewModel, ISearchOption
 
     public Task ApplySearch(DialogContext context)
     {
-        var requestViewItem = context.Request;
-        requestViewItem.TempAdditionalProperties ??= new AdditionalPropertiesDictionary();
-        requestViewItem.TempAdditionalProperties["enable_search"] = true;
+        context.TempAdditionalProperties ??= new AdditionalPropertiesDictionary();
+        context.TempAdditionalProperties["enable_search"] = true;
         if (SearchEngine != null)
         {
-            requestViewItem.TempAdditionalProperties["search_config"] = new GeekAISearchConfig()
+            context.TempAdditionalProperties["search_config"] = new GeekAISearchConfig()
             {
                 Engine = SearchEngine.GetEnumDescription(),
                 ReturnResult = ReturnResult

@@ -5,16 +5,8 @@ using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 
 namespace LLMClient.Data;
 
-public class ResponsePersistItem
+public class ResponsePersistItemBase
 {
-    public ParameterizedLLMModelPO? Client { get; set; }
-
-    public bool IsInterrupt { get; set; }
-
-    public long Tokens { get; set; }
-
-    public UsageDetails? Usage { get; set; }
-
     public int Latency { get; set; }
 
     public int Duration { get; set; }
@@ -23,11 +15,26 @@ public class ResponsePersistItem
 
     public double? Price { get; set; }
 
-    public IList<ChatMessagePO>? ResponseMessages { get; set; }
+    public UsageDetails? Usage { get; set; }
+
+    public bool IsInterrupt { get; set; }
+    
+    public IList<ChatMessagePO>? Messages { get; set; }
 
     public IList<ChatAnnotation>? Annotations { get; set; }
 
     public ChatFinishReason? FinishReason { get; set; }
+}
+
+
+public class RawResponsePersistItem : ResponsePersistItemBase
+{
+    
+}
+
+public class ClientResponsePersistItem : ResponsePersistItemBase
+{
+    public ParameterizedLLMModelPO? Client { get; set; }
 
     public bool IsManualValid { get; set; } = false;
 

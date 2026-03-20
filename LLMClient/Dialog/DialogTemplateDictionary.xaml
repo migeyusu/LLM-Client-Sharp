@@ -14,7 +14,8 @@
                     xmlns:models="clr-namespace:LLMClient.Dialog.Models"
                     xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
                     xmlns:render="clr-namespace:LLMClient.Component.Render"
-                    xmlns:extension="clr-namespace:LLMClient.Component.Extension">
+                    xmlns:extension="clr-namespace:LLMClient.Component.Extension"
+                    xmlns:abstraction="clr-namespace:LLMClient.Abstraction">
     <Style x:Key="SmallIconButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignIconButton}">
@@ -54,7 +55,7 @@
                                   Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
                         <MenuItem Header="显示Raw文本"
                                   IsCheckable="True"
-                                  IsChecked="{Binding DisplayRawText,Mode=TwoWay}" />
+                                  IsChecked="{Binding IsRawTextDisplayMode,Mode=TwoWay}" />
                         <MenuItem Header="格式化请求"
                                   Command="{Binding FormatTextCommand}"
                                   Icon="{materialDesign:PackIcon Kind=FormatText}" />
@@ -109,7 +110,7 @@
                         <customControl:FlowDocumentScrollViewerEx FontFamily="Segoe UI Emoji"
                                                                   BorderThickness="0"
                                                                   Padding="0"
-                                                                  Visibility="{Binding DisplayRawText,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
+                                                                  Visibility="{Binding IsRawTextDisplayMode,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
                                                                   HighlightableRanges="{Binding SearchableDocument.FoundTextRanges,Mode=OneWay}"
                                                                   SafeDocument="{Binding SearchableDocument.Document,Mode=OneWay}"
                                                                   Style="{StaticResource ExFlowDocumentScrollViewerStyle}">
@@ -126,7 +127,7 @@
                         </customControl:FlowDocumentScrollViewerEx>
                         <TextBlock TextWrapping="Wrap"
                                    Margin="16"
-                                   Visibility="{Binding DisplayRawText,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   Visibility="{Binding IsRawTextDisplayMode,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Style="{StaticResource MaterialDesignBody1TextBlock}"
                                    Text="{Binding TextMessage,Mode=OneWay}" />
                     </StackPanel>
@@ -176,16 +177,16 @@
                                           VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding FunctionGroups,Mode=OneTime}">
                                     <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
+                                        <DataTemplate DataType="{x:Type abstraction:IAIFunctionGroup}">
                                             <StackPanel>
                                                 <TextBlock Text="{Binding Name}"
                                                            FontWeight="Bold"
                                                            Margin="0,4,0,2" />
-                                                <ItemsControl ItemsSource="{Binding Functions,Mode=OneTime}"
+                                                <ItemsControl ItemsSource="{Binding AvailableTools,Mode=OneTime}"
                                                               Margin="10,0,0,0">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <TextBlock Text="{Binding FunctionName,Mode=OneTime}" />
+                                                            <TextBlock Text="{Binding Name,Mode=OneTime}" />
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>

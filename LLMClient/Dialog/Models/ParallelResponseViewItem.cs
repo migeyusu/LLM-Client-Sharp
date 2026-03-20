@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -9,7 +8,6 @@ using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.ViewModel;
-using LLMClient.Endpoints;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 
@@ -289,21 +287,13 @@ public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewIte
     {
     }
 
-    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+    public override IEnumerable<ChatMessage> Messages
     {
-        var responseMessages = AcceptedResponse?.ResponseMessages;
-        if (responseMessages == null)
+        get
         {
-            yield break;
+            var responseMessages = AcceptedResponse?.Messages;
+            return responseMessages ?? [];
         }
-
-        foreach (var chatMessage in responseMessages)
-        {
-            yield return chatMessage;
-        }
-
-        yield break;
     }
 
     /*public Task<CompletedResult> InvokeRequest(ResponseViewItem responseViewItem)
@@ -365,8 +355,7 @@ public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewIte
     private async Task<IResponse> ProcessResponseItem(DocResponseViewItem responseViewItem,
         CancellationToken token = default)
     {
-        var dialogItems = this.GetChatHistory().ToArray();
-        var dialogContext = new DialogContext(dialogItems, ParentSession.SystemPrompt);
+        var dialogContext = DialogContext.CreateFromResponse(this, ParentSession.SystemPrompt);
         ParentSession.RespondingCount++;
         try
         {

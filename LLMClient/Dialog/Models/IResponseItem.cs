@@ -2,7 +2,7 @@
 
 namespace LLMClient.Dialog.Models;
 
-public interface IResponseItem : IInteractionItem
+public interface IResponseItem : IDialogItem, IInteractionItem
 {
     //Task<IChatUsage> ProcessAsync(DialogContext context, CancellationToken token);
 }

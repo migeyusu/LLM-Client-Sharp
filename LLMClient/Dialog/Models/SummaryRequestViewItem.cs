@@ -1,4 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
+using LLMClient.Abstraction;
+using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
@@ -17,17 +19,17 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
         get => (long)(SummaryPrompt?.Length / 2.8 ?? 0);
     }
 
-    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+    public override IEnumerable<ChatMessage> Messages
     {
-        await Task.Yield();
-        if (string.IsNullOrEmpty(SummaryPrompt))
+        get
         {
-            throw new InvalidOperationException("SummaryPrompt cannot be null or empty.");
-        }
+            if (string.IsNullOrEmpty(SummaryPrompt))
+            {
+                throw new InvalidOperationException("SummaryPrompt cannot be null or empty.");
+            }
 
-        var message = new ChatMessage(ChatRole.User, SummaryPrompt);
-        yield return message;
+            yield return new ChatMessage(ChatRole.User, SummaryPrompt);
+        }
     }
 
     public override bool IsAvailableInContext { get; } = true;
@@ -37,4 +39,20 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
     }
 
     public Guid InteractionId { get; set; }
+
+    public string? SystemPrompt { get; } = null;
+
+    public ISearchOption? SearchOption { get; } = null;
+
+    public List<IAIFunctionGroup>? FunctionGroups { get; } = null;
+
+    public IRagSource[]? RagSources { get; } = null;
+
+    public ChatResponseFormat? ResponseFormat { get; } = null;
+
+    public FunctionCallEngineType CallEngineType { get; } = FunctionCallEngineType.Prompt;
+
+    public AdditionalPropertiesDictionary? TempAdditionalProperties { get; } = null;
+
+    public bool IsDebugMode { get; } = true;
 }

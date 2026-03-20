@@ -1,15 +1,15 @@
 ﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using Elsa.Extensions;
 using LLMClient.Abstraction;
 using LLMClient.Component.Render;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Endpoints;
-using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using MimeTypes;
@@ -30,40 +30,39 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
 
     public bool IsFormatting
     {
-        get => _isFormatting;
+        get;
         set
         {
-            if (value == _isFormatting) return;
-            _isFormatting = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool IsDebugMode { get; set; }
 
-    public bool DisplayRawText
+    public bool IsRawTextDisplayMode
     {
-        get => _displayRawText;
+        get;
         set
         {
-            if (value == _displayRawText) return;
-            _displayRawText = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public string? FormattedTextMessage
     {
-        get => _formattedTextMessage;
+        get;
         set
         {
-            if (value == _formattedTextMessage) return;
-            _formattedTextMessage = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(TextMessage));
             InvalidateAsyncProperty(nameof(SearchableDocument));
-            var dialogSessionViewModel = this.ParentSession;
-            if (dialogSessionViewModel != null) dialogSessionViewModel.IsDataChanged = true;
+            ParentSession?.IsDataChanged = true;
         }
     }
 
@@ -90,12 +89,12 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
                 }
 
                 return null;
-            }, null);
+            });
         }
     }
 
 
-    public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
+    public List<IAIFunctionGroup>? FunctionGroups { get; set; }
 
     public bool HasFunctions
     {
@@ -106,8 +105,13 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
                 return false;
             }
 
-            return FunctionGroups.Any(group => group.Functions.Count > 0);
+            return FunctionGroups.Any(group => group.AvailableTools?.Count > 0);
         }
+    }
+
+    public string? SystemPrompt
+    {
+        get { return ParentSession?.SystemPrompt; }
     }
 
     public ISearchOption? SearchOption { get; set; }
@@ -119,38 +123,30 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
     /// </summary>
     public AdditionalPropertiesDictionary? TempAdditionalProperties { get; set; }
 
-    private ChatMessage? _message = null;
-
-    private string? _formattedTextMessage;
-
-    private bool _isFormatting;
-
     public override bool IsAvailableInContext { get; } = true;
 
     public List<Attachment>? Attachments { get; set; }
 
     public bool HasAttachments
     {
-        get => Attachments != null && Attachments.Count > 0;
+        get => Attachments is { Count: > 0 };
     }
 
-    public IList<IRagSource>? RagSources { get; set; }
+    public IRagSource[]? RagSources { get; set; }
 
     public bool HasRagSources
     {
-        get => RagSources is { Count: > 0 };
+        get => RagSources is { Length: > 0 };
     }
 
-    public FunctionCallEngineType CallEngine { get; set; }
-
-    private ITokensCounter? _tokensCounter;
+    public FunctionCallEngineType CallEngineType { get; set; }
 
     private ITokensCounter TokensCounter
     {
         get
         {
-            _tokensCounter ??= ServiceLocator.GetService<ITokensCounter>()!;
-            return _tokensCounter;
+            field ??= ServiceLocator.GetService<ITokensCounter>()!;
+            return field;
         }
     }
 
@@ -164,10 +160,9 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
 
     public override ChatRole Role { get; } = ChatRole.User;
 
-    public DialogSessionViewModel? ParentSession { get; }
+    public DialogSessionViewModel? ParentSession { get; set; }
 
     private readonly TextContent _textRequestContent;
-    private bool _displayRawText;
 
     /// <summary>
     /// 
@@ -177,7 +172,7 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
     /// <exception cref="Exception"></exception>
     public RequestViewItem(string rawTextMessage, DialogSessionViewModel? parentSession = null)
     {
-        this._textRequestContent = new TextContent(rawTextMessage);
+        _textRequestContent = new TextContent(rawTextMessage);
         ParentSession = parentSession;
         InteractionId = Guid.NewGuid();
         FormatTextCommand = new RelayCommand(async void () =>
@@ -212,21 +207,22 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
         });
     }
 
-    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+    private List<DataContent>? _dataContents;
+
+    [MemberNotNull(nameof(_dataContents))]
+    public async Task EnsureInitializeAsync(CancellationToken cancellationToken = default)
     {
-        if (_message == null)
+        //一旦被创建，就不再改变，所以使用lazy模式
+        if (_dataContents == null)
         {
-            //一旦被创建，就不再改变，所以使用lazy模式
-            _message = new ChatMessage(ChatRole.User, [_textRequestContent]);
+            _dataContents = [];
             if (Attachments != null)
             {
                 foreach (var attachment in Attachments)
                 {
                     if (!attachment.EnsureCache())
                     {
-                        Trace.TraceWarning("Failed to cache attachment: " + attachment.CachedFileName);
-                        continue;
+                        throw new Exception("Failed to cache attachment: " + attachment.CachedFileName);
                     }
 
                     if (attachment.Type == AttachmentType.Image)
@@ -235,30 +231,37 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
                         var extension = Path.GetExtension(path);
                         if (!MimeTypeMap.TryGetMimeType(extension, out string? mimeType))
                         {
-                            Trace.TraceWarning("Unsupported image file extension: " + extension);
-                            continue;
+                            throw new NotSupportedException("Unsupported image file extension: " + extension);
                         }
 
                         var bytesAsync = await File.ReadAllBytesAsync(path, cancellationToken);
-                        _message.Contents.Add(new DataContent(bytesAsync.AsMemory(), mimeType));
+                        _dataContents.Add(new DataContent(bytesAsync.AsMemory(), mimeType));
                     }
                 }
             }
         }
+    }
 
-        yield return _message;
+    public override IEnumerable<ChatMessage> Messages
+    {
+        get
+        {
+            if (_dataContents == null)
+            {
+                throw new NotSupportedException("No data content found.");
+            }
+
+            var chatMessage = new ChatMessage(ChatRole.User, [_textRequestContent]);
+            chatMessage.Contents.AddRange(_dataContents);
+            yield return chatMessage;
+        }
     }
 
     public void TriggerTextContentUpdate()
     {
-        _message = null;
-        _formattedTextMessage = null;
+        ParentSession?.IsDataChanged = true;
         OnPropertyChanged(nameof(RawTextMessage));
-        OnPropertyChanged(nameof(FormattedTextMessage));
-        OnPropertyChanged(nameof(TextMessage));
         InvalidateAsyncProperty(nameof(Tokens));
-        InvalidateAsyncProperty(nameof(SearchableDocument));
-        var dialogSessionViewModel = this.ParentSession;
-        if (dialogSessionViewModel != null) dialogSessionViewModel.IsDataChanged = true;
+        FormattedTextMessage = null;
     }
 }

@@ -11,15 +11,13 @@ public class CheckableFunctionGroupTree : BaseViewModel, IAIFunctionGroup
 
     private bool _isUpdatingFromParent = false;
 
-    private bool? _isSelected;
-
     public bool? IsSelected
     {
-        get => _isSelected;
+        get;
         set
         {
-            if (value == _isSelected) return;
-            _isSelected = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             if (value.HasValue)
             {

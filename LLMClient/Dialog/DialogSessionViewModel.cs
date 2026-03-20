@@ -18,7 +18,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog;
 
-public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase, ITextDialogSession,
+public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     IDialogGraphViewModel
 {
     /// <summary>

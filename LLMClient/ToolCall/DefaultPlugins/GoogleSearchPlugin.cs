@@ -203,15 +203,9 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption,IBuil
 
     public async Task ApplySearch(DialogContext context)
     {
-        var requestViewItem = context.Request;
-        if (requestViewItem == null)
-        {
-            return;
-        }
-
-        requestViewItem.FunctionGroups ??= [];
-        if (requestViewItem.FunctionGroups.Any(tree =>
-                AIFunctionGroupComparer.Instance.Equals(tree.Data, this)))
+        context.FunctionGroups ??= [];
+        if (context.FunctionGroups.Any(func =>
+                AIFunctionGroupComparer.Instance.Equals(func, this)))
         {
             return;
         }
@@ -219,7 +213,7 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption,IBuil
         var functionGroupTree = new CheckableFunctionGroupTree(this);
         await functionGroupTree.EnsureAsync(CancellationToken.None);
         functionGroupTree.IsSelected = true;
-        requestViewItem.FunctionGroups.Add(functionGroupTree);
+        context.FunctionGroups.Add(functionGroupTree);
     }
 
     #endregion

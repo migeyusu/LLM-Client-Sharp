@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Agent;
+using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Data;
@@ -26,9 +28,29 @@ public class DialogMappingProfile : Profile
             .ConvertUsing<AutoMapModelTypeConverter>();
         CreateMap<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>()
             .ConvertUsing<AutoMapModelTypeConverter>();
+        
+        CreateMap<AIFunctionGroupPersistObject, IAIFunctionGroup>()
+            .As<CheckableFunctionGroupTree>();
+        CreateMap<IAIFunctionGroup, AIFunctionGroupPersistObject>()
+            .Include<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>();
+
         CreateMap<IThinkingConfig, GeekAIThinkingConfig>();
         CreateMap<IThinkingConfig, OpenRouterReasoningConfig>();
         CreateMap<IThinkingConfig, NVDAAPIThinkingConfig>();
+
+        CreateMap<IAgent, AgentPersistModel>().IncludeAllDerived();
+        CreateMap<AgentPersistModel, IAgent>().IncludeAllDerived();
+        CreateMap<MiniSweAgent, MiniSweAgentPersistModel>();
+        CreateMap<MiniSweAgentPersistModel, MiniSweAgent>()
+            .ConstructUsing((src, ctx) =>
+            {
+                var config = src.Config ?? new MiniSweAgentConfig();
+                var client = src.ChatClient != null
+                    ? ctx.Mapper.Map<ILLMChatClient>(src.ChatClient)
+                    : EmptyLlmModelClient.Instance;
+                return new MiniSweAgent(config, client);
+            });
+
         CreateMap<IAIContent, AIContent>().IncludeAllDerived();
         CreateMap<AIContent, IAIContent>().IncludeAllDerived();
         CreateMap<ChatMessage, ChatMessagePO>();
@@ -75,7 +97,8 @@ public class DialogMappingProfile : Profile
             .Include<RequestViewItem, RequestPersistItem>()
             .Include<SummaryRequestViewItem, SummaryRequestPersistItem>()
             .Include<EraseViewItem, ErasePersistItem>()
-            .Include<ParallelResponseViewItem, MultiResponsePersistItem>();
+            .Include<ParallelResponseViewItem, ParallelResponsePersisItem>()
+            .Include<LinearHistoryResponseViewItem, LinearHistoryResponsePersistItem>();
 
         CreateMap<RequestViewItem, RequestPersistItem>()
             .IncludeBase<IDialogItem, IDialogPersistItem>();
@@ -83,16 +106,21 @@ public class DialogMappingProfile : Profile
             .IncludeBase<IDialogItem, IDialogPersistItem>();
         CreateMap<EraseViewItem, ErasePersistItem>()
             .IncludeBase<IDialogItem, IDialogPersistItem>();
-        CreateMap<ParallelResponseViewItem, MultiResponsePersistItem>()
+        CreateMap<ParallelResponseViewItem, ParallelResponsePersisItem>()
             .IncludeBase<IDialogItem, IDialogPersistItem>()
             .ForMember(item => item.ResponseItems, opt => opt.MapFrom(item => item.Items));
+        CreateMap<LinearHistoryResponseViewItem, LinearHistoryResponsePersistItem>()
+            .IncludeBase<IDialogItem, IDialogPersistItem>()
+            .ForMember(item => item.ResponseItems, opt => opt.MapFrom(item => item.Items))
+            .ForMember(item => item.Agent, opt => opt.MapFrom(item => item.Agent));
 
         //po -> vm
         CreateMap<IDialogPersistItem, IDialogItem>()
             .Include<RequestPersistItem, RequestViewItem>()
             .Include<SummaryRequestPersistItem, SummaryRequestViewItem>()
             .Include<ErasePersistItem, EraseViewItem>()
-            .Include<MultiResponsePersistItem, ParallelResponseViewItem>();
+            .Include<ParallelResponsePersisItem, ParallelResponseViewItem>()
+            .Include<LinearHistoryResponsePersistItem, LinearHistoryResponseViewItem>();
 
         CreateMap<RequestPersistItem, RequestViewItem>()
             .ConstructUsing((item, context) =>
@@ -111,7 +139,7 @@ public class DialogMappingProfile : Profile
             .IncludeBase<IDialogPersistItem, IDialogItem>();
         CreateMap<ErasePersistItem, EraseViewItem>()
             .IncludeBase<IDialogPersistItem, IDialogItem>();
-        CreateMap<MultiResponsePersistItem, ParallelResponseViewItem>()
+        CreateMap<ParallelResponsePersisItem, ParallelResponseViewItem>()
             .IncludeBase<IDialogPersistItem, IDialogItem>()
             .ConstructUsing((_, context) =>
             {
@@ -128,7 +156,35 @@ public class DialogMappingProfile : Profile
             {
                 var contextMapper = context.Mapper;
                 var items = source.ResponseItems.Select(x =>
-                    contextMapper.Map<ResponsePersistItem, DocResponseViewItem>(x)).ToArray();
+                    contextMapper.Map<ClientResponsePersistItem, DocResponseViewItem>(x)).ToArray();
+                var responseViewItems = destination.Items;
+                foreach (var item in items)
+                {
+                    responseViewItems.Add(item);
+                }
+            });
+        CreateMap<LinearHistoryResponsePersistItem, LinearHistoryResponseViewItem>()
+            .IncludeBase<IDialogPersistItem, IDialogItem>()
+            .ConstructUsing((source, context) =>
+            {
+                var contextItems = context.Items;
+                if (!contextItems.TryGetValue(parentDialogViewModelKey, out var parentDialogViewModel)
+                    || !(parentDialogViewModel is DialogSessionViewModel parentViewModel))
+                {
+                    throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
+                }
+
+                IAgent agent = source.Agent != null
+                    ? context.Mapper.Map<IAgent>(source.Agent)
+                    : new MiniSweAgent(new MiniSweAgentConfig(), EmptyLlmModelClient.Instance);
+
+                return new LinearHistoryResponseViewItem(parentViewModel, agent);
+            })
+            .AfterMap((source, destination, context) =>
+            {
+                var contextMapper = context.Mapper;
+                var items = source.ResponseItems.Select(x =>
+                    contextMapper.Map<RawResponsePersistItem, RawResponseViewItem>(x)).ToArray();
                 var responseViewItems = destination.Items;
                 foreach (var item in items)
                 {
@@ -136,8 +192,17 @@ public class DialogMappingProfile : Profile
                 }
             });
 
+
+        CreateMap<ResponsePersistItemBase, ResponseViewItemBase>()
+            .Include<ClientResponsePersistItem, DocResponseViewItem>()
+            .Include<RawResponsePersistItem, RawResponseViewItem>();
+
         CreateMap<IResponse, ResponseViewItemBase>()
             .Include<IResponse, DocResponseViewItem>();
+
+        CreateMap<IResponse, RawResponseViewItem>()
+            .IncludeBase<IResponse, ResponseViewItemBase>();
+
         CreateMap<IResponse, DocResponseViewItem>()
             .IncludeBase<IResponse, ResponseViewItemBase>();
 
@@ -162,10 +227,13 @@ public class DialogMappingProfile : Profile
         CreateMap<DialogFileViewModel, DialogFilePersistModel>()
             .ConvertUsing<AutoMapModelTypeConverter>();
 
-        CreateMap<DocResponseViewItem, ResponsePersistItem>()
+        CreateMap<DocResponseViewItem, ClientResponsePersistItem>()
+            .PreserveReferences();
+        CreateMap<RawResponseViewItem, RawResponsePersistItem>()
             .PreserveReferences();
 
-        CreateMap<ResponsePersistItem, DocResponseViewItem>()
+        CreateMap<ClientResponsePersistItem, DocResponseViewItem>()
+            .IncludeBase<ResponsePersistItemBase, ResponseViewItemBase>()
             .PreserveReferences()
             .ConstructUsing((source, context) =>
             {
@@ -178,7 +246,9 @@ public class DialogMappingProfile : Profile
 
                 return new DocResponseViewItem(llmClient);
             });
-
+        CreateMap<RawResponsePersistItem, RawResponseViewItem>()
+            .IncludeBase<ResponsePersistItemBase, ResponseViewItemBase>()
+            .PreserveReferences();
 
         CreateMap<ProjectOptionsPersistModel, ProjectOption>();
         CreateMap<ProjectOption, ProjectOptionsPersistModel>();
@@ -496,3 +566,6 @@ public class DialogMappingProfile : Profile
         }
     }
 }
+
+
+

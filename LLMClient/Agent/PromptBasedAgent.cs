@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using System.Windows;
 using LLMClient.Abstraction;
-using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
@@ -28,13 +27,6 @@ public class PromptBasedAgent
 
     public Duration Timeout { get; set; } = Duration.Forever;
 
-    public Task<ChatCallResult> SendRequestAsync(ITextDialogSession session,
-        CancellationToken cancellationToken = default)
-    {
-        var context = new DialogContext(session.DialogItems, session.SystemPrompt);
-        return SendRequestAsync(context, cancellationToken);
-    }
-
     public async Task<ChatCallResult> SendRequestAsync(DialogContext context,
         CancellationToken cancellationToken = default)
     {
@@ -54,6 +46,10 @@ public class PromptBasedAgent
                             completedResult = await _chatClient
                                 .SendRequest(context, null, linkedTokenSource.Token)
                                 .ConfigureAwait(false);
+                            if (completedResult.IsInvalidRequest || completedResult.IsCanceled)
+                            {
+                                throw completedResult.Exception;
+                            }
                         }
                         catch (OperationCanceledException)
                         {
@@ -115,10 +111,9 @@ public class PromptBasedAgent
     public async Task<string> GetMessageAsync(string prompt, string? systemPrompt = null,
         CancellationToken cancellationToken = default)
     {
-        var context = new DialogContext([
+        var context = DialogContext.CreateFromHistory([
             new RequestViewItem(prompt)
         ], systemPrompt);
-
         var sendRequestAsync = await SendRequestAsync(context, cancellationToken);
         return sendRequestAsync.GetContentAsString()!;
     }

@@ -124,7 +124,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
 
         if (_fullResponseDocument == null)
         {
-            _fullResponseDocument = await CreateDocumentAsync(ResponseMessages, Annotations);
+            _fullResponseDocument = await CreateDocumentAsync(Messages, Annotations);
         }
 
         return _fullResponseDocument;
@@ -150,10 +150,10 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
         {
             if (_rawTextContent == null)
             {
-                if (ResponseMessages != null && ResponseMessages.Any())
+                if (Messages != null && Messages.Any())
                 {
                     var sb = new StringBuilder();
-                    foreach (var message in ResponseMessages)
+                    foreach (var message in Messages)
                     {
                         foreach (var messageContent in message.Contents)
                         {

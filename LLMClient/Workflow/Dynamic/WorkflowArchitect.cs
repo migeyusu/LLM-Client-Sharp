@@ -40,13 +40,12 @@ Return ONLY valid JSON defined as:
 ";
 
         // 2. 调用 LLM (建议开启 JSON Mode)
-        var response = await this.SendRequestAsync(new DialogContext(new[]
-        {
+        var response = await this.SendRequestAsync(DialogContext.CreateFromHistory([
             new RequestViewItem(prompt)
             {
                 ResponseFormat = ChatResponseFormat.ForJsonSchema<WorkflowBlueprint>()
-            },
-        }));
+            }
+        ]));
 
         // 3. 反序列化
         return JsonSerializer.Deserialize<WorkflowBlueprint>(response.FirstTextResponse,

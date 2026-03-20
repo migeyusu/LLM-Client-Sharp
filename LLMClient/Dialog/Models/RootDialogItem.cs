@@ -12,9 +12,9 @@ public class RootDialogItem : BaseDialogItem
     public override long Tokens { get; } = 0;
     public override ChatRole Role { get; } = EmptyRole;
 
-    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    public override IEnumerable<ChatMessage> Messages
     {
-        yield break;
+        get { yield break; }
     }
 
     public override bool IsAvailableInContext { get; } = false;

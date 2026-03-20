@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Runtime.CompilerServices;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
@@ -14,12 +13,16 @@ namespace LLMClient.Dialog.Models;
 /// </summary>
 public class RawResponseViewItem : ResponseViewItemBase
 {
+    public IEnumerable<ChatMessage> GetMessages()
+    {
+        return this.Messages ?? [];
+    }
 }
 
 /// <summary>
 /// 线性历史的ResponseViewItem
 /// </summary>
-public class LinearHistoryViewItem : MultiResponseViewItem<RawResponseViewItem>, IInvokeInteractor
+public class LinearHistoryResponseViewItem : MultiResponseViewItem<RawResponseViewItem>, IInvokeInteractor
 {
     private long _tokensCount = 0;
     public override long Tokens => _tokensCount;
@@ -31,9 +34,15 @@ public class LinearHistoryViewItem : MultiResponseViewItem<RawResponseViewItem>,
     public ObservableCollection<AsyncPermissionViewModel> PermissionViewModels { get; set; } = [];
 
     private readonly IAgent _agent;
+    public IAgent Agent => _agent;
 
-    public LinearHistoryViewItem(IEnumerable<RawResponseViewItem> items, DialogSessionViewModel parentSession,
+    public LinearHistoryResponseViewItem(IEnumerable<RawResponseViewItem> items, DialogSessionViewModel parentSession,
         IAgent agent) : base(items, parentSession)
+    {
+        _agent = agent;
+    }
+
+    public LinearHistoryResponseViewItem(DialogSessionViewModel parentSession, IAgent agent) : base([], parentSession)
     {
         _agent = agent;
     }
@@ -48,18 +57,9 @@ public class LinearHistoryViewItem : MultiResponseViewItem<RawResponseViewItem>,
         }
     }
 
-    public override async IAsyncEnumerable<ChatMessage> GetMessagesAsync(
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+    public override IEnumerable<ChatMessage> Messages
     {
-        foreach (var responseViewItemBase in this.Items)
-        {
-            var responseMessages = responseViewItemBase.ResponseMessages;
-            if (responseMessages == null) continue;
-            foreach (var responseMessage in responseMessages)
-            {
-                yield return responseMessage;
-            }
-        }
+        get { return this.Items.SelectMany(responseViewItemBase => responseViewItemBase.Messages); }
     }
 
 

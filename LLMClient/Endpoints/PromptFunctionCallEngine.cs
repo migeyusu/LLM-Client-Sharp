@@ -23,84 +23,21 @@ public enum FunctionCallEngineType
 {
     [Description("OpenAI API")] OpenAI,
 
-    [Description("Prompt-based")] Prompt
+    [Description("Prompt-based")] Prompt,
+
+    [Description("mini-SWE")] MiniSwe,
 }
 
-public abstract class FunctionCallEngine
+public partial class PromptFunctionCallEngine : FunctionCallEngine
 {
-    protected readonly KernelPluginCollection KernelPluginCollection;
-
-    protected FunctionCallEngine(KernelPluginCollection kernelPluginCollection)
-    {
-        this.KernelPluginCollection = kernelPluginCollection;
-    }
-
-    public abstract void Initialize(ChatOptions options, IEndpointModel model,
-        IList<ChatMessage> chatMessages);
-
-    public abstract bool TryParseFunctionCalls(ChatResponse response, out List<FunctionCallContent> functionCalls);
-
-    public abstract void EncapsulateResult(ChatMessage replyMessage, IList<FunctionResultContent> results);
-
-    public static FunctionCallEngine Create(FunctionCallEngineType engineType,
-        KernelPluginCollection kernelPluginCollection)
-    {
-        return engineType switch
-        {
-            FunctionCallEngineType.Prompt => new PromptFunctionCallEngine(kernelPluginCollection),
-            _ => new DefaultFunctionCallEngine(kernelPluginCollection)
-        };
-    }
-}
-
-public class DefaultFunctionCallEngine : FunctionCallEngine
-{
-    public DefaultFunctionCallEngine(KernelPluginCollection kernelPluginCollection) : base(kernelPluginCollection)
-    {
-    }
-
-    public override void Initialize(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
-    {
-        options.Tools = KernelPluginCollection.SelectMany(plugin => plugin).ToArray<AITool>();
-    }
-
-    public override bool TryParseFunctionCalls(ChatResponse response, out List<FunctionCallContent> functionCalls)
-    {
-        functionCalls = new List<FunctionCallContent>();
-        foreach (var responseMessage in response.Messages)
-        {
-            foreach (var content in responseMessage.Contents)
-            {
-                if (content is FunctionCallContent functionCallContent)
-                {
-                    functionCalls.Add(functionCallContent);
-                }
-            }
-        }
-
-        return functionCalls.Count > 0;
-    }
-
-    public override void EncapsulateResult(ChatMessage replyMessage, IList<FunctionResultContent> results)
-    {
-        replyMessage.Role = ChatRole.Tool;
-        for (var index = 0; index < results.Count; index++)
-        {
-            var functionResultContent = results[index];
-            replyMessage.Contents.Insert(index, functionResultContent);
-        }
-    }
-}
-
-public class PromptFunctionCallEngine : FunctionCallEngine
-{
-    public PromptFunctionCallEngine(KernelPluginCollection kernelPluginCollection) : base(kernelPluginCollection)
+    public PromptFunctionCallEngine()
     {
     }
 
     private string CreatePrompt(IEnumerable<AIFunction> functions)
     {
         var promptBuilder = new StringBuilder();
+        promptBuilder.AppendLine("# Tool Call");
         promptBuilder.AppendLine(
             "In this environment you have access to a set of tools to help with answering, you can use them and wait for results.");
         promptBuilder.AppendLine("");
@@ -253,7 +190,7 @@ public class PromptFunctionCallEngine : FunctionCallEngine
 
     private IEnumerable<FunctionCallContent> ParseResponseAsync(string llmResponse)
     {
-        var match = Regex.Match(llmResponse, @"<tool_calls>\s*(.*?)\s*</tool_calls>", RegexOptions.Singleline);
+        var match = MyRegex().Match(llmResponse);
         if (!match.Success)
         {
             return [];
@@ -273,12 +210,12 @@ public class PromptFunctionCallEngine : FunctionCallEngine
                 if (!string.IsNullOrWhiteSpace(name) && arguments != null)
                 {
                     var argumentsDictionary =
-                        System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(arguments);
+                        JsonSerializer.Deserialize<Dictionary<string, object?>>(arguments);
                     functionCalls.Add(new FunctionCallContent(name, name, argumentsDictionary));
                 }
             }
         }
-        catch (System.Xml.XmlException exception)
+        catch (XmlException exception)
         {
             throw new Exception("Error xml format: " + exception.Message);
         }
@@ -286,7 +223,7 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         return functionCalls;
     }
 
-    public override void Initialize(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
+    public override void PreviewRequest(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
     {
         var prompt = CreatePrompt(KernelPluginCollection.SelectMany(plugin => plugin));
         if (model.SupportSystemPrompt)
@@ -304,20 +241,18 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         }
     }
 
-    public override bool TryParseFunctionCalls(ChatResponse response, out List<FunctionCallContent> functionCalls)
+    public override Task<List<FunctionCallContent>> TryParseFunctionCalls(ChatResponse response)
     {
         var content = response.Messages.FirstOrDefault()?.Contents.FirstOrDefault();
         if (content is TextContent textContent)
         {
-            functionCalls = ParseResponseAsync(textContent.Text).ToList();
-            return functionCalls.Count > 0;
+            return Task.FromResult(ParseResponseAsync(textContent.Text).ToList());
         }
 
-        functionCalls = [];
-        return false;
+        return Task.FromResult(new List<FunctionCallContent>());
     }
 
-    public override void EncapsulateResult(ChatMessage replyMessage, IList<FunctionResultContent> results)
+    public override Task AfterProcess(ChatMessage replyMessage, IList<FunctionResultContent> results)
     {
         replyMessage.Role = ChatRole.User;
         var container = new ToolCallResultsContainer
@@ -344,7 +279,7 @@ public class PromptFunctionCallEngine : FunctionCallEngine
         var sb = new StringBuilder();
         using (var sw = new StringWriter(sb))
         {
-            using (XmlWriter xmlWriter = XmlWriter.Create(sw, new XmlWriterSettings() { Indent = true }))
+            using (var xmlWriter = XmlWriter.Create(sw, new XmlWriterSettings() { Indent = true }))
             {
                 serializer.Serialize(xmlWriter, container);
             }
@@ -352,5 +287,9 @@ public class PromptFunctionCallEngine : FunctionCallEngine
 
         // 添加到回复消息中
         replyMessage.Contents.Insert(0, new TextContent(sb.ToString()));
+        return Task.CompletedTask;
     }
+
+    [GeneratedRegex(@"<tool_calls>\s*(.*?)\s*</tool_calls>", RegexOptions.Singleline)]
+    private static partial Regex MyRegex();
 }

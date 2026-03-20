@@ -54,12 +54,11 @@ public class OpenRouterSearchOption : BaseViewModel, ISearchOption
 
     public Task ApplySearch(DialogContext context)
     {
-        var requestViewItem = context.Request;
-        requestViewItem.TempAdditionalProperties ??= new AdditionalPropertiesDictionary();
+        context.TempAdditionalProperties ??= new AdditionalPropertiesDictionary();
         if (string.IsNullOrEmpty(SearchPrompt))
         {
             Trace.WriteLine("SearchPrompt cannot be null or empty");
-            requestViewItem.TempAdditionalProperties["plugins"] =
+            context.TempAdditionalProperties["plugins"] =
                 new PluginConfig[]
                 {
                     new PluginConfig()
@@ -70,7 +69,7 @@ public class OpenRouterSearchOption : BaseViewModel, ISearchOption
         }
         else
         {
-            requestViewItem.TempAdditionalProperties["plugins"] = new[]
+            context.TempAdditionalProperties["plugins"] = new[]
             {
                 new PluginConfig()
                 {

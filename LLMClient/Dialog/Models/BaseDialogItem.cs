@@ -43,7 +43,7 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
         _childrenReadOnly = new ReadOnlyObservableCollection<IDialogItem>(ChildItemsObservables);
     }
 
-    public abstract IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken);
+    public abstract IEnumerable<ChatMessage> Messages { get; }
 
     public IDialogItem AppendChild(IDialogItem child)
     {

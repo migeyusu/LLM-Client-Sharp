@@ -215,13 +215,13 @@ public class UnitTest1
                                 new WinCLIPlugin()
                             }*/
                         },
-                        new MultiResponsePersistItem()
+                        new ParallelResponsePersisItem()
                         {
                             ResponseItems =
                             [
-                                new ResponsePersistItem()
+                                new ClientResponsePersistItem()
                                 {
-                                    ResponseMessages = new List<ChatMessagePO>()
+                                    Messages = new List<ChatMessagePO>()
                                     {
                                         new ChatMessagePO()
                                         {
@@ -299,7 +299,7 @@ public class UnitTest1
             mapper?.Map<DialogFileViewModel, DialogFilePersistModel>(dialogFileViewModel, (options => { }));
         Assert.NotNull(dialogFilePersistModel);
         var multiResponsePersistItem =
-            dialogFilePersistModel.DialogItems?.FirstOrDefault() as MultiResponsePersistItem;
+            dialogFilePersistModel.DialogItems?.FirstOrDefault() as ParallelResponsePersisItem;
         Assert.NotNull(multiResponsePersistItem);
         var persistItems = multiResponsePersistItem.ResponseItems;
         Assert.Same(persistItems[0].Client, persistItems[1].Client);

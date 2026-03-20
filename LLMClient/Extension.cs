@@ -256,12 +256,12 @@ public static class Extension
         return eraseViewItem;
     }
 
-    public static IEnumerable<IDialogItem> GetChatHistory(this ParallelResponseViewItem lastItem)
+    public static IEnumerable<IDialogItem> GetChatHistory(this IResponseItem lastItem)
     {
         return lastItem.GetChatHistoryInverse().Reverse();
     }
 
-    public static IEnumerable<IDialogItem> GetChatHistoryInverse(this ParallelResponseViewItem lastItem)
+    public static IEnumerable<IDialogItem> GetChatHistoryInverse(this IResponseItem lastItem)
     {
         Guid? interactionId = lastItem.InteractionId;
         for (var dialogViewItem = lastItem.PreviousItem;

@@ -401,16 +401,18 @@ public class RequesterViewModel : BaseViewModel
             .Select(model => model.Data)
             .ToArray();
         //每次搜索的条件可能不同，所以传递的是副本
-        return new RequestViewItem(promptBuilder.ToString())
+        var requestViewItem = new RequestViewItem(promptBuilder.ToString())
         {
             Attachments = Attachments.Count == 0 ? null : Attachments.ToList(),
             FunctionGroups = tools == null ? null : [..tools],
             SearchOption = SearchConfig.GetUserSearchOption(),
             RagSources = ragSources.Length > 0 ? ragSources : null,
-            CallEngine = this.FunctionTreeSelector.EngineType ??
+            CallEngineType = this.FunctionTreeSelector.EngineType ??
                          this.FunctionTreeSelector.SelectableCallEngineTypes.FirstOrDefault(),
             IsDebugMode = this.IsDebugMode
         };
+        await requestViewItem.EnsureInitializeAsync();
+        return requestViewItem;
     }
 
     private void TagDataChanged(object? sender, PropertyChangedEventArgs e)

@@ -17,7 +17,7 @@ public class JsonSerializationTest
     public void FunctionCall()
     {
         var content = new FunctionResultContent("dsaf", null)
-            { Exception = new LlmBadRequestException("test exception") };
+            { Exception = new LlmInvalidRequestException("test exception") };
         var json = System.Text.Json.JsonSerializer.Serialize(content,
             LLMClient.Extension.DefaultJsonSerializerOptions);
         _testOutputHelper.WriteLine(json);

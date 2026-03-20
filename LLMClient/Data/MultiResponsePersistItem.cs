@@ -2,9 +2,18 @@
 
 public class MultiResponsePersistItem : BaseDialogPersistItem
 {
-    public ResponsePersistItem[] ResponseItems { get; set; } = [];
-
-    public int AcceptedIndex { get; set; }
-
     public Guid InteractionId { get; set; }
+}
+
+public class ParallelResponsePersisItem : MultiResponsePersistItem
+{
+    public int AcceptedIndex { get; set; }
+    
+    public ClientResponsePersistItem[] ResponseItems { get; set; } = [];
+}
+
+public class LinearHistoryResponsePersistItem : MultiResponsePersistItem
+{
+    public RawResponsePersistItem[] ResponseItems { get; set; } = [];
+    public AgentPersistModel? Agent { get; set; }
 }

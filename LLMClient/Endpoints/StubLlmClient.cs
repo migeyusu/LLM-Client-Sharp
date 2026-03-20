@@ -42,7 +42,7 @@ public class StubLlmClient : ILLMChatClient
 
             return new ChatCallResult()
             {
-                ResponseMessages = [new ChatMessage(ChatRole.Assistant, str)],
+                Messages = [new ChatMessage(ChatRole.Assistant, str)],
                 Usage = new UsageDetails(),
                 FinishReason = ChatFinishReason.Stop
             };
@@ -51,7 +51,7 @@ public class StubLlmClient : ILLMChatClient
         {
             return new ChatCallResult()
             {
-                ResponseMessages = [new ChatMessage(ChatRole.Assistant, str)],
+                Messages = [new ChatMessage(ChatRole.Assistant, str)],
                 Usage = new UsageDetails
                 {
                     InputTokenCount = 0,

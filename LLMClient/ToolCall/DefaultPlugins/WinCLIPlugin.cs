@@ -9,6 +9,18 @@ using Microsoft.SemanticKernel;
 namespace LLMClient.ToolCall.DefaultPlugins;
 
 /// <summary>
+/// 执行结果
+/// </summary>
+public class ExecutionOutput
+{
+    public string Output { get; set; } = string.Empty;
+    public int ReturnCode { get; set; }
+    public string? ExceptionInfo { get; set; }
+
+    public Dictionary<string, object> Extra { get; set; } = new();
+}
+
+/// <summary>
 /// (黑名单版本) 一个用于在 Windows 命令行 (CMD) 或 PowerShell 中执行命令的插件。
 /// 注意：出于安全考虑，此插件采用“拒绝列表”（黑名单）机制。
 /// 默认会阻止一组已知的危险命令，您可以自定义此列表。
@@ -59,7 +71,7 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
     [KernelFunction]
     [Description(
         "Executes a command-line command in the specified shell (PowerShell or CMD). ")]
-    public async Task<string> ExecuteCommandAsync(
+    public async Task<ExecutionOutput> ExecuteCommandAsync(
         Kernel kernel,
         [Description("The full command to execute, for example, 'Get-Process -Name chrome' or 'ipconfig /all'.")]
         string command,
@@ -68,7 +80,7 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
     {
         if (string.IsNullOrWhiteSpace(command))
         {
-            return "错误：命令不能为空。";
+            throw new ArgumentNullException(nameof(command), "错误：命令不能为空。");
         }
 
         // 安全性检查：提取命令的第一个词（即程序名），并检查它是否在黑名单中
@@ -80,7 +92,7 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             var interactor = AsyncContextStore<ChatContext>.Current?.Interactor;
             if (interactor == null)
             {
-                return $"错误：命令 '{commandBase}' 被默认禁止执行。";
+                throw new NotSupportedException($"错误：命令 '{commandBase}' 被默认禁止执行。");
             }
 
             if (await interactor.WaitForPermission("安全警告",
@@ -113,7 +125,8 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                     processStartInfo.Arguments = $"/c \"{command}\"";
                     break;
                 default:
-                    return $"错误：不支持的 shell 类型 '{shell}'。请使用 'powershell' 或 'cmd'。";
+                    throw new ArgumentOutOfRangeException(nameof(shell),
+                        $"错误：不支持的 shell 类型 '{shell}'。请使用 'powershell' 或 'cmd'。");
             }
 
             using (var process = new Process())
@@ -124,11 +137,9 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                 var outputTask = process.StandardOutput.ReadToEndAsync();
                 var errorTask = process.StandardError.ReadToEndAsync();
                 var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                await process.WaitForExitAsync(cts.Token);
-
-                var output = await outputTask;
-                var error = await errorTask;
-
+                await Task.WhenAll(outputTask, errorTask, process.WaitForExitAsync(cts.Token));
+                var output = outputTask.Result;
+                var error = errorTask.Result;
                 var resultBuilder = new StringBuilder();
                 if (!string.IsNullOrWhiteSpace(output))
                 {
@@ -142,17 +153,22 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                     resultBuilder.AppendLine(error.Trim());
                 }
 
-                if (resultBuilder.Length == 0)
+                return new ExecutionOutput
                 {
-                    return "命令已执行，但没有产生任何输出。";
-                }
-
-                return resultBuilder.ToString();
+                    Output = resultBuilder.ToString(),
+                    ReturnCode = process.ExitCode,
+                    ExceptionInfo = process.ExitCode != 0 ? $"Command exited with code {process.ExitCode}" : null
+                };
             }
         }
         catch (Exception ex)
         {
-            return $"执行命令时发生意外错误: {ex.Message}";
+            return new ExecutionOutput
+            {
+                Output = string.Empty,
+                ReturnCode = -1,
+                ExceptionInfo = $"Command exited with exception: {ex.Message}"
+            };
         }
     }
 

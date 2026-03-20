@@ -3,7 +3,7 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
 
-public interface IDialogItem : ITokenizable
+public interface IDialogItem : IChatHistoryItem, ITokenizable
 {
     Guid Id { get; set; }
 
@@ -14,10 +14,8 @@ public interface IDialogItem : ITokenizable
     Guid? PreviousItemId => PreviousItem?.Id;
 
     IReadOnlyCollection<IDialogItem> Children { get; }
-    
-    bool HasFork { get; }
 
-    IAsyncEnumerable<ChatMessage> GetMessagesAsync(CancellationToken cancellationToken);
+    bool HasFork { get; }
 
     bool IsAvailableInContext { get; }
 

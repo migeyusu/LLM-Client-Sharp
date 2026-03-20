@@ -73,7 +73,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             OnPropertyChanged(nameof(Tokens));
         }
     }
-    
+
     /// <summary>
     /// 是否中断
     /// </summary>
@@ -99,10 +99,11 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         }
     }
 
+
     /// <summary>
     /// response messages 来源于回复，但是为了前向兼容，允许基于raw生成
     /// </summary>
-    public IList<ChatMessage>? ResponseMessages
+    public IEnumerable<ChatMessage> Messages
     {
         get;
         set
@@ -112,7 +113,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             OnPropertyChanged();
             OnPropertyChanged(nameof(TextContent));
         }
-    }
+    } = [];
 
     public ChatFinishReason? FinishReason
     {
@@ -127,10 +128,10 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
     public IList<ChatAnnotation>? Annotations { get; set; }
 
-    protected static async Task<FlowDocument?> CreateDocumentAsync(IList<ChatMessage>? responseMessages,
+    protected static async Task<FlowDocument?> CreateDocumentAsync(IEnumerable<ChatMessage>? responseMessages,
         IList<ChatAnnotation>? annotations)
     {
-        if (responseMessages == null || !responseMessages.Any())
+        if (responseMessages == null)
         {
             return null;
         }
@@ -185,9 +186,9 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
         return resultDocument;
     }
-    
+
     public Task<FlowDocument?> CreateFullResponseDocumentAsync()
     {
-        return CreateDocumentAsync(ResponseMessages, Annotations);
+        return CreateDocumentAsync(Messages, Annotations);
     }
 }

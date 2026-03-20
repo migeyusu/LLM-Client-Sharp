@@ -1,4 +1,5 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Diagnostics.CodeAnalysis;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
@@ -6,12 +7,9 @@ using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Endpoints;
 
-
 public class ChatCallResult : IResponse
 {
     public static readonly ChatCallResult Empty = new();
-
-    private Exception? _exception;
 
     public UsageDetails? Usage { get; set; }
 
@@ -26,10 +24,10 @@ public class ChatCallResult : IResponse
 
     public Exception? Exception
     {
-        get => _exception;
+        get;
         set
         {
-            _exception = value;
+            field = value;
             if (value != null)
             {
                 ErrorMessage = value.HierarchicalMessage();
@@ -56,13 +54,22 @@ public class ChatCallResult : IResponse
         }
     }
 
+    [MemberNotNullWhen(true, nameof(Exception))]
     public bool IsCanceled => Exception is OperationCanceledException;
+
+    [MemberNotNullWhen(true, nameof(Exception))]
+    public bool IsInvalidRequest => Exception is LlmInvalidRequestException;
 
     public double? Price { get; set; }
 
     public bool IsInterrupt
     {
         get { return ErrorMessage != null; }
+    }
+
+    public bool IsUnhandledError
+    {
+        get { return Exception is CriticalException; }
     }
 
     public ChatFinishReason? FinishReason { get; set; }
@@ -74,10 +81,10 @@ public class ChatCallResult : IResponse
 
     public string? FirstTextResponse
     {
-        get { return ResponseMessages?.FirstOrDefault()?.Text; }
+        get { return Messages?.FirstOrDefault()?.Text; }
     }
 
-    public IList<ChatMessage>? ResponseMessages { get; set; }
+    public IEnumerable<ChatMessage> Messages { get; set; } = Enumerable.Empty<ChatMessage>();
 
     public IList<ChatAnnotation>? Annotations { get; set; }
 
@@ -85,6 +92,6 @@ public class ChatCallResult : IResponse
 
     public string? GetContentAsString()
     {
-        return ResponseMessages?.Aggregate(string.Empty, (current, message) => current + message.Text);
+        return Messages?.Aggregate(string.Empty, (current, message) => current + message.Text);
     }
 }
