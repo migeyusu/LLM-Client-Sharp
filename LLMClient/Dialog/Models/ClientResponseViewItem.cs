@@ -24,7 +24,7 @@ namespace LLMClient.Dialog.Models;
 /// <summary>
 /// 支持flowdocument富文本渲染和交互
 /// </summary>
-public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
+public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
 {
     public ThemedIcon Icon
     {
@@ -73,7 +73,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
     /// </summary>
     private readonly StringBuilder _responseHistory = new();
 
-    public static ICommand ShowTempResponseCommand { get; } = new RelayCommand<DocResponseViewItem>(o =>
+    public static ICommand ShowTempResponseCommand { get; } = new RelayCommand<ClientResponseViewItem>(o =>
     {
         if (o == null)
         {
@@ -96,7 +96,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
     });
 
     //标记为有效结果
-    public static ICommand MarkValidCommand { get; } = new RelayCommand<DocResponseViewItem>((o =>
+    public static ICommand MarkValidCommand { get; } = new RelayCommand<ClientResponseViewItem>((o =>
     {
         if (o == null)
         {
@@ -106,7 +106,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
         o.IsManualValid = true;
     }));
 
-    public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<DocResponseViewItem>(o =>
+    public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<ClientResponseViewItem>(o =>
     {
         o?.SwitchAvailableInContext();
     });
@@ -217,7 +217,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
         get { return (IsManualValid || !IsInterrupt) && IsAvailableInContextSwitch; }
     }
 
-    public DocResponseViewItem(ILLMChatClient client)
+    public ClientResponseViewItem(ILLMChatClient client)
     {
         Client = client;
     }
@@ -258,7 +258,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
                 {
                     completedResult = await Client.SendRequest(context, interactor,
                         cancellationToken: RequestTokenSource.Token);
-                    ServiceLocator.GetService<IMapper>()!.Map<IResponse, DocResponseViewItem>(completedResult, this);
+                    ServiceLocator.GetService<IMapper>()!.Map<IResponse, ClientResponseViewItem>(completedResult, this);
                     //刷新tps
                     OnPropertyChangedAsync(nameof(TpS));
                 }
@@ -302,7 +302,7 @@ public class DocResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyabl
         private readonly StreamingRenderSession _session;
         private readonly Action<string> _outputAction;
 
-        public ResponseViewItemInteractor(FlowDocument flowDocument, DocResponseViewItem responseViewItem)
+        public ResponseViewItemInteractor(FlowDocument flowDocument, ClientResponseViewItem responseViewItem)
         {
             _customRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
 

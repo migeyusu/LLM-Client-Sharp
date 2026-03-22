@@ -18,8 +18,6 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption,IBuil
 {
     #region plugin
 
-    private IReadOnlyList<AIFunction>? _availableTools;
-
     private const string KernelPluginName = "GoogleTextSearch";
 
     public object Clone()
@@ -36,11 +34,11 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption,IBuil
     [JsonIgnore]
     public IReadOnlyList<AIFunction>? AvailableTools
     {
-        get => _availableTools;
+        get;
         private set
         {
-            if (Equals(value, _availableTools)) return;
-            _availableTools = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }

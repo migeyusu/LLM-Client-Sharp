@@ -207,7 +207,7 @@
             </StackPanel>
         </Grid>
     </DataTemplate>
-    <DataTemplate x:Key="ResponseContentTemplate" DataType="{x:Type models:DocResponseViewItem}">
+    <DataTemplate x:Key="ResponseContentTemplate" DataType="{x:Type models:ClientResponseViewItem}">
         <StackPanel>
             <materialDesign:Card Padding="8"
                                  Visibility="{Binding IsResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
@@ -375,7 +375,7 @@
                              ItemsSource="{Binding Items,Mode=OneWay}"
                              ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
                         <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type models:DocResponseViewItem}">
+                            <DataTemplate DataType="{x:Type models:ClientResponseViewItem}">
                                 <StackPanel Orientation="Horizontal"
                                             Margin="3"
                                             ToolTipService.InitialShowDelay="0"
@@ -467,7 +467,7 @@
                                           Command="{Binding ClearOthersCommand}" />
                                 <!--x:Static models:MultiResponseViewItem.RebaseCommand-->
                                 <MenuItem Header="查看日志"
-                                          Command="{x:Static models:DocResponseViewItem.ShowTempResponseCommand}"
+                                          Command="{x:Static models:ClientResponseViewItem.ShowTempResponseCommand}"
                                           CommandParameter="{Binding AcceptedResponse,Mode=OneWay}" />
                                 <MenuItem Header="标记为有效回复"
                                           IsCheckable="True"
@@ -547,7 +547,7 @@
                                 Command="{x:Static models:ParallelResponseViewItem.SplitResponseCommand}"
                                 CommandParameter="{Binding Mode=OneTime}"
                                 Content="{materialDesign:PackIcon ArrowSplitVertical,Size=20}"
-                                Visibility="{Binding HasFork,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
+                                Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
                                 Style="{StaticResource SmallIconButtonStyle}" />
                     </StackPanel>
                 </Grid>
@@ -558,7 +558,7 @@
                             Margin="16,0,0,0">
                     <CheckBox VerticalAlignment="Center"
                               Margin="6,0"
-                              Command="{x:Static models:DocResponseViewItem.SetAsAvailableCommand}"
+                              Command="{x:Static models:ClientResponseViewItem.SetAsAvailableCommand}"
                               CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                               ToolTip="通过将当前回复设置为在上下文中有效，可以跳过一些回复，减少上下文的长度"
                               IsChecked="{Binding AcceptedResponse.IsAvailableInContext,Mode=OneWay}">

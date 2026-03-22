@@ -19,6 +19,7 @@ public class ResponsePersistItemBase
 
     public bool IsInterrupt { get; set; }
     
+    [JsonPropertyName("ResponseMessages")]
     public IList<ChatMessagePO>? Messages { get; set; }
 
     public IList<ChatAnnotation>? Annotations { get; set; }

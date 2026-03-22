@@ -16,7 +16,7 @@ namespace LLMClient.Dialog.Models;
 /// <summary>
 /// 表示一个包含多个平行回复的对话项，通常用于展示同一请求的多个不同回复版本，供用户选择或比较。
 /// </summary>
-public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewItem>, ISearchableDialogItem,
+public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseViewItem>, ISearchableDialogItem,
     IEditableDialogItem
 {
     /// <summary>
@@ -57,14 +57,8 @@ public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewIte
 
     public bool IsMultiResponse
     {
-        get;
-        set
-        {
-            if (value == field) return;
-            field = value;
-            OnPropertyChanged();
-        }
-    } = false;
+        get { return this.Items.Count > 1; }
+    }
 
     [Bindable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -99,35 +93,32 @@ public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewIte
 
     public ModelSelectionPopupViewModel SelectionPopup { get; }
 
-    public static ICommand SplitResponseCommand = new RelayCommand<ParallelResponseViewItem>((async mutiResponse =>
+    public static ICommand SplitResponseCommand = new RelayCommand<ParallelResponseViewItem>((async multiResponse =>
     {
-        if (mutiResponse == null)
+        if (multiResponse == null)
         {
             return;
         }
 
         //分裂回复集合为多个分支
-        if (mutiResponse.Items.Count < 2)
+        if (multiResponse.Items.Count < 2)
         {
             return;
         }
 
-        if (mutiResponse.HasFork)
+        //回复分裂准则：以当前接受的回复为主线，其他回复分裂为独立分支
+        if (multiResponse.PreviousItem is RequestViewItem requestViewItem)
         {
-            await DialogHost.Show("只能对没有子节点的回复进行分裂");
-            return;
-        }
-
-        if (mutiResponse.PreviousItem is RequestViewItem requestViewItem)
-        {
-            while (mutiResponse.Items.Count > 1)
+            var acceptedResponse = multiResponse.AcceptedResponse;
+            foreach (var responseViewItem in multiResponse.Items.ToArray())
             {
-                var responseItem = mutiResponse.Items[1];
-                mutiResponse.RemoveAt(1);
-                var newMultiResponse = new ParallelResponseViewItem(mutiResponse.ParentSession)
-                    { InteractionId = mutiResponse.InteractionId };
-                newMultiResponse.AddResponse(responseItem);
-                requestViewItem.AppendChild(newMultiResponse);
+                if (responseViewItem != acceptedResponse)
+                {
+                    multiResponse.Items.Remove(responseViewItem);
+                    requestViewItem.AppendChild(
+                        new ParallelResponseViewItem([responseViewItem], multiResponse.ParentSession)
+                            { InteractionId = multiResponse.InteractionId });
+                }
             }
         }
     }));
@@ -151,9 +142,9 @@ public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewIte
             CanGotoPrevious = value - 1 >= 0;
             CanGoToNext = value + 1 < Items.Count;
         }
-    } = -1;
+    } = 0;
 
-    public DocResponseViewItem? AcceptedResponse
+    public ClientResponseViewItem? AcceptedResponse
     {
         get
         {
@@ -194,20 +185,19 @@ public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewIte
 
     public ICommand RemoveResponseCommand { get; }
 
-    public ParallelResponseViewItem(IEnumerable<DocResponseViewItem> items, DialogSessionViewModel parentSession)
+    public ParallelResponseViewItem(IEnumerable<ClientResponseViewItem> items, DialogSessionViewModel parentSession)
         : base(items, parentSession)
     {
         Items.CollectionChanged += (_, _) =>
         {
             this.ParentSession.IsDataChanged = true;
-            this.IsMultiResponse = Items.Count > 1;
+            OnPropertyChanged(nameof(IsMultiResponse));
         };
-        IsMultiResponse = Items.Count > 1;
         SelectionPopup = new ModelSelectionPopupViewModel(client => { this.NewResponse(client.CreateClient()); })
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
-        RetryCommand = new RelayCommand<DocResponseViewItem>(async void (responseViewItem) =>
+        RetryCommand = new RelayCommand<ClientResponseViewItem>(async void (responseViewItem) =>
         {
             try
             {
@@ -228,7 +218,7 @@ public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewIte
                 MessageBoxes.Error(e.Message, "Error");
             }
         });
-        RemoveResponseCommand = new RelayCommand<DocResponseViewItem>(o =>
+        RemoveResponseCommand = new RelayCommand<ClientResponseViewItem>(o =>
         {
             if (o == null)
             {
@@ -305,25 +295,24 @@ public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewIte
 
     public Task<IResponse> NewResponse(ILLMChatClient chatClient, CancellationToken token = default)
     {
-        var responseViewItem = new DocResponseViewItem(chatClient);
+        var responseViewItem = new ClientResponseViewItem(chatClient);
         this.AddResponse(responseViewItem);
         return this.ProcessResponseItem(responseViewItem, token);
     }
 
-    public void AddResponse(DocResponseViewItem viewItem)
+    public void AddResponse(ClientResponseViewItem viewItem)
     {
         this.Items.Add(viewItem);
         this.AcceptedIndex = this.Items.Count - 1;
-        this.IsMultiResponse = Items.Count > 1;
     }
 
-    public void Insert(DocResponseViewItem viewItem, int index)
+    public void Insert(ClientResponseViewItem viewItem, int index)
     {
         this.Items.Insert(index, viewItem);
         this.AcceptedIndex = index;
     }
 
-    public void RemoveResponse(DocResponseViewItem viewItem)
+    public void RemoveResponse(ClientResponseViewItem viewItem)
     {
         var indexOf = this.Items.IndexOf(viewItem);
         if (indexOf < 0)
@@ -337,8 +326,6 @@ public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewIte
         {
             this.AcceptedIndex = 0;
         }
-
-        this.IsMultiResponse = Items.Count > 1;
     }
 
     public void RemoveAt(int index)
@@ -348,11 +335,9 @@ public class ParallelResponseViewItem : MultiResponseViewItem<DocResponseViewIte
         {
             this.AcceptedIndex = this.Items.Count - 1;
         }
-
-        this.IsMultiResponse = Items.Count > 1;
     }
 
-    private async Task<IResponse> ProcessResponseItem(DocResponseViewItem responseViewItem,
+    private async Task<IResponse> ProcessResponseItem(ClientResponseViewItem responseViewItem,
         CancellationToken token = default)
     {
         var dialogContext = DialogContext.CreateFromResponse(this, ParentSession.SystemPrompt);

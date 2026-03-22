@@ -36,6 +36,12 @@ namespace LLMClient.ToolCall.DefaultPlugins;
 /// </summary>
 public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
 {
+    /// <summary>
+    /// Optional UI/host interaction handler used to preview and approve file edits
+    /// before they are written to disk.
+    /// </summary>
+    public IFileEditInteractionHandler? FileEditInteractionHandler { get; set; }
+    
     public Guid Id =Guid.NewGuid();
     
     private ObservableCollection<string> _byPassPaths=new ObservableCollection<string>();
@@ -113,6 +119,138 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
         return await File.ReadAllTextAsync(fullPath);
     }
     
+    [KernelFunction, Description("Read a specific inclusive line range from a text file. " +
+                                 "Returns lines prefixed with 1-based line numbers. " +
+                                 "Useful for precise inspection of code regions without reading the whole file.")]
+    public async Task<string> ReadFileRangeAsync(
+        [Description("The path to the file to read.")] string path,
+        [Description("The starting 1-based line number (inclusive).")] int startLine,
+        [Description("The ending 1-based line number (inclusive).")] int endLine)
+    {
+        if (startLine <= 0)
+            throw new ArgumentOutOfRangeException(nameof(startLine), "startLine must be greater than 0.");
+        if (endLine < startLine)
+            throw new ArgumentOutOfRangeException(nameof(endLine), "endLine must be greater than or equal to startLine.");
+
+        var fullPath = await ValidateAndResolvePathAsync(path);
+        var lines = await File.ReadAllLinesAsync(fullPath);
+
+        if (lines.Length == 0)
+            return string.Empty;
+
+        int actualStart = Math.Min(startLine, lines.Length);
+        int actualEnd = Math.Min(endLine, lines.Length);
+
+        var sb = new StringBuilder();
+        for (int i = actualStart; i <= actualEnd; i++)
+        {
+            sb.AppendLine($"{i}: {lines[i - 1]}");
+        }
+
+        return sb.ToString().TrimEnd();
+    }
+    
+    [KernelFunction, Description("Find occurrences of text in a file and return matching lines with surrounding context. " +
+                                 "This is useful before editing, to locate the exact region without reading the whole file.")]
+    public async Task<string> FindTextInFileAsync(
+        [Description("The path to the file to search.")] string path,
+        [Description("The exact text to search for.")] string searchText,
+        [Description("How many surrounding lines of context to include before and after each match.")] int contextLines = 2,
+        [Description("Whether the search should be case-sensitive. Default is true.")] bool caseSensitive = true)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            throw new ArgumentException("searchText cannot be null or empty.", nameof(searchText));
+        if (contextLines < 0)
+            throw new ArgumentOutOfRangeException(nameof(contextLines), "contextLines must be >= 0.");
+
+        var fullPath = await ValidateAndResolvePathAsync(path);
+        var lines = await File.ReadAllLinesAsync(fullPath);
+
+        var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+        var sb = new StringBuilder();
+        int matchCount = 0;
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (!lines[i].Contains(searchText, comparison))
+                continue;
+
+            matchCount++;
+            int start = Math.Max(0, i - contextLines);
+            int end = Math.Min(lines.Length - 1, i + contextLines);
+
+            sb.AppendLine($"--- Match {matchCount} at line {i + 1} ---");
+            for (int j = start; j <= end; j++)
+            {
+                sb.AppendLine($"{j + 1}: {lines[j]}");
+            }
+            sb.AppendLine();
+        }
+
+        return matchCount == 0 ? "No matches found." : sb.ToString().TrimEnd();
+    }
+    
+    [KernelFunction, Description("Preview line-based or context-based edits to a text file without saving changes. " +
+                                 "Returns a git-style diff showing what would change. " +
+                                 "Use this before applying edits when confirmation is needed.")]
+    public async Task<string> PreviewEditAsync(
+        [Description("The path of the file to edit.")] string path,
+        [Description("A list of edit operations to preview.")] List<EditOperation> edits)
+    {
+        var fullPath = await ValidateAndResolvePathAsync(path);
+        var originalContent = await File.ReadAllTextAsync(fullPath);
+        var updatedContent = ApplyEditsToContent(originalContent, edits);
+
+        return BuildDiffReport(path, originalContent, updatedContent, applied: false);
+    }
+    
+    [KernelFunction, Description("Apply line-based or context-based edits to a text file and save changes. " +
+                                 "Returns a git-style diff showing the applied modifications. " +
+                                 "Edits require unique matching oldText anchors.")]
+    public async Task<string> ApplyEditAsync(
+        [Description("The path of the file to edit.")] string path,
+        [Description("A list of edit operations to apply.")] List<EditOperation> edits)
+    {
+        var fullPath = await ValidateAndResolvePathAsync(path);
+        var originalContent = await File.ReadAllTextAsync(fullPath);
+
+        // Existing path-level permission check
+        var permissionMessage = new StringBuilder();
+        permissionMessage.Append("Applying edits to file at ");
+        permissionMessage.AppendLine(fullPath);
+        permissionMessage.AppendLine("Requested edits:");
+        permissionMessage.AppendLine(JsonSerializer.Serialize(edits, Extension.DefaultJsonSerializerOptions));
+
+        if (!await RequestPermission(fullPath, permissionMessage.ToString(), checkParentOnly: false))
+        {
+            throw new UnauthorizedAccessException("Permission denied to edit the specified file.");
+        }
+
+        // Build proposed content in memory
+        var updatedContent = ApplyEditsToContent(originalContent, edits);
+
+        // Generate preview diff
+        var previewDiffText = BuildDiffReport(path, originalContent, updatedContent, applied: false);
+
+        // Diff-aware confirmation through the existing interactor pipeline
+        var approved = await RequestEditPermissionAsync(
+            path,
+            fullPath,
+            originalContent,
+            updatedContent,
+            previewDiffText,
+            edits);
+
+        if (!approved)
+        {
+            throw new UnauthorizedAccessException($"User rejected applying changes to '{path}'.");
+        }
+
+        await File.WriteAllTextAsync(fullPath, updatedContent);
+
+        return BuildDiffReport(path, originalContent, updatedContent, applied: true);
+    }
+    
     [KernelFunction, Description("Read the contents of multiple files simultaneously. " +
                                  "This is more efficient than reading files one by one when you need to analyze "+
                                  "or compare multiple files. Each file's content is returned with its " +
@@ -160,89 +298,16 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
         return $"Successfully wrote to {path}";
     }
 
-    [KernelFunction, Description( "Make line-based edits to a text file. Each edit replaces exact line sequences " +
-                                  "with new content. Returns a git-style diff showing the changes made. " +
-                                  "Only works within allowed directories.")]
+    [KernelFunction, Description("Make text edits to a file. If dryRun is true, preview changes only; otherwise apply them. " +
+                                 "Prefer PreviewEditAsync and ApplyEditAsync for explicit workflows.")]
     public async Task<string> EditFileAsync(
         [Description("The path of the file to edit.")] string path,
         [Description("A list of edit operations to perform on the file.")] List<EditOperation> edits,
         [Description("If true, previews changes in a diff format without saving them.")] bool dryRun = false)
     {
-        var fullPath = await ValidateAndResolvePathAsync(path);
-        var originalContent = await File.ReadAllTextAsync(fullPath);
-
-        // Normalize line endings for consistent processing
-        var workingContent = originalContent.Replace("\r\n", "\n");
-
-        foreach (var edit in edits)
-        {
-            var oldTextNormalized = edit.OldText.Replace("\r\n", "\n");
-            var newTextNormalized = edit.NewText.Replace("\r\n", "\n");
-
-            if (!workingContent.Contains(oldTextNormalized))
-            {
-                // Fallback for whitespace differences, as in the original TS code.
-                // This is a simplified version. A more robust implementation might use a fuzzy search.
-                var oldLines = oldTextNormalized.Split('\n').Select(l => l.Trim()).ToArray();
-                var contentLines = workingContent.Split('\n');
-                var found = false;
-                for (int i = 0; i <= contentLines.Length - oldLines.Length; i++)
-                {
-                    var slice = contentLines.Skip(i).Take(oldLines.Length).Select(l => l.Trim()).ToArray();
-                    if (slice.SequenceEqual(oldLines))
-                    {
-                        var replacement = string.Join("\n", contentLines.Take(i)) + "\n" +
-                                          newTextNormalized + "\n" +
-                                          string.Join("\n", contentLines.Skip(i + oldLines.Length));
-                        workingContent = replacement.Trim();
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    throw new InvalidOperationException($"Could not find the exact text to replace for the edit: {edit.OldText}");
-                }
-            }
-            else
-            {
-                workingContent = workingContent.Replace(oldTextNormalized, newTextNormalized);
-            }
-        }
-        
-        var diffBuilder = new InlineDiffBuilder(new Differ());
-        var diff = diffBuilder.BuildDiffModel(originalContent, workingContent);
-
-        var diffReport = new StringBuilder();
-        diffReport.AppendLine($"```diff");
-        foreach (var line in diff.Lines)
-        {
-            switch (line.Type)
-            {
-                case ChangeType.Inserted:
-                    diffReport.AppendLine($"+ {line.Text}");
-                    break;
-                case ChangeType.Deleted:
-                    diffReport.AppendLine($"- {line.Text}");
-                    break;
-                case ChangeType.Unchanged:
-                    diffReport.AppendLine($"  {line.Text}");
-                    break;
-            }
-        }
-        diffReport.AppendLine("```");
-
-        if (!dryRun)
-        {
-            await File.WriteAllTextAsync(fullPath, workingContent);
-            diffReport.AppendLine($"\nFile '{path}' has been updated.");
-        }
-        else
-        {
-            diffReport.AppendLine($"\nDry run: File '{path}' was not modified.");
-        }
-
-        return diffReport.ToString();
+        return dryRun
+            ? await PreviewEditAsync(path, edits)
+            : await ApplyEditAsync(path, edits);
     }
 
     [KernelFunction, Description("Create a new directory or ensure a directory exists. Can create multiple " +
@@ -444,12 +509,16 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
     /// </summary>
     public class EditOperation
     {
+        [JsonPropertyName("type")]
+        [Description("Edit operation type: replace, delete, insertBefore, insertAfter. Default is replace.")]
+        public string Type { get; set; } = "replace";
+
         [JsonPropertyName("oldText")]
-        [Description("The exact text to search for and replace.")]
+        [Description("The exact text to locate in the file. For replace/delete/insertBefore/insertAfter, this must be unique in the file.")]
         public string OldText { get; set; } = string.Empty;
 
         [JsonPropertyName("newText")]
-        [Description("The new text that will replace the old text.")]
+        [Description("The replacement or inserted text. For delete, this can be empty.")]
         public string NewText { get; set; } = string.Empty;
     }
     
@@ -563,6 +632,204 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
         return string.Join("\n", resultLines.TakeLast(lineCount));
     }
     
+    private static string ApplyEditsToContent(string originalContent, List<EditOperation> edits)
+    {
+        if (edits == null || edits.Count == 0)
+            throw new ArgumentException("At least one edit operation must be provided.", nameof(edits));
+
+        var workingContent = NormalizeLineEndings(originalContent);
+
+        foreach (var edit in edits)
+        {
+            if (edit == null)
+                throw new InvalidOperationException("Edit operation cannot be null.");
+
+            var type = (edit.Type ?? "replace").Trim();
+            var oldText = NormalizeLineEndings(edit.OldText ?? string.Empty);
+            var newText = NormalizeLineEndings(edit.NewText ?? string.Empty);
+
+            if (string.IsNullOrWhiteSpace(oldText))
+                throw new InvalidOperationException("oldText cannot be empty. It is required as a unique anchor.");
+
+            workingContent = ApplySingleEdit(workingContent, type, oldText, newText);
+        }
+
+        return RestoreOriginalDominantLineEnding(originalContent, workingContent);
+    }
+    
+    private static FileEditRequestViewModel BuildFileEditRequestViewModel(
+        string path,
+        string absolutePath,
+        string originalContent,
+        string updatedContent,
+        string diffText,
+        IEnumerable<EditOperation> edits)
+    {
+        var vm = new FileEditRequestViewModel
+        {
+            Title = $"Apply changes to {System.IO.Path.GetFileName(path)}",
+            Description = $"Review the proposed file changes before applying them.",
+            Path = path,
+            AbsolutePath = absolutePath,
+            OriginalContent = originalContent,
+            UpdatedContent = updatedContent,
+            DiffText = diffText,
+            IsReadOnly = true
+        };
+
+        foreach (var edit in edits)
+        {
+            vm.Operations.Add(new FileEditOperationItemViewModel
+            {
+                Type = edit.Type,
+                OldText = edit.OldText,
+                NewText = edit.NewText
+            });
+        }
+
+        return vm;
+    }
+    
+    private async Task<bool> RequestEditPermissionAsync(
+        string path,
+        string absolutePath,
+        string originalContent,
+        string updatedContent,
+        string diffText,
+        IEnumerable<EditOperation> edits)
+    {
+        var interactor = AsyncContextStore<ChatContext>.Current?.Interactor;
+        if (interactor == null)
+        {
+            return true;
+        }
+
+        var vm = BuildFileEditRequestViewModel(
+            path,
+            absolutePath,
+            originalContent,
+            updatedContent,
+            diffText,
+            edits);
+
+        return await interactor.WaitForPermission(vm);
+    }
+    
+    private static string ApplySingleEdit(string content, string type, string oldText, string newText)
+    {
+        var matches = FindExactOccurrences(content, oldText);
+
+        if (matches.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"Could not find the target text to edit. " +
+                $"Provide more exact surrounding context in oldText.\nTarget:\n{oldText}");
+        }
+
+        if (matches.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"The target text is ambiguous and appears {matches.Count} times. " +
+                $"Provide more surrounding context in oldText so it matches uniquely.");
+        }
+
+        var match = matches[0];
+
+        return type.ToLowerInvariant() switch
+        {
+            "replace" => ReplaceAt(content, match.Start, match.Length, newText),
+            "delete" => ReplaceAt(content, match.Start, match.Length, string.Empty),
+            "insertbefore" => ReplaceAt(content, match.Start, 0, newText),
+            "insertafter" => ReplaceAt(content, match.Start + match.Length, 0, newText),
+            _ => throw new InvalidOperationException($"Unsupported edit type '{type}'. Supported types: replace, delete, insertBefore, insertAfter.")
+        };
+    }
+    
+    private readonly record struct TextMatch(int Start, int Length);
+
+    private static List<TextMatch> FindExactOccurrences(string text, string value)
+    {
+        var results = new List<TextMatch>();
+        if (string.IsNullOrEmpty(value))
+            return results;
+
+        int index = 0;
+        while (true)
+        {
+            index = text.IndexOf(value, index, StringComparison.Ordinal);
+            if (index < 0)
+                break;
+
+            results.Add(new TextMatch(index, value.Length));
+            index += value.Length;
+        }
+
+        return results;
+    }
+    
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static string ReplaceAt(string content, int startIndex, int length, string replacement)
+    {
+        return content[..startIndex] + replacement + content[(startIndex + length)..];
+    }
+    
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static string NormalizeLineEndings(string text)
+    {
+        return text.Replace("\r\n", "\n").Replace("\r", "\n");
+    }
+
+    private static string RestoreOriginalDominantLineEnding(string originalContent, string updatedContent)
+    {
+        // 如果原文件明显以 CRLF 为主，则恢复为 CRLF
+        if (originalContent.Contains("\r\n"))
+        {
+            return updatedContent.Replace("\n", "\r\n");
+        }
+
+        return updatedContent;
+    }
+    
+    private static string BuildDiffReport(string path, string originalContent, string updatedContent, bool applied)
+    {
+        var diffBuilder = new InlineDiffBuilder(new Differ());
+        var diff = diffBuilder.BuildDiffModel(originalContent, updatedContent);
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"--- a/{path.Replace('\\', '/')}");
+        sb.AppendLine($"+++ b/{path.Replace('\\', '/')}");
+        sb.AppendLine("```diff");
+
+        foreach (var line in diff.Lines)
+        {
+            switch (line.Type)
+            {
+                case ChangeType.Inserted:
+                    sb.AppendLine($"+ {line.Text}");
+                    break;
+                case ChangeType.Deleted:
+                    sb.AppendLine($"- {line.Text}");
+                    break;
+                case ChangeType.Modified:
+                    sb.AppendLine($"~ {line.Text}");
+                    break;
+                case ChangeType.Unchanged:
+                    sb.AppendLine($"  {line.Text}");
+                    break;
+                case ChangeType.Imaginary:
+                    break;
+            }
+        }
+
+        sb.AppendLine("```");
+        sb.AppendLine();
+        sb.AppendLine(applied
+            ? $"File '{path}' has been updated."
+            : $"Preview only. File '{path}' was not modified.");
+
+        return sb.ToString();
+    }
+    
     private async Task<List<TreeEntry>> BuildTreeAsync(DirectoryInfo dirInfo)
     {
         var treeEntries = new List<TreeEntry>();
@@ -592,15 +859,22 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
     #endregion
 
     public override string? AdditionPrompt =>
-        $"{Name} function group provides secure access to the local file system. " +
-        "You can read, write, edit files, and manage directories within the allowed paths. " +
-        "Ensure you specify paths relative to the allowed directories configured for this plugin. ";
+        $"{Name} function group provides secure access to the local file system. \n" +
+        "You can read, write, edit files, and manage directories within the allowed paths. \n" +
+        "Ensure you specify paths relative to the allowed directories configured for this plugin. \n"
+        +"When editing files:\n\n" +
+        "1. First inspect the relevant file region with ReadFileRangeAsync or FindTextInFileAsync.\n" +
+        "2. Then use PreviewEditAsync to preview the modification.\n" +
+        "3. Only after confirmation, use ApplyEditAsync.\n" +
+        "4. In each edit operation, oldText must include enough surrounding context to uniquely match exactly one location in the file.\n" +
+        "5. Do not rely on absolute line numbers for editing.";
 
     public override object Clone()
     {
         return new FileSystemPlugin()
         {
-            BypassPaths = new ObservableCollection<string>(BypassPaths)
+            BypassPaths = new ObservableCollection<string>(BypassPaths),
+            FileEditInteractionHandler = FileEditInteractionHandler
         };
     }
 
@@ -657,3 +931,4 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
         return interactor.WaitForPermission(toolCallInfo);
     }
 }
+

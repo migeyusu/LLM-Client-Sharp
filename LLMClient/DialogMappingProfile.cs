@@ -4,6 +4,7 @@ using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Agent.MiniSWE;
+using LLMClient.Component;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Data;
@@ -28,7 +29,7 @@ public class DialogMappingProfile : Profile
             .ConvertUsing<AutoMapModelTypeConverter>();
         CreateMap<AIFunctionGroupPersistObject, CheckableFunctionGroupTree>()
             .ConvertUsing<AutoMapModelTypeConverter>();
-        
+
         CreateMap<AIFunctionGroupPersistObject, IAIFunctionGroup>()
             .As<CheckableFunctionGroupTree>();
         CreateMap<IAIFunctionGroup, AIFunctionGroupPersistObject>()
@@ -156,7 +157,7 @@ public class DialogMappingProfile : Profile
             {
                 var contextMapper = context.Mapper;
                 var items = source.ResponseItems.Select(x =>
-                    contextMapper.Map<ClientResponsePersistItem, DocResponseViewItem>(x)).ToArray();
+                    contextMapper.Map<ClientResponsePersistItem, ClientResponseViewItem>(x)).ToArray();
                 var responseViewItems = destination.Items;
                 foreach (var item in items)
                 {
@@ -192,18 +193,13 @@ public class DialogMappingProfile : Profile
                 }
             });
 
-
-        CreateMap<ResponsePersistItemBase, ResponseViewItemBase>()
-            .Include<ClientResponsePersistItem, DocResponseViewItem>()
-            .Include<RawResponsePersistItem, RawResponseViewItem>();
-
         CreateMap<IResponse, ResponseViewItemBase>()
-            .Include<IResponse, DocResponseViewItem>();
+            .Include<IResponse, ClientResponseViewItem>();
 
         CreateMap<IResponse, RawResponseViewItem>()
             .IncludeBase<IResponse, ResponseViewItemBase>();
 
-        CreateMap<IResponse, DocResponseViewItem>()
+        CreateMap<IResponse, ClientResponseViewItem>()
             .IncludeBase<IResponse, ResponseViewItemBase>();
 
         /*.Include<IResponse, ResponseViewItem>();*/
@@ -227,12 +223,23 @@ public class DialogMappingProfile : Profile
         CreateMap<DialogFileViewModel, DialogFilePersistModel>()
             .ConvertUsing<AutoMapModelTypeConverter>();
 
-        CreateMap<DocResponseViewItem, ClientResponsePersistItem>()
-            .PreserveReferences();
-        CreateMap<RawResponseViewItem, RawResponsePersistItem>()
+        CreateMap<ResponseViewItemBase, ResponsePersistItemBase>()
+            .Include<ClientResponseViewItem, ClientResponsePersistItem>()
+            .Include<RawResponseViewItem, RawResponsePersistItem>();
+
+        CreateMap<ClientResponseViewItem, ClientResponsePersistItem>()
+            .IncludeBase<ResponseViewItemBase, ResponsePersistItemBase>()
             .PreserveReferences();
 
-        CreateMap<ClientResponsePersistItem, DocResponseViewItem>()
+        CreateMap<RawResponseViewItem, RawResponsePersistItem>()
+            .IncludeBase<ResponseViewItemBase, ResponsePersistItemBase>()
+            .PreserveReferences();
+
+        CreateMap<ResponsePersistItemBase, ResponseViewItemBase>()
+            .Include<ClientResponsePersistItem, ClientResponseViewItem>()
+            .Include<RawResponsePersistItem, RawResponseViewItem>();
+
+        CreateMap<ClientResponsePersistItem, ClientResponseViewItem>()
             .IncludeBase<ResponsePersistItemBase, ResponseViewItemBase>()
             .PreserveReferences()
             .ConstructUsing((source, context) =>
@@ -244,8 +251,9 @@ public class DialogMappingProfile : Profile
                     llmClient = context.Mapper.Map<ParameterizedLLMModelPO, ILLMChatClient>(client);
                 }
 
-                return new DocResponseViewItem(llmClient);
+                return new ClientResponseViewItem(llmClient);
             });
+
         CreateMap<RawResponsePersistItem, RawResponseViewItem>()
             .IncludeBase<ResponsePersistItemBase, ResponseViewItemBase>()
             .PreserveReferences();
@@ -566,6 +574,3 @@ public class DialogMappingProfile : Profile
         }
     }
 }
-
-
-

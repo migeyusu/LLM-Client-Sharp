@@ -41,9 +41,9 @@ public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         [Description("The public URL to fetch the content from.")]
         string url,
         [Description("Optional: The maximum number of characters to return. Default is 8000.")]
-        int? maxLength = 8000,
+        int maxLength = 8000,
         [Description("Optional: The starting character index for the content. Default is 0.")]
-        int? startIndex = 0,
+        int startIndex = 0,
         CancellationToken token = default)
     {
         var responseContent = await FetchContentAsync(url, token: token);
@@ -57,9 +57,9 @@ public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         [Description("The public URL of the JSON endpoint to fetch.")]
         string url,
         [Description("Optional: The maximum number of characters to return. Default is 8000.")]
-        int? maxLength = 8000,
+        int maxLength = 8000,
         [Description("Optional: The starting character index for the content. Default is 0.")]
-        int? startIndex = 0,
+        int startIndex = 0,
         CancellationToken token = default)
     {
         // 对于LLM，直接返回JSON字符串通常就足够了。我们仅验证内容，不在这里进行反序列化。
@@ -74,9 +74,9 @@ public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         [Description("The public URL to fetch and clean.")]
         string url,
         [Description("Optional: The maximum number of characters to return. Default is 8000.")]
-        int? maxLength = 8000,
+        int maxLength = 8000,
         [Description("Optional: The starting character index for the content. Default is 0.")]
-        int? startIndex = 0,
+        int startIndex = 0,
         CancellationToken cancellationToken = default(CancellationToken))
     {
         var htmlContent = await FetchContentAsync(url, token: cancellationToken);
@@ -107,9 +107,9 @@ public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         [Description("The public URL to fetch and convert to Markdown.")]
         string url,
         [Description("Optional: The maximum number of characters to return. Default is 8000.")]
-        int? maxLength = 8000,
+        int maxLength = 8000,
         [Description("Optional: The starting character index for the content. Default is 0.")]
-        int? startIndex = 0,
+        int startIndex = 0,
         CancellationToken token = default(CancellationToken))
     {
         var htmlContent = await FetchContentAsync(url, token: token);

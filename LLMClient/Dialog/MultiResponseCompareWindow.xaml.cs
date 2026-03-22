@@ -14,7 +14,7 @@ public partial class MultiResponseCompareWindow : Window, INotifyPropertyChanged
 {
     public ObservableCollection<ComparableResponseViewItem> ResponseViewItems { get; }
 
-    public MultiResponseCompareWindow(IList<DocResponseViewItem> items)
+    public MultiResponseCompareWindow(IList<ClientResponseViewItem> items)
     {
         ResponseViewItems =
             new ObservableCollection<ComparableResponseViewItem>(items.Select((item =>
@@ -78,11 +78,11 @@ public class ComparableResponseViewItem : BaseViewModel
         get { return GetAsyncProperty(() => RawItem.CreateFullResponseDocumentAsync()); }
     }
 
-    public DocResponseViewItem RawItem { get; }
+    public ClientResponseViewItem RawItem { get; }
 
     private double _width = 650d;
 
-    public ComparableResponseViewItem(DocResponseViewItem responseViewItem)
+    public ComparableResponseViewItem(ClientResponseViewItem responseViewItem)
     {
         RawItem = responseViewItem;
     }
