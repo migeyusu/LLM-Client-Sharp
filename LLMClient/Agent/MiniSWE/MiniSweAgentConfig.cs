@@ -1,33 +1,31 @@
 ﻿namespace LLMClient.Agent.MiniSWE;
 
-
 /// <summary>
-/// Mini-SWE-Agent 配置
-/// 对应 Python 版本的 AgentConfig
+/// Mini-SWE-Agent / Windows-Agent unified config
 /// </summary>
 public class MiniSweAgentConfig
 {
+    /// <summary>
+    /// Platform identifier, e.g. linux / windows
+    /// </summary>
     public string PlatformId { get; set; } = "linux";
 
     /// <summary>
-    /// 系统消息模板（第一条消息）
-    /// 使用 Handlebars 语法，变量如 {{system}}, {{release}} 等
+    /// System message template
     /// </summary>
     public string SystemTemplate { get; set; } = """
                                                  You are a helpful assistant that can interact with a computer.
                                                  """;
 
     /// <summary>
-    /// 实例模板（第二条消息，指定任务）
-    /// 使用 Handlebars 语法，变量如 {{task}}
+    /// Instance message template
     /// </summary>
     public string InstanceTemplate { get; set; } = """
                                                    Please solve this issue: {{task}}
                                                    """;
 
     /// <summary>
-    /// 观察结果模板（执行命令后的输出格式）
-    /// 使用 Handlebars 语法
+    /// Observation result template
     /// </summary>
     public string ObservationTemplate { get; set; } = """
                                                       <returncode>{{output.returncode}}</returncode>
@@ -37,7 +35,7 @@ public class MiniSweAgentConfig
                                                       """;
 
     /// <summary>
-    /// 格式错误反馈模板
+    /// Format / tool usage error feedback template
     /// </summary>
     public string FormatErrorTemplate { get; set; } = """
                                                       Format error:
@@ -48,37 +46,43 @@ public class MiniSweAgentConfig
                                                       """;
 
     /// <summary>
-    /// 最大步数限制（0 表示无限制）
+    /// Max steps, 0 means unlimited
     /// </summary>
     public int StepLimit { get; set; } = 0;
 
     /// <summary>
-    /// 是否使用 ToolCall 模式（否则使用正则解析）
+    /// Whether ToolCall mode is used
     /// </summary>
     public bool UseToolCall { get; set; } = true;
 
     /// <summary>
-    /// Tool 名称（当 UseToolCall=true 时）
+    /// Tool name in tool-call or text protocol
     /// </summary>
     public string ToolName { get; set; } = "bash";
 
     /// <summary>
-    /// 命令执行超时时间（秒）
+    /// Execution timeout in seconds
     /// </summary>
     public int ExecutionTimeout { get; set; } = 30;
 
     /// <summary>
-    /// 任务完成标志字符串
+    /// Task completion flag
     /// </summary>
     public string TaskCompleteFlag { get; set; } = "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT";
 
+    /// <summary>
+    /// Whether structured tool instructions should be injected
+    /// </summary>
     public bool IncludeToolInstructions { get; set; } = true;
 
+    /// <summary>
+    /// Whether structured RAG instructions should be injected
+    /// </summary>
     public bool IncludeRagInstructions { get; set; } = true;
 }
 
 /// <summary>
-/// 解析出的 Action
+/// Parsed action
 /// </summary>
 public class ParsedAction
 {

@@ -6,6 +6,7 @@ using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Agent.MiniSWE;
+
 /// <summary>
 /// Agent-oriented dialog context that owns prompt construction.
 /// Unlike the default chat context, this context renders a dedicated
@@ -40,25 +41,36 @@ public class AgentDialogContext : DialogContext
     {
     }
 
+    /// <summary>
+    /// The agent system prompt template.
+    /// Usually contains the high-level working protocol.
+    /// </summary>
     public string SystemTemplate { get; set; } = string.Empty;
 
+    /// <summary>
+    /// The first user/instance prompt template.
+    /// Usually contains task instructions and workflow rules.
+    /// </summary>
     public string InstanceTemplate { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Whether historical messages should be included after the agent bootstrap prompts.
+    /// </summary>
     public bool IncludeHistoryMessages { get; set; } = true;
 
     /// <summary>
-    /// Optional platform identifier. Defaults to "windows".
+    /// Platform identifier, e.g. windows / linux.
     /// </summary>
     public string PlatformId { get; set; } = "windows";
 
     /// <summary>
-    /// If true, tool instructions are rendered into the agent prompt.
-    /// If false, the agent template is considered fully self-contained.
+    /// Whether structured tool instructions should be rendered into templates.
+    /// Typically enabled for Windows templates, disabled for Linux mini-swe original style.
     /// </summary>
     public bool IncludeToolInstructions { get; set; } = true;
 
     /// <summary>
-    /// If true, RAG instructions are rendered into the agent prompt.
+    /// Whether structured RAG instructions should be rendered into templates.
     /// </summary>
     public bool IncludeRagInstructions { get; set; } = true;
 
@@ -69,7 +81,7 @@ public class AgentDialogContext : DialogContext
 
     protected override string? BuildSystemPrompt()
     {
-        // Agent context does not use the default chat-style system prompt assembly.
+        // Agent context does not use default chat-style prompt concatenation.
         // The actual system prompt is rendered in BuildChatHistoryAsync.
         return null;
     }
@@ -138,12 +150,8 @@ public class AgentDialogContext : DialogContext
             ["task"] = UserPrompt ?? string.Empty,
             ["platform_id"] = PlatformId,
             ["platform_instructions"] = BuildPlatformInstructions(),
-            ["tool_instructions"] = ShouldRenderToolInstructions()
-                ? BuildToolInstructions()
-                : string.Empty,
-            ["rag_instructions"] = ShouldRenderRagInstructions()
-                ? BuildRagInstructions()
-                : string.Empty,
+            ["tool_instructions"] = ShouldRenderToolInstructions() ? BuildToolInstructions() : string.Empty,
+            ["rag_instructions"] = ShouldRenderRagInstructions() ? BuildRagInstructions() : string.Empty,
             ["tool_selection_guidance"] = BuildToolSelectionGuidance(),
             ["working_directory"] = WorkingDirectory ?? string.Empty,
             ["system"] = Environment.OSVersion.Platform.ToString(),
@@ -398,27 +406,5 @@ public class AgentDialogContext : DialogContext
         }
 
         return await PromptTemplateRenderer.RenderHandlebarsAsync(InstanceTemplate, variables);
-    }
-}
-
-public static class AgentDialogContextFactory
-{
-    public static AgentDialogContext Create(
-        IReadOnlyList<IChatHistoryItem> history,
-        MiniSweAgentConfig config,
-        IChatRequest request)
-    {
-        var context = new AgentDialogContext(history)
-        {
-            PlatformId = config.PlatformId,
-            SystemTemplate = config.SystemTemplate,
-            InstanceTemplate = config.InstanceTemplate,
-            IncludeToolInstructions = config.IncludeToolInstructions,
-            IncludeRagInstructions = config.IncludeRagInstructions,
-            IncludeHistoryMessages = true
-        };
-
-        context.MapFromRequest(request);
-        return context;
     }
 }

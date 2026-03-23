@@ -1,7 +1,7 @@
 agent:
   system_template: |
     You are a helpful assistant that can interact with development tools on a Windows system.
-
+    
     Your job is to solve software engineering tasks by reasoning step by step, inspecting files, editing code, and running commands when needed.
 
     You must work incrementally:
@@ -30,6 +30,12 @@ agent:
     - do not include line number prefixes in file edit operations
 
     Failure to follow the tool usage and editing rules may cause your response to be rejected.
+
+    {{{platform_instructions}}}
+
+    {{{tool_instructions}}}
+
+    {{{rag_instructions}}}
   instance_template: |
     Please solve this issue: {{task}}
 
@@ -54,22 +60,7 @@ agent:
     7. Re-check the edited code if necessary
     8. Finish only when the result has been verified as much as possible
 
-    ## Tool Selection Guidance
-
-    Prefer FileSystem tools for:
-    - reading files
-    - inspecting code with line numbers
-    - finding text in files
-    - previewing edits
-    - applying edits
-
-    Prefer WinCLI for:
-    - dotnet build
-    - dotnet test
-    - msbuild
-    - powershell scripts
-    - project searches or tooling commands
-    - environment inspection
+    {{{tool_selection_guidance}}}
 
     ## Windows-Specific Guidance
 
@@ -122,47 +113,29 @@ environment:
     TQDM_DISABLE: '1'
 model:
   observation_template: |
-    {% if output.exception_info -%}
+    {{#if output.exception_info}}
     <exception>{{output.exception_info}}</exception>
-    {% endif -%}
+    {{/if}}
     <returncode>{{output.returncode}}</returncode>
-    {% if output.output | length < 10000 -%}
+    {{#if output.output}}
     <output>
-    {{ output.output -}}
+    {{output.output}}
     </output>
-    {%- else -%}
-    <warning>
-    The output of your last command was too long.
-    Please try a different command that produces less output.
-    If you are inspecting a file, use structured file-reading tools to read a smaller region.
-    If a search produced too much output, narrow the search scope or search text.
-    If you need the full output, redirect it to a file and inspect that file in smaller sections.
-    </warning>
-    {%- set elided_chars = output.output | length - 10000 -%}
-    <output_head>
-    {{ output.output[:5000] }}
-    </output_head>
-    <elided_chars>
-    {{ elided_chars }} characters elided
-    </elided_chars>
-    <output_tail>
-    {{ output.output[-5000:] }}
-    </output_tail>
-    {%- endif -%}
+    {{/if}}
   model_kwargs:
     drop_params: true
   format_error_template: |
     Tool usage error:
-
+    
     <error>
     {{error}}
     </error>
-
+    
     General guidance:
     - Use the available tools directly when you need to inspect files, edit files, or run commands.
     - Do not describe an action without actually calling the relevant tool.
     - Prefer FileSystem tools for reading and editing files.
     - Prefer WinCLI for Windows command execution.
     - When editing files, inspect first, preview edits, then apply edits.
-
+    
     If the task is complete, clearly explain what was changed and how it was verified.
