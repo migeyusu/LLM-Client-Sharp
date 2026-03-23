@@ -248,11 +248,10 @@ public static class RendererExtensions
             {
                 var currentLeafBlock = leafBlock;
 
-                if (currentLeafBlock.ProcessInlines)
+                if (currentLeafBlock.ProcessInlines && currentLeafBlock.Lines.Lines != null)
                 {
                     // 处理内联元素  
                     inlineProcessor.ProcessInlineLeaf(currentLeafBlock);
-
                     // 检查是否有块替换  
                     if (inlineProcessor.BlockNew != null)
                     {

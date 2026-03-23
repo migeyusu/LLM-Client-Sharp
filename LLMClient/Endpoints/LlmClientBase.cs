@@ -217,7 +217,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             int? loopLatency = null;
                             await foreach (var update in chatClient
                                                .GetStreamingResponseAsync(chatHistory, requestOptions,
-                                                   cancellationToken))
+                                                   cancellationToken).ConfigureAwait(false))
                             {
                                 loopLatency ??= (int)_latencyStopwatch.ElapsedMilliseconds;
                                 update.TryAddExtendedData();
@@ -237,7 +237,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         else
                         {
                             preResponse =
-                                await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
+                                await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken).ConfigureAwait(false);
                             //只收集文本内容
                             interactor?.WriteLine(preResponse.Text);
                             await chatContext.CompleteResponse(preResponse, result);

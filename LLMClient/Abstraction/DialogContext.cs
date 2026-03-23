@@ -33,7 +33,7 @@ public class DialogContext : IChatRequest
     public static DialogContext CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
         string? systemPrompt = null)
     {
-        var requestViewItem = history.LastOrDefault() as RequestViewItem ??
+        var requestViewItem = history.LastOrDefault() as IRequestItem ??
                               throw new InvalidOperationException("RequestViewItem is null");
         var dialogContext = new DialogContext(history)
         {

@@ -322,7 +322,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public ICommand ClearDialogCommand { get; }
 
-    public void DeleteInteraction(RequestViewItem preRequest)
+    public void DeleteInteraction(IRequestItem preRequest)
     {
         //删除单次交互，要求：1. 请求没有多回复分支 2. 回复没有多后继分支（允许单后继）
         if (preRequest.HasFork)
@@ -342,23 +342,23 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             return;
         }
 
-        var previousResponse = preRequest.PreviousItem;
-        if (previousResponse == null)
+        var previousItem = preRequest.PreviousItem;
+        if (previousItem == null)
         {
             return;
         }
 
-        previousResponse.RemoveChild(preRequest);
+        previousItem.RemoveChild(preRequest);
         var nextRequest = preResponse.Children.FirstOrDefault();
         if (nextRequest != null)
         {
-            previousResponse.AppendChild(nextRequest);
+            previousItem.AppendChild(nextRequest);
         }
 
         //检查leaf可达性
         if (!CurrentLeaf.CanReachRoot())
         {
-            CurrentLeaf = preResponse ?? RootNode;
+            CurrentLeaf = preResponse;
         }
         else
         {

@@ -315,7 +315,10 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             {
                 RendererExtensions.StreamParse(
                     _blockingCollection,
-                    (_, block) => _session.OnBlockClosed(block));
+                    (_, block) =>
+                    {
+                        Dispatch(() => _session.OnBlockClosed(block));
+                    });
             });
 
             _outputAction = message =>

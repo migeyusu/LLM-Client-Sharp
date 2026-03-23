@@ -35,9 +35,16 @@ public partial class SessionView : UserControl
 
     private void OnExcludeExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is RequestViewItem requestViewItem)
+        try
         {
-            ViewModel.CutContext(requestViewItem);
+            if (e.Parameter is RequestViewItem requestViewItem)
+            {
+                ViewModel.CutContext(requestViewItem);
+            }
+        }
+        catch (Exception exception)
+        {
+            MessageEventBus.Publish($"剪切失败：{exception.Message}");
         }
     }
 
@@ -161,9 +168,16 @@ public partial class SessionView : UserControl
 
     private void DeleteInteraction_OnExecuted(object sender, ExecutedRoutedEventArgs e)
     {
-        if (e.Parameter is RequestViewItem requestViewItem)
+        try
         {
-            ViewModel.DeleteInteraction(requestViewItem);
+            if (e.Parameter is IRequestItem requestViewItem)
+            {
+                ViewModel.DeleteInteraction(requestViewItem);
+            }
+        }
+        catch (Exception exception)
+        {
+            MessageEventBus.Publish($"删除失败：{exception.Message}");
         }
     }
 }
