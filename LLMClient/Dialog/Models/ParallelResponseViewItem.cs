@@ -142,7 +142,7 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
             CanGotoPrevious = value - 1 >= 0;
             CanGoToNext = value + 1 < Items.Count;
         }
-    } = 0;
+    } = -1; //初始值必须为-1，AcceptedResponse会自动调整！
 
     public ClientResponseViewItem? AcceptedResponse
     {
