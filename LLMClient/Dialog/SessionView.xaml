@@ -19,6 +19,8 @@
             <ListBox.CommandBindings>
                 <CommandBinding Command="Delete"
                                 Executed="OnDeleteExecuted" />
+                <CommandBinding Command="utility:CommonCommands.DeleteInteraction"
+                                Executed="DeleteInteraction_OnExecuted"/>
                 <CommandBinding Command="{x:Static utility:CommonCommands.Exclude}"
                                 Executed="OnExcludeExecuted" />
                 <CommandBinding Command="{x:Static utility:CommonCommands.ScrollToNextCodeBlock}"

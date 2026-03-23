@@ -1,15 +1,18 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using AutoMapper;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
+using LLMClient.Rag;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.SemanticKernel;
 
 namespace LLMClient.Abstraction;
 
 public class DialogContext : IChatRequest
 {
-    private static Lazy<IMapper> _mapperLazy = new(() =>
+    private static readonly Lazy<IMapper> _mapperLazy = new(() =>
     {
         var config = new MapperConfiguration(cfg => cfg.CreateMap<IChatRequest, DialogContext>(),
             NullLoggerFactory.Instance);
@@ -57,7 +60,7 @@ public class DialogContext : IChatRequest
     /// <summary>
     /// message don't contains system prompt
     /// </summary>
-    public async Task<List<ChatMessage>> GetMessagesAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<List<ChatMessage>> GetMessagesAsync(CancellationToken cancellationToken = default)
     {
         var chatMessages = new List<ChatMessage>();
         foreach (var dialogItem in DialogItems)
@@ -102,10 +105,236 @@ public class DialogContext : IChatRequest
         if (CallEngine == null)
         {
             //如果不原生支持函数调用，切换到prompt实现
-            this.CallEngine =
-                FunctionCallEngine.Create(supportFunctionCall ? this.CallEngineType : FunctionCallEngineType.Prompt);
+            CallEngine =
+                FunctionCallEngine.Create(supportFunctionCall ? CallEngineType : FunctionCallEngineType.Prompt);
         }
 
         return CallEngine;
+    }
+
+    public virtual async Task<PreparedRequestContext> PrepareAsync(
+        IEndpointModel model,
+        IInvokeInteractor? interactor = null,
+        CancellationToken cancellationToken = default)
+    {
+        await ApplySearchAsync(cancellationToken);
+
+        var functionCallEngine = EnsureCallEngine(model.SupportFunctionCall);
+        var kernelPluginCollection = functionCallEngine.KernelPluginCollection;
+
+        await RegisterFunctionGroupsAsync(kernelPluginCollection, cancellationToken);
+        await RegisterRagSourcesAsync(kernelPluginCollection, cancellationToken);
+
+        var chatHistory = await BuildChatHistoryAsync(model, interactor, functionCallEngine, cancellationToken);
+        var requestOptions = BuildRequestOptions(model, functionCallEngine, chatHistory);
+
+        return new PreparedRequestContext
+        {
+            ChatHistory = chatHistory,
+            FunctionCallEngine = functionCallEngine,
+            RequestOptions = requestOptions,
+            TempAdditionalProperties = TempAdditionalProperties
+        };
+    }
+
+    protected virtual async Task ApplySearchAsync(CancellationToken cancellationToken)
+    {
+        if (SearchOption != null)
+        {
+            await SearchOption.ApplySearch(this);
+        }
+    }
+
+    protected virtual async Task RegisterFunctionGroupsAsync(
+        KernelPluginCollection kernelPluginCollection,
+        CancellationToken cancellationToken)
+    {
+        if (FunctionGroups == null)
+        {
+            return;
+        }
+
+        foreach (var functionGroup in FunctionGroups)
+        {
+            await functionGroup.EnsureAsync(cancellationToken);
+            if (!functionGroup.IsAvailable)
+            {
+                continue;
+            }
+
+            var availableTools = functionGroup.AvailableTools;
+            if (availableTools == null || availableTools.Count == 0)
+            {
+                continue;
+            }
+
+            kernelPluginCollection.AddFromFunctions(
+                functionGroup.Name,
+                availableTools.Select(function => function.AsKernelFunction()));
+        }
+    }
+
+    protected virtual async Task RegisterRagSourcesAsync(
+        KernelPluginCollection kernelPluginCollection,
+        CancellationToken cancellationToken)
+    {
+        if (RagSources == null || RagSources.Length == 0)
+        {
+            return;
+        }
+
+        var resourceIndex = 0;
+        foreach (var ragSource in RagSources)
+        {
+            await ragSource.EnsureAsync(cancellationToken);
+            if (!ragSource.IsAvailable)
+            {
+                continue;
+            }
+
+            if (ragSource is RagFileBase ragFile)
+            {
+                ragFile.FileIndexInContext = resourceIndex;
+                resourceIndex++;
+            }
+
+            var availableTools = ragSource.AvailableTools;
+            if (availableTools == null || availableTools.Count == 0)
+            {
+                continue;
+            }
+
+            kernelPluginCollection.AddFromFunctions(
+                ragSource.Name,
+                availableTools.Select(function => function.AsKernelFunction()));
+        }
+    }
+
+    protected virtual async Task<List<ChatMessage>> BuildChatHistoryAsync(
+        IEndpointModel model,
+        IInvokeInteractor? interactor,
+        FunctionCallEngine functionCallEngine,
+        CancellationToken cancellationToken)
+    {
+        var chatHistory = new List<ChatMessage>();
+        var chatMessages = await GetMessagesAsync(cancellationToken);
+        var systemPrompt = BuildSystemPrompt();
+
+        if (!string.IsNullOrWhiteSpace(systemPrompt))
+        {
+            if (model.SupportSystemPrompt)
+            {
+                chatHistory.Add(new ChatMessage(ChatRole.System, systemPrompt));
+            }
+            else
+            {
+                interactor?.Warning(
+                    "System prompt is not supported by this model, but system prompt or additional prompt is provided. The prompt will be added as the first message in the chat history.");
+                chatHistory.Add(new ChatMessage(ChatRole.User, systemPrompt));
+            }
+        }
+
+        chatHistory.AddRange(chatMessages);
+        return chatHistory;
+    }
+
+    protected virtual string? BuildSystemPrompt()
+    {
+        var systemPrompt = SystemPrompt;
+        var additionalPromptBuilder = new StringBuilder();
+
+        AppendFunctionGroupsPrompt(additionalPromptBuilder);
+        AppendRagSourcesPrompt(additionalPromptBuilder);
+
+        var additionalPrompt = additionalPromptBuilder.ToString().Trim();
+        if (string.IsNullOrWhiteSpace(additionalPrompt))
+        {
+            return systemPrompt;
+        }
+
+        return string.IsNullOrWhiteSpace(systemPrompt)
+            ? additionalPrompt
+            : $"{systemPrompt}\n\n{additionalPrompt}";
+    }
+
+    protected virtual void AppendFunctionGroupsPrompt(StringBuilder builder)
+    {
+        if (FunctionGroups == null)
+        {
+            return;
+        }
+
+        var availableGroups = FunctionGroups
+            .Where(group => group.IsAvailable)
+            .Where(group => group.AvailableTools is { Count: > 0 })
+            .ToList();
+
+        if (availableGroups.Count == 0)
+        {
+            return;
+        }
+
+        builder.AppendLine("For the following functions, you can call them by name with the required parameters:");
+        foreach (var functionGroup in availableGroups)
+        {
+            if (string.IsNullOrWhiteSpace(functionGroup.AdditionPrompt))
+            {
+                builder.AppendLine(functionGroup.Name);
+            }
+            else
+            {
+                builder.AppendLine($"{functionGroup.Name}:{functionGroup.AdditionPrompt}");
+            }
+        }
+    }
+
+    protected virtual void AppendRagSourcesPrompt(StringBuilder builder)
+    {
+        if (RagSources == null)
+        {
+            return;
+        }
+
+        var availableSources = RagSources
+            .Where(source => source.IsAvailable)
+            .Where(source => source.AvailableTools is { Count: > 0 })
+            .ToList();
+
+        if (availableSources.Count == 0)
+        {
+            return;
+        }
+
+        builder.AppendLine();
+        builder.AppendLine(
+            "For the following RAG(Retrieval-Augmented Generation) sources such as files, web contents, you can get information by call them with the required parameters:");
+        foreach (var ragSource in availableSources)
+        {
+            if (string.IsNullOrWhiteSpace(ragSource.AdditionPrompt))
+            {
+                builder.AppendLine(ragSource.Name);
+            }
+            else
+            {
+                builder.AppendLine($"{ragSource.Name}:{ragSource.AdditionPrompt}");
+            }
+        }
+    }
+
+    protected virtual ChatOptions BuildRequestOptions(
+        IEndpointModel model,
+        FunctionCallEngine functionCallEngine,
+        List<ChatMessage> chatHistory)
+    {
+        var requestOptions = new ChatOptions
+        {
+            ResponseFormat = ResponseFormat
+        };
+        if (functionCallEngine.KernelPluginCollection.Count > 0)
+        {
+            functionCallEngine.PreviewRequest(requestOptions, model, chatHistory);
+        }
+
+        return requestOptions;
     }
 }

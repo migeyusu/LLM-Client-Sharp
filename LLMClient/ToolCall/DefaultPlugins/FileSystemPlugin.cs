@@ -93,11 +93,16 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
         
     }
 
-    [KernelFunction, Description("Read the complete contents of a file from the file system. Handles various text encodings and provides detailed error messages if the file cannot be read. Use this tool when you need to examine the contents of a single file. Use the 'head' parameter to read only the first N lines of a file, or the 'tail' parameter to read only the last N lines of a file. Only works within allowed directories.")]
+    [KernelFunction, Description("Read the complete contents of a file from the file system. Handles various text encodings and provides detailed error messages if the file cannot be read. " +
+                                 "Use this tool when you need to examine the contents of a single file. " +
+                                 "Use the 'head' parameter to read only the first N lines of a file, or the 'tail' parameter to read only the last N lines of a file. " +
+                                 "Set includeLineNumbers=true when you want output suitable for precise code review and editing. " +
+                                 "Only works within allowed directories.")]
     public async Task<string> ReadFileAsync(
         [Description("The path to the file to read.")] string path,
         [Description("Optional: If provided, returns only the first N lines of the file.")] int? head = null,
-        [Description("Optional: If provided, returns only the last N lines of the file.")] int? tail = null)
+        [Description("Optional: If provided, returns only the last N lines of the file.")] int? tail = null,
+        [Description("If true, prefixes each returned line with its 1-based line number.")] bool includeLineNumbers = false)
     {
         if (head.HasValue && tail.HasValue)
         {
@@ -105,27 +110,35 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
         }
 
         var fullPath = await ValidateAndResolvePathAsync(path);
-        
+
         if (head.HasValue)
         {
-            return await HeadFileAsync(fullPath, head.Value);
+            return await HeadFileAsync(fullPath, head.Value, includeLineNumbers);
         }
 
         if (tail.HasValue)
         {
-            return await TailFileAsync(fullPath, tail.Value);
+            return await TailFileAsync(fullPath, tail.Value, includeLineNumbers);
         }
 
-        return await File.ReadAllTextAsync(fullPath);
+        if (!includeLineNumbers)
+        {
+            return await File.ReadAllTextAsync(fullPath);
+        }
+
+        var lines = await File.ReadAllLinesAsync(fullPath);
+        return FormatLinesWithNumbers(lines, 1);
     }
     
+    
     [KernelFunction, Description("Read a specific inclusive line range from a text file. " +
-                                 "Returns lines prefixed with 1-based line numbers. " +
+                                 "Returns lines prefixed with 1-based line numbers by default. " +
                                  "Useful for precise inspection of code regions without reading the whole file.")]
     public async Task<string> ReadFileRangeAsync(
         [Description("The path to the file to read.")] string path,
         [Description("The starting 1-based line number (inclusive).")] int startLine,
-        [Description("The ending 1-based line number (inclusive).")] int endLine)
+        [Description("The ending 1-based line number (inclusive).")] int endLine,
+        [Description("If true, prefixes each returned line with its 1-based line number. Default is true.")] bool includeLineNumbers = true)
     {
         if (startLine <= 0)
             throw new ArgumentOutOfRangeException(nameof(startLine), "startLine must be greater than 0.");
@@ -141,13 +154,14 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
         int actualStart = Math.Min(startLine, lines.Length);
         int actualEnd = Math.Min(endLine, lines.Length);
 
-        var sb = new StringBuilder();
-        for (int i = actualStart; i <= actualEnd; i++)
-        {
-            sb.AppendLine($"{i}: {lines[i - 1]}");
-        }
+        var slice = lines
+            .Skip(actualStart - 1)
+            .Take(actualEnd - actualStart + 1)
+            .ToArray();
 
-        return sb.ToString().TrimEnd();
+        return includeLineNumbers
+            ? FormatLinesWithNumbers(slice, actualStart)
+            : string.Join("\n", slice);
     }
     
     [KernelFunction, Description("Find occurrences of text in a file and return matching lines with surrounding context. " +
@@ -252,12 +266,14 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
     }
     
     [KernelFunction, Description("Read the contents of multiple files simultaneously. " +
-                                 "This is more efficient than reading files one by one when you need to analyze "+
+                                 "This is more efficient than reading files one by one when you need to analyze " +
                                  "or compare multiple files. Each file's content is returned with its " +
-                                "path as a reference. Failed reads for individual files won't stop " +
-                                "the entire operation. Only works within allowed directories.")]
+                                 "path as a reference. Failed reads for individual files won't stop " +
+                                 "the entire operation. Set includeLineNumbers=true for code review scenarios. " +
+                                 "Only works within allowed directories.")]
     public async Task<string> ReadMultipleFilesAsync(
-        [Description("The list of file paths to read.")] List<string> paths)
+        [Description("The list of file paths to read.")] List<string> paths,
+        [Description("If true, prefixes each returned line with its 1-based line number.")] bool includeLineNumbers = false)
     {
         var results = new StringBuilder();
         foreach (var path in paths)
@@ -265,12 +281,26 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
             try
             {
                 var fullPath = await ValidateAndResolvePathAsync(path);
-                var content = await File.ReadAllTextAsync(fullPath);
-                results.AppendLine($"{path}:\n{content}\n---");
+                string content;
+
+                if (!includeLineNumbers)
+                {
+                    content = await File.ReadAllTextAsync(fullPath);
+                }
+                else
+                {
+                    var lines = await File.ReadAllLinesAsync(fullPath);
+                    content = FormatLinesWithNumbers(lines, 1);
+                }
+
+                results.AppendLine($"{path}:");
+                results.AppendLine(content);
+                results.AppendLine("---");
             }
             catch (Exception e)
             {
-                results.AppendLine($"{path}: Error - {e.Message}\n---");
+                results.AppendLine($"{path}: Error - {e.Message}");
+                results.AppendLine("---");
             }
         }
         return results.ToString().TrimEnd('-', '\n', '\r');
@@ -579,57 +609,54 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
         return $"{bytes / Math.Pow(1024, i):F2} {units[i]}";
     }
     
-    private static async Task<string> HeadFileAsync(string path, int lineCount)
+    private static async Task<string> HeadFileAsync(string path, int lineCount, bool includeLineNumbers = false)
     {
         if (lineCount <= 0) return string.Empty;
-        
+
         var lines = new List<string>(lineCount);
         using var reader = new StreamReader(path);
+
         for (int i = 0; i < lineCount; i++)
         {
             var line = await reader.ReadLineAsync();
             if (line == null) break;
             lines.Add(line);
         }
-        return string.Join("\n", lines);
+
+        return includeLineNumbers
+            ? FormatLinesWithNumbers(lines, 1)
+            : string.Join("\n", lines);
     }
 
-    private static async Task<string> TailFileAsync(string path, int lineCount)
+    private static async Task<string> TailFileAsync(string path, int lineCount, bool includeLineNumbers = false)
     {
         if (lineCount <= 0) return string.Empty;
 
-        // This is a memory-efficient implementation for large files.
-        using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        if (fileStream.Length == 0) return string.Empty;
+        var lines = await File.ReadAllLinesAsync(path);
+        if (lines.Length == 0) return string.Empty;
 
-        const int bufferSize = 4096;
-        byte[] buffer = new byte[bufferSize];
-        var lines = new List<string>();
-        long position = fileStream.Length;
+        int startLine = Math.Max(1, lines.Length - lineCount + 1);
+        var tailLines = lines.Skip(startLine - 1).ToArray();
 
-        while (position > 0 && lines.Count <= lineCount)
+        return includeLineNumbers
+            ? FormatLinesWithNumbers(tailLines, startLine)
+            : string.Join("\n", tailLines);
+    }
+    
+    private static string FormatLinesWithNumbers(IEnumerable<string> lines, int startingLineNumber)
+    {
+        var sb = new StringBuilder();
+        int lineNumber = startingLineNumber;
+
+        foreach (var line in lines)
         {
-            long readPosition = Math.Max(0, position - bufferSize);
-            int bytesToRead = (int)(position - readPosition);
-            fileStream.Position = readPosition;
-            await fileStream.ReadAsync(buffer, 0, bytesToRead);
-
-            var text = Encoding.UTF8.GetString(buffer, 0, bytesToRead);
-            var textLines = text.Split('\n');
-            
-            // Prepend lines in reverse order
-            for (int i = textLines.Length - 1; i >= 0; i--)
-            {
-                if (lines.Count > lineCount) break;
-                lines.Insert(0, textLines[i]);
-            }
-
-            position = readPosition;
+            sb.Append(lineNumber);
+            sb.Append(": ");
+            sb.AppendLine(line);
+            lineNumber++;
         }
-        
-        // Clean up partial lines and join result
-        var resultLines = string.Join("\n", lines).Split('\n');
-        return string.Join("\n", resultLines.TakeLast(lineCount));
+
+        return sb.ToString().TrimEnd();
     }
     
     private static string ApplyEditsToContent(string originalContent, List<EditOperation> edits)
@@ -859,16 +886,32 @@ public class FileSystemPlugin : KernelFunctionGroup,IBuiltInFunctionGroup
     #endregion
 
     public override string? AdditionPrompt =>
-        $"{Name} function group provides secure access to the local file system. \n" +
-        "You can read, write, edit files, and manage directories within the allowed paths. \n" +
-        "Ensure you specify paths relative to the allowed directories configured for this plugin. \n"
-        +"When editing files:\n\n" +
-        "1. First inspect the relevant file region with ReadFileRangeAsync or FindTextInFileAsync.\n" +
-        "2. Then use PreviewEditAsync to preview the modification.\n" +
-        "3. Only after confirmation, use ApplyEditAsync.\n" +
-        "4. In each edit operation, oldText must include enough surrounding context to uniquely match exactly one location in the file.\n" +
-        "5. Do not rely on absolute line numbers for editing.";
+        """
+        This tool group provides structured access to the local file system.
 
+        Use this tool group for:
+        - reading files and directories
+        - locating text in files
+        - inspecting code with line numbers
+        - previewing file edits
+        - applying confirmed file edits
+
+        Best practices:
+        1. Prefer structured file tools over shell commands for reading and editing files.
+        2. For precise code inspection, use ReadFileRangeAsync or ReadFileAsync with includeLineNumbers=true.
+        3. Before editing, first inspect the relevant region with ReadFileRangeAsync or FindTextInFileAsync.
+        4. Before writing changes, use PreviewEditAsync to generate a preview diff.
+        5. Use ApplyEditAsync only after the intended change is clear.
+
+        Editing rules:
+        - In each edit operation, oldText must contain enough surrounding context to uniquely match exactly one location in the file.
+        - Do not rely on absolute line numbers as the edit key.
+        - When line-numbered output is used for inspection, do not include the line number prefixes in oldText/newText.
+        - Edit operations must contain raw file text only.
+
+        On this platform, file edits may be shown to the user in a visual diff UI before they are applied.
+        """;
+    
     public override object Clone()
     {
         return new FileSystemPlugin()

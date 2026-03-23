@@ -23,12 +23,11 @@ public class OpenAIChatClientEx : ChatClient
         var clientContext = AsyncContextStore<ChatContext>.Current;
         if (clientContext != null)
         {
-            if (clientContext.AdditionalObjects.Count != 0 || clientContext.ShowRequestJson)
+            if (clientContext.AdditionalObjects.Count != 0 || clientContext.ShowRequestJson || clientContext.EnableSchemaCleaning)
             {
                 await using (var oriStream = new MemoryStream())
                 {
-                    await content
-                        .WriteToAsync(oriStream);
+                    await content.WriteToAsync(oriStream);
                     oriStream.Position = 0;
                     var jsonNode = await JsonNode.ParseAsync(oriStream);
                     if (jsonNode == null)
@@ -36,21 +35,10 @@ public class OpenAIChatClientEx : ChatClient
                         throw new InvalidOperationException("Content is not valid JSON.");
                     }
 
-                    if (clientContext.ShowRequestJson)
+                    // 1. 在原有的附加对象逻辑之前或之后，执行 Schema 清洗
+                    if (clientContext.EnableSchemaCleaning)
                     {
-                        // 1. 创建用于格式化输出的选项
-                        var jsonOptions = new JsonSerializerOptions
-                        {
-                            WriteIndented = true, // 开启格式化换行和缩进
-                            // 非常关键：取消对特殊字符（包括中文）的转义
-                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
-                        };
-
-                        // 2. 使用 ToJsonString 生成人类可读的 Json 字符串
-                        var formattedJson = jsonNode.ToJsonString(jsonOptions);
-                        clientContext.Interactor?.WriteLine("<request>");
-                        clientContext.Interactor?.WriteLine(formattedJson);
-                        clientContext.Interactor?.WriteLine("</request>");
+                        CleanTypeArrays(jsonNode);
                     }
 
                     foreach (var additionalObject in clientContext.AdditionalObjects)
@@ -58,6 +46,21 @@ public class OpenAIChatClientEx : ChatClient
                         var node = JsonSerializer.SerializeToNode(additionalObject.Value,
                             Extension.DefaultJsonSerializerOptions);
                         jsonNode[additionalObject.Key] = node;
+                    }
+
+                    // 2. 将清洗/修改后的 JSON 内容进行打印（如果有需要的话）
+                    if (clientContext.ShowRequestJson)
+                    {
+                        var jsonOptions = new JsonSerializerOptions
+                        {
+                            WriteIndented = true, 
+                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+                        };
+
+                        var formattedJson = jsonNode.ToJsonString(jsonOptions);
+                        clientContext.Interactor?.WriteLine("<request>");
+                        clientContext.Interactor?.WriteLine(formattedJson);
+                        clientContext.Interactor?.WriteLine("</request>");
                     }
 
                     oriStream.SetLength(0);
@@ -75,6 +78,7 @@ public class OpenAIChatClientEx : ChatClient
         }
 
         var result = await base.CompleteChatAsync(content, options);
+
 #if DEBUG
         // var binaryData = result.GetRawResponse();
         /*var jsonNode = JsonNode.Parse(contentString);
@@ -91,12 +95,60 @@ public class OpenAIChatClientEx : ChatClient
             }
         }*/
 #endif
+
         if (clientContext != null)
         {
             clientContext.Result = result;
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// 递归遍历 JSON AST 节点，将 "type": ["string", "null"] 降维清洗为 "type": "string"
+    /// </summary>
+    private static void CleanTypeArrays(JsonNode? node)
+    {
+        if (node is JsonObject jsonObject)
+        {
+            // 如果发现了 "type" 字段并且它的值是一个数组
+            if (jsonObject.TryGetPropertyValue("type", out var typeNode) && typeNode is JsonArray typeArray)
+            {
+                string mainType = "string"; // Fallback 类型
+                foreach (var item in typeArray)
+                {
+                    var typeValue = item?.GetValue<string>();
+                    if (!string.Equals(typeValue, "null", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // 提取出第一个不是 "null" 的类型（如 "integer", "string"）
+                        mainType = typeValue ?? "string";
+                        break;
+                    }
+                }
+                
+                // 【核心覆盖】：用单一基础类型覆盖原来的数组
+                jsonObject["type"] = mainType;
+            }
+
+            // 使用 ToList 生成快照，防范集合在这个遍历过程中被修改引发 InvalidOperationException
+            foreach (var kvp in jsonObject.ToList())
+            {
+                if (kvp.Value != null)
+                {
+                    CleanTypeArrays(kvp.Value);
+                }
+            }
+        }
+        else if (node is JsonArray jsonArray)
+        {
+            foreach (var item in jsonArray)
+            {
+                if (item != null)
+                {
+                    CleanTypeArrays(item);
+                }
+            }
+        }
     }
 }
 

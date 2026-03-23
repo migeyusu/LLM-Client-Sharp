@@ -63,11 +63,11 @@ public class RequesterViewModel : BaseViewModel
 
     public bool RawEditMode
     {
-        get => _rawEditMode;
+        get;
         set
         {
-            if (value == _rawEditMode) return;
-            _rawEditMode = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             RefreshEditor(value);
         }
@@ -352,7 +352,6 @@ public class RequesterViewModel : BaseViewModel
 
     private CancellationTokenSource? _tokenSource;
     private TextContentEditViewModel _promptEditViewModel;
-    private bool _rawEditMode;
 
     public async void Summarize(IRequestItem? insertBefore = null)
     {
@@ -394,7 +393,10 @@ public class RequesterViewModel : BaseViewModel
         IList<CheckableFunctionGroupTree>? tools = null;
         if (this.FunctionTreeSelector.FunctionSelected)
         {
-            tools = this.FunctionGroupSource?.GetFunctionGroups().OfType<CheckableFunctionGroupTree>().ToArray();
+            tools = this.FunctionGroupSource?
+                .GetFunctionGroups()
+                .OfType<CheckableFunctionGroupTree>()
+                .ToArray();
         }
 
         var ragSources = RagSources.Where(model => model is { IsSelected: true, Data.IsAvailable: true })

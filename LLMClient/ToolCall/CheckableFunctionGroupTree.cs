@@ -44,10 +44,7 @@ public class CheckableFunctionGroupTree : BaseViewModel, IAIFunctionGroup
         get { return Data.Name; }
     }
 
-    public string? AdditionPrompt
-    {
-        get { return Data.AdditionPrompt; }
-    }
+    public string? AdditionPrompt => Data.AdditionPrompt;
 
     public IReadOnlyList<AIFunction>? AvailableTools
     {
@@ -175,7 +172,8 @@ public class CheckableFunctionGroupTree : BaseViewModel, IAIFunctionGroup
         {
             IsSelected = this.IsSelected,
             Functions = new SuspendableObservableCollection<VirtualFunctionViewModel>(
-                this.Functions.Select(function => (VirtualFunctionViewModel)function.Clone()))
+                this.Functions.Select(function => 
+                    (VirtualFunctionViewModel)function.Clone()))
         };
     }
 }

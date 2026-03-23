@@ -322,6 +322,51 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public ICommand ClearDialogCommand { get; }
 
+    public void DeleteInteraction(RequestViewItem preRequest)
+    {
+        //删除单次交互，要求：1. 请求没有多回复分支 2. 回复没有多后继分支（允许单后继）
+        if (preRequest.HasFork)
+        {
+            MessageBoxes.Warning("无法删除，存在多回复分支", "提示");
+            return;
+        }
+
+        if (preRequest.Children.First() is not IResponseItem preResponse)
+        {
+            return;
+        }
+
+        if (preResponse.HasFork)
+        {
+            MessageBoxes.Warning("无法删除，回复存在多后继分支", "提示");
+            return;
+        }
+
+        var previousResponse = preRequest.PreviousItem;
+        if (previousResponse == null)
+        {
+            return;
+        }
+
+        previousResponse.RemoveChild(preRequest);
+        var nextRequest = preResponse.Children.FirstOrDefault();
+        if (nextRequest != null)
+        {
+            previousResponse.AppendChild(nextRequest);
+        }
+
+        //检查leaf可达性
+        if (!CurrentLeaf.CanReachRoot())
+        {
+            CurrentLeaf = preResponse ?? RootNode;
+        }
+        else
+        {
+            RebuildLinearItems();
+        }
+
+        this.IsDataChanged = true;
+    }
 
     public virtual void DeleteItem(IDialogItem item)
     {

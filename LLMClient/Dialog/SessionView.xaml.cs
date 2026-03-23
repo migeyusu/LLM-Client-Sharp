@@ -90,21 +90,21 @@ public partial class SessionView : UserControl
 
         // Find blocks relative to viewport
         var relativeBlocks = codeBlocks.Select(b =>
-        {
-            try
             {
-                var transform = b.TransformToAncestor(scrollViewer);
-                var point = transform.Transform(new Point(0, 0));
-                return new { Block = b, Top = point.Y };
-            }
-            catch
-            {
-                return null;
-            }
-        })
-        .Where(x => x != null)
-        .OrderBy(x => x!.Top)
-        .ToList();
+                try
+                {
+                    var transform = b.TransformToAncestor(scrollViewer);
+                    var point = transform.Transform(new Point(0, 0));
+                    return new { Block = b, Top = point.Y };
+                }
+                catch
+                {
+                    return null;
+                }
+            })
+            .Where(x => x != null)
+            .OrderBy(x => x!.Top)
+            .ToList();
 
         if (isNext)
         {
@@ -132,10 +132,11 @@ public partial class SessionView : UserControl
         {
             var child = VisualTreeHelper.GetChild(parent, i);
             if (child is T t) return t;
-            
+
             var result = FindVisualChild<T>(child);
             if (result != null) return result;
         }
+
         return null;
     }
 
@@ -155,6 +156,14 @@ public partial class SessionView : UserControl
             {
                 yield return childOfChild;
             }
+        }
+    }
+
+    private void DeleteInteraction_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is RequestViewItem requestViewItem)
+        {
+            ViewModel.DeleteInteraction(requestViewItem);
         }
     }
 }

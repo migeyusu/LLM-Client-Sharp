@@ -173,7 +173,30 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
     }
 
     public override string? AdditionPrompt =>
-        $"{Name} function group is designed to execute command-line commands in Windows. ";
+        """
+        This tool group executes Windows command-line commands.
+
+        Preferred shell:
+        - Prefer PowerShell syntax and Windows-native commands.
+        - Use CMD only when PowerShell is not appropriate.
+        - Do not assume a bash shell is available.
+
+        Important execution rules:
+        1. Each command may run in an isolated process.
+        2. Do not assume the current directory or environment changes persist across commands.
+        3. If a command depends on a specific working directory, include it explicitly in the command.
+        4. Prefer non-interactive commands and flags.
+
+        Windows guidance:
+        - Use PowerShell commands such as Get-ChildItem, Select-String, Get-Content, Set-Location, Test-Path, and dotnet.
+        - Prefer backslash-safe or quoted paths when necessary.
+        - Be careful with spaces in paths; quote them explicitly.
+        - Avoid Unix-specific tools such as sed, awk, grep, ls, cat, or nl unless you know they are available in the current environment.
+
+        When working with source code:
+        - Prefer the FileSystem tool group for file reading and editing.
+        - Prefer WinCLI for building, testing, searching with project tools, running scripts, and invoking platform-specific tooling.
+        """;
 
     public override object Clone()
     {

@@ -166,3 +166,23 @@ public class MiniSweAgent : IAgent
         return message?.Text?.Contains("COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT") == true;
     }
 }
+
+/*
+ * <agent_system>
+...基础系统规则...
+</agent_system>
+
+<platform_instructions platform="windows">
+...Windows 特定规则...
+</platform_instructions>
+
+<tool_instructions>
+<tool name="FileSystem">
+...
+</tool>
+
+<tool name="WinCLI">
+...
+</tool>
+</tool_instructions>
+ */

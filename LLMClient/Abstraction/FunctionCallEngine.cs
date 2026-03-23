@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
-using LLMClient.Abstraction;
+using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
 using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
 using TextContent = Microsoft.Extensions.AI.TextContent;
 
-namespace LLMClient.Endpoints;
+namespace LLMClient.Abstraction;
 
 public class FunctionCallException : Exception
 {

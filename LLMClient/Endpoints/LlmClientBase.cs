@@ -21,8 +21,6 @@ using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Endpoints;
 
-
-
 public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 {
     public abstract string Name { get; }
@@ -47,15 +45,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     protected abstract IChatClient GetChatClient();
 
-    protected virtual ChatOptions CreateChatOptions()
+    protected virtual void ApplyChatOptions(ChatOptions chatOptions)
     {
         var modelInfo = this.Model;
         var modelParams = this.Parameters;
-        var chatOptions = new ChatOptions()
-        {
-            ModelId = modelInfo.APIId,
-        };
-
+        chatOptions.ModelId = modelInfo.APIId;
         if (modelInfo.TopPEnable)
         {
             chatOptions.TopP = modelParams.TopP;
@@ -97,42 +91,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 IThinkingConfig.CreateFrom(this.Endpoint, modelParams.ThinkingConfig as ThinkingConfigViewModel);
             thinkingConfig?.ApplyThinking(chatOptions);
         }
-
-        return chatOptions;
     }
 
-    [Experimental("SKEXP0001")]
-    private static async Task<bool> AddTools(IEnumerable<IAIFunctionGroup> functionGroups,
-        StringBuilder toolsPromptBuilder,
-        KernelPluginCollection kernelPluginCollection, CancellationToken cancellationToken)
-    {
-        var startCount = kernelPluginCollection.Count;
-        foreach (var functionGroup in functionGroups)
-        {
-            await functionGroup.EnsureAsync(cancellationToken);
-            if (!functionGroup.IsAvailable)
-            {
-                continue;
-            }
-
-            var availableTools = functionGroup.AvailableTools;
-            if (availableTools == null || availableTools.Count == 0)
-            {
-                continue;
-            }
-
-            var functionGroupName = functionGroup.Name;
-            var additionPrompt = functionGroup.AdditionPrompt;
-            toolsPromptBuilder.AppendLine(string.IsNullOrEmpty(additionPrompt)
-                ? functionGroupName
-                : $"{functionGroupName}:{additionPrompt}");
-            kernelPluginCollection.AddFromFunctions(functionGroupName,
-                availableTools.Select(function => function.AsKernelFunction()));
-        }
-
-        if (kernelPluginCollection.Count != startCount) return true;
-        return false;
-    }
 
     private readonly Stopwatch _durationStopwatch = new();
 
@@ -154,76 +114,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         try
         {
             IsResponding = true;
-            var systemPrompt = context.SystemPrompt;
-            var searchService = context.SearchOption;
-            var functionCallEngine = context.EnsureCallEngine(this.Model.SupportFunctionCall);
+            var preparedContext = await context.PrepareAsync(this.Model, interactor, cancellationToken);
+            var functionCallEngine = preparedContext.FunctionCallEngine;
             var kernelPluginCollection = functionCallEngine.KernelPluginCollection;
-            if (searchService != null)
-            {
-                await searchService.ApplySearch(context);
-            }
-
-            var chatHistory = new List<ChatMessage>();
-            var additionalPromptBuilder = new StringBuilder();
-            var functionGroups = context.FunctionGroups;
-            if (functionGroups != null)
-            {
-                var toolsPromptBuilder = new StringBuilder();
-                toolsPromptBuilder.AppendLine(
-                    "For the following functions, you can call them by name with the required parameters:");
-                if (await AddTools(functionGroups, toolsPromptBuilder, kernelPluginCollection, cancellationToken))
-                {
-                    additionalPromptBuilder.Append(toolsPromptBuilder);
-                }
-            }
-
-            var ragSources = context.RagSources;
-            if (ragSources != null && ragSources.Any(source => source.IsAvailable))
-            {
-                var resourceIndex = 0;
-                foreach (var ragSource in ragSources)
-                {
-                    if (ragSource is RagFileBase ragFile)
-                    {
-                        ragFile.FileIndexInContext = resourceIndex;
-                        resourceIndex++;
-                    }
-                }
-
-                additionalPromptBuilder.AppendLine(
-                    "For the following RAG(Retrieval-Augmented Generation) sources such as files, web contents, " +
-                    "you can get information by call them with the required parameters:");
-                await AddTools(ragSources, additionalPromptBuilder, kernelPluginCollection, cancellationToken);
-            }
-
-            if (kernelPluginCollection.Count > 0)
-            {
-                systemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
-                    ? additionalPromptBuilder.ToString()
-                    : $"{systemPrompt}\n{additionalPromptBuilder}";
-            }
-
-            if (!string.IsNullOrWhiteSpace(systemPrompt))
-            {
-                if (this.Model.SupportSystemPrompt)
-                {
-                    chatHistory.Add(new ChatMessage(ChatRole.System, systemPrompt));
-                }
-                else
-                {
-                    interactor?.Warning(
-                        "System prompt is not supported by this model, but system prompt or additional prompt is provided. The prompt will be added as the first message in the chat history.");
-                    chatHistory.Add(new ChatMessage(ChatRole.User, systemPrompt));
-                }
-            }
-
-            var requestOptions = this.CreateChatOptions();
-            requestOptions.ResponseFormat = context.ResponseFormat;
-            if (kernelPluginCollection.Count > 0)
-            {
-                functionCallEngine.PreviewRequest(requestOptions, Model, chatHistory);
-            }
-
+            var chatHistory = preparedContext.ChatHistory;
+            var requestOptions = preparedContext.RequestOptions;
+            ApplyChatOptions(requestOptions);
             if (!this.Model.SupportFunctionCall && requestOptions.Tools?.Count > 0)
             {
                 throw new NotSupportedException(
@@ -257,7 +153,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     throw new ArgumentOutOfRangeException();
             }
 
-            var tempAdditionalProperties = context.TempAdditionalProperties;
+            var tempAdditionalProperties = preparedContext.TempAdditionalProperties;
             var requestOptionsAdditionalProperties = requestOptions.AdditionalProperties;
             if (tempAdditionalProperties != null && requestOptionsAdditionalProperties != null)
             {

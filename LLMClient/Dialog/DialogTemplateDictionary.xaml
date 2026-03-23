@@ -79,8 +79,12 @@
                                   Command="{x:Static utility:CommonCommands.Clear}"
                                   CommandParameter="{Binding}"
                                   Icon="{materialDesign:PackIcon Kind=WaveArrowUp}" />-->
-                        <MenuItem Header="删除"
+                        <MenuItem Header="移除节点树"
                                   Command="Delete"
+                                  CommandParameter="{Binding}"
+                                  Icon="{materialDesign:PackIcon Kind=DeleteAlertOutline}" />
+                        <MenuItem Header="删除本次交互"
+                                  Command="{x:Static utility:CommonCommands.DeleteInteraction}"
                                   CommandParameter="{Binding}"
                                   Icon="{materialDesign:PackIcon Kind=DeleteOutline}" />
                     </Menu>

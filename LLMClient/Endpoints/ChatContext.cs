@@ -31,6 +31,8 @@ public class ChatContext
     public StringBuilder AdditionalUserMessage { get; } = new StringBuilder();
 
     public IInvokeInteractor? Interactor { get; }
+    
+    public bool EnableSchemaCleaning { get; set; } = true;
 
     public ClientResult? Result { get; set; }
 
