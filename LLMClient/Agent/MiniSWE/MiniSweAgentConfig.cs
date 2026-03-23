@@ -1,11 +1,14 @@
 ﻿namespace LLMClient.Agent.MiniSWE;
 
+
 /// <summary>
 /// Mini-SWE-Agent 配置
 /// 对应 Python 版本的 AgentConfig
 /// </summary>
 public class MiniSweAgentConfig
 {
+    public string PlatformId { get; set; } = "linux";
+
     /// <summary>
     /// 系统消息模板（第一条消息）
     /// 使用 Handlebars 语法，变量如 {{system}}, {{release}} 等
@@ -20,8 +23,6 @@ public class MiniSweAgentConfig
     /// </summary>
     public string InstanceTemplate { get; set; } = """
                                                    Please solve this issue: {{task}}
-
-                                                   You can execute bash commands and edit files to implement the necessary changes.
                                                    """;
 
     /// <summary>
@@ -29,12 +30,9 @@ public class MiniSweAgentConfig
     /// 使用 Handlebars 语法
     /// </summary>
     public string ObservationTemplate { get; set; } = """
-                                                      {{"{{"}}#if output.exception_info{{"}}"}}
-                                                      <exception>{{"{{"}}output.exception_info{{"}}"}}</exception>
-                                                      {{"{{"}}/if{{"}}"}}
-                                                      <returncode>{{"{{"}}output.returncode{{"}}"}}</returncode>
+                                                      <returncode>{{output.returncode}}</returncode>
                                                       <output>
-                                                      {{"{{"}}output.output{{"}}"}}
+                                                      {{output.output}}
                                                       </output>
                                                       """;
 
@@ -45,10 +43,8 @@ public class MiniSweAgentConfig
                                                       Format error:
 
                                                       <error>
-                                                      {{"{{"}}error{{"}}"}}
+                                                      {{error}}
                                                       </error>
-
-                                                      Please format your response correctly.
                                                       """;
 
     /// <summary>
@@ -75,9 +71,11 @@ public class MiniSweAgentConfig
     /// 任务完成标志字符串
     /// </summary>
     public string TaskCompleteFlag { get; set; } = "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT";
-    
-}
 
+    public bool IncludeToolInstructions { get; set; } = true;
+
+    public bool IncludeRagInstructions { get; set; } = true;
+}
 
 /// <summary>
 /// 解析出的 Action
@@ -85,5 +83,6 @@ public class MiniSweAgentConfig
 public class ParsedAction
 {
     public string Command { get; set; } = string.Empty;
+
     public string? ToolCallId { get; set; }
 }

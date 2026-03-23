@@ -40,87 +40,10 @@ public class AgentDialogContext : DialogContext
     {
     }
 
-    /// <summary>
-    /// The agent system prompt template.
-    /// Usually contains the high-level working protocol.
-    /// </summary>
-    public string SystemTemplate { get; set; } = """
-                                                 You are a helpful software engineering agent working in a tool-enabled development environment.
+    public string SystemTemplate { get; set; } = string.Empty;
 
-                                                 Your job is to solve software engineering tasks step by step by:
-                                                 - understanding the project structure
-                                                 - inspecting relevant files
-                                                 - making focused edits
-                                                 - verifying the result
-                                                 - iterating when needed
+    public string InstanceTemplate { get; set; } = string.Empty;
 
-                                                 You must work incrementally and accurately.
-
-                                                 General rules:
-                                                 - Prefer structured tools over ad-hoc shell editing when such tools are available.
-                                                 - Do not claim that a file was changed unless the edit was actually applied successfully.
-                                                 - Do not claim that a fix works unless it was verified.
-                                                 - Keep each step focused and coherent.
-                                                 - Use the available tools directly instead of merely describing what you would do.
-
-                                                 {{{platform_instructions}}}
-
-                                                 {{{tool_instructions}}}
-
-                                                 {{{rag_instructions}}}
-                                                 """;
-
-    /// <summary>
-    /// The first user/instance prompt template.
-    /// Usually contains task instructions and workflow rules.
-    /// </summary>
-    public string InstanceTemplate { get; set; } = """
-                                                   Please solve this issue:
-
-                                                   <task>
-                                                   {{{task}}}
-                                                   </task>
-
-                                                   You are operating as an agent in a Windows-oriented development environment.
-
-                                                   Recommended workflow:
-                                                   1. Inspect the project structure and identify relevant files
-                                                   2. Read the relevant code in focused regions
-                                                   3. Reproduce or understand the problem if needed
-                                                   4. Make targeted edits using structured file editing tools when possible
-                                                   5. Preview edits before applying them when appropriate
-                                                   6. Verify the result using relevant commands or tests
-                                                   7. Re-inspect the edited region if needed
-                                                   8. Stop only after the result is verified as much as possible
-
-                                                   Editing rules:
-                                                   - Prefer structured file editing tools over shell-based text editing
-                                                   - Inspect the relevant region before editing
-                                                   - Use line-numbered reads when precise inspection is needed
-                                                   - Do not use line numbers as the edit key
-                                                   - oldText in edit operations must uniquely identify the target region
-                                                   - When line-numbered output is used for inspection, do not include the line number prefixes in edit payloads
-
-                                                   Command usage rules:
-                                                   - Prefer PowerShell-style commands on Windows
-                                                   - Do not assume bash is available
-                                                   - Prefer non-interactive commands
-                                                   - If a command depends on a directory, specify it explicitly
-
-                                                   Verification rules:
-                                                   - After editing, run an appropriate verification step when possible
-                                                   - For .NET projects, prefer commands such as dotnet build, dotnet test, or project-specific verification commands
-                                                   - For Qt/C++ projects, use the actual repository build/test workflow if available
-                                                   - If verification is not possible, explain why clearly
-
-                                                   <system_information>
-                                                   {{system}} {{release}} {{version}} {{machine}}
-                                                   </system_information>
-                                                   """;
-
-    /// <summary>
-    /// Whether historical messages should be included after the agent bootstrap prompts.
-    /// </summary>
     public bool IncludeHistoryMessages { get; set; } = true;
 
     /// <summary>
@@ -170,6 +93,7 @@ public class AgentDialogContext : DialogContext
         CancellationToken cancellationToken)
     {
         var chatHistory = new List<ChatMessage>();
+
         var historyMessages = IncludeHistoryMessages
             ? await GetMessagesAsync(cancellationToken)
             : new List<ChatMessage>();
@@ -214,8 +138,13 @@ public class AgentDialogContext : DialogContext
             ["task"] = UserPrompt ?? string.Empty,
             ["platform_id"] = PlatformId,
             ["platform_instructions"] = BuildPlatformInstructions(),
-            ["tool_instructions"] = IncludeToolInstructions ? BuildToolInstructions() : string.Empty,
-            ["rag_instructions"] = IncludeRagInstructions ? BuildRagInstructions() : string.Empty,
+            ["tool_instructions"] = ShouldRenderToolInstructions()
+                ? BuildToolInstructions()
+                : string.Empty,
+            ["rag_instructions"] = ShouldRenderRagInstructions()
+                ? BuildRagInstructions()
+                : string.Empty,
+            ["tool_selection_guidance"] = BuildToolSelectionGuidance(),
             ["working_directory"] = WorkingDirectory ?? string.Empty,
             ["system"] = Environment.OSVersion.Platform.ToString(),
             ["release"] = Environment.OSVersion.Version.ToString(),
@@ -235,12 +164,39 @@ public class AgentDialogContext : DialogContext
         return variables;
     }
 
+    protected virtual bool ShouldRenderToolInstructions()
+    {
+        if (!IncludeToolInstructions)
+        {
+            return false;
+        }
+
+        return UseStructuredToolInstructionsForPlatform();
+    }
+
+    protected virtual bool ShouldRenderRagInstructions()
+    {
+        if (!IncludeRagInstructions)
+        {
+            return false;
+        }
+
+        return UseStructuredToolInstructionsForPlatform();
+    }
+
+    protected virtual bool UseStructuredToolInstructionsForPlatform()
+    {
+        var platform = PlatformId?.Trim().ToLowerInvariant();
+        return platform == "windows";
+    }
+
     protected virtual string BuildPlatformInstructions()
     {
         var platform = PlatformId?.Trim().ToLowerInvariant();
         return platform switch
         {
             "windows" => BuildWindowsPlatformInstructions(),
+            "linux" => BuildLinuxPlatformInstructions(),
             _ => BuildGenericPlatformInstructions()
         };
     }
@@ -250,14 +206,14 @@ public class AgentDialogContext : DialogContext
         return
             """
             <platform_instructions platform="windows">
-            You are operating in a Windows-oriented development environment.
+            You are working in a Windows-oriented development environment.
 
             Windows command guidance:
             - Prefer PowerShell syntax and Windows-native commands.
             - Do not assume bash, sed, awk, grep, ls, cat, or nl are available.
             - Use CMD only when PowerShell is not appropriate.
             - Commands may run in isolated processes, so do not assume shell state persists across calls.
-            - If a command depends on a working directory, specify it explicitly.
+            - If a command depends on a directory, specify it explicitly.
 
             File and path guidance:
             - Be careful with spaces in Windows paths and quote them when necessary.
@@ -278,6 +234,27 @@ public class AgentDialogContext : DialogContext
             """;
     }
 
+    protected virtual string BuildLinuxPlatformInstructions()
+    {
+        return
+            """
+            <platform_instructions platform="linux">
+            You are working in a Linux development environment.
+
+            Command guidance:
+            - Prefer bash-compatible commands and standard Unix tooling when appropriate.
+            - Commands may run in isolated subshells, so do not assume state persists across calls unless explicitly managed.
+
+            File guidance:
+            - Read files in focused regions when possible.
+            - Prefer precise, minimal edits.
+
+            Verification guidance:
+            - Verify fixes with repository-appropriate build or test commands whenever possible.
+            </platform_instructions>
+            """;
+    }
+
     protected virtual string BuildGenericPlatformInstructions()
     {
         return
@@ -287,6 +264,39 @@ public class AgentDialogContext : DialogContext
             Prefer structured file tools for inspection and editing when available.
             Use non-interactive commands where possible.
             </platform_instructions>
+            """;
+    }
+
+    protected virtual string BuildToolSelectionGuidance()
+    {
+        var platform = PlatformId?.Trim().ToLowerInvariant();
+        return platform switch
+        {
+            "windows" => BuildWindowsToolSelectionGuidance(),
+            _ => string.Empty
+        };
+    }
+
+    protected virtual string BuildWindowsToolSelectionGuidance()
+    {
+        return
+            """
+            ## Tool Selection Guidance
+
+            Prefer FileSystem tools for:
+            - reading files
+            - inspecting code with line numbers
+            - finding text in files
+            - previewing edits
+            - applying edits
+
+            Prefer WinCLI for:
+            - dotnet build
+            - dotnet test
+            - msbuild
+            - powershell scripts
+            - project searches or tooling commands
+            - environment inspection
             """;
     }
 
@@ -313,9 +323,14 @@ public class AgentDialogContext : DialogContext
         foreach (var functionGroup in availableGroups)
         {
             sb.AppendLine($"""<tool name="{functionGroup.Name}">""");
+
             if (!string.IsNullOrWhiteSpace(functionGroup.AdditionPrompt))
             {
                 sb.AppendLine(functionGroup.AdditionPrompt);
+            }
+            else
+            {
+                sb.AppendLine("This tool group is available.");
             }
 
             sb.AppendLine("</tool>");
@@ -348,9 +363,14 @@ public class AgentDialogContext : DialogContext
         foreach (var source in availableSources)
         {
             sb.AppendLine($"""<rag_source name="{source.Name}">""");
+
             if (!string.IsNullOrWhiteSpace(source.AdditionPrompt))
             {
                 sb.AppendLine(source.AdditionPrompt);
+            }
+            else
+            {
+                sb.AppendLine("This RAG source is available.");
             }
 
             sb.AppendLine("</rag_source>");
@@ -378,5 +398,27 @@ public class AgentDialogContext : DialogContext
         }
 
         return await PromptTemplateRenderer.RenderHandlebarsAsync(InstanceTemplate, variables);
+    }
+}
+
+public static class AgentDialogContextFactory
+{
+    public static AgentDialogContext Create(
+        IReadOnlyList<IChatHistoryItem> history,
+        MiniSweAgentConfig config,
+        IChatRequest request)
+    {
+        var context = new AgentDialogContext(history)
+        {
+            PlatformId = config.PlatformId,
+            SystemTemplate = config.SystemTemplate,
+            InstanceTemplate = config.InstanceTemplate,
+            IncludeToolInstructions = config.IncludeToolInstructions,
+            IncludeRagInstructions = config.IncludeRagInstructions,
+            IncludeHistoryMessages = true
+        };
+
+        context.MapFromRequest(request);
+        return context;
     }
 }
