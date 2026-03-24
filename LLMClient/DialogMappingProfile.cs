@@ -111,9 +111,7 @@ public class DialogMappingProfile : Profile
             .IncludeBase<IDialogItem, IDialogPersistItem>()
             .ForMember(item => item.ResponseItems, opt => opt.MapFrom(item => item.Items));
         CreateMap<LinearHistoryResponseViewItem, LinearHistoryResponsePersistItem>()
-            .IncludeBase<IDialogItem, IDialogPersistItem>()
-            .ForMember(item => item.ResponseItems, opt => opt.MapFrom(item => item.Items))
-            .ForMember(item => item.Agent, opt => opt.MapFrom(item => item.Agent));
+            .IncludeBase<IDialogItem, IDialogPersistItem>();
 
         //po -> vm
         CreateMap<IDialogPersistItem, IDialogItem>()
@@ -175,16 +173,15 @@ public class DialogMappingProfile : Profile
                     throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
                 }
 
-                IAgent agent = source.Agent != null
+                var agent = source.Agent != null
                     ? context.Mapper.Map<IAgent>(source.Agent)
-                    : new MiniSweAgent(new MiniSweAgentConfig(), EmptyLlmModelClient.Instance);
-
+                    : null;
                 return new LinearHistoryResponseViewItem(parentViewModel, agent);
             })
             .AfterMap((source, destination, context) =>
             {
                 var contextMapper = context.Mapper;
-                var items = source.ResponseItems.Select(x =>
+                var items = source.Items.Select(x =>
                     contextMapper.Map<RawResponsePersistItem, RawResponseViewItem>(x)).ToArray();
                 var responseViewItems = destination.Items;
                 foreach (var item in items)

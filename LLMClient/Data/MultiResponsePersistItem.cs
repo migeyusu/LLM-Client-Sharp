@@ -14,6 +14,6 @@ public class ParallelResponsePersisItem : MultiResponsePersistItem
 
 public class LinearHistoryResponsePersistItem : MultiResponsePersistItem
 {
-    public RawResponsePersistItem[] ResponseItems { get; set; } = [];
+    public RawResponsePersistItem[] Items { get; set; } = [];
     public AgentPersistModel? Agent { get; set; }
 }

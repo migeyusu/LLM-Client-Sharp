@@ -2,6 +2,7 @@
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
+using LLMClient.Component.CustomControl;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,22 +34,28 @@ public class LinearHistoryResponseViewItem : MultiResponseViewItem<RawResponseVi
 
     public ObservableCollection<AsyncPermissionViewModel> PermissionViewModels { get; set; } = [];
 
-    private readonly IAgent _agent;
-    public IAgent Agent => _agent;
+    private readonly IAgent? _agent;
+    public IAgent? Agent => _agent;
 
     public LinearHistoryResponseViewItem(IEnumerable<RawResponseViewItem> items, DialogSessionViewModel parentSession,
-        IAgent agent) : base(items, parentSession)
+        IAgent? agent) : base(items, parentSession)
     {
         _agent = agent;
     }
 
-    public LinearHistoryResponseViewItem(DialogSessionViewModel parentSession, IAgent agent) : base([], parentSession)
+    public LinearHistoryResponseViewItem(DialogSessionViewModel parentSession, IAgent? agent) : this([], parentSession,
+        agent)
     {
-        _agent = agent;
     }
 
     public async Task ProcessAsync(ITextDialogSession session, CancellationToken token)
     {
+        if (_agent == null)
+        {
+            MessageBoxes.Error("No agent configured.");
+            return;
+        }
+
         await foreach (var callResult in _agent.Execute(session, interactor: this, cancellationToken: token))
         {
             var viewItem = ServiceLocator.GetService<IMapper>()!.Map<IResponse, RawResponseViewItem>(callResult);

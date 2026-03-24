@@ -9,8 +9,7 @@ using Microsoft.Extensions.AI;
 namespace LLMClient.Agent.MiniSWE;
 
 /// <summary>
-/// Mini-SWE-Agent 核心实现
-/// 原汁原味的 ReAct 循环实现
+/// Mini-SWE-Agent 核心ReAct循环实现
 /// </summary>
 public class MiniSweAgent : IAgent
 {
@@ -32,7 +31,7 @@ public class MiniSweAgent : IAgent
     {
         Config = config;
         this.ChatClient = agent;
-        _toolProviders = [new WinCLIPlugin(), new FileSystemPlugin()];
+        _toolProviders = [new WinCLIPlugin(), new FileSystemPlugin()];//todo: 配置地址
     }
 
     public async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
