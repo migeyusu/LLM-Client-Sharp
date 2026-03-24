@@ -109,10 +109,7 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
         }
     }
 
-    public string? SystemPrompt
-    {
-        get { return ParentSession?.SystemPrompt; }
-    }
+    public string? UserPrompt => RawTextMessage;
 
     public ISearchOption? SearchOption { get; set; }
 
@@ -262,6 +259,15 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
         ParentSession?.IsDataChanged = true;
         OnPropertyChanged(nameof(RawTextMessage));
         InvalidateAsyncProperty(nameof(Tokens));
-        FormattedTextMessage = null;
+        if (FormattedTextMessage != null)
+        {
+            FormattedTextMessage = null;
+        }
+        else
+        {
+            OnPropertyChanged(nameof(TextMessage));
+            InvalidateAsyncProperty(nameof(SearchableDocument));
+            ParentSession?.IsDataChanged = true;
+        }
     }
 }

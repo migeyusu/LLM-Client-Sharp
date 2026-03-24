@@ -228,7 +228,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public CancellationTokenSource? RequestTokenSource { get; private set; }
 
-    public virtual async Task<ChatCallResult> Process(DialogContext context, CancellationToken token = default)
+    public virtual async Task<ChatCallResult> Process(DefaultDialogContextBuilder contextBuilder, CancellationToken token = default)
     {
         var completedResult = ChatCallResult.Empty;
         try
@@ -256,7 +256,8 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             {
                 await using (var interactor = new ResponseViewItemInteractor(_tempDocument, this))
                 {
-                    completedResult = await Client.SendRequest(context, interactor,
+                    var requestContext = await contextBuilder.BuildAsync(Client.Model, token);
+                    completedResult = await Client.SendRequest(requestContext, interactor,
                         cancellationToken: RequestTokenSource.Token);
                     ServiceLocator.GetService<IMapper>()!.Map<IResponse, ClientResponseViewItem>(completedResult, this);
                     //刷新tps

@@ -47,9 +47,9 @@ public class LinearHistoryResponseViewItem : MultiResponseViewItem<RawResponseVi
         _agent = agent;
     }
 
-    public async Task ProcessAsync(DialogContext context, CancellationToken token)
+    public async Task ProcessAsync(ITextDialogSession session, CancellationToken token)
     {
-        await foreach (var callResult in _agent.Execute(context, this, token))
+        await foreach (var callResult in _agent.Execute(session, interactor: this, cancellationToken: token))
         {
             var viewItem = ServiceLocator.GetService<IMapper>()!.Map<IResponse, RawResponseViewItem>(callResult);
             this.Items.Add(viewItem);

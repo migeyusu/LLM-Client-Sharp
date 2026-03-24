@@ -1,10 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Configuration;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
@@ -32,10 +34,13 @@ public class NvidiaResearchClient : ResearchClient
     }
 
     [Experimental("SKEXP0110")]
-    public override async Task<ChatCallResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
-        CancellationToken cancellationToken = default)
+    public override async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
+        IInvokeInteractor? interactor = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var prompt = context.UserPrompt;
+        yield break;
+        throw new NotImplementedException("SKEXP0110 is not implemented yet.");
+        /*var prompt = context.UserPrompt;
         if (prompt == null || string.IsNullOrWhiteSpace(prompt))
         {
             throw new ArgumentException("The dialog context must contain a non-empty request.");
@@ -232,7 +237,7 @@ public class NvidiaResearchClient : ResearchClient
                 Usage = agent?.Usage,
                 Exception = e
             };
-        }
+        }*/
     }
 
     #region Private Helper Methods (LLM Interactions)

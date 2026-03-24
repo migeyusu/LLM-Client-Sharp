@@ -51,7 +51,7 @@ public class GeekAISearchOption : BaseViewModel, ISearchOption
         return client.Endpoint is APIEndPoint { Option.ModelsSource: ModelSource.GeekAI };
     }
 
-    public Task ApplySearch(DialogContext context)
+    public Task ApplySearch(DefaultDialogContextBuilder context)
     {
         context.TempAdditionalProperties ??= new AdditionalPropertiesDictionary();
         context.TempAdditionalProperties["enable_search"] = true;

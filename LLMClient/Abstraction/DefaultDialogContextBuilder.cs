@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using AutoMapper;
 using LLMClient.Dialog.Models;
@@ -10,32 +11,39 @@ using Microsoft.SemanticKernel;
 
 namespace LLMClient.Abstraction;
 
-public class DialogContext : IChatRequest
+public class DefaultDialogContextBuilder : IChatRequest
 {
-    private static readonly Lazy<IMapper> _mapperLazy = new(() =>
+    private static readonly Lazy<IMapper> MapperLazy = new(() =>
     {
-        var config = new MapperConfiguration(cfg => cfg.CreateMap<IChatRequest, DialogContext>(),
+        var config = new MapperConfiguration(cfg => cfg.CreateMap<IChatRequest, DefaultDialogContextBuilder>(),
             NullLoggerFactory.Instance);
         return config.CreateMapper();
     });
 
-    public DialogContext(IReadOnlyList<IChatHistoryItem> dialogItems)
+    public DefaultDialogContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems)
     {
-        DialogItems = dialogItems;
+        ChatHistoryItems = dialogItems;
     }
 
-    public static DialogContext CreateFromResponse(IResponseItem response, string? systemPrompt = null)
+    public static DefaultDialogContextBuilder CreateFromResponse(IResponseItem response, string? systemPrompt = null)
     {
         var history = response.GetChatHistory().ToArray();
         return CreateFromHistory(history, systemPrompt);
     }
 
-    public static DialogContext CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
+    public static DefaultDialogContextBuilder CreateFromSession(ITextDialogSession session)
+    {
+        var historyItems = session.GetHistory();
+        var systemPrompt = session.SystemPrompt;
+        return CreateFromHistory(historyItems, systemPrompt);
+    }
+
+    public static DefaultDialogContextBuilder CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
         string? systemPrompt = null)
     {
         var requestViewItem = history.LastOrDefault() as IRequestItem ??
                               throw new InvalidOperationException("RequestViewItem is null");
-        var dialogContext = new DialogContext(history)
+        var dialogContext = new DefaultDialogContextBuilder(history)
         {
             SystemPrompt = systemPrompt
         };
@@ -45,17 +53,10 @@ public class DialogContext : IChatRequest
 
     public void MapFromRequest(IChatRequest context)
     {
-        _mapperLazy.Value.Map(context, this);
+        MapperLazy.Value.Map(context, this);
     }
 
-    public string? UserPrompt
-    {
-        get
-        {
-            var requestViewItem = DialogItems.OfType<RequestViewItem>().LastOrDefault();
-            return requestViewItem?.RawTextMessage;
-        }
-    }
+    public string? UserPrompt { get; set; }
 
     /// <summary>
     /// message don't contains system prompt
@@ -63,7 +64,7 @@ public class DialogContext : IChatRequest
     public virtual async Task<List<ChatMessage>> GetMessagesAsync(CancellationToken cancellationToken = default)
     {
         var chatMessages = new List<ChatMessage>();
-        foreach (var dialogItem in DialogItems)
+        foreach (var dialogItem in ChatHistoryItems)
         {
             if (dialogItem is RequestViewItem requestViewItem)
             {
@@ -77,7 +78,7 @@ public class DialogContext : IChatRequest
         return chatMessages;
     }
 
-    public IReadOnlyList<IChatHistoryItem> DialogItems { get; }
+    public IReadOnlyList<IChatHistoryItem> ChatHistoryItems { get; }
 
     public string? WorkingDirectory { get; set; }
 
@@ -100,7 +101,7 @@ public class DialogContext : IChatRequest
     public bool IsDebugMode { get; set; }
 
     [MemberNotNull(nameof(CallEngine))]
-    public FunctionCallEngine EnsureCallEngine(bool supportFunctionCall)
+    protected FunctionCallEngine EnsureCallEngine(bool supportFunctionCall)
     {
         if (CallEngine == null)
         {
@@ -112,9 +113,8 @@ public class DialogContext : IChatRequest
         return CallEngine;
     }
 
-    public virtual async Task<PreparedRequestContext> PrepareAsync(
+    public virtual async Task<RequestContext> BuildAsync(
         IEndpointModel model,
-        IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
         await ApplySearchAsync(cancellationToken);
@@ -125,15 +125,16 @@ public class DialogContext : IChatRequest
         await RegisterFunctionGroupsAsync(kernelPluginCollection, cancellationToken);
         await RegisterRagSourcesAsync(kernelPluginCollection, cancellationToken);
 
-        var chatHistory = await BuildChatHistoryAsync(model, interactor, functionCallEngine, cancellationToken);
+        var chatHistory = await BuildChatHistoryAsync(model, functionCallEngine, cancellationToken);
         var requestOptions = BuildRequestOptions(model, functionCallEngine, chatHistory);
 
-        return new PreparedRequestContext
+        return new RequestContext
         {
             ChatHistory = chatHistory,
             FunctionCallEngine = functionCallEngine,
             RequestOptions = requestOptions,
-            TempAdditionalProperties = TempAdditionalProperties
+            TempAdditionalProperties = TempAdditionalProperties,
+            ShowRequestJson = this.IsDebugMode
         };
     }
 
@@ -212,7 +213,6 @@ public class DialogContext : IChatRequest
 
     protected virtual async Task<List<ChatMessage>> BuildChatHistoryAsync(
         IEndpointModel model,
-        IInvokeInteractor? interactor,
         FunctionCallEngine functionCallEngine,
         CancellationToken cancellationToken)
     {
@@ -228,7 +228,7 @@ public class DialogContext : IChatRequest
             }
             else
             {
-                interactor?.Warning(
+                Trace.TraceWarning(
                     "System prompt is not supported by this model, but system prompt or additional prompt is provided. The prompt will be added as the first message in the chat history.");
                 chatHistory.Add(new ChatMessage(ChatRole.User, systemPrompt));
             }

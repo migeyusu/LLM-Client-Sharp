@@ -27,11 +27,12 @@ public class PromptBasedAgent
 
     public Duration Timeout { get; set; } = Duration.Forever;
 
-    public async Task<ChatCallResult> SendRequestAsync(DialogContext context,
+    public async Task<ChatCallResult> SendRequestAsync(DefaultDialogContextBuilder contextBuilder,
         CancellationToken cancellationToken = default)
     {
         ChatCallResult? completedResult = null;
         var tryCount = 0;
+        var requestContext = await contextBuilder.BuildAsync(_chatClient.Model, cancellationToken);
         while (tryCount < RetryCount && !cancellationToken.IsCancellationRequested)
         {
             if (Timeout.HasTimeSpan)
@@ -44,7 +45,7 @@ public class PromptBasedAgent
                         try
                         {
                             completedResult = await _chatClient
-                                .SendRequest(context, null, linkedTokenSource.Token)
+                                .SendRequest(requestContext, null, linkedTokenSource.Token)
                                 .ConfigureAwait(false);
                             if (completedResult.IsInvalidRequest || completedResult.IsCanceled)
                             {
@@ -60,7 +61,7 @@ public class PromptBasedAgent
             }
             else
             {
-                completedResult = await _chatClient.SendRequest(context, null, cancellationToken)
+                completedResult = await _chatClient.SendRequest(requestContext, null, cancellationToken)
                     .ConfigureAwait(false);
             }
 
@@ -111,7 +112,7 @@ public class PromptBasedAgent
     public async Task<string> GetMessageAsync(string prompt, string? systemPrompt = null,
         CancellationToken cancellationToken = default)
     {
-        var context = DialogContext.CreateFromHistory([
+        var context = DefaultDialogContextBuilder.CreateFromHistory([
             new RequestViewItem(prompt)
         ], systemPrompt);
         var sendRequestAsync = await SendRequestAsync(context, cancellationToken);

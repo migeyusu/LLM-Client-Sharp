@@ -11,6 +11,8 @@ public class DefaultFunctionCallEngine : FunctionCallEngine
     {
     }
 
+    public override bool IsToolCallMode { get; } = true;
+
     public override void PreviewRequest(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
     {
         options.Tools = KernelPluginCollection.SelectMany(plugin => plugin).ToArray<AITool>();

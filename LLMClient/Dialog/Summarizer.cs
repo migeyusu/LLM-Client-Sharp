@@ -30,7 +30,7 @@ public class Summarizer
             var dialogItems = new List<IDialogItem>(3);
             dialogItems.AddRange(dialog.DialogItems);
             dialogItems.Add(new RequestViewItem(_options.SubjectSummarizePrompt));
-            var dialogContext = new DialogContext(dialogItems);
+            var dialogContext = new DefaultDialogContextBuilder(dialogItems);
             var sendRequestAsync = await new PromptBasedAgent(client, new TraceInvokeInteractor())
                 {
                     Timeout = duration,

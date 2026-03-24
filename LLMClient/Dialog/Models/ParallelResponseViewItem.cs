@@ -340,7 +340,7 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
     private async Task<IResponse> ProcessResponseItem(ClientResponseViewItem responseViewItem,
         CancellationToken token = default)
     {
-        var dialogContext = DialogContext.CreateFromResponse(this, ParentSession.SystemPrompt);
+        var dialogContext = DefaultDialogContextBuilder.CreateFromResponse(this, ParentSession.SystemPrompt);
         ParentSession.RespondingCount++;
         try
         {

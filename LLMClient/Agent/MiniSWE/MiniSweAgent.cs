@@ -1,7 +1,8 @@
-﻿using LLMClient.Abstraction;
-using LLMClient.ContextEngineering.PromptGeneration;
+﻿using System.Runtime.CompilerServices;
+using LLMClient.Abstraction;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
+using LLMClient.Project;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
 
@@ -21,12 +22,8 @@ public class MiniSweAgent : IAgent
     public int StepRetryCount { get; set; } = 3;
 
     public MiniSweAgentConfig Config { get; }
-    private readonly IReadOnlyList<IAIFunctionGroup> _toolProviders;
 
-    /// <summary>
-    /// 额外的模板变量
-    /// </summary>
-    public Dictionary<string, object?> ExtraTemplateVars { get; } = new();
+    private readonly IReadOnlyList<IAIFunctionGroup> _toolProviders;
 
     public ILLMChatClient ChatClient { get; }
 
@@ -38,81 +35,47 @@ public class MiniSweAgent : IAgent
         _toolProviders = [new WinCLIPlugin(), new FileSystemPlugin()];
     }
 
-    /// <summary>
-    /// 获取所有模板变量的合并结果
-    /// 对应 Python 的 get_template_vars 方法
-    /// </summary>
-    public Dictionary<string, object?> GetTemplateVars(Dictionary<string, object?>? extra = null)
-    {
-        var result = new Dictionary<string, object?>();
-
-        // 1. 配置变量
-        result["step_limit"] = Config.StepLimit;
-        // 2. 环境变量 (系统信息)
-        result["system"] = Environment.OSVersion.Platform.ToString();
-        result["release"] = Environment.OSVersion.Version.ToString();
-        result["version"] = Environment.OSVersion.VersionString;
-        result["machine"] = Environment.MachineName;
-
-        // 4. 额外变量
-        foreach (var kvp in ExtraTemplateVars)
-        {
-            result[kvp.Key] = kvp.Value;
-        }
-
-        // 5. 传入的额外变量（优先级最高）
-        if (extra != null)
-        {
-            foreach (var kvp in extra)
-            {
-                result[kvp.Key] = kvp.Value;
-            }
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// 渲染 Handlebars 模板
-    /// </summary>
-    private async Task<string> RenderTemplateAsync(string template, Dictionary<string, object?>? extraVars = null)
-    {
-        var variables = GetTemplateVars(extraVars);
-        return await PromptTemplateRenderer.RenderHandlebarsAsync(template, variables);
-    }
-
-    public async IAsyncEnumerable<ChatCallResult> Execute(DialogContext rawContext,
+    public async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
         IInvokeInteractor? interactor = null,
-        CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // 初始化
-        ExtraTemplateVars["task"] =
-            rawContext.UserPrompt ?? throw new NotSupportedException("User prompt cannot be null");
-        if (!string.IsNullOrEmpty(rawContext.WorkingDirectory))
+        var chatHistory = dialogSession.GetHistory();
+        if (chatHistory[^1] is not IRequestItem request)
         {
-            ExtraTemplateVars["cwd"] = rawContext.WorkingDirectory;
+            yield break;
         }
 
-        // 1. 添加系统消息
-        var systemContent = await RenderTemplateAsync(Config.SystemTemplate);
-        systemContent = rawContext.SystemPrompt + "\r\n" + systemContent;
-
-        // 2. 添加实例消息（任务描述）
-        var instanceContent = await RenderTemplateAsync(Config.InstanceTemplate);
-        var chatHistory = rawContext.DialogItems.ToList();
-        chatHistory[^1] = new RequestViewItem(instanceContent);
-        var dialogContext = new DialogContext(chatHistory) { SystemPrompt = systemContent };
-        dialogContext.MapFromRequest(rawContext);
+        var contextBuilder = new AgentDialogContextBuilder(chatHistory)
+        {
+            PlatformId = "windows",
+            IncludeHistoryMessages = true,
+            IncludeRagInstructions = true,
+            SystemPrompt = dialogSession.SystemPrompt,
+            SystemTemplate = Config.SystemTemplate,
+            InstanceTemplate = Config.InstanceTemplate
+        };
+        contextBuilder.MapFromRequest(request);
+        if (dialogSession is ProjectSessionViewModel projectSession)
+        {
+            contextBuilder.WorkingDirectory = projectSession.WorkingDirectory;
+        }
 
         if (_toolProviders.Count > 0)
         {
-            dialogContext.FunctionGroups ??= [];
-            dialogContext.FunctionGroups.AddRange(_toolProviders);
+            contextBuilder.FunctionGroups ??= [];
+            var functionGroups = contextBuilder.FunctionGroups;
+            foreach (var toolProvider in _toolProviders)
+            {
+                if (!functionGroups.Contains(toolProvider, AIFunctionGroupComparer.Instance))
+                {
+                    functionGroups.Add(toolProvider);
+                }
+            }
         }
 
         if (!Config.UseToolCall)
         {
-            dialogContext.CallEngine = new MiniSWEFunctionCallEngine(Config);
+            contextBuilder.CallEngine = new MiniSWEFunctionCallEngine(Config);
         }
 
         // 3. 主循环
@@ -124,11 +87,12 @@ public class MiniSweAgent : IAgent
                 throw new Exception("Step limit exceeded");
             }
 
+            var requestContext = await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
             ChatCallResult callResult;
             int retryCount = 0;
             while (retryCount < StepRetryCount)
             {
-                callResult = await ChatClient.SendRequest(dialogContext, null, cancellationToken);
+                callResult = await ChatClient.SendRequest(requestContext, interactor, cancellationToken);
                 chatHistory.Add(callResult);
                 yield return callResult;
                 if (callResult.IsCanceled)
@@ -166,23 +130,3 @@ public class MiniSweAgent : IAgent
         return message?.Text?.Contains("COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT") == true;
     }
 }
-
-/*
- * <agent_system>
-...基础系统规则...
-</agent_system>
-
-<platform_instructions platform="windows">
-...Windows 特定规则...
-</platform_instructions>
-
-<tool_instructions>
-<tool name="FileSystem">
-...
-</tool>
-
-<tool name="WinCLI">
-...
-</tool>
-</tool_instructions>
- */

@@ -93,7 +93,7 @@ public class EmptyLlmModelClient : ILLMChatClient
         this._fakeFilePath = fakeFilePath;
     }
 
-    public async Task<ChatCallResult> SendRequest(DialogContext context,
+    public async Task<ChatCallResult> SendRequest(RequestContext context,
         IInvokeInteractor? stream = null,
         CancellationToken cancellationToken = default)
     {

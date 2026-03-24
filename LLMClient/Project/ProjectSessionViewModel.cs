@@ -45,6 +45,11 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
         }
     }
 
+    public string? WorkingDirectory
+    {
+        get { return ParentProject.Option.RootPath; }
+    }
+
     /// <summary>
     /// Task内的上下文
     /// </summary>
@@ -128,7 +133,7 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
         nameof(SearchText)
     ];
 
-    public override Task OnPreviewRequest(DialogContext context, CancellationToken token)
+    public override Task OnPreviewRequest(DefaultDialogContextBuilder context, CancellationToken token)
     {
         return ParentProject.PreviewProcessing(token);
     }

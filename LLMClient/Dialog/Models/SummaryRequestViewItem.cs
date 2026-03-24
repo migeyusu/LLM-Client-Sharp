@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using LLMClient.Abstraction;
+﻿using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 
@@ -40,7 +39,13 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
 
     public Guid InteractionId { get; set; }
 
-    public string? SystemPrompt { get; } = null;
+    public string? UserPrompt
+    {
+        get
+        {
+            return SummaryPrompt;
+        }
+    }
 
     public ISearchOption? SearchOption { get; } = null;
 

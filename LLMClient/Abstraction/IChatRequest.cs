@@ -5,7 +5,7 @@ namespace LLMClient.Abstraction;
 
 public interface IChatRequest
 {
-    string? SystemPrompt { get; }
+    string? UserPrompt { get; }
     
     ISearchOption? SearchOption { get; }
 

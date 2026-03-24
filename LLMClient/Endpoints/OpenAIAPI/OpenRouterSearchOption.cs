@@ -52,7 +52,7 @@ public class OpenRouterSearchOption : BaseViewModel, ISearchOption
         return client.Endpoint is APIEndPoint { Option.ModelsSource: ModelSource.OpenRouter };
     }
 
-    public Task ApplySearch(DialogContext context)
+    public Task ApplySearch(DefaultDialogContextBuilder context)
     {
         context.TempAdditionalProperties ??= new AdditionalPropertiesDictionary();
         if (string.IsNullOrEmpty(SearchPrompt))

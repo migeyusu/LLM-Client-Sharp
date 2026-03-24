@@ -2,7 +2,7 @@
 
 namespace LLMClient.Abstraction;
 
-public sealed class PreparedRequestContext
+public sealed class RequestContext
 {
     public required List<ChatMessage> ChatHistory { get; init; }
 
@@ -11,4 +11,6 @@ public sealed class PreparedRequestContext
     public required ChatOptions RequestOptions { get; init; }
 
     public AdditionalPropertiesDictionary? TempAdditionalProperties { get; init; }
+
+    public bool ShowRequestJson { get; set; }
 }

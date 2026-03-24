@@ -17,12 +17,16 @@ public class FunctionCallException : Exception
 
 public abstract class FunctionCallEngine
 {
+    public abstract bool IsToolCallMode { get; }
+
     /// <summary>
     /// 默认情况下，应该让LLM了解函数调用失败的情况，并继续生成内容。
     /// </summary>
     public bool IsQuitWhenFunctionCallFailed { get; set; } = false;
 
     public KernelPluginCollection KernelPluginCollection { get; } = [];
+
+    public bool HasFunctions => KernelPluginCollection.Count > 0;
 
     public abstract void PreviewRequest(ChatOptions options, IEndpointModel model,
         IList<ChatMessage> chatMessages);

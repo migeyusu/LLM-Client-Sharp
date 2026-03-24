@@ -12,7 +12,7 @@ public class StubLlmClient : ILLMChatClient
     public string Name { get; } = "StubLlmClient";
     public bool IsResponding { get; set; }
 
-    public async Task<ChatCallResult> SendRequest(DialogContext context, IInvokeInteractor? interactor = null,
+    public async Task<ChatCallResult> SendRequest(RequestContext context, IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
 #if DEBUG

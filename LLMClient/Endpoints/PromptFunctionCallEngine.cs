@@ -223,6 +223,8 @@ public partial class PromptFunctionCallEngine : FunctionCallEngine
         return functionCalls;
     }
 
+    public override bool IsToolCallMode { get; } = false;
+
     public override void PreviewRequest(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
     {
         var prompt = CreatePrompt(KernelPluginCollection.SelectMany(plugin => plugin));

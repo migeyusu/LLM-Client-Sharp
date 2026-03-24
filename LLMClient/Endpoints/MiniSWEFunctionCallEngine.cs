@@ -25,6 +25,11 @@ public partial class MiniSWEFunctionCallEngine : FunctionCallEngine
         _config = config;
     }
 
+    public override bool IsToolCallMode
+    {
+        get { return _config.UseToolCall; }
+    }
+
     public override void PreviewRequest(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
     {
         //agent will do

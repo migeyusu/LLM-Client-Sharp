@@ -191,6 +191,7 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
     {
         Content.Text = await GetPrompt(true) ?? string.Empty;
         InvalidateAsyncProperty(nameof(EditDocument));
+        OnPropertyChanged(nameof(FinalText));
     }
 
     public override void AppendTempText(string tempText)

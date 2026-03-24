@@ -59,6 +59,7 @@ public class TextContentRawEditViewModel : TextContentEditViewModel
     public override Task ApplyText()
     {
         this.Content.Text = Text;
+        OnPropertyChanged(nameof(FinalText));
         return Task.CompletedTask;
     }
 

@@ -2,7 +2,7 @@ namespace LLMClient.Abstraction;
 
 public class AIFunctionGroupComparer : IEqualityComparer<IAIFunctionGroup>
 {
-    public static AIFunctionGroupComparer Instance => new AIFunctionGroupComparer();
+    public static AIFunctionGroupComparer Instance => new();
 
     public bool Equals(IAIFunctionGroup? x, IAIFunctionGroup? y)
     {

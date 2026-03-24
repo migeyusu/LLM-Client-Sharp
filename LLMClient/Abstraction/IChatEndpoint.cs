@@ -18,7 +18,7 @@ public interface IChatEndpoint
     /// <param name="interactor"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<ChatCallResult> SendRequest(DialogContext context,
+    Task<ChatCallResult> SendRequest(RequestContext context,
         IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default);
 }

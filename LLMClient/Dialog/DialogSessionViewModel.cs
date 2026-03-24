@@ -19,7 +19,7 @@ using Microsoft.Xaml.Behaviors.Core;
 namespace LLMClient.Dialog;
 
 public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
-    IDialogGraphViewModel
+    IDialogGraphViewModel, ITextDialogSession
 {
     /// <summary>
     /// indicate whether data is changed after loading.
@@ -232,6 +232,18 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     #endregion
 
     #region items management
+
+    public List<IChatHistoryItem> GetHistory()
+    {
+        if (this.CurrentLeaf is IResponseItem responseItem)
+        {
+            return responseItem.GetChatHistory()
+                .OfType<IChatHistoryItem>()
+                .ToList();
+        }
+
+        return [];
+    }
 
     public abstract string? SystemPrompt { get; }
 
@@ -487,7 +499,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region core methods
 
-    public virtual Task OnPreviewRequest(DialogContext context, CancellationToken token)
+    public virtual Task OnPreviewRequest(DefaultDialogContextBuilder context, CancellationToken token)
     {
         return Task.CompletedTask;
     }

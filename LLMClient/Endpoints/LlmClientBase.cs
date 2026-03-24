@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json.Serialization;
+using Elsa.Workflows;
 using LLMClient.Abstraction;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
@@ -102,23 +103,21 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     private const string ToolCalls = "ToolCalls";
 
     [Experimental("SKEXP0001")]
-    public virtual async Task<ChatCallResult> SendRequest(DialogContext context,
+    public virtual async Task<ChatCallResult> SendRequest(RequestContext requestContext,
         IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
 /*#if DEBUG
         interactor ??= new DebugInvokeInteractor();
 #endif*/
-        var chatMessages = await context.GetMessagesAsync(cancellationToken);
+        var chatMessages = requestContext.ChatHistory;
         var result = new ChatCallResult();
         try
         {
             IsResponding = true;
-            var preparedContext = await context.PrepareAsync(this.Model, interactor, cancellationToken);
-            var functionCallEngine = preparedContext.FunctionCallEngine;
-            var kernelPluginCollection = functionCallEngine.KernelPluginCollection;
-            var chatHistory = preparedContext.ChatHistory;
-            var requestOptions = preparedContext.RequestOptions;
+            var functionCallEngine = requestContext.FunctionCallEngine;
+            var chatHistory = requestContext.ChatHistory;
+            var requestOptions = requestContext.RequestOptions;
             ApplyChatOptions(requestOptions);
             if (!this.Model.SupportFunctionCall && requestOptions.Tools?.Count > 0)
             {
@@ -153,7 +152,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     throw new ArgumentOutOfRangeException();
             }
 
-            var tempAdditionalProperties = preparedContext.TempAdditionalProperties;
+            var tempAdditionalProperties = requestContext.TempAdditionalProperties;
             var requestOptionsAdditionalProperties = requestOptions.AdditionalProperties;
             if (tempAdditionalProperties != null && requestOptionsAdditionalProperties != null)
             {
@@ -181,9 +180,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             ChatFinishReason? finishReason = null;
             var streaming = this.Model.SupportStreaming && this.Parameters.Streaming;
             var softFunctionCall = false;
-            if (kernelPluginCollection.Count > 0)
+            if (functionCallEngine.HasFunctions)
             {
-                softFunctionCall = context.CallEngineType == FunctionCallEngineType.Prompt;
+                softFunctionCall = functionCallEngine.IsToolCallMode;
                 //在openai调用引擎下，如果不可流式输出，则关闭流式输出
                 if (!this.Model.FunctionCallOnStreaming &&
                     functionCallEngine is DefaultFunctionCallEngine)
@@ -193,7 +192,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             var chatContext = new ChatContext(interactor, tempAdditionalProperties)
-                { Streaming = streaming, ShowRequestJson = context.IsDebugMode };
+                { Streaming = streaming, ShowRequestJson = requestContext.ShowRequestJson };
             _durationStopwatch.Reset();
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
@@ -348,7 +347,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             break;
                         }
 
-                        if (kernelPluginCollection.Count == 0)
+                        if (!functionCallEngine.HasFunctions)
                         {
                             exception =
                                 new Exception(

@@ -40,7 +40,7 @@ Return ONLY valid JSON defined as:
 ";
 
         // 2. 调用 LLM (建议开启 JSON Mode)
-        var response = await this.SendRequestAsync(DialogContext.CreateFromHistory([
+        var response = await this.SendRequestAsync(DefaultDialogContextBuilder.CreateFromHistory([
             new RequestViewItem(prompt)
             {
                 ResponseFormat = ChatResponseFormat.ForJsonSchema<WorkflowBlueprint>()

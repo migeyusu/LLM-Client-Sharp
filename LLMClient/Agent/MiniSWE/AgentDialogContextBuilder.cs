@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using LLMClient.Abstraction;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.Dialog.Models;
@@ -14,7 +15,7 @@ namespace LLMClient.Agent.MiniSWE;
 /// information as prompt materials rather than directly appending them in chat style.
 /// <example>
 ///  <code>
-/// var agentContext = new AgentDialogContext(history)
+/// var agentContext = new AgentDialogContextBuilder(history)
 /// {
 /// SystemTemplate = systemTemplate,
 /// InstanceTemplate = instanceTemplate,
@@ -35,9 +36,9 @@ namespace LLMClient.Agent.MiniSWE;
 /// </code>
 /// </example>
 /// </summary>
-public class AgentDialogContext : DialogContext
+public class AgentDialogContextBuilder : DefaultDialogContextBuilder
 {
-    public AgentDialogContext(IReadOnlyList<IChatHistoryItem> dialogItems) : base(dialogItems)
+    public AgentDialogContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems) : base(dialogItems)
     {
     }
 
@@ -98,9 +99,7 @@ public class AgentDialogContext : DialogContext
         // Agent prompt assembly uses structured RAG instructions instead.
     }
 
-    protected override async Task<List<ChatMessage>> BuildChatHistoryAsync(
-        IEndpointModel model,
-        IInvokeInteractor? interactor,
+    protected override async Task<List<ChatMessage>> BuildChatHistoryAsync(IEndpointModel model,
         FunctionCallEngine functionCallEngine,
         CancellationToken cancellationToken)
     {
@@ -122,7 +121,7 @@ public class AgentDialogContext : DialogContext
             }
             else
             {
-                interactor?.Warning(
+                Trace.TraceWarning(
                     "System prompt is not supported by this model. The rendered agent system prompt will be inserted as a user message.");
                 chatHistory.Add(new ChatMessage(ChatRole.User, renderedSystemPrompt));
             }

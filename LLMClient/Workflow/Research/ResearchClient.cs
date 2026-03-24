@@ -1,26 +1,27 @@
 ﻿using LLMClient.Abstraction;
+using LLMClient.Agent;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 
 namespace LLMClient.Workflow.Research;
 
-public abstract class ResearchClient : BaseViewModel, IChatEndpoint
+public abstract class ResearchClient : BaseViewModel, IAgent
 {
     public abstract string Name { get; }
 
-    private bool _isResponding;
-
     public bool IsResponding
     {
-        get => _isResponding;
+        get;
         set
         {
-            if (value == _isResponding) return;
-            _isResponding = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
-    public abstract Task<ChatCallResult> SendRequest(DialogContext context, IInvokeInteractor? stream = null,
+    public abstract IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
+        IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default);
 }

@@ -1,25 +1,30 @@
-﻿using LLMClient.Abstraction;
-using LLMClient.Agent.MiniSWE;
+﻿using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 
 namespace LLMClient.Agent;
 
 public interface IAgent
 {
-    IAsyncEnumerable<ChatCallResult> Execute(DialogContext context, IInvokeInteractor? interactor = null,
+    IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession, IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default);
 }
 
-/*public static class AgentExtensions
-{
-    public IAgent CreateAgent(string agentName)
-    {
-        switch (agentName)
-        {
-            case "mini-SWE":
-                return new MiniSweAgent()
-                break;
-        }
-        
-    }
-}*/
+/*
+ * <agent_system>
+...基础系统规则...
+</agent_system>
+
+<platform_instructions platform="windows">
+...Windows 特定规则...
+</platform_instructions>
+
+<tool_instructions>
+<tool name="FileSystem">
+...
+</tool>
+
+<tool name="WinCLI">
+...
+</tool>
+</tool_instructions>
+ */
