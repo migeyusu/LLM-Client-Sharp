@@ -33,6 +33,8 @@ public partial class MiniSWEFunctionCallEngine : FunctionCallEngine
     public override void PreviewRequest(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
     {
         //agent will do
+        
+
     }
 
     public override async Task<List<FunctionCallContent>> TryParseFunctionCalls(ChatResponse response)

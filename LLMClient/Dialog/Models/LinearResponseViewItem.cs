@@ -45,7 +45,17 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
         }
     } = false;
 
-    public bool IsInterrupt { get; set; }
+    public bool IsInterrupt
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAvailableInContext));
+        }
+    }
 
     public string? ErrorMessage
     {
@@ -138,12 +148,14 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
         {
             MessageBoxes.Error(e.Message, "响应失败");
             this.ErrorMessage = e.Message;
+            totalCallResult.Exception = e;
         }
         finally
         {
             this.History.Clear();
             this.PermissionViewModels.Clear();
             this.IsResponding = false;
+            this.IsInterrupt = totalCallResult.IsInterrupt;
         }
 
         return totalCallResult;

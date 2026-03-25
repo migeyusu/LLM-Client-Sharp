@@ -28,21 +28,36 @@ public class MiniSweAgentConfig
     /// Observation result template
     /// </summary>
     public string ObservationTemplate { get; set; } = """
+                                                      {{#if output.exception_info}}
+                                                      <exception>{{output.exception_info}}</exception>
+                                                      {{/if}}
                                                       <returncode>{{output.returncode}}</returncode>
+                                                      {{#if output.output}}
                                                       <output>
                                                       {{output.output}}
                                                       </output>
+                                                      {{/if}}
                                                       """;
 
     /// <summary>
     /// Format / tool usage error feedback template
     /// </summary>
     public string FormatErrorTemplate { get; set; } = """
-                                                      Format error:
-
+                                                      Tool usage error:
+                                                      
                                                       <error>
                                                       {{error}}
                                                       </error>
+                                                      
+                                                      General guidance:
+                                                      - Use the available tools directly when you need to inspect files, edit files, or run commands.
+                                                      - Do not describe an action without actually calling the relevant tool.
+                                                      - Prefer FileSystem tools for reading and editing files.
+                                                      - Prefer WinCLI for Windows command execution.
+                                                      - When editing files, inspect first, preview edits, then apply edits.
+                                                      
+                                                      If the task is complete, clearly explain what was changed and how it was verified.
+                                                      
                                                       """;
 
     /// <summary>

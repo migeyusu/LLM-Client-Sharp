@@ -601,7 +601,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
                 <RowDefinition />
             </Grid.RowDefinitions>
             <materialDesign:PackIcon Grid.Column="0"
@@ -636,7 +636,7 @@
                                                       BorderThickness="0"
                                                       SafeDocument="{Binding FullDocument,Mode=OneWay}"
                                                       Style="{StaticResource ExFlowDocumentScrollViewerStyle}" />
-            <TextBox Grid.Row="1" 
+            <TextBox Grid.Row="1"
                      Grid.Column="0"
                      Grid.ColumnSpan="2"
                      IsReadOnly="True"
@@ -695,11 +695,21 @@
                                         </DataTemplate>
                                     </component:DataTemplateTypePair>
                                     <component:DataTemplateTypePair>
-                                        <DataTemplate DataType="{x:Type agent:TestAgent}">
+                                        <DataTemplate DataType="{x:Type agent:TestSuccessAgent}">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
                                                            VerticalAlignment="Center"
-                                                           Text="test-agent"
+                                                           Text="test-success-agent"
+                                                           FontWeight="Black" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </component:DataTemplateTypePair>
+                                    <component:DataTemplateTypePair>
+                                        <DataTemplate DataType="{x:Type agent:TestFailedAgent}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                           VerticalAlignment="Center"
+                                                           Text="test-failed-agent"
                                                            FontWeight="Black" />
                                             </StackPanel>
                                         </DataTemplate>

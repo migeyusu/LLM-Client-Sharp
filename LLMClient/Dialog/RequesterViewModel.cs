@@ -313,9 +313,11 @@ public class RequesterViewModel : BaseViewModel
         this.BindClient(modelClient);
 
         // Initialize agents
-        var agentTypes = new[] { typeof(MiniSweAgent), typeof(TestAgent) }; /*AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(s => s.GetTypes())
-            .Where(p => typeof(IAgent).IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);*/
+        List<Type> agentTypes = new List<Type> { typeof(MiniSweAgent) };
+#if DEBUG
+        agentTypes.Add(typeof(TestSuccessAgent));
+        agentTypes.Add(typeof(TestFailedAgent));
+#endif
 
         foreach (var type in agentTypes)
         {
