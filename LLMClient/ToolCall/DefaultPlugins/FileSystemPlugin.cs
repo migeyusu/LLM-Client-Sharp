@@ -332,22 +332,6 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         return $"Successfully wrote to {path}";
     }
 
-    /*[KernelFunction, Description(
-         "Make text edits to a file. If dryRun is true, preview changes only; otherwise apply them. " +
-         "Prefer PreviewEditAsync and ApplyEditAsync for explicit workflows.")]
-    public async Task<string> EditFileAsync(
-        [Description("The path of the file to edit.")]
-        string path,
-        [Description("A list of edit operations to perform on the file.")]
-        List<EditOperation> edits,
-        [Description("If true, previews changes in a diff format without saving them.")]
-        bool dryRun = false)
-    {
-        return dryRun
-            ? await PreviewEditAsync(path, edits)
-            : await ApplyEditAsync(path, edits);
-    }*/
-
     [KernelFunction, Description("Create a new directory or ensure a directory exists. Can create multiple " +
                                  "nested directories in one operation. If the directory already exists, " +
                                  "this operation will succeed silently. Perfect for setting up directory " +

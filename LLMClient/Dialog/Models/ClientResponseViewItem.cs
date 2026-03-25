@@ -257,15 +257,12 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         private readonly ClientResponseViewItem _responseViewItem;
         private readonly BlockingCollection<string> _blockingCollection = new();
         private readonly Task _task;
-        private readonly CustomMarkdownRenderer _customRenderer;
         private readonly StreamingRenderSession _session;
         private readonly Action<string> _outputAction;
 
         public ResponseViewItemInteractor(FlowDocument flowDocument, ClientResponseViewItem responseViewItem)
         {
             _responseViewItem = responseViewItem;
-            _customRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
-
             _session = new StreamingRenderSession(
                 flowDocument,
                 clearTail: () => Dispatch(() => responseViewItem.ResponseBuffer.Clear())

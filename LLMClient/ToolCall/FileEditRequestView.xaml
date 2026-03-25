@@ -1,0 +1,52 @@
+﻿<UserControl x:Class="LLMClient.ToolCall.FileEditRequestView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:diffplex="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf"
+             xmlns:local="clr-namespace:LLMClient.ToolCall"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance local:FileEditRequestViewModel}"
+             d:DesignHeight="600" d:DesignWidth="900">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> 
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header Information -->
+        <StackPanel Grid.Row="0" Margin="10,0,10,5">
+            <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Margin="0,0,0,5" />
+            <TextBlock Text="{Binding Path, StringFormat='Path: {0}'}" Foreground="Gray" TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+
+        <!-- Diff Viewer -->
+        <diffplex:DiffViewer Grid.Row="1"
+                             OldText="{Binding OriginalContent}"
+                             NewText="{Binding UpdatedContent}"
+                             IsSideBySide="True"
+                             Margin="10"/>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+            <Button Content="Reject" 
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,10,0">
+                <Button.CommandParameter>
+                    <sys:Boolean>False</sys:Boolean>
+                </Button.CommandParameter>
+            </Button>
+            <Button Content="Confirm" 
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Style="{StaticResource MaterialDesignRaisedButton}">
+                <Button.CommandParameter>
+                    <sys:Boolean>True</sys:Boolean>
+                </Button.CommandParameter>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

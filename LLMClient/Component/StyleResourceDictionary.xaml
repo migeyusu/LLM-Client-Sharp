@@ -599,6 +599,11 @@
                                             </DataTemplate>
                                         </component:DataTemplateTypePair.Template>
                                     </component:DataTemplateTypePair>
+                                    <component:DataTemplateTypePair>
+                                        <DataTemplate DataType="{x:Type toolCall:FileEditRequestViewModel}">
+                                            <toolCall:FileEditRequestView />
+                                        </DataTemplate>
+                                    </component:DataTemplateTypePair>
                                 </component:TypeBasedDataTemplateSelector>
                             </ContentPresenter.ContentTemplateSelector>
                         </ContentPresenter>

@@ -77,34 +77,8 @@ public class FileSystemPluginComparisonTests : IClassFixture<FileSystemTestFixtu
 
         Assert.Equal(csEntries, mcpEntries);
     }
-
-    [Fact]
-    public async Task EditFile_ShouldProduceIdenticalResults()
-    {
-        // Arrange
-        // Create two identical copies of the source file to edit
-        var csEditPath = Path.Combine(_fixture.TestDirectory, "cs_edit_me.txt");
-        var mcpEditPath = Path.Combine(_fixture.TestDirectory, "mcp_edit_me.txt");
-        File.Copy(_fixture.ReadmeFilePath, csEditPath);
-        File.Copy(_fixture.ReadmeFilePath, mcpEditPath);
-
-        var edits = new List<FileSystemPlugin.EditOperation>
-        {
-            new() { OldText = "multiple lines", NewText = "many, many lines" }
-        };
-
-        // Act
-        await _csPlugin.EditFileAsync(csEditPath, edits);
-        await _mcpClient.CallToolAsync("edit_file",
-            new Dictionary<string, object?>() { ["path"] = mcpEditPath, ["edits"] = edits });
-
-        // Assert
-        // Again, compare the final state of the files on disk.
-        var csFileContent = await File.ReadAllTextAsync(csEditPath);
-        var mcpFileContent = await File.ReadAllTextAsync(mcpEditPath);
-        Assert.Equal(NormalizeOutput(csFileContent), NormalizeOutput(mcpFileContent));
-    }
-
+    
+    
     [Fact]
     public async Task GetDirectoryTree_ShouldProduceEquivalentJsonStructure()
     {
