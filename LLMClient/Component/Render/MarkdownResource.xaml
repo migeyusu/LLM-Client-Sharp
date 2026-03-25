@@ -564,11 +564,6 @@
     </Style>
 
     <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource AsyncPermissionExpanderStyle}"
-           x:Key="{x:Static render:CustomMarkdownRenderer.PermissionRequestStyleKey}">
-    </Style>
-
-    <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static render:CustomMarkdownRenderer.AnnotationStyleKey}">
         <Setter Property="Padding"

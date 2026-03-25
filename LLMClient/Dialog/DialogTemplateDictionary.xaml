@@ -230,6 +230,7 @@
                 </StackPanel>
             </Border>
             <ItemsControl ItemsSource="{Binding PermissionViewModels}"
+                          Margin="10"
                           Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type dialog:AsyncPermissionViewModel}">

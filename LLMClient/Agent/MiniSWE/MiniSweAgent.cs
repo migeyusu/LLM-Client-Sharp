@@ -127,12 +127,12 @@ public class MiniSweAgent : IAgent
     private static IReadOnlyList<IAIFunctionGroup> CreateToolProviders(MiniSweAgentConfig config)
     {
         var providers = new List<IAIFunctionGroup>();
-        var platformId = config.PlatformId?.Trim().ToLowerInvariant();
+        var platformId = config.PlatformId;
 
         switch (platformId)
         {
-            case MiniSwePlatforms.Wsl:
-            case MiniSwePlatforms.Linux:
+            case AgentPlatform.Wsl:
+            case AgentPlatform.Linux:
                 providers.Add(new WslCLIPlugin
                 {
                     WslDistributionName = config.WslDistributionName,
@@ -141,7 +141,7 @@ public class MiniSweAgent : IAgent
                     MapWorkingDirectoryToWsl = config.MapWorkingDirectoryToWsl
                 });
                 break;
-            case MiniSwePlatforms.Windows:
+            case AgentPlatform.Windows:
             default:
                 providers.Add(new WinCLIPlugin());
                 break;

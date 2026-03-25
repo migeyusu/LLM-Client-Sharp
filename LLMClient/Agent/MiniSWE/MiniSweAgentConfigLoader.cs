@@ -42,7 +42,10 @@ public static class MiniSweAgentConfigLoader
 
             if (agentDict.TryGetValue("platform_id", out var platformId))
             {
-                config.PlatformId = platformId?.ToString() ?? config.PlatformId;
+                if (Enum.TryParse<AgentPlatform>(platformId?.ToString(), true, out var pid))
+                {
+                    config.PlatformId = pid;
+                }
             }
 
             if (agentDict.TryGetValue("include_tool_instructions", out var includeToolInstructions))
@@ -53,6 +56,21 @@ public static class MiniSweAgentConfigLoader
             if (agentDict.TryGetValue("include_rag_instructions", out var includeRagInstructions))
             {
                 config.IncludeRagInstructions = Convert.ToBoolean(includeRagInstructions);
+            }
+
+            if (agentDict.TryGetValue("wsl_distribution_name", out var wslDistro))
+            {
+                config.WslDistributionName = wslDistro?.ToString() ?? config.WslDistributionName;
+            }
+
+            if (agentDict.TryGetValue("wsl_user_name", out var wslUser))
+            {
+                config.WslUserName = wslUser?.ToString() ?? config.WslUserName;
+            }
+
+            if (agentDict.TryGetValue("map_working_directory_to_wsl", out var mapWsl))
+            {
+                config.MapWorkingDirectoryToWsl = Convert.ToBoolean(mapWsl);
             }
         }
 
@@ -79,7 +97,7 @@ public static class MiniSweAgentConfigLoader
     {
         return new MiniSweAgentConfig
         {
-            PlatformId = "linux",
+            PlatformId = AgentPlatform.Linux,
             IncludeToolInstructions = false,
             IncludeRagInstructions = false,
             UseToolCall = true,
@@ -168,7 +186,7 @@ public static class MiniSweAgentConfigLoader
     {
         return new MiniSweAgentConfig
         {
-            PlatformId = "linux",
+            PlatformId = AgentPlatform.Linux,
             IncludeToolInstructions = false,
             IncludeRagInstructions = false,
             UseToolCall = false,
@@ -271,7 +289,7 @@ public static class MiniSweAgentConfigLoader
     {
         return new MiniSweAgentConfig
         {
-            PlatformId = "windows",
+            PlatformId = AgentPlatform.Windows,
             IncludeToolInstructions = true,
             IncludeRagInstructions = true,
             UseToolCall = true,
@@ -411,4 +429,19 @@ public static class MiniSweAgentConfigLoader
                 """
         };
     }
+
+    /// <summary>
+    /// Default WSL config (Linux tool-call style)
+    /// </summary>
+    public static MiniSweAgentConfig LoadDefaultWslConfig()
+    {
+        var config = LoadDefaultLinuxToolCallConfig();
+        config.PlatformId = AgentPlatform.Wsl;
+        config.SystemTemplate = """
+            You are a helpful assistant that can interact with a computer via WSL (Windows Subsystem for Linux).
+            """;
+        // WSL specific adjustments can be added here if needed
+        return config;
+    }
 }
+

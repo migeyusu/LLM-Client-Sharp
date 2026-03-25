@@ -62,9 +62,6 @@ public class CustomMarkdownRenderer : WpfRenderer
 
     public static readonly MarkdownPipeline EditModePipeline = EditModePipelineLazy.Value;
 
-    public static ComponentResourceKey PermissionRequestStyleKey =>
-        new(typeof(CustomMarkdownRenderer), nameof(PermissionRequestStyleKey));
-
     public static CustomMarkdownRenderer EditRenderer(FlowDocument flowDocument)
     {
         var renderer = new CustomMarkdownRenderer() { Pipeline = EditModePipeline };

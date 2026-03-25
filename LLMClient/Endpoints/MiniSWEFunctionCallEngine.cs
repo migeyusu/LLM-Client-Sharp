@@ -187,11 +187,11 @@ public partial class MiniSWEFunctionCallEngine : FunctionCallEngine
 
     private string GetExecuteCommandFunctionName()
     {
-        var platformId = _config.PlatformId?.Trim().ToLowerInvariant();
+        var platformId = _config.PlatformId;
         return platformId switch
         {
-            MiniSwePlatforms.Wsl => "WslCLI_ExecuteCommandAsync",
-            MiniSwePlatforms.Linux => "WslCLI_ExecuteCommandAsync",
+            AgentPlatform.Wsl => "WslCLI_ExecuteCommandAsync",
+            AgentPlatform.Linux => "WslCLI_ExecuteCommandAsync",
             _ => "WinCLI_ExecuteCommandAsync"
         };
     }

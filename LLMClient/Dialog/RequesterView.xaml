@@ -296,16 +296,31 @@
                                     Content="安全黏贴"
                                     Click="TestPaste_OnClick"/>-->
                             <!--agent selection-->
-                            <ComboBox ItemsSource="{Binding AvailableAgents}"
-                                      DisplayMemberPath="Name"
-                                      Visibility="{Binding IsAgentMode, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                      SelectedItem="{Binding SelectedAgent}"
-                                      ToolTip="Select Agent"
-                                      Width="120"
-                                      VerticalAlignment="Center"
-                                      Padding="16,8"
-                                      Margin="16,0,0,0"
-                                      Style="{StaticResource MaterialDesignOutlinedComboBox}" />
+                            <materialDesign:Card Padding="4,0"
+                                                 Margin="6,0,0,0"
+                                                 UniformCornerRadius="12"
+                                                 Height="32"
+                                                 Visibility="{Binding DefaultClient.Model.SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp3">
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="0,0,0,0">
+                                    <ComboBox ItemsSource="{Binding AvailableAgents}"
+                                              DisplayMemberPath="Name"
+                                              Visibility="{Binding IsAgentMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                              SelectedItem="{Binding SelectedAgent}"
+                                              ToolTip="Select Agent"
+                                              Width="120"
+                                              VerticalAlignment="Center"
+                                              Padding="16,8"
+                                              Style="{StaticResource  MaterialDesignComboBox}" />
+                                    <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
+                                            ToolTip="Config Agent"
+                                            Margin="6,0,0,0"
+                                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                            CommandParameter="{Binding Mode=OneTime}" />
+                                </StackPanel>
+                            </materialDesign:Card>
+
                             <Menu VerticalAlignment="Center"
                                   Margin="6,0,0,0">
                                 <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert,Size=18}"

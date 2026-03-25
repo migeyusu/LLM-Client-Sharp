@@ -26,7 +26,7 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
 
     public bool IncludeHistoryMessages { get; set; } = true;
 
-    public string PlatformId { get; set; } = MiniSwePlatforms.Windows;
+    public AgentPlatform PlatformId { get; set; } = AgentPlatform.Windows;
 
     public bool IncludeToolInstructions { get; set; } = true;
 
@@ -95,7 +95,7 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
         var variables = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["task"] = UserPrompt ?? string.Empty,
-            ["platform_id"] = PlatformId,
+            ["platform_id"] = PlatformId.ToString().ToLowerInvariant(),
             ["platform_instructions"] = BuildPlatformInstructions(),
             ["tool_instructions"] = ShouldRenderToolInstructions() ? BuildToolInstructions() : string.Empty,
             ["rag_instructions"] = ShouldRenderRagInstructions() ? BuildRagInstructions() : string.Empty,
@@ -141,18 +141,16 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
 
     protected virtual bool UseStructuredToolInstructionsForPlatform()
     {
-        var platform = PlatformId?.Trim().ToLowerInvariant();
-        return platform is MiniSwePlatforms.Windows or MiniSwePlatforms.Wsl;
+        return PlatformId is AgentPlatform.Windows or AgentPlatform.Wsl;
     }
 
     protected virtual string BuildPlatformInstructions()
     {
-        var platform = PlatformId?.Trim().ToLowerInvariant();
-        return platform switch
+        return PlatformId switch
         {
-            MiniSwePlatforms.Windows => BuildWindowsPlatformInstructions(),
-            MiniSwePlatforms.Wsl => BuildWslPlatformInstructions(),
-            MiniSwePlatforms.Linux => BuildLinuxPlatformInstructions(),
+            AgentPlatform.Windows => BuildWindowsPlatformInstructions(),
+            AgentPlatform.Wsl => BuildWslPlatformInstructions(),
+            AgentPlatform.Linux => BuildLinuxPlatformInstructions(),
             _ => BuildGenericPlatformInstructions()
         };
     }
@@ -257,11 +255,10 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
 
     protected virtual string BuildToolSelectionGuidance()
     {
-        var platform = PlatformId?.Trim().ToLowerInvariant();
-        return platform switch
+        return PlatformId switch
         {
-            MiniSwePlatforms.Windows => BuildWindowsToolSelectionGuidance(),
-            MiniSwePlatforms.Wsl => BuildWslToolSelectionGuidance(),
+            AgentPlatform.Windows => BuildWindowsToolSelectionGuidance(),
+            AgentPlatform.Wsl => BuildWslToolSelectionGuidance(),
             _ => string.Empty
         };
     }

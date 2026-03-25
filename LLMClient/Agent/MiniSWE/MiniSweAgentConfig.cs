@@ -1,12 +1,12 @@
 namespace LLMClient.Agent.MiniSWE;
 
-public static class MiniSwePlatforms
+public enum AgentPlatform
 {
-    public const string Windows = "windows";
+    Windows,
 
-    public const string Linux = "linux";
-
-    public const string Wsl = "wsl";
+    Linux,
+    
+    Wsl
 }
 
 /// <summary>
@@ -17,7 +17,7 @@ public class MiniSweAgentConfig
     /// <summary>
     /// Platform identifier, e.g. linux / windows / wsl
     /// </summary>
-    public string PlatformId { get; set; } = MiniSwePlatforms.Windows;
+    public AgentPlatform PlatformId { get; set; } = AgentPlatform.Windows;
 
     /// <summary>
     /// System message template
@@ -53,20 +53,20 @@ public class MiniSweAgentConfig
     /// </summary>
     public string FormatErrorTemplate { get; set; } = """
                                                       Tool usage error:
-                                                      
+
                                                       <error>
                                                       {{error}}
                                                       </error>
-                                                      
+
                                                       General guidance:
                                                       - Use the available tools directly when you need to inspect files, edit files, or run commands.
                                                       - Do not describe an action without actually calling the relevant tool.
                                                       - Prefer FileSystem tools for reading and editing files.
                                                       - Prefer WinCLI for Windows command execution.
                                                       - When editing files, inspect first, preview edits, then apply edits.
-                                                      
+
                                                       If the task is complete, clearly explain what was changed and how it was verified.
-                                                      
+
                                                       """;
 
     /// <summary>

@@ -21,6 +21,31 @@ using LLMClient.Agent.MiniSWE;
 
 namespace LLMClient.Dialog;
 
+public class AgentOption : BaseViewModel
+{
+    public string? WorkingDirectory
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public AgentPlatform Platform
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
+}
+
 public class RequestOption
 {
     public required ILLMChatClient DefaultClient { get; init; }
