@@ -6,7 +6,7 @@ using LLMClient.Rag;
 namespace LLMClient.Abstraction;
 
 [TypeConverter(typeof(EnumDescriptionTypeConverter))]
-[JsonConverter(typeof(JsonStringEnumConverter<SearchAlgorithm>))]
+[JsonConverter(typeof(JsonStringEnumConverter<ThinkingIncludeMode>))]
 public enum ThinkingIncludeMode
 {
     /// <summary>

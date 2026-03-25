@@ -38,25 +38,10 @@ public abstract class ContextPromptViewModel : BaseViewModel, IDisposable
             if (value == _projectContext) return;
             _projectContext = value;
             OnPropertyChanged();
-            if (!string.IsNullOrEmpty(value))
-            {
-                CalculateProjectContextTokens(value, count => { ProjectContextTokensCount = (int)count; });
-            }
         }
     }
 
     private int _projectContextTokens;
-
-    public bool IncludeContext
-    {
-        get => _includeContext;
-        set
-        {
-            if (value == _includeContext) return;
-            _includeContext = value;
-            OnPropertyChanged();
-        }
-    }
 
     public ICommand RefreshProjectContextCommand { get; }
 
@@ -83,14 +68,11 @@ public abstract class ContextPromptViewModel : BaseViewModel, IDisposable
             OnPropertyChanged();
         }
     }
-
-    private readonly ITokensCounter _tokensCounter;
+    
     private string? _totalContext;
-    private bool _includeContext = true;
 
-    protected ContextPromptViewModel(ITokensCounter tokensCounter)
+    protected ContextPromptViewModel()
     {
-        _tokensCounter = tokensCounter;
         RefreshProjectContextCommand = new RelayCommand((async void () =>
         {
             IsRefreshingContext = true;
@@ -109,12 +91,6 @@ public abstract class ContextPromptViewModel : BaseViewModel, IDisposable
         }));
     }
 
-    private async void CalculateProjectContextTokens(string context, Action<long> callBack)
-    {
-        var countTokens = await _tokensCounter.CountTokens(context);
-        callBack.Invoke(countTokens);
-    }
-
     public async Task BuildAsync()
     {
         this.ProjectContext = await BuildProjectContextAsync();
@@ -122,15 +98,12 @@ public abstract class ContextPromptViewModel : BaseViewModel, IDisposable
         {
             ["projectContext"] = ProjectContext,
             ["focusedContext"] = await BuildFocusedContextAsync(),
-            ["relevantSnippets"] = await BuildRelevantSnippetsAsync()
         };
 
         this.TotalContext = await PromptTemplateRenderer.RenderHandlebarsAsync(
             ContextPromptTemplates.CodeContextSectionTemplate,
             variables);
     }
-
-    protected abstract Task<string> BuildRelevantSnippetsAsync();
 
     protected abstract Task<string> BuildFocusedContextAsync();
 
@@ -146,8 +119,8 @@ public abstract class ContextPromptViewModel<T> : ContextPromptViewModel
 {
     protected readonly T ProjectViewModel;
 
-    protected ContextPromptViewModel(T projectViewModel, ITokensCounter tokensCounter)
-        : base(tokensCounter)
+    protected ContextPromptViewModel(T projectViewModel)
+        : base()
     {
         ProjectViewModel = projectViewModel;
     }

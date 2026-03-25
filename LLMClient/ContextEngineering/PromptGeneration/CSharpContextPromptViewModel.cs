@@ -13,9 +13,8 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
 
     public List<RelevantSnippet>? RelevantSnippets { get; set; }
 
-    public CSharpContextPromptViewModel(SolutionContext context, CSharpProjectViewModel projectViewModel,
-        ITokensCounter tokensCounter)
-        : base(projectViewModel, tokensCounter)
+    public CSharpContextPromptViewModel(SolutionContext context, CSharpProjectViewModel projectViewModel)
+        : base(projectViewModel)
     {
         _context = context;
     }
@@ -55,7 +54,7 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
             variables);
     }
 
-    protected override async Task<string> BuildRelevantSnippetsAsync()
+    protected async Task<string> BuildRelevantSnippetsAsync()
     {
         if (RelevantSnippets == null || RelevantSnippets.Count == 0) return string.Empty;
 

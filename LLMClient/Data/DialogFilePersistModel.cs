@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.Dialog;
 
 namespace LLMClient.Data;
 
@@ -8,6 +9,8 @@ namespace LLMClient.Data;
 public class DialogFilePersistModel : DialogSessionPersistModel
 {
     public const int DialogPersistVersion = 3;
+    
+    public AgentOption? AgentOption { get; set; }
 
     public int Version { get; set; } = DialogPersistVersion;
 

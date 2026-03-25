@@ -21,31 +21,6 @@ using LLMClient.Agent.MiniSWE;
 
 namespace LLMClient.Dialog;
 
-public class AgentOption : BaseViewModel
-{
-    public string? WorkingDirectory
-    {
-        get;
-        set
-        {
-            if (value == field) return;
-            field = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public AgentPlatform Platform
-    {
-        get;
-        set
-        {
-            if (value == field) return;
-            field = value;
-            OnPropertyChanged();
-        }
-    }
-}
-
 public class RequestOption
 {
     public required ILLMChatClient DefaultClient { get; init; }
@@ -55,6 +30,8 @@ public class RequestOption
     public AgentDescriptor? Agent { get; set; }
 
     public bool UseAgent { get; set; }
+
+    public required AgentOption AgentOption { get; init; }
 }
 
 public delegate Task<IResponse> GetResponseHandler(RequestOption request,
@@ -68,6 +45,8 @@ public class RequesterViewModel : BaseViewModel
     /// indicate whether data is changed after loading.
     /// </summary>
     public bool IsDataChanged { get; set; } = true;
+
+    public AgentOption AgentOption { get; set; } = new();
 
     public event Action<IResponse>? RequestCompleted;
 
@@ -90,7 +69,8 @@ public class RequesterViewModel : BaseViewModel
                         Agent = this.SelectedAgent,
                         DefaultClient = DefaultClient,
                         RequestItem = request,
-                        UseAgent = this.IsAgentMode
+                        UseAgent = this.IsAgentMode,
+                        AgentOption = this.AgentOption
                     }, null, _tokenSource.Token);
                 OnRequestCompleted(completedResult);
                 if (!completedResult.IsInterrupt)
@@ -456,7 +436,8 @@ public class RequesterViewModel : BaseViewModel
                 {
                     DefaultClient = summarizeModel,
                     UseAgent = false,
-                    RequestItem = summaryRequest
+                    RequestItem = summaryRequest,
+                    AgentOption = AgentOption
                 }, insertBefore, _tokenSource.Token);
             }
         }

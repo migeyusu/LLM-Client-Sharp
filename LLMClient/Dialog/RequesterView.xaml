@@ -300,13 +300,12 @@
                                                  Margin="6,0,0,0"
                                                  UniformCornerRadius="12"
                                                  Height="32"
-                                                 Visibility="{Binding DefaultClient.Model.SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 Visibility="{Binding IsAgentMode, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                  materialDesign:ElevationAssist.Elevation="Dp3">
                                 <StackPanel Orientation="Horizontal"
                                             Margin="0,0,0,0">
                                     <ComboBox ItemsSource="{Binding AvailableAgents}"
                                               DisplayMemberPath="Name"
-                                              Visibility="{Binding IsAgentMode, Converter={StaticResource BooleanToVisibilityConverter}}"
                                               SelectedItem="{Binding SelectedAgent}"
                                               ToolTip="Select Agent"
                                               Width="120"
@@ -316,8 +315,12 @@
                                     <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
                                             ToolTip="Config Agent"
                                             Margin="6,0,0,0"
+                                            Width="30"
+                                            Height="30"
+                                            Style="{StaticResource MaterialDesignIconButton}"
                                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                            CommandParameter="{Binding Mode=OneTime}" />
+                                            CommandParameter="{Binding AgentOption,Mode=OneTime}">
+                                    </Button>
                                 </StackPanel>
                             </materialDesign:Card>
 

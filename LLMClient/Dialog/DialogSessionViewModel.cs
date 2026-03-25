@@ -524,7 +524,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         {
             var agentType = option.Agent?.Type ?? throw new InvalidOperationException("未指定Agent类型");
             return await ExecuteAgentAsync(client, requestViewItem,
-                agentType, insertBefore, token);
+                agentType, option.AgentOption, insertBefore, token);
         }
 
         var multiResponseViewItem = new ParallelResponseViewItem(this)
@@ -561,12 +561,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     }
 
     private async Task<IResponse> ExecuteAgentAsync(ILLMChatClient client, IRequestItem requestViewItem, Type agentType,
-        IRequestItem? insertBefore, CancellationToken token)
+        AgentOption agentOption, IRequestItem? insertBefore, CancellationToken token)
     {
         IAgent agent;
         if (agentType == typeof(MiniSweAgent))
         {
-            agent = new MiniSweAgent(client);
+            agent = new MiniSweAgent(client, agentOption);
         }
         else
         {

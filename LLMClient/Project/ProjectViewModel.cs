@@ -228,13 +228,6 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 Option.Type.GetEnumDescription(), Option.RootPath);
             _systemPromptBuilder.AppendLine();
             _systemPromptBuilder.AppendLine(Option.Description);
-            if (this.ProjectContextPrompt is { IncludeContext: true })
-            {
-                //todo: 当前只支持项目上下文
-                _systemPromptBuilder.AppendLine("# 项目上下文：");
-                _systemPromptBuilder.AppendLine(ProjectContextPrompt.TotalContext);
-            }
-
             var contextSessions = this.Session
                 .Where(model => model.EnableInContext && string.IsNullOrEmpty(model.Summary))
                 .ToArray();
@@ -254,9 +247,9 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
     }
 
     /// <summary>
-    /// 默认不提供项目上下文，派生类可重写以提供特定上下文
+    /// 默认不提供项目上下文
     /// </summary>
-    public virtual ContextPromptViewModel? ProjectContextPrompt { get; }
+    public virtual ContextPromptViewModel? ProjectContext { get; }
 
     private long _tokensConsumption;
 
@@ -458,9 +451,6 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         {
             throw new InvalidOperationException("当前项目配置不合法");
         }
-
-        if (this.ProjectContextPrompt is { IncludeContext: true })
-            await this.ProjectContextPrompt.BuildAsync();
         var functionGroups = this.SelectedSession?.SelectedFunctionGroups;
         if (functionGroups != null)
         {

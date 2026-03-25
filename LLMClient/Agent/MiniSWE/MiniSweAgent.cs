@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
+using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Project;
@@ -28,10 +29,29 @@ public class MiniSweAgent : IAgent
 
     public ILLMChatClient ChatClient { get; }
 
-    public MiniSweAgent(ILLMChatClient agent, MiniSweAgentConfig? config = null)
+    public AgentOption? AgentOption { get; }
+
+    public MiniSweAgent(ILLMChatClient agent, AgentOption agentOption)
     {
         ChatClient = agent;
-        Config = config ?? MiniSweAgentConfigLoader.LoadDefaultWindowsConfig();
+        this.AgentOption = agentOption;
+        switch (agentOption.Platform)
+        {
+            case AgentPlatform.Windows:
+                Config = MiniSweAgentConfigLoader.LoadDefaultWindowsConfig();
+                break;
+            case AgentPlatform.Linux:
+                Config = agent.Model.SupportFunctionCall
+                    ? MiniSweAgentConfigLoader.LoadDefaultLinuxToolCallConfig()
+                    : MiniSweAgentConfigLoader.LoadDefaultLinuxTextBasedConfig();
+                break;
+            case AgentPlatform.Wsl:
+                Config = MiniSweAgentConfigLoader.LoadDefaultWslConfig();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
         _toolProviders = CreateToolProviders(Config);
     }
 
@@ -61,6 +81,10 @@ public class MiniSweAgent : IAgent
         if (dialogSession is ProjectSessionViewModel projectSession)
         {
             contextBuilder.WorkingDirectory = projectSession.WorkingDirectory;
+        }
+        else
+        {
+            contextBuilder.WorkingDirectory = AgentOption.WorkingDirectory;
         }
 
         if (_toolProviders.Count > 0)

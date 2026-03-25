@@ -45,11 +45,10 @@ public class DialogMappingProfile : Profile
         CreateMap<MiniSweAgentPersistModel, MiniSweAgent>()
             .ConstructUsing((src, ctx) =>
             {
-                var config = src.Config ?? new MiniSweAgentConfig();
                 var client = src.ChatClient != null
                     ? ctx.Mapper.Map<ILLMChatClient>(src.ChatClient)
                     : EmptyLlmModelClient.Instance;
-                return new MiniSweAgent(client);
+                return new MiniSweAgent(client, src.AgentOption ?? new AgentOption());
             });
 
         CreateMap<IAIContent, AIContent>().IncludeAllDerived();
@@ -336,7 +335,8 @@ public class DialogMappingProfile : Profile
             })
             .ForMember(model => model.PromptString,
                 opt => opt.MapFrom(src => src.Requester.PromptEditViewModel.FinalText))
-            .ForMember(model => model.Client, opt => opt.MapFrom(src => src.Requester.DefaultClient));
+            .ForMember(model => model.Client, opt => opt.MapFrom(src => src.Requester.DefaultClient))
+            .ForMember(model => model.AgentOption, opt => opt.MapFrom(src => src.Requester.AgentOption));
 
         CreateMap<ProjectSessionViewModel, ProjectSessionPersistModel>()
             .IncludeBase<DialogSessionViewModel, DialogSessionPersistModel>();
@@ -381,7 +381,8 @@ public class DialogMappingProfile : Profile
                 {
                     opt.PreCondition(src => src.ExtendedPrompts != null);
                     opt.MapFrom(src => MapPrompts(src.ExtendedPrompts, promptsResource));
-                });
+                })
+            .ForMember(model => model.Requester.AgentOption, opt => opt.MapFrom(src => src.AgentOption));
 
         CreateMap<ProjectSessionPersistModel, ProjectSessionViewModel>()
             .IncludeBase<DialogSessionPersistModel, DialogSessionViewModel>()

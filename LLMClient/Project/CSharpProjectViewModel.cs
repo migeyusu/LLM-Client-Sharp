@@ -31,7 +31,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     private readonly CSharpContextPromptViewModel _projectContextPrompt;
 
-    public override ContextPromptViewModel ProjectContextPrompt => _projectContextPrompt;
+    public override ContextPromptViewModel ProjectContext => _projectContextPrompt;
 
     private readonly SolutionContext _solutionContext;
 
@@ -54,7 +54,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
                 loggerFactory.CreateLogger<CodeReadingService>()))
         ];
         Requester.FunctionTreeSelector.ConnectSource(new ProxyFunctionGroupSource(() => projectFunctions));
-        _projectContextPrompt = new CSharpContextPromptViewModel(_solutionContext, this, tokensCounter);
+        _projectContextPrompt = new CSharpContextPromptViewModel(_solutionContext, this);
         SelectPathCommand = new RelayCommand(() =>
         {
             var dialog = new Microsoft.Win32.OpenFileDialog

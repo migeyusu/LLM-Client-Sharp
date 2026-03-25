@@ -150,15 +150,7 @@
                         <Run
                             Text="{Binding SelectedTask.CurrentContextTokens,Mode=OneWay,StringFormat=Current Context:{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter},TargetNullValue=No Tasks Selected}" />
                     </TextBlock>-->
-                    <materialDesign:Card Padding="4,0"
-                                         UniformCornerRadius="12"
-                                         Style="{StaticResource MaterialDesignOutlinedCard}">
-                        <CheckBox IsChecked="{Binding ProjectContextPrompt.IncludeContext,Mode=TwoWay}">
-                            <StackPanel VerticalAlignment="Center"
-                                        Orientation="Horizontal">
-                                <TextBlock Text="Include Context"
-                                           VerticalAlignment="Center" />
-                                <Button Content="{materialDesign:PackIcon Kind=TableOfContents,Size=20}"
+                    <Button Content="{materialDesign:PackIcon Kind=TableOfContents,Size=20}"
                                         ToolTip="View Summary"
                                         Margin="6,0,0,0"
                                         Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}">
@@ -169,7 +161,7 @@
                                                   MaxHeight="600"
                                                   MinWidth="400"
                                                   MinHeight="300"
-                                                  DataContext="{Binding ProjectContextPrompt}">
+                                                  DataContext="{Binding ProjectContext}">
                                                 <FlowDocumentScrollViewer
                                                     Document="{Binding ProjectContext,Converter={x:Static converters:SnapConverters.StringToDocumentConverter}}" />
                                                 <materialDesign:Card Padding="4"
@@ -197,9 +189,6 @@
                                         </HeaderedContentControl>
                                     </Button.CommandParameter>
                                 </Button>
-                            </StackPanel>
-                        </CheckBox>
-                    </materialDesign:Card>
                     <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
                             ToolTip="Config Project"
                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"

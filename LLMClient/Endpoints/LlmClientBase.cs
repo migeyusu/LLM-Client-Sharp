@@ -110,7 +110,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 /*#if DEBUG
         interactor ??= new DebugInvokeInteractor();
 #endif*/
-        var chatMessages = requestContext.ChatHistory;
         var result = new ChatCallResult();
         try
         {
@@ -125,7 +124,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     "This model does not support function calls, but tools were provided.");
             }
 
-            chatHistory.AddRange(chatMessages);
             switch (Model.ThinkingIncludeMode)
             {
                 case ThinkingIncludeMode.None:
