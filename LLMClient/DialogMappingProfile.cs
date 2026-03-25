@@ -382,7 +382,8 @@ public class DialogMappingProfile : Profile
                     opt.PreCondition(src => src.ExtendedPrompts != null);
                     opt.MapFrom(src => MapPrompts(src.ExtendedPrompts, promptsResource));
                 })
-            .ForMember(model => model.Requester.AgentOption, opt => opt.MapFrom(src => src.AgentOption));
+            .ForPath(model => model.Requester.AgentOption,
+                opt => { opt.MapFrom(src => src.AgentOption ?? new AgentOption()); });
 
         CreateMap<ProjectSessionPersistModel, ProjectSessionViewModel>()
             .IncludeBase<DialogSessionPersistModel, DialogSessionViewModel>()

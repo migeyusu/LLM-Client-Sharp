@@ -319,8 +319,7 @@
                                             Height="30"
                                             Style="{StaticResource MaterialDesignIconButton}"
                                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                            CommandParameter="{Binding AgentOption,Mode=OneTime}">
-                                    </Button>
+                                            CommandParameter="{Binding AgentOption,Mode=OneWay}"/>
                                 </StackPanel>
                             </materialDesign:Card>
 

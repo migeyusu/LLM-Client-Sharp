@@ -83,8 +83,8 @@
                                 <DataTemplate DataType="{x:Type dialog:AgentOption}">
                                     <HeaderedContentControl Header="配置agent选项"
                                                             Style="{StaticResource DialogContentControlStyle}">
-                                        <dialog:AgentOptionView Width="800"
-                                                                Height="600" />
+                                        <dialog:AgentOptionView MaxWidth="800"
+                                                                MaxHeight="200" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type viewModel:ArchiveManagerViewModel}">
@@ -441,8 +441,8 @@
                           SelectedItem="{Binding ThemeName,Mode=TwoWay}"
                           Style="{StaticResource MaterialDesignFilledComboBox}"
                           Margin="10,0,0,0"
-                          WindowChrome.IsHitTestVisibleInChrome="True" 
-                          materialDesign:HintAssist.Hint="Code Highlight"/>
+                          WindowChrome.IsHitTestVisibleInChrome="True"
+                          materialDesign:HintAssist.Hint="Code Highlight" />
             </StackPanel>
             <ToolBarTray Grid.Column="1"
                          HorizontalAlignment="Left"
