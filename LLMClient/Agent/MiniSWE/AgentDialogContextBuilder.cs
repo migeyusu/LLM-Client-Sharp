@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text;
 using LLMClient.Abstraction;
 using LLMClient.ContextEngineering.PromptGeneration;
@@ -13,28 +13,6 @@ namespace LLMClient.Agent.MiniSWE;
 /// Unlike the default chat context, this context renders a dedicated
 /// agent system template and instance template, and treats tools/RAG/platform
 /// information as prompt materials rather than directly appending them in chat style.
-/// <example>
-///  <code>
-/// var agentContext = new AgentDialogContextBuilder(history)
-/// {
-/// SystemTemplate = systemTemplate,
-/// InstanceTemplate = instanceTemplate,
-/// PlatformId = "windows",
-/// IncludeHistoryMessages = true,
-/// IncludeToolInstructions = true,
-/// IncludeRagInstructions = true,
-/// FunctionGroups = request.FunctionGroups,
-/// RagSources = request.RagSources,
-/// SearchOption = request.SearchOption,
-/// WorkingDirectory = request.WorkingDirectory,
-/// CallEngineType = request.CallEngineType,
-/// ResponseFormat = request.ResponseFormat,
-/// TempAdditionalProperties = request.TempAdditionalProperties,
-/// IsDebugMode = request.IsDebugMode
-/// };
-/// agentContext.MapFromRequest(request);
-/// </code>
-/// </example>
 /// </summary>
 public class AgentDialogContextBuilder : DefaultDialogContextBuilder
 {
@@ -42,61 +20,31 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
     {
     }
 
-    /// <summary>
-    /// The agent system prompt template.
-    /// Usually contains the high-level working protocol.
-    /// </summary>
     public string SystemTemplate { get; set; } = string.Empty;
 
-    /// <summary>
-    /// The first user/instance prompt template.
-    /// Usually contains task instructions and workflow rules.
-    /// </summary>
     public string InstanceTemplate { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Whether historical messages should be included after the agent bootstrap prompts.
-    /// </summary>
     public bool IncludeHistoryMessages { get; set; } = true;
 
-    /// <summary>
-    /// Platform identifier, e.g. windows / linux.
-    /// </summary>
-    public string PlatformId { get; set; } = "windows";
+    public string PlatformId { get; set; } = MiniSwePlatforms.Windows;
 
-    /// <summary>
-    /// Whether structured tool instructions should be rendered into templates.
-    /// Typically enabled for Windows templates, disabled for Linux mini-swe original style.
-    /// </summary>
     public bool IncludeToolInstructions { get; set; } = true;
 
-    /// <summary>
-    /// Whether structured RAG instructions should be rendered into templates.
-    /// </summary>
     public bool IncludeRagInstructions { get; set; } = true;
 
-    /// <summary>
-    /// Additional template variables for agent rendering.
-    /// </summary>
     public Dictionary<string, object?> TemplateVariables { get; } = new();
 
     protected override string? BuildSystemPrompt()
     {
-        // Agent context does not use default chat-style prompt concatenation.
-        // The actual system prompt is rendered in BuildChatHistoryAsync.
         return null;
     }
 
     protected override void AppendFunctionGroupsPrompt(StringBuilder builder)
     {
-        // Intentionally ignored.
-        // Agent prompt assembly uses structured tool instructions instead.
     }
 
     protected override void AppendRagSourcesPrompt(StringBuilder builder)
     {
-        // Intentionally ignored.
-        // Agent prompt assembly uses structured RAG instructions instead.
     }
 
     protected override async Task<List<ChatMessage>> BuildChatHistoryAsync(IEndpointModel model,
@@ -194,7 +142,7 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
     protected virtual bool UseStructuredToolInstructionsForPlatform()
     {
         var platform = PlatformId?.Trim().ToLowerInvariant();
-        return platform == "windows";
+        return platform is MiniSwePlatforms.Windows or MiniSwePlatforms.Wsl;
     }
 
     protected virtual string BuildPlatformInstructions()
@@ -202,8 +150,9 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
         var platform = PlatformId?.Trim().ToLowerInvariant();
         return platform switch
         {
-            "windows" => BuildWindowsPlatformInstructions(),
-            "linux" => BuildLinuxPlatformInstructions(),
+            MiniSwePlatforms.Windows => BuildWindowsPlatformInstructions(),
+            MiniSwePlatforms.Wsl => BuildWslPlatformInstructions(),
+            MiniSwePlatforms.Linux => BuildLinuxPlatformInstructions(),
             _ => BuildGenericPlatformInstructions()
         };
     }
@@ -233,6 +182,38 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
             - For WPF and Avalonia projects, prefer structured file inspection and precise edits rather than shell-based text rewriting.
             - For C++ and Qt projects on Windows, use the actual project tooling and build scripts available in the repository.
             - Prefer non-interactive commands.
+
+            Safety guidance:
+            - Preview edits before applying them when possible.
+            - File edits may require user confirmation through a visual diff UI.
+            </platform_instructions>
+            """;
+    }
+
+    protected virtual string BuildWslPlatformInstructions()
+    {
+        return
+            """
+            <platform_instructions platform="wsl">
+            You are working from a Windows host, but shell commands run inside WSL Linux.
+
+            WSL command guidance:
+            - Prefer bash-compatible Linux commands and standard Unix tooling.
+            - Do not use PowerShell or CMD syntax when using the WslCLI tool.
+            - Commands may run in isolated processes, so do not assume shell state persists across calls.
+            - If a command depends on a directory, specify it explicitly.
+
+            File and path guidance:
+            - The project files are typically located on the Windows filesystem.
+            - Linux shell commands may need paths such as /mnt/c/... instead of C:\...
+            - Prefer structured file tools for reading and editing files.
+            - Use line-numbered file inspection when precise code review is needed.
+            - Do not include line number prefixes in file edit operations.
+
+            Development workflow guidance:
+            - Prefer non-interactive Linux commands.
+            - For .NET projects, dotnet build and dotnet test are preferred verification commands.
+            - Use repository-appropriate Linux tooling when available.
 
             Safety guidance:
             - Preview edits before applying them when possible.
@@ -279,7 +260,8 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
         var platform = PlatformId?.Trim().ToLowerInvariant();
         return platform switch
         {
-            "windows" => BuildWindowsToolSelectionGuidance(),
+            MiniSwePlatforms.Windows => BuildWindowsToolSelectionGuidance(),
+            MiniSwePlatforms.Wsl => BuildWslToolSelectionGuidance(),
             _ => string.Empty
         };
     }
@@ -304,6 +286,29 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
             - powershell scripts
             - project searches or tooling commands
             - environment inspection
+            """;
+    }
+
+    protected virtual string BuildWslToolSelectionGuidance()
+    {
+        return
+            """
+            ## Tool Selection Guidance
+
+            Prefer FileSystem tools for:
+            - reading files
+            - inspecting code with line numbers
+            - finding text in files
+            - previewing edits
+            - applying edits
+
+            Prefer WslCLI for:
+            - bash commands
+            - dotnet build
+            - dotnet test
+            - git commands
+            - grep/find/sed/awk when appropriate
+            - environment inspection inside WSL
             """;
     }
 

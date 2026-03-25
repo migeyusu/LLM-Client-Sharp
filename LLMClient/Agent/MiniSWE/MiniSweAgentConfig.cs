@@ -1,4 +1,13 @@
-﻿namespace LLMClient.Agent.MiniSWE;
+namespace LLMClient.Agent.MiniSWE;
+
+public static class MiniSwePlatforms
+{
+    public const string Windows = "windows";
+
+    public const string Linux = "linux";
+
+    public const string Wsl = "wsl";
+}
 
 /// <summary>
 /// Mini-SWE-Agent / Windows-Agent unified config
@@ -6,9 +15,9 @@
 public class MiniSweAgentConfig
 {
     /// <summary>
-    /// Platform identifier, e.g. linux / windows
+    /// Platform identifier, e.g. linux / windows / wsl
     /// </summary>
-    public string PlatformId { get; set; } = "linux";
+    public string PlatformId { get; set; } = MiniSwePlatforms.Windows;
 
     /// <summary>
     /// System message template
@@ -94,6 +103,21 @@ public class MiniSweAgentConfig
     /// Whether structured RAG instructions should be injected
     /// </summary>
     public bool IncludeRagInstructions { get; set; } = true;
+
+    /// <summary>
+    /// WSL distribution name. Empty means using the default distribution.
+    /// </summary>
+    public string WslDistributionName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// WSL user name. Empty means using the distro default user.
+    /// </summary>
+    public string WslUserName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether project working directory should be mapped to /mnt/... automatically.
+    /// </summary>
+    public bool MapWorkingDirectoryToWsl { get; set; } = true;
 }
 
 /// <summary>

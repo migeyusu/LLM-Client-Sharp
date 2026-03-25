@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Dialog.Models;
@@ -28,11 +28,11 @@ public class MiniSweAgent : IAgent
 
     public ILLMChatClient ChatClient { get; }
 
-    public MiniSweAgent(ILLMChatClient agent)
+    public MiniSweAgent(ILLMChatClient agent, MiniSweAgentConfig? config = null)
     {
-        this.Config = MiniSweAgentConfigLoader.LoadDefaultWindowsConfig();
-        this.ChatClient = agent;
-        _toolProviders = [new WinCLIPlugin(), new FileSystemPlugin()]; //todo: 配置地址
+        ChatClient = agent;
+        Config = config ?? MiniSweAgentConfigLoader.LoadDefaultWindowsConfig();
+        _toolProviders = CreateToolProviders(Config);
     }
 
     public string Name { get; } = "MiniSWE Agent";
@@ -42,16 +42,17 @@ public class MiniSweAgent : IAgent
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var chatHistory = dialogSession.GetHistory();
-        if (chatHistory[^1] is not IRequestItem request)
+        if (chatHistory.Count == 0 || chatHistory[^1] is not IRequestItem request)
         {
             yield break;
         }
 
         var contextBuilder = new AgentDialogContextBuilder(chatHistory)
         {
-            PlatformId = "windows",
+            PlatformId = Config.PlatformId,
             IncludeHistoryMessages = true,
-            IncludeRagInstructions = true,
+            IncludeToolInstructions = Config.IncludeToolInstructions,
+            IncludeRagInstructions = Config.IncludeRagInstructions,
             SystemPrompt = dialogSession.SystemPrompt,
             SystemTemplate = Config.SystemTemplate,
             InstanceTemplate = Config.InstanceTemplate
@@ -80,17 +81,15 @@ public class MiniSweAgent : IAgent
             contextBuilder.CallEngine = new MiniSWEFunctionCallEngine(Config);
         }
 
-        // 3. 主循环
         while (!cancellationToken.IsCancellationRequested)
         {
-            // 检查限制
             if (Config.StepLimit > 0 && CallCount >= Config.StepLimit)
             {
                 throw new Exception("Step limit exceeded");
             }
 
             var requestContext = await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
-            ChatCallResult callResult;
+            ChatCallResult? callResult = null;
             int retryCount = 0;
             while (retryCount < StepRetryCount)
             {
@@ -115,8 +114,8 @@ public class MiniSweAgent : IAgent
                 retryCount++;
             }
 
+            CallCount++;
 
-            // 检查是否完成
             var lastMessage = chatHistory.LastOrDefault()?.Messages?.LastOrDefault();
             if (IsExitMessage(lastMessage))
             {
@@ -125,10 +124,35 @@ public class MiniSweAgent : IAgent
         }
     }
 
+    private static IReadOnlyList<IAIFunctionGroup> CreateToolProviders(MiniSweAgentConfig config)
+    {
+        var providers = new List<IAIFunctionGroup>();
+        var platformId = config.PlatformId?.Trim().ToLowerInvariant();
+
+        switch (platformId)
+        {
+            case MiniSwePlatforms.Wsl:
+            case MiniSwePlatforms.Linux:
+                providers.Add(new WslCLIPlugin
+                {
+                    WslDistributionName = config.WslDistributionName,
+                    WslUserName = config.WslUserName,
+                    TimeoutSeconds = config.ExecutionTimeout,
+                    MapWorkingDirectoryToWsl = config.MapWorkingDirectoryToWsl
+                });
+                break;
+            case MiniSwePlatforms.Windows:
+            default:
+                providers.Add(new WinCLIPlugin());
+                break;
+        }
+
+        providers.Add(new FileSystemPlugin());
+        return providers;
+    }
 
     private bool IsExitMessage(ChatMessage? message)
     {
-        // 你可以根据需要定义退出条件
-        return message?.Text?.Contains("COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT") == true;
+        return message?.Text?.Contains(Config.TaskCompleteFlag, StringComparison.Ordinal) == true;
     }
 }
