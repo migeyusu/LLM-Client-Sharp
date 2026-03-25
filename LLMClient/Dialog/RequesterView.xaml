@@ -271,29 +271,6 @@
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Bottom">
-                            <!--agent selection-->
-                            <ComboBox ItemsSource="{Binding AvailableAgents}"
-                                      DisplayMemberPath="Name"
-                                      Visibility="{Binding IsAgentMode, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                      SelectedItem="{Binding SelectedAgent}"
-                                      ToolTip="Select Agent"
-                                      Width="120"
-                                      VerticalAlignment="Center"
-                                      Padding="16,8"
-                                      Margin="16,0,0,0"
-                                      Style="{StaticResource MaterialDesignOutlinedComboBox}" />
-                            <customControl:ModelButton VerticalAlignment="Center"
-                                                       Margin="16,0,0,0"
-                                                       Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                                       CommandParameter="{Binding DefaultClient,Mode=OneWay}"
-                                                       ChangeModelEnable="True"
-                                                       ChangeModelCommand="{Binding ChangeModelCommand}"
-                                                       ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                                       Model="{Binding DefaultClient.Model,Mode=OneWay}" />
-                            <!--<Button Width="120"
-                                    Height="30"
-                                    Content="安全黏贴"
-                                    Click="TestPaste_OnClick"/>-->
                             <TextBlock TextWrapping="Wrap"
                                        TextTrimming="CharacterEllipsis"
                                        VerticalAlignment="Center"
@@ -306,6 +283,29 @@
                                 <LineBreak />
                                 <Run>Estimated Tokens</Run>
                             </TextBlock>
+                            <customControl:ModelButton VerticalAlignment="Center"
+                                                       Margin="16,0,0,0"
+                                                       Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                                       CommandParameter="{Binding DefaultClient,Mode=OneWay}"
+                                                       ChangeModelEnable="True"
+                                                       ChangeModelCommand="{Binding ChangeModelCommand}"
+                                                       ModelDetailCommand="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                                       Model="{Binding DefaultClient.Model,Mode=OneWay}" />
+                            <!--<Button Width="120"
+                                    Height="30"
+                                    Content="安全黏贴"
+                                    Click="TestPaste_OnClick"/>-->
+                            <!--agent selection-->
+                            <ComboBox ItemsSource="{Binding AvailableAgents}"
+                                      DisplayMemberPath="Name"
+                                      Visibility="{Binding IsAgentMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                      SelectedItem="{Binding SelectedAgent}"
+                                      ToolTip="Select Agent"
+                                      Width="120"
+                                      VerticalAlignment="Center"
+                                      Padding="16,8"
+                                      Margin="16,0,0,0"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}" />
                             <Menu VerticalAlignment="Center"
                                   Margin="6,0,0,0">
                                 <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert,Size=18}"

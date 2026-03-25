@@ -6,7 +6,8 @@
                     xmlns:dialog="clr-namespace:LLMClient.Dialog"
                     xmlns:component="clr-namespace:LLMClient.Component"
                     xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
-                    xmlns:render="clr-namespace:LLMClient.Component.Render">
+                    xmlns:render="clr-namespace:LLMClient.Component.Render"
+                    xmlns:controls="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf">
     <Style x:Key="RepeatButtonTransparent" TargetType="{x:Type RepeatButton}">
         <Setter Property="OverridesDefaultStyle" Value="true" />
         <Setter Property="Background" Value="Transparent" />
@@ -601,7 +602,28 @@
                                     </component:DataTemplateTypePair>
                                     <component:DataTemplateTypePair>
                                         <DataTemplate DataType="{x:Type toolCall:FileEditRequestViewModel}">
-                                            <toolCall:FileEditRequestView />
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="*" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+
+                                                <!-- Header Information -->
+                                                <StackPanel Grid.Row="0" Margin="10,0,10,5">
+                                                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap"
+                                                               Margin="0,0,0,5" />
+                                                    <TextBlock Text="{Binding Path, StringFormat='Path: {0}'}"
+                                                               Foreground="Gray"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                                <!-- Diff Viewer -->
+                                                <controls:DiffViewer Grid.Row="1"
+                                                                     OldText="{Binding OriginalContent}"
+                                                                     NewText="{Binding UpdatedContent}"
+                                                                     IsSideBySide="True"
+                                                                     Margin="10" />
+                                            </Grid>
                                         </DataTemplate>
                                     </component:DataTemplateTypePair>
                                 </component:TypeBasedDataTemplateSelector>

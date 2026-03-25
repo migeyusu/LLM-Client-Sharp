@@ -6,6 +6,7 @@ using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
@@ -59,7 +60,17 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
 
     protected FileBasedSessionBase()
     {
-        BackupCommand = new RelayCommand((() => _ = SaveAs()));
+        BackupCommand = new RelayCommand((async () =>
+        {
+            try
+            {
+                await SaveAs();
+            }
+            catch (Exception e)
+            {
+                MessageBoxes.Error("备份出现问题" + e.Message);
+            }
+        }));
     }
 
     public ICommand BackupCommand { get; }

@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.SemanticKernel.Data;
 
@@ -6,7 +6,7 @@ namespace LLMClient.Test;
 
 public class TempTest
 {
-    public async Task TestMethod()
+    public async Task GoogleSearchTest()
     {
         var googleSearchPlugin = new GoogleSearchPlugin();
         await googleSearchPlugin.EnsureAsync(CancellationToken.None);
