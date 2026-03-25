@@ -15,7 +15,6 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -68,6 +67,8 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         get { return this.CalculateTps(); }
     }
 
+    public ObservableCollection<AsyncPermissionViewModel> PermissionViewModels { get; } = [];
+
     /// <summary>
     /// 在响应过程中，临时存储文本内容，不持久化
     /// </summary>
@@ -115,7 +116,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     {
         return new SearchableDocument(new FlowDocument());
     });
-    
+
     public SearchableDocument? SearchableDocument
     {
         get
@@ -129,7 +130,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             });
         }
     }
-    
+
     /// <summary>
     /// 手动标记为有效 
     /// </summary>
@@ -223,7 +224,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         Client = client;
         CancelCommand = new ActionCommand(o => { RequestTokenSource?.Cancel(); });
     }
-    
+
     /// <summary>
     /// 切换在上下文中的可用性
     /// </summary>
@@ -237,7 +238,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
         IsAvailableInContextSwitch = !IsAvailableInContextSwitch;
     }
-    
+
     public void TriggerTextContentUpdate()
     {
         InvalidateAsyncProperty(nameof(SearchableDocument));
@@ -250,8 +251,10 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         return RawTextContent ?? string.Empty;
     }
 
+
     private class ResponseViewItemInteractor : BaseViewModel, IInvokeInteractor, IAsyncDisposable
     {
+        private readonly ClientResponseViewItem _responseViewItem;
         private readonly BlockingCollection<string> _blockingCollection = new();
         private readonly Task _task;
         private readonly CustomMarkdownRenderer _customRenderer;
@@ -260,6 +263,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
         public ResponseViewItemInteractor(FlowDocument flowDocument, ClientResponseViewItem responseViewItem)
         {
+            _responseViewItem = responseViewItem;
             _customRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
 
             _session = new StreamingRenderSession(
@@ -301,18 +305,24 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 : message + Environment.NewLine);
         }
 
-        public Task<bool> WaitForPermission(string title, string message)
+        public async Task<bool> WaitForPermission(string title, string message)
         {
-            var vm = new AsyncPermissionViewModel { Title = title, Content = message };
-            _customRenderer.InsertExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);
-            return vm.Task;
+            var permissionViewModel = new AsyncPermissionViewModel() { Title = title, Content = message };
+            var permissionViewModels = _responseViewItem.PermissionViewModels;
+            permissionViewModels.Add(permissionViewModel);
+            var result = await permissionViewModel.Task;
+            permissionViewModels.Remove(permissionViewModel);
+            return result;
         }
 
-        public Task<bool> WaitForPermission(object content)
+        public async Task<bool> WaitForPermission(object content)
         {
             var vm = new AsyncPermissionViewModel { Content = content };
-            _customRenderer.InsertExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);
-            return vm.Task;
+            var permissionViewModels = _responseViewItem.PermissionViewModels;
+            permissionViewModels.Add(vm);
+            var result = await vm.Task;
+            permissionViewModels.Remove(vm);
+            return result;
         }
 
         public async ValueTask DisposeAsync()
