@@ -67,7 +67,7 @@
                     Content="{materialDesign:PackIcon Kind=FormatVerticalAlignBottom}" />
             <StackPanel Margin="0,10,0,0"
                         Orientation="Horizontal"
-                        DataContext="{Binding CurrentResponseViewItem,Mode=OneWay}"
+                        DataContext="{Binding CurrentParallelResponseViewItem,Mode=OneWay}"
                         Visibility="{Binding Converter={x:Static materialDesign:NullableToVisibilityConverter.HiddenInstance}}">
                 <Button Content="{materialDesign:PackIcon Kind=ArrowLeftBold}"
                         Margin="0"

@@ -5,6 +5,8 @@ namespace LLMClient.Agent;
 
 public interface IAgent
 {
+    string Name { get; }
+    
     IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession, IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default);
 }

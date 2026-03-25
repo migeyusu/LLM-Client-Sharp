@@ -33,6 +33,7 @@
                               FontFamily="Microsoft YaHei UI"
                               Title="LLM Client"
                               WindowStartupLocation="CenterScreen"
+                              Icon="/smart_toy.ico"
                               Height="950"
                               Width="1600"
                               AllowDrop="True"
@@ -228,18 +229,12 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition />
                                     </Grid.ColumnDefinitions>
-                                    <materialDesign:PackIcon Kind="RobotHappyOutline"
-                                                             Width="35"
-                                                             Height="35"
-                                                             Margin="16,0,16,0"
-                                                             Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
-                                                             VerticalAlignment="Center" />
-                                    <!--<Image Source="{TemplateBinding Icon}"
-                                       Width="35"
-                                       Height="35"
-                                       Margin="16,0"
-                                       VerticalAlignment="Center"
-                                       WindowChrome.IsHitTestVisibleInChrome="True" />-->
+                                    <Image Source="{TemplateBinding Icon}"
+                                           Width="35"
+                                           Height="35"
+                                           Margin="12,0,16,0"
+                                           VerticalAlignment="Center"
+                                           WindowChrome.IsHitTestVisibleInChrome="True" />
                                     <TextBlock Grid.Column="1"
                                                Text="{TemplateBinding Title}"
                                                Style="{StaticResource MaterialDesignHeadline6TextBlock}"

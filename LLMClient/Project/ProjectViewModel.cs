@@ -424,7 +424,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
-    private async Task<IResponse> GetResponse(ILLMChatClient arg1, IRequestItem arg2,
+    private async Task<IResponse> GetResponse(RequestOption requestOption,
         IRequestItem? insertViewItem = null,
         CancellationToken token = default)
     {
@@ -433,7 +433,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
             throw new NotSupportedException("未选择任务");
         }
 
-        return await SelectedSession.NewDefaultResponse(arg1, arg2, insertViewItem, token);
+        return await SelectedSession.NewDefaultResponse(requestOption, insertViewItem, token);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

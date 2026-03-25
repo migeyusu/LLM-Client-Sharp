@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Reflection;
 using System.Text;
 using System.Windows.Input;
 using LLMClient.Abstraction;
@@ -15,10 +16,26 @@ using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using LLMClient.Agent;
+using LLMClient.Agent.MiniSWE;
 
 namespace LLMClient.Dialog;
-public delegate Task<IResponse> GetResponseHandler(ILLMChatClient client, IRequestItem request,
+
+public class RequestOption
+{
+    public required ILLMChatClient DefaultClient { get; init; }
+
+    public required IRequestItem RequestItem { get; init; }
+
+    public AgentDescriptor? Agent { get; set; }
+
+    public bool UseAgent { get; set; }
+}
+
+public delegate Task<IResponse> GetResponseHandler(RequestOption request,
     IRequestItem? insertBefore, CancellationToken token);
+
+public record AgentDescriptor(string Name, Type Type);
 
 public class RequesterViewModel : BaseViewModel
 {
@@ -33,8 +50,8 @@ public class RequesterViewModel : BaseViewModel
     {
         try
         {
-            var requestViewItem = await this.NewRequest();
-            if (requestViewItem == null)
+            var request = await this.CreateRequest();
+            if (request == null)
             {
                 return;
             }
@@ -43,7 +60,13 @@ public class RequesterViewModel : BaseViewModel
             using (_tokenSource = new CancellationTokenSource())
             {
                 var completedResult =
-                    await _getResponse.Invoke(this.DefaultClient, requestViewItem, null, _tokenSource.Token);
+                    await _getResponse.Invoke(new RequestOption()
+                    {
+                        Agent = this.SelectedAgent,
+                        DefaultClient = DefaultClient,
+                        RequestItem = request,
+                        UseAgent = this.IsAgentMode
+                    }, null, _tokenSource.Token);
                 OnRequestCompleted(completedResult);
                 if (!completedResult.IsInterrupt)
                 {
@@ -114,19 +137,17 @@ public class RequesterViewModel : BaseViewModel
 
     //rag有两种利用模式：search和plugin模式，search模式由手动调用，可产生结果并入上下文；plugin由llm驱动调用
 
-    private IList<SelectableViewModel<IRagSource>> _ragSources = Array.Empty<SelectableViewModel<IRagSource>>();
-
     //不需要持久化
     public IList<SelectableViewModel<IRagSource>> RagSources
     {
-        get => _ragSources;
+        get;
         set
         {
-            if (Equals(value, _ragSources)) return;
-            _ragSources = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = Array.Empty<SelectableViewModel<IRagSource>>();
 
     public void NotifyRagSelection()
     {
@@ -237,6 +258,34 @@ public class RequesterViewModel : BaseViewModel
 
     public IFunctionGroupSource? FunctionGroupSource { get; set; }
 
+    private bool _isAgentMode;
+
+    public bool IsAgentMode
+    {
+        get => _isAgentMode;
+        set
+        {
+            if (value == _isAgentMode) return;
+            _isAgentMode = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public List<AgentDescriptor> AvailableAgents { get; } = [];
+
+    private AgentDescriptor? _selectedAgent;
+
+    public AgentDescriptor? SelectedAgent
+    {
+        get => _selectedAgent;
+        set
+        {
+            if (Equals(value, _selectedAgent)) return;
+            _selectedAgent = value;
+            OnPropertyChanged();
+        }
+    }
+
     #endregion
 
     private readonly GetResponseHandler _getResponse;
@@ -262,6 +311,20 @@ public class RequesterViewModel : BaseViewModel
         _ragSourceCollection = ragSourceCollection;
         _tokensCounter = tokensCounter;
         this.BindClient(modelClient);
+
+        // Initialize agents
+        var agentTypes = new[] { typeof(MiniSweAgent), typeof(TestAgent) }; /*AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(s => s.GetTypes())
+            .Where(p => typeof(IAgent).IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);*/
+
+        foreach (var type in agentTypes)
+        {
+            var description = type.GetCustomAttribute<DescriptionAttribute>()?.Description ?? type.Name;
+            AvailableAgents.Add(new AgentDescriptor(description, type));
+        }
+
+        SelectedAgent = AvailableAgents.FirstOrDefault();
+
         CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
         AddImageCommand = new ActionCommand(_ =>
         {
@@ -356,13 +419,18 @@ public class RequesterViewModel : BaseViewModel
     public async void Summarize(IRequestItem? insertBefore = null)
     {
         IsNewResponding = true;
-        var summaryRequest = _summarizer.CreateRequest();
+        var summaryRequest = _summarizer.CreateContextSummarizeRequest();
         try
         {
             var summarizeModel = _options.CreateContextSummarizeClient() ?? this.DefaultClient;
             using (_tokenSource = new CancellationTokenSource())
             {
-                await _getResponse.Invoke(summarizeModel, summaryRequest, insertBefore, _tokenSource.Token);
+                await _getResponse.Invoke(new RequestOption()
+                {
+                    DefaultClient = summarizeModel,
+                    UseAgent = false,
+                    RequestItem = summaryRequest
+                }, insertBefore, _tokenSource.Token);
             }
         }
         catch (Exception e)
@@ -376,7 +444,7 @@ public class RequesterViewModel : BaseViewModel
         }
     }
 
-    public async Task<RequestViewItem?> NewRequest(string additionalPrompt = "")
+    public async Task<RequestViewItem?> CreateRequest(string additionalPrompt = "")
     {
         if (!await PromptEditViewModel.ApplyAndCheck())
         {
@@ -410,8 +478,8 @@ public class RequesterViewModel : BaseViewModel
             SearchOption = SearchConfig.GetUserSearchOption(),
             RagSources = ragSources.Length > 0 ? ragSources : null,
             CallEngineType = this.FunctionTreeSelector.EngineType ??
-                         this.FunctionTreeSelector.SelectableCallEngineTypes.FirstOrDefault(),
-            IsDebugMode = this.IsDebugMode
+                             this.FunctionTreeSelector.SelectableCallEngineTypes.FirstOrDefault(),
+            IsDebugMode = this.IsDebugMode,
         };
         await requestViewItem.EnsureInitializeAsync();
         return requestViewItem;

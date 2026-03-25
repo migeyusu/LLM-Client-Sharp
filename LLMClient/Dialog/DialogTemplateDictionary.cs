@@ -14,9 +14,9 @@ public partial class DialogTemplateDictionary : ResourceDictionary
     {
         if (sender is PopupBox popupBox)
         {
-            if (popupBox is { DataContext: ParallelResponseViewItem multiResponseViewItem, PopupContent: DialogGraphViewModel graphViewModel })
+            if (popupBox is { DataContext: IResponseItem responseItem, PopupContent: DialogGraphViewModel graphViewModel })
             {
-                graphViewModel.LoadTree(multiResponseViewItem);
+                graphViewModel.LoadTree(responseItem);
             }
         }
     }

@@ -49,7 +49,7 @@ public class DialogMappingProfile : Profile
                 var client = src.ChatClient != null
                     ? ctx.Mapper.Map<ILLMChatClient>(src.ChatClient)
                     : EmptyLlmModelClient.Instance;
-                return new MiniSweAgent(config, client);
+                return new MiniSweAgent(client);
             });
 
         CreateMap<IAIContent, AIContent>().IncludeAllDerived();
@@ -99,7 +99,7 @@ public class DialogMappingProfile : Profile
             .Include<SummaryRequestViewItem, SummaryRequestPersistItem>()
             .Include<EraseViewItem, ErasePersistItem>()
             .Include<ParallelResponseViewItem, ParallelResponsePersisItem>()
-            .Include<LinearHistoryResponseViewItem, LinearHistoryResponsePersistItem>();
+            .Include<LinearResponseViewItem, LinearHistoryResponsePersistItem>();
 
         CreateMap<RequestViewItem, RequestPersistItem>()
             .IncludeBase<IDialogItem, IDialogPersistItem>();
@@ -110,7 +110,7 @@ public class DialogMappingProfile : Profile
         CreateMap<ParallelResponseViewItem, ParallelResponsePersisItem>()
             .IncludeBase<IDialogItem, IDialogPersistItem>()
             .ForMember(item => item.ResponseItems, opt => opt.MapFrom(item => item.Items));
-        CreateMap<LinearHistoryResponseViewItem, LinearHistoryResponsePersistItem>()
+        CreateMap<LinearResponseViewItem, LinearHistoryResponsePersistItem>()
             .IncludeBase<IDialogItem, IDialogPersistItem>();
 
         //po -> vm
@@ -119,7 +119,7 @@ public class DialogMappingProfile : Profile
             .Include<SummaryRequestPersistItem, SummaryRequestViewItem>()
             .Include<ErasePersistItem, EraseViewItem>()
             .Include<ParallelResponsePersisItem, ParallelResponseViewItem>()
-            .Include<LinearHistoryResponsePersistItem, LinearHistoryResponseViewItem>();
+            .Include<LinearHistoryResponsePersistItem, LinearResponseViewItem>();
 
         CreateMap<RequestPersistItem, RequestViewItem>()
             .ConstructUsing((item, context) =>
@@ -162,7 +162,7 @@ public class DialogMappingProfile : Profile
                     responseViewItems.Add(item);
                 }
             });
-        CreateMap<LinearHistoryResponsePersistItem, LinearHistoryResponseViewItem>()
+        CreateMap<LinearHistoryResponsePersistItem, LinearResponseViewItem>()
             .IncludeBase<IDialogPersistItem, IDialogItem>()
             .ConstructUsing((source, context) =>
             {
@@ -176,7 +176,7 @@ public class DialogMappingProfile : Profile
                 var agent = source.Agent != null
                     ? context.Mapper.Map<IAgent>(source.Agent)
                     : null;
-                return new LinearHistoryResponseViewItem(parentViewModel, agent);
+                return new LinearResponseViewItem(parentViewModel, agent);
             })
             .AfterMap((source, destination, context) =>
             {

@@ -15,7 +15,9 @@
                     xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
                     xmlns:render="clr-namespace:LLMClient.Component.Render"
                     xmlns:extension="clr-namespace:LLMClient.Component.Extension"
-                    xmlns:abstraction="clr-namespace:LLMClient.Abstraction">
+                    xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
+                    xmlns:miniSwe="clr-namespace:LLMClient.Agent.MiniSWE"
+                    xmlns:agent="clr-namespace:LLMClient.Agent">
     <Style x:Key="SmallIconButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignIconButton}">
@@ -384,29 +386,11 @@
                                             Margin="3"
                                             ToolTipService.InitialShowDelay="0"
                                             ToolTip="{Binding Model.Endpoint.DisplayName,Mode=OneTime}">
-                                    <Button Width="32"
-                                            Height="32"
-                                            Padding="0"
-                                            Margin="-10,0,6,0"
+                                    <Button Margin="-10,0,6,0"
                                             VerticalAlignment="Center"
                                             Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                             Command="{Binding CancelCommand}"
-                                            Style="{StaticResource MaterialDesignIconButton}">
-                                        <Grid>
-                                            <ProgressBar IsIndeterminate="True"
-                                                         Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
-                                                         Width="26"
-                                                         Height="26"
-                                                         Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                                         Value="0" />
-                                            <materialDesign:PackIcon Width="17"
-                                                                     Height="17"
-                                                                     Kind="Stop"
-                                                                     Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
-                                                                     VerticalAlignment="Center"
-                                                                     HorizontalAlignment="Center" />
-                                        </Grid>
-                                    </Button>
+                                            Style="{StaticResource ResponseCancelButtonStyle}" />
                                     <Image VerticalAlignment="Center"
                                            RenderOptions.BitmapScalingMode="HighQuality"
                                            Source="{Binding Model.Icon.CurrentSource,Mode=OneWay}"
@@ -418,7 +402,7 @@
                                                MaxWidth="200"
                                                TextTrimming="CharacterEllipsis"
                                                Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
-                                    <materialDesign:PackIcon Kind="ExclamationThick"
+                                    <materialDesign:PackIcon Kind="Exclamation"
                                                              Foreground="Red"
                                                              Height="30"
                                                              Width="30"
@@ -470,9 +454,10 @@
                                           Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                           Command="{Binding ClearOthersCommand}" />
                                 <!--x:Static models:MultiResponseViewItem.RebaseCommand-->
-                                <MenuItem Header="查看日志"
+                                <MenuItem Header="查看响应日志"
                                           Command="{x:Static models:ClientResponseViewItem.ShowTempResponseCommand}"
-                                          CommandParameter="{Binding AcceptedResponse,Mode=OneWay}" />
+                                          CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
+                                          Icon="{materialDesign:PackIcon Kind=History}" />
                                 <MenuItem Header="标记为有效回复"
                                           IsCheckable="True"
                                           IsChecked="{Binding AcceptedResponse.IsManualValid,Mode=TwoWay}"
@@ -564,7 +549,7 @@
                               Margin="6,0"
                               Command="{x:Static models:ClientResponseViewItem.SetAsAvailableCommand}"
                               CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
-                              ToolTip="通过将当前回复设置为在上下文中有效，可以跳过一些回复，减少上下文的长度"
+                              ToolTip="通过将当前回复设置为在上下文中无效，可以跳过一些交互，减少上下文的长度"
                               IsChecked="{Binding AcceptedResponse.IsAvailableInContext,Mode=OneWay}">
                         参与上下文
                     </CheckBox>
@@ -608,7 +593,213 @@
             </StackPanel>
         </StackPanel>
     </DataTemplate>
+    <DataTemplate x:Key="RawResponseItemTemplate"
+                  DataType="{x:Type models:RawResponseViewItem}">
+        <Grid Margin="0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <materialDesign:PackIcon Grid.Column="0"
+                                     Width="20"
+                                     Height="20"
+                                     Margin="10,10,6,0"
+                                     VerticalAlignment="Top">
+                <materialDesign:PackIcon.Style>
+                    <Style TargetType="{x:Type materialDesign:PackIcon}">
+                        <Setter Property="Kind"
+                                Value="Check" />
+                        <Setter Property="Foreground"
+                                Value="Green" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
+                                         Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsInterrupt,Mode=OneWay}">
+                                <Setter Property="Kind"
+                                        Value="Close" />
+                                <Setter Property="Foreground"
+                                        Value="Red" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </materialDesign:PackIcon.Style>
+            </materialDesign:PackIcon>
+            <customControl:FlowDocumentScrollViewerEx Grid.Row="0"
+                                                      Grid.Column="1"
+                                                      FontFamily="Segoe UI Emoji"
+                                                      BorderThickness="0"
+                                                      SafeDocument="{Binding FullDocument,Mode=OneWay}"
+                                                      Style="{StaticResource ExFlowDocumentScrollViewerStyle}" />
+            <TextBox Grid.Row="1" 
+                     Grid.Column="0"
+                     Grid.ColumnSpan="2"
+                     IsReadOnly="True"
+                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                     BorderThickness="0"
+                     Text="{Binding ErrorMessage,Mode=OneWay}"
+                     TextWrapping="Wrap"
+                     Foreground="Red"
+                     Padding="10"
+                     Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+        </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="LinearHistoryResponseViewItemTemplate"
+                  DataType="{x:Type models:LinearResponseViewItem}">
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <materialDesign:Chip Padding="12,0">
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <Button Margin="0,0,6,0"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Command="{Binding CancelCommand}"
+                                Style="{StaticResource ResponseCancelButtonStyle}" />
+                        <ContentPresenter Content="{Binding Agent,Mode=OneTime}">
+                            <ContentPresenter.ContentTemplateSelector>
+                                <component:TypeBasedDataTemplateSelector>
+                                    <component:DataTemplateTypePair>
+                                        <DataTemplate DataType="{x:Type miniSwe:MiniSweAgent}">
+                                            <StackPanel Orientation="Horizontal"
+                                                        ToolTipService.InitialShowDelay="0"
+                                                        ToolTip="{Binding ChatClient.Endpoint.DisplayName,Mode=OneTime}">
+                                                <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                           VerticalAlignment="Center"
+                                                           Text="mini-SWE"
+                                                           FontWeight="Black" />
+                                                <Image VerticalAlignment="Center"
+                                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                                       Margin="6,0,0,0"
+                                                       Source="{Binding ChatClient.Model.Icon.CurrentSource,Mode=OneWay}"
+                                                       Width="26"
+                                                       Height="26" />
+                                                <TextBlock Text="{Binding ChatClient.Name,Mode=OneTime}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="6,0,0,0"
+                                                           MaxWidth="200"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </component:DataTemplateTypePair>
+                                    <component:DataTemplateTypePair>
+                                        <DataTemplate DataType="{x:Type agent:TestAgent}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                           VerticalAlignment="Center"
+                                                           Text="test-agent"
+                                                           FontWeight="Black" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </component:DataTemplateTypePair>
+                                </component:TypeBasedDataTemplateSelector>
+                            </ContentPresenter.ContentTemplateSelector>
+                        </ContentPresenter>
+                        <materialDesign:PackIcon Kind="Exclamation"
+                                                 Foreground="Red"
+                                                 Height="30"
+                                                 Width="30"
+                                                 VerticalAlignment="Center"
+                                                 Margin="-5,0"
+                                                 ToolTip="当前回复有错误，将不加入对话上下文"
+                                                 Visibility="{Binding IsAvailableInContext,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
+                    </StackPanel>
+                </materialDesign:Chip>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal">
+                    <Menu VerticalAlignment="Center"
+                          Margin="6,0,0,0">
+                        <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert,Size=18}"
+                                  Width="18"
+                                  Height="45"
+                                  Padding="0">
+                            <MenuItem Header="标记为有效回复"
+                                      IsCheckable="True"
+                                      IsChecked="{Binding IsManualValid,Mode=TwoWay}"
+                                      Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                        </MenuItem>
+                    </Menu>
+                    <materialDesign:PopupBox Padding="4,0"
+                                             StaysOpen="True"
+                                             PopupUniformCornerRadius="8"
+                                             VerticalAlignment="Center"
+                                             ToolTip="分支导航"
+                                             Margin="10,0,0,0"
+                                             Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                             ToggleContent="{materialDesign:PackIcon Kind=DirectionsFork,Size=20}"
+                                             Style="{StaticResource MaterialDesignToolPopupBox}"
+                                             Opened="ForkNavigation_PopupBox_OnOpened"
+                                             PopupContent="{Binding ParentSession.SharedGraphViewModel,Mode=OneTime}"
+                                             Visibility="{Binding HasFork,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <materialDesign:PopupBox.PopupContentTemplate>
+                            <DataTemplate DataType="{x:Type controls:DialogGraphViewModel}">
+                                <controls:DialogGraphControl DataContext="{Binding}"
+                                                             MaxHeight="800"
+                                                             MaxWidth="600" />
+                            </DataTemplate>
+                        </materialDesign:PopupBox.PopupContentTemplate>
+                    </materialDesign:PopupBox>
+                    <Button ToolTip="当前设为分支Head"
+                            Margin="6,0,0,0"
+                            Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type dialog:SessionView}},Path=DataContext.SetLeafCommand}"
+                            CommandParameter="{Binding}"
+                            Content="{materialDesign:PackIcon SourceBranchPlus,Size=20}"
+                            Style="{StaticResource SmallIconButtonStyle}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="16,0,0,0">
+                    <CheckBox VerticalAlignment="Center"
+                              Margin="6,0"
+                              Command="{Binding SetAsAvailableCommand}"
+                              ToolTip="通过将当前回复设置为在上下文中无效，可以跳过一些交互，减少上下文的长度"
+                              IsChecked="{Binding IsAvailableInContext,Mode=OneWay}">
+                        参与上下文
+                    </CheckBox>
+                </StackPanel>
+            </Grid>
+
+            <materialDesign:Card Padding="16"
+                                 UniformCornerRadius="8"
+                                 HorizontalAlignment="Stretch"
+                                 BorderThickness="0"
+                                 Style="{StaticResource MaterialDesignOutlinedCard}">
+                <StackPanel>
+                    <ItemsControl ItemsSource="{Binding Items}"
+                                  ItemTemplate="{StaticResource RawResponseItemTemplate}"
+                                  ItemsPanel="{StaticResource VerticalItemsPanelTemplate}" />
+                    <customControl:MarkdownTextBlock Source="{Binding History,Mode=OneTime}"
+                                                     MaxHeight="300" />
+                    <ItemsControl ItemsSource="{Binding PermissionViewModels}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type dialog:AsyncPermissionViewModel}">
+                                <Expander Style="{StaticResource AsyncPermissionExpanderStyle}"
+                                          Content="{Binding}"
+                                          Header="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </materialDesign:Card>
+        </StackPanel>
+    </DataTemplate>
+
     <component:TypeBasedDataTemplateSelector x:Key="DialogTemplateSelector">
+        <component:DataTemplateTypePair Template="{StaticResource LinearHistoryResponseViewItemTemplate}" />
         <component:DataTemplateTypePair Template="{StaticResource DefaultRequestViewItemDataTemplate}" />
         <component:DataTemplateTypePair Template="{StaticResource MultiResponseViewItemDataTemplate}" />
         <component:DataTemplateTypePair>

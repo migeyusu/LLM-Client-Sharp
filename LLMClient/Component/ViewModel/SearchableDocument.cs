@@ -5,7 +5,7 @@ namespace LLMClient.Component.ViewModel;
 
 public class SearchableDocument : BaseViewModel
 {
-    public string RawText { get; }
+    private string _rawText;
 
     private readonly List<TextRange> _foundTextRanges = [];
 
@@ -34,18 +34,30 @@ public class SearchableDocument : BaseViewModel
     {
         //从flow文档中获取原始文本
         Document = document;
-        RawText = new TextRange(document.ContentStart, document.ContentEnd).Text;
+        _rawText = new TextRange(document.ContentStart, document.ContentEnd).Text;
     }
 
     /// <summary>
-    /// lazy search
+    /// 当doc内容发生了变化时触发
+    /// </summary>
+    public void OnDocumentRefresh()
+    {
+        _rawText = new TextRange(Document.ContentStart, Document.ContentEnd).Text;
+        if (!string.IsNullOrEmpty(_cachedSearchText))
+        {
+            ApplySearch(_cachedSearchText);
+        }
+    }
+
+    /// <summary>
+    /// lazy search, search text but not highlight
     /// </summary>
     /// <param name="searchText"></param>
     public void ApplySearch(string? searchText)
     {
         _cachedSearchText = searchText;
         HasMatched = !string.IsNullOrEmpty(searchText) &&
-                     RawText.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+                     _rawText.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         _isSearchApplied = !HasMatched;
         if (_foundTextRanges.Count > 0)
         {

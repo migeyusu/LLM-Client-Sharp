@@ -504,6 +504,7 @@
         <Resource Include="Resources\Images\llm\vertexai.png" />
         <None Remove="Resources\Images\llm\modelscope.png" />
         <Resource Include="Resources\Images\llm\modelscope.png" />
+        <Resource Include="smart_toy.ico" />
     </ItemGroup>
 
     <ItemGroup>

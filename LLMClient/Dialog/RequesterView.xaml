@@ -48,7 +48,7 @@
                               MinHeight="40"
                               AllowDrop="True"
                               x:Name="PromptEditor"
-                              IsKeyboardFocusWithinChanged="PromptEditor_OnLostKeyboardFocus"/>
+                              IsKeyboardFocusWithinChanged="PromptEditor_OnLostKeyboardFocus" />
             <Border Grid.Row="1"
                     Background="{DynamicResource MaterialDesignTextFieldBoxBackground}">
                 <StackPanel Margin="8,0">
@@ -271,7 +271,19 @@
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Bottom">
+                            <!--agent selection-->
+                            <ComboBox ItemsSource="{Binding AvailableAgents}"
+                                      DisplayMemberPath="Name"
+                                      Visibility="{Binding IsAgentMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                      SelectedItem="{Binding SelectedAgent}"
+                                      ToolTip="Select Agent"
+                                      Width="120"
+                                      VerticalAlignment="Center"
+                                      Padding="16,8"
+                                      Margin="16,0,0,0"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}" />
                             <customControl:ModelButton VerticalAlignment="Center"
+                                                       Margin="16,0,0,0"
                                                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                                        CommandParameter="{Binding DefaultClient,Mode=OneWay}"
                                                        ChangeModelEnable="True"
@@ -282,10 +294,18 @@
                                     Height="30"
                                     Content="安全黏贴"
                                     Click="TestPaste_OnClick"/>-->
-                            <TextBlock Text="{Binding EstimatedTokens,Mode=OneWay,StringFormat=Estimated Tokens:{0}}"
+                            <TextBlock TextWrapping="Wrap"
+                                       TextTrimming="CharacterEllipsis"
                                        VerticalAlignment="Center"
                                        Margin="16,0,0,0"
-                                       Style="{StaticResource MaterialDesignOverlineTextBlock}" />
+                                       TextAlignment="Center"
+                                       Style="{StaticResource MaterialDesignOverlineTextBlock}">
+                                <Run
+                                    Text="{Binding EstimatedTokens,Mode=OneWay,StringFormat={}{0},Converter={x:Static converters:SnapConverters.FluentTokensToStringConverter}}"
+                                    FontWeight="ExtraBold" />
+                                <LineBreak />
+                                <Run>Estimated Tokens</Run>
+                            </TextBlock>
                             <Menu VerticalAlignment="Center"
                                   Margin="6,0,0,0">
                                 <MenuItem Icon="{materialDesign:PackIcon Kind=MoreVert,Size=18}"
@@ -302,6 +322,10 @@
                                               IsCheckable="True"
                                               materialDesign:CheckBoxAssist.CheckBoxSize="30"
                                               IsChecked="{Binding IsDebugMode,Mode=TwoWay}" />
+                                    <MenuItem Header="Agent Mode"
+                                              IsCheckable="True"
+                                              materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                                              IsChecked="{Binding IsAgentMode,Mode=TwoWay}" />
                                 </MenuItem>
                             </Menu>
                             <Button Command="{Binding CancelLastCommand}"

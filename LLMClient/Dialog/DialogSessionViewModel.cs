@@ -11,10 +11,14 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog.Controls;
 using LLMClient.Dialog.Models;
+using LLMClient.Agent;
+using LLMClient.Agent.MiniSWE;
 using LLMClient.ToolCall;
-using MaterialDesignThemes.Wpf;
+using LLMClient.Endpoints;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
+using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 
@@ -30,9 +34,9 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     {
         get
         {
-            var textContent = DialogItems.OfType<ParallelResponseViewItem>()
+            var textContent = DialogItems.OfType<RequestViewItem>()
                 .FirstOrDefault(item => item.IsAvailableInContext)
-                ?.AcceptedResponse?.RawTextContent;
+                ?.RawTextMessage;
             return string.IsNullOrEmpty(textContent)
                 ? null
                 : textContent?.Substring(0, int.Min(20, textContent.Length));
@@ -94,7 +98,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region scroll
 
-    public ParallelResponseViewItem? CurrentResponseViewItem
+    public ParallelResponseViewItem? CurrentParallelResponseViewItem
     {
         get;
         set
@@ -118,7 +122,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 viewItem.SearchableDocument?.EnsureSearch();
             }
 
-            CurrentResponseViewItem = value as ParallelResponseViewItem;
+            CurrentParallelResponseViewItem = value as ParallelResponseViewItem;
         }
     }
 
@@ -282,7 +286,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public bool IsNodeSelectable(IDialogItem item)
     {
-        return item is ParallelResponseViewItem;
+        return item is IResponseItem;
     }
 
     public IReadOnlyList<IDialogItem> DialogItems
@@ -370,7 +374,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         //检查leaf可达性
         if (!CurrentLeaf.CanReachRoot())
         {
-            CurrentLeaf = preResponse;
+            CurrentLeaf = previousItem;
         }
         else
         {
@@ -462,7 +466,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
         bool IsRunning(IDialogItem item)
         {
-            return item is ParallelResponseViewItem { IsResponding: true } || item.Children.Any(IsRunning);
+            return item is IResponseItem { IsResponding: true } || item.Children.Any(IsRunning);
         }
     }
 
@@ -479,7 +483,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
             try
             {
-                if (CurrentLeaf is ParallelResponseViewItem responseViewItem)
+                if (CurrentLeaf is IResponseItem responseViewItem)
                 {
                     return responseViewItem.GetChatHistory().Append(CurrentLeaf).Sum(item => item.Tokens);
                 }
@@ -510,16 +514,33 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         this.TotalPrice += response.Price ?? 0;
     }
 
-    public async Task<IResponse> NewDefaultResponse(ILLMChatClient client, IRequestItem requestViewItem,
+
+    public async Task<IResponse> NewDefaultResponse(RequestOption option,
         IRequestItem? insertBefore = null, CancellationToken token = default)
     {
+        var client = option.DefaultClient;
+        var requestViewItem = option.RequestItem;
+        if (option.UseAgent)
+        {
+            var agentType = option.Agent?.Type ?? throw new InvalidOperationException("未指定Agent类型");
+            return await ExecuteAgentAsync(client, requestViewItem,
+                agentType, insertBefore, token);
+        }
+
         var multiResponseViewItem = new ParallelResponseViewItem(this)
             { InteractionId = requestViewItem.InteractionId };
+        InsertResponseItem(requestViewItem, insertBefore, multiResponseViewItem);
+
+        return await multiResponseViewItem.NewResponse(client, token);
+    }
+
+    private void InsertResponseItem(IRequestItem requestViewItem, IRequestItem? insertBefore, IDialogItem responseItem)
+    {
         if (insertBefore == null)
         {
             this.CurrentLeaf.AppendChild(requestViewItem)
-                .AppendChild(multiResponseViewItem);
-            this.CurrentLeaf = multiResponseViewItem;
+                .AppendChild(responseItem);
+            this.CurrentLeaf = responseItem;
         }
         else
         {
@@ -531,16 +552,37 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
             previousItem.RemoveChild(insertBefore);
             previousItem.AppendChild(requestViewItem)
-                .AppendChild(multiResponseViewItem)
+                .AppendChild(responseItem)
                 .AppendChild(insertBefore);
             RebuildLinearItems();
         }
 
-        this.ScrollViewItem = multiResponseViewItem;
-        return await multiResponseViewItem.NewResponse(client, token);
+        this.ScrollViewItem = responseItem;
     }
 
-    public void ForkPreTask(ParallelResponseViewItem dialogViewItem)
+    private async Task<IResponse> ExecuteAgentAsync(ILLMChatClient client, IRequestItem requestViewItem, Type agentType,
+        IRequestItem? insertBefore, CancellationToken token)
+    {
+        IAgent agent;
+        if (agentType == typeof(MiniSweAgent))
+        {
+            agent = new MiniSweAgent(client);
+        }
+        else
+        {
+            agent = (IAgent)Activator.CreateInstance(agentType)!;
+        }
+
+        var wrapper = new LinearResponseViewItem(this, agent)
+        {
+            InteractionId = requestViewItem.InteractionId
+        };
+        InsertResponseItem(requestViewItem, insertBefore, wrapper);
+
+        return await wrapper.ProcessAsync(this, token);
+    }
+
+    public void ForkPreTask(IResponseItem dialogViewItem)
     {
         CurrentLeaf = dialogViewItem;
         MessageEventBus.Publish("您已创建新分支");
@@ -577,7 +619,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                     MessageBoxes.Error("无法打开对话路线图: " + e.Message);
                 }
             });
-        SetLeafCommand = new RelayCommand<ParallelResponseViewItem>(o =>
+        SetLeafCommand = new RelayCommand<IResponseItem>(o =>
         {
             if (o == null)
             {

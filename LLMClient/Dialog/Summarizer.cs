@@ -17,7 +17,7 @@ public class Summarizer
         _options = options;
     }
 
-    public async Task<string?> SummarizeTopicAsync(DialogSessionViewModel dialog, Duration duration)
+    public async Task<string?> SummarizeTopicAsync(ITextDialogSession dialog, Duration duration)
     {
         var client = _options.CreateSubjectSummarizeClient();
         if (client == null)
@@ -45,7 +45,7 @@ public class Summarizer
         }
     }
 
-    public SummaryRequestViewItem CreateRequest()
+    public SummaryRequestViewItem CreateContextSummarizeRequest()
     {
         return new SummaryRequestViewItem()
         {

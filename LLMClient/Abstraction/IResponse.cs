@@ -2,7 +2,6 @@
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
-using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Abstraction;
 

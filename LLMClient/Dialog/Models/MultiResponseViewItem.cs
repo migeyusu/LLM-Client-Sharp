@@ -21,6 +21,8 @@ public abstract class MultiResponseViewItem<T> : BaseDialogItem, IResponseItem
 
     public ObservableCollection<T> Items { get; }
 
+    public abstract bool IsResponding { get; protected set; }
+
     public override ChatRole Role => ChatRole.System;
 
     public MultiResponseViewItem(IEnumerable<T> items, DialogSessionViewModel parentSession)

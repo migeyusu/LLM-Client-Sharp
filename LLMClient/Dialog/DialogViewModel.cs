@@ -131,7 +131,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
     [
         nameof(ScrollViewItem),
         nameof(SearchText),
-        nameof(CurrentResponseViewItem),
+        nameof(CurrentParallelResponseViewItem),
         nameof(Shortcut)
     ];
 

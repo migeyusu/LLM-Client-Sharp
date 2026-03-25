@@ -291,9 +291,9 @@ public static class Extension
             {
                 yield break;
             }
-            else if (dialogViewItem is ParallelResponseViewItem multiResponseViewItem)
+            else if (dialogViewItem is IResponseItem multiResponseViewItem)
             {
-                if (multiResponseViewItem.AcceptedResponse?.IsResponding == true)
+                if (multiResponseViewItem.IsResponding == true)
                 {
                     throw new InvalidOperationException("无法生成包含正在响应的记录的历史");
                 }

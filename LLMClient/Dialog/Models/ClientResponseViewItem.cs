@@ -111,71 +111,25 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         o?.SwitchAvailableInContext();
     });
 
-    private FlowDocument? _tempDocument;
-
-    private FlowDocument? _fullResponseDocument;
-
-    private async Task<FlowDocument?> GetPreDocumentAsync()
+    private readonly Lazy<SearchableDocument> _lazyDocument = new(() =>
     {
-        if (this.IsResponding)
-        {
-            return _tempDocument;
-        }
-
-        if (_fullResponseDocument == null)
-        {
-            _fullResponseDocument = await CreateDocumentAsync(Messages, Annotations);
-        }
-
-        return _fullResponseDocument;
-    }
-
+        return new SearchableDocument(new FlowDocument());
+    });
+    
     public SearchableDocument? SearchableDocument
     {
         get
         {
             return GetAsyncProperty(async () =>
             {
-                var preDoc = await GetPreDocumentAsync();
-                return preDoc != null ? new SearchableDocument(preDoc) : null;
+                var document = _lazyDocument.Value;
+                await PopulateDocumentAsync(document.Document, Messages, Annotations);
+                document.OnDocumentRefresh();
+                return document;
             });
         }
     }
-
-    private string? _rawTextContent = null;
-
-    public string? RawTextContent
-    {
-        get
-        {
-            if (_rawTextContent == null)
-            {
-                if (Messages != null && Messages.Any())
-                {
-                    var sb = new StringBuilder();
-                    foreach (var message in Messages)
-                    {
-                        foreach (var messageContent in message.Contents)
-                        {
-                            if (messageContent is TextContent textContent)
-                            {
-                                sb.Append(textContent.Text);
-                            }
-                        }
-                    }
-
-                    _rawTextContent = sb.ToString();
-                }
-                else
-                {
-                    _rawTextContent = string.Empty;
-                }
-            }
-
-            return _rawTextContent;
-        }
-    }
-
+    
     /// <summary>
     /// 手动标记为有效 
     /// </summary>
@@ -194,20 +148,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     public ObservableCollection<string> ResponseBuffer { get; } = [];
 
     /// <summary>
-    /// 切换在上下文中的可用性
-    /// </summary>
-    public void SwitchAvailableInContext()
-    {
-        if (!IsManualValid && IsInterrupt)
-        {
-            MessageEventBus.Publish("无法切换中断的响应，请先标记为有效");
-            return;
-        }
-
-        IsAvailableInContextSwitch = !IsAvailableInContextSwitch;
-    }
-
-    /// <summary>
     /// 可以通过手动控制实现叠加的上下文可用性
     /// </summary>
     public bool IsAvailableInContextSwitch { get; set; } = true;
@@ -217,18 +157,14 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         get { return (IsManualValid || !IsInterrupt) && IsAvailableInContextSwitch; }
     }
 
-    public ClientResponseViewItem(ILLMChatClient client)
-    {
-        Client = client;
-    }
-
     #region responding
 
-    public ICommand CancelCommand => new ActionCommand(o => { RequestTokenSource?.Cancel(); });
+    public ICommand CancelCommand { get; }
 
     public CancellationTokenSource? RequestTokenSource { get; private set; }
 
-    public virtual async Task<ChatCallResult> Process(DefaultDialogContextBuilder contextBuilder, CancellationToken token = default)
+    public virtual async Task<ChatCallResult> Process(DefaultDialogContextBuilder contextBuilder,
+        CancellationToken token = default)
     {
         var completedResult = ChatCallResult.Empty;
         try
@@ -243,18 +179,19 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 throw new InvalidOperationException("Client is busy");
             }
 
-            _fullResponseDocument = null;
             ErrorMessage = null;
-            _tempDocument = new FlowDocument();
             IsResponding = true;
-            InvalidateAsyncProperty(nameof(SearchableDocument));
+            this.Messages = [];
+            var searchableDocument = await WaitAsyncProperty<SearchableDocument>(nameof(SearchableDocument));
+            var flowDocument = searchableDocument.Document;
+            flowDocument.Blocks.Clear();
             _responseHistory.Clear();
             RequestTokenSource = token != CancellationToken.None
                 ? CancellationTokenSource.CreateLinkedTokenSource(token)
                 : new CancellationTokenSource();
             using (RequestTokenSource)
             {
-                await using (var interactor = new ResponseViewItemInteractor(_tempDocument, this))
+                await using (var interactor = new ResponseViewItemInteractor(flowDocument, this))
                 {
                     var requestContext = await contextBuilder.BuildAsync(Client.Model, token);
                     completedResult = await Client.SendRequest(requestContext, interactor,
@@ -267,14 +204,13 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         }
         catch (Exception exception)
         {
-            MessageBoxes.Error(exception.Message, "发送失败");
+            MessageBoxes.Error(exception.Message, "响应失败");
             this.ErrorMessage = exception.Message;
         }
         finally
         {
-            _tempDocument = null;
-            IsResponding = false;
             InvalidateAsyncProperty(nameof(SearchableDocument));
+            IsResponding = false;
         }
 
         return completedResult;
@@ -282,11 +218,30 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     #endregion
 
+    public ClientResponseViewItem(ILLMChatClient client)
+    {
+        Client = client;
+        CancelCommand = new ActionCommand(o => { RequestTokenSource?.Cancel(); });
+    }
+    
+    /// <summary>
+    /// 切换在上下文中的可用性
+    /// </summary>
+    public void SwitchAvailableInContext()
+    {
+        if (!IsManualValid && IsInterrupt)
+        {
+            MessageEventBus.Publish("无法切换中断的响应，请先标记为有效");
+            return;
+        }
+
+        IsAvailableInContextSwitch = !IsAvailableInContextSwitch;
+    }
+    
     public void TriggerTextContentUpdate()
     {
-        _fullResponseDocument = null;
-        _rawTextContent = null;
         InvalidateAsyncProperty(nameof(SearchableDocument));
+        RawTextContent = null;
         OnPropertyChanged(nameof(RawTextContent));
     }
 
@@ -316,10 +271,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             {
                 RendererExtensions.StreamParse(
                     _blockingCollection,
-                    (_, block) =>
-                    {
-                        Dispatch(() => _session.OnBlockClosed(block));
-                    });
+                    (_, block) => { Dispatch(() => _session.OnBlockClosed(block)); });
             });
 
             _outputAction = message =>

@@ -64,14 +64,14 @@ public class ComparableResponseViewItem : BaseViewModel
 {
     public double Width
     {
-        get => _width;
+        get;
         set
         {
-            if (Math.Abs(value - _width) < double.Epsilon) return;
-            _width = value;
+            if (Math.Abs(value - field) < double.Epsilon) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = 650d;
 
     public FlowDocument? FullDocument
     {
@@ -79,8 +79,6 @@ public class ComparableResponseViewItem : BaseViewModel
     }
 
     public ClientResponseViewItem RawItem { get; }
-
-    private double _width = 650d;
 
     public ComparableResponseViewItem(ClientResponseViewItem responseViewItem)
     {

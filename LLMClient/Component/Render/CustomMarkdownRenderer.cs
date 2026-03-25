@@ -75,6 +75,7 @@ public class CustomMarkdownRenderer : WpfRenderer
         return renderer;
     }
 
+
     public static CustomMarkdownRenderer NewRenderer(FlowDocument flowDocument, bool? enableTextMate = null,
         bool? editMode = null)
     {

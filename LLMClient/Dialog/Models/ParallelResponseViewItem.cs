@@ -35,9 +35,10 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
         AcceptedResponse?.TriggerTextContentUpdate();
     }
 
-    public bool IsResponding
+    public override bool IsResponding
     {
         get { return Items.Any(item => item.IsResponding); }
+        protected set { }
     }
 
     public bool HasAvailableMessage

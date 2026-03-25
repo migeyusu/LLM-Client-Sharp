@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
@@ -11,6 +12,7 @@ namespace LLMClient.Agent.MiniSWE;
 /// <summary>
 /// Mini-SWE-Agent 核心ReAct循环实现
 /// </summary>
+[Description("MiniSWE Agent")]
 public class MiniSweAgent : IAgent
 {
     public int CallCount { get; set; }
@@ -26,13 +28,14 @@ public class MiniSweAgent : IAgent
 
     public ILLMChatClient ChatClient { get; }
 
-    public MiniSweAgent(
-        MiniSweAgentConfig config, ILLMChatClient agent)
+    public MiniSweAgent(ILLMChatClient agent)
     {
-        Config = config;
+        this.Config = MiniSweAgentConfigLoader.LoadDefaultWindowsConfig();
         this.ChatClient = agent;
-        _toolProviders = [new WinCLIPlugin(), new FileSystemPlugin()];//todo: 配置地址
+        _toolProviders = [new WinCLIPlugin(), new FileSystemPlugin()]; //todo: 配置地址
     }
+
+    public string Name { get; } = "MiniSWE Agent";
 
     public async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
         IInvokeInteractor? interactor = null,

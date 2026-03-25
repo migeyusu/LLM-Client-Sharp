@@ -12,14 +12,9 @@ public class DialogItemEqualityComparer : IEqualityComparer<IDialogItem>
         if (x is null) return false;
         if (y is null) return false;
         if (x.GetType() != y.GetType()) return false;
-        if (x is RequestViewItem requestViewItem)
+        if (x is IInteractionItem interactionItem)
         {
-            return requestViewItem.InteractionId == ((RequestViewItem)y).InteractionId;
-        }
-
-        if (x is ParallelResponseViewItem multiResponseViewItem)
-        {
-            return multiResponseViewItem.InteractionId == ((ParallelResponseViewItem)y).InteractionId;
+            return interactionItem.InteractionId == ((IInteractionItem)y).InteractionId;
         }
 
         return x.GetHashCode() == y.GetHashCode();

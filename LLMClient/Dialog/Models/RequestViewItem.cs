@@ -93,7 +93,6 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
         }
     }
 
-
     public List<IAIFunctionGroup>? FunctionGroups { get; set; }
 
     public bool HasFunctions

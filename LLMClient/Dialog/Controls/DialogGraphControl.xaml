@@ -46,8 +46,8 @@
                                                 <RowDefinition />
                                             </Grid.RowDefinitions>
                                             <Button Style="{StaticResource ItemDeleteButtonStyle}"
-                                                    Command="Delete" 
-                                                    CommandParameter="{Binding}"/>
+                                                    Command="Delete"
+                                                    CommandParameter="{Binding}" />
                                             <TextBlock Grid.Row="0"
                                                        Text="{Binding Role,Mode=OneTime}"
                                                        HorizontalAlignment="Left"
@@ -72,6 +72,7 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition />
+                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
                                             <TextBlock Text="{Binding Role,Mode=OneTime}"
                                                        HorizontalAlignment="Left"
@@ -85,6 +86,15 @@
                                                        MaxHeight="300"
                                                        Style="{StaticResource MaterialDesignBody2TextBlock}"
                                                        LineHeight="20" />
+                                            <TextBox Grid.Row="2"
+                                                     IsReadOnly="True"
+                                                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                                     BorderThickness="0"
+                                                     Text="{Binding AcceptedResponse.ErrorMessage,Mode=OneTime}"
+                                                     TextWrapping="Wrap"
+                                                     Foreground="Red"
+                                                     Padding="10"
+                                                     Visibility="{Binding AcceptedResponse.IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                                             <materialDesign:PopupBox HorizontalAlignment="Right"
                                                                      Grid.Row="0"
                                                                      VerticalAlignment="Center"
@@ -99,6 +109,38 @@
                                                                Text="{Binding AcceptedResponse.RawTextContent,Mode=OneTime}" />
                                                 </ScrollViewer>
                                             </materialDesign:PopupBox>
+                                        </Grid>
+                                    </materialDesign:Card>
+                                </DataTemplate>
+                            </component:DataTemplateTypePair>
+                            <component:DataTemplateTypePair>
+                                <DataTemplate DataType="{x:Type models:LinearResponseViewItem}">
+                                    <materialDesign:Card>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="{Binding Agent.Name,Mode=OneTime}"
+                                                       HorizontalAlignment="Left"
+                                                       TextWrapping="NoWrap"
+                                                       Foreground="{Binding Role,Mode=OneTime,Converter={x:Static dialog:NavigationConverters.RoleToForeground}}"
+                                                       Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                                       FontWeight="Bold"
+                                                       Margin="0,0,0,10" />
+                                            <ItemsControl Grid.Row="1"
+                                                          ItemsSource="{Binding Items,Mode=OneTime}"
+                                                          DisplayMemberPath="RawTextContent" />
+                                            <TextBox Grid.Row="0"
+                                                     IsReadOnly="True"
+                                                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                                     HorizontalAlignment="Right"
+                                                     BorderThickness="0"
+                                                     Text="{Binding ErrorMessage,Mode=OneTime}"
+                                                     TextWrapping="Wrap"
+                                                     Foreground="Red"
+                                                     Padding="10"
+                                                     Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                                         </Grid>
                                     </materialDesign:Card>
                                 </DataTemplate>

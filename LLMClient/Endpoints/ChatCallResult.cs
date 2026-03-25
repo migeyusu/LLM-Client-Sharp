@@ -94,4 +94,62 @@ public class ChatCallResult : IResponse
     {
         return Messages?.Aggregate(string.Empty, (current, message) => current + message.Text);
     }
+
+    public static ChatCallResult operator +(ChatCallResult? left, ChatCallResult? right)
+    {
+        if (left is null || left == Empty) return right ?? Empty;
+        if (right is null || right == Empty) return left;
+
+        var usage = left.Usage != null || right.Usage != null
+            ? new UsageDetails
+            {
+                InputTokenCount = (left.Usage?.InputTokenCount ?? 0) + (right.Usage?.InputTokenCount ?? 0),
+                OutputTokenCount = (left.Usage?.OutputTokenCount ?? 0) + (right.Usage?.OutputTokenCount ?? 0),
+                TotalTokenCount = (left.Usage?.TotalTokenCount ?? 0) + (right.Usage?.TotalTokenCount ?? 0),
+            }
+            : null;
+
+        var result = new ChatCallResult
+        {
+            Usage = usage,
+            Latency = left.Latency, // Latency取第一个
+            Duration = left.Duration + right.Duration,
+            Exception = left.Exception ?? right.Exception, // Exception取存在的第一个
+            FinishReason = right.FinishReason ?? left.FinishReason, // FinishReason选最后一个
+            ValidCallTimes = left.ValidCallTimes + right.ValidCallTimes,
+            Price = (left.Price ?? 0) + (right.Price ?? 0),
+            Messages = left.Messages.Concat(right.Messages)
+                .ToList()
+        };
+
+        if (left.Annotations != null || right.Annotations != null)
+        {
+            var annotations = new List<ChatAnnotation>();
+            if (left.Annotations != null) annotations.AddRange(left.Annotations);
+            if (right.Annotations != null) annotations.AddRange(right.Annotations);
+            result.Annotations = annotations;
+        }
+
+        if (left.AdditionalProperties != null || right.AdditionalProperties != null)
+        {
+            result.AdditionalProperties = new AdditionalPropertiesDictionary();
+            if (left.AdditionalProperties != null)
+            {
+                foreach (var kvp in left.AdditionalProperties)
+                {
+                    result.AdditionalProperties[kvp.Key] = kvp.Value;
+                }
+            }
+
+            if (right.AdditionalProperties != null)
+            {
+                foreach (var kvp in right.AdditionalProperties)
+                {
+                    result.AdditionalProperties[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+
+        return result;
+    }
 }

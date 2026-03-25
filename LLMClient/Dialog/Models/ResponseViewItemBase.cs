@@ -111,7 +111,6 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             if (Equals(value, field)) return;
             field = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(TextContent));
         }
     } = [];
 
@@ -128,16 +127,62 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
     public IList<ChatAnnotation>? Annotations { get; set; }
 
-    protected static async Task<FlowDocument?> CreateDocumentAsync(IEnumerable<ChatMessage>? responseMessages,
+    public string? RawTextContent
+    {
+        get
+        {
+            if (field == null)
+            {
+                if (Messages != null && Messages.Any())
+                {
+                    var sb = new StringBuilder();
+                    foreach (var message in Messages)
+                    {
+                        foreach (var messageContent in message.Contents)
+                        {
+                            if (messageContent is TextContent textContent)
+                            {
+                                sb.Append(textContent.Text);
+                            }
+                        }
+                    }
+
+                    field = sb.ToString();
+                }
+                else
+                {
+                    field = string.Empty;
+                }
+            }
+
+            return field;
+        }
+        set
+        {
+            if (Equals(value, field)) return;
+            field = value;
+        }
+    } = null;
+
+
+    protected static async Task PopulateDocumentAsync(FlowDocument flowDocument,
+        IEnumerable<ChatMessage>? responseMessages,
         IList<ChatAnnotation>? annotations)
     {
         if (responseMessages == null)
         {
-            return null;
+            return;
         }
 
-        var resultDocument = new FlowDocument();
-        var renderer = CustomMarkdownRenderer.NewRenderer(resultDocument);
+        var chatMessages = responseMessages.ToArray();
+        if (chatMessages.Length == 0)
+        {
+            return;
+        }
+
+        flowDocument.Blocks.Clear();
+        //todo: 回收
+        var renderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
         if (annotations != null)
         {
             foreach (var annotation in annotations)
@@ -147,7 +192,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             }
         }
 
-        foreach (var message in responseMessages)
+        foreach (var message in chatMessages)
         {
             foreach (var content in message.Contents)
             {
@@ -183,12 +228,12 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                 }
             }
         }
-
-        return resultDocument;
     }
 
-    public Task<FlowDocument?> CreateFullResponseDocumentAsync()
+    public async Task<FlowDocument?> CreateFullResponseDocumentAsync()
     {
-        return CreateDocumentAsync(Messages, Annotations);
+        var flowDocument = new FlowDocument();
+        await PopulateDocumentAsync(flowDocument, Messages, Annotations);
+        return flowDocument;
     }
 }
