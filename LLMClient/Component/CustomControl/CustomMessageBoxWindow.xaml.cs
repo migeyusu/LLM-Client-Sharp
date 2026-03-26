@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using MaterialDesignThemes.Wpf;
 using System.Windows.Media;
-using System.Windows.Controls;
 using System.Windows.Input; // Added using directive for MouseButtonEventArgs and MouseButton
 
 namespace LLMClient.Component.CustomControl;
@@ -11,6 +10,11 @@ public partial class CustomMessageBoxWindow : Window
     public MessageBoxResult Result { get; private set; } = MessageBoxResult.None;
 
     public CustomMessageBoxWindow(string message, string caption, MessageBoxButton button, MessageBoxImage icon)
+        : this((object?)message, caption, button, icon)
+    {
+    }
+
+    public CustomMessageBoxWindow(object? content, string caption, MessageBoxButton button, MessageBoxImage icon)
     {
         InitializeComponent();
         
@@ -27,7 +31,7 @@ public partial class CustomMessageBoxWindow : Window
         
         this.Title = caption;
         this.TitleTextBlock.Text = caption;
-        this.MessageTextBlock.Text = message;
+        this.MessageContentPresenter.Content = content;
         ConfigureButtons(button);
         ConfigureIcon(icon);
     }

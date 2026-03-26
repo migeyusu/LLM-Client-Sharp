@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
@@ -24,6 +25,8 @@ public class ChatContext
 
     public bool ShowRequestJson { get; set; }
 
+    public bool AutoApproveAllInvocations { get; set; }
+
     public AdditionalPropertiesDictionary AdditionalObjects { get; }
 
     public List<AIContent> AdditionalFunctionCallResult { get; } = new List<AIContent>();
@@ -35,6 +38,21 @@ public class ChatContext
     public bool EnableSchemaCleaning { get; set; } = true;
 
     public ClientResult? Result { get; set; }
+
+    public static ChatContext CreateForRequest(RequestContext requestContext,
+        IInvokeInteractor? interactor,
+        AdditionalPropertiesDictionary? additionalObjects,
+        bool streaming,
+        ChatContext? parentContext = null)
+    {
+        return new ChatContext(interactor, additionalObjects)
+        {
+            Streaming = streaming,
+            ShowRequestJson = requestContext.ShowRequestJson,
+            AutoApproveAllInvocations = requestContext.AutoApproveAllInvocations ||
+                                        parentContext?.AutoApproveAllInvocations == true
+        };
+    }
 
     private static readonly PropertyInfo InternalChoicePropertyInfo =
         typeof(StreamingChatCompletionUpdate).GetProperty("InternalChoiceDelta",

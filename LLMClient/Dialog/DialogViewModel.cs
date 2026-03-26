@@ -55,13 +55,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
 #endif
         }
     }
-
-    public override string? Topic
-    {
-        get;
-        set { field = value ?? "新建会话"; }
-    }
-
+    
     private string? _userSystemPrompt;
 
     public string? UserSystemPrompt

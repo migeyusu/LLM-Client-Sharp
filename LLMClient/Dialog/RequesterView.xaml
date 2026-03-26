@@ -339,6 +339,11 @@
                                               IsCheckable="True"
                                               materialDesign:CheckBoxAssist.CheckBoxSize="30"
                                               IsChecked="{Binding IsDebugMode,Mode=TwoWay}" />
+                                    <MenuItem Header="自动放行全部命令确认"
+                                              ToolTip="启用后，本次请求过程中所有执行确认将默认直接放行，不再逐个弹窗确认。"
+                                              IsCheckable="True"
+                                              materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                                              IsChecked="{Binding AutoApproveAllInvocations,Mode=TwoWay}" />
                                     <MenuItem Header="Agent Mode"
                                               IsCheckable="True"
                                               materialDesign:CheckBoxAssist.CheckBoxSize="30"

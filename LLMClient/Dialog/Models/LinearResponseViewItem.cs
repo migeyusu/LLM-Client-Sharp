@@ -187,21 +187,13 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
         History.AddLine(message);
     }
 
-    public async Task<bool> WaitForPermission(string title, string message)
+    public Task<bool> WaitForPermission(string title, string message)
     {
-        var permissionViewModel = new AsyncPermissionViewModel() { Title = title, Content = message };
-        PermissionViewModels.Add(permissionViewModel);
-        var result = await permissionViewModel.Task;
-        PermissionViewModels.Remove(permissionViewModel);
-        return result;
+        return InvokePermissionDialog.RequestAsync(title, message);
     }
 
-    public async Task<bool> WaitForPermission(object content)
+    public Task<bool> WaitForPermission(object content)
     {
-        var vm = new AsyncPermissionViewModel { Content = content };
-        PermissionViewModels.Add(vm);
-        var result = await vm.Task;
-        PermissionViewModels.Remove(vm);
-        return result;
+        return InvokePermissionDialog.RequestAsync(content);
     }
 }

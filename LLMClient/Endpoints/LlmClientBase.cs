@@ -189,8 +189,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            var chatContext = new ChatContext(interactor, tempAdditionalProperties)
-                { Streaming = streaming, ShowRequestJson = requestContext.ShowRequestJson };
+            var parentContext = AsyncContextStore<ChatContext>.Current;
+            var chatContext = ChatContext.CreateForRequest(requestContext, interactor, tempAdditionalProperties,
+                streaming, parentContext);
             _durationStopwatch.Reset();
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {

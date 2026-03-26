@@ -12,5 +12,8 @@ public sealed class RequestContext
 
     public AdditionalPropertiesDictionary? TempAdditionalProperties { get; init; }
 
+    public bool AutoApproveAllInvocations { get; init; }
+
+
     public bool ShowRequestJson { get; set; }
 }

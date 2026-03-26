@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using System.Windows.Threading;
 
 namespace LLMClient.Component.CustomControl;
 
@@ -7,19 +6,24 @@ public class MessageBoxes
 {
     private static MessageBoxResult Show(string message, string caption, MessageBoxButton button, MessageBoxImage icon)
     {
+        return Show((object?)message, caption, button, icon);
+    }
+
+    private static MessageBoxResult Show(object? content, string caption, MessageBoxButton button, MessageBoxImage icon)
+    {
         if (CanUseCustomDialog())
         {
             var dispatcher = Application.Current!.Dispatcher;
             if (!dispatcher.CheckAccess())
             {
-                return dispatcher.Invoke(() => Show(message, caption, button, icon));
+                return dispatcher.Invoke(() => Show(content, caption, button, icon));
             }
-            var msgBox = new CustomMessageBoxWindow(message, caption, button, icon);
+            var msgBox = new CustomMessageBoxWindow(content, caption, button, icon);
             msgBox.ShowDialog();
             return msgBox.Result;
         }
 
-        return MessageBox.Show(message, caption, button, icon);
+        return MessageBox.Show(content?.ToString() ?? string.Empty, caption, button, icon);
     }
 
     private static bool CanUseCustomDialog()
@@ -62,6 +66,12 @@ public class MessageBoxes
     public static bool Question(string message, string caption = "Question")
     {
         return Show(message, caption, MessageBoxButton.YesNo, MessageBoxImage.Question)
+               == MessageBoxResult.Yes;
+    }
+
+    public static bool Question(object content, string caption = "Question")
+    {
+        return Show(content, caption, MessageBoxButton.YesNo, MessageBoxImage.Question)
                == MessageBoxResult.Yes;
     }
 }

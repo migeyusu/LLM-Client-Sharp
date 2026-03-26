@@ -20,4 +20,6 @@ public interface IChatRequest
     AdditionalPropertiesDictionary? TempAdditionalProperties { get; }
 
     bool IsDebugMode { get; }
+
+    bool AutoApproveAllInvocations { get; }
 }

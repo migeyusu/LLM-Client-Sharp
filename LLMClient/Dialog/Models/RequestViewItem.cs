@@ -41,6 +41,8 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
 
     public bool IsDebugMode { get; set; }
 
+    public bool AutoApproveAllInvocations { get; set; }
+
     public bool IsRawTextDisplayMode
     {
         get;

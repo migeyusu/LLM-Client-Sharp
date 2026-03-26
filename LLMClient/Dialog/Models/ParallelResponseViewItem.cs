@@ -194,7 +194,10 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
             this.ParentSession.IsDataChanged = true;
             OnPropertyChanged(nameof(IsMultiResponse));
         };
-        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.NewResponse(client.CreateClient()); })
+        SelectionPopup = new ModelSelectionPopupViewModel(client =>
+        {
+            this.NewResponse(client.CreateClient());
+        })
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };

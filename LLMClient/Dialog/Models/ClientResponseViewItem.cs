@@ -252,9 +252,9 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     }
 
 
+
     private class ResponseViewItemInteractor : BaseViewModel, IInvokeInteractor, IAsyncDisposable
     {
-        private readonly ClientResponseViewItem _responseViewItem;
         private readonly BlockingCollection<string> _blockingCollection = new();
         private readonly Task _task;
         private readonly StreamingRenderSession _session;
@@ -262,7 +262,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
         public ResponseViewItemInteractor(FlowDocument flowDocument, ClientResponseViewItem responseViewItem)
         {
-            _responseViewItem = responseViewItem;
             _session = new StreamingRenderSession(
                 flowDocument,
                 clearTail: () => Dispatch(() => responseViewItem.ResponseBuffer.Clear())
@@ -302,24 +301,14 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 : message + Environment.NewLine);
         }
 
-        public async Task<bool> WaitForPermission(string title, string message)
+        public Task<bool> WaitForPermission(string title, string message)
         {
-            var permissionViewModel = new AsyncPermissionViewModel() { Title = title, Content = message };
-            var permissionViewModels = _responseViewItem.PermissionViewModels;
-            permissionViewModels.Add(permissionViewModel);
-            var result = await permissionViewModel.Task;
-            permissionViewModels.Remove(permissionViewModel);
-            return result;
+            return InvokePermissionDialog.RequestAsync(title, message);
         }
 
-        public async Task<bool> WaitForPermission(object content)
+        public Task<bool> WaitForPermission(object content)
         {
-            var vm = new AsyncPermissionViewModel { Content = content };
-            var permissionViewModels = _responseViewItem.PermissionViewModels;
-            permissionViewModels.Add(vm);
-            var result = await vm.Task;
-            permissionViewModels.Remove(vm);
-            return result;
+            return InvokePermissionDialog.RequestAsync(content);
         }
 
         public async ValueTask DisposeAsync()

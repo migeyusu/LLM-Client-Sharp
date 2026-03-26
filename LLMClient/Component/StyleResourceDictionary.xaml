@@ -527,6 +527,55 @@
         </Setter>
     </Style>
 
+    <DataTemplate x:Key="DefaultInvokePermissionContentTemplate">
+        <TextBlock Text="{Binding Mode=OneTime}"
+                   TextWrapping="Wrap" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="ToolCallRequestTemplate"
+                  DataType="{x:Type toolCall:ToolCallRequestViewModel}">
+        <StackPanel>
+            <TextBlock FontWeight="Bold"
+                       Text="{Binding CallerClassName,Mode=OneTime,StringFormat=请求对象：{0}}" />
+            <TextBlock FontWeight="Bold"
+                       Text="{Binding CallerMethodName,Mode=OneTime,StringFormat=请求工具：{0}}" />
+            <TextBlock Text="{Binding Message,Mode=OneTime}"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="FileEditRequestTemplate"
+                  DataType="{x:Type toolCall:FileEditRequestViewModel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="10,0,10,5">
+                <TextBlock Text="{Binding Description}"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,5" />
+                <TextBlock Text="{Binding Path, StringFormat='Path: {0}'}"
+                           Foreground="Gray"
+                           TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
+            <controls:DiffViewer Grid.Row="1"
+                                 OldText="{Binding OriginalContent}"
+                                 NewText="{Binding UpdatedContent}"
+                                 IsSideBySide="True"
+                                 Margin="10" />
+        </Grid>
+    </DataTemplate>
+
+    <component:TypeBasedDataTemplateSelector x:Key="InvokePermissionContentTemplateSelector"
+                                             EmptyTemplate="{StaticResource DefaultInvokePermissionContentTemplate}">
+        <component:DataTemplateTypePair Template="{StaticResource ToolCallRequestTemplate}" />
+        <component:DataTemplateTypePair Template="{StaticResource FileEditRequestTemplate}" />
+    </component:TypeBasedDataTemplateSelector>
+
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource ContentExpander}"
            x:Key="AsyncPermissionExpanderStyle">
@@ -578,57 +627,8 @@
                 <DataTemplate DataType="{x:Type dialog:AsyncPermissionViewModel}">
                     <StackPanel>
                         <ContentPresenter Margin="10"
-                                          Content="{Binding Content,Mode=OneTime}">
-                            <ContentPresenter.ContentTemplateSelector>
-                                <component:TypeBasedDataTemplateSelector>
-                                    <component:TypeBasedDataTemplateSelector.EmptyTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Mode=OneTime}" />
-                                        </DataTemplate>
-                                    </component:TypeBasedDataTemplateSelector.EmptyTemplate>
-                                    <component:DataTemplateTypePair>
-                                        <component:DataTemplateTypePair.Template>
-                                            <DataTemplate DataType="{x:Type toolCall:ToolCallRequestViewModel}">
-                                                <StackPanel>
-                                                    <TextBlock FontWeight="Bold"
-                                                               Text="{Binding CallerClassName,Mode=OneTime,StringFormat=请求对象：{0}}" />
-                                                    <TextBlock FontWeight="Bold"
-                                                               Text="{Binding CallerMethodName,Mode=OneTime,StringFormat=请求工具：{0}}" />
-                                                    <TextBlock Text="{Binding Message,Mode=OneTime}"
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </component:DataTemplateTypePair.Template>
-                                    </component:DataTemplateTypePair>
-                                    <component:DataTemplateTypePair>
-                                        <DataTemplate DataType="{x:Type toolCall:FileEditRequestViewModel}">
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="*" />
-                                                    <RowDefinition Height="Auto" />
-                                                </Grid.RowDefinitions>
-
-                                                <!-- Header Information -->
-                                                <StackPanel Grid.Row="0" Margin="10,0,10,5">
-                                                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap"
-                                                               Margin="0,0,0,5" />
-                                                    <TextBlock Text="{Binding Path, StringFormat='Path: {0}'}"
-                                                               Foreground="Gray"
-                                                               TextTrimming="CharacterEllipsis" />
-                                                </StackPanel>
-                                                <!-- Diff Viewer -->
-                                                <controls:DiffViewer Grid.Row="1"
-                                                                     OldText="{Binding OriginalContent}"
-                                                                     NewText="{Binding UpdatedContent}"
-                                                                     IsSideBySide="True"
-                                                                     Margin="10" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </component:DataTemplateTypePair>
-                                </component:TypeBasedDataTemplateSelector>
-                            </ContentPresenter.ContentTemplateSelector>
-                        </ContentPresenter>
+                                          Content="{Binding Content,Mode=OneTime}"
+                                          ContentTemplateSelector="{StaticResource InvokePermissionContentTemplateSelector}" />
                     </StackPanel>
                 </DataTemplate>
             </Setter.Value>

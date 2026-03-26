@@ -100,6 +100,8 @@ public class DefaultDialogContextBuilder : IChatRequest
 
     public bool IsDebugMode { get; set; }
 
+    public bool AutoApproveAllInvocations { get; set; }
+
     [MemberNotNull(nameof(CallEngine))]
     protected FunctionCallEngine EnsureCallEngine(bool supportFunctionCall)
     {
@@ -134,6 +136,7 @@ public class DefaultDialogContextBuilder : IChatRequest
             FunctionCallEngine = functionCallEngine,
             RequestOptions = requestOptions,
             TempAdditionalProperties = TempAdditionalProperties,
+            AutoApproveAllInvocations = AutoApproveAllInvocations,
             ShowRequestJson = this.IsDebugMode
         };
     }

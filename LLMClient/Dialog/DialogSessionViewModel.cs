@@ -505,7 +505,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             field = value;
             OnPropertyChanged();
         }
-    }
+    } = "新建会话";
 
     public ICommand ExportCommand { get; }
 

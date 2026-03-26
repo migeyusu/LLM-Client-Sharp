@@ -60,4 +60,6 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
     public AdditionalPropertiesDictionary? TempAdditionalProperties { get; } = null;
 
     public bool IsDebugMode { get; } = true;
+
+    public bool AutoApproveAllInvocations { get; set; }
 }

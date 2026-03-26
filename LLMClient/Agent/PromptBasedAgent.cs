@@ -45,7 +45,7 @@ public class PromptBasedAgent
                         try
                         {
                             completedResult = await _chatClient
-                                .SendRequest(requestContext, null, linkedTokenSource.Token)
+                                .SendRequest(requestContext, _interactor, linkedTokenSource.Token)
                                 .ConfigureAwait(false);
                             if (completedResult.IsInvalidRequest || completedResult.IsCanceled)
                             {
@@ -61,7 +61,7 @@ public class PromptBasedAgent
             }
             else
             {
-                completedResult = await _chatClient.SendRequest(requestContext, null, cancellationToken)
+                completedResult = await _chatClient.SendRequest(requestContext, _interactor, cancellationToken)
                     .ConfigureAwait(false);
             }
 

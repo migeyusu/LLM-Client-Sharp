@@ -248,6 +248,17 @@ public class RequesterViewModel : BaseViewModel
         }
     }
 
+    public bool AutoApproveAllInvocations
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
+
     private bool _isNewResponding;
 
     public bool IsNewResponding
@@ -482,6 +493,7 @@ public class RequesterViewModel : BaseViewModel
         var requestViewItem = new RequestViewItem(promptBuilder.ToString())
         {
             Attachments = Attachments.Count == 0 ? null : Attachments.ToList(),
+            AutoApproveAllInvocations = AutoApproveAllInvocations,
             FunctionGroups = tools == null ? null : [..tools],
             SearchOption = SearchConfig.GetUserSearchOption(),
             RagSources = ragSources.Length > 0 ? ragSources : null,
