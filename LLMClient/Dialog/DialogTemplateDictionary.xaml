@@ -547,7 +547,7 @@
                                 Command="{x:Static models:ParallelResponseViewItem.SplitResponseCommand}"
                                 CommandParameter="{Binding Mode=OneTime}"
                                 Content="{materialDesign:PackIcon ArrowSplitVertical,Size=20}"
-                                Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
+                                Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}"
                                 Style="{StaticResource SmallIconButtonStyle}" />
                     </StackPanel>
                 </Grid>

@@ -56,10 +56,10 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         }
     }
 
-    public override string? Name
+    public override string? Topic
     {
-        get { return this.Topic; }
-        set { this.Topic = value ?? "新建会话"; }
+        get;
+        set { field = value ?? "新建会话"; }
     }
 
     private string? _userSystemPrompt;
@@ -112,20 +112,6 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         }
     }
 
-    private string _topic;
-    private readonly Summarizer _summarizer;
-    private readonly GlobalOptions _options;
-
-    public string Topic
-    {
-        get => _topic;
-        set
-        {
-            if (value == _topic) return;
-            _topic = value;
-            OnPropertyChangedAsync();
-        }
-    }
 
     private readonly string[] _notTrackingProperties =
     [
@@ -138,14 +124,11 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
     public RequesterViewModel Requester { get; }
 
     public DialogViewModel(string topic, string initialPrompt, ILLMChatClient modelClient,
-        IMapper mapper, Summarizer summarizer,
-        GlobalOptions options, IViewModelFactory factory, IDialogItem? rootNode = null, IDialogItem? currentLeaf = null)
-        : base(rootNode, currentLeaf)
+        IMapper mapper, Summarizer summarizer, GlobalOptions options,
+        IViewModelFactory factory, IDialogItem? rootNode = null, IDialogItem? currentLeaf = null)
+        : base(options, summarizer, rootNode, currentLeaf)
     {
-        _topic = topic;
-        _summarizer = summarizer;
-        _options = options;
-        ((INotifyCollectionChanged)this.RootNode.Children).CollectionChanged += OnRootCollectionChanged;
+        this.Topic = topic;
         Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
             (GetResponseHandler)NewDefaultResponse);
         Requester.FunctionGroupSource = this;
@@ -173,41 +156,9 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         OnPropertyChanged(nameof(SystemPrompt));
     }
 
-    private void OnRootCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        if (_options.EnableAutoSubjectGeneration &&
-            e.Action is NotifyCollectionChangedAction.Remove or NotifyCollectionChangedAction.Reset
-            && this.DialogItems.Count == 0)
-        {
-            this.Topic = "新建会话";
-        }
-    }
-
-    private static readonly TimeSpan TopicTimeOut = TimeSpan.FromSeconds(30);
-
-    public Task? SummarizeTask = null;
-
     public override void OnResponseCompleted(IResponse response)
     {
         base.OnResponseCompleted(response);
-        //判断是否需要进行主题总结
-        if (this.Topic == "新建会话" &&
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            this.DialogItems.OfType<IResponse>().Count() == 1
-            && !response.IsInterrupt
-            && _options.EnableAutoSubjectGeneration
-            && (SummarizeTask == null || SummarizeTask.IsCompleted))
-        {
-            //不要wait
-            SummarizeTask = Task.Run(async () =>
-            {
-                var newTopic = await _summarizer.SummarizeTopicAsync(this, TopicTimeOut);
-                if (!string.IsNullOrEmpty(newTopic))
-                {
-                    this.Topic = newTopic;
-                }
-            }, CancellationToken.None);
-        }
     }
 
     private void FunctionTreeSelectorOnAfterSelect()

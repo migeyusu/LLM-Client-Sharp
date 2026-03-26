@@ -256,10 +256,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                         //do nothing, textContent & reasoningContent is already added to RespondingText
                                         break;
                                     case FunctionCallContent functionCallContent:
-                                        interactor?.WriteLine("Function call requested: " +
-                                                              functionCallContent.GetDebuggerString());
+                                        interactor?.WriteLine("Function call requested: ");
+                                        interactor?.WriteLine(functionCallContent.GetDebuggerString());
                                         break;
                                     case FunctionResultContent functionResultContent:
+                                        interactor?.WriteLine("Function result generated: ");
                                         interactor?.WriteLine(functionResultContent.GetDebuggerString());
                                         break;
                                     case ErrorContent errorContent:

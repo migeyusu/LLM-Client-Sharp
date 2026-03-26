@@ -38,21 +38,88 @@ public class LinkInlineRendererEx : LinkInlineRenderer
         }
     }
 
-    private async void RenderImage(WpfRenderer renderer, LinkInline link, string url)
+    private void RenderImage(WpfRenderer renderer, LinkInline link, string url)
     {
-        ImageSource? imageSource = null;
+        // 1. Prepare common UI components
+        var template = new ControlTemplate(typeof(Button));
+        template.VisualTree = new FrameworkElementFactory(typeof(ContentPresenter));
 
+        var imageControl = new Image();
+        imageControl.SetResourceReference(FrameworkElement.StyleProperty, Styles.ImageStyleKey);
+
+        var btn = new Button
+        {
+            Template = template,
+            Content = imageControl,
+            Command = Commands.Image,
+            CommandParameter = url,
+            ToolTip = !string.IsNullOrEmpty(link.Title) ? link.Title : GetImageAltText(link)
+        };
+
+        var container = new BlockUIContainer(btn);
+        var figure = new Figure
+        {
+            HorizontalAnchor = FigureHorizontalAnchor.PageCenter,
+            VerticalAnchor = FigureVerticalAnchor.ParagraphTop,
+            Width = new FigureLength(0, FigureUnitType.Auto)
+        };
+        figure.Blocks.Add(container);
+
+        // 2. Add to renderer immediately
+        renderer.WriteInline(figure);
+
+        // 3. Load content
+        if (url.IsBase64Image())
+        {
+            try
+            {
+                var source = ImageExtensions.GetImageSourceFromBase64(url);
+                if (source != null)
+                {
+                    imageControl.Source = source;
+                    btn.Height = source.Height;
+                    btn.Width = source.Width;
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceWarning($"Failed to load base64 image: {ex.Message}");
+            }
+            // Fallback if failed
+            ShowFallback(url, link, container);
+        }
+        else
+        {
+            // Async load
+            LoadImageAsync(url, link, imageControl, btn, container);
+        }
+    }
+
+    private void ShowFallback(string url, LinkInline link, BlockUIContainer container)
+    {
+        var altText = GetImageAltText(link) ?? "[图片加载失败]";
+        var textBlock = new TextBlock
+        {
+            Text = $"[{altText}]",
+            ToolTip = $"无法加载图片: {url}"
+        };
+        container.Child = textBlock;
+    }
+
+    private async void LoadImageAsync(string url, LinkInline link, Image imageControl, Button btn, BlockUIContainer container)
+    {
         try
         {
-            if (url.IsBase64Image())
+            if (Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))
             {
-                imageSource = ImageExtensions.GetImageSourceFromBase64(url);
-            }
-            else
-            {
-                if (Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))
+                var imageSource = await uri.GetImageSourceAsync();
+                if (imageSource != null)
                 {
-                    imageSource = await uri.GetImageSourceAsync();
+                    imageControl.Source = imageSource;
+                    btn.Height = imageSource.Height;
+                    btn.Width = imageSource.Width;
+                    return;
                 }
             }
         }
@@ -61,47 +128,7 @@ public class LinkInlineRendererEx : LinkInlineRenderer
             Trace.TraceWarning($"Failed to load image from URL '{url}': {e.Message}");
         }
 
-        // 如果图片加载失败，显示替代文本
-        if (imageSource == null)
-        {
-            // 创建一个 TextBlock 显示 alt 文本
-            var altText = GetImageAltText(link) ?? "[图片加载失败]";
-            var textBlock = new TextBlock
-            {
-                Text = $"[{altText}]",
-                ToolTip = $"无法加载图片: {url}"
-            };
-            renderer.WriteInline(new InlineUIContainer(textBlock));
-            return;
-        }
-
-        // 渲染图片
-        var template = new ControlTemplate();
-        var image = new FrameworkElementFactory(typeof(Image));
-        image.SetValue(Image.SourceProperty, imageSource);
-        image.SetResourceReference(FrameworkContentElement.StyleProperty, Styles.ImageStyleKey);
-        template.VisualTree = image;
-
-        var btn = new Button
-        {
-            Template = template,
-            Command = Commands.Image,
-            CommandParameter = url,
-            Height = imageSource.Height,
-            Width = imageSource.Width,
-            // 设置 ToolTip：优先使用 title，其次使用 alt 文本
-            ToolTip = !string.IsNullOrEmpty(link.Title)
-                ? link.Title
-                : GetImageAltText(link)
-        };
-        var figure = new Figure()
-        {
-            HorizontalAnchor = FigureHorizontalAnchor.PageCenter,
-            VerticalAnchor = FigureVerticalAnchor.ParagraphTop,
-            Width = new FigureLength(0, FigureUnitType.Auto) // 自动宽度
-        };
-        figure.Blocks.Add(new BlockUIContainer(btn));
-        renderer.WriteInline(figure);
+        ShowFallback(url, link, container);
     }
 
     private void RenderHyperlink(WpfRenderer renderer, LinkInline link, string url)

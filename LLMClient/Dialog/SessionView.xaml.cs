@@ -16,7 +16,7 @@ public partial class SessionView : UserControl
         InitializeComponent();
     }
 
-    private DialogSessionViewModel ViewModel => (DialogSessionViewModel)DataContext;
+    private DialogSessionViewModel? ViewModel => (DialogSessionViewModel?)DataContext;
 
     private void OnDeleteExecuted(object sender, ExecutedRoutedEventArgs e)
     {
@@ -24,7 +24,7 @@ public partial class SessionView : UserControl
         {
             if (e.Parameter is IDialogItem dialogViewItem)
             {
-                ViewModel.DeleteItem(dialogViewItem);
+                ViewModel?.DeleteItem(dialogViewItem);
             }
         }
         catch (Exception exception)
@@ -37,6 +37,11 @@ public partial class SessionView : UserControl
     {
         try
         {
+            if (ViewModel == null)
+            {
+                return;
+            }
+
             if (e.Parameter is RequestViewItem requestViewItem)
             {
                 ViewModel.CutContext(requestViewItem);
@@ -61,6 +66,11 @@ public partial class SessionView : UserControl
     {
         if (sender is SearchBox searchBox && !searchBox.IsKeyboardFocusWithin)
         {
+            if (ViewModel == null)
+            {
+                return;
+            }
+
             if (string.IsNullOrEmpty(ViewModel.SearchText))
             {
                 ViewModel.IsSearchVisible = false;
@@ -86,7 +96,7 @@ public partial class SessionView : UserControl
         var container = DialogItemList.ItemContainerGenerator.ContainerFromItem(currentItem) as FrameworkElement;
         if (container == null) return;
 
-        var scrollViewer = FindVisualChild<ScrollViewer>(DialogItemList);
+        var scrollViewer = DialogItemList.FindVisualChild<ScrollViewer>();
         if (scrollViewer == null) return;
 
         var codeBlocks = FindVisualChildren<ContentControl>(container)
@@ -132,22 +142,9 @@ public partial class SessionView : UserControl
             }
         }
     }
+    
 
-    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-        {
-            var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is T t) return t;
-
-            var result = FindVisualChild<T>(child);
-            if (result != null) return result;
-        }
-
-        return null;
-    }
-
-    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject? depObj) where T : DependencyObject
     {
         if (depObj == null) yield break;
 
@@ -172,7 +169,7 @@ public partial class SessionView : UserControl
         {
             if (e.Parameter is IRequestItem requestViewItem)
             {
-                ViewModel.DeleteInteraction(requestViewItem);
+                ViewModel?.DeleteInteraction(requestViewItem);
             }
         }
         catch (Exception exception)

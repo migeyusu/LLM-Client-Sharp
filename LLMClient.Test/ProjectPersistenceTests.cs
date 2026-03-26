@@ -1,0 +1,166 @@
+using System.Collections;
+using System.Collections.ObjectModel;
+using AutoMapper;
+using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel;
+using LLMClient.Component.ViewModel.Base;
+using LLMClient.Configuration;
+using LLMClient.Data;
+using LLMClient.Dialog;
+using LLMClient.Endpoints;
+using LLMClient.Project;
+using LLMClient.ToolCall.DefaultPlugins;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace LLMClient.Test;
+
+public class ProjectPersistenceTests
+{
+    [Fact]
+    public void ProjectPersistence_RoundTrips_ProjectSessions()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var serviceProvider = CreateServiceProvider();
+            BaseViewModel.ServiceLocator = serviceProvider;
+
+            var factory = serviceProvider.GetRequiredService<IViewModelFactory>();
+            var mapper = serviceProvider.GetRequiredService<IMapper>();
+            var rootPath = Path.Combine(Path.GetTempPath(), "LLMClient.ProjectPersistenceTests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(rootPath);
+
+            var project = factory.CreateViewModel<CppProjectViewModel>(
+                new ProjectOption
+                {
+                    Name = "Persistence Test",
+                    Description = "Verify project session persistence.",
+                    RootPath = rootPath,
+                    Type = ProjectType.Cpp,
+                },
+                string.Empty,
+                EmptyLlmModelClient.Instance);
+
+            var session = factory.CreateViewModel<ProjectSessionViewModel>(project);
+            session.Topic = "Task 1";
+            session.Summary = "Session summary";
+            project.AddSession(session);
+
+            var persistModel = Assert.IsType<CppProjectPersistModel>(
+                mapper.Map<ProjectViewModel, ProjectPersistModel>(project, _ => { }));
+            var persistedSession = Assert.Single(Assert.IsAssignableFrom<IEnumerable<ProjectSessionPersistModel>>(persistModel.Sessions!));
+            Assert.Equal("Task 1", persistedSession.Name);
+            Assert.Equal("Session summary", persistedSession.Summary);
+
+            var clone = Assert.IsType<CppProjectViewModel>(project.Clone());
+            var clonedSession = Assert.Single(clone.Session);
+            Assert.Same(clone, clonedSession.ParentProject);
+            Assert.Equal("Task 1", clonedSession.Topic);
+            Assert.Equal("Session summary", clonedSession.Summary);
+        });
+    }
+
+    private static ServiceProvider CreateServiceProvider()
+    {
+        return new ServiceCollection()
+            .AddSingleton<IViewModelFactory, ViewModelFactory>()
+            .AddTransient<AutoMapModelTypeConverter>()
+            .AddSingleton<Microsoft.Extensions.Logging.ILoggerFactory>(NullLoggerFactory.Instance)
+            .AddSingleton<GlobalOptions>()
+            .AddSingleton<IPromptsResource, TestPromptsResource>()
+            .AddSingleton<IEndpointService, TestEndpointService>()
+            .AddSingleton<IMcpServiceCollection, TestMcpServiceCollection>()
+            .AddSingleton<IRagSourceCollection, TestRagSourceCollection>()
+            .AddSingleton<BuiltInFunctionsCollection>()
+            .AddSingleton<ITokensCounter, DefaultTokensCounter>()
+            .AddSingleton<Summarizer>()
+            .AddSingleton<Profile, DialogMappingProfile>()
+            .AddMap()
+            .BuildServiceProvider();
+    }
+
+    private sealed class TestPromptsResource : IPromptsResource
+    {
+        public IReadOnlyList<PromptEntry> SystemPrompts => Array.Empty<PromptEntry>();
+
+        public Task Initialize()
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class TestEndpointService : IEndpointService
+    {
+        public IReadOnlyList<ILLMAPIEndpoint> AvailableEndpoints => Array.Empty<ILLMAPIEndpoint>();
+
+        public IReadOnlyList<ILLMAPIEndpoint> CandidateEndpoints => Array.Empty<ILLMAPIEndpoint>();
+
+        public IReadOnlyList<IEndpointModel> HistoryModels => Array.Empty<IEndpointModel>();
+
+        public IReadOnlyList<IEndpointModel> SuggestedModels => Array.Empty<IEndpointModel>();
+
+        public void SetModelHistory(IEndpointModel model)
+        {
+        }
+
+        public Task Initialize()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task SaveActivities()
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class TestMcpServiceCollection : IMcpServiceCollection
+    {
+        public bool IsInitialized => true;
+
+        public bool IsLoaded => true;
+
+        public Task InitializeToolsAsync()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task LoadAsync()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task EnsureAsync()
+        {
+            return Task.CompletedTask;
+        }
+
+        public IAIFunctionGroup TryGet(IAIFunctionGroup functionGroup)
+        {
+            return functionGroup;
+        }
+
+        public IEnumerator<IAIFunctionGroup> GetEnumerator()
+        {
+            return Enumerable.Empty<IAIFunctionGroup>().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
+
+    private sealed class TestRagSourceCollection : IRagSourceCollection
+    {
+        public ObservableCollection<IRagSource> Sources { get; } = [];
+
+        public bool IsRunning => false;
+
+        public Task LoadAsync()
+        {
+            return Task.CompletedTask;
+        }
+    }
+}
+

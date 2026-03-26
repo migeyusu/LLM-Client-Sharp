@@ -4,6 +4,7 @@ using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
+using LLMClient.Configuration;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.ToolCall;
@@ -27,24 +28,6 @@ namespace LLMClient.Project;
  */
 public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSource
 {
-    public override string? Name
-    {
-        get;
-        set
-        {
-            if (value == field) return;
-            ClearError();
-            if (string.IsNullOrEmpty(value))
-            {
-                AddError("Name cannot be null or empty.");
-                return;
-            }
-
-            field = value;
-            OnPropertyChanged();
-        }
-    }
-
     public string? WorkingDirectory
     {
         get { return ParentProject.Option.RootPath; }
@@ -64,20 +47,6 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
     public virtual bool IsToolsSelectable => true;
 
     public ProjectViewModel ParentProject { get; }
-
-    /// <summary>
-    /// indicate whether enable this task in context when generate response.
-    /// </summary>
-    public bool EnableInContext
-    {
-        get;
-        set
-        {
-            if (value == field) return;
-            field = value;
-            OnPropertyChanged();
-        }
-    }
 
     /// <summary>
     /// summary of the task, when task end, generate for total context.
@@ -118,9 +87,10 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
     }
 
     public ProjectSessionViewModel(ProjectViewModel parentProject, IMapper mapper,
+        Summarizer summarizer, GlobalOptions options,
         IList<CheckableFunctionGroupTree>? functionGroupTrees = null,
         IDialogItem? rootNode = null, IDialogItem? currentLeaf = null)
-        : base(rootNode, currentLeaf)
+        : base(options, summarizer, rootNode, currentLeaf)
     {
         ParentProject = parentProject;
         SelectedFunctionGroups = functionGroupTrees;

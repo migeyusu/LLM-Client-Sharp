@@ -83,8 +83,16 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
                 if (!string.IsNullOrEmpty(textMessage))
                 {
                     var flowDocument = new FlowDocument();
-                    var renderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
-                    await renderer.RenderMarkdown(textMessage);
+                    var renderer = CustomMarkdownRenderer.Rent(flowDocument);
+                    try
+                    {
+                        await renderer.RenderMarkdown(textMessage);
+                    }
+                    finally
+                    {
+                        CustomMarkdownRenderer.Return(renderer);
+                    }
+
                     return new SearchableDocument(flowDocument);
                 }
 

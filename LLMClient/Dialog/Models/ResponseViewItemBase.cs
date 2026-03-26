@@ -182,51 +182,58 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
         flowDocument.Blocks.Clear();
         //todo: 回收
-        var renderer = CustomMarkdownRenderer.NewRenderer(flowDocument);
-        if (annotations != null)
+        var renderer = CustomMarkdownRenderer.Rent(flowDocument);
+        try
         {
-            foreach (var annotation in annotations)
+            if (annotations != null)
             {
-                renderer.AppendExpanderItem(annotation,
-                    CustomMarkdownRenderer.AnnotationStyleKey);
-            }
-        }
-
-        foreach (var message in chatMessages)
-        {
-            foreach (var content in message.Contents)
-            {
-                switch (content)
+                foreach (var annotation in annotations)
                 {
-                    case TextReasoningContent reasoningContent:
-                        var markdownDocument = await Task.Run(() =>
-                        {
-                            var stringBuilder = new StringBuilder();
-                            stringBuilder.AppendLine(ThinkBlockParser.OpenTag);
-                            stringBuilder.AppendLine(reasoningContent.Text);
-                            stringBuilder.AppendLine(ThinkBlockParser.CloseTag);
-                            var s = stringBuilder.ToString();
-                            return Markdown.Parse(s, CustomMarkdownRenderer.DefaultPipeline);
-                        });
-                        renderer.Render(markdownDocument);
-                        break;
-                    case TextContent textContent:
-                        await renderer.RenderMarkdown(textContent.Text);
-                        break;
-                    case FunctionCallContent functionCallContent:
-                        renderer.AppendExpanderItem(functionCallContent,
-                            CustomMarkdownRenderer.FunctionCallStyleKey);
-                        break;
-                    case FunctionResultContent functionResultContent:
-                        renderer.AppendExpanderItem(functionResultContent,
-                            CustomMarkdownRenderer.FunctionResultStyleKey);
-                        break;
-
-                    default:
-                        Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");
-                        break;
+                    renderer.AppendExpanderItem(annotation,
+                        CustomMarkdownRenderer.AnnotationStyleKey);
                 }
             }
+
+            foreach (var message in chatMessages)
+            {
+                foreach (var content in message.Contents)
+                {
+                    switch (content)
+                    {
+                        case TextReasoningContent reasoningContent:
+                            var markdownDocument = await Task.Run(() =>
+                            {
+                                var stringBuilder = new StringBuilder();
+                                stringBuilder.AppendLine(ThinkBlockParser.OpenTag);
+                                stringBuilder.AppendLine(reasoningContent.Text);
+                                stringBuilder.AppendLine(ThinkBlockParser.CloseTag);
+                                var s = stringBuilder.ToString();
+                                return Markdown.Parse(s, CustomMarkdownRenderer.DefaultPipeline);
+                            });
+                            renderer.Render(markdownDocument);
+                            break;
+                        case TextContent textContent:
+                            await renderer.RenderMarkdown(textContent.Text);
+                            break;
+                        case FunctionCallContent functionCallContent:
+                            renderer.AppendExpanderItem(functionCallContent,
+                                CustomMarkdownRenderer.FunctionCallStyleKey);
+                            break;
+                        case FunctionResultContent functionResultContent:
+                            renderer.AppendExpanderItem(functionResultContent,
+                                CustomMarkdownRenderer.FunctionResultStyleKey);
+                            break;
+
+                        default:
+                            Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");
+                            break;
+                    }
+                }
+            }
+        }
+        finally
+        {
+            CustomMarkdownRenderer.Return(renderer);
         }
     }
 

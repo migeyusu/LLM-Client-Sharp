@@ -281,7 +281,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
                     specificArchive = ProjectArchive;
                     fullPath = Path.Combine(fullPath, specificArchive);
                 }
-                
+
                 if (!Directory.Exists(fullPath))
                 {
                     Directory.CreateDirectory(fullPath);
@@ -299,6 +299,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
         }
         catch (Exception exception)
         {
+            Trace.TraceError(exception.ToString());
             MessageEventBus.Publish("备份会话失败: " + exception.Message);
         }
     }

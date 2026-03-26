@@ -289,6 +289,7 @@ public class DialogMappingProfile : Profile
             .Include<CSharpProjectViewModel, CSharpProjectPersistModel>()
             .Include<CppProjectViewModel, CppProjectPersistModel>()
             .ForMember(dest => dest.Client, opt => opt.MapFrom(src => src.Requester.DefaultClient))
+            .ForMember(dest => dest.Sessions, opt => opt.MapFrom(src => src.Session))
             .ForMember(dest => dest.ExtendedPrompts,
                 opt =>
                 {
@@ -339,7 +340,8 @@ public class DialogMappingProfile : Profile
             .ForMember(model => model.AgentOption, opt => opt.MapFrom(src => src.Requester.AgentOption));
 
         CreateMap<ProjectSessionViewModel, ProjectSessionPersistModel>()
-            .IncludeBase<DialogSessionViewModel, DialogSessionPersistModel>();
+            .IncludeBase<DialogSessionViewModel, DialogSessionPersistModel>()
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Topic));
 
         // PO -> VM
         CreateMap<DialogSessionPersistModel, DialogSessionViewModel>()
@@ -387,6 +389,7 @@ public class DialogMappingProfile : Profile
 
         CreateMap<ProjectSessionPersistModel, ProjectSessionViewModel>()
             .IncludeBase<DialogSessionPersistModel, DialogSessionViewModel>()
+            .ForMember(dest => dest.Topic, opt => opt.MapFrom(src => src.Name))
             .ConstructUsing((_, ctx) =>
             {
                 if (!ctx.Items.TryGetValue(AutoMapModelTypeConverter.ParentProjectViewModelKey,

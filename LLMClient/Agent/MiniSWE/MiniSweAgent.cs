@@ -135,6 +135,8 @@ public class MiniSweAgent : IAgent
                     break;
                 }
 
+                //todo: 冒险将执行过的步骤加入继续执行还是重用当前上下文？
+                requestContext.ChatHistory.AddRange(callResult.Messages);
                 retryCount++;
             }
 

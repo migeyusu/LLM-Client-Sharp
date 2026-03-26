@@ -109,7 +109,7 @@
                                       IsEditable="True"
                                       TextSearch.TextPath="Name"
                                       Width="200"
-                                      Text="{Binding Path=SelectedSession.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                      Text="{Binding Path=SelectedSession.Topic, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate DataType="{x:Type local:ProjectSessionViewModel}">
                                         <Grid>
@@ -117,7 +117,7 @@
                                                 <ColumnDefinition />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding Name,Mode=OneWay,TargetNullValue=未设置名称}"
+                                            <TextBlock Text="{Binding Topic,Mode=OneWay,TargetNullValue=未设置名称}"
                                                        VerticalAlignment="Center"
                                                        TextWrapping="NoWrap"
                                                        TextTrimming="CharacterEllipsis" />

@@ -13,6 +13,7 @@ public sealed class StreamingRenderSession : IDisposable
     private readonly FlowDocument _mainDocument;
     private readonly CustomMarkdownRenderer _mainRenderer;
     private readonly Dispatcher _dispatcher;
+    private bool _disposed;
 
     // 当 block commit 时通知外部清空 TempResponseText
     private readonly Action _clearTail;
@@ -27,7 +28,7 @@ public sealed class StreamingRenderSession : IDisposable
     {
         _mainDocument = mainDocument;
         _dispatcher = mainDocument.Dispatcher;
-        _mainRenderer = CustomMarkdownRenderer.NewRenderer(mainDocument);
+        _mainRenderer = CustomMarkdownRenderer.Rent(mainDocument);
         _clearTail = clearTail;
 
         _dispatcher.Invoke(CreateLivingUI);
@@ -60,7 +61,7 @@ public sealed class StreamingRenderSession : IDisposable
     private void CreateLivingUI()
     {
         _livingSubDocument = new FlowDocument();
-        _livingSubRenderer = CustomMarkdownRenderer.NewRenderer(_livingSubDocument, enableTextMate: false);
+        _livingSubRenderer = CustomMarkdownRenderer.Rent(_livingSubDocument, enableTextMate: false);
 
         _livingSubViewer = new RichTextBox
         {
@@ -80,14 +81,32 @@ public sealed class StreamingRenderSession : IDisposable
         _mainDocument.Blocks.Add(_livingContainer);
     }
 
+    private void ReleaseLivingRenderer()
+    {
+        if (_livingSubRenderer != null)
+        {
+            CustomMarkdownRenderer.Return(_livingSubRenderer);
+            _livingSubRenderer = null;
+        }
+    }
+
+    private void RemoveLivingContainer()
+    {
+        if (_livingContainer != null && _mainDocument.Blocks.Contains(_livingContainer))
+        {
+            _mainDocument.Blocks.Remove(_livingContainer);
+        }
+
+        _livingContainer = null;
+        _livingSubViewer = null;
+        _livingSubDocument = null;
+        ReleaseLivingRenderer();
+    }
+
     private void CommitTopLevelBlock(Block block)
     {
         // 1. 移除 living 区域（含其中已渲染的子块）
-        if (_livingContainer != null)
-        {
-            _mainDocument.Blocks.Remove(_livingContainer);
-            _livingContainer = null;
-        }
+        RemoveLivingContainer();
 
         // 2. 将顶层 block 渲染到主文档
         _mainRenderer.AppendMarkdownObject(block);
@@ -126,8 +145,7 @@ public sealed class StreamingRenderSession : IDisposable
             // 流结束后 living 区域若无子块内容则移除，避免残留空 BlockUIContainer
             if (_livingContainer != null && _livingSubDocument!.Blocks.Count == 0)
             {
-                _mainDocument.Blocks.Remove(_livingContainer);
-                _livingContainer = null;
+                RemoveLivingContainer();
             }
         }, DispatcherPriority.ContextIdle).Task;
         // ContextIdle(3) < Background(4)，确保在所有 Background OnBlockClosed 之后执行
@@ -135,13 +153,29 @@ public sealed class StreamingRenderSession : IDisposable
 
     public void Dispose()
     {
-        _dispatcher.InvokeAsync(() =>
+        if (_disposed)
         {
-            if (_livingContainer != null
-                && _mainDocument.Blocks.Contains(_livingContainer))
+            return;
+        }
+
+        _disposed = true;
+
+        void DisposeCore()
+        {
+            RemoveLivingContainer();
+            CustomMarkdownRenderer.Return(_mainRenderer);
+        }
+
+        if (_dispatcher.CheckAccess())
+        {
+            DisposeCore();
+        }
+        else
+        {
+            _dispatcher.Invoke(() =>
             {
-                _mainDocument.Blocks.Remove(_livingContainer);
-            }
-        });
+                DisposeCore();
+            });
+        }
     }
 }

@@ -20,18 +20,17 @@ public class CustomMarkdownRenderer : WpfRenderer
 
     public bool EditMode { get; set; } = false;
 
-    public static CustomMarkdownRenderer DefaultInstance { get; } = CreateDefaultRenderer();
-
     public static MarkdownPipelineBuilder DefaultBuilder { get; } = CreateDefaultPipelineBuilder();
 
     public static MarkdownPipeline DefaultPipeline { get; } = DefaultBuilder.Build();
 
+    public static CustomMarkdownRenderer DefaultInstance { get; } = CreateDefaultRenderer();
+
     public static CustomMarkdownRenderer CreateDefaultRenderer()
     {
-        var defaultPipeline = CreateDefaultPipelineBuilder().Build();
-        var renderer = new CustomMarkdownRenderer() { Pipeline = defaultPipeline };
+        var renderer = new CustomMarkdownRenderer() { Pipeline = DefaultPipeline };
         renderer.Initialize();
-        defaultPipeline.Setup(renderer);
+        DefaultPipeline.Setup(renderer);
         return renderer;
     }
 
@@ -76,13 +75,54 @@ public class CustomMarkdownRenderer : WpfRenderer
     public static CustomMarkdownRenderer NewRenderer(FlowDocument flowDocument, bool? enableTextMate = null,
         bool? editMode = null)
     {
-        var renderer = CreateDefaultRenderer();
+        return Rent(flowDocument, enableTextMate, editMode);
+    }
+
+    private static readonly ConcurrentBag<CustomMarkdownRenderer> Pool = new();
+
+    public static CustomMarkdownRenderer Rent(FlowDocument flowDocument, bool? enableTextMate = null,
+        bool? editMode = null)
+    {
+        if (!Pool.TryTake(out var renderer))
+        {
+            renderer = CreateDefaultRenderer();
+        }
+
         renderer.LoadDocument(flowDocument);
         if (enableTextMate.HasValue)
             renderer.EnableTextMateHighlighting = enableTextMate.Value;
         if (editMode.HasValue)
             renderer.EditMode = editMode.Value;
+
         return renderer;
+    }
+
+    public static void Return(CustomMarkdownRenderer renderer)
+    {
+        // 如果不是默认 Pipeline，不回收
+        if (renderer.Pipeline != DefaultPipeline)
+        {
+            return;
+        }
+
+        renderer.Reset();
+        Pool.Add(renderer);
+    }
+
+    private void Reset()
+    {
+        Document = null;
+        try
+        {
+            // LoadDocument pushes the document, so we need to pop it to reset the state
+            Pop();
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+        EnableTextMateHighlighting = true;
+        EditMode = false;
     }
 
     public static ComponentResourceKey FunctionCallStyleKey { get; } =

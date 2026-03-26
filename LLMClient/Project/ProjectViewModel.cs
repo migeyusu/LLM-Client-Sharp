@@ -223,24 +223,13 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 _systemPromptBuilder.AppendLine(UserSystemPrompt);
             }
 
-            _systemPromptBuilder.AppendLine("# 项目背景");
+            _systemPromptBuilder.AppendLine("<project_information>");
             _systemPromptBuilder.AppendFormat("这是一个名为{0}的{1}项目，项目代码位于文件夹{2}。", Option.Name,
                 Option.Type.GetEnumDescription(), Option.RootPath);
             _systemPromptBuilder.AppendLine();
             _systemPromptBuilder.AppendLine(Option.Description);
-            var contextSessions = this.Session
-                .Where(model => model.EnableInContext && string.IsNullOrEmpty(model.Summary))
-                .ToArray();
-            if (contextSessions.Length != 0)
-            {
-                _systemPromptBuilder.AppendLine("以下是曾经完成的任务信息：");
-                foreach (var contextSession in contextSessions)
-                {
-                    _systemPromptBuilder.Append("#");
-                    _systemPromptBuilder.AppendLine(contextSession.Name);
-                    _systemPromptBuilder.AppendLine(contextSession.Summary);
-                }
-            }
+            _systemPromptBuilder.AppendLine();
+            _systemPromptBuilder.AppendLine("</project_information>");
 
             return _systemPromptBuilder.ToString();
         }
@@ -283,7 +272,8 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
     public ICommand NewSessionCommand => new ActionCommand(_ =>
     {
-        AddSession(new ProjectSessionViewModel(this, _mapper) { Name = "Empty Dialog" });
+        var projectSessionViewModel = _factory.CreateViewModel<ProjectSessionViewModel>(this, _mapper);
+        AddSession(projectSessionViewModel);
     });
 
     public void AddSession(ProjectSessionViewModel session)
@@ -303,9 +293,6 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         var propertyName = e.PropertyName;
         switch (propertyName)
         {
-            case nameof(ProjectSessionViewModel.EnableInContext):
-                OnPropertyChanged(nameof(Context));
-                break;
             case nameof(DialogSessionViewModel.IsBusy):
                 OnPropertyChanged(nameof(IsBusy));
                 break;
@@ -451,6 +438,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         {
             throw new InvalidOperationException("当前项目配置不合法");
         }
+
         var functionGroups = this.SelectedSession?.SelectedFunctionGroups;
         if (functionGroups != null)
         {

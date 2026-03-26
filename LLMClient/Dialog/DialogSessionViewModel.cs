@@ -13,12 +13,11 @@ using LLMClient.Dialog.Controls;
 using LLMClient.Dialog.Models;
 using LLMClient.Agent;
 using LLMClient.Agent.MiniSWE;
+using LLMClient.Configuration;
 using LLMClient.ToolCall;
-using LLMClient.Endpoints;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 using MaterialDesignThemes.Wpf;
-using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 
@@ -497,7 +496,16 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
     }
 
-    public virtual string? Name { get; set; }
+    public virtual string? Topic
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
 
     public ICommand ExportCommand { get; }
 
@@ -508,10 +516,34 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         return Task.CompletedTask;
     }
 
+    private static readonly TimeSpan TopicTimeOut = TimeSpan.FromSeconds(30);
+
+    public Task? SummarizeTask = null;
+
+    private readonly Summarizer _summarizer;
+
     public virtual void OnResponseCompleted(IResponse response)
     {
         this.TokensConsumption += response.Usage?.TotalTokenCount ?? 0;
         this.TotalPrice += response.Price ?? 0;
+        //判断是否需要进行主题总结
+        if (this.Topic == "新建会话" &&
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            this.DialogItems.OfType<IResponse>().Count() == 1
+            && !response.IsInterrupt
+            && _options.EnableAutoSubjectGeneration
+            && (SummarizeTask == null || SummarizeTask.IsCompleted))
+        {
+            //不要wait
+            SummarizeTask = Task.Run(async () =>
+            {
+                var newTopic = await _summarizer.SummarizeTopicAsync(this, TopicTimeOut);
+                if (!string.IsNullOrEmpty(newTopic))
+                {
+                    this.Topic = newTopic;
+                }
+            }, CancellationToken.None);
+        }
     }
 
 
@@ -590,8 +622,13 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #endregion
 
-    protected DialogSessionViewModel(IDialogItem? rootNode, IDialogItem? currentLeaf = null)
+    private readonly GlobalOptions _options;
+
+    protected DialogSessionViewModel(GlobalOptions options, Summarizer summarizer, IDialogItem? rootNode,
+        IDialogItem? currentLeaf = null)
     {
+        _options = options;
+        _summarizer = summarizer;
         _readOnlyDialogItems = new ReadOnlyObservableCollection<IDialogItem>(DialogItemsObservable);
         if (rootNode == null)
         {
@@ -605,6 +642,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
 
         RebuildLinearItems();
+        ((INotifyCollectionChanged)this.RootNode.Children).CollectionChanged += OnRootCollectionChanged;
         SharedGraphViewModel = new DialogGraphViewModel(this);
         DialogItemsObservable.CollectionChanged += DialogOnCollectionChanged;
         OpenDialogRouteCommand =
@@ -726,7 +764,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             {
                 var saveFileDialog = new SaveFileDialog()
                 {
-                    FileName = this.Name ?? string.Empty,
+                    FileName = this.Topic ?? string.Empty,
                     CheckFileExists = false,
                     AddExtension = true,
                     DefaultExt = ".md",
@@ -784,6 +822,17 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             }
         });
     }
+
+    private void OnRootCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (_options.EnableAutoSubjectGeneration &&
+            e.Action is NotifyCollectionChangedAction.Remove or NotifyCollectionChangedAction.Reset
+            && this.DialogItems.Count == 0)
+        {
+            this.Topic = "新建会话";
+        }
+    }
+
 
     protected virtual void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {

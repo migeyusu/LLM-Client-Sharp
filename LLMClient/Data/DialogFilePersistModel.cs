@@ -16,7 +16,7 @@ public class DialogFilePersistModel : DialogSessionPersistModel
 
     public DateTime EditTime { get; set; }
     
-    public string Topic { get; set; } = string.Empty;
+    public string? Topic { get; set; }
 
     public ParameterizedLLMModelPO? Client { get; set; }
     
