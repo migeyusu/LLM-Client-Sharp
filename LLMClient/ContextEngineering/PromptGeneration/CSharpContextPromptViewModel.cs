@@ -26,7 +26,18 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
             IncludeMembers = true,
             IncludePackages = true
         });
-
+        if (string.IsNullOrEmpty(ProjectViewModel.SolutionFilePath))
+        {
+            throw new NotSupportedException("Only C# projects with a valid solution file path are supported.");
+        }
+        if (_context.IsLoaded)
+        {
+            await _context.Analyzer.AnalysisCurrentSolutionAsync(CancellationToken.None);
+        }
+        else
+        {
+            await _context.LoadSolutionAsync(ProjectViewModel.SolutionFilePath, CancellationToken.None);
+        }
         var solutionInfo = _context.RequireSolutionInfoOrThrow();
         var projectContext = markdownSummaryFormatter.Format(solutionInfo);
         return await PromptTemplateRenderer.RenderHandlebarsAsync(
