@@ -80,23 +80,30 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         });
     }
 
-    public override async Task PreviewProcessing(CancellationToken token = default)
+    public override async Task PreviewProcessing(DefaultDialogContextBuilder context, CancellationToken token = default)
     {
         if (string.IsNullOrEmpty(SolutionFilePath))
         {
             throw new InvalidOperationException("Please select a solution file before sending the request.");
         }
 
-        if (_solutionContext.IsLoaded)
+        //检查是否使用了project相关工具
+        if (context.FunctionGroups?.Any(group =>
+            {
+                return _projectFunctions.Any(function => function == group.Data);
+            }) == true)
         {
-            await _solutionContext.Analyzer.AnalysisCurrentSolutionAsync(token);
-        }
-        else
-        {
-            await _solutionContext.LoadSolutionAsync(SolutionFilePath, token);
+            if (_solutionContext.IsLoaded)
+            {
+                await _solutionContext.Analyzer.AnalysisCurrentSolutionAsync(token);
+            }
+            else
+            {
+                await _solutionContext.LoadSolutionAsync(SolutionFilePath, token);
+            }
         }
 
-        await base.PreviewProcessing(token);
+        await base.PreviewProcessing(context, token);
     }
 
     public override bool TryResolvePersistedFunctionGroup(AIFunctionGroupDefinitionPersistModel persistModel,

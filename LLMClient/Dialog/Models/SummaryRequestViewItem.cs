@@ -1,5 +1,6 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Endpoints;
+using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
@@ -49,7 +50,7 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
 
     public ISearchOption? SearchOption { get; } = null;
 
-    public List<IAIFunctionGroup>? FunctionGroups { get; } = null;
+    public List<CheckableFunctionGroupTree>? FunctionGroups { get; } = null;
 
     public IRagSource[]? RagSources { get; } = null;
 

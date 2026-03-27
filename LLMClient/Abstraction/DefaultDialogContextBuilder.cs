@@ -5,20 +5,30 @@ using AutoMapper;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Rag;
+using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel;
 
 namespace LLMClient.Abstraction;
 
+/// <summary>
+/// 用于隔离chatrequest和context
+/// </summary>
 public class DefaultDialogContextBuilder : IChatRequest
 {
     private static readonly Lazy<IMapper> MapperLazy = new(() =>
     {
-        var config = new MapperConfiguration(cfg => cfg.CreateMap<IChatRequest, DefaultDialogContextBuilder>(),
+        var config = new MapperConfiguration(cfg =>
+            {
+                cfg.CreateMap<IChatRequest, DefaultDialogContextBuilder>();
+                cfg.CreateMap<IChatRequest, RequestViewItem>();
+            },
             NullLoggerFactory.Instance);
         return config.CreateMapper();
     });
+
+    public static IMapper IChatRequestMapper => MapperLazy.Value;
 
     public DefaultDialogContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems)
     {
@@ -86,7 +96,7 @@ public class DefaultDialogContextBuilder : IChatRequest
 
     public ISearchOption? SearchOption { get; set; }
 
-    public List<IAIFunctionGroup>? FunctionGroups { get; set; }
+    public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
 
     public IRagSource[]? RagSources { get; set; }
 

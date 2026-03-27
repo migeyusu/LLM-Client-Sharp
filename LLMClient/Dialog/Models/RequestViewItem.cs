@@ -10,6 +10,7 @@ using LLMClient.Component.Render;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Endpoints;
+using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using MimeTypes;
@@ -103,7 +104,7 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
         }
     }
 
-    public List<IAIFunctionGroup>? FunctionGroups { get; set; }
+    public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
 
     public bool HasFunctions
     {

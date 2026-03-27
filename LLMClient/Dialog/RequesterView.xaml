@@ -203,7 +203,7 @@
                                                              Style="{StaticResource MaterialDesignToolPopupBox}">
                                         <materialDesign:PopupBox.PopupContentTemplate>
                                             <DataTemplate DataType="{x:Type local:RequesterViewModel}">
-                                                <ItemsControl ItemsSource="{Binding RagSources,Mode=OneWay}">
+                                                <ItemsControl ItemsSource="{Binding SelectableRagSources,Mode=OneWay}">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate
                                                             DataType="{x:Type  viewModel:SelectableViewModel`1[]}">

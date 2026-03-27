@@ -39,7 +39,7 @@ public delegate Task<IResponse> GetResponseHandler(RequestOption request,
 
 public record AgentDescriptor(string Name, Type Type);
 
-public class RequesterViewModel : BaseViewModel
+public class RequesterViewModel : BaseViewModel, IChatRequest
 {
     /// <summary>
     /// indicate whether data is changed after loading.
@@ -143,7 +143,7 @@ public class RequesterViewModel : BaseViewModel
     //rag有两种利用模式：search和plugin模式，search模式由手动调用，可产生结果并入上下文；plugin由llm驱动调用
 
     //不需要持久化
-    public IList<SelectableViewModel<IRagSource>> RagSources
+    public IList<SelectableViewModel<IRagSource>> SelectableRagSources
     {
         get;
         set
@@ -159,11 +159,11 @@ public class RequesterViewModel : BaseViewModel
         OnPropertyChanged(nameof(IsRagEnabled));
     }
 
-    public bool IsRagEnabled => RagSources.Any(model => model.IsSelected && model.Data.IsAvailable);
+    public bool IsRagEnabled => SelectableRagSources.Any(model => model.IsSelected && model.Data.IsAvailable);
 
     public void RefreshRagSources()
     {
-        var selected = RagSources.Where(model => model.IsSelected).ToList();
+        var selected = SelectableRagSources.Where(model => model.IsSelected).ToList();
         var selectableViewModels = _ragSourceCollection.Sources.ToSelectable().ToArray();
         foreach (var selectableViewModel in selectableViewModels)
         {
@@ -174,7 +174,7 @@ public class RequesterViewModel : BaseViewModel
             }
         }
 
-        RagSources = selectableViewModels;
+        SelectableRagSources = selectableViewModels;
     }
 
     public FileQueryViewModel QueryViewModel { get; }
@@ -236,6 +236,60 @@ public class RequesterViewModel : BaseViewModel
     public ICommand CancelLastCommand { get; }
 
     private bool _isDebugMode = true;
+
+    #region ichatrequest
+
+    public string? UserPrompt
+    {
+        get { return PromptEditViewModel.FinalText; }
+    }
+
+    public ISearchOption? SearchOption
+    {
+        get { return SearchConfig.GetUserSearchOption(); }
+    }
+
+    public List<CheckableFunctionGroupTree>? FunctionGroups
+    {
+        get
+        {
+            if (this.FunctionTreeSelector.FunctionSelected)
+            {
+                return this.FunctionGroupSource?
+                    .GetFunctionGroups()
+                    .OfType<CheckableFunctionGroupTree>()
+                    .ToList();
+            }
+
+            return null;
+        }
+    }
+
+    public IRagSource[]? RagSources
+    {
+        get
+        {
+            var ragSources = SelectableRagSources.Where(model => model is { IsSelected: true, Data.IsAvailable: true })
+                .Select(model => model.Data)
+                .ToArray();
+            return ragSources.Length > 0 ? ragSources : null;
+        }
+    }
+
+    public ChatResponseFormat? ResponseFormat { get; } = null;
+
+    public FunctionCallEngineType CallEngineType
+    {
+        get
+        {
+            return this.FunctionTreeSelector.EngineType ??
+                   this.FunctionTreeSelector.SelectableCallEngineTypes.FirstOrDefault();
+        }
+    }
+
+    public AdditionalPropertiesDictionary? TempAdditionalProperties { get; } = null;
+
+    #endregion
 
     public bool IsDebugMode
     {
@@ -463,44 +517,19 @@ public class RequesterViewModel : BaseViewModel
         }
     }
 
-    public async Task<RequestViewItem?> CreateRequest(string additionalPrompt = "")
+    public async Task<RequestViewItem?> CreateRequest()
     {
         if (!await PromptEditViewModel.ApplyAndCheck())
         {
             return null;
         }
 
-        var promptBuilder = new StringBuilder();
-        if (!string.IsNullOrEmpty(additionalPrompt))
-        {
-            promptBuilder.Append(additionalPrompt);
-        }
-
-        promptBuilder.Append(PromptEditViewModel.FinalText);
-        IList<CheckableFunctionGroupTree>? tools = null;
-        if (this.FunctionTreeSelector.FunctionSelected)
-        {
-            tools = this.FunctionGroupSource?
-                .GetFunctionGroups()
-                .OfType<CheckableFunctionGroupTree>()
-                .ToArray();
-        }
-
-        var ragSources = RagSources.Where(model => model is { IsSelected: true, Data.IsAvailable: true })
-            .Select(model => model.Data)
-            .ToArray();
         //每次搜索的条件可能不同，所以传递的是副本
-        var requestViewItem = new RequestViewItem(promptBuilder.ToString())
+        var requestViewItem = new RequestViewItem(PromptEditViewModel.FinalText)
         {
             Attachments = Attachments.Count == 0 ? null : Attachments.ToList(),
-            AutoApproveAllInvocations = AutoApproveAllInvocations,
-            FunctionGroups = tools == null ? null : [..tools],
-            SearchOption = SearchConfig.GetUserSearchOption(),
-            RagSources = ragSources.Length > 0 ? ragSources : null,
-            CallEngineType = this.FunctionTreeSelector.EngineType ??
-                             this.FunctionTreeSelector.SelectableCallEngineTypes.FirstOrDefault(),
-            IsDebugMode = this.IsDebugMode,
         };
+        DefaultDialogContextBuilder.IChatRequestMapper.Map<IChatRequest, RequestViewItem>(this, requestViewItem);
         await requestViewItem.EnsureInitializeAsync();
         return requestViewItem;
     }

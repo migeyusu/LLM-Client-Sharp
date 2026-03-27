@@ -1,13 +1,10 @@
-﻿using System.ComponentModel;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using LLMClient.Abstraction;
-using LLMClient.Component.Converters;
 using LLMClient.Component.Render;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
@@ -16,17 +13,6 @@ using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
 using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Endpoints;
-
-[TypeConverter(typeof(EnumDescriptionTypeConverter))]
-[JsonConverter(typeof(JsonStringEnumConverter<FunctionCallEngineType>))]
-public enum FunctionCallEngineType
-{
-    [Description("OpenAI API")] OpenAI,
-
-    [Description("Prompt-based")] Prompt,
-
-    [Description("mini-SWE")] MiniSwe,
-}
 
 public partial class PromptFunctionCallEngine : FunctionCallEngine
 {

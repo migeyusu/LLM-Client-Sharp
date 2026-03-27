@@ -10,18 +10,13 @@ public class VirtualFunctionViewModel : BaseViewModel, ICloneable
 {
     private readonly CheckableFunctionGroupTree _parentNode;
 
-    private bool _isSelected;
-    private string? _functionName;
-    private string? _description;
-    private bool _isEnabled;
-
     public bool IsSelected
     {
-        get => _isSelected;
+        get;
         set
         {
-            if (value == _isSelected) return;
-            _isSelected = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             _parentNode?.RefreshCheckState();
         }
@@ -43,33 +38,33 @@ public class VirtualFunctionViewModel : BaseViewModel, ICloneable
 
     public bool IsEnabled
     {
-        get => _isEnabled;
+        get;
         set
         {
-            if (value == _isEnabled) return;
-            _isEnabled = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public string? Description
     {
-        get => _description;
+        get;
         set
         {
-            if (value == _description) return;
-            _description = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public string? FunctionName
     {
-        get => _functionName;
+        get;
         set
         {
-            if (value == _functionName) return;
-            _functionName = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsEnabled));
         }

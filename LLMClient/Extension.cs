@@ -18,6 +18,7 @@ using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
+using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,6 +70,17 @@ public static class Extension
     }
 
     #endregion
+    
+    public static async Task<CheckableFunctionGroupTree> ToCheckableFunctionGroupTree(this IAIFunctionGroup functionGroup,CancellationToken token)
+    {
+        var checkableFunctionGroupTree = new CheckableFunctionGroupTree(functionGroup){IsSelected = true};
+        await checkableFunctionGroupTree.EnsureAsync(token);
+        foreach (var virtualFunctionViewModel in checkableFunctionGroupTree.Functions)
+        {
+            virtualFunctionViewModel.IsSelected = true;
+        }
+        return checkableFunctionGroupTree;
+    }
 
     public static async Task<bool> ShowConfirm(string question)
     {

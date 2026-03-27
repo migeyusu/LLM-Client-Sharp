@@ -29,7 +29,7 @@ public class MiniSweAgent : IAgent
 
     public ILLMChatClient ChatClient { get; }
 
-    public AgentOption? AgentOption { get; }
+    public AgentOption AgentOption { get; }
 
     public MiniSweAgent(ILLMChatClient agent, AgentOption agentOption)
     {
@@ -95,7 +95,8 @@ public class MiniSweAgent : IAgent
             {
                 if (!functionGroups.Contains(toolProvider, AIFunctionGroupComparer.Instance))
                 {
-                    functionGroups.Add(toolProvider);
+                    var tree = await toolProvider.ToCheckableFunctionGroupTree(cancellationToken);
+                    functionGroups.Add(tree);
                 }
             }
         }

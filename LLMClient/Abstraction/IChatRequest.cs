@@ -1,4 +1,5 @@
 ﻿using LLMClient.Endpoints;
+using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;
@@ -9,7 +10,7 @@ public interface IChatRequest
     
     ISearchOption? SearchOption { get; }
 
-    List<IAIFunctionGroup>? FunctionGroups { get; }
+    List<CheckableFunctionGroupTree>? FunctionGroups { get; }
 
     IRagSource[]? RagSources { get; }
 
