@@ -1,7 +1,9 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using LLMClient.Configuration;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
@@ -30,6 +32,23 @@ namespace LLMClient.Data;
 [JsonSerializable(typeof(GeekAISearchOption))]
 [JsonSerializable(typeof(OpenRouterSearchOption))]
 [JsonSerializable(typeof(GoogleSearchPlugin))]
+[JsonSerializable(typeof(AIFunctionGroupPersistObject))]
+[JsonSerializable(typeof(AIFunctionGroupDefinitionPersistModel))]
+[JsonSerializable(typeof(StdIOServerItemPersistModel))]
+[JsonSerializable(typeof(SseServerItemPersistModel))]
+[JsonSerializable(typeof(FileSystemPluginPersistModel))]
+[JsonSerializable(typeof(WslCliPluginPersistModel))]
+[JsonSerializable(typeof(WinCliPluginPersistModel))]
+[JsonSerializable(typeof(GoogleSearchPluginPersistModel))]
+[JsonSerializable(typeof(UrlFetcherPluginPersistModel))]
+[JsonSerializable(typeof(ProjectAwarenessPluginPersistModel))]
+[JsonSerializable(typeof(SymbolSemanticPluginPersistModel))]
+[JsonSerializable(typeof(CodeSearchPluginPersistModel))]
+[JsonSerializable(typeof(CodeReadingPluginPersistModel))]
+[JsonSerializable(typeof(VariableItem))]
+[JsonSerializable(typeof(VariableItem[]))]
+[JsonSerializable(typeof(ProxySetting))]
+[JsonSerializable(typeof(ProxyOption))]
 [JsonSerializable(typeof(GeekAISearchOption.GeekAISearchConfig))]
 [JsonSerializable(typeof(OpenRouterSearchOption.PluginConfig[]))]
 [JsonSerializable(typeof(GeekAIThinkingConfig))]

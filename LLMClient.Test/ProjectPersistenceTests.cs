@@ -5,10 +5,14 @@ using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
+using LLMClient.ContextEngineering.Analysis;
+using LLMClient.ContextEngineering.Tools;
 using LLMClient.Data;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Project;
+using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -60,12 +64,114 @@ public class ProjectPersistenceTests
         });
     }
 
+    [Fact]
+    public void ProjectPersistence_RoundTrips_CSharpProjectScopedFunctionGroups()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var serviceProvider = CreateServiceProvider();
+            BaseViewModel.ServiceLocator = serviceProvider;
+
+            var factory = serviceProvider.GetRequiredService<IViewModelFactory>();
+            var mapper = serviceProvider.GetRequiredService<IMapper>();
+            var rootPath = Path.Combine(Path.GetTempPath(), "LLMClient.CSharpProjectPersistenceTests",
+                Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(rootPath);
+
+            var project = factory.CreateViewModel<CSharpProjectViewModel>(
+                new ProjectOption
+                {
+                    Name = "CSharp Persistence Test",
+                    Description = "Verify C# project function persistence.",
+                    RootPath = rootPath,
+                    Type = ProjectType.CSharp,
+                },
+                string.Empty,
+                EmptyLlmModelClient.Instance);
+            project.SolutionFilePath = Path.Combine(rootPath, "Test.sln");
+
+            var session = factory.CreateViewModel<ProjectSessionViewModel>(project);
+            session.Topic = "Task 1";
+            session.SelectedFunctionGroups = [CreateProjectScopedTree(project)];
+            project.AddSession(session);
+
+            var persistModel = Assert.IsType<CSharpProjectPersistModel>(
+                mapper.Map<ProjectViewModel, ProjectPersistModel>(project, _ => { }));
+            Assert.Equal(project.SolutionFilePath, persistModel.SolutionFilePath);
+
+            var persistedSession = Assert.Single(persistModel.Sessions!);
+            var persistedGroup = Assert.Single(persistedSession.AllowedFunctions!);
+            Assert.Null(persistedGroup.FunctionGroup);
+            Assert.IsType<ProjectAwarenessPluginPersistModel>(persistedGroup.FunctionGroupPersistModel);
+
+            var clone = Assert.IsType<CSharpProjectViewModel>(
+                mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, _ => { }));
+            Assert.Equal(project.SolutionFilePath, clone.SolutionFilePath);
+
+            var clonedSession = Assert.Single(clone.Session);
+            var clonedTree = Assert.Single(clonedSession.SelectedFunctionGroups!);
+            Assert.True(clone.TryResolvePersistedFunctionGroup(new ProjectAwarenessPluginPersistModel(),
+                out var resolvedFunctionGroup));
+            Assert.Same(resolvedFunctionGroup, clonedTree.Data);
+            Assert.Equal(typeof(ProjectAwarenessPlugin), clonedTree.Data.GetType());
+        });
+    }
+
+    [Fact]
+    public void RequestPersistence_RoundTrips_FunctionGroups_WithParentProjectContext()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var serviceProvider = CreateServiceProvider();
+            BaseViewModel.ServiceLocator = serviceProvider;
+
+            var factory = serviceProvider.GetRequiredService<IViewModelFactory>();
+            var mapper = serviceProvider.GetRequiredService<IMapper>();
+            var rootPath = Path.Combine(Path.GetTempPath(), "LLMClient.RequestPersistenceTests",
+                Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(rootPath);
+
+            var project = factory.CreateViewModel<CSharpProjectViewModel>(
+                new ProjectOption
+                {
+                    Name = "Request Persistence Test",
+                    Description = "Verify request function group persistence.",
+                    RootPath = rootPath,
+                    Type = ProjectType.CSharp,
+                },
+                string.Empty,
+                EmptyLlmModelClient.Instance);
+            var session = factory.CreateViewModel<ProjectSessionViewModel>(project);
+
+            var request = new RequestViewItem("hello", session)
+            {
+                FunctionGroups = [CreateProjectScopedTree(project)],
+            };
+
+            var persistModel = mapper.Map<RequestViewItem, RequestPersistItem>(request, _ => { });
+            var persistedGroup = Assert.Single(persistModel.FunctionGroups!);
+            Assert.IsType<ProjectAwarenessPluginPersistModel>(persistedGroup.FunctionGroupPersistModel);
+
+            var restored = mapper.Map<RequestPersistItem, RequestViewItem>(persistModel, opts =>
+            {
+                opts.Items[AutoMapModelTypeConverter.ParentDialogViewModelKey] = session;
+                opts.Items[AutoMapModelTypeConverter.ParentProjectViewModelKey] = project;
+            });
+
+            var restoredGroup = Assert.IsType<CheckableFunctionGroupTree>(Assert.Single(restored.FunctionGroups!));
+            Assert.True(project.TryResolvePersistedFunctionGroup(new ProjectAwarenessPluginPersistModel(),
+                out var resolvedFunctionGroup));
+            Assert.Same(resolvedFunctionGroup, restoredGroup.Data);
+        });
+    }
+
     private static ServiceProvider CreateServiceProvider()
     {
         return new ServiceCollection()
             .AddSingleton<IViewModelFactory, ViewModelFactory>()
             .AddTransient<AutoMapModelTypeConverter>()
             .AddSingleton<Microsoft.Extensions.Logging.ILoggerFactory>(NullLoggerFactory.Instance)
+            .AddSingleton(typeof(Microsoft.Extensions.Logging.ILogger<>), typeof(NullLogger<>))
             .AddSingleton<GlobalOptions>()
             .AddSingleton<IPromptsResource, TestPromptsResource>()
             .AddSingleton<IEndpointService, TestEndpointService>()
@@ -73,10 +179,28 @@ public class ProjectPersistenceTests
             .AddSingleton<IRagSourceCollection, TestRagSourceCollection>()
             .AddSingleton<BuiltInFunctionsCollection>()
             .AddSingleton<ITokensCounter, DefaultTokensCounter>()
+            .AddTransient<AnalyzerConfig>()
+            .AddTransient<RoslynProjectAnalyzer>()
             .AddSingleton<Summarizer>()
+            .AddSingleton<Profile, FunctionGroupPersistenceProfile>()
+            .AddSingleton<Profile, DialogItemPersistenceProfile>()
             .AddSingleton<Profile, DialogMappingProfile>()
+            .AddSingleton<Profile, SessionProjectPersistenceProfile>()
             .AddMap()
             .BuildServiceProvider();
+    }
+
+    private static CheckableFunctionGroupTree CreateProjectScopedTree(CSharpProjectViewModel project)
+    {
+        Assert.True(project.TryResolvePersistedFunctionGroup(new ProjectAwarenessPluginPersistModel(),
+            out var functionGroup));
+        Assert.NotNull(functionGroup);
+
+        var tree = new CheckableFunctionGroupTree(functionGroup);
+        var firstFunction = Assert.Single(functionGroup.AvailableTools!.Take(1));
+        tree.Functions.Add(new VirtualFunctionViewModel(firstFunction, tree) { IsSelected = true });
+        tree.IsSelected = true;
+        return tree;
     }
 
     private sealed class TestPromptsResource : IPromptsResource

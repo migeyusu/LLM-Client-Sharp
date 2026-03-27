@@ -7,6 +7,7 @@ using LLMClient.Configuration;
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.ContextEngineering.Tools;
+using LLMClient.Data;
 using LLMClient.ToolCall;
 using Microsoft.Extensions.Logging;
 
@@ -30,6 +31,11 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
     public ICommand SelectPathCommand { get; }
 
     private readonly CSharpContextPromptViewModel _projectContextPrompt;
+    private readonly ProjectAwarenessPlugin _projectAwarenessPlugin;
+    private readonly SymbolSemanticPlugin _symbolSemanticPlugin;
+    private readonly CodeSearchPlugin _codeSearchPlugin;
+    private readonly CodeReadingPlugin _codeReadingPlugin;
+    private readonly IAIFunctionGroup[] _projectFunctions;
 
     public override ContextPromptViewModel ProjectContext => _projectContextPrompt;
 
@@ -43,17 +49,21 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         : base(option, initialPrompt, modelClient, mapper, options, factory, tasks)
     {
         _solutionContext = new SolutionContext(projectAnalyzer);
-        IAIFunctionGroup[] projectFunctions =
+        _projectAwarenessPlugin = new ProjectAwarenessPlugin(new ProjectAwarenessService(_solutionContext));
+        _symbolSemanticPlugin = new SymbolSemanticPlugin(new SymbolSemanticService(_solutionContext, mapper,
+            loggerFactory.CreateLogger<SymbolSemanticService>()));
+        _codeSearchPlugin = new CodeSearchPlugin(new CodeSearchService(_solutionContext, null,
+            loggerFactory.CreateLogger<CodeSearchService>()));
+        _codeReadingPlugin = new CodeReadingPlugin(new CodeReadingService(_solutionContext, mapper,
+            loggerFactory.CreateLogger<CodeReadingService>()));
+        _projectFunctions =
         [
-            new ProjectAwarenessPlugin(new ProjectAwarenessService(_solutionContext)),
-            new SymbolSemanticPlugin(new SymbolSemanticService(_solutionContext, mapper,
-                loggerFactory.CreateLogger<SymbolSemanticService>())),
-            new CodeSearchPlugin(new CodeSearchService(_solutionContext, null,
-                loggerFactory.CreateLogger<CodeSearchService>())),
-            new CodeReadingPlugin(new CodeReadingService(_solutionContext, mapper,
-                loggerFactory.CreateLogger<CodeReadingService>()))
+            _projectAwarenessPlugin,
+            _symbolSemanticPlugin,
+            _codeSearchPlugin,
+            _codeReadingPlugin
         ];
-        Requester.FunctionTreeSelector.ConnectSource(new ProxyFunctionGroupSource(() => projectFunctions));
+        Requester.FunctionTreeSelector.ConnectSource(new ProxyFunctionGroupSource(() => _projectFunctions));
         _projectContextPrompt = new CSharpContextPromptViewModel(_solutionContext, this);
         SelectPathCommand = new RelayCommand(() =>
         {
@@ -87,6 +97,20 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         }
 
         await base.PreviewProcessing(token);
+    }
+
+    public override bool TryResolvePersistedFunctionGroup(AIFunctionGroupDefinitionPersistModel persistModel,
+        out IAIFunctionGroup? functionGroup)
+    {
+        functionGroup = persistModel switch
+        {
+            ProjectAwarenessPluginPersistModel => _projectAwarenessPlugin,
+            SymbolSemanticPluginPersistModel => _symbolSemanticPlugin,
+            CodeSearchPluginPersistModel => _codeSearchPlugin,
+            CodeReadingPluginPersistModel => _codeReadingPlugin,
+            _ => null
+        };
+        return functionGroup != null;
     }
 
     public void Dispose()

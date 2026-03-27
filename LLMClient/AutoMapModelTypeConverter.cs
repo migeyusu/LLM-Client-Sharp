@@ -114,7 +114,8 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         ResolutionContext context)
     {
         destination ??= new AIFunctionGroupPersistObject();
-        destination.FunctionGroup = source.Data;
+        destination.FunctionGroupPersistModel = context.Mapper.Map<AIFunctionGroupDefinitionPersistModel>(source.Data);
+        destination.FunctionGroup = null;
         destination.SelectedFunctionNames = source.Functions
             .Where(function => function.IsSelected)
             .Select(function => function.FunctionName!)
@@ -126,10 +127,7 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
         CheckableFunctionGroupTree? destination,
         ResolutionContext context)
     {
-        var sourceFunctionGroup = source.FunctionGroup;
-        var group = sourceFunctionGroup is McpServerItem server
-            ? _mcpServiceCollection.TryGet(server)
-            : sourceFunctionGroup;
+        var group = ResolveFunctionGroup(source, context);
         if (group == null)
         {
             throw new InvalidOperationException("Function group cannot be null.");
@@ -189,5 +187,22 @@ public class AutoMapModelTypeConverter : ITypeConverter<DialogFileViewModel, Dia
 
         context.InstanceCache?.TryAdd(contextCacheKey, llmModelClient);
         return llmModelClient;
+    }
+
+    private IAIFunctionGroup? ResolveFunctionGroup(AIFunctionGroupPersistObject source, ResolutionContext context)
+    {
+        var persistModel = source.FunctionGroupPersistModel;
+        if (persistModel != null)
+        {
+            return context.Mapper.Map<IAIFunctionGroup>(persistModel);
+        }
+
+        var sourceFunctionGroup = source.FunctionGroup;
+        return sourceFunctionGroup switch
+        {
+            McpServerItem server => _mcpServiceCollection.TryGet(server),
+            not null => sourceFunctionGroup,
+            _ => null
+        };
     }
 }

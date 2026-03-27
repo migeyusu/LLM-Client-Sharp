@@ -106,10 +106,8 @@
                             <!--IsEnabled="{Binding SelectedTask,Mode=OneWay,Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}"-->
                             <ComboBox ItemsSource="{Binding  Session,Mode=OneWay}"
                                       SelectedItem="{Binding SelectedSession,Mode=TwoWay}"
-                                      IsEditable="True"
                                       TextSearch.TextPath="Name"
-                                      Width="200"
-                                      Text="{Binding Path=SelectedSession.Topic, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                      Width="200">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate DataType="{x:Type local:ProjectSessionViewModel}">
                                         <Grid>

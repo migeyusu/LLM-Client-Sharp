@@ -400,7 +400,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
         this.SelectedSession.SelectedFunctionGroups =
             this.Requester.FunctionTreeSelector.FunctionGroups.Where(tree => tree.IsSelected != false)
-                .Select((tree => (CheckableFunctionGroupTree)tree.Clone())).ToArray();
+                .Select(tree => (CheckableFunctionGroupTree)tree.Clone()).ToArray();
         PopupBox.ClosePopupCommand.Execute(null, null);
     }
 
@@ -450,5 +450,12 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 }
             }
         }
+    }
+
+    public virtual bool TryResolvePersistedFunctionGroup(AIFunctionGroupDefinitionPersistModel persistModel,
+        out IAIFunctionGroup? functionGroup)
+    {
+        functionGroup = null;
+        return false;
     }
 }
