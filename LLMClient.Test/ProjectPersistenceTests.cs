@@ -165,6 +165,59 @@ public class ProjectPersistenceTests
         });
     }
 
+    [Fact]
+    public void ProjectRequester_FunctionSelector_DoesNotDuplicate_ProjectScopedFunctionGroups_AfterRestore()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var serviceProvider = CreateServiceProvider();
+            BaseViewModel.ServiceLocator = serviceProvider;
+
+            var factory = serviceProvider.GetRequiredService<IViewModelFactory>();
+            var mapper = serviceProvider.GetRequiredService<IMapper>();
+            var rootPath = Path.Combine(Path.GetTempPath(), "LLMClient.ProjectRequesterTests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(rootPath);
+
+            var project = factory.CreateViewModel<CSharpProjectViewModel>(
+                new ProjectOption
+                {
+                    Name = "Requester Dedup Test",
+                    Description = "Verify project requester deduplicates restored tools.",
+                    RootPath = rootPath,
+                    Type = ProjectType.CSharp,
+                },
+                string.Empty,
+                EmptyLlmModelClient.Instance);
+            project.SolutionFilePath = Path.Combine(rootPath, "Test.sln");
+
+            var session = factory.CreateViewModel<ProjectSessionViewModel>(project);
+            session.Topic = "Task 1";
+            session.SelectedFunctionGroups = [CreateProjectScopedTree(project)];
+            project.AddSession(session);
+
+            var persistModel = Assert.IsType<CSharpProjectPersistModel>(
+                mapper.Map<ProjectViewModel, ProjectPersistModel>(project, _ => { }));
+            var clone = Assert.IsType<CSharpProjectViewModel>(
+                mapper.Map<ProjectPersistModel, ProjectViewModel>(persistModel, _ => { }));
+            var clonedSession = Assert.Single(clone.Session);
+            clone.SelectedSession = clonedSession;
+
+            clone.Requester.FunctionTreeSelector.RefreshSourceAsync().GetAwaiter().GetResult();
+
+            Assert.True(clone.TryResolvePersistedFunctionGroup(new ProjectAwarenessPluginPersistModel(),
+                out var resolvedFunctionGroup));
+            Assert.NotNull(resolvedFunctionGroup);
+
+            var matchingGroups = clone.Requester.FunctionTreeSelector.FunctionGroups
+                .Where(group => AIFunctionGroupComparer.Instance.Equals(group, resolvedFunctionGroup))
+                .ToArray();
+
+            var restoredGroup = Assert.Single(matchingGroups);
+            Assert.Same(resolvedFunctionGroup, restoredGroup.Data);
+            Assert.True(restoredGroup.IsSelected);
+        });
+    }
+
     private static ServiceProvider CreateServiceProvider()
     {
         return new ServiceCollection()

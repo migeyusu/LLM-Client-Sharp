@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Elsa.Workflows;
 using LLMClient.Abstraction;
+using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
@@ -199,6 +200,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 {
                     var reasoningStart = false;
                     var reasoningEnd = false;
+                    ChatMessage? functionResultMessage = null;
                     cancellationToken.ThrowIfCancellationRequested();
                     UsageDetails? loopUsageDetails = null;
                     try
@@ -257,12 +259,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                         //do nothing, textContent & reasoningContent is already added to RespondingText
                                         break;
                                     case FunctionCallContent functionCallContent:
-                                        interactor?.WriteLine("Function call requested: ");
+                                        interactor?.WriteLine(ToolCallBlockParser.FunctionCallTag);
                                         interactor?.WriteLine(functionCallContent.GetDebuggerString());
+                                        interactor?.WriteLine(ToolCallBlockParser.FunctionCallEndTag);
                                         break;
                                     case FunctionResultContent functionResultContent:
-                                        interactor?.WriteLine("Function result generated: ");
+                                        interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultTag);
                                         interactor?.WriteLine(functionResultContent.GetDebuggerString());
+                                        interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultEndTag);
                                         break;
                                     case ErrorContent errorContent:
                                         interactor?.Error(
@@ -356,11 +360,34 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         }
 
                         interactor?.WriteLine("Processing function calls...");
-                        var chatMessage = new ChatMessage();
-                        chatHistory.Add(chatMessage);
-                        responseMessages.Add(chatMessage);
-                        await functionCallEngine.ProcessFunctionCallsAsync(chatContext, chatMessage, preFunctionCalls,
+                        functionResultMessage = new ChatMessage();
+                        chatHistory.Add(functionResultMessage);
+                        responseMessages.Add(functionResultMessage);
+                        await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage, preFunctionCalls,
                             interactor, cancellationToken);
+                    }
+                    catch (AgentFlowException agentFlowException)
+                    {
+                        if (preUpdates.Count != 0)
+                        {
+                            responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
+                        }
+
+                        if (functionResultMessage is { Contents.Count: 0 })
+                        {
+                            chatHistory.Remove(functionResultMessage);
+                            responseMessages.Remove(functionResultMessage);
+                        }
+
+                        if (agentFlowException.Messages.Count > 0)
+                        {
+                            chatHistory.AddRange(agentFlowException.Messages);
+                            responseMessages.AddRange(agentFlowException.Messages);
+                        }
+
+                        finishReason = ChatFinishReason.Stop;
+                        interactor?.Info("Agent flow completed.");
+                        break;
                     }
                     catch (OperationCanceledException canceledException)
                     {

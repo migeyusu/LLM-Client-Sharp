@@ -80,7 +80,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         });
     }
 
-    public override async Task PreviewProcessing(DefaultDialogContextBuilder context, CancellationToken token = default)
+    public override async Task PreviewProcessing(CancellationToken token = default)
     {
         if (string.IsNullOrEmpty(SolutionFilePath))
         {
@@ -88,7 +88,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         }
 
         //检查是否使用了project相关工具
-        if (context.FunctionGroups?.Any(group =>
+        if (this.SelectedSession?.SelectedFunctionGroups?.Any(group =>
             {
                 return _projectFunctions.Any(function => function == group.Data);
             }) == true)
@@ -103,7 +103,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
             }
         }
 
-        await base.PreviewProcessing(context, token);
+        await base.PreviewProcessing(token);
     }
 
     public override bool TryResolvePersistedFunctionGroup(AIFunctionGroupDefinitionPersistModel persistModel,

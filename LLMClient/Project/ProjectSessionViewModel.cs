@@ -103,9 +103,9 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
         nameof(SearchText)
     ];
 
-    public override Task OnPreviewRequest(DefaultDialogContextBuilder context, CancellationToken token)
+    public override Task OnPreviewRequest(CancellationToken token)
     {
-        return ParentProject.PreviewProcessing(context, token);
+        return ParentProject.PreviewProcessing(token);
     }
 
     private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)

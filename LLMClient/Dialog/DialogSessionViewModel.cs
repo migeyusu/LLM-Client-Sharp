@@ -511,7 +511,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     #region core methods
 
-    public virtual Task OnPreviewRequest(DefaultDialogContextBuilder context, CancellationToken token)
+    public virtual Task OnPreviewRequest(CancellationToken token)
     {
         return Task.CompletedTask;
     }
@@ -529,7 +529,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         //判断是否需要进行主题总结
         if (this.Topic == "新建会话" &&
             // ReSharper disable once SuspiciousTypeConversion.Global
-            this.DialogItems.OfType<IResponse>().Count() == 1
+            this.DialogItems.OfType<IResponseItem>().Count() == 1
             && !response.IsInterrupt
             && _options.EnableAutoSubjectGeneration
             && (SummarizeTask == null || SummarizeTask.IsCompleted))

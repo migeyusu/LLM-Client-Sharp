@@ -53,8 +53,6 @@ public class FunctionResultContentPO : IAIContent
 {
     [JsonPropertyName("CallId")] public string CallId { get; set; } = string.Empty;
 
-    [JsonPropertyName("Exception")] public Exception? Exception { get; set; }
-
     [JsonPropertyName("Result")] public object? Result { get; set; }
 }
 

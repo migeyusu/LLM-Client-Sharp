@@ -71,7 +71,7 @@ public sealed class WslCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                 throw new NotSupportedException($"错误：命令 '{commandBase}' 被默认禁止执行。");
             }
 
-            if (await interactor.WaitForPermission(
+            if (!await interactor.WaitForPermission(
                     "安全警告",
                     $"请求在 WSL 中执行命令：{command}\n该命令被列为危险命令，可能会对系统造成损害。是否继续？"))
             {

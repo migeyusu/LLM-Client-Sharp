@@ -61,8 +61,7 @@ public class DialogMappingProfile : Profile
         CreateMap<ErrorContentPO, ErrorContent>();
         CreateMap<FunctionResultContent, FunctionResultContentPO>();
         CreateMap<FunctionResultContentPO, FunctionResultContent>()
-            .ConstructUsing((po, _) => new FunctionResultContent(po.CallId, po.Result)
-                { Exception = po.Exception });
+            .ConstructUsing((po, _) => new FunctionResultContent(po.CallId, po.Result));
         CreateMap<TextReasoningContent, TextReasoningContentPO>();
         CreateMap<TextReasoningContentPO, TextReasoningContent>();
         CreateMap<UriContent, UriContentPO>();

@@ -134,7 +134,10 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
                 : new CancellationTokenSource();
             using (RequestTokenSource)
             {
-                await foreach (var callResult in Agent.Execute(session, interactor: this, cancellationToken: token))
+                var cancellationToken = RequestTokenSource.Token;
+                await ParentSession.OnPreviewRequest(cancellationToken);
+                await foreach (var callResult in Agent.Execute(session, interactor: this,
+                                   cancellationToken: cancellationToken))
                 {
                     var viewItem =
                         ServiceLocator.GetService<IMapper>()!.Map<IResponse, RawResponseViewItem>(callResult);
@@ -142,6 +145,7 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
                     this.Items.Add(viewItem);
                     this.History.Clear();
                 }
+                ParentSession.OnResponseCompleted(totalCallResult);
             }
         }
         catch (Exception e)

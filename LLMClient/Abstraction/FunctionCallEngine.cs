@@ -83,10 +83,12 @@ public abstract class FunctionCallEngine
             if (!this.KernelPluginCollection.TryGetFunction(null, functionCallContent.Name,
                     out var kernelFunction))
             {
+                var exception = new Exception("Function not exist");
                 interactor?.Error(
                     $"Function '{functionCallContent.Name}' not exist, call failed.");
-                functionResultContents.Add(new FunctionResultContent(functionCallContent.CallId, null)
-                    { Exception = new Exception("Function not exist") });
+                functionResultContents.Add(
+                    new FunctionResultContent(functionCallContent.CallId, exception.HierarchicalMessage())
+                        { Exception = exception });
                 if (IsQuitWhenFunctionCallFailed)
                 {
                     throw new FunctionCallException($"Function '{functionCallContent.Name}' not exist.");
@@ -127,7 +129,7 @@ public abstract class FunctionCallEngine
                 {
                     interactor?.Error("Function call failed: " + e.HierarchicalMessage());
                     functionResultContents.Add(
-                        new FunctionResultContent(functionCallContent.CallId, null)
+                        new FunctionResultContent(functionCallContent.CallId, e.HierarchicalMessage())
                             { Exception = e });
                     if (IsQuitWhenFunctionCallFailed)
                     {

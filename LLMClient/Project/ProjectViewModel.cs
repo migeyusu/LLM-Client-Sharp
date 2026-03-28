@@ -432,7 +432,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         }
     }
 
-    public virtual async Task PreviewProcessing(DefaultDialogContextBuilder context, CancellationToken token = default)
+    public virtual async Task PreviewProcessing(CancellationToken token = default)
     {
         if (!this.Option.Check())
         {

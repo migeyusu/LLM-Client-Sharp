@@ -1,21 +1,38 @@
+using LLMClient.ToolCall;
+
 namespace LLMClient.Abstraction;
 
 public class AIFunctionGroupComparer : IEqualityComparer<IAIFunctionGroup>
 {
-    public static AIFunctionGroupComparer Instance => new();
+    public static AIFunctionGroupComparer Instance { get; } = new();
 
     public bool Equals(IAIFunctionGroup? x, IAIFunctionGroup? y)
     {
         if (ReferenceEquals(x, y)) return true;
         if (x is null) return false;
         if (y is null) return false;
+
+        x = Unwrap(x);
+        y = Unwrap(y);
+
+        if (ReferenceEquals(x, y)) return true;
         if (x.GetType() != y.GetType()) return false;
         return x.GetUniqueId() == y.GetUniqueId();
     }
 
     public int GetHashCode(IAIFunctionGroup obj)
     {
-        // return obj.GetUniqueId().GetHashCode();
-        return HashCode.Combine(obj.GetUniqueId());
+        obj = Unwrap(obj);
+        return HashCode.Combine(obj.GetType(), obj.GetUniqueId());
+    }
+
+    private static IAIFunctionGroup Unwrap(IAIFunctionGroup group)
+    {
+        while (group is CheckableFunctionGroupTree tree)
+        {
+            group = tree.Data;
+        }
+
+        return group;
     }
 }

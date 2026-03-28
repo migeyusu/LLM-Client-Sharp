@@ -46,7 +46,20 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
     /// </summary>
     public bool IsDataChanged { get; set; } = true;
 
-    public AgentOption AgentOption { get; set; } = new();
+    private AgentOption _agentOption = new();
+
+    public AgentOption AgentOption
+    {
+        get => _agentOption;
+        set
+        {
+            if (ReferenceEquals(value, _agentOption)) return;
+            _agentOption.PropertyChanged -= TagDataChanged;
+            _agentOption = value;
+            _agentOption.PropertyChanged += TagDataChanged;
+            OnPropertyChanged();
+        }
+    }
 
     public event Action<IResponse>? RequestCompleted;
 
@@ -380,6 +393,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         _summarizer = summarizer;
         _ragSourceCollection = ragSourceCollection;
         _tokensCounter = tokensCounter;
+        _agentOption.PropertyChanged += TagDataChanged;
         this.BindClient(modelClient);
 
         // Initialize agents

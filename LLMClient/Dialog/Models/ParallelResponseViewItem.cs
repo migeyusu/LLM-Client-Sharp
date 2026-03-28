@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -189,15 +190,13 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
     public ParallelResponseViewItem(IEnumerable<ClientResponseViewItem> items, DialogSessionViewModel parentSession)
         : base(items, parentSession)
     {
-        Items.CollectionChanged += (_, _) =>
+        foreach (var item in Items)
         {
-            this.ParentSession.IsDataChanged = true;
-            OnPropertyChanged(nameof(IsMultiResponse));
-        };
-        SelectionPopup = new ModelSelectionPopupViewModel(client =>
-        {
-            this.NewResponse(client.CreateClient());
-        })
+            SubscribeResponseItem(item);
+        }
+
+        Items.CollectionChanged += OnItemsCollectionChanged;
+        SelectionPopup = new ModelSelectionPopupViewModel(client => { this.NewResponse(client.CreateClient()); })
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
@@ -277,6 +276,49 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
         });
     }
 
+    private void OnItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems != null)
+        {
+            foreach (var item in e.OldItems.OfType<ClientResponseViewItem>())
+            {
+                UnsubscribeResponseItem(item);
+            }
+        }
+
+        if (e.NewItems != null)
+        {
+            foreach (var item in e.NewItems.OfType<ClientResponseViewItem>())
+            {
+                SubscribeResponseItem(item);
+            }
+        }
+
+        this.ParentSession.IsDataChanged = true;
+        OnPropertyChanged(nameof(IsMultiResponse));
+        OnPropertyChanged(nameof(IsResponding));
+    }
+
+    private void SubscribeResponseItem(ClientResponseViewItem item)
+    {
+        item.PropertyChanged += OnResponseItemPropertyChanged;
+    }
+
+    private void UnsubscribeResponseItem(ClientResponseViewItem item)
+    {
+        item.PropertyChanged -= OnResponseItemPropertyChanged;
+    }
+
+    private void OnResponseItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(ClientResponseViewItem.IsResponding))
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(IsResponding));
+    }
+
     public ParallelResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)
     {
     }
@@ -344,17 +386,19 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
     private async Task<IResponse> ProcessResponseItem(ClientResponseViewItem responseViewItem,
         CancellationToken token = default)
     {
-        var dialogContext = DefaultDialogContextBuilder.CreateFromResponse(this, ParentSession.SystemPrompt);
+        responseViewItem.AcquireRespondingState();
         ParentSession.RespondingCount++;
         try
         {
-            await ParentSession.OnPreviewRequest(dialogContext, token);
+            await ParentSession.OnPreviewRequest(token);
+            var dialogContext = DefaultDialogContextBuilder.CreateFromResponse(this, ParentSession.SystemPrompt);
             var completedResult = await responseViewItem.Process(dialogContext, token);
             ParentSession.OnResponseCompleted(completedResult);
             return completedResult;
         }
         finally
         {
+            responseViewItem.ReleaseRespondingState();
             ParentSession.RespondingCount--;
         }
     }

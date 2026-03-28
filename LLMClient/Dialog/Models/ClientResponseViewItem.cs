@@ -74,6 +74,8 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     /// </summary>
     private readonly StringBuilder _responseHistory = new();
 
+    private int _respondingStateRefCount;
+
     public static ICommand ShowTempResponseCommand { get; } = new RelayCommand<ClientResponseViewItem>(o =>
     {
         if (o == null)
@@ -180,8 +182,8 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 throw new InvalidOperationException("Client is busy");
             }
 
+            AcquireRespondingState();
             ErrorMessage = null;
-            IsResponding = true;
             this.Messages = [];
             var searchableDocument = await WaitAsyncProperty<SearchableDocument>(nameof(SearchableDocument));
             var flowDocument = searchableDocument.Document;
@@ -210,8 +212,8 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         }
         finally
         {
+            ReleaseRespondingState();
             InvalidateAsyncProperty(nameof(SearchableDocument));
-            IsResponding = false;
         }
 
         return completedResult;
@@ -249,6 +251,32 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     public string GetCopyText()
     {
         return RawTextContent ?? string.Empty;
+    }
+
+    internal void AcquireRespondingState()
+    {
+        if (Interlocked.Increment(ref _respondingStateRefCount) != 1)
+        {
+            return;
+        }
+
+        IsResponding = true;
+    }
+
+    internal void ReleaseRespondingState()
+    {
+        var remaining = Interlocked.Decrement(ref _respondingStateRefCount);
+        if (remaining > 0)
+        {
+            return;
+        }
+
+        if (remaining < 0)
+        {
+            Interlocked.Exchange(ref _respondingStateRefCount, 0);
+        }
+
+        IsResponding = false;
     }
 
 

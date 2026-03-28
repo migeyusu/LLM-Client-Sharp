@@ -95,7 +95,7 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                 throw new NotSupportedException($"错误：命令 '{commandBase}' 被默认禁止执行。");
             }
 
-            if (await interactor.WaitForPermission("安全警告",
+            if (!await interactor.WaitForPermission("安全警告",
                     $"请求执行命令：{command}\n该命令被列为危险命令，可能会对系统造成损害。是否继续？"))
             {
                 throw new UnauthorizedAccessException("用户拒绝执行命令: " + command);
