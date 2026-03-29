@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Threading;
+using LLMClient.Component.Utility;
 using Markdig.Syntax;
 using Block = Markdig.Syntax.Block;
 
@@ -44,14 +45,14 @@ public sealed class StreamingRenderSession : IDisposable
 
         // 用 Background 优先级，确保此前所有 Normal 优先级的 TempResponseText.Add
         // 均已执行完毕后再 commit（Normal > Background，Normal 先执行）
-        _dispatcher.InvokeAsync(() =>
+        _dispatcher.InvokeObservedAsync(() =>
         {
             if (isTopLevel)
                 CommitTopLevelBlock(block);
             else
                 AppendSubBlockToLiving(block);
 
-        }, DispatcherPriority.Background);
+        }, DispatcherPriority.Background, $"{nameof(StreamingRenderSession)}.{nameof(OnBlockClosed)}");
     }
 
     // -------------------------------------------------------------------------

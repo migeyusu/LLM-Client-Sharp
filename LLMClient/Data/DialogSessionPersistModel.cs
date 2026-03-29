@@ -1,6 +1,4 @@
-﻿using LLMClient.Dialog;
-
-namespace LLMClient.Data;
+﻿namespace LLMClient.Data;
 
 public class DialogSessionPersistModel
 {

@@ -137,10 +137,13 @@ public class Program
         };
         TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
         {
-            var ex = eventArgs.Exception;
+            var ex = eventArgs.Exception.Flatten();
+            var detail = string.Join(Environment.NewLine + Environment.NewLine,
+                ex.InnerExceptions.Select(exception => exception.ToString()));
             MessageBox.Show("发生未观察到的任务异常: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             var logger = serviceProvider?.GetService<ILogger<Program>>();
-            logger?.LogError(ex, "发生未观察到的任务异常");
+            logger?.LogError(ex, "发生未观察到的任务异常: {Detail}", detail);
+            eventArgs.SetObserved();
         };
 #endif
             AnalyzerExtension.RegisterMsBuild();

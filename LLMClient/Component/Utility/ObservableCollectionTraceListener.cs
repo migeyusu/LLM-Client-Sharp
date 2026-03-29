@@ -55,7 +55,8 @@ public sealed class ObservableCollectionTraceListener : TraceListener
         }
         else
         {
-            _dispatcher.BeginInvoke(new Action(() => _target.Add(item)));
+            _dispatcher.InvokeObservedAsync(() => _target.Add(item),
+                operationName: nameof(ObservableCollectionTraceListener));
         }
     }
 }

@@ -93,6 +93,8 @@ public class SessionProjectPersistenceProfile : Profile
                     PromptReference = s.ExtendedSystemPrompts.Select(entry => entry.Id).ToArray(),
                 });
             })
+            .ForMember(model => model.IsFunctionEnabled,
+                expression => expression.MapFrom(model => model.Requester.FunctionTreeSelector.IsFunctionEnabled))
             .ForMember(model => model.PromptString,
                 opt => opt.MapFrom(src => src.Requester.PromptEditViewModel.FinalText))
             .ForMember(model => model.Client, opt => opt.MapFrom(src => src.Requester.DefaultClient))
@@ -302,4 +304,3 @@ public class SessionProjectPersistenceProfile : Profile
         }
     }
 }
-

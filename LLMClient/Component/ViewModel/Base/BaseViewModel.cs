@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Threading;
+using LLMClient.Component.Utility;
 
 namespace LLMClient.Component.ViewModel.Base;
 
@@ -331,7 +332,7 @@ public class BaseViewModel : INotifyPropertyChanged
         }
         else
         {
-            Dispatcher.BeginInvoke(action);
+            Dispatcher.InvokeObservedAsync(action, operationName: $"{GetType().Name}.{nameof(Dispatch)}");
         }
     }
 

@@ -14,17 +14,13 @@ namespace LLMClient.ToolCall;
 
 public class AIFunctionTreeSelectorViewModel : BaseViewModel
 {
-    public bool IsEnable { get; set; }
-    
-    private bool _functionSelected;
-
-    public bool FunctionSelected
+    public bool IsFunctionEnabled
     {
-        get => _functionSelected;
+        get;
         set
         {
-            if (value == _functionSelected) return;
-            _functionSelected = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }

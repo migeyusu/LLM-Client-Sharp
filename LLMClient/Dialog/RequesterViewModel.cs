@@ -266,7 +266,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
     {
         get
         {
-            if (this.FunctionTreeSelector.FunctionSelected)
+            if (this.FunctionTreeSelector.IsFunctionEnabled)
             {
                 return this.FunctionGroupSource?
                     .GetFunctionGroups()

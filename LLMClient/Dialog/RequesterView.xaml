@@ -96,7 +96,7 @@
                                                  materialDesign:ElevationAssist.Elevation="Dp3">
                                 <CheckBox materialDesign:CheckBoxAssist.CheckBoxSize="20"
                                           DataContext="{Binding FunctionTreeSelector,Mode=OneWay}"
-                                          IsChecked="{Binding FunctionSelected,Mode=TwoWay}">
+                                          IsChecked="{Binding IsFunctionEnabled,Mode=TwoWay}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="Tools"
                                                    VerticalAlignment="Center" />
