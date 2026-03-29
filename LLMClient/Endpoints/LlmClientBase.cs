@@ -363,7 +363,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         functionResultMessage = new ChatMessage();
                         chatHistory.Add(functionResultMessage);
                         responseMessages.Add(functionResultMessage);
-                        await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage, preFunctionCalls,
+                        await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
+                            preFunctionCalls,
                             interactor, cancellationToken);
                     }
                     catch (AgentFlowException agentFlowException)
@@ -435,6 +436,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                         exception = new CriticalException(
                             "An unhandled exception occurred during response processing.", ex);
+                        Trace.TraceError(exception.ToString());
                         interactor?.Error($"Error during response: {ex}");
                     }
 

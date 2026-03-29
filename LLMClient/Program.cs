@@ -3,7 +3,6 @@ using System.Windows;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component;
-using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
@@ -11,6 +10,7 @@ using LLMClient.ContextEngineering.Analysis;
 using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
+using LLMClient.Log;
 using LLMClient.Rag;
 using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.MCP;
@@ -42,6 +42,9 @@ public class Program
 
         IServiceProvider? serviceProvider = null;
         MainWindow? mainWindow = null;
+        DailyRollingLogSink? logSink = null;
+        DailyRollingTraceListener? traceFileListener = null;
+        LoggerTraceListener? loggerTraceListener = null;
         var tempPath = new DirectoryInfo(Extension.TempPath);
         if (!tempPath.Exists)
         {
@@ -50,6 +53,17 @@ public class Program
 
         try
         {
+            var logPath = Path.GetFullPath("Logs");
+            if (!Directory.Exists(logPath))
+            {
+                Directory.CreateDirectory(logPath);
+            }
+
+            logSink = new DailyRollingLogSink(logPath);
+            traceFileListener = new DailyRollingTraceListener(logSink);
+            Trace.Listeners.Add(traceFileListener);
+            Trace.AutoFlush = true;
+
             var serviceCollection = new ServiceCollection();
             var collection = serviceCollection
                 .AddSingleton<IViewModelFactory, ViewModelFactory>()
@@ -96,6 +110,7 @@ public class Program
             collection.AddLogging(builder =>
             {
                 builder.AddDebug();
+                builder.AddProvider(new DailyRollingFileLoggerProvider(logSink));
                 // Add OpenTelemetry as a logging provider
                 builder.AddOpenTelemetry(options =>
                 {
@@ -108,25 +123,26 @@ public class Program
                 builder.SetMinimumLevel(LogLevel.Trace);
             });
 #else
-            var logPath = Path.GetFullPath("Logs");
-            if (!Directory.Exists(logPath))
-            {
-                Directory.CreateDirectory(logPath);
-            }
-
             collection.AddLogging(builder =>
             {
+                builder.AddProvider(new DailyRollingFileLoggerProvider(logSink));
                 builder.SetMinimumLevel(LogLevel.Information);
             });
 #endif
             serviceProvider = collection.BuildServiceProvider();
             BaseViewModel.ServiceLocator = serviceProvider;
 #if RELEASE
-        //禁止在Debug模式下注册LoggerTraceListener，避免重复日志
-        //注册LoggerFactory到Listeners
+        // Release 下通过 ILogger 管道统一写文件，避免 Trace 直写和 ILogger 文件 provider 重复落盘。
+        if (traceFileListener is not null)
+        {
+            Trace.Listeners.Remove(traceFileListener);
+            traceFileListener.Dispose();
+            traceFileListener = null;
+        }
+
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-        var traceListener = new LLMClient.Log.LoggerTraceListener(loggerFactory);
-        Trace.Listeners.Add(traceListener);
+        loggerTraceListener = new LoggerTraceListener(loggerFactory);
+        Trace.Listeners.Add(loggerTraceListener);
 
         AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) =>
         {
@@ -173,6 +189,29 @@ public class Program
         }
         finally
         {
+            try
+            {
+                Trace.Flush();
+            }
+            catch
+            {
+                // 忽略退出阶段的日志刷新异常，避免影响应用退出。
+            }
+
+            if (loggerTraceListener is not null)
+            {
+                Trace.Listeners.Remove(loggerTraceListener);
+                loggerTraceListener.Dispose();
+            }
+
+            if (traceFileListener is not null)
+            {
+                Trace.Listeners.Remove(traceFileListener);
+                traceFileListener.Dispose();
+            }
+
+            logSink?.Dispose();
+
             if (!Debugger.IsAttached)
             {
                 Mutex.ReleaseMutex();
