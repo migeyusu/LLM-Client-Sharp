@@ -1,5 +1,6 @@
 ﻿using System.ClientModel;
 using System.ClientModel.Primitives;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using LLMClient.Component.Utility;
@@ -13,17 +14,23 @@ namespace LLMClient.Endpoints.OpenAIAPI;
 /// </summary>
 public class OpenAIChatClientEx : ChatClient
 {
-    public OpenAIChatClientEx(string model, ApiKeyCredential credential, OpenAIClientOptions options)
+    private readonly bool _treatNullChoicesAsEmptyResponse;
+
+    public OpenAIChatClientEx(string model, ApiKeyCredential credential, OpenAIClientOptions options,
+        bool treatNullChoicesAsEmptyResponse = false)
         : base(model, credential, options)
     {
+        _treatNullChoicesAsEmptyResponse = treatNullChoicesAsEmptyResponse;
     }
 
     public override async Task<ClientResult> CompleteChatAsync(BinaryContent content, RequestOptions? options = null)
     {
         var clientContext = AsyncContextStore<ChatContext>.Current;
+        var shouldProcessNonStreamingResponse = clientContext?.Streaming != true;
         if (clientContext != null)
         {
-            if (clientContext.AdditionalObjects.Count != 0 || clientContext.ShowRequestJson || clientContext.EnableSchemaCleaning)
+            if (clientContext.AdditionalObjects.Count != 0 || clientContext.ShowRequestJson ||
+                clientContext.EnableSchemaCleaning)
             {
                 await using (var oriStream = new MemoryStream())
                 {
@@ -53,14 +60,14 @@ public class OpenAIChatClientEx : ChatClient
                     {
                         var jsonOptions = new JsonSerializerOptions
                         {
-                            WriteIndented = true, 
-                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+                            WriteIndented = true,
+                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                         };
 
                         var formattedJson = jsonNode.ToJsonString(jsonOptions);
-                        clientContext.Interactor?.WriteLine("<request>");
-                        clientContext.Interactor?.WriteLine(formattedJson);
-                        clientContext.Interactor?.WriteLine("</request>");
+                        clientContext.InteractionHistory.AppendLine("<request>");
+                        clientContext.InteractionHistory.AppendLine(formattedJson);
+                        clientContext.InteractionHistory.AppendLine("</request>");
                     }
 
                     oriStream.SetLength(0);
@@ -79,7 +86,27 @@ public class OpenAIChatClientEx : ChatClient
 
         var result = await base.CompleteChatAsync(content, options);
 
+        if (clientContext != null)
+        {
+            clientContext.Result = result;
+        }
+
+        if (shouldProcessNonStreamingResponse)
+        {
+            await NormalizeChatCompletionResponseAsync(result, clientContext);
+            await ValidateChatCompletionResponseAsync(result);
+        }
+
 #if DEBUG
+
+        if (clientContext != null)
+        {
+            var binaryData = result.GetRawResponse();
+            var response = binaryData.Content.ToString();
+            clientContext.InteractionHistory.AppendLine("<response>");
+            clientContext.InteractionHistory.AppendLine(response);
+            clientContext.InteractionHistory.AppendLine("</response>");
+        }
         // var binaryData = result.GetRawResponse();
         /*var jsonNode = JsonNode.Parse(contentString);
         if (jsonNode != null)
@@ -96,12 +123,141 @@ public class OpenAIChatClientEx : ChatClient
         }*/
 #endif
 
-        if (clientContext != null)
+        return result;
+    }
+
+    private async Task NormalizeChatCompletionResponseAsync(ClientResult result, ChatContext? clientContext)
+    {
+        var response = result.GetRawResponse();
+        var responseText = await GetResponseTextAsync(response);
+        if (string.IsNullOrWhiteSpace(responseText))
         {
-            clientContext.Result = result;
+            return;
         }
 
-        return result;
+        try
+        {
+            using var document = JsonDocument.Parse(responseText);
+            var root = document.RootElement;
+            if (!_treatNullChoicesAsEmptyResponse || root.ValueKind != JsonValueKind.Object ||
+                !root.TryGetProperty("choices", out var choicesElement) || choicesElement.ValueKind != JsonValueKind.Null)
+            {
+                return;
+            }
+
+            var rootNode = JsonNode.Parse(responseText)?.AsObject();
+            if (rootNode == null)
+            {
+                return;
+            }
+
+            rootNode["choices"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["index"] = 0,
+                    ["message"] = new JsonObject
+                    {
+                        ["role"] = "assistant",
+                        ["content"] = string.Empty
+                    },
+                    ["finish_reason"] = "stop"
+                }
+            };
+            var normalizedResponseText = rootNode.ToJsonString();
+            ReplaceResponseContent(response, normalizedResponseText);
+            if (clientContext != null)
+            {
+                clientContext.InteractionHistory.AppendLine(
+                    "<warning>Applied OpenAI-compatible fallback: converted null choices to an empty array.</warning>");
+            }
+        }
+        catch (JsonException)
+        {
+            // Let the stricter validation stage surface the invalid JSON error.
+        }
+    }
+
+    private static async Task ValidateChatCompletionResponseAsync(ClientResult result)
+    {
+        var response = result.GetRawResponse();
+        var responseText = await GetResponseTextAsync(response);
+        if (string.IsNullOrWhiteSpace(responseText))
+        {
+            throw new LlmInvalidRequestException(
+                "The LLM endpoint returned an empty OpenAI-compatible response.");
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(responseText);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                throw new LlmInvalidRequestException(
+                    $"The LLM endpoint returned an invalid OpenAI-compatible response. Expected a JSON object but got {root.ValueKind}.\nResponse Content: {TrimResponse(responseText)}");
+            }
+
+            if (!root.TryGetProperty("choices", out var choicesElement))
+            {
+                throw new LlmInvalidRequestException(
+                    $"The LLM endpoint returned an invalid OpenAI-compatible response. Missing required 'choices' field.\nResponse Content: {TrimResponse(responseText)}");
+            }
+
+            if (choicesElement.ValueKind != JsonValueKind.Array)
+            {
+                throw new LlmInvalidRequestException(
+                    $"The LLM endpoint returned an invalid OpenAI-compatible response. Expected 'choices' to be an array, but got {choicesElement.ValueKind}.\nResponse Content: {TrimResponse(responseText)}");
+            }
+        }
+        catch (JsonException ex)
+        {
+            throw new LlmInvalidRequestException(
+                $"The LLM endpoint returned invalid JSON for an OpenAI-compatible response.\nResponse Content: {TrimResponse(responseText)}",
+                ex);
+        }
+    }
+
+
+    private static async Task<string?> GetResponseTextAsync(PipelineResponse response)
+    {
+        var contentStream = response.ContentStream;
+        if (contentStream == null)
+        {
+            return response.Content.ToString();
+        }
+
+        await using var memoryStream = new MemoryStream();
+        if (contentStream.CanSeek)
+        {
+            contentStream.Position = 0;
+        }
+
+        await contentStream.CopyToAsync(memoryStream);
+        var responseBytes = memoryStream.ToArray();
+        ReplaceResponseContent(response, responseBytes);
+        return Encoding.UTF8.GetString(responseBytes);
+    }
+
+    private static void ReplaceResponseContent(PipelineResponse response, string responseText)
+    {
+        ReplaceResponseContent(response, Encoding.UTF8.GetBytes(responseText));
+    }
+
+    private static void ReplaceResponseContent(PipelineResponse response, byte[] responseBytes)
+    {
+        response.ContentStream = new MemoryStream(responseBytes, writable: false);
+    }
+
+    private static string TrimResponse(string responseText)
+    {
+        const int maxLength = 2048;
+        if (responseText.Length <= maxLength)
+        {
+            return responseText;
+        }
+
+        return responseText[..maxLength] + "...";
     }
 
     /// <summary>
@@ -125,7 +281,7 @@ public class OpenAIChatClientEx : ChatClient
                         break;
                     }
                 }
-                
+
                 // 【核心覆盖】：用单一基础类型覆盖原来的数组
                 jsonObject["type"] = mainType;
             }

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
@@ -89,6 +90,8 @@ public class ChatCallResult : IResponse
     public IList<ChatAnnotation>? Annotations { get; set; }
 
     public AdditionalPropertiesDictionary? AdditionalProperties { get; set; }
+
+    public StringBuilder? History { get; set; }
 
     public string? GetContentAsString()
     {

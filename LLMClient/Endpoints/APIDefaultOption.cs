@@ -22,6 +22,8 @@ public class APIDefaultOption : BaseViewModel<APIDefaultOption>
     
     private bool _isOpenAiCompatible = true;
 
+    private bool _treatNullChoicesAsEmptyResponse;
+
     public string URL
     {
         get => _url;
@@ -42,6 +44,17 @@ public class APIDefaultOption : BaseViewModel<APIDefaultOption>
         {
             if (value == _isOpenAiCompatible) return;
             _isOpenAiCompatible = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool TreatNullChoicesAsEmptyResponse
+    {
+        get => _treatNullChoicesAsEmptyResponse;
+        set
+        {
+            if (value == _treatNullChoicesAsEmptyResponse) return;
+            _treatNullChoicesAsEmptyResponse = value;
             OnPropertyChanged();
         }
     }

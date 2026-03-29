@@ -79,7 +79,7 @@ public class OpenAIAPIClient : LlmClientBase
             Transport = new HttpClientPipelineTransport(httpClient),
             RetryPolicy = new ClientRetryPolicy(0),
             NetworkTimeout = Timeout.InfiniteTimeSpan
-        });
+        }, _option.TreatNullChoicesAsEmptyResponse);
         var builder = Kernel.CreateBuilder();
 #if DEBUG //只有debug模式下才需要获取每次请求的日志
         builder.Services.AddSingleton(_loggerFactory);

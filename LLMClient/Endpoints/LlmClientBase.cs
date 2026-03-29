@@ -103,6 +103,54 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     private const string ToolCalls = "ToolCalls";
 
+    private static bool IsMalformedOpenAiCompatibleResponse(InvalidOperationException exception)
+    {
+        return exception.Message.Contains("requires an element of type 'Array'", StringComparison.OrdinalIgnoreCase)
+               && exception.Message.Contains("type 'Null'", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static LlmInvalidRequestException CreateMalformedOpenAiCompatibleResponseException(
+        ChatContext chatContext, InvalidOperationException innerException)
+    {
+        var message =
+            "The LLM endpoint returned an invalid OpenAI-compatible response. Expected 'choices' to be an array.";
+        var rawResponse = TryGetRawResponseText(chatContext.Result);
+        if (!string.IsNullOrWhiteSpace(rawResponse))
+        {
+            message += $"{Environment.NewLine}Response Content: {TrimResponseForError(rawResponse)}";
+        }
+
+        return new LlmInvalidRequestException(message, innerException);
+    }
+
+    private static string? TryGetRawResponseText(ClientResult? result)
+    {
+        try
+        {
+            if (result == null)
+            {
+                return null;
+            }
+
+            return result.GetRawResponse().Content.ToString();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string TrimResponseForError(string responseText)
+    {
+        const int maxLength = 2048;
+        if (responseText.Length <= maxLength)
+        {
+            return responseText;
+        }
+
+        return responseText[..maxLength] + "...";
+    }
+
     [Experimental("SKEXP0001")]
     public virtual async Task<ChatCallResult> SendRequest(RequestContext requestContext,
         IInvokeInteractor? interactor = null,
@@ -427,6 +475,30 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             exception = new OutOfContextWindowException(clientResultException);
                         }
                     }
+                    catch (LlmInvalidRequestException llmInvalidRequestException)
+                    {
+                        if (preUpdates.Count != 0)
+                        {
+                            responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
+                        }
+
+                        exception = llmInvalidRequestException;
+                        Trace.TraceError(exception.ToString());
+                        interactor?.Error($"Error during response: {exception}");
+                    }
+                    catch (InvalidOperationException invalidOperationException)
+                        when (IsMalformedOpenAiCompatibleResponse(invalidOperationException))
+                    {
+                        if (preUpdates.Count != 0)
+                        {
+                            responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
+                        }
+
+                        exception = CreateMalformedOpenAiCompatibleResponseException(chatContext,
+                            invalidOperationException);
+                        Trace.TraceError(exception.ToString());
+                        interactor?.Error($"Error during response: {exception}");
+                    }
                     catch (Exception ex)
                     {
                         if (preUpdates.Count != 0)
@@ -447,6 +519,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                     interactor?.WriteLine();
                 }
+
+                result.History = chatContext.InteractionHistory;
             }
 
             var duration = (int)Math.Ceiling(_durationStopwatch.ElapsedMilliseconds / 1000f);

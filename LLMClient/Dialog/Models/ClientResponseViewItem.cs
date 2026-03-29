@@ -72,7 +72,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     /// <summary>
     /// 在响应过程中，临时存储文本内容，不持久化
     /// </summary>
-    private readonly StringBuilder _responseHistory = new();
+    private readonly StringBuilder _history = new();
 
     private int _respondingStateRefCount;
 
@@ -90,7 +90,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 Content = new TextBox()
                 {
                     IsReadOnly = true,
-                    Text = o._responseHistory.ToString(),
+                    Text = o._history.ToString(),
                     TextWrapping = TextWrapping.Wrap
                 }
             }
@@ -188,7 +188,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             var searchableDocument = await WaitAsyncProperty<SearchableDocument>(nameof(SearchableDocument));
             var flowDocument = searchableDocument.Document;
             flowDocument.Blocks.Clear();
-            _responseHistory.Clear();
+            _history.Clear();
             RequestTokenSource = token != CancellationToken.None
                 ? CancellationTokenSource.CreateLinkedTokenSource(token)
                 : new CancellationTokenSource();
@@ -212,6 +212,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         }
         finally
         {
+            this._history.Append(completedResult.History);
             ReleaseRespondingState();
             InvalidateAsyncProperty(nameof(SearchableDocument));
         }
@@ -280,7 +281,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     }
 
 
-
     private class ResponseViewItemInteractor : BaseViewModel, IInvokeInteractor, IAsyncDisposable
     {
         private readonly BlockingCollection<string> _blockingCollection = new();
@@ -309,11 +309,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 _blockingCollection.Add(message);
 
                 // Normal 优先级，确保在 Background 级别的 OnBlockClosed 之前执行
-                Dispatch(() =>
-                {
-                    responseViewItem.ResponseBuffer.Add(message);
-                    responseViewItem._responseHistory.Append(message);
-                });
+                Dispatch(() => { responseViewItem.ResponseBuffer.Add(message); });
             };
         }
 

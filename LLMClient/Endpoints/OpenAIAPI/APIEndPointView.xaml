@@ -44,6 +44,7 @@
                 <RowDefinition Height="36" />
                 <RowDefinition Height="36" />
                 <RowDefinition Height="36" />
+                <RowDefinition Height="36" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="120" />
@@ -156,6 +157,15 @@
                       materialDesign:CheckBoxAssist.CheckBoxSize="30"
                       Height="35"
                       Content="OpenAI Compatible" />
+            <CheckBox Grid.Row="4" Grid.Column="2"
+                      Grid.ColumnSpan="2"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center"
+                      IsChecked="{Binding ConfigOption.TreatNullChoicesAsEmptyResponse,Mode=TwoWay}"
+                      ToolTip="仅对非流式响应生效：当部分 OpenAI-compatible 服务返回 choices:null 时，将其自动降级为空响应，而不是直接报错。"
+                      materialDesign:CheckBoxAssist.CheckBoxSize="30"
+                      Height="35"
+                      Content="Null choices fallback" />
         </Grid>
         <ListBox Grid.Row="1" Grid.Column="0"
                  Margin="0,16,0,0"

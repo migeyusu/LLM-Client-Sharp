@@ -29,13 +29,15 @@ public class ChatContext
 
     public AdditionalPropertiesDictionary AdditionalObjects { get; }
 
-    public List<AIContent> AdditionalFunctionCallResult { get; } = new List<AIContent>();
+    public List<AIContent> AdditionalFunctionCallResult { get; } = new();
 
-    public StringBuilder AdditionalUserMessage { get; } = new StringBuilder();
+    public StringBuilder AdditionalUserMessage { get; } = new();
 
     public IInvokeInteractor? Interactor { get; }
-    
+
     public bool EnableSchemaCleaning { get; set; } = true;
+
+    public StringBuilder InteractionHistory { get; set; } = new();
 
     public ClientResult? Result { get; set; }
 
