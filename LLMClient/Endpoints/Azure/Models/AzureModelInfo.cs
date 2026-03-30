@@ -73,7 +73,11 @@ public class AzureModelInfo : IEndpointModel
         }
     }
 
-    [JsonIgnore] public int MaxContextSize { get; set; }
+    [JsonIgnore]
+    public int MaxContextSize
+    {
+        get { return (int)(MaxInputTokens ?? 0); }
+    }
 
     [JsonPropertyName("max_input_tokens")] public ulong? MaxInputTokens { get; set; }
 
