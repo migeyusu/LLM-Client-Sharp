@@ -17,6 +17,8 @@ public class ResponsePersistItemBase
 
     public UsageDetails? Usage { get; set; }
 
+    public UsageDetails? LastSuccessfulUsage { get; set; }
+
     public bool IsInterrupt { get; set; }
     
     [JsonPropertyName("ResponseMessages")]

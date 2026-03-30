@@ -150,12 +150,13 @@ public class OpenAiChatClientExTests
     [Fact]
     public async Task CompleteChatAsync_WhenStreamingContextExists_SkipsNonStreamingResponseValidation()
     {
-        var rawClient = CreateRawChatClient("""
-                                            data: {"id":"chatcmpl-stream","object":"chat.completion.chunk","created":1774824996,"model":"ZhipuAI/GLM-5","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}],"usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}
+        var responseText = """
+                           data: {"id":"chatcmpl-stream","object":"chat.completion.chunk","created":1774824996,"model":"ZhipuAI/GLM-5","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}],"usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}
 
-                                            data: [DONE]
+                           data: [DONE]
 
-                                            """);
+                           """;
+        var rawClient = CreateRawChatClient(new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes(responseText))));
 
         System.ClientModel.BinaryContent requestJson =
             System.ClientModel.BinaryContent.Create(BinaryData.FromString("{" +
@@ -184,13 +185,26 @@ public class OpenAiChatClientExTests
         return (OpenAIChatClientEx)openAiClient.GetChatClient("gpt-4o");
     }
 
+    private static OpenAIChatClientEx CreateRawChatClient(HttpContent responseContent,
+        bool treatNullChoicesAsEmptyResponse = false)
+    {
+        var openAiClient = CreateOpenAiClient(responseContent, treatNullChoicesAsEmptyResponse);
+        return (OpenAIChatClientEx)openAiClient.GetChatClient("gpt-4o");
+    }
+
     private static OpenAIClientEx CreateOpenAiClient(string responseJson, bool treatNullChoicesAsEmptyResponse)
+    {
+        return CreateOpenAiClient(new StringContent(responseJson, Encoding.UTF8, "application/json"),
+            treatNullChoicesAsEmptyResponse);
+    }
+
+    private static OpenAIClientEx CreateOpenAiClient(HttpContent responseContent, bool treatNullChoicesAsEmptyResponse)
     {
         var httpMessageHandlerStub = new HttpMessageHandlerStub
         {
             ResponseToReturn = new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(responseJson, Encoding.UTF8, "application/json")
+                Content = responseContent
             }
         };
 

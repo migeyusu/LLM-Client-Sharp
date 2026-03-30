@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Reflection;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
 using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
+using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Test;
 
@@ -76,6 +77,98 @@ public class MiniSweRegressionTests
         Assert.Null(result.Exception);
         Assert.Equal(ChatFinishReason.Stop, result.FinishReason);
         Assert.Contains(result.Messages, message => message.Role == ChatRole.Assistant && message.Text == "final submission");
+    }
+
+    [Fact]
+    public async Task SendRequest_MultiTurnFunctionCall_TracksLastSuccessfulUsageSeparatelyFromTotalUsage()
+    {
+        var firstUsage = new UsageDetails { InputTokenCount = 10, OutputTokenCount = 2, TotalTokenCount = 12 };
+        var secondUsage = new UsageDetails { InputTokenCount = 30, OutputTokenCount = 4, TotalTokenCount = 34 };
+        var client = new AgentFlowLlmClient(new SequentialChatClient(
+            CreateToolCallResponse("call-1", firstUsage),
+            CreateTextResponse("all done", secondUsage)));
+        var engine = new LoopingToolCallEngine();
+        var requestContext = new RequestContext
+        {
+            ChatHistory = [new ChatMessage(ChatRole.User, "run the tool and finish")],
+            FunctionCallEngine = engine,
+            RequestOptions = new ChatOptions(),
+        };
+
+#pragma warning disable SKEXP0001
+        var result = await client.SendRequest(requestContext, cancellationToken: CancellationToken.None);
+#pragma warning restore SKEXP0001
+
+        Assert.Null(result.Exception);
+        Assert.Equal(2, result.ValidCallTimes);
+        AssertUsage(result.Usage, new UsageDetails
+        {
+            InputTokenCount = firstUsage.InputTokenCount + secondUsage.InputTokenCount,
+            OutputTokenCount = firstUsage.OutputTokenCount + secondUsage.OutputTokenCount,
+            TotalTokenCount = firstUsage.TotalTokenCount + secondUsage.TotalTokenCount,
+        });
+        AssertUsage(result.LastSuccessfulUsage, secondUsage);
+    }
+
+    [Fact]
+    public async Task SendRequest_LaterRoundFailure_PreservesPreviousLastSuccessfulUsage()
+    {
+        var firstUsage = new UsageDetails { InputTokenCount = 11, OutputTokenCount = 3, TotalTokenCount = 14 };
+        var client = new AgentFlowLlmClient(new SequentialChatClient(
+            CreateToolCallResponse("call-1", firstUsage),
+            new InvalidOperationException("boom")));
+        var engine = new LoopingToolCallEngine();
+        var requestContext = new RequestContext
+        {
+            ChatHistory = [new ChatMessage(ChatRole.User, "run the tool and fail later")],
+            FunctionCallEngine = engine,
+            RequestOptions = new ChatOptions(),
+        };
+
+#pragma warning disable SKEXP0001
+        var result = await client.SendRequest(requestContext, cancellationToken: CancellationToken.None);
+#pragma warning restore SKEXP0001
+
+        Assert.NotNull(result.Exception);
+        Assert.Equal(1, result.ValidCallTimes);
+        AssertUsage(result.Usage, firstUsage);
+        AssertUsage(result.LastSuccessfulUsage, firstUsage);
+    }
+
+    [Fact]
+    public void ChatCallResult_Add_UsesLatestSuccessfulUsageAcrossAggregation()
+    {
+        var firstUsage = new UsageDetails { InputTokenCount = 7, OutputTokenCount = 2, TotalTokenCount = 9 };
+        var secondUsage = new UsageDetails { InputTokenCount = 13, OutputTokenCount = 5, TotalTokenCount = 18 };
+        var firstResult = new ChatCallResult
+        {
+            Usage = firstUsage,
+            LastSuccessfulUsage = firstUsage,
+            ValidCallTimes = 1,
+        };
+        var secondResult = new ChatCallResult
+        {
+            Usage = secondUsage,
+            LastSuccessfulUsage = secondUsage,
+            ValidCallTimes = 1,
+        };
+        var interruptedResult = new ChatCallResult
+        {
+            Exception = new Exception("interrupted"),
+            ValidCallTimes = 0,
+        };
+
+        var combined = firstResult + secondResult;
+        AssertUsage(combined.Usage, new UsageDetails
+        {
+            InputTokenCount = firstUsage.InputTokenCount + secondUsage.InputTokenCount,
+            OutputTokenCount = firstUsage.OutputTokenCount + secondUsage.OutputTokenCount,
+            TotalTokenCount = firstUsage.TotalTokenCount + secondUsage.TotalTokenCount,
+        });
+        AssertUsage(combined.LastSuccessfulUsage, secondUsage);
+
+        var preserved = combined + interruptedResult;
+        AssertUsage(preserved.LastSuccessfulUsage, secondUsage);
     }
 
     [Theory]
@@ -295,6 +388,73 @@ public class MiniSweRegressionTests
         }
     }
 
+    private sealed class SequentialChatClient(params object[] responses) : IChatClient
+    {
+        private readonly Queue<object> _responses = new(responses);
+
+        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> chatMessages, ChatOptions? options,
+            CancellationToken cancellationToken = default)
+        {
+            if (_responses.Count == 0)
+            {
+                throw new InvalidOperationException("No more responses configured.");
+            }
+
+            var response = _responses.Dequeue();
+            if (response is Exception exception)
+            {
+                throw exception;
+            }
+
+            return Task.FromResult((ChatResponse)response);
+        }
+
+        public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> chatMessages,
+            ChatOptions? options, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public object? GetService(Type serviceType, object? serviceKey)
+        {
+            return null;
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private sealed class LoopingToolCallEngine : FunctionCallEngine
+    {
+        public LoopingToolCallEngine()
+        {
+            KernelPluginCollection.AddFromFunctions("Test",
+            [
+                KernelFunctionFactory.CreateFromMethod(
+                    () => "ok",
+                    new KernelFunctionFromMethodOptions { FunctionName = "noop" })
+            ]);
+        }
+
+        public override bool IsToolCallMode => false;
+
+        public override void PreviewRequest(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
+        {
+        }
+
+        public override Task<List<FunctionCallContent>> TryParseFunctionCalls(ChatResponse response)
+        {
+            return Task.FromResult(ExtractFunctionCallsFromResponse(response));
+        }
+
+        public override Task AfterProcess(ChatMessage replyMessage, IList<FunctionResultContent> results)
+        {
+            EncapsulateReply(replyMessage, results);
+            return Task.CompletedTask;
+        }
+    }
+
     private sealed class PermissionInteractor(bool allow) : IInvokeInteractor
     {
         public void Info(string message)
@@ -347,6 +507,52 @@ public class MiniSweRegressionTests
 
             yield break;
         }
+    }
+
+    private static ChatResponse CreateToolCallResponse(string callId, UsageDetails usage)
+    {
+        var message = new ChatMessage(ChatRole.Assistant,
+        [
+            new FunctionCallContent(callId, "noop", new Dictionary<string, object?>()),
+            new UsageContent(new UsageDetails
+            {
+                InputTokenCount = usage.InputTokenCount,
+                OutputTokenCount = usage.OutputTokenCount,
+                TotalTokenCount = usage.TotalTokenCount,
+            })
+        ]);
+
+        return new ChatResponse([message])
+        {
+            FinishReason = ChatFinishReason.ToolCalls,
+        };
+    }
+
+    private static ChatResponse CreateTextResponse(string text, UsageDetails usage)
+    {
+        var message = new ChatMessage(ChatRole.Assistant,
+        [
+            new TextContent(text),
+            new UsageContent(new UsageDetails
+            {
+                InputTokenCount = usage.InputTokenCount,
+                OutputTokenCount = usage.OutputTokenCount,
+                TotalTokenCount = usage.TotalTokenCount,
+            })
+        ]);
+
+        return new ChatResponse([message])
+        {
+            FinishReason = ChatFinishReason.Stop,
+        };
+    }
+
+    private static void AssertUsage(UsageDetails? actual, UsageDetails expected)
+    {
+        var usage = Assert.IsType<UsageDetails>(actual);
+        Assert.Equal(expected.InputTokenCount, usage.InputTokenCount);
+        Assert.Equal(expected.OutputTokenCount, usage.OutputTokenCount);
+        Assert.Equal(expected.TotalTokenCount, usage.TotalTokenCount);
     }
 
     private sealed class TestTextDialogSession : ITextDialogSession

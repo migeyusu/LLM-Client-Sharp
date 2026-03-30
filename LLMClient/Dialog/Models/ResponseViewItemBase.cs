@@ -71,6 +71,19 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(Tokens));
+            OnUsagePropertiesChanged();
+        }
+    }
+
+    public UsageDetails? LastSuccessfulUsage
+    {
+        get;
+        set
+        {
+            if (Equals(value, field)) return;
+            field = value;
+            OnPropertyChanged();
+            OnUsagePropertiesChanged();
         }
     }
 
@@ -242,5 +255,9 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         var flowDocument = new FlowDocument();
         await PopulateDocumentAsync(flowDocument, Messages, Annotations);
         return flowDocument;
+    }
+
+    protected virtual void OnUsagePropertiesChanged()
+    {
     }
 }

@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using System.Xml.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -69,7 +70,37 @@ public static class Extension
             : (resultContent.Result?.ToString() ?? "(null)"));
     }
 
+    public static string ToToolCallXmlFragment(this FunctionCallContent functionCallContent)
+    {
+        return new XElement("tool_call",
+            new XElement("name", functionCallContent.Name),
+            new XElement("arguments", NormalizeToolPayload(functionCallContent.Arguments))).ToString();
+    }
+
+    public static string ToToolCallResultXmlFragment(this FunctionResultContent resultContent)
+    {
+        var resultPayload = resultContent.Exception != null
+            ? resultContent.Exception.ToString()
+            : NormalizeToolPayload(resultContent.Result);
+
+        return new XElement("tool_call_result",
+            new XElement("name", resultContent.CallId),
+            new XElement("result", resultPayload)).ToString();
+    }
+
     #endregion
+
+    private static string NormalizeToolPayload(object? payload)
+    {
+        return payload switch
+        {
+            null => "null",
+            string text => text,
+            JsonElement jsonElement => jsonElement.GetRawText(),
+            JsonNode jsonNode => jsonNode.ToJsonString(DefaultJsonSerializerOptions),
+            _ => JsonSerializer.Serialize(payload, DefaultJsonSerializerOptions)
+        };
+    }
     
     public static async Task<CheckableFunctionGroupTree> ToCheckableFunctionGroupTree(this IAIFunctionGroup functionGroup,CancellationToken token)
     {

@@ -19,6 +19,8 @@ using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.MCP;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Data;
@@ -40,12 +42,19 @@ public class UnitTest1
     {
         this.output = output;
         serviceProvider = new ServiceCollection()
+            .AddSingleton<IViewModelFactory, ViewModelFactory>()
             .AddTransient<AutoMapModelTypeConverter>()
             .AddTransient<GlobalOptions>()
+            .AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance)
+            .AddSingleton(typeof(ILogger<>), typeof(NullLogger<>))
             .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
             .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
             .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
             .AddSingleton<BuiltInFunctionsCollection>()
+            .AddSingleton<Profile, FunctionGroupPersistenceProfile>()
+            .AddSingleton<Profile, DialogItemPersistenceProfile>()
+            .AddSingleton<Profile, DialogMappingProfile>()
+            .AddSingleton<Profile, SessionProjectPersistenceProfile>()
             .AddMap().BuildServiceProvider();
         BaseViewModel.ServiceLocator = serviceProvider;
     }
@@ -335,6 +344,62 @@ public class UnitTest1
         var multiResponseViewItemDe = viewModel.Dialog.DialogItems.First() as ParallelResponseViewItem;
         var responseViewItems = multiResponseViewItemDe!.Items.ToArray();
         Assert.Same(responseViewItems[0].Client, responseViewItems[1].Client);
+    }
+
+    [Fact]
+    public void LastSuccessfulUsage_IsPreservedWhenMappingToClientResponsePersistItem()
+    {
+        var mapperConfiguration = new MapperConfiguration(configuration =>
+        {
+            configuration.CreateMap<ResponseViewItemBase, ResponsePersistItemBase>();
+            configuration.CreateMap<ClientResponseViewItem, ClientResponsePersistItem>()
+                .IncludeBase<ResponseViewItemBase, ResponsePersistItemBase>()
+                .ForMember(destination => destination.Client, option => option.Ignore());
+        }, NullLoggerFactory.Instance);
+        var mapper = mapperConfiguration.CreateMapper();
+        var responseViewItem = new ClientResponseViewItem(new EmptyLlmModelClient())
+        {
+            Usage = new UsageDetails
+            {
+                InputTokenCount = 16_000,
+                OutputTokenCount = 3_000,
+                TotalTokenCount = 19_000,
+            },
+            LastSuccessfulUsage = new UsageDetails
+            {
+                InputTokenCount = 12_000,
+                OutputTokenCount = 1_000,
+                TotalTokenCount = 13_000,
+            },
+        };
+
+        var persisted = mapper.Map<ClientResponsePersistItem>(responseViewItem);
+
+        Assert.NotNull(persisted.LastSuccessfulUsage);
+        Assert.Equal(12_000, persisted.LastSuccessfulUsage!.InputTokenCount);
+        Assert.Equal(13_000, persisted.LastSuccessfulUsage.TotalTokenCount);
+    }
+
+    [Fact]
+    public void LastSuccessfulUsage_IsPreservedAcrossPersistItemSerialization()
+    {
+        var persisted = new ClientResponsePersistItem
+        {
+            LastSuccessfulUsage = new UsageDetails
+            {
+                InputTokenCount = 12_000,
+                OutputTokenCount = 1_000,
+                TotalTokenCount = 13_000,
+            }
+        };
+
+        var json = JsonSerializer.Serialize(persisted);
+        var restored = JsonSerializer.Deserialize<ClientResponsePersistItem>(json);
+
+        Assert.NotNull(restored);
+        Assert.NotNull(restored.LastSuccessfulUsage);
+        Assert.Equal(12_000, restored.LastSuccessfulUsage!.InputTokenCount);
+        Assert.Equal(13_000, restored.LastSuccessfulUsage.TotalTokenCount);
     }
 
     [Fact]

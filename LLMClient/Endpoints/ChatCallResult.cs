@@ -14,6 +14,11 @@ public class ChatCallResult : IResponse
 
     public UsageDetails? Usage { get; set; }
 
+    /// <summary>
+    /// 最后一次成功调用返回的 usage，不参与多轮累计。
+    /// </summary>
+    public UsageDetails? LastSuccessfulUsage { get; set; }
+
     public long Tokens
     {
         get { return Usage?.OutputTokenCount ?? 0; }
@@ -115,6 +120,9 @@ public class ChatCallResult : IResponse
         var result = new ChatCallResult
         {
             Usage = usage,
+            LastSuccessfulUsage = right.ValidCallTimes > 0
+                ? CloneUsageDetails(right.LastSuccessfulUsage)
+                : CloneUsageDetails(left.LastSuccessfulUsage),
             Latency = left.Latency, // Latency取第一个
             Duration = left.Duration + right.Duration,
             Exception = left.Exception ?? right.Exception, // Exception取存在的第一个
@@ -154,5 +162,17 @@ public class ChatCallResult : IResponse
         }
 
         return result;
+    }
+
+    private static UsageDetails? CloneUsageDetails(UsageDetails? usage)
+    {
+        return usage == null
+            ? null
+            : new UsageDetails
+            {
+                InputTokenCount = usage.InputTokenCount,
+                OutputTokenCount = usage.OutputTokenCount,
+                TotalTokenCount = usage.TotalTokenCount,
+            };
     }
 }

@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json.Serialization;
-using Elsa.Workflows;
 using LLMClient.Abstraction;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.Render;
@@ -11,7 +10,6 @@ using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.Rag;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
@@ -149,6 +147,18 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
 
         return responseText[..maxLength] + "...";
+    }
+
+    private static UsageDetails? CloneUsageDetails(UsageDetails? usageDetails)
+    {
+        return usageDetails == null
+            ? null
+            : new UsageDetails
+            {
+                InputTokenCount = usageDetails.InputTokenCount,
+                OutputTokenCount = usageDetails.OutputTokenCount,
+                TotalTokenCount = usageDetails.TotalTokenCount,
+            };
     }
 
     [Experimental("SKEXP0001")]
@@ -307,13 +317,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                         //do nothing, textContent & reasoningContent is already added to RespondingText
                                         break;
                                     case FunctionCallContent functionCallContent:
+                                        interactor?.WriteLine();
                                         interactor?.WriteLine(ToolCallBlockParser.FunctionCallTag);
-                                        interactor?.WriteLine(functionCallContent.GetDebuggerString());
+                                        interactor?.WriteLine(functionCallContent.ToToolCallXmlFragment());
                                         interactor?.WriteLine(ToolCallBlockParser.FunctionCallEndTag);
                                         break;
                                     case FunctionResultContent functionResultContent:
+                                        interactor?.WriteLine();
                                         interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultTag);
-                                        interactor?.WriteLine(functionResultContent.GetDebuggerString());
+                                        interactor?.WriteLine(functionResultContent.ToToolCallResultXmlFragment());
                                         interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultEndTag);
                                         break;
                                     case ErrorContent errorContent:
@@ -335,6 +347,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         chatHistory.AddRange(preResponseMessages);
                         responseMessages.AddRange(preResponseMessages);
                         loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
+                        result.LastSuccessfulUsage = CloneUsageDetails(loopUsageDetails);
                         if (loopUsageDetails != null)
                         {
                             totalUsageDetails.Add(loopUsageDetails);

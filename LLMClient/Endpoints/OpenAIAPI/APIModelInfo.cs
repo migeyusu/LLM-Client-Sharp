@@ -14,22 +14,22 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
 {
     public string? SeriesName
     {
-        get => _seriesName;
+        get;
         set
         {
-            if (value == _seriesName) return;
-            _seriesName = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public string? Provider
     {
-        get => _publisher;
+        get;
         set
         {
-            if (value == _publisher) return;
-            _publisher = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -37,49 +37,49 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
     [JsonPropertyName("Id")]
     public string APIId
     {
-        get => _id;
+        get;
         set
         {
-            if (value == _id) return;
-            _id = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = string.Empty;
 
     [JsonPropertyName("Name")]
     public string Name
     {
-        get => _name;
+        get;
         set
         {
-            if (value == _name) return;
-            _name = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = string.Empty;
 
     [JsonIgnore]
     public bool IsNotMatchFromSource
     {
-        get => _isNotMatchFromSource;
+        get;
         set
         {
-            if (value == _isNotMatchFromSource) return;
-            _isNotMatchFromSource = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool Streaming
     {
-        get => _streaming;
+        get;
         set
         {
-            if (value == _streaming) return;
-            _streaming = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = true;
 
     [JsonIgnore]
     public ThemedIcon Icon
@@ -110,37 +110,37 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
 
     public bool UrlIconEnable
     {
-        get => _urlIconEnable;
+        get;
         set
         {
-            if (value == _urlIconEnable) return;
-            _urlIconEnable = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             _icon = null;
             OnPropertyChanged(nameof(Icon));
         }
-    }
+    } = false;
 
     public ModelIconType IconType
     {
-        get => _iconType;
+        get;
         set
         {
-            if (value == _iconType) return;
-            _iconType = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             _icon = null;
             OnPropertyChanged(nameof(Icon));
         }
-    }
+    } = ModelIconType.None;
 
     public string? IconUrl
     {
-        get => _iconUrl;
+        get;
         set
         {
-            if (value == _iconUrl) return;
-            _iconUrl = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             _icon = null;
             OnPropertyChanged(nameof(Icon));
@@ -155,11 +155,11 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
 
     public string? InfoUrl
     {
-        get => _infoUrl;
+        get;
         set
         {
-            if (value == _infoUrl) return;
-            _infoUrl = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -175,108 +175,63 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
         }
     }
 
-    private string? _iconUrl;
     private ThemedIcon? _icon = null;
-    private bool _urlIconEnable = false;
-    private ModelIconType _iconType = ModelIconType.None;
-    private bool _supportsystemPrompt = true;
-    private bool _topPEnable;
-    private bool _topKEnable;
-    private bool _temperatureEnable;
-    private bool _maxTokensEnable = true;
-    private bool _frequencyPenaltyEnable;
-    private bool _presencePenaltyEnable;
-    private bool _seedEnable;
-    private string? _systemPrompt;
 
-    private float _topP = 1;
-
-    private int _topK;
-    private float _frequencyPenalty;
-    private float _presencePenalty;
-    private long? _seed;
-    private float _temperature = 1;
-    private int _maxTokens = 4 * 1000;
-    private int _maxTokenLimit = 128 * 1000;
-    private int _topKMax = 50;
     private string? _description;
-    private int _maxContextSize = 200 * 1000;
-    private bool _streaming = true;
-    private string _id = string.Empty;
-    private string _name = string.Empty;
-    private string? _infoUrl;
-    private bool _isNotMatchFromSource;
-    private bool _supportTextGeneration = true;
-    private bool _supportVideoInput;
-    private bool _supportAudioInput;
-    private bool _supportFunctionCall;
-    private bool _supportSearch;
-    private bool _supportImageGeneration;
-    private bool _reasonable = false;
-    private bool _supportImageInput;
-    private bool _supportVideoGeneration;
-    private bool _supportAudioGeneration;
-    private bool _supportStreaming = true; //默认支持streaming，除非这个模型确实不支持，否则不建议关闭
-    private bool _functionCallOnStreaming = false;
-    private bool _thinkingEnabled = true; //默认开启thinking，除非这个模型确实不支持，否则不建议关闭
-    private IThinkingConfig? _thinkingConfig;
-    private ThinkingIncludeMode _thinkingIncludeMode;
-    private string? _seriesName;
-    private string? _publisher;
 
     public int MaxContextSize
     {
-        get => _maxContextSize;
+        get;
         set
         {
-            if (value == _maxContextSize) return;
-            _maxContextSize = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = 200 * 1000;
 
     [JsonIgnore] public ILLMAPIEndpoint Endpoint { get; set; } = new EmptyLLMEndpoint();
 
     public ThinkingIncludeMode ThinkingIncludeMode
     {
-        get => _thinkingIncludeMode;
+        get;
         set
         {
-            if (value == _thinkingIncludeMode) return;
-            _thinkingIncludeMode = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool SupportSystemPrompt
     {
-        get => _supportsystemPrompt;
+        get;
         set
         {
-            if (value == _supportsystemPrompt) return;
-            _supportsystemPrompt = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = true;
 
     public bool TopPEnable
     {
-        get => _topPEnable;
+        get;
         set
         {
-            if (value == _topPEnable) return;
-            _topPEnable = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool TopKEnable
     {
-        get => _topKEnable;
+        get;
         set
         {
-            if (value == _topKEnable) return;
-            _topKEnable = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -284,99 +239,99 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
 
     public bool TemperatureEnable
     {
-        get => _temperatureEnable;
+        get;
         set
         {
-            if (value == _temperatureEnable) return;
-            _temperatureEnable = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool MaxTokensEnable
     {
-        get => _maxTokensEnable;
+        get;
         set
         {
-            if (value == _maxTokensEnable) return;
-            _maxTokensEnable = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = true;
 
     public bool FrequencyPenaltyEnable
     {
-        get => _frequencyPenaltyEnable;
+        get;
         set
         {
-            if (value == _frequencyPenaltyEnable) return;
-            _frequencyPenaltyEnable = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool PresencePenaltyEnable
     {
-        get => _presencePenaltyEnable;
+        get;
         set
         {
-            if (value == _presencePenaltyEnable) return;
-            _presencePenaltyEnable = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool SeedEnable
     {
-        get => _seedEnable;
+        get;
         set
         {
-            if (value == _seedEnable) return;
-            _seedEnable = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public string? SystemPrompt
     {
-        get => _systemPrompt;
+        get;
         set
         {
-            if (value == _systemPrompt) return;
-            _systemPrompt = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public float TopP
     {
-        get => _topP;
+        get;
         set
         {
-            if (value.Equals(_topP)) return;
-            _topP = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = 1;
 
     public int TopKMax
     {
-        get => _topKMax;
+        get;
         set
         {
-            if (value == _topKMax) return;
-            _topKMax = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = 50;
 
     public int TopK
     {
-        get => _topK;
+        get;
         set
         {
-            if (value == _topK) return;
-            _topK = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -384,200 +339,200 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
 
     public float Temperature
     {
-        get => _temperature;
+        get;
         set
         {
-            if (value.Equals(_temperature)) return;
-            _temperature = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = 1;
 
     public int MaxTokens
     {
-        get => _maxTokens;
+        get;
         set
         {
-            if (value == _maxTokens) return;
-            _maxTokens = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = 4 * 1000;
 
     public int MaxTokenLimit
     {
-        get => _maxTokenLimit;
+        get;
         set
         {
-            if (value == _maxTokenLimit) return;
-            _maxTokenLimit = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = 128 * 1000;
 
     public bool Reasonable
     {
-        get => _reasonable;
+        get;
         set
         {
-            if (value == _reasonable) return;
-            _reasonable = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             if (!Reasonable)
             {
                 ThinkingEnabled = false;
             }
         }
-    }
+    } = false;
 
     public IThinkingConfig? ThinkingConfig
     {
-        get => _thinkingConfig;
+        get;
         set
         {
-            if (Equals(value, _thinkingConfig)) return;
-            _thinkingConfig = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool ThinkingEnabled
     {
-        get => _thinkingEnabled;
+        get;
         set
         {
-            if (value == _thinkingEnabled) return;
-            _thinkingEnabled = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             if (ThinkingConfig == null && value)
             {
                 ThinkingConfig = new ThinkingConfigViewModel();
             }
         }
-    }
+    } = true;
 
     /// <summary>
     /// 许多function call的实现不支持streaming，这个选项用于在function call时禁用streaming
     /// </summary>
     public bool FunctionCallOnStreaming
     {
-        get => _functionCallOnStreaming;
+        get;
         set
         {
-            if (value == _functionCallOnStreaming) return;
-            _functionCallOnStreaming = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = false;
 
     public bool SupportStreaming
     {
-        get => _supportStreaming;
+        get;
         set
         {
-            if (value == _supportStreaming) return;
-            _supportStreaming = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             //streaming 将默认随着这个选项变化
             Streaming = value;
         }
-    }
+    } = true;
 
     public bool SupportImageGeneration
     {
-        get => _supportImageGeneration;
+        get;
         set
         {
-            if (value == _supportImageGeneration) return;
-            _supportImageGeneration = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool SupportAudioGeneration
     {
-        get => _supportAudioGeneration;
+        get;
         set
         {
-            if (value == _supportAudioGeneration) return;
-            _supportAudioGeneration = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool SupportVideoGeneration
     {
-        get => _supportVideoGeneration;
+        get;
         set
         {
-            if (value == _supportVideoGeneration) return;
-            _supportVideoGeneration = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool SupportSearch
     {
-        get => _supportSearch;
+        get;
         set
         {
-            if (value == _supportSearch) return;
-            _supportSearch = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool SupportFunctionCall
     {
-        get => _supportFunctionCall;
+        get;
         set
         {
-            if (value == _supportFunctionCall) return;
-            _supportFunctionCall = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool SupportAudioInput
     {
-        get => _supportAudioInput;
+        get;
         set
         {
-            if (value == _supportAudioInput) return;
-            _supportAudioInput = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool SupportVideoInput
     {
-        get => _supportVideoInput;
+        get;
         set
         {
-            if (value == _supportVideoInput) return;
-            _supportVideoInput = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool SupportTextGeneration
     {
-        get => _supportTextGeneration;
+        get;
         set
         {
-            if (value == _supportTextGeneration) return;
-            _supportTextGeneration = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = true;
 
     public bool SupportImageInput
     {
-        get => _supportImageInput;
+        get;
         set
         {
-            if (value == _supportImageInput) return;
-            _supportImageInput = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -588,33 +543,33 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
 
     public float FrequencyPenalty
     {
-        get => _frequencyPenalty;
+        get;
         set
         {
-            if (value.Equals(_frequencyPenalty)) return;
-            _frequencyPenalty = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public float PresencePenalty
     {
-        get => _presencePenalty;
+        get;
         set
         {
-            if (value.Equals(_presencePenalty)) return;
-            _presencePenalty = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public long? Seed
     {
-        get => _seed;
+        get;
         set
         {
-            if (value == _seed) return;
-            _seed = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }

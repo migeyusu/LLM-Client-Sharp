@@ -474,7 +474,7 @@
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.SymbolSemanticServiceTests&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=1e5efabb_002D9dbd_002D4338_002Db658_002Da617d0538bcb/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="ProjectAwarenessPluginTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=1e5efabb_002D9dbd_002D4338_002Db658_002Da617d0538bcb/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="ProjectAwarenessPluginTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.ProjectAwarenessPluginTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.SymbolSemanticPluginTests&lt;/TestId&gt;&#xD;

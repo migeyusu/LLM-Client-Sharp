@@ -114,6 +114,12 @@ public class DialogItemPersistenceProfile : Profile
             .IncludeBase<IResponse, ResponseViewItemBase>();
         CreateMap<IResponse, ClientResponseViewItem>()
             .IncludeBase<IResponse, ResponseViewItemBase>();
+        CreateMap<ChatCallResult, ResponseViewItemBase>()
+            .IncludeBase<IResponse, ResponseViewItemBase>();
+        CreateMap<ChatCallResult, RawResponseViewItem>()
+            .IncludeBase<IResponse, RawResponseViewItem>();
+        CreateMap<ChatCallResult, ClientResponseViewItem>()
+            .IncludeBase<IResponse, ClientResponseViewItem>();
 
         CreateMap<ResponseViewItemBase, ResponsePersistItemBase>()
             .Include<ClientResponseViewItem, ClientResponsePersistItem>()

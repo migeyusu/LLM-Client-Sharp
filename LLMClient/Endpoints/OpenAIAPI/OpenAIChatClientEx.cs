@@ -101,10 +101,17 @@ public class OpenAIChatClientEx : ChatClient
 
         if (clientContext != null)
         {
-            var binaryData = result.GetRawResponse();
-            var response = binaryData.Content.ToString();
             clientContext.InteractionHistory.AppendLine("<response>");
-            clientContext.InteractionHistory.AppendLine(response);
+            if (shouldProcessNonStreamingResponse)
+            {
+                var response = await GetResponseTextAsync(result.GetRawResponse());
+                clientContext.InteractionHistory.AppendLine(response ?? string.Empty);
+            }
+            else
+            {
+                clientContext.InteractionHistory.AppendLine("<streaming response omitted>");
+            }
+
             clientContext.InteractionHistory.AppendLine("</response>");
         }
         // var binaryData = result.GetRawResponse();

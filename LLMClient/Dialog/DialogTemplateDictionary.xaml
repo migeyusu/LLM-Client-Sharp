@@ -589,7 +589,7 @@
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-                <materialDesign:PopupBox ToolTip="模型信息"
+                <materialDesign:PopupBox ToolTip="用量信息"
                                          Margin="10,0,0,0"
                                          Width="30"
                                          Height="30"
@@ -601,6 +601,77 @@
                                          VerticalAlignment="Center"
                                          PopupContent="{Binding AcceptedResponse.Usage,Mode=OneWay}"
                                          PopupContentTemplate="{StaticResource UsageDetailDataTemplate}" />
+                <Border Margin="10,6,0,0"
+                        Padding="10,6"
+                        CornerRadius="12"
+                        BorderThickness="1"
+                        VerticalAlignment="Center"
+                        ToolTip="基于最后一次成功调用的输入 Tokens 与模型最大上下文计算"
+                        Visibility="{Binding AcceptedResponse.HasContextUsage,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="#0F2196F3" />
+                            <Setter Property="BorderBrush" Value="#332196F3" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding AcceptedResponse.IsContextUsageWarning,Mode=OneWay}" Value="True">
+                                    <Setter Property="Background" Value="#0FF59E0B" />
+                                    <Setter Property="BorderBrush" Value="#33F59E0B" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding AcceptedResponse.IsContextUsageCritical,Mode=OneWay}" Value="True">
+                                    <Setter Property="Background" Value="#0FE53935" />
+                                    <Setter Property="BorderBrush" Value="#33E53935" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <materialDesign:PackIcon Width="16"
+                                                     Height="16"
+                                                     Margin="0,0,6,0"
+                                                     Kind="Gauge"
+                                                     VerticalAlignment="Center">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Foreground" Value="#2196F3" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding AcceptedResponse.IsContextUsageWarning,Mode=OneWay}" Value="True">
+                                                <Setter Property="Foreground" Value="#F59E0B" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding AcceptedResponse.IsContextUsageCritical,Mode=OneWay}" Value="True">
+                                                <Setter Property="Foreground" Value="#E53935" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Text="{Binding AcceptedResponse.ContextUsageSummary,Mode=OneWay}"
+                                       Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <ProgressBar Margin="0,6,0,0"
+                                     Height="6"
+                                     Width="170"
+                                     Minimum="0"
+                                     Maximum="100"
+                                     Value="{Binding AcceptedResponse.ContextUsagePercent,Mode=OneWay}">
+                            <ProgressBar.Style>
+                                <Style TargetType="ProgressBar">
+                                    <Setter Property="Foreground" Value="#2196F3" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AcceptedResponse.IsContextUsageWarning,Mode=OneWay}" Value="True">
+                                            <Setter Property="Foreground" Value="#F59E0B" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding AcceptedResponse.IsContextUsageCritical,Mode=OneWay}" Value="True">
+                                            <Setter Property="Foreground" Value="#E53935" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ProgressBar.Style>
+                        </ProgressBar>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </StackPanel>
     </DataTemplate>

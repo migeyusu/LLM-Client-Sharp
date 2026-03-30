@@ -47,6 +47,74 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public ILLMChatClient? Client { get; }
 
+    public long? ContextUsageTokenCount
+    {
+        get { return LastSuccessfulUsage?.InputTokenCount; }
+    }
+
+    public int? MaxContextTokens
+    {
+        get
+        {
+            var maxContextSize = Model?.MaxContextSize;
+            return maxContextSize > 0 ? maxContextSize : null;
+        }
+    }
+
+    public bool HasContextUsage
+    {
+        get { return ContextUsageRatio.HasValue; }
+    }
+
+    public double? ContextUsageRatio
+    {
+        get
+        {
+            var contextUsageTokenCount = ContextUsageTokenCount;
+            var maxContextTokens = MaxContextTokens;
+            if (contextUsageTokenCount is not > 0 || maxContextTokens is not > 0)
+            {
+                return null;
+            }
+
+            return Math.Clamp(contextUsageTokenCount.Value / (double)maxContextTokens.Value, 0d, 1d);
+        }
+    }
+
+    public double ContextUsagePercent
+    {
+        get { return (ContextUsageRatio ?? 0d) * 100d; }
+    }
+
+    public bool IsContextUsageWarning
+    {
+        get
+        {
+            var contextUsageRatio = ContextUsageRatio;
+            return contextUsageRatio is >= 0.7 and < 0.9;
+        }
+    }
+
+    public bool IsContextUsageCritical
+    {
+        get { return ContextUsageRatio >= 0.9; }
+    }
+
+    public string ContextUsageSummary
+    {
+        get
+        {
+            var contextUsageTokenCount = ContextUsageTokenCount;
+            var maxContextTokens = MaxContextTokens;
+            if (contextUsageTokenCount is null || maxContextTokens is null)
+            {
+                return "上下文 --";
+            }
+
+            return $"上下文 {FormatTokenCount(contextUsageTokenCount)} / {FormatTokenCount(maxContextTokens)} · {ContextUsagePercent:0}%";
+        }
+    }
+
     public override bool IsInterrupt
     {
         get;
@@ -254,6 +322,19 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         return RawTextContent ?? string.Empty;
     }
 
+    protected override void OnUsagePropertiesChanged()
+    {
+        base.OnUsagePropertiesChanged();
+        OnPropertyChanged(nameof(ContextUsageTokenCount));
+        OnPropertyChanged(nameof(MaxContextTokens));
+        OnPropertyChanged(nameof(HasContextUsage));
+        OnPropertyChanged(nameof(ContextUsageRatio));
+        OnPropertyChanged(nameof(ContextUsagePercent));
+        OnPropertyChanged(nameof(IsContextUsageWarning));
+        OnPropertyChanged(nameof(IsContextUsageCritical));
+        OnPropertyChanged(nameof(ContextUsageSummary));
+    }
+
     internal void AcquireRespondingState()
     {
         if (Interlocked.Increment(ref _respondingStateRefCount) != 1)
@@ -278,6 +359,22 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         }
 
         IsResponding = false;
+    }
+
+    private static string FormatTokenCount(long? value)
+    {
+        if (value == null)
+        {
+            return "--";
+        }
+
+        var number = value.Value;
+        return number switch
+        {
+            >= 1_000_000 => $"{number / 1_000_000d:0.#}M",
+            >= 1_000 => $"{number / 1_000d:0.#}k",
+            _ => number.ToString("N0")
+        };
     }
 
 

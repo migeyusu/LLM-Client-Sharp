@@ -4,6 +4,7 @@ using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Test;
 
@@ -58,6 +59,32 @@ public class ClientResponseViewItemTests
         Assert.Equal(0, session.RespondingCount);
     }
 
+    [Fact]
+    public void ClientResponseViewItem_ContextUsage_UsesLastSuccessfulInputTokensAgainstModelMaxContext()
+    {
+        var client = new NeverInvokedChatClient(128_000);
+        var responseViewItem = new ClientResponseViewItem(client)
+        {
+            LastSuccessfulUsage = new UsageDetails
+            {
+                InputTokenCount = 32_000,
+                OutputTokenCount = 2_000,
+                TotalTokenCount = 34_000,
+            }
+        };
+
+        Assert.True(responseViewItem.HasContextUsage);
+        Assert.Equal(32_000, responseViewItem.ContextUsageTokenCount);
+        Assert.Equal(128_000, responseViewItem.MaxContextTokens);
+        Assert.Equal(0.25d, responseViewItem.ContextUsageRatio);
+        Assert.Equal(25d, responseViewItem.ContextUsagePercent);
+        Assert.False(responseViewItem.IsContextUsageWarning);
+        Assert.False(responseViewItem.IsContextUsageCritical);
+        Assert.Contains("25%", responseViewItem.ContextUsageSummary);
+        Assert.Contains("32k", responseViewItem.ContextUsageSummary);
+        Assert.Contains("128k", responseViewItem.ContextUsageSummary);
+    }
+
     private sealed class PreviewBlockingDialogSessionViewModel : DialogSessionViewModel
     {
         public PreviewBlockingDialogSessionViewModel() : base(new GlobalOptions(), new Summarizer(new GlobalOptions()), null)
@@ -78,29 +105,35 @@ public class ClientResponseViewItemTests
 
     private sealed class NeverInvokedChatClient : ILLMChatClient
     {
+        public NeverInvokedChatClient(int maxContextSize = 200 * 1000)
+        {
+            Model = new APIModelInfo
+            {
+                APIId = "preview-only-model",
+                Name = "Preview Only Model",
+                Endpoint = EmptyLLMEndpoint.Instance,
+                MaxContextSize = maxContextSize,
+                SupportFunctionCall = false,
+                SupportStreaming = false,
+                SupportSystemPrompt = true,
+                FunctionCallOnStreaming = false,
+                SupportTextGeneration = true,
+                TopPEnable = true,
+                TopKEnable = true,
+                TemperatureEnable = true,
+                MaxTokensEnable = true,
+                FrequencyPenaltyEnable = true,
+                PresencePenaltyEnable = true,
+                SeedEnable = true,
+                PriceCalculator = new TokenBasedPriceCalculator()
+            };
+        }
+
         public string Name => "NeverInvokedChatClient";
 
         public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
-        public IEndpointModel Model { get; } = new APIModelInfo
-        {
-            APIId = "preview-only-model",
-            Name = "Preview Only Model",
-            Endpoint = EmptyLLMEndpoint.Instance,
-            SupportFunctionCall = false,
-            SupportStreaming = false,
-            SupportSystemPrompt = true,
-            FunctionCallOnStreaming = false,
-            SupportTextGeneration = true,
-            TopPEnable = true,
-            TopKEnable = true,
-            TemperatureEnable = true,
-            MaxTokensEnable = true,
-            FrequencyPenaltyEnable = true,
-            PresencePenaltyEnable = true,
-            SeedEnable = true,
-            PriceCalculator = new TokenBasedPriceCalculator()
-        };
+        public IEndpointModel Model { get; }
 
         public IModelParams Parameters { get; set; } = new DefaultModelParam { Streaming = false };
 
