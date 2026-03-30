@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using LLMClient.ToolCall;
+using LLMClient.ToolCall.MCP;
 using ModelContextProtocol.Client;
 using Xunit.Abstractions;
 
@@ -42,6 +43,7 @@ public class McpTest
             stringBuilder.AppendLine("Parameters: " + mcpClientTool.JsonSchema);
             stringBuilder.AppendLine("Returns: " + mcpClientTool.ReturnJsonSchema);
         }
+
         _output.WriteLine(stringBuilder.ToString());
         /*
 
@@ -79,5 +81,130 @@ public class McpTest
         _output.WriteLine($"Exit Code: {process.ExitCode}");
         _output.WriteLine($"Output: {output}");
         _output.WriteLine($"Error: {error}");
+    }
+
+    [Fact]
+    public async Task CreateTransportOptions_PythonScriptCommand_WrapsScriptAndSetsDefaults()
+    {
+        var tempDirectory = Directory.CreateTempSubdirectory();
+        try
+        {
+            var scriptPath = Path.Combine(tempDirectory.FullName, "word_mcp_server.py");
+            await File.WriteAllTextAsync(scriptPath, "print('startup log')");
+
+            var stdIoServerItem = new StdIOServerItem()
+            {
+                Name = "word",
+                Command = "\"python\"",
+                Argument = new[] { $"\"{scriptPath}\"", "--port", "9000" }
+            };
+
+            var options = stdIoServerItem.CreateTransportOptions();
+
+            Assert.Equal(tempDirectory.FullName, options.WorkingDirectory);
+            Assert.NotNull(options.Arguments);
+
+            if (OperatingSystem.IsWindows())
+            {
+                Assert.Equal("powershell.exe", options.Command);
+                Assert.Collection(options.Arguments!,
+                    arg => Assert.Equal("-NoProfile", arg),
+                    arg => Assert.Equal("-Command", arg),
+                    arg =>
+                    {
+                        Assert.Contains("mcp_python_stdio_bootstrap.py", arg);
+                        Assert.Contains(scriptPath, arg);
+                        Assert.Contains("--port", arg);
+                        Assert.Contains("9000", arg);
+
+                        var bootstrapPath = Path.Combine(Extension.TempPath, "mcp_python_stdio_bootstrap.py");
+                        Assert.True(File.Exists(bootstrapPath));
+                        Assert.Contains("exec(compile", File.ReadAllText(bootstrapPath));
+                    });
+            }
+            else
+            {
+                Assert.Equal("python", options.Command);
+                Assert.Collection(options.Arguments!,
+                    arg => Assert.Equal("-u", arg),
+                    arg =>
+                    {
+                        Assert.EndsWith("mcp_python_stdio_bootstrap.py", arg);
+                        Assert.True(File.Exists(arg));
+                        Assert.Contains("exec(compile", File.ReadAllText(arg));
+                    },
+                    arg => Assert.Equal(scriptPath, arg),
+                    arg => Assert.Equal("--port", arg),
+                    arg => Assert.Equal("9000", arg));
+            }
+
+            Assert.NotNull(options.EnvironmentVariables);
+            Assert.Equal("stdio", options.EnvironmentVariables!["MCP_TRANSPORT"]);
+            Assert.Equal("1", options.EnvironmentVariables["PYTHONUNBUFFERED"]);
+        }
+        finally
+        {
+            tempDirectory.Delete(true);
+        }
+    }
+
+    [Fact]
+    public async Task CreateTransportOptions_PythonScriptCommand_PreservesExplicitWorkingDirectoryAndEnvironment()
+    {
+        var tempDirectory = Directory.CreateTempSubdirectory();
+        var workingDirectory = Directory.CreateTempSubdirectory();
+        try
+        {
+            var scriptPath = Path.Combine(tempDirectory.FullName, "server.py");
+            await File.WriteAllTextAsync(scriptPath, "print('startup log')");
+
+            var stdIoServerItem = new StdIOServerItem()
+            {
+                Name = "word",
+                Command = "python.exe",
+                WorkingDirectory = $"\"{workingDirectory.FullName}\"",
+                Argument = new[] { scriptPath },
+                EnvironmentVariable = new[]
+                {
+                    new VariableItem() { Name = "MCP_TRANSPORT", Value = "sse" },
+                    new VariableItem() { Name = "PYTHONUNBUFFERED", Value = "0" },
+                    new VariableItem() { Name = " CUSTOM_FLAG ", Value = "yes" }
+                }
+            };
+
+            var options = stdIoServerItem.CreateTransportOptions();
+
+            Assert.Equal(workingDirectory.FullName, options.WorkingDirectory);
+            Assert.Equal(OperatingSystem.IsWindows() ? "powershell.exe" : "python.exe", options.Command);
+            Assert.NotNull(options.EnvironmentVariables);
+            Assert.Equal("stdio", options.EnvironmentVariables!["MCP_TRANSPORT"]);
+            Assert.Equal("1", options.EnvironmentVariables["PYTHONUNBUFFERED"]);
+            Assert.Equal("yes", options.EnvironmentVariables["CUSTOM_FLAG"]);
+        }
+        finally
+        {
+            tempDirectory.Delete(true);
+            workingDirectory.Delete(true);
+        }
+    }
+
+    [Fact]
+    public void CreateTransportOptions_NonPythonCommand_OnlyNormalizesQuotedTokens()
+    {
+        var stdIoServerItem = new StdIOServerItem()
+        {
+            Name = "node-server",
+            Command = "\"node\"",
+            WorkingDirectory = "\"C:\\Temp\\mcp\"",
+            Argument = new[] { "\"server.js\"", "--stdio" }
+        };
+
+        var options = stdIoServerItem.CreateTransportOptions();
+
+        Assert.Equal("node", options.Command);
+        Assert.Equal(@"C:\Temp\mcp", options.WorkingDirectory);
+        Assert.NotNull(options.Arguments);
+        Assert.Equal(new[] { "server.js", "--stdio" }, options.Arguments);
+        Assert.Null(options.EnvironmentVariables);
     }
 }

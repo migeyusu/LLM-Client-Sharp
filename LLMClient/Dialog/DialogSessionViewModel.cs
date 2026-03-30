@@ -527,9 +527,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         this.TokensConsumption += response.Usage?.TotalTokenCount ?? 0;
         this.TotalPrice += response.Price ?? 0;
         //判断是否需要进行主题总结
-        if (this.Topic == "新建会话" &&
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            this.DialogItems.OfType<IResponseItem>().Count() == 1
+        if (this.Topic == "新建会话"
+            /*&& this.DialogItems.OfType<IResponseItem>().Count() == 1*/
             && !response.IsInterrupt
             && _options.EnableAutoSubjectGeneration
             && (SummarizeTask == null || SummarizeTask.IsCompleted))

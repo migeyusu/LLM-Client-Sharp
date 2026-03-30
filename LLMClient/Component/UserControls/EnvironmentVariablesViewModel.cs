@@ -47,23 +47,6 @@ public class EnvironmentVariablesViewModel : BaseViewModel
         }
     }
 
-    private bool _isSystemVariablesEnable = true;
-
-    public bool IsSystemVariablesEnable
-    {
-        get => _isSystemVariablesEnable;
-        set
-        {
-            if (value == _isSystemVariablesEnable) return;
-            _isSystemVariablesEnable = value;
-            OnPropertyChanged();
-            if (!value)
-            {
-                IsSystemVariablesIncluded = false;
-            }
-        }
-    }
-
     // 控制是否显示/启用系统环境变量
     public bool IsSystemVariablesIncluded
     {
