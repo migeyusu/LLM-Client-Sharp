@@ -34,15 +34,13 @@ public class UsageStatisticsViewModel : BaseViewModel
 {
     private readonly IEndpointService _endpointService;
 
-    private bool _isPieChart;
-
     public bool IsPieChart
     {
-        get => _isPieChart;
+        get;
         set
         {
-            if (value == _isPieChart) return;
-            _isPieChart = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             UpdateSource();
         }
@@ -50,171 +48,163 @@ public class UsageStatisticsViewModel : BaseViewModel
 
     public long TotalCompletionTokens
     {
-        get => _totalCompletionTokens;
+        get;
         set
         {
-            if (value == _totalCompletionTokens) return;
-            _totalCompletionTokens = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public ISeries[] CompletionTokensSeries
     {
-        get => _completionTokensSeries;
+        get;
         private set
         {
-            if (Equals(value, _completionTokensSeries)) return;
-            _completionTokensSeries = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = [];
 
     public int TotalCallTimes
     {
-        get => _totalCallTimes;
+        get;
         set
         {
-            if (value == _totalCallTimes) return;
-            _totalCallTimes = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public ISeries[] CallTimesSeries
     {
-        get => _callTimesSeries;
+        get;
         private set
         {
-            if (Equals(value, _callTimesSeries)) return;
-            _callTimesSeries = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = [];
 
     public double TotalPrice
     {
-        get => _totalPrice;
+        get;
         set
         {
-            if (value.Equals(_totalPrice)) return;
-            _totalPrice = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public ISeries[] PriceSeries
     {
-        get => _priceSeries;
+        get;
         private set
         {
-            if (Equals(value, _priceSeries)) return;
-            _priceSeries = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = [];
 
     public int TotalErrorTimes
     {
-        get => _totalErrorTimes;
+        get;
         set
         {
-            if (value == _totalErrorTimes) return;
-            _totalErrorTimes = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public ISeries[] ErrorTimesSeries
     {
-        get => _errorTimesSeries;
+        get;
         private set
         {
-            if (Equals(value, _errorTimesSeries)) return;
-            _errorTimesSeries = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = [];
 
     public float MeanAvgTps
     {
-        get => _meanAvgTps;
+        get;
         set
         {
-            if (value.Equals(_meanAvgTps)) return;
-            _meanAvgTps = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public float MeanAvgLatencyPerTokens
     {
-        get => _meanAvgLatencyPerTokens;
+        get;
         set
         {
-            if (value.Equals(_meanAvgLatencyPerTokens)) return;
-            _meanAvgLatencyPerTokens = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
-
-    private ISeries[]? _averageTpsSeries;
 
     public ISeries[]? AverageTpsSeries
     {
-        get => _averageTpsSeries;
+        get;
         private set
         {
-            if (Equals(value, _averageTpsSeries)) return;
-            _averageTpsSeries = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
-    private ISeries[]? _avgLatencyPerTokensSeries;
-
     public ISeries[]? AvgLatencyPerTokensSeries
     {
-        get => _avgLatencyPerTokensSeries;
+        get;
         private set
         {
-            if (Equals(value, _avgLatencyPerTokensSeries)) return;
-            _avgLatencyPerTokensSeries = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public record LegendItem(string Name, string HexColor);
 
-    private List<LegendItem> _legend = [];
-
     public List<LegendItem> Legend
     {
-        get => _legend;
+        get;
         private set
         {
-            if (Equals(value, _legend)) return;
-            _legend = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
-
-    private int _maxItemsCount = 10;
+    } = [];
 
     public int MaxItemsCount
     {
-        get => _maxItemsCount;
+        get;
         set
         {
-            if (value == _maxItemsCount) return;
-            _maxItemsCount = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             if (value <= _existingItemsCount)
             {
                 UpdateSource();
             }
         }
-    }
+    } = 10;
 
     public int CriteriaIndex
     {
@@ -238,16 +228,6 @@ public class UsageStatisticsViewModel : BaseViewModel
 
 
     private int _existingItemsCount = 0;
-    private long _totalCompletionTokens;
-    private int _totalCallTimes;
-    private double _totalPrice;
-    private int _totalErrorTimes;
-    private float _meanAvgTps;
-    private float _meanAvgLatencyPerTokens;
-    private ISeries[] _completionTokensSeries = [];
-    private ISeries[] _callTimesSeries = [];
-    private ISeries[] _priceSeries = [];
-    private ISeries[] _errorTimesSeries = [];
     private int _criteriaIndex = 0;
 
     private void UpdateSource()
@@ -338,6 +318,23 @@ public class UsageStatisticsViewModel : BaseViewModel
             }
         }
 
+        // Archived (deleted) model/endpoint telemetry – grouped by the same name key used above
+        foreach (var archived in _endpointService.ArchivedTelemetry)
+        {
+            if (archived.Telemetry.CallTimes <= 0) continue;
+
+            var name = $"{archived.ModelName} ({archived.EndpointDisplayName})";
+            var existing = series.FirstOrDefault(s => s.Name == name);
+            if (existing.Name != null)
+            {
+                existing.Usage.Add(archived.Telemetry);
+            }
+            else
+            {
+                series.Add((name, new UsageCounter(archived.Telemetry)));
+            }
+        }
+
         UpdateStatistics(series);
     }
 
@@ -346,7 +343,9 @@ public class UsageStatisticsViewModel : BaseViewModel
     /// </summary>
     private void UpdateEndpointStatistics()
     {
-        IList<(string Name, UsageCounter Usage)> endpoints = new List<(string Name, UsageCounter Usage)>();
+        var endpointMap = new Dictionary<string, (string DisplayName, UsageCounter Usage)>();
+
+        // Current (live) endpoints
         foreach (var endpoint in _endpointService.AvailableEndpoints)
         {
             UsageCounter? usage = null;
@@ -367,9 +366,29 @@ public class UsageStatisticsViewModel : BaseViewModel
 
             if (usage?.CallTimes > 0)
             {
-                endpoints.Add((endpoint.DisplayName, usage));
+                endpointMap[endpoint.Name] = (endpoint.DisplayName, usage);
             }
         }
+
+        // Archived (deleted) model/endpoint telemetry
+        foreach (var archived in _endpointService.ArchivedTelemetry)
+        {
+            if (archived.Telemetry.CallTimes <= 0) continue;
+
+            if (endpointMap.TryGetValue(archived.EndpointName, out var entry))
+            {
+                entry.Usage.Add(archived.Telemetry);
+            }
+            else
+            {
+                endpointMap[archived.EndpointName] =
+                    (archived.EndpointDisplayName, new UsageCounter(archived.Telemetry));
+            }
+        }
+
+        var endpoints = endpointMap.Values
+            .Select(e => (e.DisplayName, e.Usage))
+            .ToList<(string Name, UsageCounter Usage)>();
 
         UpdateStatistics(endpoints);
     }
@@ -389,6 +408,16 @@ public class UsageStatisticsViewModel : BaseViewModel
                     var name = $"{model.Name} ({endpoint.DisplayName})";
                     models.Add((name, model.Telemetry));
                 }
+            }
+        }
+
+        // Include telemetry from deleted models/endpoints
+        foreach (var archived in _endpointService.ArchivedTelemetry)
+        {
+            if (archived.Telemetry.CallTimes > 0)
+            {
+                var name = $"{archived.ModelName} ({archived.EndpointDisplayName})";
+                models.Add((name, archived.Telemetry));
             }
         }
 

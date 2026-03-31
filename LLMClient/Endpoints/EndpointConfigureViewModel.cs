@@ -239,6 +239,10 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     private GithubCopilotEndPoint? _githubCopilotEndPoint;
 
+    private readonly List<ArchivedModelTelemetry> _archivedTelemetry = [];
+
+    public IReadOnlyList<ArchivedModelTelemetry> ArchivedTelemetry => _archivedTelemetry;
+
     private const string SuggestedModelKey = "SuggestedModels";
 
     private const string HistoryModelKey = "HistoryModels";
@@ -336,11 +340,13 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                         continue;
                     }
 
+                    // Prefer a stored DisplayName; fall back to the endpoint Name.
+                    endpointNode.TryGetPropertyValue("DisplayName", out var displayNameNode);
+
                     var llmEndpoint = ((IEndpointService)this).GetEndpoint(endpointName);
-                    if (llmEndpoint == null)
-                    {
-                        continue;
-                    }
+                    var endpointDisplayName = llmEndpoint?.DisplayName
+                                              ?? displayNameNode?.GetValue<string>()
+                                              ?? endpointName;
 
                     if (!endpointNode.TryGetPropertyValue("Models", out var modelsNode))
                     {
@@ -365,17 +371,37 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                             continue;
                         }
 
-                        var model = llmEndpoint.GetModel(modelName);
-                        if (model == null)
+                        if (!modelNode.TryGetPropertyValue("Telemetry", out var modelTelemetry) ||
+                            modelTelemetry == null)
                         {
                             continue;
                         }
 
-                        if (modelNode.TryGetPropertyValue("Telemetry", out var modelTelemetry))
+                        var usageCounter =
+                            modelTelemetry.Deserialize<UsageCounter>(Extension.DefaultJsonSerializerOptions);
+                        if (usageCounter == null)
                         {
-                            model.Telemetry =
-                                modelTelemetry.Deserialize<UsageCounter>(Extension.DefaultJsonSerializerOptions);
+                            continue;
                         }
+
+                        if (llmEndpoint == null)
+                        {
+                            // Endpoint no longer exists – archive all its models.
+                            _archivedTelemetry.Add(new ArchivedModelTelemetry(
+                                endpointName, endpointDisplayName, modelName, usageCounter));
+                            continue;
+                        }
+
+                        var model = llmEndpoint.GetModel(modelName);
+                        if (model == null)
+                        {
+                            // Model no longer exists in this endpoint – archive it.
+                            _archivedTelemetry.Add(new ArchivedModelTelemetry(
+                                endpointName, endpointDisplayName, modelName, usageCounter));
+                            continue;
+                        }
+
+                        model.Telemetry = usageCounter;
                     }
                 }
             }
@@ -402,34 +428,59 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             endPointsNode[HistoryModelKey] = historySerializeToNode;
         }
 
-        //save telemetry 
-        //get all telemetry enabled endpoints
-        var jsonArray = new JsonArray();
+        //save telemetry
+        // Build a map: endpointName -> (displayName, list of model telemetry entries)
+        var endpointTelemetryMap = new Dictionary<string, (string DisplayName, List<JsonObject> Models)>();
+
+        // Step 1: current endpoints
         foreach (var endpoint in this.Endpoints)
         {
-            var models = new JsonArray();
+            var modelsList = new List<JsonObject>();
             foreach (var availableModel in endpoint.AvailableModels)
             {
                 if (availableModel.Telemetry != null)
                 {
-                    models.Add(new JsonObject()
+                    modelsList.Add(new JsonObject()
                     {
                         ["ModelName"] = availableModel.Name,
-                        ["Telemetry"] = JsonSerializer.SerializeToNode(availableModel.Telemetry,
-                            Extension.DefaultJsonSerializerOptions)
+                        ["Telemetry"] = JsonSerializer.SerializeToNode(availableModel.Telemetry, options)
                     });
                 }
             }
 
-            if (models.Count > 0)
+            endpointTelemetryMap[endpoint.Name] = (endpoint.DisplayName, modelsList);
+        }
+
+        // Step 2: merge archived (deleted) telemetry so it survives the next save
+        foreach (var archived in _archivedTelemetry)
+        {
+            if (!endpointTelemetryMap.TryGetValue(archived.EndpointName, out var entry))
             {
-                var jsonObject = new JsonObject
-                {
-                    ["Name"] = endpoint.Name,
-                    ["Models"] = models
-                };
-                jsonArray.Add(jsonObject);
+                entry = (archived.EndpointDisplayName, new List<JsonObject>());
+                endpointTelemetryMap[archived.EndpointName] = entry;
             }
+
+            entry.Models.Add(new JsonObject()
+            {
+                ["ModelName"] = archived.ModelName,
+                ["Telemetry"] = JsonSerializer.SerializeToNode(archived.Telemetry, options)
+            });
+        }
+
+        // Step 3: build the JSON array
+        var jsonArray = new JsonArray();
+        foreach (var (endpointName, (displayName, models)) in endpointTelemetryMap)
+        {
+            if (models.Count == 0) continue;
+
+            var modelsArray = new JsonArray();
+            foreach (var m in models) modelsArray.Add(m);
+            jsonArray.Add(new JsonObject
+            {
+                ["Name"] = endpointName,
+                ["DisplayName"] = displayName,
+                ["Models"] = modelsArray
+            });
         }
 
         root[TelemetryKey] = jsonArray;

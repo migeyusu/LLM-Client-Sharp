@@ -1,5 +1,14 @@
 ﻿namespace LLMClient.Abstraction;
 
+/// <summary>
+/// Telemetry data preserved for a model/endpoint that has been deleted.
+/// </summary>
+public record ArchivedModelTelemetry(
+    string EndpointName,
+    string EndpointDisplayName,
+    string ModelName,
+    UsageCounter Telemetry);
+
 public interface IEndpointService
 {
     /// <summary>
@@ -20,6 +29,11 @@ public interface IEndpointService
     IReadOnlyList<IEndpointModel> SuggestedModels { get; }
 
     void SetModelHistory(IEndpointModel model);
+
+    /// <summary>
+    /// Telemetry data for models/endpoints that have been deleted, preserved across sessions.
+    /// </summary>
+    IReadOnlyList<ArchivedModelTelemetry> ArchivedTelemetry => [];
 
     Task Initialize();
 
