@@ -105,9 +105,15 @@ public static class MiniSweAgentConfigLoader
             StepLimit = 0,
             SystemTemplate = """
                 You are a helpful assistant that can interact with a computer.
+                
+                {{{project_information}}}
                 """,
             InstanceTemplate = """
-                Please solve this issue: {{task}}
+                Please solve this issue:
+                
+                <issue>
+                {{task}}
+                </issue>
 
                 You can execute bash commands and edit files to implement the necessary changes.
 
@@ -208,9 +214,15 @@ public static class MiniSweAgentConfigLoader
                 </format_example>
 
                 Failure to follow these rules will cause your response to be rejected.
+                
+                {{{project_information}}}
                 """,
             InstanceTemplate = """
-                Please solve this issue: {{task}}
+                Please solve this issue:
+                
+                <issue>
+                {{task}}
+                </issue>
 
                 You can execute bash commands and edit files to implement the necessary changes.
 
@@ -327,6 +339,8 @@ public static class MiniSweAgentConfigLoader
 
                 Failure to follow the tool usage and editing rules may cause your response to be rejected.
 
+                {{{project_information}}}
+                
                 {{{platform_instructions}}}
 
                 {{{tool_instructions}}}
@@ -334,7 +348,11 @@ public static class MiniSweAgentConfigLoader
                 {{{rag_instructions}}}
                 """,
             InstanceTemplate = """
-                Please solve this issue: {{task}}
+                Please solve this issue:
+                
+                <issue>
+                {{task}}
+                </issue>
 
                 You are working in a Windows-oriented development environment.
 
@@ -439,6 +457,8 @@ public static class MiniSweAgentConfigLoader
         config.PlatformId = AgentPlatform.Wsl;
         config.SystemTemplate = """
             You are a helpful assistant that can interact with a computer via WSL (Windows Subsystem for Linux).
+            
+            {{{project_information}}}
             """;
         // WSL specific adjustments can be added here if needed
         return config;

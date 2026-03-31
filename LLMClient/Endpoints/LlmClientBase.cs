@@ -242,7 +242,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 softFunctionCall = functionCallEngine.IsToolCallMode;
                 //在openai调用引擎下，如果不可流式输出，则关闭流式输出
                 if (!this.Model.FunctionCallOnStreaming &&
-                    functionCallEngine is DefaultFunctionCallEngine)
+                    functionCallEngine.IsToolCallMode)
                 {
                     streaming = false;
                 }

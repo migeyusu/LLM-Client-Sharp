@@ -37,14 +37,12 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
     private readonly IMapper _mapper;
     private readonly IViewModelFactory _factory;
 
-    private bool _isDataChanged = true;
-
     public override bool IsDataChanged
     {
-        get { return Session.Any(session => session.IsDataChanged) || Requester.IsDataChanged || _isDataChanged; }
+        get { return Session.Any(session => session.IsDataChanged) || Requester.IsDataChanged || field; }
         set
         {
-            _isDataChanged = value;
+            field = value;
             if (!value)
             {
                 //用于重置子项的变更状态
@@ -56,7 +54,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 Requester.IsDataChanged = value;
             }
         }
-    }
+    } = true;
 
     public override bool IsBusy
     {
@@ -203,7 +201,25 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         }
     }
 
-    private readonly StringBuilder _systemPromptBuilder = new StringBuilder(1024);
+    private readonly StringBuilder _systemPromptBuilder = new(1024);
+
+    private readonly StringBuilder _promptInformationPromptBuilder = new(1024);
+
+    public string ProjectInformationPrompt
+    {
+        get
+        {
+            _promptInformationPromptBuilder.Clear();
+            _promptInformationPromptBuilder.AppendLine("<project_information>");
+            _promptInformationPromptBuilder.AppendFormat("这是一个名为{0}的{1}项目，项目代码位于路径：'{2}'。", Option.Name,
+                Option.Type.GetEnumDescription(), Option.RootPath);
+            _promptInformationPromptBuilder.AppendLine();
+            _promptInformationPromptBuilder.AppendLine(Option.Description);
+            _promptInformationPromptBuilder.AppendLine();
+            _promptInformationPromptBuilder.AppendLine("</project_information>");
+            return _promptInformationPromptBuilder.ToString();
+        }
+    }
 
     /// <summary>
     /// 项目级别的上下文，在Item间共享
@@ -223,13 +239,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 _systemPromptBuilder.AppendLine(UserSystemPrompt);
             }
 
-            _systemPromptBuilder.AppendLine("<project_information>");
-            _systemPromptBuilder.AppendFormat("这是一个名为{0}的{1}项目，项目代码位于文件夹{2}。", Option.Name,
-                Option.Type.GetEnumDescription(), Option.RootPath);
-            _systemPromptBuilder.AppendLine();
-            _systemPromptBuilder.AppendLine(Option.Description);
-            _systemPromptBuilder.AppendLine();
-            _systemPromptBuilder.AppendLine("</project_information>");
+            _systemPromptBuilder.AppendLine(ProjectInformationPrompt);
 
             return _systemPromptBuilder.ToString();
         }
@@ -280,12 +290,17 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
     {
         session.PropertyChanged += OnSessionPropertyChanged;
         this.Session.Add(session);
+        SelectedSession = session;
     }
 
     public void RemoveSession(ProjectSessionViewModel session)
     {
         session.PropertyChanged -= OnSessionPropertyChanged;
         this.Session.Remove(session);
+        if (SelectedSession == session)
+        {
+            SelectedSession = this.Session.LastOrDefault();
+        }
     }
 
     private void OnSessionPropertyChanged(object? sender, PropertyChangedEventArgs e)

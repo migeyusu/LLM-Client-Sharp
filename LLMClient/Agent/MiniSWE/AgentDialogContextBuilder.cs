@@ -20,19 +20,24 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
     {
     }
 
-    public string SystemTemplate { get; set; } = string.Empty;
+    public required string SystemTemplate { get; init; }
 
-    public string InstanceTemplate { get; set; } = string.Empty;
+    public required string InstanceTemplate { get; init; }
 
-    public bool IncludeHistoryMessages { get; set; } = true;
+    public bool IncludeHistoryMessages { get; init; } = true;
 
-    public AgentPlatform PlatformId { get; set; } = AgentPlatform.Windows;
+    /// <summary>
+    /// 优先使用project information
+    /// </summary>
+    public string? ProjectInformation { get; set; }
 
-    public bool IncludeToolInstructions { get; set; } = true;
+    public AgentPlatform PlatformId { get; init; } = AgentPlatform.Windows;
 
-    public bool IncludeRagInstructions { get; set; } = true;
+    public bool IncludeToolInstructions { get; init; } = true;
 
-    public Dictionary<string, object?> TemplateVariables { get; } = new();
+    public bool IncludeRagInstructions { get; init; } = true;
+
+    private readonly Dictionary<string, object?> _templateVariables = new();
 
     protected override string? BuildSystemPrompt()
     {
@@ -54,10 +59,10 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
         var chatHistory = new List<ChatMessage>();
 
         var historyMessages = IncludeHistoryMessages
-            ? await GetMessagesAsync(cancellationToken)
+            ? (await GetMessagesAsync(cancellationToken)).SkipLast(1).ToList()
             : new List<ChatMessage>();
 
-        var templateVariables = await BuildTemplateVariablesAsync(model, cancellationToken);
+        var templateVariables = BuildTemplateVariablesAsync();
         var renderedSystemPrompt = await RenderSystemTemplateAsync(templateVariables);
         var renderedInstancePrompt = await RenderInstanceTemplateAsync(templateVariables);
 
@@ -88,15 +93,18 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
         return chatHistory;
     }
 
-    protected virtual async Task<Dictionary<string, object?>> BuildTemplateVariablesAsync(
-        IEndpointModel model,
-        CancellationToken cancellationToken)
+    protected virtual Dictionary<string, object?> BuildTemplateVariablesAsync()
     {
+        //优先使用project information
+        var context = string.IsNullOrEmpty(ProjectInformation)
+            ? $"<context>\r\n{SystemPrompt}\r\nCurrent Folder: {WorkingDirectory}\r\n</context>"
+            : ProjectInformation;
         var variables = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["task"] = UserPrompt ?? string.Empty,
             ["platform_id"] = PlatformId.ToString().ToLowerInvariant(),
             ["platform_instructions"] = BuildPlatformInstructions(),
+            ["project_information"] = context,
             ["tool_instructions"] = ShouldRenderToolInstructions() ? BuildToolInstructions() : string.Empty,
             ["rag_instructions"] = ShouldRenderRagInstructions() ? BuildRagInstructions() : string.Empty,
             ["tool_selection_guidance"] = BuildToolSelectionGuidance(),
@@ -105,17 +113,13 @@ public class AgentDialogContextBuilder : DefaultDialogContextBuilder
             ["release"] = Environment.OSVersion.Version.ToString(),
             ["version"] = Environment.Version.ToString(),
             ["machine"] = Environment.MachineName,
-            ["model_name"] = model.APIId,
-            ["supports_function_call"] = model.SupportFunctionCall,
-            ["supports_system_prompt"] = model.SupportSystemPrompt
         };
 
-        foreach (var pair in TemplateVariables)
+        foreach (var pair in _templateVariables)
         {
             variables[pair.Key] = pair.Value;
         }
 
-        await Task.CompletedTask;
         return variables;
     }
 

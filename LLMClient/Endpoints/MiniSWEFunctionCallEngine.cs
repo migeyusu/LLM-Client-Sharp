@@ -28,7 +28,10 @@ public partial class MiniSWEFunctionCallEngine : FunctionCallEngine
 
     public override void PreviewRequest(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
     {
-        // agent will do
+        if (_config.UseToolCall)
+        {
+            options.Tools = KernelPluginCollection.SelectMany(plugin => plugin).ToArray<AITool>();
+        }
     }
 
     public override async Task<List<FunctionCallContent>> TryParseFunctionCalls(ChatResponse response)

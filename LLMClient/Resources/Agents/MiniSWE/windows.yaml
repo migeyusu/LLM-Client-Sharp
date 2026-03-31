@@ -31,14 +31,20 @@ agent:
 
     Failure to follow the tool usage and editing rules may cause your response to be rejected.
 
+    {{{project_information}}}
+
     {{{platform_instructions}}}
 
     {{{tool_instructions}}}
 
     {{{rag_instructions}}}
   instance_template: |
-    Please solve this issue: {{task}}
-
+    Please solve this issue:
+    
+    <issue>
+    {{task}}
+    </issue>
+    
     You are working in a Windows-oriented development environment.
 
     Available capabilities may include:

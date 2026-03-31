@@ -51,6 +51,8 @@ agent:
     <system_information>
     {{system}} {{release}} {{version}} {{machine}}
     </system_information>
+    
+    {{{project_information}}}
 
     ## Useful command examples
 

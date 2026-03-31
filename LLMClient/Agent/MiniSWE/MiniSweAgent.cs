@@ -5,6 +5,7 @@ using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Project;
+using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
 
@@ -25,7 +26,7 @@ public class MiniSweAgent : IAgent
 
     public MiniSweAgentConfig Config { get; }
 
-    private readonly IReadOnlyList<IAIFunctionGroup> _toolProviders;
+    private readonly IReadOnlyList<KernelFunctionGroup> _toolProviders;
 
     public ILLMChatClient ChatClient { get; }
 
@@ -73,22 +74,31 @@ public class MiniSweAgent : IAgent
             IncludeHistoryMessages = true,
             IncludeToolInstructions = Config.IncludeToolInstructions,
             IncludeRagInstructions = Config.IncludeRagInstructions,
-            SystemPrompt = dialogSession.SystemPrompt,
             SystemTemplate = Config.SystemTemplate,
+            SystemPrompt = dialogSession.SystemPrompt,
             InstanceTemplate = Config.InstanceTemplate
         };
         contextBuilder.MapFromRequest(request);
+        string? workingDirectory;
         if (dialogSession is ProjectSessionViewModel projectSession)
         {
-            contextBuilder.WorkingDirectory = projectSession.WorkingDirectory;
+            workingDirectory = projectSession.WorkingDirectory;
+            contextBuilder.ProjectInformation = projectSession.ParentProject.ProjectInformationPrompt;
         }
         else
         {
-            contextBuilder.WorkingDirectory = AgentOption.WorkingDirectory;
+            workingDirectory = AgentOption.WorkingDirectory;
         }
 
+        contextBuilder.WorkingDirectory = workingDirectory;
         if (_toolProviders.Count > 0)
         {
+            if (!string.IsNullOrEmpty(workingDirectory))
+            {
+                _toolProviders.OfType<FileSystemPlugin>()
+                    .FirstOrDefault()?.BypassPaths.Add(workingDirectory);
+            }
+
             contextBuilder.FunctionGroups ??= [];
             var functionGroups = contextBuilder.FunctionGroups;
             foreach (var toolProvider in _toolProviders)
@@ -101,12 +111,8 @@ public class MiniSweAgent : IAgent
             }
         }
 
-        if (!Config.UseToolCall)
-        {
-            contextBuilder.CallEngine = new MiniSWEFunctionCallEngine(Config);
-        }
-
-
+        contextBuilder.CallEngine = new MiniSWEFunctionCallEngine(Config);
+        var requestContext = await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
         while (!cancellationToken.IsCancellationRequested)
         {
             if (Config.StepLimit > 0 && CallCount >= Config.StepLimit)
@@ -114,7 +120,6 @@ public class MiniSweAgent : IAgent
                 throw new Exception("Step limit exceeded");
             }
 
-            var requestContext = await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
             ChatCallResult? callResult = null;
             int retryCount = 0;
             while (retryCount < StepRetryCount)
@@ -152,9 +157,9 @@ public class MiniSweAgent : IAgent
         }
     }
 
-    private static IReadOnlyList<IAIFunctionGroup> CreateToolProviders(MiniSweAgentConfig config)
+    private static IReadOnlyList<KernelFunctionGroup> CreateToolProviders(MiniSweAgentConfig config)
     {
-        var providers = new List<IAIFunctionGroup>();
+        var providers = new List<KernelFunctionGroup>();
         var platformId = config.PlatformId;
 
         switch (platformId)
