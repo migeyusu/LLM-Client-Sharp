@@ -47,14 +47,7 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
 
     public bool IsInterrupt
     {
-        get;
-        set
-        {
-            if (value == field) return;
-            field = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsAvailableInContext));
-        }
+        get { return this.Items.Any(item => item.IsInterrupt); }
     }
 
     public string? ErrorMessage
@@ -84,8 +77,6 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
     public override IEnumerable<ChatMessage> Messages => Items.SelectMany(x => x.Messages);
 
     public ObservableCollection<string> History { get; } = [];
-
-    public ObservableCollection<AsyncPermissionViewModel> PermissionViewModels { get; } = [];
 
     public IAgent? Agent { get; }
 
@@ -145,6 +136,7 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
                     this.Items.Add(viewItem);
                     this.History.Clear();
                 }
+
                 ParentSession.OnResponseCompleted(totalCallResult);
             }
         }
@@ -157,9 +149,9 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
         finally
         {
             this.History.Clear();
-            this.PermissionViewModels.Clear();
             this.IsResponding = false;
-            this.IsInterrupt = totalCallResult.IsInterrupt;
+            OnPropertyChanged(nameof(IsInterrupt));
+            OnPropertyChanged(nameof(IsAvailableInContext));
         }
 
         return totalCallResult;

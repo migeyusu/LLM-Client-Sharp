@@ -44,3 +44,8 @@ public class OutOfContextWindowException : LlmInvalidRequestException
     {
     }
 }
+
+public class ResultFilteredException : LlmInvalidRequestException
+{
+    
+}

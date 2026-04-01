@@ -965,16 +965,7 @@
                                   ItemTemplate="{StaticResource RawResponseItemTemplate}"
                                   ItemsPanel="{StaticResource VerticalItemsPanelTemplate}" />
                     <customControl:MarkdownTextBlock Source="{Binding History,Mode=OneTime}"
-                                                     MaxHeight="300" />
-                    <ItemsControl ItemsSource="{Binding PermissionViewModels}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type dialog:AsyncPermissionViewModel}">
-                                <Expander Style="{StaticResource AsyncPermissionExpanderStyle}"
-                                          Content="{Binding}"
-                                          Header="{Binding}" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                                     MaxHeight="500" />
                 </StackPanel>
             </materialDesign:Card>
         </StackPanel>

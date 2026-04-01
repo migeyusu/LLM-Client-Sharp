@@ -385,6 +385,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                             }
                             else if (finishReason == ChatFinishReason.ContentFilter)
                             {
+                                exception = new ResultFilteredException();
                                 interactor?.Warning("Response was filtered by content filter.");
                                 break;
                             }

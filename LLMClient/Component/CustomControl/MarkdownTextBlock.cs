@@ -2,16 +2,24 @@
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
 
 namespace LLMClient.Component.CustomControl;
 
-public class MarkdownTextBlock : TextBlock
+public class MarkdownTextBlock : Control
 {
+    private TextBlock? _textBlock;
+    private ScrollViewer? _scrollViewer;
+
     public static readonly DependencyProperty SourceProperty = DependencyProperty.Register(
         nameof(Source), typeof(ObservableCollection<string>), typeof(MarkdownTextBlock),
         new PropertyMetadata(default(ObservableCollection<string>), CollectionTextChangedCallback));
+
+    public static readonly DependencyProperty TextWrappingProperty = DependencyProperty.Register(
+        nameof(TextWrapping), typeof(TextWrapping), typeof(MarkdownTextBlock),
+        new PropertyMetadata(TextWrapping.NoWrap));
 
     private static void CollectionTextChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
@@ -27,6 +35,52 @@ public class MarkdownTextBlock : TextBlock
         set { SetValue(SourceProperty, value); }
     }
 
+    public TextWrapping TextWrapping
+    {
+        get { return (TextWrapping)GetValue(TextWrappingProperty); }
+        set { SetValue(TextWrappingProperty, value); }
+    }
+
+    public MarkdownTextBlock()
+    {
+        Focusable = false;
+        Template = BuildTemplate();
+    }
+
+    private static ControlTemplate BuildTemplate()
+    {
+        var template = new ControlTemplate(typeof(MarkdownTextBlock));
+
+        var scrollViewerFactory = new FrameworkElementFactory(typeof(ScrollViewer), "PART_ScrollViewer");
+        scrollViewerFactory.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
+        scrollViewerFactory.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
+        scrollViewerFactory.SetValue(ScrollViewer.FocusableProperty, false);
+        scrollViewerFactory.SetValue(ScrollViewer.PaddingProperty, new Thickness(0));
+        scrollViewerFactory.SetValue(ScrollViewer.BackgroundProperty, Brushes.Transparent);
+
+        var textBlockFactory = new FrameworkElementFactory(typeof(TextBlock), "PART_TextBlock");
+        textBlockFactory.SetBinding(TextBlock.TextWrappingProperty,
+            new Binding(nameof(TextWrapping)) { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        textBlockFactory.SetBinding(TextBlock.ForegroundProperty,
+            new Binding(nameof(Foreground)) { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        textBlockFactory.SetBinding(TextBlock.FontSizeProperty,
+            new Binding(nameof(FontSize)) { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        textBlockFactory.SetBinding(TextBlock.FontFamilyProperty,
+            new Binding(nameof(FontFamily)) { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+
+        scrollViewerFactory.AppendChild(textBlockFactory);
+        template.VisualTree = scrollViewerFactory;
+        return template;
+    }
+
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+        _textBlock = GetTemplateChild("PART_TextBlock") as TextBlock;
+        _scrollViewer = GetTemplateChild("PART_ScrollViewer") as ScrollViewer;
+        RebuildInlines();
+    }
+
     private void OnCollectionTextChanged(DependencyPropertyChangedEventArgs args)
     {
         if (args.OldValue is ObservableCollection<string> oldCollection)
@@ -34,12 +88,29 @@ public class MarkdownTextBlock : TextBlock
             oldCollection.CollectionChanged -= OnCollectionChanged;
         }
 
-        var inlines = this.Inlines;
-        inlines.Clear();
         if (args.NewValue is ObservableCollection<string> newCollection)
         {
             newCollection.CollectionChanged += OnCollectionChanged;
-            foreach (var str in newCollection)
+        }
+
+        RebuildInlines();
+    }
+
+    private void RebuildInlines()
+    {
+        if (_textBlock == null) return;
+
+        var inlines = _textBlock.Inlines;
+        inlines.Clear();
+
+        isBold = false;
+        isItalic = false;
+        isCode = false;
+        isCodeBlock = false;
+
+        if (Source != null)
+        {
+            foreach (var str in Source)
             {
                 inlines.Add(FromMarkdown(str));
             }
@@ -48,8 +119,10 @@ public class MarkdownTextBlock : TextBlock
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        this.BeginInit();
-        var inlineCollection = this.Inlines;
+        if (_textBlock == null) return;
+
+        _textBlock.BeginInit();
+        var inlineCollection = _textBlock.Inlines;
         switch (e.Action)
         {
             case NotifyCollectionChangedAction.Add:
@@ -62,6 +135,7 @@ public class MarkdownTextBlock : TextBlock
                     }
                 }
 
+                _scrollViewer?.ScrollToEnd();
                 break;
             case NotifyCollectionChangedAction.Remove:
                 break;
@@ -71,12 +145,16 @@ public class MarkdownTextBlock : TextBlock
                 break;
             case NotifyCollectionChangedAction.Reset:
                 inlineCollection.Clear();
+                isBold = false;
+                isItalic = false;
+                isCode = false;
+                isCodeBlock = false;
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
 
-        this.EndInit();
+        _textBlock.EndInit();
     }
 
     bool isBold = false;
@@ -127,10 +205,6 @@ public class MarkdownTextBlock : TextBlock
             run.Background = Brushes.LightGray;
         }
 
-        /*if (isCodeBlock)
-        {
-            run.Background = Brushes.DarkGray;
-        }*/
 
         return run;
     }

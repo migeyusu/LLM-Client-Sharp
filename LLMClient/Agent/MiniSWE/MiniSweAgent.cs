@@ -125,7 +125,7 @@ public class MiniSweAgent : IAgent
             while (retryCount < StepRetryCount)
             {
                 callResult = await ChatClient.SendRequest(requestContext, interactor, cancellationToken);
-                chatHistory.Add(callResult);
+                requestContext.ChatHistory.AddRange(callResult.Messages);
                 yield return callResult;
                 if (callResult.IsCanceled)
                 {
@@ -149,7 +149,7 @@ public class MiniSweAgent : IAgent
 
             CallCount++;
 
-            var lastMessage = chatHistory.LastOrDefault()?.Messages?.LastOrDefault();
+            var lastMessage = callResult?.Messages?.LastOrDefault();
             if (IsExitMessage(lastMessage))
             {
                 break;
@@ -186,6 +186,10 @@ public class MiniSweAgent : IAgent
 
     private bool IsExitMessage(ChatMessage? message)
     {
+        if (string.IsNullOrEmpty(message?.Text))
+        {
+            return true;
+        }
         return message?.Text?.Contains(Config.TaskCompleteFlag, StringComparison.Ordinal) == true;
     }
 }
