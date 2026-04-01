@@ -486,6 +486,16 @@ public class MiniSweRegressionTests
         {
             return Task.FromResult(allow);
         }
+
+        public void NewLoop()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void EndLoop()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     private sealed class CancelAwareAgent : IAgent

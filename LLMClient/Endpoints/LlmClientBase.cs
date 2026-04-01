@@ -321,12 +321,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                         interactor?.WriteLine(ToolCallBlockParser.FunctionCallTag);
                                         interactor?.WriteLine(functionCallContent.ToToolCallXmlFragment());
                                         interactor?.WriteLine(ToolCallBlockParser.FunctionCallEndTag);
+                                        interactor?.WriteLine();
                                         break;
                                     case FunctionResultContent functionResultContent:
                                         interactor?.WriteLine();
                                         interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultTag);
                                         interactor?.WriteLine(functionResultContent.ToToolCallResultXmlFragment());
                                         interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultEndTag);
+                                        interactor?.WriteLine();
                                         break;
                                     case ErrorContent errorContent:
                                         interactor?.Error(

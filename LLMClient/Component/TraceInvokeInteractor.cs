@@ -46,4 +46,14 @@ public class TraceInvokeInteractor : IInvokeInteractor
         Trace.WriteLine("Permission requested, automatically granted in TraceInvokeInteractor.");
         return Task.FromResult(true);
     }
+
+    public void NewLoop()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void EndLoop()
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -192,4 +192,14 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
     {
         return InvokePermissionDialog.RequestAsync(content);
     }
+
+    public void NewLoop()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void EndLoop()
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -45,4 +45,14 @@ public class ConsoleInvokeInteractor : IInvokeInteractor
         Console.ReadLine();
         return Task.FromResult(true);
     }
+
+    public void NewLoop()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void EndLoop()
+    {
+        throw new NotImplementedException();
+    }
 }
