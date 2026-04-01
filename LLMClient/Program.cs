@@ -12,6 +12,7 @@ using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Log;
 using LLMClient.Rag;
+using LLMClient.Test;
 using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.MCP;
 using LLMClient.Workflow.Research;
@@ -165,7 +166,7 @@ public class Program
             AnalyzerExtension.RegisterMsBuild();
             App app = new App();
             app.InitializeComponent();
-            //app.Run(new AsyncTestWindow());
+            app.Run(new AsyncTestWindow());
             mainWindow = serviceProvider.GetService<MainWindow>();
             app.Run(mainWindow);
         }

@@ -4,11 +4,39 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:LLMClient.Test"
+        xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
         mc:Ignorable="d"
-        Title="AsyncTestWindow" Height="450" Width="800"
+        Title="MarkdownTextBlock Streaming Demo" Height="600" Width="900"
         d:DataContext="{d:DesignInstance local:AsyncTestWindow}">
     <Grid>
-        <Border x:Name="ContainerBorder"/>
-        <!-- <FlowDocumentScrollViewer Document="{Binding Document,Mode=OneWay}"/> -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+            <Button x:Name="StartButton" Content="▶ Start Streaming" Padding="12,6" Click="OnStartClick" />
+            <Button x:Name="ResetButton" Content="⟲ Reset" Padding="12,6" Margin="8,0,0,0" Click="OnResetClick" />
+            <TextBlock Text="  Chunk delay (ms):" VerticalAlignment="Center" Margin="16,0,4,0"/>
+            <Slider x:Name="DelaySlider" Width="120" Minimum="10" Maximum="500" Value="60"
+                    VerticalAlignment="Center" IsSnapToTickEnabled="True" TickFrequency="10"/>
+            <TextBlock Text="{Binding Value, ElementName=DelaySlider, StringFormat={}{0:F0}}"
+                       VerticalAlignment="Center" Margin="4,0,0,0"/>
+        </StackPanel>
+
+        <!-- MarkdownTextBlock under test -->
+        <Border Grid.Row="1" Margin="10" BorderBrush="Gray" BorderThickness="1" Padding="10">
+            <customControl:MarkdownTextBlock x:Name="MdTextBlock"
+                                             TextWrapping="Wrap"
+                                             FontSize="14"
+                                             VerticalAlignment="Top"
+                                             Source="{Binding StreamingSource, Mode=OneTime}" />
+        </Border>
+
+        <!-- Status bar -->
+        <TextBlock x:Name="StatusText" Grid.Row="2" Margin="10,0,10,8"
+                   Text="Ready" Foreground="Gray" />
     </Grid>
 </Window>

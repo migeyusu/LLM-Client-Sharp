@@ -25,20 +25,6 @@ public class UITest
         thread.Start();
         thread.Join();
     }
-    
-    [Fact]
-    public void StreamingMDRun()
-    {
-        var thread = new Thread(o =>
-        {
-            var app = new App();
-            app.InitializeComponent();
-           
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-    }
 
     [Fact]
     public void SerializeInfo()

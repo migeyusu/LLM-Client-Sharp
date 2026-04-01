@@ -1,82 +1,130 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Documents;
 
 namespace LLMClient.Test;
 
 public partial class AsyncTestWindow : Window, INotifyPropertyChanged
 {
-    private FlowDocument? _document;
+    private CancellationTokenSource? _cts;
+
+    /// <summary>
+    /// The markdown test string from StubLlmClient — exercises headings, code blocks,
+    /// inline code, bold, tables, horizontal rules, lists, and nested structures.
+    /// </summary>
+    private static readonly string TestMarkdown =
+        "基于 `TempResponseText` 在 FlowDocument 之外独立显示，" +
+        "`StreamingRenderSession` 不再需要管理任何 **tail 文本**，结构大幅简化：" +
+        "`livingContainer` 只需包含一个 `RichTextBox`（用于承接子块渲染结果），" +
+        "tail 的显示和清空完全由外部的 `MarkdownTextBlock` + `TempResponseText` 负责。\n\n" +
+        "---\n\n" +
+        "## `StreamingRenderSession.cs`\n\n" +
+        "```csharp\n" +
+        "using System.Windows;\n" +
+        "using System.Windows.Controls;\n" +
+        "using System.Windows.Documents;\n" +
+        "using Markdig.Syntax;\n\n" +
+        "namespace LLMClient.Component.Render;\n\n" +
+        "public sealed class StreamingRenderSession : IDisposable\n" +
+        "{\n" +
+        "    private readonly FlowDocument _mainDocument;\n" +
+        "    private readonly Action _clearTail;\n\n" +
+        "    public StreamingRenderSession(FlowDocument doc, Action clearTail)\n" +
+        "    {\n" +
+        "        _mainDocument = doc;\n" +
+        "        _clearTail = clearTail;\n" +
+        "    }\n" +
+        "}\n" +
+        "```\n\n" +
+        "## 关键设计点说明\n\n" +
+        "**Dispatcher 优先级的有意安排**（这是正确性的核心）：\n\n" +
+        "1. `TempResponseText.Add(message)` — Normal (9) 优先级\n" +
+        "2. `OnBlockClosed` dispatch — Background (4) 优先级\n" +
+        "3. `CompleteAsync` — ContextIdle (3) 优先级\n\n" +
+        "> WPF Dispatcher 数值越大优先级越高，同优先级按 FIFO。\n" +
+        "> 这三层优先级保证了 *\"tail 追加 → block commit → 清理\"* 的严格顺序。\n\n" +
+        "### 特性一览\n\n" +
+        "- **粗体** 与 *斜体* 以及 ~~删除线~~\n" +
+        "- 行内代码 `var x = 42;`\n" +
+        "- [超链接](https://github.com)\n" +
+        "- 嵌套列表：\n" +
+        "  - 子项 A\n" +
+        "  - 子项 B\n\n" +
+        "---\n\n" +
+        "以上就是完整的流式渲染架构说明。";
+
+    public ObservableCollection<string> StreamingSource { get; } = [];
 
     public AsyncTestWindow()
     {
-        this.DataContext = this;
+        DataContext = this;
         InitializeComponent();
-        this.Loaded += OnLoaded;
     }
 
-    private string GenerateHugeXamlData()
+    // ─── Button handlers ──────────────────────────────────────────────
+
+    private async void OnStartClick(object sender, RoutedEventArgs e)
     {
-        // 简单的生成一个庞大的 XAML FlowDocument 结构
-        var sb = new System.Text.StringBuilder();
-        sb.Append("<FlowDocument xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>");
-        sb.Append("<Paragraph><Bold FontSize='24'>独立线程渲染的大型文档</Bold></Paragraph>");
-        
-        for (int i = 0; i < 5000; i++)
+        // Cancel any previous run
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        StreamingSource.Clear();
+        StartButton.IsEnabled = false;
+        StatusText.Text = "Streaming…";
+
+        try
         {
-            sb.Append($"<Paragraph>这是第 {i} 段内容。由于是在独立线程渲染，主界面的按钮依然可以点击，窗口依然可以拖动，不会出现未响应的情况。</Paragraph>");
+            await SimulateStreaming(TestMarkdown, token);
+            StatusText.Text = $"Done — {TestMarkdown.Length} chars streamed.";
         }
-        
-        sb.Append("</FlowDocument>");
-        return sb.ToString();
-    }
-    
-    private async void OnLoaded(object sender, RoutedEventArgs e)
-    {
-        /*var testStr =
-            "## Overview\n\n- **Files**: 327\n- **Types**: 827\n- **Methods**: 2238\n- **Lines of Code**: 35,570\n\n### LLMClient\n\n- **Type**: WindowsApplication\n- **Relative Path**: `.`\n- **Frameworks**: netstandard\n- **Language**: C#\n- **Language Version**: 12.0\n- **Statistics**: 827 types, 2238 methods\n\n#### Package References\n- automapper (15.0.1)\n- avalonedit (6.3.1.120)\n- azure.ai.textanalytics (5.3.0)\n- azure.core (1.33.0)\n- cefsharp.common.netcore (141.0.110)\n- cefsharp.wpf.netcore (141.0.110)\n- closedxml (0.104.2)\n- closedxml.parser (1.2.0)\n- communitytoolkit.mvvm (8.4.0)\n- diffplex (1.9.0)\n- ... and 173 more";
-        var flowDocument = await Task.Run((() =>
+        catch (OperationCanceledException)
         {
-            /*CustomRenderer customRenderer = CustomRenderer.NewRenderer(new FlowDocument());
-            customRenderer.RenderRaw(testStr);
-            return customRenderer.Document;#1#
-        
-        }));
-        this.Document = flowDocument;*/
-
-        string hugeXaml = GenerateHugeXamlData();
-
-        // 2. 创建多线程宿主
-        // 当这行代码执行时，WPF 的 Document 排版引擎将在独立线程运行
-        var host = new ThreadedDocumentHost(hugeXaml);
-
-        // 3. 添加到 UI 容器（假设 XAML 里有个叫 ContainerBorder 的 Border）
-        ContainerBorder.Child = host;        
-        
+            StatusText.Text = "Cancelled.";
+        }
+        finally
+        {
+            StartButton.IsEnabled = true;
+        }
     }
 
-    
-    // 模拟生成大量内容的方法（在后台线程安全执行）
-
-    public FlowDocument? Document
+    private void OnResetClick(object sender, RoutedEventArgs e)
     {
-        get => _document;
-        set => SetField(ref _document, value);
+        _cts?.Cancel();
+        StreamingSource.Clear();
+        StatusText.Text = "Ready";
     }
+
+    // ─── Streaming simulation (mirrors StubLlmClient logic) ──────────
+
+    private async Task SimulateStreaming(string text, CancellationToken ct)
+    {
+        var random = new Random();
+        int pos = 0;
+
+        while (pos < text.Length)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            int len = random.Next(3, 6);
+            if (pos + len > text.Length) len = text.Length - pos;
+
+            var chunk = text.Substring(pos, len);
+            StreamingSource.Add(chunk);
+            pos += len;
+
+            int delay = (int)DelaySlider.Value;
+            await Task.Delay(delay, ct);
+        }
+    }
+
+    // ─── INotifyPropertyChanged ───────────────────────────────────────
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-        field = value;
-        OnPropertyChanged(propertyName);
-        return true;
-    }
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
