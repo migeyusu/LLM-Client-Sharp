@@ -87,7 +87,7 @@
                                                   IsChecked="{Binding IsDisabled,Mode=OneWay}"
                                                   Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.ToggleEndpointDisabledCommand}"
                                                   CommandParameter="{Binding}"
-                                                  Style="{StaticResource MaterialDesignFlatToggleButton}"
+                                                  Style="{StaticResource MaterialDesignActionLightToggleButton}"
                                                   Padding="0">
                                         <materialDesign:PackIcon Width="14"
                                                                  Height="14"

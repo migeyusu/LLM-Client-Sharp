@@ -5,64 +5,57 @@ namespace LLMClient.Abstraction;
 
 public class UsageCounter : BaseViewModel
 {
-    private long _completionTokens;
-    private int _callTimes;
-    private double _price;
-    private float _averageTps;
-    private int _errorTimes;
-    private float _avgLatencyPerTokens;
-
     public long CompletionTokens
     {
-        get => _completionTokens;
+        get;
         set
         {
-            if (value == _completionTokens) return;
-            _completionTokens = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public int CallTimes
     {
-        get => _callTimes;
+        get;
         set
         {
-            if (value == _callTimes) return;
-            _callTimes = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public double Price
     {
-        get => _price;
+        get;
         set
         {
-            if (value.Equals(_price)) return;
-            _price = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public float AverageTps
     {
-        get => _averageTps;
+        get;
         set
         {
-            if (value.Equals(_averageTps)) return;
-            _averageTps = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public int ErrorTimes
     {
-        get => _errorTimes;
+        get;
         set
         {
-            if (value == _errorTimes) return;
-            _errorTimes = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -72,11 +65,11 @@ public class UsageCounter : BaseViewModel
     /// </summary>
     public float AvgLatencyPerTokens
     {
-        get => _avgLatencyPerTokens;
+        get;
         set
         {
-            if (value.Equals(_avgLatencyPerTokens)) return;
-            _avgLatencyPerTokens = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }

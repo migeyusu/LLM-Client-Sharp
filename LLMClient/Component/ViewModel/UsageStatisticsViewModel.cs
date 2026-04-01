@@ -182,7 +182,7 @@ public class UsageStatisticsViewModel : BaseViewModel
 
     public List<LegendItem> Legend
     {
-        get;
+        get => field;
         private set
         {
             if (Equals(value, field)) return;
@@ -190,6 +190,18 @@ public class UsageStatisticsViewModel : BaseViewModel
             OnPropertyChanged();
         }
     } = [];
+
+    public int SortCriteriaIndex
+    {
+        get => field;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+            UpdateSource();
+        }
+    } = 0;
 
     public int MaxItemsCount
     {
@@ -249,7 +261,9 @@ public class UsageStatisticsViewModel : BaseViewModel
     private void UpdateStatistics(IList<(string Name, UsageCounter Usage)> models)
     {
         _existingItemsCount = models.Count;
-        models = models.OrderByDescending(tuple => tuple.Usage.CompletionTokens)
+        models = (SortCriteriaIndex == 0 
+                ? models.OrderByDescending(tuple => tuple.Usage.CallTimes) 
+                : models.OrderByDescending(tuple => tuple.Usage.CompletionTokens))
             .Take(MaxItemsCount)
             .ToArray();
         Legend = models.Select(m =>

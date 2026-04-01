@@ -71,9 +71,15 @@
                 </ToggleButton>
                 <TextBlock Text="Pie Chart Mode" VerticalAlignment="Center" />
             </StackPanel>
-            <TextBlock Text="{Binding MaxItemsCount,Mode=OneWay,StringFormat=Show Top {0} Items By CallTimes}"
-                       VerticalAlignment="Center"
-                       Margin="0,8,0,0" />
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <TextBlock Text="{Binding MaxItemsCount,Mode=OneWay,StringFormat=Show Top {0} Items By:}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0" />
+                <ComboBox SelectedIndex="{Binding SortCriteriaIndex, Mode=TwoWay}" VerticalAlignment="Center">
+                    <ComboBoxItem Content="CallTimes" />
+                    <ComboBoxItem Content="CompletionTokens" />
+                </ComboBox>
+            </StackPanel>
             <Slider Maximum="20"
                     Minimum="5"
                     Margin="0,8,0,0"
