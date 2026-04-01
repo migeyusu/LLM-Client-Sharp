@@ -10,6 +10,7 @@ namespace LLMClient.Endpoints
         public string DisplayName => "Empty Endpoint";
         public bool IsInbuilt => false;
         public bool IsEnabled => true;
+        public bool IsDisabled { get; set; }
         public string Name => "EmptyEndpoint";
         public ThemedIcon Icon => ImageExtensions.EndpointThemedIcon;
 

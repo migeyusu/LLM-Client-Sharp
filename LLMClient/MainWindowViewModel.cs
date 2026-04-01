@@ -476,7 +476,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
             await RagSourceCollection.LoadAsync();
             await EndpointsViewModel.Initialize();
             await ModelRegister.Initialize(
-                EndpointsViewModel.AvailableEndpoints.SelectMany((endpoint => endpoint.AvailableModels)));
+                EndpointsViewModel.AllEndpoints.SelectMany((endpoint => endpoint.AvailableModels)));
             await PromptsResource.Initialize();
             await InitialSessionsFromLocal();
             if (SessionViewModels.Any())

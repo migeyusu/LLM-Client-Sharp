@@ -21,6 +21,7 @@ public class StubEndPoint: ILLMAPIEndpoint
 
     public bool IsInbuilt { get; } = true;
     public bool IsEnabled { get; } = true;
+    public bool IsDisabled { get; set; }
     public string Name { get; }
     public ThemedIcon Icon { get; }
 

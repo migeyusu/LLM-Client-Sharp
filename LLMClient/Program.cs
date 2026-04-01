@@ -166,7 +166,7 @@ public class Program
             AnalyzerExtension.RegisterMsBuild();
             App app = new App();
             app.InitializeComponent();
-            app.Run(new AsyncTestWindow());
+            // app.Run(new AsyncTestWindow());
             mainWindow = serviceProvider.GetService<MainWindow>();
             app.Run(mainWindow);
         }

@@ -78,20 +78,51 @@
                                        VerticalAlignment="Center" />
                             <Border
                                 Visibility="{Binding RelativeSource={RelativeSource FindAncestor,AncestorType=ListBoxItem},Path=IsSelected,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <Button Width="18"
-                                        Height="18"
-                                        Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveEndPointCommand}"
-                                        CommandParameter="{Binding  }"
-                                        Margin="6,0,0,0"
-                                        VerticalAlignment="Center"
-                                        ToolTip="删除当前"
-                                        Visibility="{Binding  IsInbuilt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
-                                        Template="{StaticResource ItemDeleteButtonTemplate}">
-                                </Button>
+                                <StackPanel Orientation="Horizontal">
+                                    <ToggleButton Width="18"
+                                                  Height="18"
+                                                  Margin="6,0,0,0"
+                                                  VerticalAlignment="Center"
+                                                  ToolTip="禁用/启用"
+                                                  IsChecked="{Binding IsDisabled,Mode=OneWay}"
+                                                  Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.ToggleEndpointDisabledCommand}"
+                                                  CommandParameter="{Binding}"
+                                                  Style="{StaticResource MaterialDesignFlatToggleButton}"
+                                                  Padding="0">
+                                        <materialDesign:PackIcon Width="14"
+                                                                 Height="14"
+                                                                 Kind="EyeOffOutline" />
+                                        <materialDesign:ToggleButtonAssist.OnContent>
+                                            <materialDesign:PackIcon Width="14"
+                                                                     Height="14"
+                                                                     Kind="EyeOutline" />
+                                        </materialDesign:ToggleButtonAssist.OnContent>
+                                    </ToggleButton>
+                                    <Button Width="18"
+                                            Height="18"
+                                            Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ListBox},Path=DataContext.RemoveEndPointCommand}"
+                                            CommandParameter="{Binding  }"
+                                            Margin="6,0,0,0"
+                                            VerticalAlignment="Center"
+                                            ToolTip="删除当前"
+                                            Visibility="{Binding  IsInbuilt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}"
+                                            Template="{StaticResource ItemDeleteButtonTemplate}">
+                                    </Button>
+                                </StackPanel>
                             </Border>
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem"
+                           BasedOn="{StaticResource MaterialDesignChoiceChipPrimaryOutlineListBoxItem}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsDisabled}" Value="True">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.ItemContainerStyle>
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel IsItemsHost="True" />

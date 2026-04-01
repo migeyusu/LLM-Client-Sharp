@@ -12,12 +12,12 @@ public record ArchivedModelTelemetry(
 public interface IEndpointService
 {
     /// <summary>
-    /// distinct endpoints, which can be used for selection when creating a new session. It may contain endpoints that are not used in history, but can be used for new sessions. It should not contain endpoints that are used in history but not available anymore.
+    /// All registered endpoints (unfiltered, including disabled ones).
     /// </summary>
-    IReadOnlyList<ILLMAPIEndpoint> AvailableEndpoints { get; }
+    IReadOnlyList<ILLMAPIEndpoint> AllEndpoints { get; }
 
     /// <summary>
-    /// for ui, including history models and suggested endpoints
+    /// For UI, including history models, suggested endpoints and enabled real endpoints (disabled ones excluded).
     /// </summary>
     IReadOnlyList<ILLMAPIEndpoint> CandidateEndpoints { get; }
 
@@ -39,7 +39,7 @@ public interface IEndpointService
 
     ILLMAPIEndpoint? GetEndpoint(string name)
     {
-        return AvailableEndpoints.FirstOrDefault((endpoint) => endpoint.Name == name);
+        return AllEndpoints.FirstOrDefault((endpoint) => endpoint.Name == name);
     }
 
     /// <summary>

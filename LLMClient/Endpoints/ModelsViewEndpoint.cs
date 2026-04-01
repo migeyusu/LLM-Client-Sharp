@@ -16,6 +16,7 @@ public class ModelsViewEndpoint : ILLMAPIEndpoint
     public required string DisplayName { get; set; }
     public bool IsInbuilt { get; } = true;
     public bool IsEnabled { get; } = true;
+    public bool IsDisabled { get; set; }
     public required string Name { get; set; }
     public required ThemedIcon Icon { get; set; }
 

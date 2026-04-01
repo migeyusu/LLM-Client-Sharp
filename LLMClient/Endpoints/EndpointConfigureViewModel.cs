@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
@@ -28,6 +29,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 {
     private readonly ILoggerFactory _loggerFactory;
 
+
     public ILLMAPIEndpoint? SelectedEndpoint
     {
         get => _selectedEndpoint;
@@ -54,6 +56,14 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             }
 
             Endpoints.Remove(endpoint);
+        }
+    }));
+
+    public ICommand ToggleEndpointDisabledCommand => new RelayCommand<ILLMAPIEndpoint?>((o =>
+    {
+        if (o != null)
+        {
+            o.IsDisabled = !o.IsDisabled;
         }
     }));
 
@@ -121,12 +131,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public ObservableCollection<ILLMAPIEndpoint> Endpoints { get; set; } = [];
 
-    private readonly ReadOnlyObservableCollection<ILLMAPIEndpoint> _availableEndpoints;
-
-    public IReadOnlyList<ILLMAPIEndpoint> AvailableEndpoints
-    {
-        get { return _availableEndpoints; }
-    }
+    public IReadOnlyList<ILLMAPIEndpoint> AllEndpoints => Endpoints;
 
     public IReadOnlyList<ILLMAPIEndpoint> CandidateEndpoints
     {
@@ -140,7 +145,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 #if DEBUG
             list.Add(_testEndPoint);
 #endif
-            list.AddRange(Endpoints);
+            list.AddRange(Endpoints.Where(e => !e.IsDisabled));
             return list;
         }
     }
@@ -204,7 +209,6 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         PopupSelectViewModel = new ModelSelectionPopupViewModel(OnModelSelected)
             { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
         _suggestedModels = new ReadOnlyObservableCollection<IEndpointModel>(SuggestedModelsOb);
-        _availableEndpoints = new ReadOnlyObservableCollection<ILLMAPIEndpoint>(Endpoints);
         _historyChatModels = new ReadOnlyObservableCollection<IEndpointModel>(_historyChatModelsOb);
         _historyEndPoint = new ModelsViewEndpoint(_historyChatModelsOb)
         {
@@ -219,11 +223,34 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
             Icon = PackIconKind.StarOutline.GetThemedIcon(),
         };
         _testEndPoint = new StubEndPoint("Test Endpoint");
-        /*var collection = new CompositeCollection();
-        var collectionContainer = new CollectionContainer() { Collection = Endpoints };
-        collection.Add(collectionContainer);
-        collection.Add(historyEndPoint);
-        collection.Add(suggestedEndPoint);*/
+        Endpoints.CollectionChanged += (_, e) =>
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems.OfType<INotifyPropertyChanged>())
+                {
+                    item.PropertyChanged += OnEndpointPropertyChanged;
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems.OfType<INotifyPropertyChanged>())
+                {
+                    item.PropertyChanged -= OnEndpointPropertyChanged;
+                }
+            }
+
+            OnPropertyChanged(nameof(CandidateEndpoints));
+        };
+    }
+
+    private void OnEndpointPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ILLMAPIEndpoint.IsDisabled))
+        {
+            OnPropertyChanged(nameof(CandidateEndpoints));
+        }
     }
 
     private void OnModelSelected(BaseModelSelectionViewModel obj)

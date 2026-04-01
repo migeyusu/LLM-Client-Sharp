@@ -23,6 +23,17 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
 
     public bool IsEnabled => true;
 
+    public bool IsDisabled
+    {
+        get => Option.IsDisabled;
+        set
+        {
+            if (value == Option.IsDisabled) return;
+            Option.IsDisabled = value;
+            OnPropertyChanged();
+        }
+    }
+
     public string Name => Option.Name;
 
     public ThemedIcon Icon => Option.Icon;

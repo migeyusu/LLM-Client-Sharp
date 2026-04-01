@@ -29,6 +29,19 @@ public abstract class AzureEndPointBase : BaseViewModel, ILLMAPIEndpoint
 
     public bool IsEnabled { get; } = true;
 
+    private bool _isDisabled;
+
+    public bool IsDisabled
+    {
+        get => _isDisabled;
+        set
+        {
+            if (value == _isDisabled) return;
+            _isDisabled = value;
+            OnPropertyChanged();
+        }
+    }
+
     public abstract string Name { get; }
 
     private static readonly Lazy<ThemedIcon> Source = new((() => { return ModelIconType.Azure.GetIcon(); }));

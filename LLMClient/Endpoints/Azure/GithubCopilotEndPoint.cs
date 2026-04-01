@@ -174,6 +174,7 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
     public void UpdateConfig(JsonNode document)
     {
         var config = JsonSerializer.SerializeToNode(this.Option, Extension.DefaultJsonSerializerOptions);
+        config!.AsObject()["IsDisabled"] = IsDisabled;
         document[Name] = config;
     }
 
@@ -186,6 +187,11 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
             if (azureOption != null)
             {
                 githubCopilotEndPoint.Option = azureOption;
+            }
+
+            if (jsonNode is JsonObject obj && obj.TryGetPropertyValue("IsDisabled", out var isDisabledNode))
+            {
+                githubCopilotEndPoint.IsDisabled = isDisabledNode?.GetValue<bool>() ?? false;
             }
         }
 

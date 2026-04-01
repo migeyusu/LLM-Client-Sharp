@@ -297,7 +297,7 @@ public class UsageStatisticsViewModel : BaseViewModel
     private void UpdateSeriesStatistics()
     {
         IList<(string Name, UsageCounter Usage)> series = new List<(string Name, UsageCounter Usage)>();
-        foreach (var endpoint in _endpointService.AvailableEndpoints)
+        foreach (var endpoint in _endpointService.AllEndpoints)
         {
             foreach (var model in endpoint.AvailableModels)
             {
@@ -346,7 +346,7 @@ public class UsageStatisticsViewModel : BaseViewModel
         var endpointMap = new Dictionary<string, (string DisplayName, UsageCounter Usage)>();
 
         // Current (live) endpoints
-        foreach (var endpoint in _endpointService.AvailableEndpoints)
+        foreach (var endpoint in _endpointService.AllEndpoints)
         {
             UsageCounter? usage = null;
             foreach (var model in endpoint.AvailableModels)
@@ -399,7 +399,7 @@ public class UsageStatisticsViewModel : BaseViewModel
     private void UpdateModelsStatistics()
     {
         IList<(string Name, UsageCounter Usage)> models = new List<(string Name, UsageCounter Usage)>();
-        foreach (var endpoint in _endpointService.AvailableEndpoints)
+        foreach (var endpoint in _endpointService.AllEndpoints)
         {
             foreach (var model in endpoint.AvailableModels)
             {

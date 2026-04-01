@@ -268,7 +268,7 @@ public class ProjectPersistenceTests
 
     private sealed class TestEndpointService : IEndpointService
     {
-        public IReadOnlyList<ILLMAPIEndpoint> AvailableEndpoints => Array.Empty<ILLMAPIEndpoint>();
+        public IReadOnlyList<ILLMAPIEndpoint> AllEndpoints => Array.Empty<ILLMAPIEndpoint>();
 
         public IReadOnlyList<ILLMAPIEndpoint> CandidateEndpoints => Array.Empty<ILLMAPIEndpoint>();
 

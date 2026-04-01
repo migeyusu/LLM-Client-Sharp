@@ -266,7 +266,7 @@
                         <TextBlock Text="Endpoint:"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource MaterialDesignBody2TextBlock}" />
-                        <ComboBox ItemsSource="{Binding EndpointService.AvailableEndpoints,Mode=OneWay}"
+                        <ComboBox ItemsSource="{Binding EndpointService.AllEndpoints,Mode=OneWay}"
                                   SelectedItem="{Binding EmbeddingEndpoint,Mode=TwoWay}"
                                   Style="{StaticResource MaterialDesignFilledComboBox}"
                                   Padding="12,5"
