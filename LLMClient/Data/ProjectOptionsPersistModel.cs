@@ -15,4 +15,6 @@ public class ProjectOptionsPersistModel
     public string? RootPath { get; set; }
 
     public string[]? AllowedFolderPaths { get; set; }
+
+    public bool IncludeAgentsMd { get; set; } = true;
 }

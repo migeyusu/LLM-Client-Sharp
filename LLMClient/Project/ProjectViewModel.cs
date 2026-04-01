@@ -213,10 +213,35 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
             _promptInformationPromptBuilder.AppendLine("<project_information>");
             _promptInformationPromptBuilder.AppendFormat("这是一个名为{0}的{1}项目，项目代码位于路径：'{2}'。", Option.Name,
                 Option.Type.GetEnumDescription(), Option.RootPath);
-            _promptInformationPromptBuilder.AppendLine();
-            _promptInformationPromptBuilder.AppendLine(Option.Description);
-            _promptInformationPromptBuilder.AppendLine();
+            if (!string.IsNullOrEmpty(Option.Description))
+            {
+                _promptInformationPromptBuilder.AppendLine();
+                _promptInformationPromptBuilder.AppendLine(Option.Description);
+                _promptInformationPromptBuilder.AppendLine();
+            }
+
             _promptInformationPromptBuilder.AppendLine("</project_information>");
+
+            if (Option.IncludeAgentsMd && !string.IsNullOrEmpty(Option.RootPath))
+            {
+                var agentsMdPath = Path.Combine(Option.RootPath, "AGENTS.md");
+                if (File.Exists(agentsMdPath))
+                {
+                    try
+                    {
+                        var agentsMdContent = File.ReadAllText(agentsMdPath);
+                        _promptInformationPromptBuilder.AppendLine();
+                        _promptInformationPromptBuilder.AppendLine("<agents_rules>");
+                        _promptInformationPromptBuilder.AppendLine(agentsMdContent);
+                        _promptInformationPromptBuilder.AppendLine("</agents_rules>");
+                    }
+                    catch (Exception e)
+                    {
+                        Trace.TraceError("Failed to read AGENTS.md: " + e.Message);
+                    }
+                }
+            }
+
             return _promptInformationPromptBuilder.ToString();
         }
     }
@@ -389,6 +414,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         switch (e.PropertyName)
         {
             case nameof(Option.Description):
+            case nameof(Option.IncludeAgentsMd):
                 OnPropertyChanged(nameof(Context));
                 OnPropertyChanged(nameof(UserSystemPrompt));
                 break;

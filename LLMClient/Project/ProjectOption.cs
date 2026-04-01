@@ -37,13 +37,6 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         set
         {
             if (value == _description) return;
-            this.ClearError();
-            if (string.IsNullOrEmpty(value))
-            {
-                this.AddError("Description cannot be null or empty.");
-                return;
-            }
-
             _description = value;
             OnPropertyChanged();
         }
@@ -137,6 +130,19 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
 
     private ProjectType _type;
 
+    private bool _includeAgentsMd = true;
+
+    public bool IncludeAgentsMd
+    {
+        get => _includeAgentsMd;
+        set
+        {
+            if (value == _includeAgentsMd) return;
+            _includeAgentsMd = value;
+            OnPropertyChanged();
+        }
+    }
+
     public ProjectType Type
     {
         get => _type;
@@ -165,7 +171,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         };
     }
 
-    [MemberNotNullWhen(true, nameof(Name), nameof(RootPath), nameof(Description))]
+    [MemberNotNullWhen(true, nameof(Name), nameof(RootPath))]
     public bool Check()
     {
         if (this.HasErrors)
@@ -181,11 +187,6 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         if (string.IsNullOrEmpty(RootPath))
         {
             this.AddError("FolderPath cannot be null or empty.", nameof(RootPath));
-        }
-
-        if (string.IsNullOrEmpty(Description))
-        {
-            this.AddError("Description cannot be null or empty.", nameof(Description));
         }
 
         if (!AllowedFolderPaths.Any())
@@ -206,6 +207,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
             AllowedFolderPaths = new ObservableCollection<string>(this.AllowedFolderPaths.ToArray()),
             Name = this.Name,
             Type = this.Type,
+            IncludeAgentsMd = this.IncludeAgentsMd,
         };
     }
 }

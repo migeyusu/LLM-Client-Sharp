@@ -197,9 +197,4 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
     {
         throw new NotImplementedException();
     }
-
-    public void EndLoop()
-    {
-        throw new NotImplementedException();
-    }
 }
