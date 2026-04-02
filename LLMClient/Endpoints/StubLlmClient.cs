@@ -1,5 +1,6 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Component;
+using LLMClient.Component.Render;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 
@@ -12,63 +13,237 @@ public class StubLlmClient : ILLMChatClient
     public string Name { get; } = "StubLlmClient";
     public bool IsResponding { get; set; }
 
+    /// <summary>
+    /// 模拟多轮 ReAct 的 Stub 数据定义
+    /// </summary>
+    private static readonly ReactLoop[] SimulatedLoops =
+    [
+        // ── Loop 1: 思考 → 调用 search ──
+        new()
+        {
+            ThinkingContent = "用户在问关于WPF中数据绑定的问题，我需要先搜索相关文档来获取最新信息。",
+            TextContent = "让我先搜索一下相关的文档信息。",
+            FunctionCall = new SimulatedFunctionCall
+            {
+                CallId = "call_001",
+                Name = "web_search",
+                Arguments = """{"query": "WPF data binding best practices 2026"}"""
+            },
+            FunctionResult = new SimulatedFunctionResult
+            {
+                CallId = "call_001",
+                Result = """Found 3 results:\n1. Microsoft Docs - Data Binding Overview\n2. WPF Tutorial - MVVM Pattern\n3. Stack Overflow - Common binding mistakes"""
+            }
+        },
+        // ── Loop 2: 再次思考 → 调用 read_file ──
+        new()
+        {
+            ThinkingContent = "搜索结果给了一些方向，但我需要读取项目中的具体代码来给出更有针对性的建议。让我查看一下用户的 ViewModel 实现。",
+            TextContent = "找到了一些参考资料，现在让我查看项目中的代码实现。",
+            FunctionCall = new SimulatedFunctionCall
+            {
+                CallId = "call_002",
+                Name = "read_file",
+                Arguments = """{"path": "src/ViewModels/MainViewModel.cs", "offset": 1, "limit": 50}"""
+            },
+            FunctionResult = new SimulatedFunctionResult
+            {
+                CallId = "call_002",
+                Result = """public class MainViewModel : INotifyPropertyChanged\n{\n    private string _title;\n    public string Title\n    {\n        get => _title;\n        set { _title = value; OnPropertyChanged(); }\n    }\n}"""
+            }
+        },
+        // ── Loop 3: 最终回复，无工具调用 ──
+        new()
+        {
+            ThinkingContent = "现在我有了足够的信息来给出一个完整的回答。用户的ViewModel实现基本正确，但可以改进。",
+            TextContent =
+                """
+                ## WPF 数据绑定最佳实践
+
+                根据搜索结果和您项目的代码，以下是一些建议：
+
+                ### 1. 使用 `ObservableObject` 基类
+                您当前手动实现了 `INotifyPropertyChanged`，建议使用 CommunityToolkit.Mvvm 提供的 `ObservableObject`：
+
+                ```csharp
+                public partial class MainViewModel : ObservableObject
+                {
+                    [ObservableProperty]
+                    private string _title;
+                }
+                ```
+
+                ### 2. 集合绑定使用 `ObservableCollection<T>`
+                确保列表类型的属性使用 `ObservableCollection<T>` 而不是 `List<T>`，这样 UI 才能自动响应集合变化。
+
+                ### 3. 避免常见错误
+                - ❌ 不要在构造函数中多次赋值触发通知
+                - ✅ 使用 `SetProperty` 方法来简化属性通知
+                - ✅ 在 XAML 中使用 `x:Bind` 获得编译期检查（UWP/WinUI）
+
+                > **总结**：您的基础实现是正确的，主要可以通过引入源生成器来减少样板代码。
+                """,
+            FunctionCall = null,
+            FunctionResult = null
+        }
+    ];
+
     public async Task<ChatCallResult> SendRequest(RequestContext context, IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default)
     {
 #if DEBUG
         interactor ??= new DebugInvokeInteractor();
 #endif
-        var str = "基于 `TempResponseText` 在 FlowDocument 之外独立显示，`StreamingRenderSession` 不再需要管理任何 tail 文本，结构大幅简化：`livingContainer` 只需包含一个 `RichTextBox`（用于承接子块渲染结果），tail 的显示和清空完全由外部的 `MarkdownTextBlock` + `TempResponseText` 负责。\n\n---\n\n## `StreamingRenderSession.cs`\n\n```csharp\nusing System.Windows;\nusing System.Windows.Controls;\nusing System.Windows.Documents;\nusing System.Windows.Media;\nusing System.Windows.Threading;\nusing Markdig.Syntax;\n\nnamespace LLMClient.Component.Render;\n\npublic sealed class StreamingRenderSession : IDisposable\n{\n    private readonly FlowDocument _mainDocument;\n    private readonly CustomMarkdownRenderer _mainRenderer;\n    private readonly Dispatcher _dispatcher;\n\n    // 当 block commit 时通知外部清空 TempResponseText\n    private readonly Action _clearTail;\n\n    // Living 区域：仅用于承接非顶层已闭合子块\n    private BlockUIContainer? _livingContainer;\n    private FlowDocument? _livingSubDocument;\n    private CustomMarkdownRenderer? _livingSubRenderer;\n    private RichTextBox? _livingSubViewer;\n\n    public StreamingRenderSession(FlowDocument mainDocument, Action clearTail)\n    {\n        _mainDocument = mainDocument;\n        _dispatcher = mainDocument.Dispatcher;\n        _mainRenderer = CustomMarkdownRenderer.NewRenderer(mainDocument);\n        _clearTail = clearTail;\n\n        _dispatcher.Invoke(CreateLivingUI);\n    }\n\n    // -------------------------------------------------------------------------\n    // 后台线程入口（由 StreamParse 的 Closed 回调触发）\n    // -------------------------------------------------------------------------\n\n    public void OnBlockClosed(Block block)\n    {\n        bool isTopLevel = block.Parent is MarkdownDocument;\n\n        // 用 Background 优先级，确保此前所有 Normal 优先级的 TempResponseText.Add\n        // 均已执行完毕后再 commit（Normal > Background，Normal 先执行）\n        _dispatcher.InvokeAsync(() =>\n        {\n            if (isTopLevel)\n                CommitTopLevelBlock(block);\n            else\n                AppendSubBlockToLiving(block);\n\n        }, DispatcherPriority.Background);\n    }\n\n    // -------------------------------------------------------------------------\n    // UI 线程私有操作\n    // -------------------------------------------------------------------------\n\n    private void CreateLivingUI()\n    {\n        _livingSubDocument = new FlowDocument();\n        _livingSubRenderer = CustomMarkdownRenderer.NewRenderer(_livingSubDocument);\n\n        _livingSubViewer = new RichTextBox\n        {\n            Document = _livingSubDocument,\n            IsReadOnly = true,\n            IsDocumentEnabled = true,\n            BorderThickness = new Thickness(0),\n            Padding = new Thickness(0),\n            Background = Brushes.Transparent,\n            VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,\n            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,\n            // 没有子块时折叠，不占高度\n            Visibility = Visibility.Collapsed,\n        };\n\n        _livingContainer = new BlockUIContainer(_livingSubViewer);\n        _mainDocument.Blocks.Add(_livingContainer);\n    }\n\n    private void CommitTopLevelBlock(Block block)\n    {\n        // 1. 移除 living 区域（含其中已渲染的子块）\n        if (_livingContainer != null)\n        {\n            _mainDocument.Blocks.Remove(_livingContainer);\n            _livingContainer = null;\n        }\n\n        // 2. 将顶层 block 渲染到主文档\n        _mainRenderer.AppendMarkdownObject(block);\n\n        // 3. 通知外部清空 TempResponseText\n        _clearTail();\n\n        // 4. 重建 living 区域，为下一轮内容做准备\n        CreateLivingUI();\n    }\n\n    private void AppendSubBlockToLiving(Block block)\n    {\n        // 渲染子块到 living 子文档\n        _livingSubRenderer!.AppendMarkdownObject(block);\n\n        // 有内容才显示\n        _livingSubViewer!.Visibility = Visibility.Visible;\n\n        // 清空 tail\n        _clearTail();\n    }\n\n    // -------------------------------------------------------------------------\n    // 生命周期\n    // -------------------------------------------------------------------------\n\n    /// <summary>\n    /// 流结束后调用。使用 ContextIdle 优先级确保所有 Background 级别的\n    /// OnBlockClosed 调度均已执行完毕后再清理空的 livingContainer。\n    /// </summary>\n    public Task CompleteAsync()\n    {\n        return _dispatcher.InvokeAsync(() =>\n        {\n            // 流结束后 living 区域若无子块内容则移除，避免残留空 BlockUIContainer\n            if (_livingContainer != null && _livingSubDocument!.Blocks.Count == 0)\n            {\n                _mainDocument.Blocks.Remove(_livingContainer);\n                _livingContainer = null;\n            }\n        }, DispatcherPriority.ContextIdle).Task;\n        // ContextIdle(3) < Background(4)，确保在所有 Background OnBlockClosed 之后执行\n    }\n\n    public void Dispose()\n    {\n        _dispatcher.InvokeAsync(() =>\n        {\n            if (_livingContainer != null\n                && _mainDocument.Blocks.Contains(_livingContainer))\n            {\n                _mainDocument.Blocks.Remove(_livingContainer);\n            }\n        });\n    }\n}\n```\n\n---\n\n## `ResponseViewItemInteractor`（内部类完整版）\n\n```csharp\nprivate class ResponseViewItemInteractor : BaseViewModel, IInvokeInteractor, IAsyncDisposable\n{\n    private readonly BlockingCollection<string> _blockingCollection = new();\n    private readonly Task _task;\n    private readonly CustomMarkdownRenderer _customRenderer;\n    private readonly StreamingRenderSession _session;\n    private readonly Action<string> _outputAction;\n\n    public ResponseViewItemInteractor(FlowDocument flowDocument, ResponseViewItem responseViewItem)\n    {\n        _customRenderer = CustomMarkdownRenderer.NewRenderer(flowDocument);\n\n        _session = new StreamingRenderSession(\n            flowDocument,\n            clearTail: () => Dispatch(() => responseViewItem.TempResponseText.Clear())\n        );\n\n        _task = Task.Run(() =>\n        {\n            RendererExtensions.StreamParse(\n                _blockingCollection,\n                (_, block) => _session.OnBlockClosed(block));\n        });\n\n        _outputAction = message =>\n        {\n            if (_blockingCollection.IsAddingCompleted) return;\n\n            _blockingCollection.Add(message);\n\n            // Normal 优先级，确保在 Background 级别的 OnBlockClosed 之前执行\n            Dispatch(() =>\n            {\n                responseViewItem.TempResponseText.Add(message);\n                responseViewItem._responseHistory.Append(message);\n            });\n        };\n    }\n\n    public void Info(string message) => _outputAction(message);\n    public void Error(string message) => _outputAction(message);\n    public void Warning(string message) => _outputAction(message);\n    public void Write(string message) => _outputAction(message);\n\n    public void WriteLine(string? message = null)\n    {\n        _outputAction(string.IsNullOrEmpty(message)\n            ? Environment.NewLine\n            : message + Environment.NewLine);\n    }\n\n    public Task<bool> WaitForPermission(string title, string message)\n    {\n        var vm = new PermissionViewModel { Title = title, Content = message };\n        _customRenderer.AppendExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);\n        return vm.Task;\n    }\n\n    public Task<bool> WaitForPermission(object content)\n    {\n        var vm = new PermissionViewModel { Content = content };\n        _customRenderer.AppendExpanderItem(vm, CustomMarkdownRenderer.PermissionRequestStyleKey);\n        return vm.Task;\n    }\n\n    public async ValueTask DisposeAsync()\n    {\n        _blockingCollection.CompleteAdding();\n\n        // 等待 StreamParse 完成（含 CloseAll，所有 Closed 事件均已触发并 dispatch）\n        await _task;\n\n        // 使用 ContextIdle 确保所有 Background 级别的 OnBlockClosed 调度先执行完\n        await _session.CompleteAsync();\n\n        _session.Dispose();\n        _blockingCollection.Dispose();\n    }\n}\n```\n\n---\n\n## 关键设计点说明\n\n**Dispatcher 优先级的有意安排**（这是正确性的核心）：\n\n| 操作 | 优先级 | 原因 |\n|---|---|---|\n| `TempResponseText.Add(message)` | Normal (9) | 需要先于 commit 执行，确保 tail 显示完整 |\n| `OnBlockClosed` dispatch | Background (4) | 晚于 token 追加；确保 tail 文字已显示后再替换 |\n| `CompleteAsync` | ContextIdle (3) | 晚于所有 `OnBlockClosed`；确保清理时 living 区域已最终状态 |\n\nWPF Dispatcher 数值越大优先级越高，同优先级按 FIFO。这三层优先级保证了\"tail 追加 → block commit → 清理\"的严格顺序。";
-        if (Parameters.Streaming)
+        IsResponding = true;
+        try
         {
             var random = new Random();
-            int currentIndex = 0;
-            while (currentIndex < str.Length)
-            {
-                if (cancellationToken.IsCancellationRequested) break;
+            var streaming = Parameters.Streaming;
+            var allText = new System.Text.StringBuilder();
 
-                int len = random.Next(3, 6); // 3 to 5 characters
-                if (currentIndex + len > str.Length)
+            for (int loopIndex = 0; loopIndex < SimulatedLoops.Length; loopIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var loop = SimulatedLoops[loopIndex];
+
+                // ── BeginLoop (与 LlmClientBase 一致) ──
+                interactor?.BeginLoop();
+
+                // ── 1. Reasoning / Thinking content ──
+                if (!string.IsNullOrEmpty(loop.ThinkingContent))
                 {
-                    len = str.Length - currentIndex;
+                    if (streaming)
+                    {
+                        // 流式输出 <think>...</think>
+                        interactor?.Info(ThinkBlockParser.OpenTag + Environment.NewLine);
+                        await StreamText(interactor, loop.ThinkingContent, random, cancellationToken);
+                        interactor?.Info(Environment.NewLine + ThinkBlockParser.CloseTag + Environment.NewLine);
+                    }
+                    else
+                    {
+                        interactor?.WriteLine(ThinkBlockParser.OpenTag);
+                        interactor?.WriteLine(loop.ThinkingContent);
+                        interactor?.WriteLine(ThinkBlockParser.CloseTag);
+                    }
                 }
 
-                var chunk = str.Substring(currentIndex, len);
-                interactor?.Info(chunk);
-                currentIndex += len;
+                // ── 2. Text content (LLM 的文本输出) ──
+                if (!string.IsNullOrEmpty(loop.TextContent))
+                {
+                    if (streaming)
+                    {
+                        await StreamText(interactor, loop.TextContent, random, cancellationToken);
+                    }
+                    else
+                    {
+                        interactor?.WriteLine(loop.TextContent);
+                    }
 
-                await Task.Delay(100, cancellationToken);
+                    allText.AppendLine(loop.TextContent);
+                }
+
+                // ── 3. Function call (工具调用) ──
+                if (loop.FunctionCall != null)
+                {
+                    var fc = loop.FunctionCall;
+                    var functionCallContent = new FunctionCallContent(fc.CallId, fc.Name,
+                        new Dictionary<string, object?> { ["raw"] = fc.Arguments });
+
+                    interactor?.WriteLine();
+                    interactor?.WriteLine(ToolCallBlockParser.FunctionCallTag);
+                    interactor?.WriteLine(functionCallContent.ToToolCallXmlFragment());
+                    interactor?.WriteLine(ToolCallBlockParser.FunctionCallEndTag);
+                    interactor?.WriteLine();
+
+                    interactor?.Info("Function call detect, need run function calls...");
+                    interactor?.WriteLine("Processing function calls...");
+
+                    // 模拟工具执行延迟
+                    await Task.Delay(random.Next(500, 1500), cancellationToken);
+
+                    // ── 4. Function result (工具返回) ──
+                    if (loop.FunctionResult != null)
+                    {
+                        var fr = loop.FunctionResult;
+                        var functionResultContent = new FunctionResultContent(fr.CallId, fr.Result);
+
+                        interactor?.WriteLine();
+                        interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultTag);
+                        interactor?.WriteLine(functionResultContent.ToToolCallResultXmlFragment());
+                        interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultEndTag);
+                        interactor?.WriteLine();
+                    }
+
+                    interactor?.WriteLine();
+                }
+                else
+                {
+                    // 最后一轮无工具调用
+                    interactor?.Info("Response completed without function calls.");
+                }
             }
 
-            return new ChatCallResult()
+            return new ChatCallResult
             {
-                Messages = [new ChatMessage(ChatRole.Assistant, str)],
-                Usage = new UsageDetails(),
-                FinishReason = ChatFinishReason.Stop
-            };
-        }
-        else
-        {
-            return new ChatCallResult()
-            {
-                Messages = [new ChatMessage(ChatRole.Assistant, str)],
+                Messages = [new ChatMessage(ChatRole.Assistant, allText.ToString())],
                 Usage = new UsageDetails
                 {
-                    InputTokenCount = 0,
-                    OutputTokenCount = 0,
-                    TotalTokenCount = 0,
-                    AdditionalCounts = null
+                    InputTokenCount = 256,
+                    OutputTokenCount = 512,
+                    TotalTokenCount = 768,
                 },
-                Latency = 0,
-                Duration = 0,
-                Exception = null,
-                Price = null,
+                Latency = 120,
+                Duration = 5,
                 FinishReason = ChatFinishReason.Stop,
-                Annotations = null,
-                AdditionalProperties = null
+                ValidCallTimes = SimulatedLoops.Length
             };
+        }
+        finally
+        {
+            IsResponding = false;
+        }
+    }
+
+    /// <summary>
+    /// 模拟流式输出：每次随机 3-8 个字符，间隔 30-80ms
+    /// </summary>
+    private static async Task StreamText(IInvokeInteractor? interactor, string text, Random random,
+        CancellationToken cancellationToken)
+    {
+        int currentIndex = 0;
+        while (currentIndex < text.Length)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            int len = Math.Min(random.Next(3, 9), text.Length - currentIndex);
+            var chunk = text.Substring(currentIndex, len);
+            interactor?.Info(chunk);
+            currentIndex += len;
+            await Task.Delay(random.Next(30, 80), cancellationToken);
         }
     }
 
     public ILLMAPIEndpoint Endpoint { get; }
+
+    // ── 内部模拟数据结构 ──
+
+    private class ReactLoop
+    {
+        public string? ThinkingContent { get; init; }
+        public string? TextContent { get; init; }
+        public SimulatedFunctionCall? FunctionCall { get; init; }
+        public SimulatedFunctionResult? FunctionResult { get; init; }
+    }
+
+    private class SimulatedFunctionCall
+    {
+        public required string CallId { get; init; }
+        public required string Name { get; init; }
+        public required string Arguments { get; init; }
+    }
+
+    private class SimulatedFunctionResult
+    {
+        public required string CallId { get; init; }
+        public required string Result { get; init; }
+    }
 }

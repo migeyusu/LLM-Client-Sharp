@@ -256,6 +256,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             {
                 while (true)
                 {
+                    interactor?.BeginLoop();
                     var reasoningStart = false;
                     var reasoningEnd = false;
                     ChatMessage? functionResultMessage = null;

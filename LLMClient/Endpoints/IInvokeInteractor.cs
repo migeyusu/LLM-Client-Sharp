@@ -17,7 +17,7 @@ public interface IInvokeInteractor
     Task<bool> WaitForPermission(object content);
 
     /// <summary>
-    /// 表示新的ReAct循环启动
+    /// 表示一轮 ReAct 循环开始（包含第一轮）
     /// </summary>
-    void NewLoop();
+    void BeginLoop();
 }

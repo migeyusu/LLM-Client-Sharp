@@ -9,8 +9,6 @@ public enum ModelSource
     OpenRouter,
     O3Fan,
     GeekAI,
-    XiaoAI,
-    XiaoHuMini,
     NewAPI,
 }
 

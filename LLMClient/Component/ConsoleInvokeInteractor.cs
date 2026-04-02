@@ -46,13 +46,8 @@ public class ConsoleInvokeInteractor : IInvokeInteractor
         return Task.FromResult(true);
     }
 
-    public void NewLoop()
+    public void BeginLoop()
     {
-        throw new NotImplementedException();
-    }
-
-    public void EndLoop()
-    {
-        throw new NotImplementedException();
+        Console.WriteLine("--- Begin ReAct loop ---");
     }
 }

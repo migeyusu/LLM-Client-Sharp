@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,7 +8,6 @@ using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
-using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
@@ -21,7 +19,7 @@ using Microsoft.Xaml.Behaviors.Core;
 namespace LLMClient.Dialog.Models;
 
 /// <summary>
-/// 支持flowdocument富文本渲染和交互
+/// 流式阶段通过 MarkdownTextBlock 渲染，响应结束后使用 FlowDocument 呈现最终内容
 /// </summary>
 public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopyable
 {
@@ -135,6 +133,23 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         get { return this.CalculateTps(); }
     }
 
+    public int LoopCount
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
+
+
+    /// <summary>
+    /// 每轮 ReAct 循环的 ViewModel 列表
+    /// </summary>
+    public ObservableCollection<ReactLoopViewModel> Loops { get; } = [];
+
     public ObservableCollection<AsyncPermissionViewModel> PermissionViewModels { get; } = [];
 
     /// <summary>
@@ -216,7 +231,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         }
     } = false;
 
-    public ObservableCollection<string> ResponseBuffer { get; } = [];
 
     /// <summary>
     /// 可以通过手动控制实现叠加的上下文可用性
@@ -252,17 +266,16 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
             AcquireRespondingState();
             ErrorMessage = null;
+            LoopCount = 0;
+            Loops.Clear();
             this.Messages = [];
-            var searchableDocument = await WaitAsyncProperty<SearchableDocument>(nameof(SearchableDocument));
-            var flowDocument = searchableDocument.Document;
-            flowDocument.Blocks.Clear();
             _history.Clear();
             RequestTokenSource = token != CancellationToken.None
                 ? CancellationTokenSource.CreateLinkedTokenSource(token)
                 : new CancellationTokenSource();
             using (RequestTokenSource)
             {
-                await using (var interactor = new ResponseViewItemInteractor(flowDocument, this))
+                await using (var interactor = new ResponseViewItemInteractor(this))
                 {
                     var requestContext = await contextBuilder.BuildAsync(Client.Model, token);
                     completedResult = await Client.SendRequest(requestContext, interactor,
@@ -380,44 +393,27 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     private class ResponseViewItemInteractor : BaseViewModel, IInvokeInteractor, IAsyncDisposable
     {
-        private readonly BlockingCollection<string> _blockingCollection = new();
-        private readonly Task _task;
-        private readonly StreamingRenderSession _session;
-        private readonly Action<string> _outputAction;
+        private readonly ClientResponseViewItem _responseViewItem;
+        private ReactLoopViewModel? _currentLoop;
 
-        public ResponseViewItemInteractor(FlowDocument flowDocument, ClientResponseViewItem responseViewItem)
+        public ResponseViewItemInteractor(ClientResponseViewItem responseViewItem)
         {
-            _session = new StreamingRenderSession(
-                flowDocument,
-                clearTail: () => Dispatch(() => responseViewItem.ResponseBuffer.Clear())
-            );
-
-            _task = Task.Run(() =>
-            {
-                RendererExtensions.StreamParse(
-                    _blockingCollection,
-                    (_, block) => { Dispatch(() => _session.OnBlockClosed(block)); });
-            });
-
-            _outputAction = message =>
-            {
-                if (_blockingCollection.IsAddingCompleted) return;
-
-                _blockingCollection.Add(message);
-
-                // Normal 优先级，确保在 Background 级别的 OnBlockClosed 之前执行
-                Dispatch(() => { responseViewItem.ResponseBuffer.Add(message); });
-            };
+            _responseViewItem = responseViewItem;
         }
 
-        public void Info(string message) => _outputAction(message);
-        public void Error(string message) => _outputAction(message);
-        public void Warning(string message) => _outputAction(message);
-        public void Write(string message) => _outputAction(message);
+        private void Output(string message)
+        {
+            Dispatch(() => { _currentLoop?.ResponseBuffer.Add(message); });
+        }
+
+        public void Info(string message) => Output(message);
+        public void Error(string message) => Output(message);
+        public void Warning(string message) => Output(message);
+        public void Write(string message) => Output(message);
 
         public void WriteLine(string? message = null)
         {
-            _outputAction(string.IsNullOrEmpty(message)
+            Output(string.IsNullOrEmpty(message)
                 ? Environment.NewLine
                 : message + Environment.NewLine);
         }
@@ -432,23 +428,30 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             return InvokePermissionDialog.RequestAsync(content);
         }
 
-        public void NewLoop()
+        public void BeginLoop()
         {
-            throw new NotImplementedException();
+            Dispatch(() =>
+            {
+                // 折叠上一轮
+                if (_currentLoop != null)
+                {
+                    _currentLoop.IsCompleted = true;
+                    _currentLoop.IsExpanded = false;
+                }
+
+                _responseViewItem.LoopCount++;
+                var loop = new ReactLoopViewModel
+                {
+                    LoopNumber = _responseViewItem.LoopCount
+                };
+                _responseViewItem.Loops.Add(loop);
+                _currentLoop = loop;
+            });
         }
 
-        public async ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
         {
-            _blockingCollection.CompleteAdding();
-
-            // 等待 StreamParse 完成（含 CloseAll，所有 Closed 事件均已触发并 dispatch）
-            await _task;
-
-            // 使用 ContextIdle 确保所有 Background 级别的 OnBlockClosed 调度先执行完
-            await _session.CompleteAsync();
-
-            _session.Dispose();
-            _blockingCollection.Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }

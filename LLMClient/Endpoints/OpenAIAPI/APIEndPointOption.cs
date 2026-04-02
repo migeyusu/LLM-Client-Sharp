@@ -70,11 +70,11 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
 
     public string? ModelSourceUrl
     {
-        get => _modelSourceUrl;
+        get;
         set
         {
-            if (value == _modelSourceUrl) return;
-            _modelSourceUrl = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -134,7 +134,6 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
     }));
 
     private ObservableCollection<APIModelInfo> _models = [];
-    private string? _modelSourceUrl;
 
     public ObservableCollection<APIModelInfo> Models
     {

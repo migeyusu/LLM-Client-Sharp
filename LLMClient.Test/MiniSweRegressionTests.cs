@@ -487,14 +487,8 @@ public class MiniSweRegressionTests
             return Task.FromResult(allow);
         }
 
-        public void NewLoop()
+        public void BeginLoop()
         {
-            throw new NotImplementedException();
-        }
-
-        public void EndLoop()
-        {
-            throw new NotImplementedException();
         }
     }
 

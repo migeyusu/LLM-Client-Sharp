@@ -78,6 +78,24 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
 
     public ObservableCollection<string> History { get; } = [];
 
+    public int LoopCount
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// 每轮 ReAct 循环的 ViewModel 列表
+    /// </summary>
+    public ObservableCollection<ReactLoopViewModel> Loops { get; } = [];
+
+    private ReactLoopViewModel? _currentLoop;
+
     public IAgent? Agent { get; }
 
     public CancellationTokenSource? RequestTokenSource { get; private set; }
@@ -117,6 +135,9 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
 
         var totalCallResult = new ChatCallResult();
         this.ErrorMessage = null;
+        this.LoopCount = 0;
+        this.Loops.Clear();
+        this._currentLoop = null;
         this.IsResponding = true;
         try
         {
@@ -161,26 +182,31 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
     public void Info(string message)
     {
         History.Add(message);
+        _currentLoop?.ResponseBuffer.Add(message);
     }
 
     public void Error(string message)
     {
         History.Add(message);
+        _currentLoop?.ResponseBuffer.Add(message);
     }
 
     public void Warning(string message)
     {
         History.Add(message);
+        _currentLoop?.ResponseBuffer.Add(message);
     }
 
     public void Write(string message)
     {
         History.Add(message);
+        _currentLoop?.ResponseBuffer.Add(message);
     }
 
     public void WriteLine(string? message = null)
     {
         History.AddLine(message);
+        _currentLoop?.ResponseBuffer.AddLine(message);
     }
 
     public Task<bool> WaitForPermission(string title, string message)
@@ -193,8 +219,21 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
         return InvokePermissionDialog.RequestAsync(content);
     }
 
-    public void NewLoop()
+    public void BeginLoop()
     {
-        throw new NotImplementedException();
+        // 折叠上一轮
+        if (_currentLoop != null)
+        {
+            _currentLoop.IsCompleted = true;
+            _currentLoop.IsExpanded = false;
+        }
+
+        LoopCount++;
+        var loop = new ReactLoopViewModel
+        {
+            LoopNumber = LoopCount
+        };
+        Loops.Add(loop);
+        _currentLoop = loop;
     }
 }

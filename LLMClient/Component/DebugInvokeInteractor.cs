@@ -40,13 +40,8 @@ public class DebugInvokeInteractor : IInvokeInteractor
         return Task.FromResult(true);
     }
 
-    public void NewLoop()
+    public void BeginLoop()
     {
-        throw new NotImplementedException();
-    }
-
-    public void EndLoop()
-    {
-        throw new NotImplementedException();
+        Debug.WriteLine("--- Begin ReAct loop ---");
     }
 }
