@@ -46,6 +46,10 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public IEndpointService EndpointsViewModel { get; }
 
+    public SuggestionViewModel? Suggestion { get; }
+
+    public EndpointInfoViewModel EndpointInfo { get; }
+
     public IPromptsResource PromptsResource { get; }
 
     public bool IsInitialized { get; private set; }
@@ -262,6 +266,10 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         _viewModelFactory = viewModelFactory;
         GlobalOptions = globalOptions;
         EndpointsViewModel = configureViewModel;
+        Suggestion = configureViewModel is EndpointConfigureViewModel ecvm
+            ? new SuggestionViewModel(ecvm)
+            : null;
+        EndpointInfo = new EndpointInfoViewModel(configureViewModel);
         _uiSettings = new UISettings();
         IsDarkTheme = !IsColorLight(_uiSettings.GetColorValue(UIColorType.Background));
         _createSessionLazy =

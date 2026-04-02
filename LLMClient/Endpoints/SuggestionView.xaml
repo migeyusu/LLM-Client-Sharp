@@ -1,0 +1,98 @@
+﻿<UserControl x:Class="LLMClient.Endpoints.SuggestionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:endpoints="clr-namespace:LLMClient.Endpoints"
+             xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance endpoints:SuggestionViewModel}"
+             d:DesignHeight="300" d:DesignWidth="700"
+             x:Name="ControlRoot">
+    <Grid Margin="16,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <materialDesign:PackIcon Kind="StarOutline"
+                                     Width="22" Height="22"
+                                     VerticalAlignment="Center"
+                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary}" />
+            <TextBlock Text="推荐模型"
+                       Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                       VerticalAlignment="Center"
+                       Margin="8,0,0,0" />
+            <materialDesign:PopupBox Padding="2,0"
+                                     StaysOpen="True"
+                                     Margin="12,0,0,0"
+                                     VerticalAlignment="Center"
+                                     ToolTip="添加推荐模型"
+                                     Style="{StaticResource MaterialDesignToolPopupBox}"
+                                     PopupContentTemplate="{StaticResource PopupSelectModelDataTemplate}"
+                                     PopupContent="{Binding PopupSelectViewModel, Mode=OneTime}">
+                <materialDesign:PopupBox.ToggleContent>
+                    <Border Width="26" Height="26"
+                            Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                            CornerRadius="13">
+                        <materialDesign:PackIcon Kind="Add"
+                                                 VerticalAlignment="Center"
+                                                 HorizontalAlignment="Center"
+                                                 Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}" />
+                    </Border>
+                </materialDesign:PopupBox.ToggleContent>
+            </materialDesign:PopupBox>
+        </StackPanel>
+
+        <!-- Suggested models chips -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Margin="0,0,0,12">
+            <ItemsControl VerticalAlignment="Center"
+                          ItemsSource="{Binding SuggestedModels, Mode=OneWay}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel IsItemsHost="True" Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type abstraction:IEndpointModel}">
+                        <materialDesign:Chip IsDeletable="True"
+                                             MaxWidth="200"
+                                             Height="34"
+                                             Margin="4"
+                                             Padding="6,0"
+                                             ToolTipService.InitialShowDelay="0"
+                                             IconBackground="White"
+                                             ToolTip="{Binding Endpoint.DisplayName, Mode=OneTime}"
+                                             DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}, Path=DataContext.RemoveSuggestedModelCommand}"
+                                             DeleteCommandParameter="{Binding}"
+                                             Content="{Binding Name, Mode=OneTime}">
+                            <materialDesign:Chip.Icon>
+                                <Image Source="{Binding Icon.CurrentSource, Mode=OneWay}"
+                                       Width="24" Height="24" />
+                            </materialDesign:Chip.Icon>
+                        </materialDesign:Chip>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Footer buttons -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Content="重置"
+                    Margin="0,0,10,0"
+                    Command="{Binding ReloadCommand}" />
+            <Button Content="保存全部"
+                    Command="{Binding SaveAllCommand}"
+                    CommandParameter="{Binding ElementName=ControlRoot}" />
+        </StackPanel>
+    </Grid>
+</UserControl>
+

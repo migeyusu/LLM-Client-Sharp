@@ -152,91 +152,16 @@
                    Background="Black"
                    VerticalAlignment="Top"
                    Margin="10,0" />
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0"
-                        Orientation="Horizontal">
-                <TextBlock Text="Suggestion:"
-                           VerticalAlignment="Center"
-                           Margin="10,0,0,0" />
-                <materialDesign:PopupBox Padding="2,0"
-                                         StaysOpen="True"
-                                         Margin="10,0,0,0"
-                                         VerticalAlignment="Center"
-                                         ToolTip="添加suggestion"
-                                         Style="{StaticResource MaterialDesignToolPopupBox}"
-                                         PopupContentTemplate="{StaticResource  PopupSelectModelDataTemplate}"
-                                         PopupContent="{Binding   PopupSelectViewModel,Mode=OneTime}">
-                    <materialDesign:PopupBox.ToggleContent>
-                        <Border Width="23"
-                                Height="23"
-                                Background="{DynamicResource MaterialDesign.Brush.Primary}"
-                                CornerRadius="11">
-                            <materialDesign:PackIcon Kind="Add"
-                                                     VerticalAlignment="Center"
-                                                     HorizontalAlignment="Center"
-                                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}" />
-                        </Border>
-                    </materialDesign:PopupBox.ToggleContent>
-                </materialDesign:PopupBox>
-            </StackPanel>
-            <ScrollViewer Grid.Column="1"
-                          Margin="6,0"
-                          Style="{StaticResource HorizontalArrowScrollViewer}">
-                <ItemsControl VerticalAlignment="Center"
-                              ItemsSource="{Binding SuggestedModels,Mode=OneWay}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel IsItemsHost="True"
-                                        CanHorizontallyScroll="True"
-                                        CanVerticallyScroll="False"
-                                        Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type abstraction:IEndpointModel}">
-                            <materialDesign:Chip IsDeletable="True"
-                                                 MaxWidth="180"
-                                                 Height="30"
-                                                 Margin="0"
-                                                 Padding="5,0"
-                                                 ToolTipService.InitialShowDelay="0"
-                                                 IconBackground="White"
-                                                 ToolTip="{Binding Endpoint.DisplayName,Mode=OneTime}"
-                                                 DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveSuggestedModelCommand}"
-                                                 DeleteCommandParameter="{Binding}"
-                                                 Content="{Binding Name,Mode=OneTime}">
-                                <materialDesign:Chip.Icon>
-                                    <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"
-                                           Width="23"
-                                           Height="23" />
-                                </materialDesign:Chip.Icon>
-                            </materialDesign:Chip>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-            <StackPanel Grid.Column="2"
-                        Margin="10"
-                        HorizontalAlignment="Right"
-                        Orientation="Horizontal">
-                <Separator VerticalAlignment="Stretch"
-                           Width="2"
-                           Background="Gray"
-                           Margin="0"
-                           Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
-                <Button Content="重置"
-                        Margin="10,0,0,0"
-                        Command="{Binding ReloadCommand}" />
-                <Button Content="保存全部"
-                        Margin="10,0,0,0"
-                        Command="{Binding SaveAllCommand}"
-                        CommandParameter="{Binding ElementName=ControlRoot}" />
-            </StackPanel>
-        </Grid>
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="10,4,10,8">
+            <Button Content="重置"
+                    Margin="0,0,10,0"
+                    Command="{Binding ReloadCommand}" />
+            <Button Content="保存全部"
+                    Command="{Binding SaveAllCommand}"
+                    CommandParameter="{Binding ElementName=ControlRoot}" />
+        </StackPanel>
     </Grid>
 </UserControl>

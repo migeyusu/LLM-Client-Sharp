@@ -754,7 +754,7 @@
                     </TextBlock.Text>
                 </TextBlock>
                 <TextBlock DataContext="{Binding AcceptedResponse,Mode=OneWay}"
-                           Margin="10,6,0,0"
+                           Margin="10,0,0,0"
                            VerticalAlignment="Center"
                            Text="{Binding LoopCount,Mode=OneWay,StringFormat=🔄 {0} 轮}">
                     <TextBlock.Style>

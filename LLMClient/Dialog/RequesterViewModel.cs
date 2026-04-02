@@ -524,7 +524,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         var text = PromptEditViewModel.FinalText;
         var messageId = PromptEditViewModel.MessageId;
         PromptEditViewModel = RawEditMode
-            ? (TextContentEditViewModel)new TextContentRawEditViewModel(new TextContent(text), messageId)
+            ? new TextContentRawEditViewModel(new TextContent(text), messageId)
             : new TextContentCodeEditViewModel(new TextContent(text), messageId);
     }
 
