@@ -249,32 +249,33 @@
                                                             Header="选择要导入的对话">
                                         <Grid Width="500" MaxHeight="500">
                                             <ListBox ItemsSource="{Binding DialogSessions}"
+                                                     SelectedItem="{Binding SelectedSession, Mode=TwoWay}"
                                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                <b:Interaction.Triggers>
+                                                    <b:EventTrigger EventName="MouseDoubleClick">
+                                                        <b:InvokeCommandAction Command="{Binding SelectCommand}" />
+                                                    </b:EventTrigger>
+                                                </b:Interaction.Triggers>
                                                 <ListBox.ItemTemplate>
                                                     <DataTemplate DataType="{x:Type dialog:DialogViewModel}">
-                                                        <Button Style="{StaticResource MaterialDesignFlatButton}"
-                                                                HorizontalContentAlignment="Left"
-                                                                Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                                CommandParameter="{Binding}"
-                                                                Padding="8,6">
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <materialDesign:PackIcon Kind="ChatOutline"
-                                                                        VerticalAlignment="Center"
-                                                                        Margin="0,0,8,0" />
-                                                                <StackPanel>
-                                                                    <TextBlock
-                                                                        Text="{Binding Topic, Mode=OneWay, TargetNullValue=未命名对话}"
-                                                                        Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                                                        TextTrimming="CharacterEllipsis"
-                                                                        MaxWidth="400" />
-                                                                    <TextBlock Text="{Binding Shortcut, Mode=OneWay}"
-                                                                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
-                                                                               TextTrimming="CharacterEllipsis"
-                                                                               MaxWidth="400" />
-                                                                </StackPanel>
+                                                        <StackPanel Orientation="Horizontal"
+                                                                    Margin="8,6">
+                                                            <materialDesign:PackIcon Kind="ChatOutline"
+                                                                                     VerticalAlignment="Center"
+                                                                                     Margin="0,0,8,0" />
+                                                            <StackPanel>
+                                                                <TextBlock
+                                                                    Text="{Binding Topic, Mode=OneWay, TargetNullValue=未命名对话}"
+                                                                    Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                                    TextTrimming="CharacterEllipsis"
+                                                                    MaxWidth="400" />
+                                                                <TextBlock Text="{Binding Shortcut, Mode=OneWay}"
+                                                                           Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                                           Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           MaxWidth="400" />
                                                             </StackPanel>
-                                                        </Button>
+                                                        </StackPanel>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
                                             </ListBox>
@@ -516,7 +517,7 @@
                           Background="Transparent"
                           BorderThickness="0"
                           Padding="0">
-                        <MenuItem Height="32"
+                        <MenuItem Height="34"
                                   Padding="12,0"
                                   VerticalContentAlignment="Center">
                             <MenuItem.Header>
@@ -524,6 +525,7 @@
                                     <materialDesign:PackIcon Kind="Server"
                                                              VerticalAlignment="Center" />
                                     <TextBlock Text="Endpoints"
+                                               FontWeight="Bold"
                                                Margin="5,0,0,0"
                                                VerticalAlignment="Center" />
                                     <materialDesign:PackIcon Kind="ChevronDown"

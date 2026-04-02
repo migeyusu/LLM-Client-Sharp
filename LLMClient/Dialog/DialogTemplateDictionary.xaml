@@ -454,7 +454,7 @@
                 <StackPanel Orientation="Horizontal" Margin="0,2">
                     <materialDesign:PackIcon Kind="ArrowRightBoldBox" Width="18" Height="18" Margin="0,0,6,0" />
                     <TextBlock
-                        Text="{Binding InputTokenCount,Mode=OneWay,StringFormat=输入 Tokens：{0},TargetNullValue=--}" />
+                        Text="{Binding InputTokenCount,Mode=OneWay,StringFormat=累计输入 Tokens：{0},TargetNullValue=--}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,2">
                     <materialDesign:PackIcon Kind="ArrowLeftBoldBox" Width="18" Height="18" Margin="0,0,6,0" />
@@ -781,6 +781,8 @@
                                          PopupUniformCornerRadius="8"
                                          Padding="4,0"
                                          VerticalAlignment="Center"
+                                         VerticalContentAlignment="Center"
+                                         HorizontalContentAlignment="Center"
                                          PopupContent="{Binding AcceptedResponse.Usage,Mode=OneWay}"
                                          PopupContentTemplate="{StaticResource UsageDetailDataTemplate}" />
                 <materialDesign:PopupBox ToolTip="上下文占比"
