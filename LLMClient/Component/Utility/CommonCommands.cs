@@ -57,6 +57,9 @@ public static class CommonCommands
     public static RoutedCommand DeleteInteraction =
         new RoutedUICommand("DeleteInteraction", "DeleteInteraction", typeof(CommonCommands));
 
+    public static RoutedCommand ImportDialogSession =
+        new RoutedUICommand("ImportDialogSession", "ImportDialogSession", typeof(CommonCommands));
+
     private static ICommand? _openFileCommand;
 
     public static ICommand OpenFileCommand

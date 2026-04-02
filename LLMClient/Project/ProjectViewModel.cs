@@ -9,6 +9,8 @@ using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.Converters;
+using LLMClient.Component.CustomControl;
+using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering.PromptGeneration;
@@ -310,6 +312,73 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         var projectSessionViewModel = _factory.CreateViewModel<ProjectSessionViewModel>(this, _mapper);
         AddSession(projectSessionViewModel);
     });
+
+    public async Task ImportFromDialogSessions(IReadOnlyList<DialogViewModel> availableDialogs)
+    {
+        try
+        {
+            var dialogSessions = availableDialogs
+                .Where(d => d.DialogItems.Count > 0)
+                .ToList();
+
+            if (!dialogSessions.Any())
+            {
+                MessageEventBus.Publish("没有可用的对话会话");
+                return;
+            }
+
+            // Show selection dialog
+            var result = await DialogHost.Show(new ImportDialogSelectionViewModel(dialogSessions));
+            if (result is not DialogViewModel selectedDialog)
+            {
+                return;
+            }
+
+            // Serialize selected dialog to persist model
+            var dialogPersist = _mapper.Map<DialogViewModel, DialogSessionPersistModel>(selectedDialog, _ => { });
+
+            // Strip per-request FunctionGroups from dialog items:
+            // These reference external tools (MCP servers, plugins) that may not be resolvable
+            // in the project context and are not needed for imported conversation content.
+            if (dialogPersist.DialogItems != null)
+            {
+                foreach (var item in dialogPersist.DialogItems)
+                {
+                    if (item is RequestPersistItem requestPersist)
+                    {
+                        requestPersist.FunctionGroups = null;
+                    }
+                }
+            }
+
+            // Create ProjectSessionPersistModel (dialog items only, no system prompts)
+            var sessionPersist = new ProjectSessionPersistModel
+            {
+                DialogItems = dialogPersist.DialogItems,
+                RootNode = dialogPersist.RootNode,
+                CurrentLeaf = dialogPersist.CurrentLeaf,
+                TokensConsumption = dialogPersist.TokensConsumption,
+                TotalPrice = dialogPersist.TotalPrice,
+                Name = selectedDialog.Topic,
+                // AllowedFunctions intentionally not copied
+            };
+
+            // Map back to ProjectSessionViewModel
+            var projectSession = _mapper.Map<ProjectSessionPersistModel, ProjectSessionViewModel>(sessionPersist,
+                opts => opts.Items[AutoMapModelTypeConverter.ParentProjectViewModelKey] = this);
+
+            AddSession(projectSession);
+            MessageEventBus.Publish($"已从对话「{selectedDialog.Topic}」导入");
+        }
+        catch (Exception e)
+        {
+            var message = e.InnerException != null
+                ? $"{e.Message}\n{e.InnerException.Message}"
+                : e.Message;
+            Trace.TraceError(e.ToString());
+            MessageBoxes.Error("导入失败: " + message);
+        }
+    }
 
     public void AddSession(ProjectSessionViewModel session)
     {

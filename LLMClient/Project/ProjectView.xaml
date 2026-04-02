@@ -128,10 +128,25 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Button Content="{materialDesign:PackIcon Kind=AddThick,Size=16}"
-                                    Command="{Binding NewSessionCommand}"
+                            <materialDesign:PopupBox
+                                    ToolTip="Add Tasks"
                                     Margin="6,0,0,0"
-                                    ToolTip="Add Tasks" />
+                                    Width="30"
+                                    Height="30"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    PlacementMode="BottomAndAlignCentres"
+                                    PopupUniformCornerRadius="8"
+                                    ToggleContent="{materialDesign:PackIcon Kind=AddThick,Size=20}"
+                                    Style="{StaticResource MaterialDesignToolPopupBox}"
+                                    StaysOpen="False">
+                                <StackPanel MinWidth="140">
+                                    <Button Content="新建任务"
+                                            Command="{Binding NewSessionCommand}" />
+                                    <Button Content="从对话导入"
+                                            Command="{x:Static utility:CommonCommands.ImportDialogSession}" />
+                                </StackPanel>
+                            </materialDesign:PopupBox>
                         </StackPanel>
                     </materialDesign:Card>
                     <!--<TextBlock MaxWidth="140"

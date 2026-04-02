@@ -74,7 +74,7 @@ public class FunctionCall
     public async Task WebFetch()
     {
         var webFetcherPlugin = new UrlFetcherPlugin();
-        var fetchHtmlAsync = await webFetcherPlugin.FetchMarkdownAsync(
+        var fetchHtmlAsync = await webFetcherPlugin.FetchHtmlAsync(
             "https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-plugins.html");
         _output.WriteLine(fetchHtmlAsync);
     }

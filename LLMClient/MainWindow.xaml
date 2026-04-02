@@ -80,6 +80,15 @@
                                                                     Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
+                                <DataTemplate DataType="{x:Type dialog:TextContentEditViewModel}">
+                                    <HeaderedContentControl Header="编辑输入内容"
+                                                            Style="{StaticResource DialogContentControlStyle}">
+                                        <ContentPresenter ContentTemplateSelector="{StaticResource TextEditTemplateSelector}"
+                                                          Content="{Binding}"
+                                                          Width="900"
+                                                          Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
                                 <DataTemplate DataType="{x:Type dialog:AgentOption}">
                                     <HeaderedContentControl Header="配置agent选项"
                                                             Style="{StaticResource DialogContentControlStyle}">
@@ -218,6 +227,42 @@
                                                             Header="Prompt Template">
                                         <research1:ResearchClientView Width="900"
                                                                       Height="600" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type project:ImportDialogSelectionViewModel}">
+                                    <HeaderedContentControl Style="{StaticResource DialogContentControlStyle}"
+                                                            Header="选择要导入的对话">
+                                        <Grid Width="500" MaxHeight="500">
+                                            <ListBox ItemsSource="{Binding DialogSessions}"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type dialog:DialogViewModel}">
+                                                        <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                                                HorizontalContentAlignment="Left"
+                                                                Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                CommandParameter="{Binding}"
+                                                                Padding="8,6">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <materialDesign:PackIcon Kind="ChatOutline"
+                                                                                         VerticalAlignment="Center"
+                                                                                         Margin="0,0,8,0" />
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Topic, Mode=OneWay, TargetNullValue=未命名对话}"
+                                                                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               MaxWidth="400" />
+                                                                    <TextBlock Text="{Binding Shortcut, Mode=OneWay}"
+                                                                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               MaxWidth="400" />
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </Grid>
                                     </HeaderedContentControl>
                                 </DataTemplate>
                             </materialDesign:DialogHost.Resources>
@@ -890,6 +935,8 @@
                                     Executed="SaveAs_Command_OnExecuted" />
                     <CommandBinding Command="{x:Static utility:CommonCommands.OpenSource}"
                                     Executed="OpenSessionFile_OnExecuted" />
+                    <CommandBinding Command="{x:Static utility:CommonCommands.ImportDialogSession}"
+                                    Executed="ImportDialogSession_OnExecuted" />
                 </ContentControl.CommandBindings>
             </ContentControl>
             <materialDesign:Card Grid.Row="0" Grid.Column="0"

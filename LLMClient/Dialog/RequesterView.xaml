@@ -13,10 +13,11 @@
              xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
              xmlns:models="clr-namespace:LLMClient.Dialog.Models"
              mc:Ignorable="d"
+             ClipToBounds="False"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
              d:DesignHeight="110" d:DesignWidth="1600">
     <Border CornerRadius="8"
-            ClipToBounds="True"
+            ClipToBounds="False"
             Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
             BorderThickness="1.5">
         <Border.Style>
@@ -43,45 +44,29 @@
                 <RowDefinition />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <ContentPresenter ContentTemplateSelector="{StaticResource TextEditTemplateSelector}"
-                              Content="{Binding PromptEditViewModel,Mode=OneWay}"
-                              MinHeight="40"
-                              AllowDrop="True"
-                              x:Name="PromptEditor"
-                              IsKeyboardFocusWithinChanged="PromptEditor_OnLostKeyboardFocus" />
+            <Grid x:Name="EditorGrid">
+                <ContentPresenter ContentTemplateSelector="{StaticResource TextEditTemplateSelector}"
+                                  Content="{Binding PromptEditViewModel,Mode=OneWay}"
+                                  MinHeight="40"
+                                  AllowDrop="True"
+                                  x:Name="PromptEditor"
+                                  IsKeyboardFocusWithinChanged="PromptEditor_OnLostKeyboardFocus" />
+                <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                        Width="28"
+                        Height="28"
+                        Margin="0,-28,0,0"
+                        Opacity="0.75"
+                        ToolTip="展开编辑器"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Command="{Binding OpenExpandedEditorCommand}"
+                        CommandParameter="{Binding}"
+                        Content="{materialDesign:PackIcon Kind=ArrowExpand,Size=16}"
+                        Visibility="{Binding ElementName=EditorGrid,Path=IsKeyboardFocusWithin,Converter={StaticResource BooleanToVisibilityConverter}}" />
+            </Grid>
             <Border Grid.Row="1"
                     Background="{DynamicResource MaterialDesignTextFieldBoxBackground}">
                 <StackPanel Margin="8,0">
-                    <ScrollViewer Style="{StaticResource HorizontalArrowScrollViewer}"
-                                  Visibility="{Binding  Attachments.Count,Converter={x:Static converters:SnapConverters.CountToVisibilityConverter}}">
-                        <ItemsControl Padding="0,5,0,0"
-                                      ItemsSource="{Binding Attachments,Mode=OneWay}"
-                                      ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type models:Attachment}">
-                                    <materialDesign:Chip IsDeletable="True"
-                                                         MaxWidth="160"
-                                                         Margin="0,0,5,0"
-                                                         IconBackground="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
-                                                         IconForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
-                                                         ToolTipService.InitialShowDelay="0"
-                                                         ToolTip="{Binding OriUri,Mode=OneTime}"
-                                                         Command="{x:Static models:Attachment.OpenFileCommand}"
-                                                         CommandParameter="{Binding}"
-                                                         Content="{Binding Name,Mode=OneTime}"
-                                                         DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"
-                                                         DeleteCommandParameter="{Binding  }">
-                                        <materialDesign:Chip.Icon>
-                                            <materialDesign:PackIcon Width="18"
-                                                                     Height="18"
-                                                                     Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
-                                                                     Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
-                                        </materialDesign:Chip.Icon>
-                                    </materialDesign:Chip>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
                     <Grid Margin="0,5">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -267,6 +252,38 @@
                                     Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
                                     CommandParameter="{Binding QueryViewModel,Mode=OneTime}" />
                         </StackPanel>
+                        <ScrollViewer Grid.Column="1"
+                                      Margin="16,0"
+                                      Style="{StaticResource HorizontalArrowScrollViewer}"
+                                      Visibility="{Binding  Attachments.Count,Converter={x:Static converters:SnapConverters.CountToVisibilityConverter}}">
+                            <ItemsControl ItemsSource="{Binding Attachments,Mode=OneWay}"
+                                          VerticalAlignment="Center"
+                                          ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:Attachment}">
+                                        <materialDesign:Chip IsDeletable="True"
+                                                             MaxWidth="160"
+                                                             Margin="0,0,5,0"
+                                                             IconBackground="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
+                                                             IconForeground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
+                                                             ToolTipService.InitialShowDelay="0"
+                                                             ToolTip="{Binding OriUri,Mode=OneTime}"
+                                                             Command="{x:Static models:Attachment.OpenFileCommand}"
+                                                             CommandParameter="{Binding}"
+                                                             Content="{Binding Name,Mode=OneTime}"
+                                                             DeleteCommand="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl},Path=DataContext.RemoveAttachmentCommand}"
+                                                             DeleteCommandParameter="{Binding  }">
+                                            <materialDesign:Chip.Icon>
+                                                <materialDesign:PackIcon Width="18"
+                                                                         Height="18"
+                                                                         Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Light.Foreground}"
+                                                                         Kind="{Binding Type,Mode=OneWay,Converter={x:Static converters:AttachmentTypeConverter.Instance}}" />
+                                            </materialDesign:Chip.Icon>
+                                        </materialDesign:Chip>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                         <StackPanel Grid.Column="2"
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Right"
@@ -308,6 +325,7 @@
                                               DisplayMemberPath="Name"
                                               SelectedItem="{Binding SelectedAgent}"
                                               ToolTip="Select Agent"
+                                              materialDesign:HintAssist.Hint="Select Agent"
                                               Width="120"
                                               VerticalAlignment="Center"
                                               Padding="16,8"
@@ -319,7 +337,7 @@
                                             Height="30"
                                             Style="{StaticResource MaterialDesignIconButton}"
                                             Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                            CommandParameter="{Binding AgentOption,Mode=OneWay}"/>
+                                            CommandParameter="{Binding AgentOption,Mode=OneWay}" />
                                 </StackPanel>
                             </materialDesign:Card>
 

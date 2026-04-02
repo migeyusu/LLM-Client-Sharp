@@ -28,7 +28,7 @@
             </Grid.ColumnDefinitions>
             <materialDesign:PopupBox Grid.Column="0"
                                      Margin="5"
-                                     ToolTip="添加新的终结点"
+                                     ToolTip="添加新的LLM服务"
                                      ToolTipService.InitialShowDelay="0"
                                      PlacementMode="BottomAndAlignCentres"
                                      VerticalAlignment="Center"

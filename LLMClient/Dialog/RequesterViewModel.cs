@@ -248,6 +248,8 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
 
     public ICommand CancelLastCommand { get; }
 
+    public ICommand OpenExpandedEditorCommand { get; }
+
     private bool _isDebugMode = true;
 
     #region ichatrequest
@@ -412,6 +414,21 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         SelectedAgent = AvailableAgents.FirstOrDefault();
 
         CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
+        OpenExpandedEditorCommand = new ActionCommand(async o =>
+        {
+            if (o is RequesterViewModel vm)
+            {
+                await DialogHost.Show(vm.PromptEditViewModel);
+                // Persist edits made inside the dialog back to Content.Text
+                await vm.PromptEditViewModel.ApplyText();
+                // Recreate the ViewModel so the main RichTextBox gets a fresh
+                // FlowDocument — avoids the "stolen document" issue where WPF
+                // binding skips OnDocumentChanged because the same object reference
+                // is returned and the main RTB never re-acquires ownership.
+                vm.RecreatePromptEditor();
+                vm.InvalidateAsyncProperty(nameof(EstimatedTokens));
+            }
+        });
         AddImageCommand = new ActionCommand(_ =>
         {
             var openFileDialog = new OpenFileDialog()
@@ -496,6 +513,19 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
             ? new TextContentRawEditViewModel(textContent, null)
             : new TextContentCodeEditViewModel(textContent, null);
         InvalidateAsyncProperty(nameof(EstimatedTokens));
+    }
+
+    /// <summary>
+    /// Recreates PromptEditViewModel with the current text so the main RichTextBox
+    /// receives a brand-new FlowDocument and fully re-renders its content.
+    /// </summary>
+    private void RecreatePromptEditor()
+    {
+        var text = PromptEditViewModel.FinalText;
+        var messageId = PromptEditViewModel.MessageId;
+        PromptEditViewModel = RawEditMode
+            ? (TextContentEditViewModel)new TextContentRawEditViewModel(new TextContent(text), messageId)
+            : new TextContentCodeEditViewModel(new TextContent(text), messageId);
     }
 
 

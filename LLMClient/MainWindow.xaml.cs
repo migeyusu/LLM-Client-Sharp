@@ -328,4 +328,16 @@ public partial class MainWindow : ExtendedWindow, IDisposable
             MessageEventBus.Publish("克隆模板会话失败: " + exception.Message);
         }
     }
+
+    private async void ImportDialogSession_OnExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (_mainWindowViewModel.PreSession is ProjectViewModel projectViewModel)
+        {
+            var availableDialogs = _mainWindowViewModel.SessionViewModels
+                .OfType<DialogFileViewModel>()
+                .Select(d => d.Dialog)
+                .ToList();
+            await projectViewModel.ImportFromDialogSessions(availableDialogs);
+        }
+    }
 }

@@ -319,6 +319,7 @@ public static class ModelRegister
                         "MiniMax M2",
                         "MiniMax M2.1",
                         "MiniMax M2.5",
+                        "MiniMax M2.7"
                     ]
                 },
                 new()
@@ -328,6 +329,16 @@ public static class ModelRegister
                     [
                         "Nemotron 3 Nano 30B A3B",
                         "Nemotron 3 Super"
+                    ]
+                },
+                new ProviderDescriptor()
+                {
+                    ProviderName = "ByteDance",
+                    ModelNames = [
+                        "Seed 2.0 Mini",
+                        "Seed 2.0 Pro",
+                        "Seed 2.0 Lite",
+                        "Seed 2.0 Code",
                     ]
                 }
             ];
