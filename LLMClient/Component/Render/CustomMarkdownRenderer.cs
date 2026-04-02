@@ -42,8 +42,6 @@ public class CustomMarkdownRenderer : WpfRenderer
             .UseRequestBlock()
             .UseMathematics()
             .UseCustomMathematics()
-            .UseFunctionCallBlock()
-            .UseFunctionResultBlock()
             .UseGenericAttributes();
     }
 
@@ -125,11 +123,9 @@ public class CustomMarkdownRenderer : WpfRenderer
         EditMode = false;
     }
 
-    public static ComponentResourceKey FunctionCallStyleKey { get; } =
-        new(typeof(CustomMarkdownRenderer), nameof(FunctionCallStyleKey));
 
-    public static ComponentResourceKey FunctionResultStyleKey { get; } =
-        new(typeof(CustomMarkdownRenderer), (object)nameof(FunctionResultStyleKey));
+    public static ComponentResourceKey FunctionInteractionStyleKey { get; } =
+        new(typeof(CustomMarkdownRenderer), nameof(FunctionInteractionStyleKey));
 
     public static ComponentResourceKey AnnotationStyleKey =>
         new(typeof(CustomMarkdownRenderer), nameof(AnnotationStyleKey));

@@ -1,14 +1,13 @@
-using LLMClient.Component.Render;
-using Markdig;
-using Markdig.Syntax;
 using Microsoft.Extensions.AI;
+using System.Xml.Serialization;
+using LLMClient.Endpoints;
 
 namespace LLMClient.Test;
 
 public class ToolCallStreamingFormatTests
 {
     [Fact]
-    public void FunctionCallXmlFragment_CanBeParsedByToolCallBlockParser()
+    public void FunctionCallXmlFragment_CanBeParsedAsToolCallXml()
     {
         var functionCallContent = new FunctionCallContent("call-1", "search_files", new Dictionary<string, object?>
         {
@@ -17,14 +16,10 @@ public class ToolCallStreamingFormatTests
             ["includeHidden"] = true,
         });
 
-        var markdown = $"{ToolCallBlockParser.FunctionCallTag}{Environment.NewLine}{functionCallContent.ToToolCallXmlFragment()}{Environment.NewLine}{ToolCallBlockParser.FunctionCallEndTag}";
-        var document = Markdown.Parse(markdown, CustomMarkdownRenderer.DefaultPipeline);
-
-        var block = Assert.Single(document.Descendants().OfType<ToolCallBlock>());
-        Assert.Null(block.Raw);
-
-        Assert.NotNull(block.ToolCalls);
-        var toolCalls = block.ToolCalls!;
+        var xml = $"<tool_calls>{functionCallContent.ToToolCallXmlFragment()}</tool_calls>";
+        var serializer = new XmlSerializer(typeof(ToolCallsElement));
+        using var reader = new StringReader(xml);
+        var toolCalls = Assert.IsType<ToolCallsElement>(serializer.Deserialize(reader));
         var toolCall = Assert.Single(toolCalls.ToolCalls);
         Assert.Equal("search_files", toolCall.Name);
         Assert.Contains("\"query\"", toolCall.Arguments);
@@ -34,21 +29,17 @@ public class ToolCallStreamingFormatTests
     }
 
     [Fact]
-    public void FunctionResultXmlFragment_CanBeParsedByToolCallResultBlockParser_WhenExceptionContainsXmlSensitiveCharacters()
+    public void FunctionResultXmlFragment_CanBeParsedAsToolCallResultXml_WhenExceptionContainsXmlSensitiveCharacters()
     {
         var functionResultContent = new FunctionResultContent("call-1", null)
         {
             Exception = new InvalidOperationException("bad < data > & more")
         };
 
-        var markdown = $"{ToolCallResultBlockParser.FunctionResultTag}{Environment.NewLine}{functionResultContent.ToToolCallResultXmlFragment()}{Environment.NewLine}{ToolCallResultBlockParser.FunctionResultEndTag}";
-        var document = Markdown.Parse(markdown, CustomMarkdownRenderer.DefaultPipeline);
-
-        var block = Assert.Single(document.Descendants().OfType<ToolCallResultBlock>());
-        Assert.Null(block.Raw);
-
-        Assert.NotNull(block.ToolCallResults);
-        var results = block.ToolCallResults!;
+        var xml = $"<tool_call_results>{functionResultContent.ToToolCallResultXmlFragment()}</tool_call_results>";
+        var serializer = new XmlSerializer(typeof(ToolCallResultsContainer));
+        using var reader = new StringReader(xml);
+        var results = Assert.IsType<ToolCallResultsContainer>(serializer.Deserialize(reader));
         var toolResult = Assert.Single(results.ToolCalls);
         Assert.Equal("call-1", toolResult.Name);
         Assert.Contains("InvalidOperationException", toolResult.ResultContent);
@@ -56,26 +47,20 @@ public class ToolCallStreamingFormatTests
     }
 
     [Fact]
-    public void MarkdownParse_CanParseToolCallBlockWhenStructuredOutputStartsOnNewLine()
+    public void FunctionCallXmlFragment_PreservesStructuredArguments()
     {
         var functionCallContent = new FunctionCallContent("call-2", "read_file", new Dictionary<string, object?>
         {
             ["path"] = "README.md"
         });
 
-        var markdown = string.Join(Environment.NewLine,
-            "assistant text without trailing newline",
-            string.Empty,
-            ToolCallBlockParser.FunctionCallTag,
-            functionCallContent.ToToolCallXmlFragment(),
-            ToolCallBlockParser.FunctionCallEndTag);
-
-        var document = Markdown.Parse(markdown, CustomMarkdownRenderer.DefaultPipeline);
-        var block = Assert.Single(document.Descendants().OfType<ToolCallBlock>());
-        Assert.NotNull(block.ToolCalls);
-        var toolCalls = block.ToolCalls!;
+        var xml = $"<tool_calls>{functionCallContent.ToToolCallXmlFragment()}</tool_calls>";
+        var serializer = new XmlSerializer(typeof(ToolCallsElement));
+        using var reader = new StringReader(xml);
+        var toolCalls = Assert.IsType<ToolCallsElement>(serializer.Deserialize(reader));
         var toolCall = Assert.Single(toolCalls.ToolCalls);
         Assert.Equal("read_file", toolCall.Name);
+        Assert.Contains("README.md", toolCall.Arguments);
     }
 }
 

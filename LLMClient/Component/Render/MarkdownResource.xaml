@@ -8,6 +8,7 @@
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                     xmlns:dialog="clr-namespace:LLMClient.Dialog"
+                    xmlns:models="clr-namespace:LLMClient.Dialog.Models"
                     xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
                     xmlns:converters="clr-namespace:LLMClient.Component.Converters"
                     xmlns:render="clr-namespace:LLMClient.Component.Render"
@@ -327,137 +328,67 @@
         </Setter>
     </Style>
 
+
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource ContentExpander}"
-           x:Key="{x:Static render:CustomMarkdownRenderer.FunctionCallStyleKey}">
-        <Setter Property="Padding"
-                Value="16" />
+           x:Key="{x:Static render:CustomMarkdownRenderer.FunctionInteractionStyleKey}">
+        <Setter Property="Padding" Value="16" />
         <Setter Property="HeaderTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type ai:FunctionCallContent}">
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="Function"
-                                                 Width="20"
-                                                 VerticalAlignment="Center"
-                                                 Height="20" />
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            Margin="6,0,0,0"
-                            FontWeight="Bold"
-                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
-                            <Run Text="{Binding Name,StringFormat=函数调用：{0},Mode=OneTime}" />
-                            <Run Text="{Binding CallId,StringFormat=[{0}],Mode=OneTime}"
-                                 Foreground="DimGray" />
+                <DataTemplate DataType="{x:Type models:FunctionCallInteraction}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Function" Width="20" Height="20" VerticalAlignment="Center" />
+                        <TextBlock VerticalAlignment="Center" Margin="6,0,0,0" FontWeight="Bold" Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
+                            <Run Text="{Binding Call.Name, Mode=OneTime}" />
                         </TextBlock>
-                    </StackPanel>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="ContentTemplate">
-            <Setter.Value>
-                <DataTemplate DataType="{x:Type ai:FunctionCallContent}">
-                    <TextBlock Foreground="DarkGray"
-                               FontStyle="Italic"
-                               TextWrapping="Wrap">
-                        <Run Text="{Binding CallId,Mode=OneTime,StringFormat=CallID:{0}}" />
-                        <LineBreak />
-                        <Run Text="{Binding Name,Mode=OneTime,StringFormat=Function Name:{0}}" />
-                        <LineBreak />
-                        <Run>Arguments:</Run>
-                        <Run
-                            Text="{Binding Arguments,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
-                    </TextBlock>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
+                        
+                        <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16" Margin="6,0,0,0" Foreground="LimeGreen" VerticalAlignment="Center">
+                            <materialDesign:PackIcon.Style>
+                                <Style TargetType="materialDesign:PackIcon">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding Result, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}" Value="True" />
+                                                <Condition Binding="{Binding Result.Exception, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}" Value="False" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </materialDesign:PackIcon.Style>
+                        </materialDesign:PackIcon>
 
-    <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource ContentExpander}"
-           x:Key="{x:Static  render:ToolCallBlockRenderer.ToolCallStyleKey}">
-        <Setter Property="Padding"
-                Value="16" />
-        <Setter Property="HeaderTemplate">
-            <Setter.Value>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="Function"
-                                                 Width="20"
-                                                 VerticalAlignment="Center"
-                                                 Height="20" />
-                        <TextBlock Text="函数调用"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                        <materialDesign:PackIcon Kind="CloseCircle" Width="16" Height="16" Margin="6,0,0,0" Foreground="Red" VerticalAlignment="Center">
+                            <materialDesign:PackIcon.Style>
+                                <Style TargetType="materialDesign:PackIcon">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Result.Exception, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </materialDesign:PackIcon.Style>
+                        </materialDesign:PackIcon>
                     </StackPanel>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
         <Setter Property="ContentTemplate">
             <Setter.Value>
-                <DataTemplate DataType="{x:Type  render:ToolCallBlock}">
+                <DataTemplate DataType="{x:Type models:FunctionCallInteraction}">
                     <StackPanel>
-                        <ItemsControl ItemsSource="{Binding ToolCalls.ToolCalls}"
-                                      Visibility="{Binding ToolCalls,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type render:ToolCallElement}">
-                                    <TextBlock Foreground="DarkGray"
-                                               FontStyle="Italic"
-                                               TextWrapping="Wrap">
-                                        <Run FontWeight="Black">Function Name: </Run>
-                                        <Run Text="{Binding Name,Mode=OneTime}" />
-                                        <LineBreak />
-                                        <Run FontWeight="Black">Arguments:</Run>
-                                        <Run
-                                            Text="{Binding Arguments,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringUnescapeConverter}}" />
-                                    </TextBlock>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <TextBlock Text="{Binding Raw,Mode=OneTime}"
-                                   Visibility="{Binding Raw,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}" />
-                    </StackPanel>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource ContentExpander}"
-           x:Key="{x:Static render:CustomMarkdownRenderer.FunctionResultStyleKey}">
-        <Setter Property="Padding"
-                Value="16" />
-        <Setter Property="HeaderTemplate">
-            <Setter.Value>
-                <DataTemplate DataType="{x:Type ai:FunctionResultContent}">
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="CallReceived"
-                                                 Width="20"
-                                                 Height="20" />
-                        <TextBlock Text="{Binding CallId,Mode=OneTime,StringFormat={}[{0}]-调用结果}"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
-                    </StackPanel>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="ContentTemplate">
-            <Setter.Value>
-                <DataTemplate DataType="{x:Type ai:FunctionResultContent}">
-                    <StackPanel>
-                        <TextBlock Foreground="DarkGray"
-                                   FontStyle="Italic"
-                                   TextWrapping="Wrap"
-                                   Text="{Binding Result,Mode=OneTime,Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
-                        <TextBlock Foreground="Red"
-                                   Visibility="{Binding Exception,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
-                                   Text="{Binding Exception,Mode=OneTime,StringFormat=Exception:{0}}" />
+                        <TextBlock Foreground="DarkGray" FontStyle="Italic" TextWrapping="Wrap">
+                            <Run>Arguments:</Run>
+                            <LineBreak />
+                            <Run Text="{Binding Call.Arguments, Mode=OneTime, Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
+                        </TextBlock>
+                        <Border Margin="0,8" Height="1" Background="{DynamicResource MaterialDesign.Brush.Card.Border}" />
+                        <TextBlock Foreground="DarkGray" FontStyle="Italic" TextWrapping="Wrap"
+                                   Text="{Binding Result.Result, Mode=OneTime, Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
+                        <TextBlock Foreground="Red" Visibility="{Binding Result.Exception, Mode=OneTime, Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                   Text="{Binding Result.Exception, Mode=OneTime, StringFormat=Exception:{0}}" />
                     </StackPanel>
                 </DataTemplate>
             </Setter.Value>
@@ -507,57 +438,6 @@
                             </ContextMenu>
                         </Image.ContextMenu>
                     </Image>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource ContentExpander}"
-           x:Key="{x:Static render:ToolCallResultBlockRenderer.ToolCallResultStyleKey}">
-        <Setter Property="Padding"
-                Value="16" />
-        <Setter Property="HeaderTemplate">
-            <Setter.Value>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="CallReceived"
-                                                 Width="20"
-                                                 Height="20" />
-                        <TextBlock Text="函数调用结果"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
-                    </StackPanel>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="ContentTemplate">
-            <Setter.Value>
-                <DataTemplate DataType="{x:Type  render:ToolCallResultBlock}">
-                    <StackPanel>
-                        <ItemsControl ItemsSource="{Binding ToolCallResults.ToolCalls}"
-                                      Visibility="{Binding ToolCallResults,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type render:ToolCallResultElement}">
-                                    <TextBlock Foreground="DarkGray"
-                                               FontStyle="Italic"
-                                               TextWrapping="Wrap">
-                                        <Run FontWeight="Black">Function Name: </Run>
-                                        <Run Text="{Binding Name,Mode=OneTime}" />
-                                        <LineBreak />
-                                        <Run FontWeight="Black">Result:</Run>
-                                        <Run
-                                            Text="{Binding ResultContent,Mode=OneTime,Converter={x:Static converters:SnapConverters.StringUnescapeConverter}}" />
-                                    </TextBlock>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <TextBlock Text="{Binding Raw,Mode=OneTime}"
-                                   Visibility="{Binding Raw,Mode=OneTime,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}" />
-                    </StackPanel>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
@@ -778,3 +658,4 @@
         </Setter>
     </Style>
 </ResourceDictionary>
+

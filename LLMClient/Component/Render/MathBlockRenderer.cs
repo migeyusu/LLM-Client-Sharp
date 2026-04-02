@@ -11,7 +11,7 @@ namespace LLMClient.Component.Render;
 public class MathBlockRenderer : WpfObjectRenderer<MathBlock>
 {
     public static ComponentResourceKey MathBlockStyleKey { get; } =
-        new(typeof(ToolCallBlockRenderer), nameof(MathBlockStyleKey));
+        new(typeof(MathBlockRenderer), nameof(MathBlockStyleKey));
 
     protected override void Write(WpfRenderer renderer, MathBlock obj)
     {
@@ -33,7 +33,7 @@ public class MathBlockRenderer : WpfObjectRenderer<MathBlock>
 public class MathBlockInlineRenderer : WpfObjectRenderer<MathInline>
 {
     public static ComponentResourceKey MathInlineStyleKey { get; } =
-        new(typeof(ToolCallBlockRenderer), nameof(MathInlineStyleKey));
+        new(typeof(MathBlockInlineRenderer), nameof(MathInlineStyleKey));
 
     protected override void Write(WpfRenderer renderer, MathInline obj)
     {

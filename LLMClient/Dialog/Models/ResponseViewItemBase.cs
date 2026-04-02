@@ -10,6 +10,12 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
 
+public class FunctionCallInteraction
+{
+    public required FunctionCallContent Call { get; init; }
+    public FunctionResultContent? Result { get; init; }
+}
+
 public class ResponseViewItemBase : BaseViewModel, IResponse
 {
     public virtual long Tokens
@@ -207,40 +213,45 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                 }
             }
 
-            foreach (var message in chatMessages)
-            {
-                foreach (var content in message.Contents)
-                {
-                    switch (content)
-                    {
-                        case TextReasoningContent reasoningContent:
-                            var markdownDocument = await Task.Run(() =>
-                            {
-                                var stringBuilder = new StringBuilder();
-                                stringBuilder.AppendLine(ThinkBlockParser.OpenTag);
-                                stringBuilder.AppendLine(reasoningContent.Text);
-                                stringBuilder.AppendLine(ThinkBlockParser.CloseTag);
-                                var s = stringBuilder.ToString();
-                                return Markdown.Parse(s, CustomMarkdownRenderer.DefaultPipeline);
-                            });
-                            renderer.Render(markdownDocument);
-                            break;
-                        case TextContent textContent:
-                            await renderer.RenderMarkdown(textContent.Text);
-                            break;
-                        case FunctionCallContent functionCallContent:
-                            renderer.AppendExpanderItem(functionCallContent,
-                                CustomMarkdownRenderer.FunctionCallStyleKey);
-                            break;
-                        case FunctionResultContent functionResultContent:
-                            renderer.AppendExpanderItem(functionResultContent,
-                                CustomMarkdownRenderer.FunctionResultStyleKey);
-                            break;
+            var contents = chatMessages.SelectMany(m => m.Contents).ToList();
 
-                        default:
-                            Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");
-                            break;
-                    }
+            // Group FunctionCall and FunctionResult by CallId
+            var functionCalls = contents.OfType<FunctionCallContent>().ToList();
+            var functionResults = contents.OfType<FunctionResultContent>().ToDictionary(r => r.CallId);
+
+            foreach (var call in functionCalls)
+            {
+                functionResults.TryGetValue(call.CallId, out var result);
+                var interaction = new FunctionCallInteraction { Call = call, Result = result };
+                renderer.AppendExpanderItem(interaction, CustomMarkdownRenderer.FunctionInteractionStyleKey);
+            }
+
+            foreach (var content in contents)
+            {
+                switch (content)
+                {
+                    case TextReasoningContent reasoningContent:
+                        var markdownDocument = await Task.Run(() =>
+                        {
+                            var stringBuilder = new StringBuilder();
+                            stringBuilder.AppendLine(ThinkBlockParser.OpenTag);
+                            stringBuilder.AppendLine(reasoningContent.Text);
+                            stringBuilder.AppendLine(ThinkBlockParser.CloseTag);
+                            var s = stringBuilder.ToString();
+                            return Markdown.Parse(s, CustomMarkdownRenderer.DefaultPipeline);
+                        });
+                        renderer.Render(markdownDocument);
+                        break;
+                    case TextContent textContent:
+                        await renderer.RenderMarkdown(textContent.Text);
+                        break;
+                    case FunctionCallContent:
+                    case FunctionResultContent:
+                        // Already handled above
+                        break;
+                    default:
+                        Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");
+                        break;
                 }
             }
         }

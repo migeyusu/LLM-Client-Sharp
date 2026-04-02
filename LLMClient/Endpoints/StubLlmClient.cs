@@ -149,11 +149,7 @@ public class StubLlmClient : ILLMChatClient
                     var functionCallContent = new FunctionCallContent(fc.CallId, fc.Name,
                         new Dictionary<string, object?> { ["raw"] = fc.Arguments });
 
-                    interactor?.WriteLine();
-                    interactor?.WriteLine(ToolCallBlockParser.FunctionCallTag);
-                    interactor?.WriteLine(functionCallContent.ToToolCallXmlFragment());
-                    interactor?.WriteLine(ToolCallBlockParser.FunctionCallEndTag);
-                    interactor?.WriteLine();
+                    interactor?.Info($"Function call: {functionCallContent.Name}");
 
                     interactor?.Info("Function call detect, need run function calls...");
                     interactor?.WriteLine("Processing function calls...");
@@ -167,11 +163,9 @@ public class StubLlmClient : ILLMChatClient
                         var fr = loop.FunctionResult;
                         var functionResultContent = new FunctionResultContent(fr.CallId, fr.Result);
 
-                        interactor?.WriteLine();
-                        interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultTag);
-                        interactor?.WriteLine(functionResultContent.ToToolCallResultXmlFragment());
-                        interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultEndTag);
-                        interactor?.WriteLine();
+                        interactor?.Info(functionResultContent.Exception == null
+                            ? $"Function result received: {functionResultContent.CallId}"
+                            : $"Function call failed: {functionResultContent.CallId}");
                     }
 
                     interactor?.WriteLine();

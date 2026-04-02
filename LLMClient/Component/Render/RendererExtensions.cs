@@ -366,19 +366,6 @@ public static class RendererExtensions
         return pipeline;
     }
 
-    public static MarkdownPipelineBuilder UseFunctionCallBlock(
-        this MarkdownPipelineBuilder pipeline)
-    {
-        pipeline.Extensions.ReplaceOrAdd<ToolCallBlockExtension>(new ToolCallBlockExtension());
-        return pipeline;
-    }
-
-    public static MarkdownPipelineBuilder UseFunctionResultBlock(
-        this MarkdownPipelineBuilder pipeline)
-    {
-        pipeline.Extensions.ReplaceOrAdd<ToolCallResultBlockExtension>(new ToolCallResultBlockExtension());
-        return pipeline;
-    }
 
     public static MarkdownPipelineBuilder UseRequestBlock(
         this MarkdownPipelineBuilder pipeline)

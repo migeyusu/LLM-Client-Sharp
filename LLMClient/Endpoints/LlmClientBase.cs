@@ -318,18 +318,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                         //do nothing, textContent & reasoningContent is already added to RespondingText
                                         break;
                                     case FunctionCallContent functionCallContent:
-                                        interactor?.WriteLine();
-                                        interactor?.WriteLine(ToolCallBlockParser.FunctionCallTag);
-                                        interactor?.WriteLine(functionCallContent.ToToolCallXmlFragment());
-                                        interactor?.WriteLine(ToolCallBlockParser.FunctionCallEndTag);
-                                        interactor?.WriteLine();
+                                        interactor?.Info($"Function call: {functionCallContent.Name}");
                                         break;
                                     case FunctionResultContent functionResultContent:
-                                        interactor?.WriteLine();
-                                        interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultTag);
-                                        interactor?.WriteLine(functionResultContent.ToToolCallResultXmlFragment());
-                                        interactor?.WriteLine(ToolCallResultBlockParser.FunctionResultEndTag);
-                                        interactor?.WriteLine();
+                                        interactor?.Info(functionResultContent.Exception == null
+                                            ? $"Function result received: {functionResultContent.CallId}"
+                                            : $"Function call failed: {functionResultContent.CallId}");
                                         break;
                                     case ErrorContent errorContent:
                                         interactor?.Error(

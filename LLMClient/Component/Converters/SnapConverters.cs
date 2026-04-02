@@ -56,14 +56,27 @@ internal static class SnapConverters
             : string.Empty);
 
     public static readonly IValueConverter ObjectToPrettyJsonConverter =
-        ValueConverter.Create<object?, string>(e => e.Value != null
-            ? JsonSerializer.Serialize(e.Value,
+        ValueConverter.Create<object?, string>(e => {
+            if (e.Value == null) return string.Empty;
+            if (e.Value is string s)
+            {
+                try
+                {
+                    using var jsonDoc = JsonDocument.Parse(s);
+                    return JsonSerializer.Serialize(jsonDoc.RootElement, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+                }
+                catch
+                {
+                    return s;
+                }
+            }
+            return JsonSerializer.Serialize(e.Value,
                 options: new(LLMClient.Extension.DefaultJsonSerializerOptions)
                 {
                     WriteIndented = true,
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                })
-            : string.Empty);
+                });
+        });
 
     public static readonly IValueConverter CountToVisibilityConverter =
         ValueConverter.Create<int, Visibility>(e => e.Value > 0 ? Visibility.Visible : Visibility.Collapsed);
