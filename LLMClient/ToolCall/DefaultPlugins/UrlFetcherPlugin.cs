@@ -100,7 +100,7 @@ public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         return ApplyLengthLimits(normalizedText, maxLength, startIndex);
     }
 
-    [KernelFunction,
+    /*[KernelFunction,
      Description(
          "Fetches a web page and converts its main content to Markdown format. This preserves structure like headings, lists, and links, which is great for structured data extraction.")]
     public async Task<string> FetchMarkdownAsync(
@@ -118,7 +118,7 @@ public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         var markdown = converter.Convert(htmlContent);
 
         return ApplyLengthLimits(markdown, maxLength, startIndex);
-    }
+    }*/
 
     #region Private Helpers
 

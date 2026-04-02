@@ -204,7 +204,12 @@
                                         Value="36" />
                             </Style>
                         </StackPanel.Resources>
-                        <!-- SearchBox removed -->
+                        <Button ToolTip="打开对话路由"
+                                Command="{Binding OpenDialogRouteCommand}">
+                            <materialDesign:PackIcon Kind="SitemapOutline"
+                                                     Width="20"
+                                                     Height="20" />
+                        </Button>
                         <Button ToolTip="清空对话"
                                 Command="{Binding ClearDialogCommand}">
                             <materialDesign:PackIcon Kind="Delete"

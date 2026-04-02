@@ -437,11 +437,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             throw new NotImplementedException();
         }
 
-        public void EndLoop()
-        {
-            throw new NotImplementedException();
-        }
-
         public async ValueTask DisposeAsync()
         {
             _blockingCollection.CompleteAdding();
