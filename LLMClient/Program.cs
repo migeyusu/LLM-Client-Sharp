@@ -74,6 +74,7 @@ public class Program
                 .AddSingleton<GlobalOptions>((_) => GlobalOptions.LoadOrCreate().Result)
                 .AddSingleton<IPromptsResource, PromptsResourceViewModel>()
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
+                .AddSingleton<NewApiUsageQueryService>()
                 .AddSingleton<IRagSourceCollection, RagSourceCollection>()
                 .AddTransient<NvidiaResearchClientOption>()
                 .AddSingleton<IMcpServiceCollection, McpServiceCollection>()

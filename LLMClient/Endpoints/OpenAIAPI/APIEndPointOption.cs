@@ -105,6 +105,32 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         }
     }
 
+    private string? _newApiSystemToken;
+
+    public string? NewApiSystemToken
+    {
+        get => _newApiSystemToken;
+        set
+        {
+            if (value == _newApiSystemToken) return;
+            _newApiSystemToken = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string? _newApiUserId;
+
+    public string? NewApiUserId
+    {
+        get => _newApiUserId;
+        set
+        {
+            if (value == _newApiUserId) return;
+            _newApiUserId = value;
+            OnPropertyChanged();
+        }
+    }
+
     public APIDefaultOption ConfigOption { get; set; } = new();
 
     private ModelMapping? ModelMapping => ModelMapping.Create(this.ModelsSource);
@@ -119,7 +145,7 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
 
         if (modelMapping is NewAPIModelMapping newModelMapping)
         {
-            newModelMapping.Url = this.ModelSourceUrl;
+            newModelMapping.Url = ResolveNewApiPricingUrl(this.ConfigOption.URL);
         }
 
         if (await modelMapping.Refresh())
@@ -132,6 +158,21 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
 
         MessageEventBus.Publish("已刷新模型列表");
     }));
+
+    internal static string? ResolveNewApiPricingUrl(string? apiUrl)
+    {
+        if (string.IsNullOrWhiteSpace(apiUrl) || !Uri.TryCreate(apiUrl, UriKind.Absolute, out var sourceUri))
+        {
+            return null;
+        }
+
+        return new UriBuilder(sourceUri)
+        {
+            Path = "/api/pricing",
+            Query = string.Empty,
+            Fragment = string.Empty,
+        }.Uri.ToString();
+    }
 
     private ObservableCollection<APIModelInfo> _models = [];
 

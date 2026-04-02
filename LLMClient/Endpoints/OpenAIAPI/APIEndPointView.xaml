@@ -40,7 +40,7 @@
                 </Style>
             </Grid.Resources>
             <Grid.RowDefinitions>
-                <RowDefinition Height="36" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="36" />
                 <RowDefinition Height="36" />
                 <RowDefinition Height="36" />
@@ -66,20 +66,31 @@
                        Text="Icon URL:" />
             <TextBox Grid.Row="0" Grid.Column="3"
                      Text="{Binding IconUrl,Mode=TwoWay}" />
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="API Usage Url：" />
-            <TextBox Grid.Row="2" Grid.Column="1"
-                     Text="{Binding ApiLogUrl,Mode=TwoWay}" />
-            <TextBlock Grid.Row="2" Grid.Column="2" Text="Source：" />
-            <Grid Grid.Row="2" Grid.Column="3"
-                  VerticalAlignment="Bottom">
+            <Grid Grid.Row="2"
+                  Grid.Column="0"
+                  Grid.ColumnSpan="4"
+                  Margin="0,0,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="90" />
+                    <ColumnDefinition Width="110" />
                     <ColumnDefinition />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ComboBox VerticalAlignment="Bottom"
+
+                <TextBlock Grid.Row="0"
+                           Grid.Column="0"
+                           Text="Source：" />
+
+                <ComboBox Grid.Row="0"
+                          Grid.Column="1"
+                          VerticalAlignment="Center"
                           HorizontalAlignment="Stretch"
-                          DockPanel.Dock="Left"
                           SelectedValue="{Binding ModelsSource,Mode=TwoWay}"
                           Width="80">
                     <ComboBox.Items>
@@ -90,27 +101,117 @@
                         <converters:ModelSource>NewAPI</converters:ModelSource>
                     </ComboBox.Items>
                 </ComboBox>
-                <TextBox Grid.Column="1"
-                         Margin="6,0,0,0"
-                         materialDesign:HintAssist.Hint="Source URL"
-                         Text="{Binding ModelSourceUrl,Mode=TwoWay,UpdateSourceTrigger=LostFocus}">
-                    <TextBox.Style>
-                        <Style TargetType="{x:Type TextBox}"
-                               BasedOn="{StaticResource {x:Type TextBox}}">
-                            <Setter Property="Visibility"
-                                    Value="Collapsed" />
+
+                <TextBlock Grid.Row="0"
+                           Grid.Column="2"
+                           Text="API Usage Url：">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}"
+                               BasedOn="{StaticResource {x:Type TextBlock}}">
+                            <Setter Property="Visibility" Value="Visible" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding ModelsSource,Mode=OneWay}"
                                              Value="{x:Static converters:ModelSource.NewAPI}">
-                                    <Setter Property="Visibility"
-                                            Value="Visible" />
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <TextBox Grid.Row="0"
+                         Grid.Column="3"
+                         Grid.ColumnSpan="3"
+                         Text="{Binding ApiLogUrl,Mode=TwoWay}">
+                    <TextBox.Style>
+                        <Style TargetType="{x:Type TextBox}"
+                               BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Setter Property="Margin" Value="6,0,10,0" />
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ModelsSource,Mode=OneWay}"
+                                             Value="{x:Static converters:ModelSource.NewAPI}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </TextBox.Style>
                 </TextBox>
-                <Button Grid.Column="2"
-                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+
+                <TextBlock Grid.Row="0"
+                           Grid.Column="2"
+                           Text="System Token：">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}"
+                               BasedOn="{StaticResource {x:Type TextBlock}}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ModelsSource,Mode=OneWay}"
+                                             Value="{x:Static converters:ModelSource.NewAPI}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <TextBox Grid.Row="0"
+                         Grid.Column="3"
+                         Text="{Binding NewApiSystemToken,Mode=TwoWay}">
+                    <TextBox.Style>
+                        <Style TargetType="{x:Type TextBox}"
+                               BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Setter Property="Margin" Value="6,0,10,0" />
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ModelsSource,Mode=OneWay}"
+                                             Value="{x:Static converters:ModelSource.NewAPI}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+
+                <TextBlock Grid.Row="0"
+                           Grid.Column="4"
+                           Margin="0,0,0,0"
+                           Text="User Id：">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}"
+                               BasedOn="{StaticResource {x:Type TextBlock}}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ModelsSource,Mode=OneWay}"
+                                             Value="{x:Static converters:ModelSource.NewAPI}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <TextBox Grid.Row="0"
+                         Grid.Column="5"
+                         Margin="6,0,10,0"
+                         Text="{Binding NewApiUserId,Mode=TwoWay}">
+                    <TextBox.Style>
+                        <Style TargetType="{x:Type TextBox}"
+                               BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Setter Property="Margin" Value="6,0,10,0" />
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ModelsSource,Mode=OneWay}"
+                                             Value="{x:Static converters:ModelSource.NewAPI}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+
+                <Button Grid.Row="0"
+                        Grid.Column="6"
                         Width="30"
                         Height="30"
                         Margin="6,0,0,0"
@@ -119,6 +220,22 @@
                         ToolTip="同步模型"
                         Content="{materialDesign:PackIcon Kind=Refresh}"
                         Command="{Binding RefreshModelSource}">
+                    <Button.Style>
+                        <Style TargetType="{x:Type Button}"
+                               BasedOn="{StaticResource MaterialDesignFloatingActionMiniButton}">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ModelsSource,Mode=OneWay}"
+                                             Value="{x:Static converters:ModelSource.NewAPI}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ModelsSource,Mode=OneWay}"
+                                             Value="{x:Static converters:ModelSource.None}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
                 </Button>
             </Grid>
             <TextBlock Grid.Row="3" Grid.Column="0" Text="Proxy：" />

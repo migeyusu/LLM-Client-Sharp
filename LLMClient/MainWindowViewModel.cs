@@ -256,7 +256,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public MainWindowViewModel(IEndpointService configureViewModel, IPromptsResource promptsResource,
         IMcpServiceCollection mcpServiceCollection, IRagSourceCollection ragSourceCollection, IMapper mapper,
-        GlobalOptions globalOptions, IViewModelFactory viewModelFactory)
+        GlobalOptions globalOptions, IViewModelFactory viewModelFactory, NewApiUsageQueryService newApiUsageQueryService)
     {
         MessageEventBus.MessageReceived += s => MessageQueue.Enqueue(s);
         PromptsResource = promptsResource;
@@ -269,7 +269,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         Suggestion = configureViewModel is EndpointConfigureViewModel ecvm
             ? new SuggestionViewModel(ecvm)
             : null;
-        EndpointInfo = new EndpointInfoViewModel(configureViewModel);
+        EndpointInfo = new EndpointInfoViewModel(configureViewModel, newApiUsageQueryService);
         _uiSettings = new UISettings();
         IsDarkTheme = !IsColorLight(_uiSettings.GetColorValue(UIColorType.Background));
         _createSessionLazy =

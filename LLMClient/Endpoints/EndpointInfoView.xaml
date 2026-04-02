@@ -73,35 +73,306 @@
                       Style="{StaticResource MaterialDesignGridSplitter}"
                       Margin="0,8" />
 
-        <!-- Right: Content area (留空等候下一步设计) -->
+        <!-- Right: Content area -->
         <Border Grid.Column="2" Margin="16">
             <Grid>
-                <!-- Shown when nothing is selected -->
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Text="请从左侧选择一个终结点"
                            Foreground="{DynamicResource MaterialDesignBodyLight}"
-                           FontSize="14">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedEndpoint}" Value="{x:Null}">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
+                           FontSize="14"
+                           Visibility="{Binding ShowEmptyState, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-                <!-- Content placeholder shown when endpoint is selected (待设计) -->
-                <Border Visibility="{Binding SelectedEndpoint, Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}">
-                    <TextBlock Text="内容区域（待设计）"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
-                               Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                </Border>
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding HasSelection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <DockPanel LastChildFill="False">
+                            <StackPanel Orientation="Horizontal"
+                                        DockPanel.Dock="Left">
+                                <Image Width="42"
+                                       Height="42"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                       VerticalAlignment="Center"
+                                       Source="{Binding SelectedEndpoint.Icon.CurrentSource, Mode=OneWay}" />
+                                <StackPanel Margin="12,0,0,0"
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedEndpoint.DisplayName, Mode=OneWay}"
+                                               Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
+                                    <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignBody2TextBlock}">
+                                        <Run Text="{Binding SelectedEndpoint.Name, Mode=OneWay}" />
+                                        <Run Text="  ·  " />
+                                        <Run Text="{Binding SelectedEndpointTypeText, Mode=OneWay}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Button DockPanel.Dock="Right"
+                                    Command="{Binding RefreshCommand}"
+                                    IsEnabled="{Binding CanRefresh, Mode=OneWay}"
+                                    Padding="12,6"
+                                    ToolTip="刷新 Token 用量">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Refresh" />
+                                    <TextBlock Text="刷新"
+                                               Margin="6,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </DockPanel>
+
+                        <materialDesign:Card Margin="0,16,0,0"
+                                             Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="查询地址"
+                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                <TextBox Margin="0,8,0,0"
+                                         IsReadOnly="True"
+                                         Text="{Binding QueryUrl, Mode=OneWay}"
+                                         Visibility="{Binding HasQueryUrl, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="0,10,0,0"
+                                            Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <ProgressBar Width="120"
+                                                 Height="4"
+                                                 IsIndeterminate="True"
+                                                 VerticalAlignment="Center" />
+                                    <TextBlock Text="正在查询 Token 用量..."
+                                               Margin="12,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                </StackPanel>
+
+                                <TextBlock Margin="0,10,0,0"
+                                           Text="{Binding UnsupportedReason, Mode=OneWay}"
+                                           Foreground="#C65F00"
+                                           TextWrapping="Wrap"
+                                           Visibility="{Binding ShowUnsupportedState, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                                <TextBlock Margin="0,10,0,0"
+                                           Text="{Binding ErrorMessage, Mode=OneWay}"
+                                           Foreground="#B00020"
+                                           TextWrapping="Wrap"
+                                           Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                                <TextBlock Margin="0,10,0,0"
+                                           Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                           Style="{StaticResource MaterialDesignCaptionTextBlock}">
+                                    <Run Text="上次刷新：" />
+                                    <Run Text="{Binding LastRefreshAt, Mode=OneWay, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <Grid Margin="0,16,0,0"
+                              Visibility="{Binding HasUsageData, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+
+                            <materialDesign:Card Grid.Column="0"
+                                                 Margin="0,0,8,0"
+                                                 Padding="16">
+                                <StackPanel>
+                                    <TextBlock Text="Token 配额"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.QuotaText, Mode=OneWay}"
+                                               Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
+                                </StackPanel>
+                            </materialDesign:Card>
+
+                            <materialDesign:Card Grid.Column="1"
+                                                 Margin="8,0"
+                                                 Padding="16">
+                                <StackPanel>
+                                    <TextBlock Text="Token 已使用"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.UsedQuota, Mode=OneWay, StringFormat={}{0:F2}}"
+                                               Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
+                                </StackPanel>
+                            </materialDesign:Card>
+
+                            <materialDesign:Card Grid.Column="2"
+                                                 Margin="8,0,0,0"
+                                                 Padding="16">
+                                <StackPanel>
+                                    <TextBlock Text="Token 剩余配额"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.RemainQuota, Mode=OneWay, StringFormat={}{0:F2}}"
+                                               Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
+                                </StackPanel>
+                            </materialDesign:Card>
+                        </Grid>
+
+                        <materialDesign:Card Margin="0,16,0,0"
+                                             Padding="16"
+                                             Visibility="{Binding HasUsageData, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="Token 配额使用情况"
+                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                <ProgressBar Margin="0,12,0,0"
+                                             Height="8"
+                                             Minimum="0"
+                                             Maximum="100"
+                                             Value="{Binding UsageSnapshot.UsedPercent, Mode=OneWay}" />
+                                <TextBlock Margin="0,8,0,0"
+                                           Foreground="{DynamicResource MaterialDesignBodyLight}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding UsageSnapshot.UnlimitedQuota, Mode=OneWay}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                    <Run Text="当前 token 为无限额度" />
+                                </TextBlock>
+                                <TextBlock Margin="0,8,0,0"
+                                           Foreground="{DynamicResource MaterialDesignBodyLight}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding UsageSnapshot.UnlimitedQuota, Mode=OneWay}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                    <Run Text="已使用占比 " />
+                                    <Run Text="{Binding UsageSnapshot.UsedPercent, Mode=OneWay, StringFormat={}{0:F1}%}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Margin="0,16,0,0"
+                                             Padding="16"
+                                             Visibility="{Binding HasUsageData, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0"
+                                            Grid.Column="0"
+                                            Margin="0,0,12,12">
+                                    <TextBlock Text="令牌名称"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.TokenName, Mode=OneWay, TargetNullValue=未返回}"
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="0"
+                                            Grid.Column="1"
+                                            Margin="12,0,0,12">
+                                    <TextBlock Text="令牌 ID"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.TokenId, Mode=OneWay, TargetNullValue=未返回}"
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="1"
+                                            Grid.Column="0"
+                                            Margin="0,0,12,0">
+                                    <TextBlock Text="令牌 Key"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.TokenKey, Mode=OneWay, TargetNullValue=未返回}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="1"
+                                            Grid.Column="1"
+                                            Margin="12,0,0,0">
+                                    <TextBlock Text="状态"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.StatusText, Mode=OneWay}"
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="2"
+                                            Grid.Column="0"
+                                            Margin="0,12,12,0">
+                                    <TextBlock Text="用户 ID"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.UserId, Mode=OneWay, TargetNullValue=未返回}"
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="2"
+                                            Grid.Column="1"
+                                            Margin="12,12,0,0">
+                                    <TextBlock Text="分组"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.GroupName, Mode=OneWay, TargetNullValue=未返回}"
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="3"
+                                            Grid.Column="0"
+                                            Margin="0,12,12,0">
+                                    <TextBlock Text="创建时间"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.CreatedAtText, Mode=OneWay}"
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="3"
+                                            Grid.Column="1"
+                                            Margin="12,12,0,0">
+                                    <TextBlock Text="最近访问"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.AccessedAtText, Mode=OneWay}"
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="4"
+                                            Grid.Column="0"
+                                            Margin="0,12,12,0">
+                                    <TextBlock Text="过期时间"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.ExpiredAtText, Mode=OneWay}"
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="4"
+                                            Grid.Column="1"
+                                            Margin="12,12,0,0">
+                                    <TextBlock Text="额度类型"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                    <TextBlock Text="{Binding UsageSnapshot.QuotaModeText, Mode=OneWay}"
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}" />
+                                </StackPanel>
+                            </Grid>
+                        </materialDesign:Card>
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
         </Border>
     </Grid>
