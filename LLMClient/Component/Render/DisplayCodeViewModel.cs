@@ -71,7 +71,7 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
 
     public StringLineGroup CodeGroup { get; }
 
-    private readonly string[] _supportedRunExtensions = new[] { "bash", "powershell", "html" };
+    private readonly string[] _supportedRunExtensions = new[] { "bash", "powershell", "html", "mermaid" };
     private bool _isCollapsed;
 
     public string NameLower { get; }
@@ -97,19 +97,68 @@ public class DisplayCodeViewModel : BaseViewModel, CommonCommands.ICopyable
             var s = model.CodeString;
             if (!string.IsNullOrEmpty(s))
             {
-                if (nameLower.Equals("html"))
+                if (nameLower.Equals("html") || nameLower.Equals("mermaid"))
                 {
+                    string htmlContent = s;
+                    if (nameLower.Equals("mermaid"))
+                    {
+                        htmlContent = $$"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mermaid Preview</title>
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: false });
+      
+      async function draw() {
+          const source = document.getElementById('source').textContent;
+          const container = document.getElementById('container');
+          try {
+              const { svg } = await mermaid.render('mermaid-svg', source);
+              container.innerHTML = svg;
+              const svgEl = container.querySelector('svg');
+              svgEl.style.width = '100%';
+              svgEl.style.height = '100%';
+              svgEl.style.maxWidth = 'none';
+              
+              svgPanZoom(svgEl, {
+                  zoomEnabled: true,
+                  controlIconsEnabled: true,
+                  fit: true,
+                  center: true,
+                  minZoom: 0.1,
+                  maxZoom: 10
+              });
+          } catch(e) {
+              container.innerHTML = `<pre style="color:red; padding:20px;">${e}</pre>`;
+          }
+      }
+      draw();
+    </script>
+</head>
+<body style="margin:0; overflow:hidden; background-color:white;">
+    <script type="text/plain" id="source">
+{{s}}
+    </script>
+    <div id="container" style="width:100vw; height:100vh; display:flex; justify-content:center; align-items:center;"></div>
+</body>
+</html>
+""";
+                    }
                     var webView2 = new WebView2()
                     {
                         Source = new Uri("about:blank"),
                     };
                     webView2.EnsureCoreWebView2Async().ConfigureAwait(true).GetAwaiter().OnCompleted(() =>
                     {
-                        webView2.CoreWebView2.NavigateToString(s);
+                        webView2.CoreWebView2.NavigateToString(htmlContent);
                     });
                     var window = new Window()
                     {
-                        Title = "HTML Preview",
+                        Title = nameLower.Equals("mermaid") ? "Mermaid Preview" : "HTML Preview",
                         Width = 800,
                         Height = 600,
                         Content = webView2
