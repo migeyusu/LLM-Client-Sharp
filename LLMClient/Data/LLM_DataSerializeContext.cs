@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using LLMClient.Configuration;
+using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.ToolCall;
@@ -45,6 +46,7 @@ namespace LLMClient.Data;
 [JsonSerializable(typeof(SymbolSemanticPluginPersistModel))]
 [JsonSerializable(typeof(CodeSearchPluginPersistModel))]
 [JsonSerializable(typeof(CodeReadingPluginPersistModel))]
+[JsonSerializable(typeof(NvidiaResearchClientPersistModel))]
 [JsonSerializable(typeof(VariableItem))]
 [JsonSerializable(typeof(VariableItem[]))]
 [JsonSerializable(typeof(ProxySetting))]

@@ -1,10 +1,12 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Dialog;
+using LLMClient.Workflow.Research;
 
 namespace LLMClient.Data;
 
 [JsonDerivedType(typeof(MiniSweAgentPersistModel), "miniSweAgent")]
+[JsonDerivedType(typeof(NvidiaResearchClientPersistModel), "nvidiaResearchClient")]
 public abstract class AgentPersistModel
 {
 }
@@ -16,5 +18,16 @@ public class MiniSweAgentPersistModel : AgentPersistModel
     public AgentOption? AgentOption { get; set; }
     public ParameterizedLLMModelPO? ChatClient { get; set; }
     public Dictionary<string, object?> ExtraTemplateVars { get; set; } = [];
+}
+
+public class NvidiaResearchClientPersistModel : AgentPersistModel
+{
+    public int MaxTopics { get; set; } = 5;
+    
+    public int MaxSearchPhrases { get; set; } = 3;
+    
+    public ParameterizedLLMModelPO? PromptModel { get; set; }
+    
+    public ParameterizedLLMModelPO? ReportModel { get; set; }
 }
 

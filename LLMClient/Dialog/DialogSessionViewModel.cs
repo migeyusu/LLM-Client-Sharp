@@ -13,6 +13,7 @@ using LLMClient.Dialog.Controls;
 using LLMClient.Dialog.Models;
 using LLMClient.Agent;
 using LLMClient.Agent.MiniSWE;
+using LLMClient.Workflow.Research;
 using LLMClient.Configuration;
 using LLMClient.ToolCall;
 using Microsoft.Win32;
@@ -598,6 +599,13 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         if (agentType == typeof(MiniSweAgent))
         {
             agent = new MiniSweAgent(client, agentOption);
+        }
+        else if (agentType == typeof(NvidiaResearchClient))
+        {
+            // NvidiaResearchClient requires two models and GlobalOptions
+            // Use the same client for both prompt and report models
+            // GlobalOptions is injected through constructor
+            agent = new NvidiaResearchClient(client, client, _options);
         }
         else
         {

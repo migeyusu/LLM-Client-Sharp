@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -14,6 +15,7 @@ using Microsoft.SemanticKernel.Data;
 
 namespace LLMClient.Workflow.Research;
 
+[Description("Nvidia Deep Research")]
 public class NvidiaResearchClient : ResearchClient
 {
     public override string Name => "Nvidia Deep Research";

@@ -8,6 +8,7 @@ using LLMClient.Data;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.Workflow.Research;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient;
@@ -22,6 +23,7 @@ public class DialogMappingProfile : Profile
 
         CreateMap<IAgent, AgentPersistModel>().IncludeAllDerived();
         CreateMap<AgentPersistModel, IAgent>().IncludeAllDerived();
+        
         CreateMap<MiniSweAgent, MiniSweAgentPersistModel>();
         CreateMap<MiniSweAgentPersistModel, MiniSweAgent>()
             .ConstructUsing((src, ctx) =>
@@ -31,6 +33,11 @@ public class DialogMappingProfile : Profile
                     : EmptyLlmModelClient.Instance;
                 return new MiniSweAgent(client, src.AgentOption ?? new AgentOption());
             });
+        
+        CreateMap<NvidiaResearchClient, NvidiaResearchClientPersistModel>();
+        // Note: NvidiaResearchClientPersistModel -> NvidiaResearchClient mapping 
+        // requires GlobalOptions and should be handled by NvidiaResearchClientFactory
+        // instead of AutoMapper to avoid ServiceLocator anti-pattern
 
         CreateMap<IAIContent, AIContent>().IncludeAllDerived();
         CreateMap<AIContent, IAIContent>().IncludeAllDerived();

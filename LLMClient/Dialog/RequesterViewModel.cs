@@ -18,6 +18,7 @@ using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using LLMClient.Agent;
 using LLMClient.Agent.MiniSWE;
+using LLMClient.Workflow.Research;
 
 namespace LLMClient.Dialog;
 
@@ -399,7 +400,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         this.BindClient(modelClient);
 
         // Initialize agents
-        List<Type> agentTypes = new List<Type> { typeof(MiniSweAgent) };
+        List<Type> agentTypes = new List<Type> { typeof(MiniSweAgent), typeof(NvidiaResearchClient) };
 #if DEBUG
         agentTypes.Add(typeof(TestSuccessAgent));
         agentTypes.Add(typeof(TestFailedAgent));
