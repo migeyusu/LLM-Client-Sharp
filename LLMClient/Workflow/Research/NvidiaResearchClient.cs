@@ -26,21 +26,24 @@ public class NvidiaResearchClient : ResearchClient
 
     private readonly UrlFetcherPlugin _urlFetcherPlugin = new();
 
-
     public NvidiaResearchClient(IParameterizedLLMModel promptModel, IParameterizedLLMModel reportModel,
         GlobalOptions options)
     {
+        PromptModel = promptModel;
+        ReportModel = reportModel;
         _options = options;
     }
+
+    public IParameterizedLLMModel PromptModel { get; }
+    public IParameterizedLLMModel ReportModel { get; }
 
     [Experimental("SKEXP0110")]
     public override async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
         IInvokeInteractor? interactor = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        yield break;
-        throw new NotImplementedException("SKEXP0110 is not implemented yet.");
-        /*var prompt = context.UserPrompt;
+        var lastRequest = dialogSession.DialogItems.LastOrDefault(item => item is RequestViewItem) as RequestViewItem;
+        var prompt = lastRequest?.UserPrompt;
         if (prompt == null || string.IsNullOrWhiteSpace(prompt))
         {
             throw new ArgumentException("The dialog context must contain a non-empty request.");
@@ -54,190 +57,179 @@ public class NvidiaResearchClient : ResearchClient
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        PromptBasedAgent? agent = null;
-        try
+        var chatClient = PromptModel.Model.CreateChatClient() ?? throw new InvalidOperationException("Failed to create chat client from prompt model");
+        var agent = new PromptBasedAgent(chatClient, interactor);
+        
+        // ====================================================================
+        // 阶段 1: 研究
+        // ====================================================================
+        Information($"Received research request: '{prompt}'");
+
+        var isPromptValid = await CheckIfPromptIsValidAsync(agent, prompt, cancellationToken);
+        if (!isPromptValid)
         {
-            agent = new PromptBasedAgent(new EmptyLlmModelClient(), interactor);
-            // ====================================================================
-            // 阶段 1: 研究
-            // ====================================================================
-            Information($"Received research request: '{prompt}'");
+            throw new Exception("The prompt is not a valid document research prompt. Please try again.");
+        }
 
-            var isPromptValid = await CheckIfPromptIsValidAsync(agent, prompt, cancellationToken);
-            if (!isPromptValid)
-            {
-                throw new Exception("The prompt is not a valid document research prompt. Please try again.");
-            }
+        Information("Analyzing the research request...");
+        var (taskPrompt, formatPrompt) =
+            await PerformPromptDecompositionAsync(agent, prompt, interactor, cancellationToken);
+        Information($"Prompt analysis completed. Task: '{taskPrompt}'");
 
-            Information("Analyzing the research request...");
-            var (taskPrompt, formatPrompt) =
-                await PerformPromptDecompositionAsync(agent, prompt, interactor, cancellationToken);
-            Information($"Prompt analysis completed. Task: '{taskPrompt}'");
+        var topics = await GenerateTopicsAsync(agent, taskPrompt, cancellationToken);
+        Information($"Task analysis completed. Will be researching {topics.Count} topics.");
 
-            var topics = await GenerateTopicsAsync(agent, taskPrompt, cancellationToken);
-            Information($"Task analysis completed. Will be researching {topics.Count} topics.");
+        var topicRelevantSegments = new Dictionary<string, List<string>>();
+        var searchResultUrls = new List<string>();
+        var allResults = new List<InternalSearchResult>();
 
-            var topicRelevantSegments = new Dictionary<string, List<string>>();
-            var searchResultUrls = new List<string>();
-            var allResults = new List<InternalSearchResult>();
+        foreach (var topic in topics)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Information($"Researching '{topic}'");
 
-            foreach (var topic in topics)
+            var searchPhrases = await ProduceSearchPhrasesAsync(agent, taskPrompt, topic,
+                cancellationToken);
+            Information($"Will invoke {searchPhrases.Count} search phrases to research '{topic}'.");
+
+            topicRelevantSegments[topic] = [];
+
+            foreach (var searchPhrase in searchPhrases)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                Information($"Researching '{topic}'");
-
-                var searchPhrases = await ProduceSearchPhrasesAsync(agent, taskPrompt, topic,
-                    cancellationToken);
-                Information($"Will invoke {searchPhrases.Count} search phrases to research '{topic}'.");
-
-                topicRelevantSegments[topic] = [];
-
-                foreach (var searchPhrase in searchPhrases)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    Information($"Searching for '{searchPhrase}'");
-                    var skTextSearchResult = await textSearch.GetTextSearchResultsAsync(searchPhrase,
-                        new TextSearchOptions()
-                        {
-                            Skip = 0,
-                            Top = 10,
-                        }, cancellationToken);
-                    var originalSearchResults = new ConcurrentBag<InternalSearchResult>();
-                    await foreach (var textSearchResult in skTextSearchResult.Results.WithCancellation(
-                                       cancellationToken))
+                Information($"Searching for '{searchPhrase}'");
+                var skTextSearchResult = await textSearch.GetTextSearchResultsAsync(searchPhrase,
+                    new TextSearchOptions()
                     {
-                        var objLink = textSearchResult.Link;
-                        if (!string.IsNullOrWhiteSpace(objLink) && !string.IsNullOrWhiteSpace(textSearchResult.Value) &&
-                            !searchResultUrls.Contains(objLink))
+                        Skip = 0,
+                        Top = 10,
+                    }, cancellationToken);
+                var originalSearchResults = new ConcurrentBag<InternalSearchResult>();
+                await foreach (var textSearchResult in skTextSearchResult.Results.WithCancellation(
+                                   cancellationToken))
+                {
+                    var objLink = textSearchResult.Link;
+                    if (!string.IsNullOrWhiteSpace(objLink) && !string.IsNullOrWhiteSpace(textSearchResult.Value) &&
+                        !searchResultUrls.Contains(objLink))
+                    {
+                        //重试3次
+                        const int maxRetries = 3;
+                        const int delayMilliseconds = 3000;
+                        var attempt = 0;
+                        Exception? exception = null;
+                        while (attempt < maxRetries)
                         {
-                            //重试3次
-                            const int maxRetries = 3;
-                            const int delayMilliseconds = 3000;
-                            var attempt = 0;
-                            Exception? exception = null;
-                            while (attempt < maxRetries)
+                            attempt++;
+                            try
                             {
-                                attempt++;
-                                try
+                                using (var timeoutTokenSource =
+                                       new CancellationTokenSource(TimeSpan.FromMilliseconds(delayMilliseconds)))
                                 {
-                                    using (var timeoutTokenSource =
-                                           new CancellationTokenSource(TimeSpan.FromMilliseconds(delayMilliseconds)))
+                                    using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+                                               cancellationToken,
+                                               timeoutTokenSource.Token))
                                     {
-                                        using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
-                                                   cancellationToken,
-                                                   timeoutTokenSource.Token))
+                                        var text = await _urlFetcherPlugin.FetchTextAsync(objLink,
+                                            cancellationToken: linkedTokenSource.Token);
+                                        if (!string.IsNullOrWhiteSpace(text))
                                         {
-                                            var text = await _urlFetcherPlugin.FetchTextAsync(objLink,
-                                                cancellationToken: linkedTokenSource.Token);
-                                            if (!string.IsNullOrWhiteSpace(text))
-                                            {
-                                                originalSearchResults.Add(
-                                                    new InternalSearchResult(objLink, textSearchResult.Name ?? "",
-                                                        text));
-                                                break;
-                                            }
+                                            originalSearchResults.Add(
+                                                new InternalSearchResult(objLink, textSearchResult.Name ?? "",
+                                                    text));
+                                            break;
                                         }
                                     }
                                 }
-                                catch (Exception e)
-                                {
-                                    //do nothing, just retry
-                                    exception = e;
-                                }
                             }
-
-                            interactor?.Warning(
-                                $"Failed to fetch content from URL '{objLink}'. {exception?.HierarchicalMessage()}");
-                        }
-                    }
-
-                    if (!originalSearchResults.Any()) continue;
-
-                    searchResultUrls.AddRange(originalSearchResults.Select(r => r.Url));
-                    allResults.AddRange(originalSearchResults);
-
-                    Information($"Processing {originalSearchResults.Count} new search results.");
-
-                    foreach (var searchResult in originalSearchResults)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        var searchResultUrlIndex = searchResultUrls.IndexOf(searchResult.Url);
-                        var relevantSegments = await FindRelevantSegmentsAsync(agent, taskPrompt,
-                            topic,
-                            searchResult.Content,
-                            searchResultUrlIndex,
-                            cancellationToken
-                        );
-
-                        if (relevantSegments.Any())
-                        {
-                            topicRelevantSegments[topic].AddRange(relevantSegments);
+                            catch (Exception e)
+                            {
+                                //do nothing, just retry
+                                exception = e;
+                            }
                         }
 
-                        interactor?.Info(
-                            string.Format("Processed search result {0}. Found {1} relevant segments for URL {2}",
-                                searchResultUrlIndex, relevantSegments.Count, searchResult.Url));
+                        interactor?.Warning(
+                            $"Failed to fetch content from URL '{objLink}'. {exception?.HierarchicalMessage()}");
                     }
                 }
-            }
 
-            Information("Research phase completed.");
+                if (!originalSearchResults.Any()) continue;
 
-            // ====================================================================
-            // 阶段 2: 报告 
-            // ====================================================================
-            Information("Aggregating relevant information and building the report...");
+                searchResultUrls.AddRange(originalSearchResults.Select(r => r.Url));
+                allResults.AddRange(originalSearchResults);
 
-            var initialReport =
-                await ProduceReportAsync(agent, taskPrompt, formatPrompt, topicRelevantSegments, cancellationToken);
-            Information("Initial report generated. Formatting and finalizing...");
+                Information($"Processing {originalSearchResults.Count} new search results.");
 
-            var consistentReport =
-                await EnsureFormatIsRespectedAsync(agent, formatPrompt, initialReport, cancellationToken);
+                foreach (var searchResult in originalSearchResults)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var searchResultUrlIndex = searchResultUrls.IndexOf(searchResult.Url);
+                    var relevantSegments = await FindRelevantSegmentsAsync(agent, taskPrompt,
+                        topic,
+                        searchResult.Content,
+                        searchResultUrlIndex,
+                        cancellationToken
+                    );
 
-            var finalReportBuilder = new StringBuilder(consistentReport);
-            finalReportBuilder.AppendLine("\n\n---");
+                    if (relevantSegments.Any())
+                    {
+                        topicRelevantSegments[topic].AddRange(relevantSegments);
+                    }
 
-            for (var i = 0; i < searchResultUrls.Count; i++)
-            {
-                var result = allResults.FirstOrDefault(r => r.Url == searchResultUrls[i]);
-                finalReportBuilder.AppendLine(result != null
-                    ? $" - [[{i}]] [{result.Title}][{i}]"
-                    : $" - [[{i}]] [Source {i}][{i}]");
-            }
-
-            finalReportBuilder.AppendLine("\n");
-            for (var i = 0; i < searchResultUrls.Count; i++)
-            {
-                finalReportBuilder.AppendLine($"[{i}]: {searchResultUrls[i]}");
-            }
-
-            var finalReport = finalReportBuilder.ToString();
-            Information("Report completed.");
-
-            return new ChatCallResult
-            {
-                Usage = agent.Usage,
-                Latency = 0,
-                Duration = stopwatch.Elapsed.Seconds,
-                Price = agent.Price,
-                Messages = [new ChatMessage(ChatRole.Assistant, finalReport)]
-            };
-
-            void Information(string message)
-            {
-                interactor?.Info(message);
+                    interactor?.Info(
+                        string.Format("Processed search result {0}. Found {1} relevant segments for URL {2}",
+                            searchResultUrlIndex, relevantSegments.Count, searchResult.Url));
+                }
             }
         }
-        catch (Exception e)
+
+        Information("Research phase completed.");
+
+        // ====================================================================
+        // 阶段 2: 报告 
+        // ====================================================================
+        Information("Aggregating relevant information and building the report...");
+
+        var initialReport =
+            await ProduceReportAsync(agent, taskPrompt, formatPrompt, topicRelevantSegments, cancellationToken);
+        Information("Initial report generated. Formatting and finalizing...");
+
+        var consistentReport =
+            await EnsureFormatIsRespectedAsync(agent, formatPrompt, initialReport, cancellationToken);
+
+        var finalReportBuilder = new StringBuilder(consistentReport);
+        finalReportBuilder.AppendLine("\n\n---");
+
+        for (var i = 0; i < searchResultUrls.Count; i++)
         {
-            return new ChatCallResult()
-            {
-                //todo:
-                Usage = agent?.Usage,
-                Exception = e
-            };
-        }*/
+            var result = allResults.FirstOrDefault(r => r.Url == searchResultUrls[i]);
+            finalReportBuilder.AppendLine(result != null
+                ? $" - [[{i}]] [{result.Title}][{i}]"
+                : $" - [[{i}]] [Source {i}][{i}]");
+        }
+
+        finalReportBuilder.AppendLine("\n");
+        for (var i = 0; i < searchResultUrls.Count; i++)
+        {
+            finalReportBuilder.AppendLine($"[{i}]: {searchResultUrls[i]}");
+        }
+
+        var finalReport = finalReportBuilder.ToString();
+        Information("Report completed.");
+
+        yield return new ChatCallResult
+        {
+            Usage = agent.Usage,
+            Latency = 0,
+            Duration = stopwatch.Elapsed.Seconds,
+            Price = agent.Price,
+            Messages = [new ChatMessage(ChatRole.Assistant, finalReport)]
+        };
+
+        void Information(string message)
+        {
+            interactor?.Info(message);
+        }
     }
 
     #region Private Helper Methods (LLM Interactions)

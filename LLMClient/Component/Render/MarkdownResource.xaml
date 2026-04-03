@@ -332,25 +332,38 @@
     <Style TargetType="{x:Type Expander}"
            BasedOn="{StaticResource ContentExpander}"
            x:Key="{x:Static render:CustomMarkdownRenderer.FunctionInteractionStyleKey}">
-        <Setter Property="Padding" Value="16" />
+        <Setter Property="Padding" Value="10,4" />
         <Setter Property="HeaderTemplate">
             <Setter.Value>
                 <DataTemplate DataType="{x:Type models:FunctionCallInteraction}">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="Function" Width="20" Height="20" VerticalAlignment="Center" />
-                        <TextBlock VerticalAlignment="Center" Margin="6,0,0,0" FontWeight="Bold" Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
+                        <materialDesign:PackIcon Kind="Function"
+                                                 Width="20"
+                                                 Height="20" 
+                                                 VerticalAlignment="Center" />
+                        <TextBlock VerticalAlignment="Center" Margin="6,0,0,0" 
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
                             <Run Text="{Binding Call.Name, Mode=OneTime}" />
                         </TextBlock>
-                        
-                        <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16" Margin="6,0,0,0" Foreground="LimeGreen" VerticalAlignment="Center">
+
+                        <materialDesign:PackIcon Kind="CheckCircle" Width="16" 
+                                                 Height="16" 
+                                                 Margin="6,0,0,0"
+                                                 Foreground="LimeGreen" 
+                                                 VerticalAlignment="Center">
                             <materialDesign:PackIcon.Style>
                                 <Style TargetType="materialDesign:PackIcon">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                     <Style.Triggers>
                                         <MultiDataTrigger>
                                             <MultiDataTrigger.Conditions>
-                                                <Condition Binding="{Binding Result, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}" Value="True" />
-                                                <Condition Binding="{Binding Result.Exception, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}" Value="False" />
+                                                <Condition
+                                                    Binding="{Binding Result, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}"
+                                                    Value="True" />
+                                                <Condition
+                                                    Binding="{Binding Result.Exception, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}"
+                                                    Value="False" />
                                             </MultiDataTrigger.Conditions>
                                             <Setter Property="Visibility" Value="Visible" />
                                         </MultiDataTrigger>
@@ -359,12 +372,15 @@
                             </materialDesign:PackIcon.Style>
                         </materialDesign:PackIcon>
 
-                        <materialDesign:PackIcon Kind="CloseCircle" Width="16" Height="16" Margin="6,0,0,0" Foreground="Red" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="CloseCircle" Width="16" Height="16" Margin="6,0,0,0"
+                                                 Foreground="Red" VerticalAlignment="Center">
                             <materialDesign:PackIcon.Style>
                                 <Style TargetType="materialDesign:PackIcon">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Result.Exception, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}" Value="True">
+                                        <DataTrigger
+                                            Binding="{Binding Result.Exception, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}"
+                                            Value="True">
                                             <Setter Property="Visibility" Value="Visible" />
                                         </DataTrigger>
                                     </Style.Triggers>
@@ -382,12 +398,14 @@
                         <TextBlock Foreground="DarkGray" FontStyle="Italic" TextWrapping="Wrap">
                             <Run>Arguments:</Run>
                             <LineBreak />
-                            <Run Text="{Binding Call.Arguments, Mode=OneTime, Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
+                            <Run
+                                Text="{Binding Call.Arguments, Mode=OneTime, Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
                         </TextBlock>
                         <Border Margin="0,8" Height="1" Background="{DynamicResource MaterialDesign.Brush.Card.Border}" />
                         <TextBlock Foreground="DarkGray" FontStyle="Italic" TextWrapping="Wrap"
                                    Text="{Binding Result.Result, Mode=OneTime, Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
-                        <TextBlock Foreground="Red" Visibility="{Binding Result.Exception, Mode=OneTime, Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                        <TextBlock Foreground="Red"
+                                   Visibility="{Binding Result.Exception, Mode=OneTime, Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                    Text="{Binding Result.Exception, Mode=OneTime, StringFormat=Exception:{0}}" />
                     </StackPanel>
                 </DataTemplate>
@@ -658,4 +676,3 @@
         </Setter>
     </Style>
 </ResourceDictionary>
-
