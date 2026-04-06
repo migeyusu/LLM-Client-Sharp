@@ -16,7 +16,6 @@ public class DialogItemPersistenceProfile : Profile
 
         CreateMap<IDialogItem, IDialogPersistItem>()
             .Include<RequestViewItem, RequestPersistItem>()
-            .Include<SummaryRequestViewItem, SummaryRequestPersistItem>()
             .Include<EraseViewItem, ErasePersistItem>()
             .Include<ParallelResponseViewItem, ParallelResponsePersisItem>()
             .Include<LinearResponseViewItem, LinearHistoryResponsePersistItem>();
@@ -25,8 +24,6 @@ public class DialogItemPersistenceProfile : Profile
             .IncludeBase<IDialogItem, IDialogPersistItem>()
             .ForMember(dest => dest.FunctionGroups, opt => opt.MapFrom(src => src.FunctionGroups))
             .ForMember(dest => dest.SearchService, opt => opt.MapFrom(src => src.SearchOption));
-        CreateMap<SummaryRequestViewItem, SummaryRequestPersistItem>()
-            .IncludeBase<IDialogItem, IDialogPersistItem>();
         CreateMap<EraseViewItem, ErasePersistItem>()
             .IncludeBase<IDialogItem, IDialogPersistItem>();
         CreateMap<ParallelResponseViewItem, ParallelResponsePersisItem>()
@@ -37,7 +34,6 @@ public class DialogItemPersistenceProfile : Profile
 
         CreateMap<IDialogPersistItem, IDialogItem>()
             .Include<RequestPersistItem, RequestViewItem>()
-            .Include<SummaryRequestPersistItem, SummaryRequestViewItem>()
             .Include<ErasePersistItem, EraseViewItem>()
             .Include<ParallelResponsePersisItem, ParallelResponseViewItem>()
             .Include<LinearHistoryResponsePersistItem, LinearResponseViewItem>();
@@ -56,8 +52,6 @@ public class DialogItemPersistenceProfile : Profile
             })
             .ForMember(dest => dest.FunctionGroups, opt => opt.MapFrom(src => src.FunctionGroups))
             .ForMember(dest => dest.SearchOption, opt => opt.MapFrom(src => src.SearchService));
-        CreateMap<SummaryRequestPersistItem, SummaryRequestViewItem>()
-            .IncludeBase<IDialogPersistItem, IDialogItem>();
         CreateMap<ErasePersistItem, EraseViewItem>()
             .IncludeBase<IDialogPersistItem, IDialogItem>();
         CreateMap<ParallelResponsePersisItem, ParallelResponseViewItem>()

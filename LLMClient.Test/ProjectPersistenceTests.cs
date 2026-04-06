@@ -249,7 +249,9 @@ public class ProjectPersistenceTests
             var request = Assert.IsType<RequestViewItem>(Assert.Single(dialog.DialogItems.OfType<RequestViewItem>()));
             Assert.Equal("legacy summary", request.RawTextMessage);
             Assert.Same(erase, request.PreviousItem);
-            Assert.DoesNotContain(dialog.DialogItems, item => item is SummaryRequestViewItem);
+            Assert.Contains(erase, dialog.DialogItems);
+            Assert.Contains(request, dialog.DialogItems);
+            Assert.Same(request, dialog.CurrentLeaf);
         });
     }
 

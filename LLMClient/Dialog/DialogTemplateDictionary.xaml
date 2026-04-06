@@ -1061,34 +1061,6 @@
         <component:DataTemplateTypePair Template="{StaticResource LinearHistoryResponseViewItemTemplate}" />
         <component:DataTemplateTypePair Template="{StaticResource DefaultRequestViewItemDataTemplate}" />
         <component:DataTemplateTypePair Template="{StaticResource MultiResponseViewItemDataTemplate}" />
-        <component:DataTemplateTypePair>
-            <DataTemplate DataType="{x:Type models:SummaryRequestViewItem}">
-                <Grid HorizontalAlignment="Right"
-                      Margin="50,0,0,0">
-                    <Grid.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="移除节点树"
-                                      Command="Delete"
-                                      CommandParameter="{Binding}"
-                                      Icon="{materialDesign:PackIcon Kind=DeleteAlertOutline}" />
-                            <MenuItem Header="删除本次交互"
-                                      Command="{x:Static utility:CommonCommands.DeleteInteraction}"
-                                      CommandParameter="{Binding}"
-                                      Icon="{materialDesign:PackIcon Kind=DeleteOutline}" />
-                        </ContextMenu>
-                    </Grid.ContextMenu>
-                    <Rectangle Stroke="Black"
-                               StrokeThickness="1.5"
-                               RadiusX="8" RadiusY="8"
-                               StrokeDashArray="6,2"
-                               SnapsToDevicePixels="True" />
-                    <TextBlock TextWrapping="Wrap"
-                               Margin="8"
-                               materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                               Text="{Binding SummaryPrompt,Mode=OneTime}" />
-                </Grid>
-            </DataTemplate>
-        </component:DataTemplateTypePair>
         <component:DataTemplateTypePair Template="{StaticResource EraseDataTemplate}" />
     </component:TypeBasedDataTemplateSelector>
     <Style x:Key="DialogListBoxStyle"
