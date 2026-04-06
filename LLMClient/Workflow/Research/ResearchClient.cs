@@ -22,6 +22,5 @@ public abstract class ResearchClient : BaseViewModel, IAgent
     }
 
     public abstract IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
-        IInvokeInteractor? interactor = null,
         CancellationToken cancellationToken = default);
 }

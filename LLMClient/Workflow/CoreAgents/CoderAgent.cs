@@ -8,7 +8,7 @@ namespace LLMClient.Workflow.CoreAgents;
 [AgentCapability("CSharpCoder", "根据需求和计划编写 C# 代码。并在 Memory 中生成 Diff。")]
 public class CoderAgent : PromptBasedAgent, IAgentStep
 {
-    public CoderAgent(ILLMChatClient chatClient, IInvokeInteractor? interactor) : base(chatClient, interactor)
+    public CoderAgent(ILLMChatClient chatClient) : base(chatClient)
     {
     }
 

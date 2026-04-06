@@ -8,7 +8,7 @@ namespace LLMClient.Workflow.CoreAgents;
 [AgentCapability("Reviewer", "编译现有代码并运行测试。如果失败会抛出错误。")]
 public class ReviewerAgent :PromptBasedAgent, IAgentStep
 {
-    public ReviewerAgent(ILLMChatClient chatClient, IInvokeInteractor? interactor) : base(chatClient, interactor)
+    public ReviewerAgent(ILLMChatClient chatClient) : base(chatClient)
     {
     }
 

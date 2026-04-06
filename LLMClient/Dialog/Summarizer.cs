@@ -31,7 +31,7 @@ public class Summarizer
             dialogItems.AddRange(dialog.DialogItems.Take(Math.Min(3, dialog.DialogItems.Count)));
             dialogItems.Add(new RequestViewItem(_options.SubjectSummarizePrompt));
             var dialogContext = new DefaultDialogContextBuilder(dialogItems);
-            var sendRequestAsync = await new PromptBasedAgent(client, new TraceInvokeInteractor())
+            var sendRequestAsync = await new PromptBasedAgent(client)
                 {
                     Timeout = duration,
                 }

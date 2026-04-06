@@ -14,8 +14,8 @@ public class WorkflowArchitect : PromptBasedAgent, IAgentStep
 {
     private readonly IEnumerable<IAgentStep> _availableAgents;
 
-    public WorkflowArchitect(ILLMChatClient chatClient, IEnumerable<IAgentStep> agents, IInvokeInteractor? interactor)
-        : base(chatClient, interactor)
+    public WorkflowArchitect(ILLMChatClient chatClient, IEnumerable<IAgentStep> agents)
+        : base(chatClient)
     {
         _availableAgents = agents;
     }

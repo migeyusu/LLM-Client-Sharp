@@ -201,7 +201,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
             field = value;
             OnPropertyChanged();
         }
-    }
+    } = ThinkingIncludeMode.KeepLast;
 
     public bool SupportSystemPrompt
     {

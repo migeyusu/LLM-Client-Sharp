@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 namespace LLMClient.ToolCall;
 
 /// <summary>
-/// ViewModel passed to <see cref="IInvokeInteractor.WaitForPermission(object)"/>
+/// ViewModel passed to the permission dialog
 /// to preview and confirm file edits before applying them.
 /// </summary>
 public class FileEditRequestViewModel : INotifyPropertyChanged

@@ -1,4 +1,5 @@
-﻿using LLMClient.Abstraction;
+﻿using System.Runtime.CompilerServices;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -93,53 +94,55 @@ public class EmptyLlmModelClient : ILLMChatClient
         this._fakeFilePath = fakeFilePath;
     }
 
-    public async Task<ChatCallResult> SendRequest(RequestContext context,
-        IInvokeInteractor? stream = null,
-        CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<ReactStep> SendRequestAsync(RequestContext context,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (!string.IsNullOrEmpty(_fakeFilePath))
+        var step = new ReactStep();
+
+        // 启动后台生产
+        var producerTask = Task.Run(async () =>
         {
-            if (File.Exists(_fakeFilePath))
+            try
             {
-                var fakeResponse = await File.ReadAllTextAsync(_fakeFilePath, cancellationToken);
-                int next = Random.Shared.Next(8);
-                int index = 0;
-                while (index < fakeResponse.Length)
+                if (!string.IsNullOrEmpty(_fakeFilePath) && File.Exists(_fakeFilePath))
                 {
-                    if (cancellationToken.IsCancellationRequested)
+                    var fakeResponse = await File.ReadAllTextAsync(_fakeFilePath, cancellationToken);
+                    int next = Random.Shared.Next(8);
+                    int index = 0;
+                    while (index < fakeResponse.Length)
                     {
-                        break;
+                        if (cancellationToken.IsCancellationRequested) break;
+                        var chunk = fakeResponse.Substring(index, Math.Min(next, fakeResponse.Length - index));
+                        step.EmitText(chunk);
+                        index += next;
+                        next = Random.Shared.Next(8);
+                        await Task.Delay(200, cancellationToken);
                     }
-
-                    var chunk = fakeResponse.Substring(index, Math.Min(next, fakeResponse.Length - index));
-                    stream?.Info(chunk);
-                    index += next;
-                    next = Random.Shared.Next(8);
-                    await Task.Delay(200, cancellationToken);
                 }
-            }
-        }
 
-        return new ChatCallResult
-        {
-            Usage = new UsageDetails
+                step.Complete(new StepResult
+                {
+                    Usage = new UsageDetails
+                    {
+                        InputTokenCount = 0,
+                        OutputTokenCount = 0,
+                        TotalTokenCount = 0,
+                    },
+                    FinishReason = ChatFinishReason.Stop,
+                    IsCompleted = true,
+                    Messages =
+                    [
+                        new ChatMessage(ChatRole.Assistant, "This is a fake response from NullLlmModelClient.")
+                    ],
+                });
+            }
+            catch (Exception ex)
             {
-                InputTokenCount = 0,
-                OutputTokenCount = 0,
-                TotalTokenCount = 0,
-                AdditionalCounts = null
-            },
-            Latency = 0,
-            Duration = 0,
-            Exception = null,
-            Price = null,
-            FinishReason = ChatFinishReason.Stop,
-            Messages =
-            [
-                new ChatMessage(ChatRole.Assistant, "This is a fake response from NullLlmModelClient.")
-            ],
-            Annotations = null,
-            AdditionalProperties = null
-        };
+                step.CompleteWithError(ex);
+            }
+        }, cancellationToken);
+
+        yield return step;
+        await producerTask;
     }
 }

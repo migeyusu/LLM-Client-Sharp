@@ -30,7 +30,7 @@ public class StubLLMChatModel : IEndpointModel
         get { return StubEndPoint.Instance; }
     }
 
-    public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.None;
+    public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.KeepLast;
 
     public bool SupportSystemPrompt { get; set; } = true;
     public bool TopPEnable { get; set; } = true;

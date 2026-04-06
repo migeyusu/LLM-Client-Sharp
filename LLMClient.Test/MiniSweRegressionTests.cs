@@ -8,6 +8,7 @@ using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,7 +46,7 @@ public class MiniSweRegressionTests
         });
         typeof(MiniSweAgent)
             .GetField("_toolProviders", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(agent, Array.Empty<IAIFunctionGroup>());
+            .SetValue(agent, Array.Empty<KernelFunctionGroup>());
 
         var results = new List<ChatCallResult>();
         await foreach (var result in agent.Execute(session, cancellationToken: CancellationToken.None))
@@ -71,7 +72,7 @@ public class MiniSweRegressionTests
         };
 
 #pragma warning disable SKEXP0001
-        var result = await client.SendRequest(requestContext, cancellationToken: CancellationToken.None);
+        var result = await client.SendRequestCompatAsync(requestContext, CancellationToken.None);
 #pragma warning restore SKEXP0001
 
         Assert.Null(result.Exception);
@@ -96,7 +97,7 @@ public class MiniSweRegressionTests
         };
 
 #pragma warning disable SKEXP0001
-        var result = await client.SendRequest(requestContext, cancellationToken: CancellationToken.None);
+        var result = await client.SendRequestCompatAsync(requestContext, CancellationToken.None);
 #pragma warning restore SKEXP0001
 
         Assert.Null(result.Exception);
@@ -126,7 +127,7 @@ public class MiniSweRegressionTests
         };
 
 #pragma warning disable SKEXP0001
-        var result = await client.SendRequest(requestContext, cancellationToken: CancellationToken.None);
+        var result = await client.SendRequestCompatAsync(requestContext, CancellationToken.None);
 #pragma warning restore SKEXP0001
 
         Assert.NotNull(result.Exception);
@@ -177,7 +178,7 @@ public class MiniSweRegressionTests
     public async Task WinCliPlugin_DangerousCommand_UsesExpectedPermissionSemantics(bool allow)
     {
         var plugin = new WinCLIPlugin(["danger"]);
-        using var scope = AsyncContextStore<ChatContext>.CreateInstance(new ChatContext(new PermissionInteractor(allow)));
+        using var scope = CreatePermissionContext(allow);
 
         if (!allow)
         {
@@ -197,7 +198,7 @@ public class MiniSweRegressionTests
     public async Task WslCliPlugin_DangerousCommand_UsesExpectedPermissionSemantics(bool allow)
     {
         var plugin = new WslCLIPlugin(["danger"]);
-        using var scope = AsyncContextStore<ChatContext>.CreateInstance(new ChatContext(new PermissionInteractor(allow)));
+        using var scope = CreatePermissionContext(allow);
 
         if (!allow)
         {
@@ -263,8 +264,8 @@ public class MiniSweRegressionTests
 
         public bool IsResponding { get; set; }
 
-        public Task<ChatCallResult> SendRequest(RequestContext context, IInvokeInteractor? interactor = null,
-            CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<ReactStep> SendRequestAsync(RequestContext context,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             ChatHistoryCounts.Add(context.ChatHistory.Count);
             _callCount++;
@@ -272,17 +273,27 @@ public class MiniSweRegressionTests
             var message = new ChatMessage(ChatRole.Assistant, text);
             context.ChatHistory.Add(message);
 
-            var result = new ChatCallResult
+            var step = new ReactStep();
+            step.EmitText(text);
+            var stepResult = new StepResult
             {
-                Messages = [message],
                 FinishReason = ChatFinishReason.Stop,
+                IsCompleted = true,
+                Messages = [message],
             };
             if (_callCount == 1)
             {
-                result.Exception = new Exception("retry");
+                stepResult = new StepResult
+                {
+                    FinishReason = ChatFinishReason.Stop,
+                    IsCompleted = true,
+                    Messages = [message],
+                    Exception = new Exception("retry"),
+                };
             }
 
-            return Task.FromResult(result);
+            step.Complete(stepResult);
+            yield return step;
         }
     }
 
@@ -455,41 +466,29 @@ public class MiniSweRegressionTests
         }
     }
 
-    private sealed class PermissionInteractor(bool allow) : IInvokeInteractor
+    private static IDisposable CreatePermissionContext(bool allow)
     {
-        public void Info(string message)
+        var step = new ReactStep();
+        var chatContext = new ChatContext { CurrentStep = step, AutoApproveAllInvocations = allow };
+        // Start a background task to consume permission requests from the step
+        _ = Task.Run(async () =>
         {
-        }
-
-        public void Error(string message)
-        {
-        }
-
-        public void Warning(string message)
-        {
-        }
-
-        public void Write(string message)
-        {
-        }
-
-        public void WriteLine(string? message = null)
-        {
-        }
-
-        public Task<bool> WaitForPermission(string title, string message)
-        {
-            return Task.FromResult(allow);
-        }
-
-        public Task<bool> WaitForPermission(object content)
-        {
-            return Task.FromResult(allow);
-        }
-
-        public void BeginLoop()
-        {
-        }
+            try
+            {
+                await foreach (var evt in step)
+                {
+                    if (evt is PermissionRequest pr)
+                    {
+                        pr.Response.TrySetResult(allow);
+                    }
+                }
+            }
+            catch
+            {
+                // ignored
+            }
+        });
+        return AsyncContextStore<ChatContext>.CreateInstance(chatContext);
     }
 
     private sealed class CancelAwareAgent : IAgent
@@ -500,7 +499,6 @@ public class MiniSweRegressionTests
         public string Name => "CancelAwareAgent";
 
         public async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
-            IInvokeInteractor? interactor = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             TokenCaptured.TrySetResult(cancellationToken);

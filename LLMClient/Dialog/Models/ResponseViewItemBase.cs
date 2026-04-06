@@ -1,9 +1,11 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Text;
 using System.Windows.Documents;
 using LLMClient.Abstraction;
 using LLMClient.Component.Render;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
 using Markdig;
 using Microsoft.Extensions.AI;
@@ -108,6 +110,23 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     }
 
     public bool IsResponding
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
+
+
+    /// <summary>
+    /// 每轮 ReAct 循环的 ViewModel 列表
+    /// </summary>
+    public ObservableCollection<ReactLoopViewModel> Loops { get; } = [];
+
+    public int LoopCount
     {
         get;
         set
@@ -270,5 +289,6 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
     protected virtual void OnUsagePropertiesChanged()
     {
+        
     }
 }

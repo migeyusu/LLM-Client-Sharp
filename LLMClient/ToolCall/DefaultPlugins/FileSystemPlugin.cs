@@ -730,8 +730,8 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         string diffText,
         IEnumerable<EditOperation> edits)
     {
-        var interactor = AsyncContextStore<ChatContext>.Current?.Interactor;
-        if (interactor == null)
+        var step = AsyncContextStore<ChatContext>.Current?.CurrentStep;
+        if (step == null)
         {
             return true;
         }
@@ -744,7 +744,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             diffText,
             edits);
 
-        return await interactor.WaitForPermission(vm);
+        return await step.RequestPermissionAsync(vm);
     }
 
     private static string ApplySingleEdit(string content, string type, string oldText, string newText)
@@ -967,8 +967,8 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             }
         }
 
-        var interactor = AsyncContextStore<ChatContext>.Current?.Interactor;
-        if (interactor == null)
+        var step = AsyncContextStore<ChatContext>.Current?.CurrentStep;
+        if (step == null)
         {
             return Task.FromResult(true);
         }
@@ -979,6 +979,6 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             CallerMethodName = callerName,
             Message = message,
         };
-        return interactor.WaitForPermission(toolCallInfo);
+        return step.RequestPermissionAsync(toolCallInfo);
     }
 }

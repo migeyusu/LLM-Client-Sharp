@@ -4,6 +4,8 @@
 
 **LLM Client for WPF** is a .NET 10 WPF application providing a rich LLM chat client with RAG, MCP, agent workflows, and code-awareness features. The primary project is `LLMClient/LLMClient.csproj`; tests live in `LLMClient.Test/`.
 
+- 所有代码修改前必须严格遵守本文件中的 XAML 风格和 ViewModel 最小化原则。
+
 ---
 
 ## Repository Layout
@@ -32,7 +34,7 @@ LLMClient.Avalonia/         # Future Avalonia cross-platform port (stub)
 
 ## Build & Run
 
-**SDK requirement:** .NET 10 preview (`global.json` sets `"version": "10.0.0"`, `"allowPrerelease": true`).
+**SDK requirement:** .NET 10 preview (`global.json` sets `"version": "10.0.0"`, `"allowPrerelease": true).
 
 ```powershell
 # Build the solution
@@ -209,10 +211,53 @@ t![img.png](img.png)esting are stored in `StreamingResponse.txt`.
 
 ## Conventions
 
+### 核心开发规范（核心原则）
+
+#### XAML 规范（必须严格遵守）
+- **每个属性必须单独一行**，包括 xmlns、x:Name、绑定、事件、样式等。
+- 属性按逻辑顺序或字母顺序排列，避免长行和内联样式。
+- 复杂绑定或样式必须拆成单独属性行。
+
+**正确示例**：
+```xml
+<Button
+    x:Name="SaveButton"
+    Command="{Binding SaveCommand}"
+    Content="保存"
+    HorizontalAlignment="Right"
+    IsEnabled="{Binding IsDirty}"
+    Margin="8,0"
+    ToolTip="点击保存当前更改" />
+```
+**禁止示例**：所有属性挤在一行、或把多个属性写在同一行。
+
+#### ViewModel / C# 规范（核心原则）
+- **最大化代码重用**：任何修改必须优先调用、复用现有方法、命令、服务、基类或工具类，绝不重复实现相同逻辑。
+- **最小化属性原则**（极其重要）：
+  - 除非 UI 需要双向绑定或必须通过 INotifyPropertyChanged 通知 UI 刷新，否则**绝对不要在 ViewModel 中新增 public 属性**。
+  - 优先使用**间接引用**：
+    - 通过计算属性（expression-bodied）引用现有属性，例如 `public string FullName => $"{FirstName} {LastName}";`
+    - 或通过现有 Observable 属性 + 方法返回结果。
+    - 或直接在 XAML 中用 MultiBinding / Converter 实现组合逻辑。
+  - 只有真正需要 OnPropertyChanged 通知时，才使用 `[ObservableProperty]` 或手动实现属性。
+- 所有命令**必须**使用 `[RelayCommand]`（CommunityToolkit.Mvvm），不要手动创建 ICommand。
+- ViewModel 必须保持轻量：业务逻辑下沉到 Service / Repository / Model 层。
+
+#### MVVM 架构原则（必须遵守）
+- View：仅负责 UI 布局、样式和命令绑定，**绝不**包含业务逻辑。
+- ViewModel：仅暴露命令和必要的 Observable 属性，**绝不**直接操作 UI 元素。
+- Model：纯数据模型，不实现 INotifyPropertyChanged。
+- 严格分层：View → ViewModel → Service → Repository。
+
+#### 通用编码要求
+- 命名规范：类/属性使用 PascalCase，私有字段/参数使用 camelCase。
+- 错误处理：必须使用 try-catch + 日志记录，禁止吞异常。
+- 修改后必须考虑对单元测试、现有绑定和性能的影响。
+- 优先使用现有 ObservableCollection，避免不必要的 new ObservableCollection 创建。
+
 - Namespace matches directory path: `LLMClient.<SubFolder>` (e.g., `LLMClient.Rag`, `LLMClient.Workflow.Dynamic`).
 - One class per file; XAML views paired with `.xaml.cs` code-behind; view models in separate files.
 - Observable collections use `ObservableCollection<T>`; never replace — mutate in place on the UI thread.
 - Async methods returning `void` only for fire-and-forget event handlers; otherwise return `Task`.
 - `CancellationToken` must be threaded through async call chains; do not ignore tokens in loops.
 - Do not add `async/await` wrappers around already-async code without adding value.
-

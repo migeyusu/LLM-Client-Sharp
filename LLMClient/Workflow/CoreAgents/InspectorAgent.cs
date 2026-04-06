@@ -6,7 +6,7 @@ namespace LLMClient.Workflow.CoreAgents;
  
 public class InspectorAgent : PromptBasedAgent, IAgentStep
 {
-    public InspectorAgent(ILLMChatClient chatClient, IInvokeInteractor? interactor) : base(chatClient, interactor)
+    public InspectorAgent(ILLMChatClient chatClient) : base(chatClient)
     {
     }
 

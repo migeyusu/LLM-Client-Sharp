@@ -72,7 +72,7 @@ public abstract class FunctionCallEngine
     }
 
     public async Task ProcessFunctionCallsAsync(ChatContext chatContext, ChatMessage replyMessage,
-        IList<FunctionCallContent> functionCalls, IInvokeInteractor? interactor = null,
+        IList<FunctionCallContent> functionCalls, ReactStep? step = null,
         CancellationToken token = default)
     {
         #region function call
@@ -84,7 +84,7 @@ public abstract class FunctionCallEngine
                     out var kernelFunction))
             {
                 var exception = new Exception("Function not exist");
-                interactor?.Error(
+                step?.EmitDiagnostic(DiagLevel.Error,
                     $"Function '{functionCallContent.Name}' not exist, call failed.");
                 functionResultContents.Add(
                     new FunctionResultContent(functionCallContent.CallId, exception.HierarchicalMessage())
@@ -107,8 +107,8 @@ public abstract class FunctionCallEngine
                     additionalFunctionCallResults.Clear();
                     additionalUserMessageBuilder.Clear();
                     var invokeResult = await kernelFunction.InvokeAsync(arguments, token);
-                    interactor?.WriteLine(
-                        $"Function '{functionCallContent.Name}' invoked successfully, result: {invokeResult}");
+                    step?.Emit(new FunctionCallCompleted(functionCallContent.CallId,
+                        functionCallContent.Name, invokeResult, null));
                     functionResultContents.Add(new FunctionResultContent(functionCallContent.CallId,
                         invokeResult));
 
@@ -127,7 +127,8 @@ public abstract class FunctionCallEngine
                 }
                 catch (Exception e)
                 {
-                    interactor?.Error("Function call failed: " + e.HierarchicalMessage());
+                    step?.Emit(new FunctionCallCompleted(functionCallContent.CallId,
+                        functionCallContent.Name, null, e));
                     functionResultContents.Add(
                         new FunctionResultContent(functionCallContent.CallId, e.HierarchicalMessage())
                             { Exception = e });

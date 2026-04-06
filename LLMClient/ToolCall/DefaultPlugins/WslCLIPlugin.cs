@@ -65,15 +65,14 @@ public sealed class WslCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         var commandBase = command.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries)[0].ToLowerInvariant();
         if (VerifyRequiredCommands.Contains(commandBase))
         {
-            var interactor = AsyncContextStore<ChatContext>.Current?.Interactor;
-            if (interactor == null)
+            var step = AsyncContextStore<ChatContext>.Current?.CurrentStep;
+            if (step == null)
             {
                 throw new NotSupportedException($"错误：命令 '{commandBase}' 被默认禁止执行。");
             }
 
-            if (!await interactor.WaitForPermission(
-                    "安全警告",
-                    $"请求在 WSL 中执行命令：{command}\n该命令被列为危险命令，可能会对系统造成损害。是否继续？"))
+            if (!await step.RequestPermissionAsync(
+                    $"安全警告\n请求在 WSL 中执行命令：{command}\n该命令被列为危险命令，可能会对系统造成损害。是否继续？"))
             {
                 throw new UnauthorizedAccessException("用户拒绝执行命令: " + command);
             }

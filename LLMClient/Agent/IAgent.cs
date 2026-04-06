@@ -7,7 +7,7 @@ public interface IAgent
 {
     string Name { get; }
     
-    IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession, IInvokeInteractor? interactor = null,
+    IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
         CancellationToken cancellationToken = default);
 }
 

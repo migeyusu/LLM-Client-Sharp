@@ -26,7 +26,7 @@ public class EmptyLLMChatModel : IEndpointModel
         get => EmptyLLMEndpoint.Instance;
     }
 
-    public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.None;
+    public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.KeepLast;
 
     public bool SupportSystemPrompt { get; set; }
     public bool TopPEnable { get; set; }

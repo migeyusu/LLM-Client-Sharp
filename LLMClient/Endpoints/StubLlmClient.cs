@@ -1,5 +1,5 @@
-﻿using LLMClient.Abstraction;
-using LLMClient.Component;
+﻿using System.Runtime.CompilerServices;
+using LLMClient.Abstraction;
 using LLMClient.Component.Render;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
@@ -88,109 +88,111 @@ public class StubLlmClient : ILLMChatClient
         }
     ];
 
-    public async Task<ChatCallResult> SendRequest(RequestContext context, IInvokeInteractor? interactor = null,
-        CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<ReactStep> SendRequestAsync(RequestContext context,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-#if DEBUG
-        interactor ??= new DebugInvokeInteractor();
-#endif
         IsResponding = true;
         try
         {
             var random = new Random();
             var streaming = Parameters.Streaming;
-            var allText = new System.Text.StringBuilder();
 
             for (int loopIndex = 0; loopIndex < SimulatedLoops.Length; loopIndex++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var loop = SimulatedLoops[loopIndex];
+                var step = new ReactStep();
 
-                // ── BeginLoop (与 LlmClientBase 一致) ──
-                interactor?.BeginLoop();
-
-                // ── 1. Reasoning / Thinking content ──
-                if (!string.IsNullOrEmpty(loop.ThinkingContent))
+                var producerTask = Task.Run(async () =>
                 {
-                    if (streaming)
+                    try
                     {
-                        // 流式输出 <think>...</think>
-                        interactor?.Info(ThinkBlockParser.OpenTag + Environment.NewLine);
-                        await StreamText(interactor, loop.ThinkingContent, random, cancellationToken);
-                        interactor?.Info(Environment.NewLine + ThinkBlockParser.CloseTag + Environment.NewLine);
+                        // 1. Reasoning / Thinking content
+                        if (!string.IsNullOrEmpty(loop.ThinkingContent))
+                        {
+                            if (streaming)
+                            {
+                                await StreamToStep(step, loop.ThinkingContent, random, isReasoning: true,
+                                    cancellationToken);
+                            }
+                            else
+                            {
+                                step.EmitReasoning(loop.ThinkingContent);
+                            }
+                        }
+
+                        // 2. Text content
+                        if (!string.IsNullOrEmpty(loop.TextContent))
+                        {
+                            if (streaming)
+                            {
+                                await StreamToStep(step, loop.TextContent, random, isReasoning: false,
+                                    cancellationToken);
+                            }
+                            else
+                            {
+                                step.EmitText(loop.TextContent);
+                            }
+                        }
+
+                        // 3. Function call
+                        if (loop.FunctionCall != null)
+                        {
+                            var fc = loop.FunctionCall;
+                            var functionCallContent = new FunctionCallContent(fc.CallId, fc.Name,
+                                new Dictionary<string, object?> { ["raw"] = fc.Arguments });
+                            step.Emit(new FunctionCallStarted(functionCallContent));
+
+                            await Task.Delay(random.Next(500, 1500), cancellationToken);
+
+                            if (loop.FunctionResult != null)
+                            {
+                                step.Emit(new FunctionCallCompleted(
+                                    loop.FunctionResult.CallId, fc.Name, loop.FunctionResult.Result, null));
+                            }
+
+                            step.Complete(new StepResult
+                            {
+                                IsCompleted = false,
+                                LatencyMs = random.Next(50, 200),
+                                Messages =
+                                [
+                                    new ChatMessage(ChatRole.Assistant, loop.TextContent ?? "")
+                                ],
+                            });
+                        }
+                        else
+                        {
+                            step.Complete(new StepResult
+                            {
+                                IsCompleted = true,
+                                FinishReason = ChatFinishReason.Stop,
+                                LatencyMs = random.Next(50, 200),
+                                Usage = new UsageDetails
+                                {
+                                    InputTokenCount = 256,
+                                    OutputTokenCount = 512,
+                                    TotalTokenCount = 768,
+                                },
+                                Messages =
+                                [
+                                    new ChatMessage(ChatRole.Assistant, loop.TextContent ?? "")
+                                ],
+                            });
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        interactor?.WriteLine(ThinkBlockParser.OpenTag);
-                        interactor?.WriteLine(loop.ThinkingContent);
-                        interactor?.WriteLine(ThinkBlockParser.CloseTag);
+                        step.CompleteWithError(ex);
                     }
-                }
+                }, cancellationToken);
 
-                // ── 2. Text content (LLM 的文本输出) ──
-                if (!string.IsNullOrEmpty(loop.TextContent))
-                {
-                    if (streaming)
-                    {
-                        await StreamText(interactor, loop.TextContent, random, cancellationToken);
-                    }
-                    else
-                    {
-                        interactor?.WriteLine(loop.TextContent);
-                    }
+                yield return step;
+                await producerTask;
 
-                    allText.AppendLine(loop.TextContent);
-                }
-
-                // ── 3. Function call (工具调用) ──
-                if (loop.FunctionCall != null)
-                {
-                    var fc = loop.FunctionCall;
-                    var functionCallContent = new FunctionCallContent(fc.CallId, fc.Name,
-                        new Dictionary<string, object?> { ["raw"] = fc.Arguments });
-
-                    interactor?.Info($"Function call: {functionCallContent.Name}");
-
-                    interactor?.Info("Function call detect, need run function calls...");
-                    interactor?.WriteLine("Processing function calls...");
-
-                    // 模拟工具执行延迟
-                    await Task.Delay(random.Next(500, 1500), cancellationToken);
-
-                    // ── 4. Function result (工具返回) ──
-                    if (loop.FunctionResult != null)
-                    {
-                        var fr = loop.FunctionResult;
-                        var functionResultContent = new FunctionResultContent(fr.CallId, fr.Result);
-
-                        interactor?.Info(functionResultContent.Exception == null
-                            ? $"Function result received: {functionResultContent.CallId}"
-                            : $"Function call failed: {functionResultContent.CallId}");
-                    }
-
-                    interactor?.WriteLine();
-                }
-                else
-                {
-                    // 最后一轮无工具调用
-                    interactor?.Info("Response completed without function calls.");
-                }
+                if (step.Result is { IsCompleted: true } or { Exception: not null })
+                    break;
             }
-
-            return new ChatCallResult
-            {
-                Messages = [new ChatMessage(ChatRole.Assistant, allText.ToString())],
-                Usage = new UsageDetails
-                {
-                    InputTokenCount = 256,
-                    OutputTokenCount = 512,
-                    TotalTokenCount = 768,
-                },
-                Latency = 120,
-                Duration = 5,
-                FinishReason = ChatFinishReason.Stop,
-                ValidCallTimes = SimulatedLoops.Length
-            };
         }
         finally
         {
@@ -198,11 +200,8 @@ public class StubLlmClient : ILLMChatClient
         }
     }
 
-    /// <summary>
-    /// 模拟流式输出：每次随机 3-8 个字符，间隔 30-80ms
-    /// </summary>
-    private static async Task StreamText(IInvokeInteractor? interactor, string text, Random random,
-        CancellationToken cancellationToken)
+    private static async Task StreamToStep(ReactStep step, string text, Random random,
+        bool isReasoning, CancellationToken cancellationToken)
     {
         int currentIndex = 0;
         while (currentIndex < text.Length)
@@ -210,7 +209,10 @@ public class StubLlmClient : ILLMChatClient
             cancellationToken.ThrowIfCancellationRequested();
             int len = Math.Min(random.Next(3, 9), text.Length - currentIndex);
             var chunk = text.Substring(currentIndex, len);
-            interactor?.Info(chunk);
+            if (isReasoning)
+                step.EmitReasoning(chunk);
+            else
+                step.EmitText(chunk);
             currentIndex += len;
             await Task.Delay(random.Next(30, 80), cancellationToken);
         }

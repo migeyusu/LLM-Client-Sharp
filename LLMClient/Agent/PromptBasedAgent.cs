@@ -11,16 +11,13 @@ public class PromptBasedAgent
 {
     private readonly ILLMChatClient _chatClient;
 
-    private readonly IInvokeInteractor? _interactor;
-
     public UsageDetails Usage { get; set; } = new();
 
     public double? Price { get; set; } = 0;
 
-    public PromptBasedAgent(ILLMChatClient chatClient, IInvokeInteractor? interactor)
+    public PromptBasedAgent(ILLMChatClient chatClient)
     {
         _chatClient = chatClient;
-        _interactor = interactor;
     }
 
     public int RetryCount { get; set; } = 3;
@@ -45,7 +42,7 @@ public class PromptBasedAgent
                         try
                         {
                             completedResult = await _chatClient
-                                .SendRequest(requestContext, _interactor, linkedTokenSource.Token)
+                                .SendRequestCompatAsync(requestContext, linkedTokenSource.Token)
                                 .ConfigureAwait(false);
                             if (completedResult.IsInvalidRequest || completedResult.IsCanceled)
                             {
@@ -61,16 +58,14 @@ public class PromptBasedAgent
             }
             else
             {
-                completedResult = await _chatClient.SendRequest(requestContext, _interactor, cancellationToken)
+                completedResult = await _chatClient.SendRequestCompatAsync(requestContext, cancellationToken)
                     .ConfigureAwait(false);
             }
 
             tryCount++;
             if (completedResult.IsInterrupt)
             {
-                _interactor?.Warning(
-                    string.Format("The LLM request was interrupted. Retrying... (Attempt {0}/{1})", tryCount,
-                        RetryCount));
+                // Diagnostic logging is now handled via LoopEvent stream
             }
 
             if (completedResult.Usage != null)
@@ -85,9 +80,7 @@ public class PromptBasedAgent
 
             if (completedResult.IsInterrupt || string.IsNullOrEmpty(completedResult.GetContentAsString()))
             {
-                _interactor?.Warning(
-                    string.Format("The LLM returned an empty or interrupt response. Retrying... (Attempt {0}/{1})",
-                        tryCount, RetryCount));
+                // retry
             }
             else
             {
@@ -96,7 +89,7 @@ public class PromptBasedAgent
         }
 
         var stringBuilder =
-            new StringBuilder($"Failed to get a valid rsesponse from the LLM after {RetryCount} attempts.");
+            new StringBuilder($"Error:Failed to get a valid response from the LLM after {RetryCount} attempts.");
         if (completedResult?.ErrorMessage != null)
         {
             stringBuilder.AppendLine();
@@ -105,7 +98,6 @@ public class PromptBasedAgent
         }
 
         var s = stringBuilder.ToString();
-        _interactor?.Error(s);
         throw new Exception(s);
     }
 

@@ -59,7 +59,6 @@ public class MiniSweAgent : IAgent
     public string Name { get; } = "MiniSWE Agent";
 
     public async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
-        IInvokeInteractor? interactor = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var chatHistory = dialogSession.GetHistory();
@@ -124,7 +123,7 @@ public class MiniSweAgent : IAgent
             int retryCount = 0;
             while (retryCount < StepRetryCount)
             {
-                callResult = await ChatClient.SendRequest(requestContext, interactor, cancellationToken);
+                callResult = await ChatClient.SendRequestCompatAsync(requestContext, cancellationToken);
                 requestContext.ChatHistory.AddRange(callResult.Messages);
                 yield return callResult;
                 if (callResult.IsCanceled)

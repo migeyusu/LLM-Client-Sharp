@@ -92,7 +92,7 @@ public class AzureModelInfo : IEndpointModel
 
     [JsonIgnore] public ILLMAPIEndpoint Endpoint { get; set; } = EmptyLLMEndpoint.Instance;
 
-    [JsonIgnore] public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.None;
+    [JsonIgnore] public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.KeepLast;
 
     [JsonIgnore] public bool SupportSystemPrompt => true;
 

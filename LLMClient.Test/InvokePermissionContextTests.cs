@@ -54,7 +54,7 @@ public class InvokePermissionContextTests
             AutoApproveAllInvocations = true,
         };
 
-        var chatContext = ChatContext.CreateForRequest(requestContext, null, null, streaming: true, parentContext);
+        var chatContext = ChatContext.CreateForRequest(requestContext, null, true, parentContext);
 
         Assert.True(chatContext.AutoApproveAllInvocations);
         Assert.True(chatContext.ShowRequestJson);

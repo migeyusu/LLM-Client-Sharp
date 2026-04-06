@@ -1,6 +1,7 @@
-﻿using System.ClientModel;
+using System.ClientModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
@@ -162,14 +163,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     }
 
     [Experimental("SKEXP0001")]
-    public virtual async Task<ChatCallResult> SendRequest(RequestContext requestContext,
-        IInvokeInteractor? interactor = null,
-        CancellationToken cancellationToken = default)
+    public virtual async IAsyncEnumerable<ReactStep> SendRequestAsync(
+        RequestContext requestContext,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-/*#if DEBUG
-        interactor ??= new DebugInvokeInteractor();
-#endif*/
-        var result = new ChatCallResult();
         try
         {
             IsResponding = true;
@@ -214,7 +211,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             if (tempAdditionalProperties != null && requestOptionsAdditionalProperties != null)
             {
                 //由于openai库的实现不使用requestoptions.AdditionalProperties传递额外参数，
-                //所以这里需要把临时属性也添加进去
+                //所以这里需要把临时属��也添加进去
                 foreach (var requestOptionsAdditionalProperty in requestOptionsAdditionalProperties)
                 {
                     tempAdditionalProperties[requestOptionsAdditionalProperty.Key] =
@@ -222,19 +219,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            Exception? exception = null;
-            int? totalLatency = null;
             var chatClient = GetChatClient();
-            //本次响应的消息列表
-            var responseMessages = new List<ChatMessage>();
             var preUpdates = new List<ChatResponseUpdate>();
-            var totalUsageDetails = new UsageDetails
-            {
-                InputTokenCount = 0,
-                TotalTokenCount = 0,
-                OutputTokenCount = 0,
-            };
-            ChatFinishReason? finishReason = null;
             var streaming = this.Model.SupportStreaming && this.Parameters.Streaming;
             var softFunctionCall = false;
             if (functionCallEngine.HasFunctions)
@@ -249,345 +235,470 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             var parentContext = AsyncContextStore<ChatContext>.Current;
-            var chatContext = ChatContext.CreateForRequest(requestContext, interactor, tempAdditionalProperties,
+            var chatContext = ChatContext.CreateForRequest(requestContext, tempAdditionalProperties,
                 streaming, parentContext);
             _durationStopwatch.Reset();
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
                 while (true)
                 {
-                    interactor?.BeginLoop();
-                    var reasoningStart = false;
-                    var reasoningEnd = false;
-                    ChatMessage? functionResultMessage = null;
                     cancellationToken.ThrowIfCancellationRequested();
-                    UsageDetails? loopUsageDetails = null;
-                    try
+
+                    var step = new ReactStep();
+                    chatContext.CurrentStep = step;
+
+                    // 启动后台生产任务
+                    var producerTask = ProduceStepAsync(
+                        step, chatContext, chatClient, chatHistory, requestOptions,
+                        functionCallEngine, streaming, softFunctionCall,
+                        preUpdates, cancellationToken);
+
+                    // 立即 yield —— 消费者可以马上开始 await foreach (var evt in step)
+                    yield return step;
+
+                    // 等待该轮生产完成
+                    await producerTask;
+
+                    var result = step.Result!;
+
+                    // 更新 telemetry
+                    if (result.Usage != null)
                     {
-                        _latencyStopwatch.Restart();
-                        if (!_durationStopwatch.IsRunning)
+                        var price = this.Model.PriceCalculator?.Calculate(result.Usage);
+                        var tempResult = new ChatCallResult
                         {
-                            _durationStopwatch.Start();
-                        }
-
-                        ChatResponse? preResponse;
-                        if (streaming)
+                            Usage = result.Usage,
+                            Latency = result.LatencyMs,
+                            Duration = 0,
+                            ValidCallTimes = result.Exception == null ? 1 : 0,
+                        };
+                        var modelTelemetry = this.Model.Telemetry;
+                        if (modelTelemetry == null)
                         {
-                            int? loopLatency = null;
-                            await foreach (var update in chatClient
-                                               .GetStreamingResponseAsync(chatHistory, requestOptions,
-                                                   cancellationToken))
-                            {
-                                loopLatency ??= (int)_latencyStopwatch.ElapsedMilliseconds;
-                                update.TryAddExtendedData();
-                                preUpdates.Add(update);
-                                chatContext.CompleteStreamResponse(result, update);
-                                //只收集文本内容
-                                interactor?.Info(GetText(update, ref reasoningStart, ref reasoningEnd));
-                            }
-
-                            preResponse = preUpdates.MergeResponse();
-                            if (totalLatency == null)
-                                totalLatency = loopLatency;
-                            else
-                                totalLatency += loopLatency;
-                            preUpdates.Clear();
+                            this.Model.Telemetry = new UsageCounter(tempResult);
                         }
                         else
                         {
-                            preResponse =
-                                await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
-                            //只收集文本内容
-                            interactor?.WriteLine(preResponse.Text);
-                            await chatContext.CompleteResponse(preResponse, result);
+                            modelTelemetry.Add(tempResult);
                         }
-
-                        _durationStopwatch.Stop();
-                        var preResponseMessages = preResponse.Messages;
-                        foreach (var preResponseMessage in preResponseMessages)
-                        {
-                            foreach (var content in preResponseMessage.Contents)
-                            {
-                                switch (content)
-                                {
-                                    case UsageContent usageContent:
-                                        (loopUsageDetails ??= new UsageDetails()).Add(usageContent.Details);
-                                        break;
-                                    case TextContent:
-                                    case TextReasoningContent:
-                                        //do nothing, textContent & reasoningContent is already added to RespondingText
-                                        break;
-                                    case FunctionCallContent functionCallContent:
-                                        interactor?.Info($"Function call: {functionCallContent.Name}");
-                                        break;
-                                    case FunctionResultContent functionResultContent:
-                                        interactor?.Info(functionResultContent.Exception == null
-                                            ? $"Function result received: {functionResultContent.CallId}"
-                                            : $"Function call failed: {functionResultContent.CallId}");
-                                        break;
-                                    case ErrorContent errorContent:
-                                        interactor?.Error(
-                                            string.Format("Error content received: {0}, {1}, {2}",
-                                                errorContent.Message, errorContent.Details, errorContent.ErrorCode));
-                                        break;
-                                    default:
-                                        interactor?.Info("Received content:" + content.GetType().Name);
-                                        /*interactor?.Warning(
-                                            $"Unsupported content type: {content.GetType().Name}");
-                                        interactor?.Warning(content.RawRepresentation?.ToString() ?? string.Empty);*/
-                                        break;
-                                }
-                            }
-                        }
-
-                        result.ValidCallTimes++;
-                        chatHistory.AddRange(preResponseMessages);
-                        responseMessages.AddRange(preResponseMessages);
-                        loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
-                        result.LastSuccessfulUsage = CloneUsageDetails(loopUsageDetails);
-                        if (loopUsageDetails != null)
-                        {
-                            totalUsageDetails.Add(loopUsageDetails);
-                        }
-
-                        finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();
-                        var finishReasonValue = finishReason?.Value;
-                        if (finishReasonValue == null)
-                        {
-                            interactor?.Warning("Finish reason is null");
-                        }
-                        else
-                        {
-                            if (finishReasonValue.Equals(ChatFinishReason.ToolCalls.Value) ||
-                                finishReasonValue.Equals(ToolCalls, StringComparison.OrdinalIgnoreCase))
-                            {
-                                interactor?.Info("Function call detect, need run function calls...");
-                            }
-                            else if (finishReason == ChatFinishReason.Stop)
-                            {
-                                if (!softFunctionCall)
-                                {
-                                    interactor?.Info("Response completed without function calls.");
-                                    break;
-                                }
-                            }
-                            else if (finishReason == ChatFinishReason.Length)
-                            {
-                                interactor?.Info("Exceeded maximum response length.");
-                                exception = new OutOfContextWindowException()
-                                {
-                                    ChatResponse = preResponse
-                                };
-                                break;
-                            }
-                            else if (finishReason == ChatFinishReason.ContentFilter)
-                            {
-                                exception = new ResultFilteredException();
-                                interactor?.Warning("Response was filtered by content filter.");
-                                break;
-                            }
-                            else
-                            {
-                                interactor?.Warning($"Unexpected finish reason: {finishReason}");
-                            }
-                        }
-
-                        List<FunctionCallContent> preFunctionCalls;
-                        try
-                        {
-                            preFunctionCalls = await functionCallEngine.TryParseFunctionCalls(preResponse);
-                        }
-                        catch (Exception e)
-                        {
-                            interactor?.Error("Failed to parse function calls: " + e.HierarchicalMessage());
-                            exception = e;
-                            break;
-                        }
-
-                        if (preFunctionCalls.Count == 0)
-                        {
-                            interactor?.Info("No function calls were requested, response completed.");
-                            break;
-                        }
-
-                        if (!functionCallEngine.HasFunctions)
-                        {
-                            exception =
-                                new Exception(
-                                    $"No functions available to call. But {preFunctionCalls.Count} function calls were requested.");
-                            break;
-                        }
-
-                        interactor?.WriteLine("Processing function calls...");
-                        functionResultMessage = new ChatMessage();
-                        chatHistory.Add(functionResultMessage);
-                        responseMessages.Add(functionResultMessage);
-                        await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
-                            preFunctionCalls,
-                            interactor, cancellationToken);
                     }
-                    catch (AgentFlowException agentFlowException)
-                    {
-                        if (preUpdates.Count != 0)
-                        {
-                            responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
-                        }
 
-                        if (functionResultMessage is { Contents.Count: 0 })
-                        {
-                            chatHistory.Remove(functionResultMessage);
-                            responseMessages.Remove(functionResultMessage);
-                        }
-
-                        if (agentFlowException.Messages.Count > 0)
-                        {
-                            chatHistory.AddRange(agentFlowException.Messages);
-                            responseMessages.AddRange(agentFlowException.Messages);
-                        }
-
-                        finishReason = ChatFinishReason.Stop;
-                        interactor?.Info("Agent flow completed.");
+                    if (result.IsCompleted || result.Exception != null)
                         break;
-                    }
-                    catch (OperationCanceledException canceledException)
-                    {
-                        exception = canceledException;
-                        if (preUpdates.Count != 0)
-                        {
-                            responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
-                        }
-
-                        break;
-                    }
-                    catch (HttpOperationException httpOperationException)
-                    {
-                        exception = new Exception($"Response Content: {httpOperationException.ResponseContent}",
-                            httpOperationException);
-                        if (exception.Message.Contains("context_length_exceeded", StringComparison.OrdinalIgnoreCase))
-                        {
-                            exception = new OutOfContextWindowException(httpOperationException);
-                        }
-                    }
-                    catch (ClientResultException clientResultException)
-                    {
-                        var errorMessage = string.Empty;
-                        var pipelineResponse = clientResultException.GetRawResponse();
-                        var s = pipelineResponse?.Content.ToString();
-                        if (!string.IsNullOrEmpty(s))
-                        {
-                            errorMessage += $"Response Content: {s}";
-                        }
-
-                        exception = clientResultException.Status == 400
-                            ? new LlmInvalidRequestException(errorMessage)
-                            : new Exception(errorMessage, clientResultException);
-                        if (exception.Message.Contains("context_length_exceeded", StringComparison.OrdinalIgnoreCase))
-                        {
-                            exception = new OutOfContextWindowException(clientResultException);
-                        }
-                    }
-                    catch (LlmInvalidRequestException llmInvalidRequestException)
-                    {
-                        if (preUpdates.Count != 0)
-                        {
-                            responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
-                        }
-
-                        exception = llmInvalidRequestException;
-                        Trace.TraceError(exception.ToString());
-                        interactor?.Error($"Error during response: {exception}");
-                    }
-                    catch (InvalidOperationException invalidOperationException)
-                        when (IsMalformedOpenAiCompatibleResponse(invalidOperationException))
-                    {
-                        if (preUpdates.Count != 0)
-                        {
-                            responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
-                        }
-
-                        exception = CreateMalformedOpenAiCompatibleResponseException(chatContext,
-                            invalidOperationException);
-                        Trace.TraceError(exception.ToString());
-                        interactor?.Error($"Error during response: {exception}");
-                    }
-                    catch (Exception ex)
-                    {
-                        if (preUpdates.Count != 0)
-                        {
-                            responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
-                        }
-
-                        exception = new CriticalException(
-                            "An unhandled exception occurred during response processing.", ex);
-                        Trace.TraceError(exception.ToString());
-                        interactor?.Error($"Error during response: {ex}");
-                    }
-
-                    if (exception != null)
-                    {
-                        break;
-                    }
-
-                    interactor?.WriteLine();
                 }
-
-                result.History = chatContext.InteractionHistory;
             }
-
-            var duration = (int)Math.Ceiling(_durationStopwatch.ElapsedMilliseconds / 1000f);
-            var price = this.Model.PriceCalculator?.Calculate(totalUsageDetails);
-            result.Usage = totalUsageDetails;
-            result.Messages = responseMessages;
-            result.Exception = exception;
-            result.Latency = totalLatency ?? 0;
-            result.Duration = duration;
-            result.FinishReason = finishReason;
-            result.Price = price;
-            var modelTelemetry = this.Model.Telemetry;
-            if (modelTelemetry == null)
-            {
-                this.Model.Telemetry = new UsageCounter(result);
-            }
-            else
-            {
-                modelTelemetry.Add(result);
-            }
-
-            return result;
         }
         finally
         {
             IsResponding = false;
         }
+    }
 
-        string GetText(ChatResponseUpdate update, ref bool reasoningStart, ref bool reasoningEnd)
+    [Experimental("SKEXP0001")]
+    private async Task ProduceStepAsync(
+        ReactStep step,
+        ChatContext chatContext,
+        IChatClient chatClient,
+        List<ChatMessage> chatHistory,
+        ChatOptions requestOptions,
+        FunctionCallEngine functionCallEngine,
+        bool streaming,
+        bool softFunctionCall,
+        List<ChatResponseUpdate> preUpdates,
+        CancellationToken cancellationToken)
+    {
+        var reasoningStart = false;
+        var reasoningEnd = false;
+        ChatMessage? functionResultMessage = null;
+        UsageDetails? loopUsageDetails = null;
+        Exception? exception = null;
+        ChatFinishReason? finishReason = null;
+        var responseMessages = new List<ChatMessage>();
+
+        try
         {
-            var stringBuilder = new StringBuilder();
-            foreach (var content in update.Contents)
+            _latencyStopwatch.Restart();
+            if (!_durationStopwatch.IsRunning)
             {
-                if (content is TextContent textContent)
-                {
-                    if (reasoningStart && !reasoningEnd)
-                    {
-                        stringBuilder.AppendLine(ThinkBlockParser.CloseTag);
-                        reasoningEnd = true;
-                    }
+                _durationStopwatch.Start();
+            }
 
-                    stringBuilder.Append(textContent.Text);
+            ChatResponse? preResponse;
+            if (streaming)
+            {
+                await foreach (var update in chatClient
+                                   .GetStreamingResponseAsync(chatHistory, requestOptions,
+                                       cancellationToken))
+                {
+                    update.TryAddExtendedData();
+                    preUpdates.Add(update);
+                    chatContext.CompleteStreamResponse(new ChatCallResult(), update);
+                    // 发射流式事件
+                    EmitStreamEvents(step, update, ref reasoningStart, ref reasoningEnd);
                 }
-                else if (content is TextReasoningContent reasoningContent)
-                {
-                    if (!reasoningStart)
-                    {
-                        stringBuilder.AppendLine(ThinkBlockParser.OpenTag);
-                        reasoningStart = true;
-                    }
 
-                    stringBuilder.Append(reasoningContent.Text);
+                preResponse = preUpdates.MergeResponse();
+                preUpdates.Clear();
+            }
+            else
+            {
+                preResponse =
+                    await chatClient.GetResponseAsync(chatHistory, requestOptions, cancellationToken);
+                // 发射文本内容
+                if (!string.IsNullOrEmpty(preResponse.Text))
+                {
+                    step.EmitText(preResponse.Text);
+                }
+
+                await chatContext.CompleteResponse(preResponse, new ChatCallResult());
+            }
+
+            _durationStopwatch.Stop();
+            var preResponseMessages = preResponse.Messages;
+            foreach (var preResponseMessage in preResponseMessages)
+            {
+                foreach (var content in preResponseMessage.Contents)
+                {
+                    switch (content)
+                    {
+                        case UsageContent usageContent:
+                            (loopUsageDetails ??= new UsageDetails()).Add(usageContent.Details);
+                            break;
+                        case TextContent:
+                        case TextReasoningContent:
+                            //do nothing, textContent & reasoningContent is already added to RespondingText
+                            break;
+                        case FunctionCallContent functionCallContent:
+                            step.Emit(new FunctionCallStarted(functionCallContent));
+                            break;
+                        case FunctionResultContent:
+                            break;
+                        case ErrorContent errorContent:
+                            step.EmitDiagnostic(DiagLevel.Error,
+                                string.Format("Error content received: {0}, {1}, {2}",
+                                    errorContent.Message, errorContent.Details, errorContent.ErrorCode));
+                            break;
+                        default:
+                            step.EmitDiagnostic(DiagLevel.Warning,
+                                "Received content:" + content.GetType().Name);
+                            break;
+                    }
                 }
             }
 
-            return stringBuilder.ToString();
+            chatHistory.AddRange(preResponseMessages);
+            responseMessages.AddRange(preResponseMessages);
+            loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
+
+            finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();
+            var finishReasonValue = finishReason?.Value;
+            if (finishReasonValue == null)
+            {
+                step.EmitDiagnostic(DiagLevel.Warning, "Finish reason is null");
+            }
+            else
+            {
+                if (finishReasonValue.Equals(ChatFinishReason.ToolCalls.Value) ||
+                    finishReasonValue.Equals(ToolCalls, StringComparison.OrdinalIgnoreCase))
+                {
+                    step.EmitDiagnostic(DiagLevel.Info, "Function call detect, need run function calls...");
+                }
+                else if (finishReason == ChatFinishReason.Stop)
+                {
+                    if (!softFunctionCall)
+                    {
+                        step.Complete(new StepResult
+                        {
+                            Usage = loopUsageDetails,
+                            FinishReason = finishReason,
+                            LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                            IsCompleted = true,
+                            MaxContextTokens = Model.MaxContextSize,
+                            Messages = responseMessages,
+                        });
+                        return;
+                    }
+                }
+                else if (finishReason == ChatFinishReason.Length)
+                {
+                    step.Complete(new StepResult
+                    {
+                        Usage = loopUsageDetails,
+                        FinishReason = finishReason,
+                        LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                        IsCompleted = false,
+                        MaxContextTokens = Model.MaxContextSize,
+                        Messages = responseMessages,
+                        Exception = new OutOfContextWindowException { ChatResponse = preResponse },
+                    });
+                    return;
+                }
+                else if (finishReason == ChatFinishReason.ContentFilter)
+                {
+                    step.Complete(new StepResult
+                    {
+                        Usage = loopUsageDetails,
+                        FinishReason = finishReason,
+                        LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                        IsCompleted = false,
+                        MaxContextTokens = Model.MaxContextSize,
+                        Messages = responseMessages,
+                        Exception = new ResultFilteredException(),
+                    });
+                    return;
+                }
+                else
+                {
+                    step.EmitDiagnostic(DiagLevel.Warning, $"Unexpected finish reason: {finishReason}");
+                }
+            }
+
+            List<FunctionCallContent> preFunctionCalls;
+            try
+            {
+                preFunctionCalls = await functionCallEngine.TryParseFunctionCalls(preResponse);
+            }
+            catch (Exception e)
+            {
+                step.Complete(new StepResult
+                {
+                    Usage = loopUsageDetails,
+                    FinishReason = finishReason,
+                    LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                    IsCompleted = false,
+                    MaxContextTokens = Model.MaxContextSize,
+                    Messages = responseMessages,
+                    Exception = e,
+                });
+                return;
+            }
+
+            if (preFunctionCalls.Count == 0)
+            {
+                step.Complete(new StepResult
+                {
+                    Usage = loopUsageDetails,
+                    FinishReason = finishReason,
+                    LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                    IsCompleted = true,
+                    MaxContextTokens = Model.MaxContextSize,
+                    Messages = responseMessages,
+                });
+                return;
+            }
+
+            if (!functionCallEngine.HasFunctions)
+            {
+                step.Complete(new StepResult
+                {
+                    Usage = loopUsageDetails,
+                    FinishReason = finishReason,
+                    LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                    IsCompleted = false,
+                    MaxContextTokens = Model.MaxContextSize,
+                    Messages = responseMessages,
+                    Exception = new Exception(
+                        $"No functions available to call. But {preFunctionCalls.Count} function calls were requested."),
+                });
+                return;
+            }
+
+            step.EmitDiagnostic(DiagLevel.Info, "Processing function calls...");
+            functionResultMessage = new ChatMessage();
+            chatHistory.Add(functionResultMessage);
+            responseMessages.Add(functionResultMessage);
+            await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
+                preFunctionCalls, step, cancellationToken);
+
+            // 该轮未完成（有 function call），继续下一轮
+            step.Complete(new StepResult
+            {
+                Usage = loopUsageDetails,
+                FinishReason = finishReason,
+                LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                IsCompleted = false,
+                MaxContextTokens = Model.MaxContextSize,
+                Messages = responseMessages,
+            });
+        }
+        catch (AgentFlowException agentFlowException)
+        {
+            if (preUpdates.Count != 0)
+            {
+                responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
+            }
+
+            if (functionResultMessage is { Contents.Count: 0 })
+            {
+                chatHistory.Remove(functionResultMessage);
+                responseMessages.Remove(functionResultMessage);
+            }
+
+            if (agentFlowException.Messages.Count > 0)
+            {
+                chatHistory.AddRange(agentFlowException.Messages);
+                responseMessages.AddRange(agentFlowException.Messages);
+            }
+
+            step.Complete(new StepResult
+            {
+                Usage = loopUsageDetails,
+                FinishReason = ChatFinishReason.Stop,
+                LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                IsCompleted = true,
+                MaxContextTokens = Model.MaxContextSize,
+                Messages = responseMessages,
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            if (preUpdates.Count != 0)
+            {
+                responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
+            }
+
+            step.Complete(new StepResult
+            {
+                Usage = loopUsageDetails,
+                FinishReason = finishReason,
+                LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                IsCompleted = false,
+                MaxContextTokens = Model.MaxContextSize,
+                Messages = responseMessages,
+                Exception = new OperationCanceledException(),
+            });
+        }
+        catch (HttpOperationException httpOperationException)
+        {
+            exception = new Exception($"Response Content: {httpOperationException.ResponseContent}",
+                httpOperationException);
+            if (exception.Message.Contains("context_length_exceeded", StringComparison.OrdinalIgnoreCase))
+            {
+                exception = new OutOfContextWindowException(httpOperationException);
+            }
+
+            step.Complete(new StepResult
+            {
+                Usage = loopUsageDetails,
+                FinishReason = finishReason,
+                LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                IsCompleted = false,
+                MaxContextTokens = Model.MaxContextSize,
+                Messages = responseMessages,
+                Exception = exception,
+            });
+        }
+        catch (ClientResultException clientResultException)
+        {
+            var errorMessage = string.Empty;
+            var pipelineResponse = clientResultException.GetRawResponse();
+            var s = pipelineResponse?.Content.ToString();
+            if (!string.IsNullOrEmpty(s))
+            {
+                errorMessage += $"Response Content: {s}";
+            }
+
+            exception = clientResultException.Status == 400
+                ? new LlmInvalidRequestException(errorMessage)
+                : new Exception(errorMessage, clientResultException);
+            if (exception.Message.Contains("context_length_exceeded", StringComparison.OrdinalIgnoreCase))
+            {
+                exception = new OutOfContextWindowException(clientResultException);
+            }
+
+            step.Complete(new StepResult
+            {
+                Usage = loopUsageDetails,
+                FinishReason = finishReason,
+                LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                IsCompleted = false,
+                MaxContextTokens = Model.MaxContextSize,
+                Messages = responseMessages,
+                Exception = exception,
+            });
+        }
+        catch (LlmInvalidRequestException llmInvalidRequestException)
+        {
+            if (preUpdates.Count != 0)
+            {
+                responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
+            }
+
+            step.Complete(new StepResult
+            {
+                Usage = loopUsageDetails,
+                FinishReason = finishReason,
+                LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                IsCompleted = false,
+                MaxContextTokens = Model.MaxContextSize,
+                Messages = responseMessages,
+                Exception = llmInvalidRequestException,
+            });
+        }
+        catch (InvalidOperationException invalidOperationException)
+            when (IsMalformedOpenAiCompatibleResponse(invalidOperationException))
+        {
+            if (preUpdates.Count != 0)
+            {
+                responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
+            }
+
+            step.Complete(new StepResult
+            {
+                Usage = loopUsageDetails,
+                FinishReason = finishReason,
+                LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                IsCompleted = false,
+                MaxContextTokens = Model.MaxContextSize,
+                Messages = responseMessages,
+                Exception = CreateMalformedOpenAiCompatibleResponseException(chatContext, invalidOperationException),
+            });
+        }
+        catch (Exception ex)
+        {
+            if (preUpdates.Count != 0)
+            {
+                responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
+            }
+
+            step.Complete(new StepResult
+            {
+                Usage = loopUsageDetails,
+                FinishReason = finishReason,
+                LatencyMs = (int)_latencyStopwatch.ElapsedMilliseconds,
+                IsCompleted = false,
+                MaxContextTokens = Model.MaxContextSize,
+                Messages = responseMessages,
+                Exception = new CriticalException(
+                    "An unhandled exception occurred during response processing.", ex),
+            });
+        }
+    }
+
+    private static void EmitStreamEvents(ReactStep step, ChatResponseUpdate update,
+        ref bool reasoningStart, ref bool reasoningEnd)
+    {
+        foreach (var content in update.Contents)
+        {
+            if (content is TextContent textContent)
+            {
+                if (reasoningStart && !reasoningEnd)
+                {
+                    reasoningEnd = true;
+                }
+
+                step.EmitText(textContent.Text ?? "");
+            }
+            else if (content is TextReasoningContent reasoningContent)
+            {
+                if (!reasoningStart)
+                {
+                    reasoningStart = true;
+                }
+
+                step.EmitReasoning(reasoningContent.Text ?? "");
+            }
         }
     }
 }
+

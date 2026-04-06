@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,6 +13,7 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Endpoints;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -45,71 +46,14 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public ILLMChatClient? Client { get; }
 
-    public long? ContextUsageTokenCount
-    {
-        get { return LastSuccessfulUsage?.InputTokenCount; }
-    }
-
-    public int? MaxContextTokens
+    public ContextUsageViewModel ContextUsage
     {
         get
         {
             var maxContextSize = Model?.MaxContextSize;
-            return maxContextSize > 0 ? maxContextSize : null;
-        }
-    }
-
-    public bool HasContextUsage
-    {
-        get { return ContextUsageRatio.HasValue; }
-    }
-
-    public double? ContextUsageRatio
-    {
-        get
-        {
-            var contextUsageTokenCount = ContextUsageTokenCount;
-            var maxContextTokens = MaxContextTokens;
-            if (contextUsageTokenCount is not > 0 || maxContextTokens is not > 0)
-            {
-                return null;
-            }
-
-            return Math.Clamp(contextUsageTokenCount.Value / (double)maxContextTokens.Value, 0d, 1d);
-        }
-    }
-
-    public double ContextUsagePercent
-    {
-        get { return (ContextUsageRatio ?? 0d) * 100d; }
-    }
-
-    public bool IsContextUsageWarning
-    {
-        get
-        {
-            var contextUsageRatio = ContextUsageRatio;
-            return contextUsageRatio is >= 0.7 and < 0.9;
-        }
-    }
-
-    public bool IsContextUsageCritical
-    {
-        get { return ContextUsageRatio >= 0.9; }
-    }
-
-    public string ContextUsageSummary
-    {
-        get
-        {
-            var contextUsageTokenCount = ContextUsageTokenCount;
-            var maxContextTokens = MaxContextTokens;
-            if (contextUsageTokenCount is null || maxContextTokens is null)
-            {
-                return "上下文 --";
-            }
-
-            return $"上下文 {FormatTokenCount(contextUsageTokenCount)} / {FormatTokenCount(maxContextTokens)} · {ContextUsagePercent:0}%";
+            return new ContextUsageViewModel(
+                LastSuccessfulUsage,
+                maxContextSize > 0 ? maxContextSize : null);
         }
     }
 
@@ -133,22 +77,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         get { return this.CalculateTps(); }
     }
 
-    public int LoopCount
-    {
-        get;
-        set
-        {
-            if (value == field) return;
-            field = value;
-            OnPropertyChanged();
-        }
-    }
-
-
-    /// <summary>
-    /// 每轮 ReAct 循环的 ViewModel 列表
-    /// </summary>
-    public ObservableCollection<ReactLoopViewModel> Loops { get; } = [];
 
     public ObservableCollection<AsyncPermissionViewModel> PermissionViewModels { get; } = [];
 
@@ -268,32 +196,115 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             ErrorMessage = null;
             LoopCount = 0;
             Loops.Clear();
-            this.Messages = [];
+            Messages = [];
             _history.Clear();
             RequestTokenSource = token != CancellationToken.None
                 ? CancellationTokenSource.CreateLinkedTokenSource(token)
                 : new CancellationTokenSource();
             using (RequestTokenSource)
             {
-                await using (var interactor = new ResponseViewItemInteractor(this))
+                var ct = RequestTokenSource.Token;
+                var requestContext = await contextBuilder.BuildAsync(Client.Model, token);
+
+                var totalUsage = new UsageDetails
                 {
-                    var requestContext = await contextBuilder.BuildAsync(Client.Model, token);
-                    completedResult = await Client.SendRequest(requestContext, interactor,
-                        cancellationToken: RequestTokenSource.Token);
-                    ServiceLocator.GetService<IMapper>()!.Map<IResponse, ClientResponseViewItem>(completedResult, this);
-                    //刷新tps
-                    OnPropertyChangedAsync(nameof(TpS));
+                    InputTokenCount = 0, OutputTokenCount = 0, TotalTokenCount = 0,
+                };
+                var allMessages = new List<Microsoft.Extensions.AI.ChatMessage>();
+                ChatFinishReason? finishReason = null;
+                Exception? exception = null;
+                int totalLatency = 0;
+                int validCallTimes = 0;
+                UsageDetails? lastSuccessfulUsage = null;
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                await foreach (var step in Client.SendRequestAsync(requestContext, ct))
+                {
+                    // BeginLoop
+                    LoopCount++;
+                    var loopVm = new ReactLoopViewModel { LoopNumber = LoopCount };
+                    Loops.Add(loopVm);
+
+                    await foreach (var evt in step.WithCancellation(ct))
+                    {
+                        switch (evt)
+                        {
+                            case TextDelta t:
+                                loopVm.ResponseBuffer.Add(t.Text);
+                                loopVm.NotifyFirstLine();
+                                _history.Append(t.Text);
+                                break;
+                            case ReasoningDelta r:
+                                loopVm.ResponseBuffer.Add(r.Text);
+                                _history.Append(r.Text);
+                                break;
+                            case FunctionCallStarted fc:
+                                loopVm.ResponseBuffer.Add($"Function call: {fc.Call.Name}\n");
+                                loopVm.NotifyFirstLine();
+                                break;
+                            case FunctionCallCompleted fc:
+                                loopVm.ResponseBuffer.Add(fc.Error == null
+                                    ? $"Function result received: {fc.CallId}\n"
+                                    : $"Function call failed: {fc.CallId}\n");
+                                break;
+                            case PermissionRequest pr:
+                                var allowed = await InvokePermissionDialog.RequestAsync(pr.Content);
+                                pr.Response.SetResult(allowed);
+                                break;
+                            case DiagnosticMessage dm:
+                                loopVm.ResponseBuffer.Add($"[{dm.Level}] {dm.Message}\n");
+                                _history.AppendLine($"[{dm.Level}] {dm.Message}");
+                                break;
+                        }
+                    }
+
+                    // EndLoop
+                    var result = step.Result;
+                    if (result != null)
+                    {
+                        loopVm.ContextUsage = new ContextUsageViewModel(
+                            result.Usage, result.MaxContextTokens);
+                        loopVm.LatencyMs = result.LatencyMs;
+                        loopVm.IsCompleted = true;
+                        loopVm.IsExpanded = false;
+
+                        if (result.Usage != null)
+                        {
+                            totalUsage.Add(result.Usage);
+                            lastSuccessfulUsage = result.Usage;
+                        }
+
+                        allMessages.AddRange(result.Messages);
+                        finishReason = result.FinishReason;
+                        exception ??= result.Exception;
+                        totalLatency += result.LatencyMs;
+                        if (result.Exception == null) validCallTimes++;
+                    }
                 }
+
+                completedResult = new ChatCallResult
+                {
+                    Usage = totalUsage,
+                    LastSuccessfulUsage = lastSuccessfulUsage,
+                    Messages = allMessages,
+                    FinishReason = finishReason,
+                    Exception = exception,
+                    Latency = totalLatency,
+                    Duration = (int)Math.Ceiling(sw.ElapsedMilliseconds / 1000f),
+                    ValidCallTimes = validCallTimes,
+                };
+
+                ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(completedResult, this);
+                OnPropertyChangedAsync(nameof(TpS));
             }
         }
         catch (Exception exception)
         {
             MessageBoxes.Error(exception.Message, "响应失败");
-            this.ErrorMessage = exception.Message;
+            ErrorMessage = exception.Message;
         }
         finally
         {
-            this._history.Append(completedResult.History);
             ReleaseRespondingState();
             InvalidateAsyncProperty(nameof(SearchableDocument));
         }
@@ -338,14 +349,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     protected override void OnUsagePropertiesChanged()
     {
         base.OnUsagePropertiesChanged();
-        OnPropertyChanged(nameof(ContextUsageTokenCount));
-        OnPropertyChanged(nameof(MaxContextTokens));
-        OnPropertyChanged(nameof(HasContextUsage));
-        OnPropertyChanged(nameof(ContextUsageRatio));
-        OnPropertyChanged(nameof(ContextUsagePercent));
-        OnPropertyChanged(nameof(IsContextUsageWarning));
-        OnPropertyChanged(nameof(IsContextUsageCritical));
-        OnPropertyChanged(nameof(ContextUsageSummary));
+        OnPropertyChanged(nameof(ContextUsage));
     }
 
     internal void AcquireRespondingState()
@@ -372,86 +376,5 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         }
 
         IsResponding = false;
-    }
-
-    private static string FormatTokenCount(long? value)
-    {
-        if (value == null)
-        {
-            return "--";
-        }
-
-        var number = value.Value;
-        return number switch
-        {
-            >= 1_000_000 => $"{number / 1_000_000d:0.#}M",
-            >= 1_000 => $"{number / 1_000d:0.#}k",
-            _ => number.ToString("N0")
-        };
-    }
-
-
-    private class ResponseViewItemInteractor : BaseViewModel, IInvokeInteractor, IAsyncDisposable
-    {
-        private readonly ClientResponseViewItem _responseViewItem;
-        private ReactLoopViewModel? _currentLoop;
-
-        public ResponseViewItemInteractor(ClientResponseViewItem responseViewItem)
-        {
-            _responseViewItem = responseViewItem;
-        }
-
-        private void Output(string message)
-        {
-            Dispatch(() => { _currentLoop?.ResponseBuffer.Add(message); });
-        }
-
-        public void Info(string message) => Output(message);
-        public void Error(string message) => Output(message);
-        public void Warning(string message) => Output(message);
-        public void Write(string message) => Output(message);
-
-        public void WriteLine(string? message = null)
-        {
-            Output(string.IsNullOrEmpty(message)
-                ? Environment.NewLine
-                : message + Environment.NewLine);
-        }
-
-        public Task<bool> WaitForPermission(string title, string message)
-        {
-            return InvokePermissionDialog.RequestAsync(title, message);
-        }
-
-        public Task<bool> WaitForPermission(object content)
-        {
-            return InvokePermissionDialog.RequestAsync(content);
-        }
-
-        public void BeginLoop()
-        {
-            Dispatch(() =>
-            {
-                // 折叠上一轮
-                if (_currentLoop != null)
-                {
-                    _currentLoop.IsCompleted = true;
-                    _currentLoop.IsExpanded = false;
-                }
-
-                _responseViewItem.LoopCount++;
-                var loop = new ReactLoopViewModel
-                {
-                    LoopNumber = _responseViewItem.LoopCount
-                };
-                _responseViewItem.Loops.Add(loop);
-                _currentLoop = loop;
-            });
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            return ValueTask.CompletedTask;
-        }
     }
 }

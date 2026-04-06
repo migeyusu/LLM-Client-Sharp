@@ -41,7 +41,6 @@ public class NvidiaResearchClient : ResearchClient
 
     [Experimental("SKEXP0110")]
     public override async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
-        IInvokeInteractor? interactor = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var lastRequest = dialogSession.DialogItems.LastOrDefault(item => item is RequestViewItem) as RequestViewItem;
@@ -60,7 +59,7 @@ public class NvidiaResearchClient : ResearchClient
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var chatClient = PromptModel.Model.CreateChatClient() ?? throw new InvalidOperationException("Failed to create chat client from prompt model");
-        var agent = new PromptBasedAgent(chatClient, interactor);
+        var agent = new PromptBasedAgent(chatClient);
         
         // ====================================================================
         // 阶段 1: 研究
@@ -75,7 +74,7 @@ public class NvidiaResearchClient : ResearchClient
 
         Information("Analyzing the research request...");
         var (taskPrompt, formatPrompt) =
-            await PerformPromptDecompositionAsync(agent, prompt, interactor, cancellationToken);
+            await PerformPromptDecompositionAsync(agent, prompt, cancellationToken);
         Information($"Prompt analysis completed. Task: '{taskPrompt}'");
 
         var topics = await GenerateTopicsAsync(agent, taskPrompt, cancellationToken);
@@ -150,7 +149,7 @@ public class NvidiaResearchClient : ResearchClient
                             }
                         }
 
-                        interactor?.Warning(
+                        Trace.TraceWarning(
                             $"Failed to fetch content from URL '{objLink}'. {exception?.HierarchicalMessage()}");
                     }
                 }
@@ -178,7 +177,7 @@ public class NvidiaResearchClient : ResearchClient
                         topicRelevantSegments[topic].AddRange(relevantSegments);
                     }
 
-                    interactor?.Info(
+                    Trace.TraceInformation(
                         string.Format("Processed search result {0}. Found {1} relevant segments for URL {2}",
                             searchResultUrlIndex, relevantSegments.Count, searchResult.Url));
                 }
@@ -230,7 +229,7 @@ public class NvidiaResearchClient : ResearchClient
 
         void Information(string message)
         {
-            interactor?.Info(message);
+            Trace.TraceInformation(message);
         }
     }
 
@@ -267,7 +266,7 @@ public class NvidiaResearchClient : ResearchClient
     /// <param name="token"></param>
     /// <returns></returns>
     private async Task<(string TaskPrompt, string FormatPrompt)> PerformPromptDecompositionAsync(
-        PromptBasedAgent promptAgent, string prompt, IInvokeInteractor? logger, CancellationToken token)
+        PromptBasedAgent promptAgent, string prompt, CancellationToken token)
     {
         var response = await promptAgent.GetMessageAsync(
             $"Decompose the PROMPT into a task to be performed and a format in which the report should be produced. If there is no formatting constraint, output 'No formatting constraint' in the second prompt. Do not output any other text.\n\n" +
@@ -282,7 +281,7 @@ public class NvidiaResearchClient : ResearchClient
         var parts = response.Split(["\n\n"], 2, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 2)
         {
-            logger?.Warning(
+            Trace.TraceWarning(
                 "Failed to perform prompt decomposition. Falling back to using the original prompt as task and no format.");
             return (prompt, "No formatting constraint");
         }

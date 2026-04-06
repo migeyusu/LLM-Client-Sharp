@@ -7,6 +7,7 @@ using LLMClient.Abstraction;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Endpoints;
 
@@ -15,9 +16,8 @@ namespace LLMClient.Endpoints;
 /// </summary>
 public class ChatContext
 {
-    public ChatContext(IInvokeInteractor? interactor = null, AdditionalPropertiesDictionary? additionalObjects = null)
+    public ChatContext(AdditionalPropertiesDictionary? additionalObjects = null)
     {
-        Interactor = interactor;
         AdditionalObjects = additionalObjects ?? new AdditionalPropertiesDictionary();
     }
 
@@ -33,7 +33,10 @@ public class ChatContext
 
     public StringBuilder AdditionalUserMessage { get; } = new();
 
-    public IInvokeInteractor? Interactor { get; }
+    /// <summary>
+    /// 当前 ReAct 步骤的事件写入器（用于插件请求权限等场景）
+    /// </summary>
+    public ReactStep? CurrentStep { get; set; }
 
     public bool EnableSchemaCleaning { get; set; } = true;
 
@@ -42,12 +45,11 @@ public class ChatContext
     public ClientResult? Result { get; set; }
 
     public static ChatContext CreateForRequest(RequestContext requestContext,
-        IInvokeInteractor? interactor,
         AdditionalPropertiesDictionary? additionalObjects,
         bool streaming,
         ChatContext? parentContext = null)
     {
-        return new ChatContext(interactor, additionalObjects)
+        return new ChatContext(additionalObjects)
         {
             Streaming = streaming,
             ShowRequestJson = requestContext.ShowRequestJson,

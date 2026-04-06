@@ -73,16 +73,16 @@ public class ClientResponseViewItemTests
             }
         };
 
-        Assert.True(responseViewItem.HasContextUsage);
-        Assert.Equal(32_000, responseViewItem.ContextUsageTokenCount);
-        Assert.Equal(128_000, responseViewItem.MaxContextTokens);
-        Assert.Equal(0.25d, responseViewItem.ContextUsageRatio);
-        Assert.Equal(25d, responseViewItem.ContextUsagePercent);
-        Assert.False(responseViewItem.IsContextUsageWarning);
-        Assert.False(responseViewItem.IsContextUsageCritical);
-        Assert.Contains("25%", responseViewItem.ContextUsageSummary);
-        Assert.Contains("32k", responseViewItem.ContextUsageSummary);
-        Assert.Contains("128k", responseViewItem.ContextUsageSummary);
+        Assert.True(responseViewItem.ContextUsage.HasContextUsage);
+        Assert.Equal(32_000, responseViewItem.ContextUsage.ContextUsageTokenCount);
+        Assert.Equal(128_000, responseViewItem.ContextUsage.MaxContextTokens);
+        Assert.Equal(0.25d, responseViewItem.ContextUsage.ContextUsageRatio);
+        Assert.Equal(25d, responseViewItem.ContextUsage.ContextUsagePercent);
+        Assert.False(responseViewItem.ContextUsage.IsContextUsageWarning);
+        Assert.False(responseViewItem.ContextUsage.IsContextUsageCritical);
+        Assert.Contains("25%", responseViewItem.ContextUsage.ContextUsageSummary);
+        Assert.Contains("32k", responseViewItem.ContextUsage.ContextUsageSummary);
+        Assert.Contains("128k", responseViewItem.ContextUsage.ContextUsageSummary);
     }
 
     private sealed class PreviewBlockingDialogSessionViewModel : DialogSessionViewModel
@@ -139,7 +139,7 @@ public class ClientResponseViewItemTests
 
         public bool IsResponding { get; set; }
 
-        public Task<ChatCallResult> SendRequest(RequestContext context, IInvokeInteractor? interactor = null,
+        public IAsyncEnumerable<ReactStep> SendRequestAsync(RequestContext context,
             CancellationToken cancellationToken = default)
         {
             throw new InvalidOperationException("SendRequest should not be called while preview processing is blocked.");

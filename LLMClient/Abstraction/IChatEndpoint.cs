@@ -1,6 +1,4 @@
-﻿using LLMClient.Endpoints;
-
-namespace LLMClient.Abstraction;
+﻿namespace LLMClient.Abstraction;
 
 public interface IChatEndpoint
 {
@@ -12,13 +10,9 @@ public interface IChatEndpoint
     bool IsResponding { get; set; }
 
     /// <summary>
-    /// 
+    /// 以 ReAct 循环流的形式发送请求。每个 ReactStep 代表一轮 Reasoning + Acting。
     /// </summary>
-    /// <param name="context"></param>
-    /// <param name="interactor"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task<ChatCallResult> SendRequest(RequestContext context,
-        IInvokeInteractor? interactor = null,
+    IAsyncEnumerable<ReactStep> SendRequestAsync(
+        RequestContext context,
         CancellationToken cancellationToken = default);
 }
