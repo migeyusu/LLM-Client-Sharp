@@ -1,4 +1,6 @@
 ﻿using LLMClient.Abstraction;
+using LLMClient.Configuration;
+using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
@@ -24,13 +26,10 @@ public class InvokePermissionContextTests
     }
 
     [Fact]
-    public void MapFromRequest_CopiesAutoApprove_FromSummaryRequest()
+    public void MapFromRequest_CopiesAutoApprove_FromGeneratedSummaryRequest()
     {
-        var request = new SummaryRequestViewItem
-        {
-            SummaryPrompt = "summary",
-            AutoApproveAllInvocations = true,
-        };
+        var request = new Summarizer(new GlobalOptions()).CreateContextSummarizeRequest();
+        request.AutoApproveAllInvocations = true;
         var builder = new DefaultDialogContextBuilder([request]);
 
         builder.MapFromRequest(request);

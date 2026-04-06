@@ -5,7 +5,8 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
 
-public class SummaryRequestViewItem : EraseViewItem, IRequestItem
+[global::System.Obsolete("Legacy compatibility type. Runtime summary flow now uses EraseViewItem + RequestViewItem + SummaryAgent.")]
+public class SummaryRequestViewItem : BaseDialogItem, IRequestItem, IContextBoundaryItem
 {
     public int OutputLength { get; set; }
 
@@ -33,6 +34,8 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
     }
 
     public override bool IsAvailableInContext { get; } = true;
+
+    public override ChatRole Role { get; } = ChatRole.User;
 
     public void TriggerTextContentUpdate()
     {
@@ -63,4 +66,16 @@ public class SummaryRequestViewItem : EraseViewItem, IRequestItem
     public bool IsDebugMode { get; } = true;
 
     public bool AutoApproveAllInvocations { get; set; }
+
+    public ContextBoundaryEvaluation EvaluateHistoryBoundary(Guid? interactionId)
+    {
+        if (IsSummarizing)
+        {
+            return ContextBoundaryEvaluation.IncludeAndContinue(interactionId);
+        }
+
+        return InteractionId == interactionId
+            ? ContextBoundaryEvaluation.Stop(interactionId)
+            : ContextBoundaryEvaluation.Continue(null);
+    }
 }

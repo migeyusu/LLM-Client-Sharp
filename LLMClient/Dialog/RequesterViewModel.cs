@@ -42,6 +42,8 @@ public record AgentDescriptor(string Name, Type Type);
 
 public class RequesterViewModel : BaseViewModel, IChatRequest
 {
+    private static readonly AgentDescriptor SummaryAgentDescriptor = new("Summary", typeof(SummaryAgent));
+
     /// <summary>
     /// indicate whether data is changed after loading.
     /// </summary>
@@ -74,24 +76,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
                 return;
             }
 
-            IsNewResponding = true;
-            using (_tokenSource = new CancellationTokenSource())
-            {
-                var completedResult =
-                    await _getResponse.Invoke(new RequestOption()
-                    {
-                        Agent = this.SelectedAgent,
-                        DefaultClient = DefaultClient,
-                        RequestItem = request,
-                        UseAgent = this.IsAgentMode,
-                        AgentOption = this.AgentOption
-                    }, null, _tokenSource.Token);
-                OnRequestCompleted(completedResult);
-                if (!completedResult.IsInterrupt)
-                {
-                    ClearRequest();
-                }
-            }
+            await ExecuteRequestAsync(CreateRequestOption(request), clearRequestOnSuccess: true);
         }
         catch (Exception e)
         {
@@ -535,30 +520,18 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
 
     public async void Summarize(IRequestItem? insertBefore = null)
     {
-        IsNewResponding = true;
         var summaryRequest = _summarizer.CreateContextSummarizeRequest();
         try
         {
             var summarizeModel = _options.CreateContextSummarizeClient() ?? this.DefaultClient;
-            using (_tokenSource = new CancellationTokenSource())
-            {
-                await _getResponse.Invoke(new RequestOption()
-                {
-                    DefaultClient = summarizeModel,
-                    UseAgent = false,
-                    RequestItem = summaryRequest,
-                    AgentOption = AgentOption
-                }, insertBefore, _tokenSource.Token);
-            }
+            var requestOption = CreateRequestOption(summaryRequest, summarizeModel);
+            requestOption.Agent = SummaryAgentDescriptor;
+            requestOption.UseAgent = true;
+            await ExecuteRequestAsync(requestOption, insertBefore);
         }
         catch (Exception e)
         {
             MessageEventBus.Publish(e.Message);
-        }
-        finally
-        {
-            summaryRequest.IsSummarizing = false;
-            IsNewResponding = false;
         }
     }
 
@@ -582,6 +555,43 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
     private void TagDataChanged(object? sender, PropertyChangedEventArgs e)
     {
         IsDataChanged = true;
+    }
+
+    private RequestOption CreateRequestOption(IRequestItem requestItem, ILLMChatClient? client = null)
+    {
+        return new RequestOption()
+        {
+            Agent = this.SelectedAgent,
+            DefaultClient = client ?? DefaultClient,
+            RequestItem = requestItem,
+            UseAgent = this.IsAgentMode,
+            AgentOption = this.AgentOption
+        };
+    }
+
+    private async Task<IResponse> ExecuteRequestAsync(RequestOption option,
+        IRequestItem? insertBefore = null,
+        bool clearRequestOnSuccess = false)
+    {
+        IsNewResponding = true;
+        try
+        {
+            using (_tokenSource = new CancellationTokenSource())
+            {
+                var completedResult = await _getResponse.Invoke(option, insertBefore, _tokenSource.Token);
+                OnRequestCompleted(completedResult);
+                if (clearRequestOnSuccess && !completedResult.IsInterrupt)
+                {
+                    ClearRequest();
+                }
+
+                return completedResult;
+            }
+        }
+        finally
+        {
+            IsNewResponding = false;
+        }
     }
 
     protected virtual void OnRequestCompleted(IResponse obj)

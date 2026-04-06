@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.Agent;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Dialog;
 using LLMClient.Workflow.Research;
@@ -6,6 +7,7 @@ using LLMClient.Workflow.Research;
 namespace LLMClient.Data;
 
 [JsonDerivedType(typeof(MiniSweAgentPersistModel), "miniSweAgent")]
+[JsonDerivedType(typeof(SummaryAgentPersistModel), "summaryAgent")]
 [JsonDerivedType(typeof(NvidiaResearchClientPersistModel), "nvidiaResearchClient")]
 public abstract class AgentPersistModel
 {
@@ -29,5 +31,10 @@ public class NvidiaResearchClientPersistModel : AgentPersistModel
     public ParameterizedLLMModelPO? PromptModel { get; set; }
     
     public ParameterizedLLMModelPO? ReportModel { get; set; }
+}
+
+public class SummaryAgentPersistModel : AgentPersistModel
+{
+    public ParameterizedLLMModelPO? ChatClient { get; set; }
 }
 

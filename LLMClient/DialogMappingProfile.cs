@@ -33,6 +33,16 @@ public class DialogMappingProfile : Profile
                     : EmptyLlmModelClient.Instance;
                 return new MiniSweAgent(client, src.AgentOption ?? new AgentOption());
             });
+
+        CreateMap<SummaryAgent, SummaryAgentPersistModel>();
+        CreateMap<SummaryAgentPersistModel, SummaryAgent>()
+            .ConstructUsing((src, ctx) =>
+            {
+                var client = src.ChatClient != null
+                    ? ctx.Mapper.Map<ILLMChatClient>(src.ChatClient)
+                    : EmptyLlmModelClient.Instance;
+                return new SummaryAgent(client);
+            });
         
         CreateMap<NvidiaResearchClient, NvidiaResearchClientPersistModel>();
         // Note: NvidiaResearchClientPersistModel -> NvidiaResearchClient mapping 

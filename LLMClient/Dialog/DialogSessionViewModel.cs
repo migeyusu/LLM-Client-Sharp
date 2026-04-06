@@ -336,6 +336,11 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         ScrollViewItem = eraseViewItem;
     }
 
+    public Task CutContextAsync(IRequestItem? requestItem = null)
+    {
+        return DispatchAsync(() => CutContext(requestItem));
+    }
+
     public ICommand ClearDialogCommand { get; }
 
     public void DeleteInteraction(IRequestItem preRequest)
@@ -599,6 +604,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         if (agentType == typeof(MiniSweAgent))
         {
             agent = new MiniSweAgent(client, agentOption);
+        }
+        else if (agentType == typeof(SummaryAgent))
+        {
+            agent = new SummaryAgent(client);
         }
         else if (agentType == typeof(NvidiaResearchClient))
         {

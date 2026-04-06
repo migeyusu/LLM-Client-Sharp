@@ -9,6 +9,7 @@ using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Project;
+using LLMClient.ToolCall;
 
 namespace LLMClient;
 
@@ -222,7 +223,7 @@ public class SessionProjectPersistenceProfile : Profile
         IDialogGraphViewModel destination)
     {
         List<IDialogItem> vmList = [];
-        var flatPersistItems = source.DialogItems;
+        var flatPersistItems = ExpandLegacySummaryItems(source.DialogItems);
         if (flatPersistItems == null || flatPersistItems.Length == 0) return;
 
         var idMap = new Dictionary<Guid, IDialogItem>();
@@ -271,6 +272,42 @@ public class SessionProjectPersistenceProfile : Profile
 
             destination.CurrentLeaf = root.DefaultLastItem();
         }
+    }
+
+    private static IDialogPersistItem[]? ExpandLegacySummaryItems(IDialogPersistItem[]? dialogItems)
+    {
+        if (dialogItems == null || dialogItems.Length == 0)
+        {
+            return dialogItems;
+        }
+
+        var expandedItems = new List<IDialogPersistItem>(dialogItems.Length);
+        foreach (var dialogItem in dialogItems)
+        {
+            if (dialogItem is not SummaryRequestPersistItem summaryRequest)
+            {
+                expandedItems.Add(dialogItem);
+                continue;
+            }
+
+            var eraseId = Guid.NewGuid();
+            expandedItems.Add(new ErasePersistItem
+            {
+                Id = eraseId,
+                PreviousItemId = summaryRequest.PreviousItemId,
+            });
+            expandedItems.Add(new RequestPersistItem
+            {
+                Id = summaryRequest.Id,
+                PreviousItemId = eraseId,
+                InteractionId = summaryRequest.InteractionId,
+                RawTextMessage = summaryRequest.SummaryPrompt ?? string.Empty,
+                CallEngineType = FunctionCallEngineType.Prompt,
+                Tokens = (long)((summaryRequest.SummaryPrompt?.Length ?? 0) / 2.8),
+            });
+        }
+
+        return expandedItems.ToArray();
     }
 
     private static void FlattenTreeForSave(IDialogGraphViewModel source, DialogSessionPersistModel destination,

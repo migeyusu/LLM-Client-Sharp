@@ -311,32 +311,26 @@ public static class Extension
              dialogViewItem != null;
              dialogViewItem = dialogViewItem.PreviousItem)
         {
-            if (dialogViewItem is SummaryRequestViewItem summaryRequestViewItem)
+            if (dialogViewItem is IContextBoundaryItem contextBoundaryItem)
             {
-                if (summaryRequestViewItem.IsSummarizing)
+                var evaluation = contextBoundaryItem.EvaluateHistoryBoundary(interactionId);
+                interactionId = evaluation.NextInteractionId;
+                if (evaluation.IncludeInHistory)
                 {
-                    yield return summaryRequestViewItem;
+                    yield return dialogViewItem;
                 }
-                else
+
+                if (evaluation.StopTraversal)
                 {
-                    //这样的设计允许中间有不可用的总结（跳过）
-                    if (summaryRequestViewItem.InteractionId == interactionId)
-                    {
-                        yield break;
-                    }
-                    else
-                    {
-                        interactionId = null;
-                    }
+                    yield break;
                 }
+
+                continue;
             }
-            else if (dialogViewItem is EraseViewItem)
+
+            if (dialogViewItem is IResponseItem multiResponseViewItem)
             {
-                yield break;
-            }
-            else if (dialogViewItem is IResponseItem multiResponseViewItem)
-            {
-                if (multiResponseViewItem.IsResponding == true)
+                if (multiResponseViewItem.IsResponding)
                 {
                     throw new InvalidOperationException("无法生成包含正在响应的记录的历史");
                 }
@@ -352,11 +346,11 @@ public static class Extension
                     interactionId = null;
                 }
             }
-            else if (dialogViewItem is RequestViewItem requestViewItem)
+            else if (dialogViewItem is IRequestItem requestItem)
             {
-                if (interactionId == requestViewItem.InteractionId)
+                if (interactionId == requestItem.InteractionId)
                 {
-                    yield return requestViewItem;
+                    yield return requestItem;
                 }
             }
         }

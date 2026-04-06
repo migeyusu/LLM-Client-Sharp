@@ -2,7 +2,7 @@
 
 namespace LLMClient.Dialog.Models;
 
-public class EraseViewItem : BaseDialogItem
+public class EraseViewItem : BaseDialogItem, IContextBoundaryItem
 {
     public override IEnumerable<ChatMessage> Messages => throw new NotSupportedException();
 
@@ -13,4 +13,9 @@ public class EraseViewItem : BaseDialogItem
     public override ChatRole Role { get; } = EraseRole;
 
     static ChatRole EraseRole = new ChatRole("erase");
+
+    public ContextBoundaryEvaluation EvaluateHistoryBoundary(Guid? interactionId)
+    {
+        return ContextBoundaryEvaluation.Stop(interactionId);
+    }
 }

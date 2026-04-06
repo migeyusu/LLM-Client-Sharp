@@ -218,6 +218,41 @@ public class ProjectPersistenceTests
         });
     }
 
+    [Fact]
+    public void DialogPersistence_LoadsLegacySummaryRequest_AsErasePlusRequest()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var serviceProvider = CreateServiceProvider();
+            BaseViewModel.ServiceLocator = serviceProvider;
+
+            var mapper = serviceProvider.GetRequiredService<IMapper>();
+            var summaryId = Guid.NewGuid();
+            var persistModel = new DialogFilePersistModel
+            {
+                Topic = "Legacy Summary",
+                DialogItems =
+                [
+                    new SummaryRequestPersistItem
+                    {
+                        Id = summaryId,
+                        InteractionId = Guid.NewGuid(),
+                        SummaryPrompt = "legacy summary",
+                    }
+                ],
+                CurrentLeaf = new SummaryRequestPersistItem { Id = summaryId },
+            };
+
+            var dialog = mapper.Map<DialogFilePersistModel, DialogViewModel>(persistModel, _ => { });
+
+            var erase = Assert.IsType<EraseViewItem>(Assert.Single(dialog.DialogItems.OfType<EraseViewItem>()));
+            var request = Assert.IsType<RequestViewItem>(Assert.Single(dialog.DialogItems.OfType<RequestViewItem>()));
+            Assert.Equal("legacy summary", request.RawTextMessage);
+            Assert.Same(erase, request.PreviousItem);
+            Assert.DoesNotContain(dialog.DialogItems, item => item is SummaryRequestViewItem);
+        });
+    }
+
     private static ServiceProvider CreateServiceProvider()
     {
         return new ServiceCollection()

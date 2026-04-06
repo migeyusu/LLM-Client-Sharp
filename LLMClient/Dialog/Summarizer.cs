@@ -2,9 +2,9 @@
 using System.Windows;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
-using LLMClient.Component;
 using LLMClient.Configuration;
 using LLMClient.Dialog.Models;
+using LLMClient.Endpoints;
 
 namespace LLMClient.Dialog;
 
@@ -73,14 +73,13 @@ public class Summarizer
         }
     }
 
-    public SummaryRequestViewItem CreateContextSummarizeRequest()
+    public RequestViewItem CreateContextSummarizeRequest()
     {
-        return new SummaryRequestViewItem()
+        return new RequestViewItem(_options.ContextSummarizePrompt)
         {
-            SummaryPrompt = _options.ContextSummarizePrompt,
-            OutputLength = _options.ContextSummarizeWordsCount,
             InteractionId = Guid.NewGuid(),
-            IsSummarizing = true,
+            CallEngineType = FunctionCallEngineType.Prompt,
+            IsDebugMode = true,
         };
     }
 

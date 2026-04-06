@@ -225,6 +225,11 @@ public class NvidiaResearchClientTests
             return _history;
         }
 
+        public Task CutContextAsync(IRequestItem? requestItem = null)
+        {
+            return Task.CompletedTask;
+        }
+
         public string? SystemPrompt => null;
     }
 }

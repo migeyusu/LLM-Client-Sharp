@@ -577,6 +577,11 @@ public class MiniSweRegressionTests
             return _history;
         }
 
+        public Task CutContextAsync(IRequestItem? requestItem = null)
+        {
+            return Task.CompletedTask;
+        }
+
         public string? SystemPrompt => null;
     }
 
@@ -587,6 +592,11 @@ public class MiniSweRegressionTests
         public List<IChatHistoryItem> GetHistory()
         {
             return [];
+        }
+
+        public Task CutContextAsync(IRequestItem? requestItem = null)
+        {
+            return Task.CompletedTask;
         }
 
         public string? SystemPrompt => null;
