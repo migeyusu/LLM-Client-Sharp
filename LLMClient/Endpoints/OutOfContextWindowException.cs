@@ -2,18 +2,18 @@
 
 namespace LLMClient.Endpoints;
 
-public class CriticalException : Exception
+public class ChatCriticalException : Exception
 {
-    public CriticalException(string message) : base(message)
+    public ChatCriticalException(string message) : base(message)
     {
     }
 
-    public CriticalException(string message, Exception innerException) : base(message, innerException)
+    public ChatCriticalException(string message, Exception innerException) : base(message, innerException)
     {
     }
 }
 
-public class LlmInvalidRequestException : CriticalException
+public class LlmInvalidRequestException : ChatCriticalException
 {
     public LlmInvalidRequestException() : base("The request was invalid or cannot be served by the LLM endpoint.")
     {

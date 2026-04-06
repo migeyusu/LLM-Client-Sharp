@@ -375,6 +375,7 @@
                             <materialDesign:SplitButton Margin="6,0,0,0"
                                                         Padding="10,4"
                                                         PopupUniformCornerRadius="6"
+                                                        PopupElevation="Dp2"
                                                         Command="{Binding NewRequestCommand}"
                                                         Visibility="{Binding IsNewResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
                                 <materialDesign:SplitButton.ContentTemplate>
@@ -393,20 +394,37 @@
                                     </DataTemplate>
                                 </materialDesign:SplitButton.ContentTemplate>
                                 <materialDesign:SplitButton.PopupContent>
-                                    <Button Command="{Binding SummarizeCommand}"
-                                            Width="120"
-                                            Height="40"
-                                            Style="{StaticResource MaterialDesignPaperLightButton}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="总结"
-                                                       VerticalAlignment="Center" />
-                                            <materialDesign:PackIcon Kind="LightbulbOnOutline"
-                                                                     Width="16"
-                                                                     Height="16"
-                                                                     Margin="6,0,0,0"
-                                                                     VerticalAlignment="Center" />
-                                        </StackPanel>
-                                    </Button>
+                                    <StackPanel>
+                                        <Button Command="{Binding SummarizeCommand}"
+                                                Width="110"
+                                                Height="40"
+                                                Style="{StaticResource MaterialDesignFlatButton}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="对话总结"
+                                                           VerticalAlignment="Center" />
+                                                <materialDesign:PackIcon Kind="LightbulbOnOutline"
+                                                                         Width="16"
+                                                                         Height="16"
+                                                                         Margin="6,0,0,0"
+                                                                         VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding ComplexSummaryCommand}"
+                                                Width="110"
+                                                Height="40"
+                                                Margin="0,6,0,0"
+                                                Style="{StaticResource MaterialDesignFlatButton}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="任务总结"
+                                                           VerticalAlignment="Center" />
+                                                <materialDesign:PackIcon Kind="TaskAuto"
+                                                                         Width="16"
+                                                                         Height="16"
+                                                                         Margin="6,0,0,0"
+                                                                         VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
                                 </materialDesign:SplitButton.PopupContent>
                             </materialDesign:SplitButton>
                             <!--<Button Command="{Binding TestCommand}" Content="测试" />-->

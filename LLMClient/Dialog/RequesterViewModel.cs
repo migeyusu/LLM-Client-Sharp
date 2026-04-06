@@ -2,8 +2,10 @@
 using System.ComponentModel;
 using System.Reflection;
 using System.Text;
+using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
@@ -43,6 +45,8 @@ public record AgentDescriptor(string Name, Type Type);
 public class RequesterViewModel : BaseViewModel, IChatRequest
 {
     private static readonly AgentDescriptor SummaryAgentDescriptor = new("Summary", typeof(SummaryAgent));
+
+    private static readonly TimeSpan ComplexSummaryTimeout = TimeSpan.FromMinutes(2);
 
     /// <summary>
     /// indicate whether data is changed after loading.
@@ -101,6 +105,44 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
     }
 
     public ICommand SummarizeCommand => new ActionCommand(_ => { Summarize(); });
+
+    public ICommand ComplexSummaryCommand => new ActionCommand(async _ =>
+    {
+        if (_isComplexSummaryRunning)
+        {
+            return;
+        }
+
+        var currentSession = _currentSessionProvider?.Invoke();
+        if (currentSession == null)
+        {
+            MessageEventBus.Publish("当前没有可用会话，无法生成复杂总结。");
+            return;
+        }
+
+        try
+        {
+            _isComplexSummaryRunning = true;
+            var summary = await _summarizer.SummarizeConversationHistoryAsync(currentSession,
+                new Duration(ComplexSummaryTimeout));
+            if (string.IsNullOrWhiteSpace(summary))
+            {
+                MessageBoxes.Warning("未生成复杂总结，请先配置可用的摘要模型。", "Complex Summary");
+                return;
+            }
+
+            Clipboard.SetText(summary);
+            MessageBoxes.Info(summary, "Complex Summary");
+        }
+        catch (Exception e)
+        {
+            MessageBoxes.Error("生成复杂总结失败: " + e.Message, "Complex Summary");
+        }
+        finally
+        {
+            _isComplexSummaryRunning = false;
+        }
+    });
 
     public ICommand ChangeModelCommand => new ActionCommand(async o =>
     {
@@ -364,12 +406,17 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
     private readonly GlobalOptions _options;
     private readonly Summarizer _summarizer;
 
+    private readonly Func<ITextDialogSession?>? _currentSessionProvider;
+
     private readonly ITokensCounter _tokensCounter;
+
+    private bool _isComplexSummaryRunning;
 
     public RequesterViewModel(string initialPrompt, ILLMChatClient modelClient,
         GetResponseHandler getResponse,
         GlobalOptions options, Summarizer summarizer, IRagSourceCollection ragSourceCollection,
-        ITokensCounter tokensCounter)
+        ITokensCounter tokensCounter,
+        Func<ITextDialogSession?>? currentSessionProvider = null)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
@@ -381,6 +428,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         _summarizer = summarizer;
         _ragSourceCollection = ragSourceCollection;
         _tokensCounter = tokensCounter;
+        _currentSessionProvider = currentSessionProvider;
         _agentOption.PropertyChanged += TagDataChanged;
         this.BindClient(modelClient);
 

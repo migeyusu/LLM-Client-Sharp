@@ -444,7 +444,8 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
-            (GetResponseHandler)GetResponse);
+            (GetResponseHandler)GetResponse,
+            new Func<ITextDialogSession?>(() => this.SelectedSession));
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.ConnectDefault()
             .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedSession?.SelectedFunctionGroups));

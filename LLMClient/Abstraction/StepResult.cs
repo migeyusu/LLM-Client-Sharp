@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.AI;
+﻿using System.Diagnostics.CodeAnalysis;
+using LLMClient.Endpoints;
+using Microsoft.Extensions.AI;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace LLMClient.Abstraction;
@@ -21,5 +23,12 @@ public sealed class StepResult
     public List<ChatMessage> Messages { get; init; } = [];
 
     public Exception? Exception { get; init; }
+    
+    [MemberNotNullWhen(true, nameof(Exception))]
+    public bool IsCanceled => Exception is OperationCanceledException;
+
+    [MemberNotNullWhen(true, nameof(Exception))]
+    public bool IsInvalidRequest => Exception is LlmInvalidRequestException;
+
 }
 

@@ -124,7 +124,8 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
     {
         this.Topic = topic;
         Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
-            (GetResponseHandler)NewDefaultResponse);
+            (GetResponseHandler)NewDefaultResponse,
+            new Func<ITextDialogSession?>(() => this));
         Requester.FunctionGroupSource = this;
         Requester.FunctionTreeSelector.Reset();
         var functionTreeSelector = Requester.FunctionTreeSelector;

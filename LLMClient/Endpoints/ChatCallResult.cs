@@ -75,7 +75,7 @@ public class ChatCallResult : IResponse
 
     public bool IsUnhandledError
     {
-        get { return Exception is CriticalException; }
+        get { return Exception is ChatCriticalException; }
     }
 
     public ChatFinishReason? FinishReason { get; set; }

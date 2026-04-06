@@ -134,12 +134,13 @@ public class MiniSweAgent : IAgent
                     }
                 }
 
-                if (lastStepResult?.Exception is OperationCanceledException)
+
+                if (lastStepResult?.IsCanceled == true)
                 {
                     yield break;
                 }
 
-                if (lastStepResult?.Exception is CriticalException)
+                if (lastStepResult?.IsInvalidRequest == true)
                 {
                     yield break;
                 }
@@ -197,6 +198,7 @@ public class MiniSweAgent : IAgent
         {
             return true;
         }
+
         return message?.Text?.Contains(Config.TaskCompleteFlag, StringComparison.Ordinal) == true;
     }
 }

@@ -669,7 +669,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 IsCompleted = false,
                 MaxContextTokens = Model.MaxContextSize,
                 Messages = responseMessages,
-                Exception = new CriticalException(
+                Exception = new ChatCriticalException(
                     "An unhandled exception occurred during response processing.", ex),
             });
         }
