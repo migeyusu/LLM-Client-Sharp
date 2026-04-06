@@ -49,12 +49,6 @@ public class ReactLoopViewModel : BaseViewModel
     public string? FirstLine { get; set; }
 
     /// <summary>
-    /// 首行文本的截断版本（用于显示）
-    /// </summary>
-    public string? FirstLineTruncated =>
-        string.IsNullOrEmpty(FirstLine) || FirstLine.Length <= 50 ? FirstLine : FirstLine[..50] + "...";
-
-    /// <summary>
     /// 该轮的延迟（毫秒）
     /// </summary>
     public int LatencyMs { get; set; }

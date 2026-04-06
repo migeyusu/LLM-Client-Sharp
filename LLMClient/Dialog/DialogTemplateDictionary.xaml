@@ -330,7 +330,7 @@
                                                  VerticalAlignment="Center"
                                                  Margin="8,0,0,0"
                                                  Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-                        <TextBlock Text="{Binding FirstLineTruncated}"
+                        <TextBlock Text="{Binding FirstLine,Mode=OneWay}"
                                    VerticalAlignment="Center"
                                    Margin="12,0,0,0"
                                    MaxWidth="200"

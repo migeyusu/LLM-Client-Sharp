@@ -29,8 +29,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     public abstract ILLMAPIEndpoint Endpoint { get; }
 
     [JsonIgnore] public abstract IEndpointModel Model { get; }
-
-
+    
     public bool IsResponding
     {
         get;
