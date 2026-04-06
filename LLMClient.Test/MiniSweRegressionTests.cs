@@ -48,10 +48,13 @@ public class MiniSweRegressionTests
             .GetField("_toolProviders", BindingFlags.Instance | BindingFlags.NonPublic)!
             .SetValue(agent, Array.Empty<KernelFunctionGroup>());
 
-        var results = new List<ChatCallResult>();
-        await foreach (var result in agent.Execute(session, cancellationToken: CancellationToken.None))
+        var results = new List<StepResult>();
+        await foreach (var step in agent.Execute(session, cancellationToken: CancellationToken.None))
         {
-            results.Add(result);
+            // Consume all events so step.Result becomes available
+            await foreach (var _ in step) { }
+            if (step.Result != null)
+                results.Add(step.Result);
         }
 
         Assert.Equal(2, results.Count);
@@ -498,7 +501,7 @@ public class MiniSweRegressionTests
 
         public string Name => "CancelAwareAgent";
 
-        public async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
+        public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             TokenCaptured.TrySetResult(cancellationToken);

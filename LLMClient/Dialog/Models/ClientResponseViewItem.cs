@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -10,10 +9,8 @@ using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
-using LLMClient.Component.ViewModel.Base;
 using LLMClient.Data;
 using LLMClient.Endpoints;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -80,11 +77,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public ObservableCollection<AsyncPermissionViewModel> PermissionViewModels { get; } = [];
 
-    /// <summary>
-    /// 在响应过程中，临时存储文本内容，不持久化
-    /// </summary>
-    private readonly StringBuilder _history = new();
-
     private int _respondingStateRefCount;
 
     public static ICommand ShowTempResponseCommand { get; } = new RelayCommand<ClientResponseViewItem>(o =>
@@ -101,7 +93,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 Content = new TextBox()
                 {
                     IsReadOnly = true,
-                    Text = o._history.ToString(),
+                    /*Text = o._history.ToString(),*/
                     TextWrapping = TextWrapping.Wrap
                 }
             }
@@ -194,10 +186,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
             AcquireRespondingState();
             ErrorMessage = null;
-            LoopCount = 0;
-            Loops.Clear();
             Messages = [];
-            _history.Clear();
             RequestTokenSource = token != CancellationToken.None
                 ? CancellationTokenSource.CreateLinkedTokenSource(token)
                 : new CancellationTokenSource();
@@ -206,93 +195,8 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 var ct = RequestTokenSource.Token;
                 var requestContext = await contextBuilder.BuildAsync(Client.Model, token);
 
-                var totalUsage = new UsageDetails
-                {
-                    InputTokenCount = 0, OutputTokenCount = 0, TotalTokenCount = 0,
-                };
-                var allMessages = new List<Microsoft.Extensions.AI.ChatMessage>();
-                ChatFinishReason? finishReason = null;
-                Exception? exception = null;
-                int totalLatency = 0;
-                int validCallTimes = 0;
-                UsageDetails? lastSuccessfulUsage = null;
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                await foreach (var step in Client.SendRequestAsync(requestContext, ct))
-                {
-                    // BeginLoop
-                    LoopCount++;
-                    var loopVm = new ReactLoopViewModel { LoopNumber = LoopCount };
-                    Loops.Add(loopVm);
-
-                    await foreach (var evt in step.WithCancellation(ct))
-                    {
-                        switch (evt)
-                        {
-                            case TextDelta t:
-                                loopVm.ResponseBuffer.Add(t.Text);
-                                loopVm.NotifyFirstLine();
-                                _history.Append(t.Text);
-                                break;
-                            case ReasoningDelta r:
-                                loopVm.ResponseBuffer.Add(r.Text);
-                                _history.Append(r.Text);
-                                break;
-                            case FunctionCallStarted fc:
-                                loopVm.ResponseBuffer.Add($"Function call: {fc.Call.Name}\n");
-                                loopVm.NotifyFirstLine();
-                                break;
-                            case FunctionCallCompleted fc:
-                                loopVm.ResponseBuffer.Add(fc.Error == null
-                                    ? $"Function result received: {fc.CallId}\n"
-                                    : $"Function call failed: {fc.CallId}\n");
-                                break;
-                            case PermissionRequest pr:
-                                var allowed = await InvokePermissionDialog.RequestAsync(pr.Content);
-                                pr.Response.SetResult(allowed);
-                                break;
-                            case DiagnosticMessage dm:
-                                loopVm.ResponseBuffer.Add($"[{dm.Level}] {dm.Message}\n");
-                                _history.AppendLine($"[{dm.Level}] {dm.Message}");
-                                break;
-                        }
-                    }
-
-                    // EndLoop
-                    var result = step.Result;
-                    if (result != null)
-                    {
-                        loopVm.ContextUsage = new ContextUsageViewModel(
-                            result.Usage, result.MaxContextTokens);
-                        loopVm.LatencyMs = result.LatencyMs;
-                        loopVm.IsCompleted = true;
-                        loopVm.IsExpanded = false;
-
-                        if (result.Usage != null)
-                        {
-                            totalUsage.Add(result.Usage);
-                            lastSuccessfulUsage = result.Usage;
-                        }
-
-                        allMessages.AddRange(result.Messages);
-                        finishReason = result.FinishReason;
-                        exception ??= result.Exception;
-                        totalLatency += result.LatencyMs;
-                        if (result.Exception == null) validCallTimes++;
-                    }
-                }
-
-                completedResult = new ChatCallResult
-                {
-                    Usage = totalUsage,
-                    LastSuccessfulUsage = lastSuccessfulUsage,
-                    Messages = allMessages,
-                    FinishReason = finishReason,
-                    Exception = exception,
-                    Latency = totalLatency,
-                    Duration = (int)Math.Ceiling(sw.ElapsedMilliseconds / 1000f),
-                    ValidCallTimes = validCallTimes,
-                };
+                completedResult = await ConsumeReactStepsAsync(
+                    Client.SendRequestAsync(requestContext, ct), ct);
 
                 ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(completedResult, this);
                 OnPropertyChangedAsync(nameof(TpS));

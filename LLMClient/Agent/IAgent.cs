@@ -1,5 +1,5 @@
-﻿using LLMClient.Dialog.Models;
-using LLMClient.Endpoints;
+﻿using LLMClient.Abstraction;
+using LLMClient.Dialog.Models;
 
 namespace LLMClient.Agent;
 
@@ -7,7 +7,10 @@ public interface IAgent
 {
     string Name { get; }
     
-    IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
+    /// <summary>
+    /// 以 ReAct 循环流的形式执行 Agent。每个 ReactStep 代表一轮 Reasoning + Acting。
+    /// </summary>
+    IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         CancellationToken cancellationToken = default);
 }
 

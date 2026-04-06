@@ -58,7 +58,7 @@ public class MiniSweAgent : IAgent
 
     public string Name { get; } = "MiniSWE Agent";
 
-    public async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
+    public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var chatHistory = dialogSession.GetHistory();
@@ -119,36 +119,44 @@ public class MiniSweAgent : IAgent
                 throw new Exception("Step limit exceeded");
             }
 
-            ChatCallResult? callResult = null;
+            StepResult? lastStepResult = null;
             int retryCount = 0;
             while (retryCount < StepRetryCount)
             {
-                callResult = await ChatClient.SendRequestCompatAsync(requestContext, cancellationToken);
-                requestContext.ChatHistory.AddRange(callResult.Messages);
-                yield return callResult;
-                if (callResult.IsCanceled)
+                await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))
+                {
+                    yield return step;
+
+                    if (step.Result != null)
+                    {
+                        requestContext.ChatHistory.AddRange(step.Result.Messages);
+                        lastStepResult = step.Result;
+                    }
+                }
+
+                if (lastStepResult?.Exception is OperationCanceledException)
                 {
                     yield break;
                 }
 
-                if (callResult.IsUnhandledError)
+                if (lastStepResult?.Exception is CriticalException)
                 {
                     yield break;
                 }
 
-                if (!callResult.IsInterrupt)
+                if (lastStepResult?.Exception == null)
                 {
                     break;
                 }
 
-                // requestContext.ChatHistory is already mutated by SendRequest; avoid duplicating the same
-                // messages when retrying the current step after a recoverable interrupt.
+                // requestContext.ChatHistory is already mutated by the steps above;
+                // avoid duplicating messages when retrying the current step after a recoverable interrupt.
                 retryCount++;
             }
 
             CallCount++;
 
-            var lastMessage = callResult?.Messages?.LastOrDefault();
+            var lastMessage = requestContext.ChatHistory.LastOrDefault();
             if (IsExitMessage(lastMessage))
             {
                 break;

@@ -8,7 +8,6 @@ using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Configuration;
 using LLMClient.Dialog.Models;
-using LLMClient.Endpoints;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel.Data;
@@ -40,7 +39,7 @@ public class NvidiaResearchClient : ResearchClient
     public IParameterizedLLMModel ReportModel { get; }
 
     [Experimental("SKEXP0110")]
-    public override async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
+    public override async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var lastRequest = dialogSession.DialogItems.LastOrDefault(item => item is RequestViewItem) as RequestViewItem;
@@ -64,7 +63,7 @@ public class NvidiaResearchClient : ResearchClient
         // ====================================================================
         // 阶段 1: 研究
         // ====================================================================
-        Information($"Received research request: '{prompt}'");
+        yield return EmitProgress($"Received research request: '{prompt}'");
 
         var isPromptValid = await CheckIfPromptIsValidAsync(agent, prompt, cancellationToken);
         if (!isPromptValid)
@@ -72,13 +71,13 @@ public class NvidiaResearchClient : ResearchClient
             throw new Exception("The prompt is not a valid document research prompt. Please try again.");
         }
 
-        Information("Analyzing the research request...");
+        yield return EmitProgress("Analyzing the research request...");
         var (taskPrompt, formatPrompt) =
             await PerformPromptDecompositionAsync(agent, prompt, cancellationToken);
-        Information($"Prompt analysis completed. Task: '{taskPrompt}'");
+        yield return EmitProgress($"Prompt analysis completed. Task: '{taskPrompt}'");
 
         var topics = await GenerateTopicsAsync(agent, taskPrompt, cancellationToken);
-        Information($"Task analysis completed. Will be researching {topics.Count} topics.");
+        yield return EmitProgress($"Task analysis completed. Will be researching {topics.Count} topics.");
 
         var topicRelevantSegments = new Dictionary<string, List<string>>();
         var searchResultUrls = new List<string>();
@@ -87,18 +86,18 @@ public class NvidiaResearchClient : ResearchClient
         foreach (var topic in topics)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Information($"Researching '{topic}'");
+            yield return EmitProgress($"Researching '{topic}'");
 
             var searchPhrases = await ProduceSearchPhrasesAsync(agent, taskPrompt, topic,
                 cancellationToken);
-            Information($"Will invoke {searchPhrases.Count} search phrases to research '{topic}'.");
+            yield return EmitProgress($"Will invoke {searchPhrases.Count} search phrases to research '{topic}'.");
 
             topicRelevantSegments[topic] = [];
 
             foreach (var searchPhrase in searchPhrases)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                Information($"Searching for '{searchPhrase}'");
+                yield return EmitProgress($"Searching for '{searchPhrase}'");
                 var skTextSearchResult = await textSearch.GetTextSearchResultsAsync(searchPhrase,
                     new TextSearchOptions()
                     {
@@ -159,7 +158,7 @@ public class NvidiaResearchClient : ResearchClient
                 searchResultUrls.AddRange(originalSearchResults.Select(r => r.Url));
                 allResults.AddRange(originalSearchResults);
 
-                Information($"Processing {originalSearchResults.Count} new search results.");
+                yield return EmitProgress($"Processing {originalSearchResults.Count} new search results.");
 
                 foreach (var searchResult in originalSearchResults)
                 {
@@ -184,16 +183,16 @@ public class NvidiaResearchClient : ResearchClient
             }
         }
 
-        Information("Research phase completed.");
+        yield return EmitProgress("Research phase completed.");
 
         // ====================================================================
         // 阶段 2: 报告 
         // ====================================================================
-        Information("Aggregating relevant information and building the report...");
+        yield return EmitProgress("Aggregating relevant information and building the report...");
 
         var initialReport =
             await ProduceReportAsync(agent, taskPrompt, formatPrompt, topicRelevantSegments, cancellationToken);
-        Information("Initial report generated. Formatting and finalizing...");
+        yield return EmitProgress("Initial report generated. Formatting and finalizing...");
 
         var consistentReport =
             await EnsureFormatIsRespectedAsync(agent, formatPrompt, initialReport, cancellationToken);
@@ -216,21 +215,25 @@ public class NvidiaResearchClient : ResearchClient
         }
 
         var finalReport = finalReportBuilder.ToString();
-        Information("Report completed.");
 
-        yield return new ChatCallResult
+        var finalStep = new ReactStep();
+        finalStep.EmitText(finalReport);
+        finalStep.Complete(new StepResult
         {
+            Messages = [new ChatMessage(ChatRole.Assistant, finalReport)],
             Usage = agent.Usage,
-            Latency = 0,
-            Duration = stopwatch.Elapsed.Seconds,
-            Price = agent.Price,
-            Messages = [new ChatMessage(ChatRole.Assistant, finalReport)]
-        };
+            IsCompleted = true
+        });
+        yield return finalStep;
+    }
 
-        void Information(string message)
-        {
-            Trace.TraceInformation(message);
-        }
+    private static ReactStep EmitProgress(string message)
+    {
+        Trace.TraceInformation(message);
+        var step = new ReactStep();
+        step.EmitDiagnostic(DiagLevel.Info, message);
+        step.Complete(new StepResult { IsCompleted = true });
+        return step;
     }
 
     #region Private Helper Methods (LLM Interactions)
@@ -262,7 +265,6 @@ public class NvidiaResearchClient : ResearchClient
     /// </summary>
     /// <param name="promptAgent"></param>
     /// <param name="prompt"></param>
-    /// <param name="logger"></param>
     /// <param name="token"></param>
     /// <returns></returns>
     private async Task<(string TaskPrompt, string FormatPrompt)> PerformPromptDecompositionAsync(

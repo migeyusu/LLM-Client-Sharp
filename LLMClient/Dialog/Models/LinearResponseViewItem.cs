@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using AutoMapper;
-using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Agent.MiniSWE;
@@ -9,7 +7,6 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog.Models;
@@ -19,7 +16,11 @@ namespace LLMClient.Dialog.Models;
 /// </summary>
 public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
 {
-    public override long Tokens => Items.Sum(x => x.Tokens);
+    private readonly List<ChatMessage> _accumulatedMessages = [];
+    private UsageDetails? _accumulatedUsage;
+    private bool _hasError;
+
+    public override long Tokens => _accumulatedUsage?.OutputTokenCount ?? Items.Sum(x => x.Tokens);
 
     public override bool IsAvailableInContext
     {
@@ -48,7 +49,7 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
 
     public bool IsInterrupt
     {
-        get { return this.Items.Any(item => item.IsInterrupt); }
+        get { return _hasError || this.Items.Any(item => item.IsInterrupt); }
     }
 
     public string? ErrorMessage
@@ -75,7 +76,8 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
 
     public override ChatRole Role => ChatRole.Assistant;
 
-    public override IEnumerable<ChatMessage> Messages => Items.SelectMany(x => x.Messages);
+    public override IEnumerable<ChatMessage> Messages =>
+        _accumulatedMessages.Count > 0 ? _accumulatedMessages : Items.SelectMany(x => x.Messages);
 
     public int LoopCount
     {
@@ -93,7 +95,6 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
     /// </summary>
     public ObservableCollection<ReactLoopViewModel> Loops { get; } = [];
 
-    private ReactLoopViewModel? _currentLoop;
 
     public IAgent? Agent { get; }
 
@@ -137,11 +138,10 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
             return ChatCallResult.Empty;
         }
 
-        var totalCallResult = new ChatCallResult();
         this.ErrorMessage = null;
-        this.LoopCount = 0;
-        this.Loops.Clear();
-        this._currentLoop = null;
+        this._accumulatedMessages.Clear();
+        this._accumulatedUsage = null;
+        this._hasError = false;
         this.IsResponding = true;
         try
         {
@@ -152,31 +152,27 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
             {
                 var cancellationToken = RequestTokenSource.Token;
                 await ParentSession.OnPreviewRequest(cancellationToken);
-                await foreach (var callResult in Agent.Execute(session,
-                                   cancellationToken: cancellationToken))
-                {
-                    var viewItem =
-                        ServiceLocator.GetService<IMapper>()!.Map<IResponse, RawResponseViewItem>(callResult);
-                    totalCallResult += callResult;
-                    this.Items.Add(viewItem);
 
-                    // 更新 loop 信息
-                    LoopCount++;
-                    var loop = new ReactLoopViewModel { LoopNumber = LoopCount };
-                    Loops.Add(loop);
-                    _currentLoop = loop;
-                    loop.IsCompleted = true;
-                    loop.IsExpanded = false;
-                }
+                var totalCallResult = await ResponseViewItemBase.ConsumeReactStepsAsync(
+                    Agent.Execute(session, cancellationToken: cancellationToken),
+                    Loops,
+                    count => LoopCount = count,
+                    cancellationToken,
+                    MaxContextTokens);
+
+                _accumulatedMessages.AddRange(totalCallResult.Messages);
+                _accumulatedUsage = totalCallResult.Usage;
+                _hasError = totalCallResult.Exception != null;
 
                 ParentSession.OnResponseCompleted(totalCallResult);
+                return totalCallResult;
             }
         }
         catch (Exception e)
         {
             MessageBoxes.Error(e.Message, "响应失败");
             this.ErrorMessage = e.Message;
-            totalCallResult.Exception = e;
+            return new ChatCallResult { Exception = e };
         }
         finally
         {
@@ -184,7 +180,5 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
             OnPropertyChanged(nameof(IsInterrupt));
             OnPropertyChanged(nameof(IsAvailableInContext));
         }
-
-        return totalCallResult;
     }
 }

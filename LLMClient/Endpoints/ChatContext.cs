@@ -40,7 +40,7 @@ public class ChatContext
 
     public bool EnableSchemaCleaning { get; set; } = true;
 
-    public StringBuilder InteractionHistory { get; set; } = new();
+    public StringBuilder InteractionHistory { get; } = new();
 
     public ClientResult? Result { get; set; }
 

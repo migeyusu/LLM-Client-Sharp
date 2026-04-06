@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using LLMClient.Abstraction;
 using LLMClient.Dialog.Models;
-using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Agent;
@@ -11,7 +11,7 @@ public class TestSuccessAgent : IAgent
 {
     public string Name { get; } = "TestSuccessAgent";
 
-    public async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
+    public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         for (int i = 0; i < 5; i++)
@@ -19,13 +19,16 @@ public class TestSuccessAgent : IAgent
             if (cancellationToken.IsCancellationRequested) break;
 
             await Task.Delay(1000, cancellationToken);
-            await Task.Delay(500, cancellationToken);
 
-            var message = new ChatMessage(ChatRole.Assistant, $"Result from step {i + 1}");
-            yield return new ChatCallResult
+            var step = new ReactStep();
+            var text = $"Result from step {i + 1}";
+            step.EmitText(text);
+            step.Complete(new StepResult
             {
-                Messages = new[] { message }
-            };
+                Messages = [new ChatMessage(ChatRole.Assistant, text)],
+                IsCompleted = true
+            });
+            yield return step;
         }
     }
 }
@@ -35,16 +38,20 @@ public class TestFailedAgent: IAgent
 {
     public string Name { get; }="TestFailedAgent";
 
-    public async IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
+    public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await Task.Delay(1000, cancellationToken);
-        
-        yield return new ChatCallResult
+
+        var step1 = new ReactStep();
+        step1.EmitText("Step 1 complete.");
+        step1.Complete(new StepResult
         {
-            Messages = new[] { new ChatMessage(ChatRole.Assistant, "Step 1 complete.") }
-        };
-        
+            Messages = [new ChatMessage(ChatRole.Assistant, "Step 1 complete.")],
+            IsCompleted = false
+        });
+        yield return step1;
+
         await Task.Delay(1000, cancellationToken);
         await Task.Delay(1500, cancellationToken);
         

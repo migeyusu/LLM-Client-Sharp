@@ -2,7 +2,6 @@
 using LLMClient.Agent;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog.Models;
-using LLMClient.Endpoints;
 
 namespace LLMClient.Workflow.Research;
 
@@ -21,6 +20,6 @@ public abstract class ResearchClient : BaseViewModel, IAgent
         }
     }
 
-    public abstract IAsyncEnumerable<ChatCallResult> Execute(ITextDialogSession dialogSession,
+    public abstract IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         CancellationToken cancellationToken = default);
 }

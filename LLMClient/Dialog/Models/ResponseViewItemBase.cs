@@ -287,6 +287,117 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         return flowDocument;
     }
 
+    /// <summary>
+    /// 消费 IAsyncEnumerable&lt;ReactStep&gt; 流，将每轮循环写入 <paramref name="loops"/>
+    /// 并累积为 <see cref="ChatCallResult"/>。供 ClientResponseViewItem / LinearResponseViewItem 共用。
+    /// </summary>
+    internal static async Task<ChatCallResult> ConsumeReactStepsAsync(
+        IAsyncEnumerable<ReactStep> steps,
+        ObservableCollection<ReactLoopViewModel> loops,
+        Action<int> setLoopCount,
+        CancellationToken cancellationToken,
+        int? fallbackMaxContextTokens = null)
+    {
+        var totalUsage = new UsageDetails
+        {
+            InputTokenCount = 0, OutputTokenCount = 0, TotalTokenCount = 0,
+        };
+        var allMessages = new List<ChatMessage>();
+        ChatFinishReason? finishReason = null;
+        Exception? exception = null;
+        int totalLatency = 0;
+        int validCallTimes = 0;
+        UsageDetails? lastSuccessfulUsage = null;
+        var sw = Stopwatch.StartNew();
+        int loopCount = 0;
+
+        loops.Clear();
+        setLoopCount(0);
+
+        await foreach (var step in steps.WithCancellation(cancellationToken))
+        {
+            loopCount++;
+            setLoopCount(loopCount);
+            var loopVm = new ReactLoopViewModel { LoopNumber = loopCount };
+            loops.Add(loopVm);
+
+            await foreach (var evt in step.WithCancellation(cancellationToken))
+            {
+                switch (evt)
+                {
+                    case TextDelta t:
+                        loopVm.ResponseBuffer.Add(t.Text);
+                        loopVm.NotifyFirstLine();
+                        break;
+                    case ReasoningDelta r:
+                        loopVm.ResponseBuffer.Add(r.Text);
+                        break;
+                    case FunctionCallStarted fc:
+                        loopVm.ResponseBuffer.Add($"Function call: {fc.Call.Name}\n");
+                        loopVm.NotifyFirstLine();
+                        break;
+                    case FunctionCallCompleted fc:
+                        loopVm.ResponseBuffer.Add(fc.Error == null
+                            ? $"Function result received: {fc.CallId}\n"
+                            : $"Function call failed: {fc.CallId}\n");
+                        break;
+                    case PermissionRequest pr:
+                        var allowed = await InvokePermissionDialog.RequestAsync(pr.Content);
+                        pr.Response.SetResult(allowed);
+                        break;
+                    case DiagnosticMessage dm:
+                        loopVm.ResponseBuffer.Add($"[{dm.Level}] {dm.Message}\n");
+                        loopVm.NotifyFirstLine();
+                        break;
+                }
+            }
+
+            // EndLoop
+            var result = step.Result;
+            if (result != null)
+            {
+                var maxCtx = result.MaxContextTokens > 0 ? result.MaxContextTokens : fallbackMaxContextTokens;
+                loopVm.ContextUsage = new ContextUsageViewModel(result.Usage, maxCtx);
+                loopVm.LatencyMs = result.LatencyMs;
+                loopVm.IsCompleted = true;
+                loopVm.IsExpanded = false;
+
+                if (result.Usage != null)
+                {
+                    totalUsage.Add(result.Usage);
+                    lastSuccessfulUsage = result.Usage;
+                }
+
+                allMessages.AddRange(result.Messages);
+                finishReason = result.FinishReason;
+                exception ??= result.Exception;
+                totalLatency += result.LatencyMs;
+                if (result.Exception == null) validCallTimes++;
+            }
+        }
+
+        return new ChatCallResult
+        {
+            Usage = totalUsage,
+            LastSuccessfulUsage = lastSuccessfulUsage,
+            Messages = allMessages,
+            FinishReason = finishReason,
+            Exception = exception,
+            Latency = totalLatency,
+            Duration = (int)Math.Ceiling(sw.ElapsedMilliseconds / 1000f),
+            ValidCallTimes = validCallTimes,
+        };
+    }
+
+    /// <summary>
+    /// 实例便捷方法 — 使用当前实例的 <see cref="Loops"/> 和 <see cref="LoopCount"/>。
+    /// </summary>
+    protected Task<ChatCallResult> ConsumeReactStepsAsync(
+        IAsyncEnumerable<ReactStep> steps,
+        CancellationToken cancellationToken,
+        int? fallbackMaxContextTokens = null)
+        => ConsumeReactStepsAsync(steps, Loops, count => LoopCount = count, cancellationToken, fallbackMaxContextTokens);
+
     protected virtual void OnUsagePropertiesChanged()
     {
         
