@@ -219,7 +219,6 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         }
 
         flowDocument.Blocks.Clear();
-        //todo: 回收
         var renderer = CustomMarkdownRenderer.Rent(flowDocument);
         try
         {
@@ -233,17 +232,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             }
 
             var contents = chatMessages.SelectMany(m => m.Contents).ToList();
-
-            // Group FunctionCall and FunctionResult by CallId
-            var functionCalls = contents.OfType<FunctionCallContent>().ToList();
             var functionResults = contents.OfType<FunctionResultContent>().ToDictionary(r => r.CallId);
-
-            foreach (var call in functionCalls)
-            {
-                functionResults.TryGetValue(call.CallId, out var result);
-                var interaction = new FunctionCallInteraction { Call = call, Result = result };
-                renderer.AppendExpanderItem(interaction, CustomMarkdownRenderer.FunctionInteractionStyleKey);
-            }
 
             foreach (var content in contents)
             {
@@ -264,9 +253,13 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                     case TextContent textContent:
                         await renderer.RenderMarkdown(textContent.Text);
                         break;
-                    case FunctionCallContent:
+                    case FunctionCallContent call:
+                        functionResults.TryGetValue(call.CallId, out var result);
+                        var interaction = new FunctionCallInteraction { Call = call, Result = result };
+                        renderer.AppendExpanderItem(interaction, CustomMarkdownRenderer.FunctionInteractionStyleKey);
+                        break;
                     case FunctionResultContent:
-                        // Already handled above
+                        // Already handled via FunctionCallContent above
                         break;
                     default:
                         Trace.TraceWarning($"Unknown content type: {content.GetType().FullName}");

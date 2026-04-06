@@ -73,21 +73,23 @@ public class ClientResponseViewItemTests
             }
         };
 
-        Assert.True(responseViewItem.ContextUsage.HasContextUsage);
-        Assert.Equal(32_000, responseViewItem.ContextUsage.ContextUsageTokenCount);
-        Assert.Equal(128_000, responseViewItem.ContextUsage.MaxContextTokens);
-        Assert.Equal(0.25d, responseViewItem.ContextUsage.ContextUsageRatio);
-        Assert.Equal(25d, responseViewItem.ContextUsage.ContextUsagePercent);
-        Assert.False(responseViewItem.ContextUsage.IsContextUsageWarning);
-        Assert.False(responseViewItem.ContextUsage.IsContextUsageCritical);
-        Assert.Contains("25%", responseViewItem.ContextUsage.ContextUsageSummary);
-        Assert.Contains("32k", responseViewItem.ContextUsage.ContextUsageSummary);
-        Assert.Contains("128k", responseViewItem.ContextUsage.ContextUsageSummary);
+        var usageViewModel = responseViewItem.ContextUsage;
+        Assert.True(usageViewModel.HasContextUsage);
+        Assert.Equal(32_000, usageViewModel.ContextUsageTokenCount);
+        Assert.Equal(128_000, usageViewModel.MaxContextTokens);
+        Assert.Equal(0.25d, usageViewModel.ContextUsageRatio);
+        Assert.Equal(25d, usageViewModel.ContextUsagePercent);
+        Assert.False(usageViewModel.IsContextUsageWarning);
+        Assert.False(usageViewModel.IsContextUsageCritical);
+        Assert.Contains("25%", usageViewModel.ContextUsageSummary);
+        Assert.Contains("32k", usageViewModel.ContextUsageSummary);
+        Assert.Contains("128k", usageViewModel.ContextUsageSummary);
     }
 
     private sealed class PreviewBlockingDialogSessionViewModel : DialogSessionViewModel
     {
-        public PreviewBlockingDialogSessionViewModel() : base(new GlobalOptions(), new Summarizer(new GlobalOptions()), null)
+        public PreviewBlockingDialogSessionViewModel() : base(new GlobalOptions(), new Summarizer(new GlobalOptions()),
+            null)
         {
         }
 
@@ -142,8 +144,8 @@ public class ClientResponseViewItemTests
         public IAsyncEnumerable<ReactStep> SendRequestAsync(RequestContext context,
             CancellationToken cancellationToken = default)
         {
-            throw new InvalidOperationException("SendRequest should not be called while preview processing is blocked.");
+            throw new InvalidOperationException(
+                "SendRequest should not be called while preview processing is blocked.");
         }
     }
 }
-

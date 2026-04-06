@@ -428,8 +428,7 @@
             <!-- 每轮 ReAct 循环的可折叠列表 -->
             <ItemsControl ItemsSource="{Binding Loops,Mode=OneTime}"
                           ItemTemplate="{StaticResource ReactLoopItemTemplate}"
-                          Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
-            </ItemsControl>
+                          Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"/>
             <TextBox IsReadOnly="True"
                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                      BorderThickness="0"

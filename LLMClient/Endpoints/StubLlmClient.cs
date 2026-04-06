@@ -34,6 +34,13 @@ public class StubLlmClient : ILLMChatClient
                 CallId = "call_001",
                 Result = """Found 3 results:\n1. Microsoft Docs - Data Binding Overview\n2. WPF Tutorial - MVVM Pattern\n3. Stack Overflow - Common binding mistakes"""
             }
+            ,
+            Usage = new UsageDetails
+            {
+                InputTokenCount = 64,
+                OutputTokenCount = 32,
+                TotalTokenCount = 96,
+            }
         },
         // ── Loop 2: 再次思考 → 调用 read_file ──
         new()
@@ -50,6 +57,13 @@ public class StubLlmClient : ILLMChatClient
             {
                 CallId = "call_002",
                 Result = """public class MainViewModel : INotifyPropertyChanged\n{\n    private string _title;\n    public string Title\n    {\n        get => _title;\n        set { _title = value; OnPropertyChanged(); }\n    }\n}"""
+            }
+            ,
+            Usage = new UsageDetails
+            {
+                InputTokenCount = 48,
+                OutputTokenCount = 24,
+                TotalTokenCount = 72,
             }
         },
         // ── Loop 3: 最终回复，无工具调用 ──
@@ -85,6 +99,13 @@ public class StubLlmClient : ILLMChatClient
                 """,
             FunctionCall = null,
             FunctionResult = null
+            ,
+            Usage = new UsageDetails
+            {
+                InputTokenCount = 256,
+                OutputTokenCount = 512,
+                TotalTokenCount = 768,
+            }
         }
     ];
 
@@ -155,6 +176,13 @@ public class StubLlmClient : ILLMChatClient
                             {
                                 IsCompleted = false,
                                 LatencyMs = random.Next(50, 200),
+                                Usage = loop.Usage ?? new UsageDetails
+                                {
+                                    // Default simulated token usage for an intermediate function-call step
+                                    InputTokenCount = 128,
+                                    OutputTokenCount = 64,
+                                    TotalTokenCount = 192,
+                                },
                                 Messages =
                                 [
                                     new ChatMessage(ChatRole.Assistant, loop.TextContent ?? "")
@@ -168,7 +196,7 @@ public class StubLlmClient : ILLMChatClient
                                 IsCompleted = true,
                                 FinishReason = ChatFinishReason.Stop,
                                 LatencyMs = random.Next(50, 200),
-                                Usage = new UsageDetails
+                                Usage = loop.Usage ?? new UsageDetails
                                 {
                                     InputTokenCount = 256,
                                     OutputTokenCount = 512,
@@ -228,6 +256,7 @@ public class StubLlmClient : ILLMChatClient
         public string? TextContent { get; init; }
         public SimulatedFunctionCall? FunctionCall { get; init; }
         public SimulatedFunctionResult? FunctionResult { get; init; }
+        public UsageDetails? Usage { get; init; }
     }
 
     private class SimulatedFunctionCall

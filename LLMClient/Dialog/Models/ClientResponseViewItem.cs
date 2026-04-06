@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -77,6 +78,11 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public ObservableCollection<AsyncPermissionViewModel> PermissionViewModels { get; } = [];
 
+    /// <summary>
+    /// 缓存 ChatContext.InteractionHistory，用于调试查看
+    /// </summary>
+    private readonly StringBuilder _history = new();
+
     private int _respondingStateRefCount;
 
     public static ICommand ShowTempResponseCommand { get; } = new RelayCommand<ClientResponseViewItem>(o =>
@@ -93,7 +99,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 Content = new TextBox()
                 {
                     IsReadOnly = true,
-                    /*Text = o._history.ToString(),*/
+                    Text = o._history.ToString(),
                     TextWrapping = TextWrapping.Wrap
                 }
             }
@@ -209,6 +215,12 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         }
         finally
         {
+            _history.Clear();
+            if (completedResult.History != null)
+            {
+                _history.Append(completedResult.History);
+            }
+
             ReleaseRespondingState();
             InvalidateAsyncProperty(nameof(SearchableDocument));
         }

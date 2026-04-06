@@ -387,6 +387,27 @@
                                 </Style>
                             </materialDesign:PackIcon.Style>
                         </materialDesign:PackIcon>
+
+                        <materialDesign:PackIcon Kind="AlertCircleOutline"
+                                                 Width="16"
+                                                 Height="16"
+                                                 Margin="6,0,0,0"
+                                                 Foreground="Orange"
+                                                 ToolTip="未找到匹配的函数调用结果"
+                                                 VerticalAlignment="Center">
+                            <materialDesign:PackIcon.Style>
+                                <Style TargetType="materialDesign:PackIcon">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger
+                                            Binding="{Binding Result, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}"
+                                            Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </materialDesign:PackIcon.Style>
+                        </materialDesign:PackIcon>
                     </StackPanel>
                 </DataTemplate>
             </Setter.Value>
@@ -402,7 +423,26 @@
                                 Text="{Binding Call.Arguments, Mode=OneTime, Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
                         </TextBlock>
                         <Border Margin="0,8" Height="1" Background="{DynamicResource MaterialDesign.Brush.Card.Border}" />
-                        <TextBlock Foreground="DarkGray" FontStyle="Italic" TextWrapping="Wrap"
+                        <TextBlock FontStyle="Italic"
+                                   Foreground="Orange"
+                                   TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger
+                                            Binding="{Binding Result, Converter={x:Static converters:SnapConverters.NullToBooleanConverter}}"
+                                            Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                            <Run>⚠ 未找到匹配的函数调用结果（Result missing）</Run>
+                        </TextBlock>
+                        <TextBlock Foreground="DarkGray"
+                                   FontStyle="Italic"
+                                   TextWrapping="Wrap"
                                    Text="{Binding Result.Result, Mode=OneTime, Converter={x:Static converters:SnapConverters.ObjectToPrettyJsonConverter}}" />
                         <TextBlock Foreground="Red"
                                    Visibility="{Binding Result.Exception, Mode=OneTime, Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
