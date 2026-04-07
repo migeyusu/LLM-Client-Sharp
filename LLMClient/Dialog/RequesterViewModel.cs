@@ -123,7 +123,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         try
         {
             _isComplexSummaryRunning = true;
-            var summary = await _summarizer.SummarizeConversationHistoryAsync(currentSession,
+            var summary = await _summarizer.SummarizeSessionConversationHistoryAsync(currentSession,
                 new Duration(ComplexSummaryTimeout));
             if (string.IsNullOrWhiteSpace(summary))
             {
@@ -568,7 +568,8 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
 
     public async void Summarize(IRequestItem? insertBefore = null)
     {
-        var summaryRequest = _summarizer.CreateContextSummarizeRequest();
+        var summarizePrompt = _options.ContextSummarizePrompt;
+        var summaryRequest = new RequestViewItem(summarizePrompt);
         try
         {
             var summarizeModel = _options.CreateContextSummarizeClient() ?? this.DefaultClient;

@@ -161,7 +161,7 @@ public class HistoryCompressionStrategyTests
             Options = new ReactHistoryCompressionOptions
             {
                 PreambleCompression = true,
-                PreambleTokenThreshold = 999999, // very high threshold
+                PreambleTokenThresholdPercent = 100, // very high threshold
             },
             CurrentRound = 0,
             CurrentClient = summaryClient,
@@ -185,7 +185,7 @@ public class HistoryCompressionStrategyTests
             Options = new ReactHistoryCompressionOptions
             {
                 PreambleCompression = true,
-                PreambleTokenThreshold = 10, // very low threshold to trigger compression
+                PreambleTokenThresholdPercent = 10, // very low threshold to trigger compression
             },
             CurrentRound = 0,
             CurrentClient = summaryClient,
@@ -231,7 +231,7 @@ public class HistoryCompressionStrategyTests
             Options = new ReactHistoryCompressionOptions
             {
                 PreambleCompression = true,
-                PreambleTokenThreshold = 10,
+                PreambleTokenThresholdPercent = 10,
             },
             CurrentRound = 0,
             CurrentClient = summaryClient,
@@ -260,7 +260,7 @@ public class HistoryCompressionStrategyTests
             Options = new ReactHistoryCompressionOptions
             {
                 PreambleCompression = true,
-                PreambleTokenThreshold = 0,
+                PreambleTokenThresholdPercent = 0,
             },
             CurrentRound = 0,
             CurrentClient = summaryClient,
@@ -280,7 +280,7 @@ public class HistoryCompressionStrategyTests
             CreateTextResponse("done"));
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.None);
         client.ModelInfo.HistoryCompression.PreambleCompression = true;
-        client.ModelInfo.HistoryCompression.PreambleTokenThreshold = 10;
+        client.ModelInfo.HistoryCompression.PreambleTokenThresholdPercent = 10;
 
         // Build history: system + previous task messages + current user message
         var chatHistory = new List<ChatMessage>
@@ -325,7 +325,7 @@ public class HistoryCompressionStrategyTests
             CreateTextResponse("done"));
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.None);
         client.ModelInfo.HistoryCompression.PreambleCompression = true;
-        client.ModelInfo.HistoryCompression.PreambleTokenThreshold = 10;
+        client.ModelInfo.HistoryCompression.PreambleTokenThresholdPercent = 10;
 
         var requestContext = new RequestContext
         {

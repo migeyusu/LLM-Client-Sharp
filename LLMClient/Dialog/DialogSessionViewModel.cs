@@ -542,7 +542,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             //不要wait
             SummarizeTask = Task.Run(async () =>
             {
-                var newTopic = await _summarizer.SummarizeTopicAsync(this, TopicTimeOut);
+                var newTopic = await _summarizer.SummarizeSessionTopicAsync(this, TopicTimeOut);
                 if (!string.IsNullOrEmpty(newTopic))
                 {
                     this.Topic = newTopic;

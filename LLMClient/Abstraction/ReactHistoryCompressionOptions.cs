@@ -26,6 +26,6 @@ public class ReactHistoryCompressionOptions
     /// are counted. Uses character-based estimation (length / 2.8).
     /// </summary>
     [JsonPropertyName("PreambleTokenThreshold")]
-    public int PreambleTokenThreshold { get; set; } = 4096;
+    public double PreambleTokenThresholdPercent { get; set; }
 }
 

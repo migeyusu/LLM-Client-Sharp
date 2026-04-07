@@ -26,18 +26,6 @@ public class InvokePermissionContextTests
     }
 
     [Fact]
-    public void MapFromRequest_CopiesAutoApprove_FromGeneratedSummaryRequest()
-    {
-        var request = new Summarizer(new GlobalOptions()).CreateContextSummarizeRequest();
-        request.AutoApproveAllInvocations = true;
-        var builder = new DefaultDialogContextBuilder([request]);
-
-        builder.MapFromRequest(request);
-
-        Assert.True(builder.AutoApproveAllInvocations);
-    }
-
-    [Fact]
     public void CreateForRequest_MergesRequestAndParentAutoApprove()
     {
         var requestContext = new RequestContext

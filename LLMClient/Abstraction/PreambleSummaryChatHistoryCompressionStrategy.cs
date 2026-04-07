@@ -13,13 +13,6 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
 {
     private static readonly Duration CompressionTimeout = new(TimeSpan.FromSeconds(60));
 
-    private const string PreambleSummaryPrompt =
-        "Summarize the previous task context into a concise continuation note. " +
-        "Focus on: the task goal and current progress, key decisions made, " +
-        "files inspected or changed, important observations and failures, " +
-        "and remaining work to be done. " +
-        "Keep the result concise but complete enough to continue the task without the original messages.";
-
     private readonly Summarizer _summarizer;
 
     public PreambleSummaryChatHistoryCompressionStrategy(Summarizer summarizer)
@@ -77,14 +70,16 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
 
         // Check if compression is needed based on token threshold
         var estimatedTokens = EstimateTokens(historicalMessages);
-        if (estimatedTokens <= options.PreambleTokenThreshold)
+        var modelMaxContextSize = context.CurrentClient.Model.MaxContextSize;
+        var threshold = options.PreambleTokenThresholdPercent * modelMaxContextSize;
+        if (estimatedTokens <= threshold)
         {
             return;
         }
 
         // Summarize historical messages
         var summary = await _summarizer.SummarizeChatMessagesAsync(
-            historicalMessages, PreambleSummaryPrompt, CompressionTimeout,
+            historicalMessages, _summarizer.ConversationHistorySummaryPrompt, CompressionTimeout,
             context.CurrentClient, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(summary))
@@ -93,8 +88,7 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
         }
 
         // Rebuild chat history: system + summary + current user + rounds
-        var replacement = new List<ChatMessage>(systemMessages);
-        replacement.Add(CreatePreambleSummaryMessage(summary));
+        var replacement = new List<ChatMessage>(systemMessages) { CreatePreambleSummaryMessage(summary) };
         if (currentUserMessage != null)
         {
             replacement.Add(currentUserMessage);
@@ -145,7 +139,7 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
                 }
             }
         }
-        
+
         return (long)(totalChars / 2.8);
     }
 }

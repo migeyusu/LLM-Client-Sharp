@@ -497,7 +497,7 @@
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.UnitTest1.GitHubCopilotModels&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c4b833a6_002Daad2_002D42f5_002Db874_002D1485a150f542/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="ReturnedRenderer_CanBeReusedAcrossMultipleDocuments" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c4b833a6_002Daad2_002D42f5_002Db874_002D1485a150f542/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="ReturnedRenderer_CanBeReusedAcrossMultipleDocuments" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.CustomMarkdownRendererPoolTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.ProjectPersistenceTests&lt;/TestId&gt;&#xD;

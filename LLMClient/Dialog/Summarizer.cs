@@ -9,79 +9,63 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 
-public class Summarizer
+public class Summarizer(GlobalOptions options)
 {
-    private readonly GlobalOptions _options;
-
-    public Summarizer(GlobalOptions options)
+    public Task<string?> SummarizeSessionTopicAsync(ITextDialogSession dialog, Duration duration)
     {
-        _options = options;
+        var dialogItems = new List<IDialogItem>(dialog.DialogItems.Take(3))
+        {
+            new RequestViewItem(options.SubjectSummarizePrompt)
+        };
+
+        return ExecuteSummarizeAsync(
+            options.CreateSubjectSummarizeClient(),
+            dialogItems,
+            duration,
+            "生成话题摘要失败");
     }
 
-    public async Task<string?> SummarizeTopicAsync(ITextDialogSession dialog, Duration duration)
+    public Task<string?> SummarizeSessionConversationHistoryAsync(ITextDialogSession dialog, Duration duration)
     {
-        var client = _options.CreateSubjectSummarizeClient();
-        if (client == null)
+        var dialogItems = new List<IDialogItem>(dialog.DialogItems)
         {
-            return null;
-        }
+            new RequestViewItem(ConversationHistorySummaryPrompt)
+        };
 
-        try
-        {
-            var dialogItems = new List<IDialogItem>(3);
-            dialogItems.AddRange(dialog.DialogItems.Take(Math.Min(3, dialog.DialogItems.Count)));
-            dialogItems.Add(new RequestViewItem(_options.SubjectSummarizePrompt));
-            var dialogContext = new DefaultDialogContextBuilder(dialogItems);
-            var sendRequestAsync = await new PromptBasedAgent(client)
-                {
-                    Timeout = duration,
-                }
-                .SendRequestAsync(dialogContext);
-            return sendRequestAsync.FirstTextResponse;
-        }
-        catch (Exception e)
-        {
-            Trace.TraceError("生成话题摘要失败：" + e);
-            return null;
-        }
+        return ExecuteSummarizeAsync(
+            options.CreateContextSummarizeClient(),
+            dialogItems,
+            duration,
+            "生成会话历史总结失败");
     }
 
-    public async Task<string?> SummarizeConversationHistoryAsync(ITextDialogSession dialog, Duration duration)
-    {
-        var client = _options.CreateContextSummarizeClient();
-        if (client == null)
-        {
-            return null;
-        }
-
-        try
-        {
-            var dialogItems = new List<IDialogItem>();
-            dialogItems.AddRange(dialog.DialogItems);
-            dialogItems.Add(new RequestViewItem(ConversationHistorySummaryPrompt));
-            var dialogContext = new DefaultDialogContextBuilder(dialogItems);
-            var sendRequestAsync = await new PromptBasedAgent(client)
-                {
-                    Timeout = duration,
-                }
-                .SendRequestAsync(dialogContext);
-            return sendRequestAsync.FirstTextResponse;
-        }
-        catch (Exception e)
-        {
-            Trace.TraceError("生成会话历史总结失败：" + e);
-            return null;
-        }
-    }
-
-    public async Task<string?> SummarizeChatMessagesAsync(
+    public Task<string?> SummarizeChatMessagesAsync(
         IReadOnlyList<ChatMessage> chatMessages,
         string prompt,
         Duration duration,
         ILLMChatClient? fallbackClient = null,
         CancellationToken cancellationToken = default)
     {
-        var client = _options.CreateContextSummarizeClient() ?? fallbackClient;
+        var dialogItems = new List<IChatHistoryItem>(chatMessages.Count + 1);
+        var messageHistoryItems = chatMessages.Select(message => new ChatMessageHistoryItem(message)).ToArray();
+        dialogItems.AddRange(messageHistoryItems);
+        dialogItems.Add(CreateRequest(prompt));
+
+        return ExecuteSummarizeAsync(
+            options.CreateContextSummarizeClient() ?? fallbackClient,
+            dialogItems,
+            duration,
+            "生成上下文压缩摘要失败",
+            cancellationToken);
+    }
+
+    private static async Task<string?> ExecuteSummarizeAsync(
+        ILLMChatClient? client,
+        IReadOnlyList<IChatHistoryItem> chatHistoryItems,
+        Duration duration,
+        string errorMessage,
+        CancellationToken cancellationToken = default)
+    {
         if (client == null)
         {
             return null;
@@ -89,30 +73,22 @@ public class Summarizer
 
         try
         {
-            var dialogItems = new List<IChatHistoryItem>(chatMessages.Count + 1);
-            dialogItems.AddRange(chatMessages.Select(message => new ChatMessageHistoryItem(message)));
-            dialogItems.Add(CreateContextSummarizeRequest(prompt));
-            var dialogContext = new DefaultDialogContextBuilder(dialogItems);
-            var sendRequestAsync = await new PromptBasedAgent(client)
+            var dialogContext = new DefaultDialogContextBuilder(chatHistoryItems);
+            var response = await new PromptBasedAgent(client)
                 {
                     Timeout = duration,
                 }
                 .SendRequestAsync(dialogContext, cancellationToken);
-            return sendRequestAsync.FirstTextResponse;
+            return response.FirstTextResponse;
         }
         catch (Exception e)
         {
-            Trace.TraceError("生成上下文压缩摘要失败：" + e);
+            Trace.TraceError($"{errorMessage}：{e}");
             return null;
         }
     }
 
-    public RequestViewItem CreateContextSummarizeRequest()
-    {
-        return CreateContextSummarizeRequest(_options.ContextSummarizePrompt);
-    }
-
-    public RequestViewItem CreateContextSummarizeRequest(string prompt)
+    private static RequestViewItem CreateRequest(string prompt)
     {
         return new RequestViewItem(prompt)
         {
@@ -122,7 +98,8 @@ public class Summarizer
         };
     }
 
-    private const string ConversationHistorySummaryPrompt = @"Your task is to create a comprehensive, detailed summary of the entire conversation that captures all essential information needed to seamlessly continue the work without any loss of context. This summary will be used to compact the conversation while preserving critical technical details, decisions, and progress.
+    public string ConversationHistorySummaryPrompt { get; }
+        = @"Your task is to create a comprehensive, detailed summary of the entire conversation that captures all essential information needed to seamlessly continue the work without any loss of context. This summary will be used to compact the conversation while preserving critical technical details, decisions, and progress.
 
 ## Recent Context Analysis
 

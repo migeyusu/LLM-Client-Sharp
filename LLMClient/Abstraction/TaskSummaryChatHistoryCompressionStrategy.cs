@@ -8,9 +8,6 @@ public sealed class TaskSummaryChatHistoryCompressionStrategy : IChatHistoryComp
 {
     private static readonly Duration CompressionTimeout = new(TimeSpan.FromSeconds(60));
 
-    private const string CompressionPrompt =
-        "Summarize the earlier completed ReAct rounds for continued execution. Focus on the task goal, key decisions, tools used, files inspected or changed, important observations, failures, and the current plan. Do not repeat the most recent active rounds. Keep the result concise but complete enough for the next loop.";
-
     private readonly Summarizer _summarizer;
 
     public TaskSummaryChatHistoryCompressionStrategy(Summarizer summarizer)
@@ -18,7 +15,8 @@ public sealed class TaskSummaryChatHistoryCompressionStrategy : IChatHistoryComp
         _summarizer = summarizer;
     }
 
-    public async Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
+    public async Task CompressAsync(ChatHistoryCompressionContext context,
+        CancellationToken cancellationToken = default)
     {
         var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
         var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
@@ -37,7 +35,7 @@ public sealed class TaskSummaryChatHistoryCompressionStrategy : IChatHistoryComp
         }
 
         var summary = await _summarizer.SummarizeChatMessagesAsync(roundsToCompress,
-            CompressionPrompt, CompressionTimeout, context.CurrentClient, cancellationToken);
+            _summarizer.ConversationHistorySummaryPrompt, CompressionTimeout, context.CurrentClient, cancellationToken);
         if (string.IsNullOrWhiteSpace(summary))
         {
             return;
@@ -62,4 +60,3 @@ public sealed class TaskSummaryChatHistoryCompressionStrategy : IChatHistoryComp
         return message;
     }
 }
-
