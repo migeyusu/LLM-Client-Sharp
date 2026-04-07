@@ -7,6 +7,14 @@ namespace LLMClient.Abstraction;
 /// </summary>
 public abstract record LoopEvent;
 
+public enum HistoryCompressionKind
+{
+    PreambleSummary,
+    ObservationMasking,
+    InfoCleaning,
+    TaskSummary,
+}
+
 // ── 流式内容 ──
 
 /// <summary>
@@ -34,6 +42,20 @@ public sealed record FunctionCallCompleted(
     string FunctionName,
     object? Result,
     Exception? Error) : LoopEvent;
+
+// ── 历史压缩状态 ──
+
+/// <summary>
+/// 历史压缩开始。
+/// </summary>
+public sealed record HistoryCompressionStarted(HistoryCompressionKind Kind) : LoopEvent;
+
+/// <summary>
+/// 历史压缩结束。Applied=false 表示无需压缩或本次未发生实际替换。
+/// </summary>
+public sealed record HistoryCompressionCompleted(
+    HistoryCompressionKind Kind,
+    bool Applied) : LoopEvent;
 
 // ── 日志/诊断 ──
 

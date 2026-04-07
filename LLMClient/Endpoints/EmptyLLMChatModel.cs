@@ -50,6 +50,7 @@ public class EmptyLLMChatModel : IEndpointModel
     public bool SupportSearch { get; set; }
     public bool SupportFunctionCall { get; set; }
     public bool FunctionCallOnStreaming { get; set; }
+    public ReactHistoryCompressionOptions HistoryCompression { get; } = new();
     public IPriceCalculator? PriceCalculator { get; init; }
 
     public UsageCounter? Telemetry { get; set; }

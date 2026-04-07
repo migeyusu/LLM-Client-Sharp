@@ -220,6 +220,8 @@ public class AzureModelInfo : IEndpointModel
 /*Tags?.Contains("agents") == true;*/
     public bool FunctionCallOnStreaming { get; } = false;
 
+    [JsonIgnore] public ReactHistoryCompressionOptions HistoryCompression { get; } = new();
+
     public bool SupportAudioInput { get; } = false;
 
     public bool SupportVideoInput { get; } = false;

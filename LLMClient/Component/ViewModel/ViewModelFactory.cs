@@ -12,15 +12,20 @@ public class ViewModelFactory : IViewModelFactory
         _serviceProvider = serviceProvider;
     }
 
+    public T Create<T>(params object[] args) where T : class
+    {
+        return ActivatorUtilities.CreateInstance<T>(_serviceProvider, args);
+    }
+
     public T CreateViewModel<T>(params object[] args) where T : BaseViewModel
     {
-        // 使用 ActivatorUtilities 创建实例
-        // args 是特定参数数组，按构造函数顺序传递
-        return ActivatorUtilities.CreateInstance<T>(_serviceProvider, args);
+        return Create<T>(args);
     }
 }
 
 public interface IViewModelFactory
 {
+    public T Create<T>(params object[] args) where T : class;
+
     public T CreateViewModel<T>(params object[] args) where T : BaseViewModel;
 }

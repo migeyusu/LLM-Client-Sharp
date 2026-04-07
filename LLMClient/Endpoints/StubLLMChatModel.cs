@@ -62,6 +62,7 @@ public class StubLLMChatModel : IEndpointModel
     public bool SupportSearch { get; set; } = true;
     public bool SupportFunctionCall { get; set; } = true;
     public bool FunctionCallOnStreaming { get; set; } = true;
+    public ReactHistoryCompressionOptions HistoryCompression { get; } = new();
     public IPriceCalculator? PriceCalculator { get; init; }
 
     public UsageCounter? Telemetry { get; set; }

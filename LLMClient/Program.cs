@@ -81,6 +81,7 @@ public class Program
                 .AddSingleton<BuiltInFunctionsCollection>()
                 .AddSingleton<CreateSessionViewModel>()
                 .AddSingleton<ITokensCounter, DefaultTokensCounter>()
+                .AddSingleton<ChatHistoryCompressionStrategyFactory>()
                 .AddSingleton<Profile, FunctionGroupPersistenceProfile>()
                 .AddSingleton<Profile, DialogItemPersistenceProfile>()
                 .AddSingleton<Profile, DialogMappingProfile>()

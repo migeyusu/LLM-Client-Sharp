@@ -66,6 +66,8 @@ public interface IEndpointModel : IModel
 
     bool FunctionCallOnStreaming { get; }
 
+    ReactHistoryCompressionOptions HistoryCompression { get; }
+
     #endregion
 
     IPriceCalculator? PriceCalculator { get; }

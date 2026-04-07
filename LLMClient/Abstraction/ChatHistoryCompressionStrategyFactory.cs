@@ -1,0 +1,25 @@
+﻿using LLMClient.Component.ViewModel;
+
+namespace LLMClient.Abstraction;
+
+public class ChatHistoryCompressionStrategyFactory
+{
+    private readonly IViewModelFactory _viewModelFactory;
+
+    public ChatHistoryCompressionStrategyFactory(IViewModelFactory viewModelFactory)
+    {
+        _viewModelFactory = viewModelFactory;
+    }
+
+    public IChatHistoryCompressionStrategy Create(ReactHistoryCompressionOptions? options)
+    {
+        return options?.Mode switch
+        {
+            ReactHistoryCompressionMode.TaskSummary => _viewModelFactory.Create<TaskSummaryChatHistoryCompressionStrategy>(),
+            ReactHistoryCompressionMode.ObservationMasking => _viewModelFactory.Create<ObservationMaskingChatHistoryCompressionStrategy>(),
+            ReactHistoryCompressionMode.InfoCleaning => _viewModelFactory.Create<InfoCleaningChatHistoryCompressionStrategy>(),
+            _ => NoOpChatHistoryCompressionStrategy.Instance,
+        };
+    }
+}
+

@@ -5,6 +5,7 @@ using LLMClient.Agent;
 using LLMClient.Configuration;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 
@@ -47,7 +48,7 @@ public class Summarizer
 
     public async Task<string?> SummarizeConversationHistoryAsync(ITextDialogSession dialog, Duration duration)
     {
-        var client = _options.CreateSubjectSummarizeClient();
+        var client = _options.CreateContextSummarizeClient();
         if (client == null)
         {
             return null;
@@ -73,9 +74,47 @@ public class Summarizer
         }
     }
 
+    public async Task<string?> SummarizeChatMessagesAsync(
+        IReadOnlyList<ChatMessage> chatMessages,
+        string prompt,
+        Duration duration,
+        ILLMChatClient? fallbackClient = null,
+        CancellationToken cancellationToken = default)
+    {
+        var client = _options.CreateContextSummarizeClient() ?? fallbackClient;
+        if (client == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var dialogItems = new List<IChatHistoryItem>(chatMessages.Count + 1);
+            dialogItems.AddRange(chatMessages.Select(message => new ChatMessageHistoryItem(message)));
+            dialogItems.Add(CreateContextSummarizeRequest(prompt));
+            var dialogContext = new DefaultDialogContextBuilder(dialogItems);
+            var sendRequestAsync = await new PromptBasedAgent(client)
+                {
+                    Timeout = duration,
+                }
+                .SendRequestAsync(dialogContext, cancellationToken);
+            return sendRequestAsync.FirstTextResponse;
+        }
+        catch (Exception e)
+        {
+            Trace.TraceError("生成上下文压缩摘要失败：" + e);
+            return null;
+        }
+    }
+
     public RequestViewItem CreateContextSummarizeRequest()
     {
-        return new RequestViewItem(_options.ContextSummarizePrompt)
+        return CreateContextSummarizeRequest(_options.ContextSummarizePrompt);
+    }
+
+    public RequestViewItem CreateContextSummarizeRequest(string prompt)
+    {
+        return new RequestViewItem(prompt)
         {
             InteractionId = Guid.NewGuid(),
             CallEngineType = FunctionCallEngineType.Prompt,

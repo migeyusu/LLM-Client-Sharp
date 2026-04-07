@@ -162,6 +162,45 @@
                       Visibility="{Binding SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                       ToolTip="Support Function Call when Streaming (Many Endpoints don't support)" />
         </StackPanel>
+        <GroupBox Margin="0,10,0,0"
+                  Header="ReAct History Compression">
+            <StackPanel>
+                <TextBlock Text="Compression Mode" />
+                <ComboBox
+                    Margin="0,8,0,0"
+                    ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type abstraction:ReactHistoryCompressionMode}}}"
+                    SelectedValue="{Binding HistoryCompression.Mode,Mode=TwoWay}"
+                    Style="{StaticResource MaterialDesignOutlinedComboBox}" />
+                <TextBlock
+                    Margin="0,10,0,0"
+                    Text="Preserve Recent Rounds" />
+                <TextBox
+                    Margin="0,8,0,0"
+                    Style="{StaticResource MaterialDesignFilledTextBox}"
+                    Text="{Binding HistoryCompression.PreserveRecentRounds,Mode=TwoWay}" />
+                <TextBlock
+                    Margin="0,10,0,0"
+                    Text="Observation Placeholder" />
+                <TextBox
+                    Margin="0,8,0,0"
+                    AcceptsReturn="True"
+                    Style="{StaticResource MaterialDesignFilledTextBox}"
+                    Text="{Binding HistoryCompression.ObservationPlaceholder,Mode=TwoWay}" />
+                <CheckBox
+                    Margin="0,10,0,0"
+                    Content="Preamble Compression (cross-task context)"
+                    IsChecked="{Binding HistoryCompression.PreambleCompression,Mode=TwoWay}"
+                    ToolTip="Summarize previous task context before starting the ReAct loop when it exceeds the token threshold" />
+                <TextBlock
+                    Margin="0,10,0,0"
+                    Text="Preamble Token Threshold" />
+                <TextBox
+                    Margin="0,8,0,0"
+                    Style="{StaticResource MaterialDesignFilledTextBox}"
+                    Text="{Binding HistoryCompression.PreambleTokenThreshold,Mode=TwoWay}"
+                    ToolTip="Estimated token threshold above which preamble (previous task context) is compressed" />
+            </StackPanel>
+        </GroupBox>
         <Expander Header="Advanced Parameters"
                   Margin="0,10,0,0">
             <StackPanel>

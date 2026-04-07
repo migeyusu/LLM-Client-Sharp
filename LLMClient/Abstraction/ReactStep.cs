@@ -35,6 +35,12 @@ public sealed class ReactStep : IAsyncEnumerable<LoopEvent>
     internal void EmitDiagnostic(DiagLevel level, string message)
         => Emit(new DiagnosticMessage(level, message));
 
+    internal void EmitHistoryCompressionStarted(HistoryCompressionKind kind)
+        => Emit(new HistoryCompressionStarted(kind));
+
+    internal void EmitHistoryCompressionCompleted(HistoryCompressionKind kind, bool applied)
+        => Emit(new HistoryCompressionCompleted(kind, applied));
+
     internal Task<bool> RequestPermissionAsync(object content)
     {
         var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -342,6 +342,16 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                         loopVm.ResponseBuffer.Add($"[{dm.Level}] {dm.Message}\n");
                         loopVm.NotifyFirstLine();
                         break;
+                    case HistoryCompressionStarted compressionStarted:
+                        loopVm.ResponseBuffer.Add($"History compression: {FormatHistoryCompressionKind(compressionStarted.Kind)} started.\n");
+                        loopVm.NotifyFirstLine();
+                        break;
+                    case HistoryCompressionCompleted compressionCompleted:
+                        loopVm.ResponseBuffer.Add(compressionCompleted.Applied
+                            ? $"History compression: {FormatHistoryCompressionKind(compressionCompleted.Kind)} applied.\n"
+                            : $"History compression: {FormatHistoryCompressionKind(compressionCompleted.Kind)} skipped.\n");
+                        loopVm.NotifyFirstLine();
+                        break;
                 }
             }
 
@@ -390,6 +400,18 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         CancellationToken cancellationToken,
         int? fallbackMaxContextTokens = null)
         => ConsumeReactStepsAsync(steps, Loops, count => LoopCount = count, cancellationToken, fallbackMaxContextTokens);
+
+    private static string FormatHistoryCompressionKind(HistoryCompressionKind kind)
+    {
+        return kind switch
+        {
+            HistoryCompressionKind.PreambleSummary => "previous task context summary",
+            HistoryCompressionKind.ObservationMasking => "observation masking",
+            HistoryCompressionKind.InfoCleaning => "round info cleaning",
+            HistoryCompressionKind.TaskSummary => "task summary",
+            _ => kind.ToString(),
+        };
+    }
 
     protected virtual void OnUsagePropertiesChanged()
     {

@@ -129,7 +129,7 @@ public class MiniSweAgent : IAgent
 
                     if (step.Result != null)
                     {
-                        requestContext.ChatHistory.AddRange(step.Result.Messages);
+                        AppendMessagesIfNeeded(requestContext.ChatHistory, step.Result.Messages);
                         lastStepResult = step.Result;
                     }
                 }
@@ -200,5 +200,34 @@ public class MiniSweAgent : IAgent
         }
 
         return message?.Text?.Contains(Config.TaskCompleteFlag, StringComparison.Ordinal) == true;
+    }
+
+    private static void AppendMessagesIfNeeded(List<ChatMessage> chatHistory, IReadOnlyList<ChatMessage> messages)
+    {
+        if (messages.Count == 0)
+        {
+            return;
+        }
+
+        if (chatHistory.Count >= messages.Count)
+        {
+            var startIndex = chatHistory.Count - messages.Count;
+            var suffixMatches = true;
+            for (var index = 0; index < messages.Count; index++)
+            {
+                if (!ReferenceEquals(chatHistory[startIndex + index], messages[index]))
+                {
+                    suffixMatches = false;
+                    break;
+                }
+            }
+
+            if (suffixMatches)
+            {
+                return;
+            }
+        }
+
+        chatHistory.AddRange(messages);
     }
 }

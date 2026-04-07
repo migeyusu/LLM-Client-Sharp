@@ -9,9 +9,11 @@ using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Component.ViewModel;
 using LLMClient.Dialog;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
@@ -24,6 +26,12 @@ namespace LLMClient.Endpoints;
 
 public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 {
+    /// <summary>
+    /// Re-entrancy guard: prevents recursive preamble compression when the summarizer
+    /// calls SendRequestAsync on the same (or any) LlmClientBase instance.
+    /// </summary>
+    private static readonly AsyncLocal<bool> PreambleCompressionActive = new();
+
     public abstract string Name { get; }
 
     public abstract ILLMAPIEndpoint Endpoint { get; }
@@ -100,6 +108,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
 
     private const string ToolCalls = "ToolCalls";
+
+    private ChatHistoryCompressionStrategyFactory? HistoryCompressionFactory =>
+        ServiceLocator.GetService<ChatHistoryCompressionStrategyFactory>();
 
     private static bool IsMalformedOpenAiCompatibleResponse(InvalidOperationException exception)
     {
@@ -236,6 +247,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var parentContext = AsyncContextStore<ChatContext>.Current;
             var chatContext = ChatContext.CreateForRequest(requestContext, tempAdditionalProperties,
                 streaming, parentContext);
+            var historyCompressionOptions = Model.HistoryCompression;
+            var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions) ??
+                                             NoOpChatHistoryCompressionStrategy.Instance;
+
+            var reactRoundNumber = 0;
             _durationStopwatch.Reset();
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
@@ -250,7 +266,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     var producerTask = ProduceStepAsync(
                         step, chatContext, chatClient, chatHistory, requestOptions,
                         functionCallEngine, streaming, softFunctionCall,
-                        preUpdates, cancellationToken);
+                        preUpdates, ++reactRoundNumber, historyCompressionOptions,
+                        historyCompressionStrategy, cancellationToken);
 
                     // 立即 yield —— 消费者可以马上开始 await foreach (var evt in step)
                     yield return step;
@@ -304,6 +321,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         bool streaming,
         bool softFunctionCall,
         List<ChatResponseUpdate> preUpdates,
+        int reactRoundNumber,
+        ReactHistoryCompressionOptions historyCompressionOptions,
+        IChatHistoryCompressionStrategy historyCompressionStrategy,
         CancellationToken cancellationToken)
     {
         var reasoningStart = false;
@@ -320,6 +340,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             if (!_durationStopwatch.IsRunning)
             {
                 _durationStopwatch.Start();
+            }
+
+            if (reactRoundNumber == 1)
+            {
+                await CompressPreambleIfNeededAsync(step, chatHistory, historyCompressionOptions, cancellationToken);
             }
 
             ChatResponse? preResponse;
@@ -354,6 +379,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
             _durationStopwatch.Stop();
             var preResponseMessages = preResponse.Messages;
+            ReactHistorySegmenter.TagMessages(preResponseMessages, reactRoundNumber, ReactHistoryMessageKind.Assistant);
             foreach (var preResponseMessage in preResponseMessages)
             {
                 foreach (var content in preResponseMessage.Contents)
@@ -504,10 +530,26 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
             step.EmitDiagnostic(DiagLevel.Info, "Processing function calls...");
             functionResultMessage = new ChatMessage();
+            ReactHistorySegmenter.TagMessage(functionResultMessage, reactRoundNumber, ReactHistoryMessageKind.Observation);
             chatHistory.Add(functionResultMessage);
             responseMessages.Add(functionResultMessage);
             await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
                 preFunctionCalls, step, cancellationToken);
+
+            var compressionKind = GetHistoryCompressionKind(historyCompressionOptions.Mode);
+            if (compressionKind.HasValue)
+            {
+                var compressionContext = new ChatHistoryCompressionContext
+                {
+                    ChatHistory = chatHistory,
+                    CurrentRound = reactRoundNumber,
+                    CurrentClient = this,
+                    Options = historyCompressionOptions,
+                };
+                step.EmitHistoryCompressionStarted(compressionKind.Value);
+                await historyCompressionStrategy.CompressAsync(compressionContext, cancellationToken);
+                step.EmitHistoryCompressionCompleted(compressionKind.Value, compressionContext.CompressionApplied);
+            }
 
             // 该轮未完成（有 function call），继续下一轮
             step.Complete(new StepResult
@@ -698,6 +740,57 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 step.EmitReasoning(reasoningContent.Text ?? "");
             }
         }
+    }
+
+    private async Task CompressPreambleIfNeededAsync(
+        ReactStep step,
+        List<ChatMessage> chatHistory,
+        ReactHistoryCompressionOptions historyCompressionOptions,
+        CancellationToken cancellationToken)
+    {
+        if (!historyCompressionOptions.PreambleCompression || PreambleCompressionActive.Value)
+        {
+            return;
+        }
+
+        var viewModelFactory = ServiceLocator.GetService<IViewModelFactory>();
+        if (viewModelFactory == null)
+        {
+            return;
+        }
+
+        var compressionContext = new ChatHistoryCompressionContext
+        {
+            ChatHistory = chatHistory,
+            Options = historyCompressionOptions,
+            CurrentRound = 0,
+            CurrentClient = this,
+        };
+
+        step.EmitHistoryCompressionStarted(HistoryCompressionKind.PreambleSummary);
+        PreambleCompressionActive.Value = true;
+        try
+        {
+            var preambleStrategy = viewModelFactory.Create<PreambleSummaryChatHistoryCompressionStrategy>();
+            await preambleStrategy.CompressAsync(compressionContext, cancellationToken);
+            step.EmitHistoryCompressionCompleted(HistoryCompressionKind.PreambleSummary,
+                compressionContext.CompressionApplied);
+        }
+        finally
+        {
+            PreambleCompressionActive.Value = false;
+        }
+    }
+
+    private static HistoryCompressionKind? GetHistoryCompressionKind(ReactHistoryCompressionMode mode)
+    {
+        return mode switch
+        {
+            ReactHistoryCompressionMode.ObservationMasking => HistoryCompressionKind.ObservationMasking,
+            ReactHistoryCompressionMode.InfoCleaning => HistoryCompressionKind.InfoCleaning,
+            ReactHistoryCompressionMode.TaskSummary => HistoryCompressionKind.TaskSummary,
+            _ => null,
+        };
     }
 }
 
