@@ -128,9 +128,9 @@
                                                        Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
                                                        FontWeight="Bold"
                                                        Margin="0,0,0,10" />
-                                            <ItemsControl Grid.Row="1"
-                                                          ItemsSource="{Binding Items,Mode=OneTime}"
-                                                          DisplayMemberPath="RawTextContent" />
+                                            <TextBlock Grid.Row="1"
+                                                       Text="{Binding Response.RawTextContent,Mode=OneTime}"
+                                                       TextWrapping="Wrap" />
                                             <TextBox Grid.Row="0"
                                                      IsReadOnly="True"
                                                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"

@@ -25,6 +25,16 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         get => Usage?.OutputTokenCount ?? 0;
     }
 
+    /// <summary>
+    /// tokens per second
+    /// </summary>
+    public virtual float TpS => this.CalculateTps();
+
+    /// <summary>
+    /// 上下文占比信息（无模型信息时返回空 ViewModel）
+    /// </summary>
+    public virtual ContextUsageViewModel ContextUsage => new ContextUsageViewModel();
+
     public int Latency
     {
         get;
@@ -289,7 +299,8 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         ObservableCollection<ReactLoopViewModel> loops,
         Action<int> setLoopCount,
         CancellationToken cancellationToken,
-        int? fallbackMaxContextTokens = null)
+        int? fallbackMaxContextTokens = null,
+        Action<string>? statusCallback = null)
     {
         var totalUsage = new UsageDetails
         {
@@ -326,32 +337,52 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                         loopVm.ResponseBuffer.Add(r.Text);
                         break;
                     case FunctionCallStarted fc:
-                        loopVm.ResponseBuffer.Add($"Function call: {fc.Call.Name}\n");
+                    {
+                        var msg = $"Function call: {fc.Call.Name}";
+                        loopVm.ResponseBuffer.Add(msg + "\n");
                         loopVm.NotifyFirstLine();
+                        statusCallback?.Invoke(msg);
                         break;
+                    }
                     case FunctionCallCompleted fc:
-                        loopVm.ResponseBuffer.Add(fc.Error == null
-                            ? $"Function result received: {fc.CallId}\n"
-                            : $"Function call failed: {fc.CallId}\n");
+                    {
+                        var msg = fc.Error == null
+                            ? $"Function result received: {fc.CallId}"
+                            : $"Function call failed: {fc.CallId}";
+                        loopVm.ResponseBuffer.Add(msg + "\n");
+                        statusCallback?.Invoke(msg);
                         break;
+                    }
                     case PermissionRequest pr:
                         var allowed = await InvokePermissionDialog.RequestAsync(pr.Content);
                         pr.Response.SetResult(allowed);
                         break;
                     case DiagnosticMessage dm:
-                        loopVm.ResponseBuffer.Add($"[{dm.Level}] {dm.Message}\n");
+                    {
+                        var msg = $"[{dm.Level}] {dm.Message}";
+                        loopVm.ResponseBuffer.Add(msg + "\n");
                         loopVm.NotifyFirstLine();
+                        statusCallback?.Invoke(msg);
                         break;
+                    }
                     case HistoryCompressionStarted compressionStarted:
-                        loopVm.ResponseBuffer.Add($"History compression: {FormatHistoryCompressionKind(compressionStarted.Kind)} started.\n");
+                    {
+                        var msg = $"History compression: {FormatHistoryCompressionKind(compressionStarted.Kind)} started.";
+                        loopVm.ResponseBuffer.Add(msg + "\n");
                         loopVm.NotifyFirstLine();
+                        statusCallback?.Invoke(msg);
                         break;
+                    }
                     case HistoryCompressionCompleted compressionCompleted:
-                        loopVm.ResponseBuffer.Add(compressionCompleted.Applied
-                            ? $"History compression: {FormatHistoryCompressionKind(compressionCompleted.Kind)} applied.\n"
-                            : $"History compression: {FormatHistoryCompressionKind(compressionCompleted.Kind)} skipped.\n");
+                    {
+                        var msg = compressionCompleted.Applied
+                            ? $"History compression: {FormatHistoryCompressionKind(compressionCompleted.Kind)} applied."
+                            : $"History compression: {FormatHistoryCompressionKind(compressionCompleted.Kind)} skipped.";
+                        loopVm.ResponseBuffer.Add(msg + "\n");
                         loopVm.NotifyFirstLine();
+                        statusCallback?.Invoke(msg);
                         break;
+                    }
                 }
             }
 

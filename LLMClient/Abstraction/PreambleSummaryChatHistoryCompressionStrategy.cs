@@ -87,12 +87,14 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
         }
 
         // Summarize historical messages
+        context.Step?.EmitDiagnostic(DiagLevel.Info, $"Summarizing preamble context ({historicalMessages.Count} messages)...");
         var summary = await _summarizer.SummarizeChatMessagesAsync(
             historicalMessages, _summarizer.ConversationHistorySummaryPrompt, CompressionTimeout,
             context.CurrentClient, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(summary))
         {
+            context.Step?.EmitDiagnostic(DiagLevel.Warning, "Preamble summarization returned empty result, skipping compression.");
             return;
         }
 

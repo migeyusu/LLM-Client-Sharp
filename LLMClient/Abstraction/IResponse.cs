@@ -1,18 +1,8 @@
 ﻿using LLMClient.Dialog.Models;
 using LLMClient.Endpoints.Messages;
-using Microsoft.Extensions.AI;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 
 namespace LLMClient.Abstraction;
-
-public interface IChatUsage
-{
-    double? Price { get; }
-
-    UsageDetails? Usage { get; }
-
-    UsageDetails? LastSuccessfulUsage { get; }
-}
 
 public interface IResponse : IChatUsage, IChatHistoryItem, ITokenizable
 {
@@ -22,7 +12,7 @@ public interface IResponse : IChatUsage, IChatHistoryItem, ITokenizable
     int Latency { get; }
 
     /// <summary>
-    /// The duration of the response in s
+    /// The duration of the response in s, contains latency
     /// </summary>
     int Duration { get; }
 

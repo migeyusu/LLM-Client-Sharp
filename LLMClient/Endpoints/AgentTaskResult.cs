@@ -19,9 +19,8 @@ public class AgentTaskResult : CallResult
     {
         get { return Messages?.FirstOrDefault()?.Text; }
     }
-
-    //todo:
-    public StringBuilder History { get; init; } = new StringBuilder();
+    
+    public StringBuilder History { get; } = new();
 
     public string? GetContentAsString()
     {
@@ -45,10 +44,10 @@ public class AgentTaskResult : CallResult
             ? CloneUsageDetails(right.LastSuccessfulUsage)
             : CloneUsageDetails(LastSuccessfulUsage);
         Latency = Latency == 0 ? right.Latency : Latency;
-        Duration = Duration + right.Duration;
-        Exception = Exception ?? right.Exception;
+        Duration += right.Duration;
+        Exception ??= right.Exception;
         FinishReason = right.FinishReason ?? FinishReason;
-        ValidCallTimes = ValidCallTimes + right.ValidCallTimes;
+        ValidCallTimes += right.ValidCallTimes;
         Price = (Price ?? 0) + (right.Price ?? 0);
         Usage = usage;
         Messages = Messages.Concat(right.Messages).ToList();

@@ -1,4 +1,6 @@
-﻿namespace LLMClient.Data;
+﻿using System.Text.Json.Serialization;
+
+namespace LLMClient.Data;
 
 public class MultiResponsePersistItem : BaseDialogPersistItem
 {
@@ -12,9 +14,15 @@ public class ParallelResponsePersisItem : MultiResponsePersistItem
     public ClientResponsePersistItem[] ResponseItems { get; set; } = [];
 }
 
-public class LinearHistoryResponsePersistItem : MultiResponsePersistItem
+public class LinearHistoryResponsePersistItem : BaseDialogPersistItem
 {
-    public RawResponsePersistItem[] Items { get; set; } = [];
+    public Guid InteractionId { get; set; }
+
+    public RawResponsePersistItem? Response { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RawResponsePersistItem[]? Items { get; set; }
+
     public AgentPersistModel? Agent { get; set; }
 
     public bool IsManualValid { get; set; } = false;

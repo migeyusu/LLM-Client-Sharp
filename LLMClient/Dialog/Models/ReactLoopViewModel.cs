@@ -66,7 +66,7 @@ public class ReactLoopViewModel : BaseViewModel
         }
 
         var firstLine = ResponseBuffer
-            .SelectMany(line => line.Split(Environment.NewLine))
+            .SelectMany(line => line.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
             .FirstOrDefault(line => !string.IsNullOrWhiteSpace(line))?.Trim();
         if (string.IsNullOrEmpty(firstLine))
         {

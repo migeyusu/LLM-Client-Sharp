@@ -44,7 +44,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public ILLMChatClient? Client { get; }
 
-    public ContextUsageViewModel ContextUsage
+    public override ContextUsageViewModel ContextUsage
     {
         get
         {
@@ -70,7 +70,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     /// <summary>
     /// tokens per second
     /// </summary>
-    public float TpS
+    public override float TpS
     {
         get { return this.CalculateTps(); }
     }
@@ -216,11 +216,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         finally
         {
             _history.Clear();
-            if (completedResult.History != null)
-            {
-                _history.Append(completedResult.History);
-            }
-
+            _history.Append(completedResult.History);
             ReleaseRespondingState();
             InvalidateAsyncProperty(nameof(SearchableDocument));
         }

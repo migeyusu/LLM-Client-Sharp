@@ -305,32 +305,35 @@
                       materialDesign:ExpanderAssist.HorizontalHeaderPadding="12"
                       Padding="0">
                 <Expander.Header>
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="Refresh"
-                                                 Width="16"
-                                                 Height="16"
-                                                 VerticalAlignment="Center"
-                                                 Margin="0,0,6,0" />
-                        <TextBlock VerticalAlignment="Center"
-                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                   Text="{Binding LoopNumber,StringFormat=第 {0} 轮}" />
-                        <ProgressBar IsIndeterminate="True"
-                                     Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                     Value="0"
-                                     Margin="8,0,0,0"
-                                     Width="14"
-                                     Height="14"
-                                     VerticalAlignment="Center"
-                                     Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
-                        <materialDesign:PackIcon Kind="Check"
-                                                 Width="16"
-                                                 Height="16"
-                                                 Foreground="Green"
-                                                 VerticalAlignment="Center"
-                                                 Margin="8,0,0,0"
-                                                 Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-                        <TextBlock Text="{Binding FirstLine,Mode=OneWay}"
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Check"
+                                                     Width="16"
+                                                     Height="16"
+                                                     Foreground="Green"
+                                                     VerticalAlignment="Center"
+                                                     Margin="8,0,0,0"
+                                                     Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                            <ProgressBar IsIndeterminate="True"
+                                         Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                         Value="0"
+                                         Margin="8,0,0,0"
+                                         Width="14"
+                                         Height="14"
+                                         VerticalAlignment="Center"
+                                         Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
+                            <TextBlock VerticalAlignment="Center"
+                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                       Text="{Binding LoopNumber,StringFormat=第 {0} 轮}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding FirstLine,Mode=OneWay}"
                                    VerticalAlignment="Center"
                                    Margin="12,0,0,0"
                                    MaxWidth="200"
@@ -339,7 +342,8 @@
                                    Style="{StaticResource MaterialDesignCaptionTextBlock}"
                                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground.Light}" />
                         <!-- 用量信息区域 -->
-                        <Border Padding="6,2"
+                        <Border Grid.Column="2"
+                                Padding="6,2"
                                 CornerRadius="8"
                                 Margin="8,0,0,0"
                                 Visibility="{Binding HasUsage,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -359,7 +363,7 @@
                                 </TextBlock>
                             </StackPanel>
                         </Border>
-                    </StackPanel>
+                    </Grid>
                 </Expander.Header>
                 <customControl:MarkdownTextBlock TextWrapping="Wrap"
                                                  VerticalAlignment="Top"
@@ -428,7 +432,7 @@
             <!-- 每轮 ReAct 循环的可折叠列表 -->
             <ItemsControl ItemsSource="{Binding Loops,Mode=OneTime}"
                           ItemTemplate="{StaticResource ReactLoopItemTemplate}"
-                          Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                          Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
             <TextBox IsReadOnly="True"
                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                      BorderThickness="0"
@@ -563,6 +567,99 @@
             <TextBlock Margin="0,4,0,0"
                        TextWrapping="Wrap"
                        Style="{StaticResource ContextUsageIndicatorHintStyle}" />
+        </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="ResponseStatsTemplate"
+                  DataType="{x:Type models:ResponseViewItemBase}">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock HorizontalAlignment="Left"
+                       Margin="0,6,0,0">
+                <TextBlock.Text>
+                    <MultiBinding
+                        StringFormat="Completion Tokens: {0}, Price：{1:F4}$，Latency: {2}ms, Duration:{3}s, Speed:{4:F1}tps">
+                        <Binding Path="Tokens"
+                                 Mode="OneWay"
+                                 TargetNullValue="None" />
+                        <Binding Path="Price"
+                                 Mode="OneWay"
+                                 TargetNullValue="None" />
+                        <Binding Path="Latency"
+                                 Mode="OneWay"
+                                 TargetNullValue="None" />
+                        <Binding Path="Duration"
+                                 Mode="OneWay"
+                                 TargetNullValue="None" />
+                        <Binding Path="TpS"
+                                 Mode="OneWay"
+                                 TargetNullValue="None" />
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+            <TextBlock Margin="10,0,0,0"
+                       VerticalAlignment="Center"
+                       Text="{Binding LoopCount,Mode=OneWay,StringFormat=🔄 {0} 轮}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility"
+                                Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding LoopCount,Mode=OneWay}"
+                                         Value="0">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding LoopCount,Mode=OneWay}"
+                                         Value="1">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <materialDesign:PopupBox ToolTip="用量信息"
+                                     Margin="10,0,0,0"
+                                     Width="30"
+                                     Height="30"
+                                     Visibility="{Binding Usage,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                     ToggleContent="{materialDesign:PackIcon Kind=InfoOutline}"
+                                     PopupAnimation="Slide"
+                                     PopupUniformCornerRadius="8"
+                                     Padding="4,0"
+                                     VerticalAlignment="Center"
+                                     VerticalContentAlignment="Center"
+                                     HorizontalContentAlignment="Center"
+                                     PopupContent="{Binding Usage,Mode=OneWay}"
+                                     PopupContentTemplate="{StaticResource UsageDetailDataTemplate}" />
+            <materialDesign:PopupBox ToolTip="上下文占比"
+                                     Margin="10,0,0,0"
+                                     Padding="4,0"
+                                     VerticalAlignment="Center"
+                                     Visibility="{Binding ContextUsage.HasContextUsage,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     PopupAnimation="Slide"
+                                     PopupUniformCornerRadius="8"
+                                     PopupContent="{Binding ContextUsage,Mode=OneWay}"
+                                     PopupContentTemplate="{StaticResource ContextUsageDetailDataTemplate}">
+                <materialDesign:PopupBox.ToggleContent>
+                    <Border Padding="8,4"
+                            CornerRadius="12"
+                            DataContext="{Binding ContextUsage,Mode=OneWay}"
+                            Style="{StaticResource ContextUsageIndicatorBorderStyle}">
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <materialDesign:PackIcon Width="16"
+                                                     Height="16"
+                                                     Margin="0,0,4,0"
+                                                     Kind="Gauge"
+                                                     VerticalAlignment="Center"
+                                                     Style="{StaticResource ContextUsageIndicatorIconStyle}" />
+                            <TextBlock VerticalAlignment="Center"
+                                       Style="{StaticResource ContextUsageIndicatorTextStyle}"
+                                       Text="{Binding ContextUsagePercent,Mode=OneWay,StringFormat={}{0:0}%}" />
+                        </StackPanel>
+                    </Border>
+                </materialDesign:PopupBox.ToggleContent>
+            </materialDesign:PopupBox>
         </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="MultiResponseViewItemDataTemplate"
@@ -770,83 +867,8 @@
                 <ContentControl Content="{Binding AcceptedResponse,Mode=OneWay}"
                                 ContentTemplate="{StaticResource ResponseContentTemplate}" />
             </materialDesign:Card>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock DataContext="{Binding AcceptedResponse,Mode=OneWay}"
-                           HorizontalAlignment="Left"
-                           Margin="0,6,0,0">
-                    <TextBlock.Text>
-                        <MultiBinding
-                            StringFormat="Completion Tokens: {0}, Price：{1:F4}$，Latency: {2}ms, Duration:{3}s, Speed:{4:F1}tps">
-                            <Binding Path="Tokens" Mode="OneWay" TargetNullValue="None" />
-                            <Binding Path="Price" Mode="OneWay" TargetNullValue="None" />
-                            <Binding Path="Latency" Mode="OneWay" TargetNullValue="None" />
-                            <Binding Path="Duration" Mode="OneWay" TargetNullValue="None" />
-                            <Binding Path="TpS" Mode="OneWay" TargetNullValue="None" />
-                        </MultiBinding>
-                    </TextBlock.Text>
-                </TextBlock>
-                <TextBlock DataContext="{Binding AcceptedResponse,Mode=OneWay}"
-                           Margin="10,0,0,0"
-                           VerticalAlignment="Center"
-                           Text="{Binding LoopCount,Mode=OneWay,StringFormat=🔄 {0} 轮}">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Visible" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding LoopCount,Mode=OneWay}" Value="0">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding LoopCount,Mode=OneWay}" Value="1">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                <materialDesign:PopupBox ToolTip="用量信息"
-                                         Margin="10,0,0,0"
-                                         Width="30"
-                                         Height="30"
-                                         Visibility="{Binding AcceptedResponse.Usage,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
-                                         ToggleContent="{materialDesign:PackIcon Kind=InfoOutline}"
-                                         PopupAnimation="Slide"
-                                         PopupUniformCornerRadius="8"
-                                         Padding="4,0"
-                                         VerticalAlignment="Center"
-                                         VerticalContentAlignment="Center"
-                                         HorizontalContentAlignment="Center"
-                                         PopupContent="{Binding AcceptedResponse.Usage,Mode=OneWay}"
-                                         PopupContentTemplate="{StaticResource UsageDetailDataTemplate}" />
-                <materialDesign:PopupBox ToolTip="上下文占比"
-                                         Margin="10,0,0,0"
-                                         Padding="4,0"
-                                         VerticalAlignment="Center"
-                                         Visibility="{Binding AcceptedResponse.ContextUsage.HasContextUsage,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                         PopupAnimation="Slide"
-                                         PopupUniformCornerRadius="8"
-                                         PopupContent="{Binding AcceptedResponse.ContextUsage,Mode=OneWay}"
-                                         PopupContentTemplate="{StaticResource ContextUsageDetailDataTemplate}">
-                    <materialDesign:PopupBox.ToggleContent>
-                        <Border Padding="8,4"
-                                CornerRadius="12"
-                                DataContext="{Binding AcceptedResponse.ContextUsage,Mode=OneWay}"
-                                Style="{StaticResource ContextUsageIndicatorBorderStyle}">
-                            <StackPanel Orientation="Horizontal"
-                                        VerticalAlignment="Center">
-                                <materialDesign:PackIcon Width="16"
-                                                         Height="16"
-                                                         Margin="0,0,4,0"
-                                                         Kind="Gauge"
-                                                         VerticalAlignment="Center"
-                                                         Style="{StaticResource ContextUsageIndicatorIconStyle}" />
-                                <TextBlock VerticalAlignment="Center"
-                                           Style="{StaticResource ContextUsageIndicatorTextStyle}"
-                                           Text="{Binding ContextUsagePercent,Mode=OneWay,StringFormat={}{0:0}%}" />
-                            </StackPanel>
-                        </Border>
-                    </materialDesign:PopupBox.ToggleContent>
-                </materialDesign:PopupBox>
-            </StackPanel>
+            <ContentControl Content="{Binding AcceptedResponse,Mode=OneWay}"
+                            ContentTemplate="{StaticResource ResponseStatsTemplate}" />
         </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="RawResponseItemTemplate"
@@ -1038,22 +1060,94 @@
                     </CheckBox>
                 </StackPanel>
             </Grid>
-
             <materialDesign:Card Padding="16"
                                  UniformCornerRadius="8"
                                  HorizontalAlignment="Stretch"
                                  BorderThickness="0"
                                  Style="{StaticResource MaterialDesignOutlinedCard}">
                 <StackPanel>
-                    <ItemsControl ItemsSource="{Binding Items}"
-                                  ItemTemplate="{StaticResource RawResponseItemTemplate}"
-                                  ItemsPanel="{StaticResource VerticalItemsPanelTemplate}" />
+                    <ContentControl
+                        Content="{Binding Response,Mode=OneWay}"
+                        ContentTemplate="{StaticResource RawResponseItemTemplate}" />
                     <!-- 每轮 ReAct 循环的可折叠列表 -->
                     <ItemsControl ItemsSource="{Binding Loops,Mode=OneTime}"
                                   ItemTemplate="{StaticResource ReactLoopItemTemplate}"
-                                  Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                  Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
                 </StackPanel>
             </materialDesign:Card>
+            <ContentControl Content="{Binding Response,Mode=OneWay}"
+                            ContentTemplate="{StaticResource ResponseStatsTemplate}">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Setter Property="Visibility"
+                                Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
+            </ContentControl>
+            <StackPanel Orientation="Horizontal"
+                        Margin="0,6,0,0">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility"
+                                Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <materialDesign:PackIcon Kind="Sync"
+                                         Width="16"
+                                         Height="16"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,6,0"
+                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary}">
+                    <materialDesign:PackIcon.RenderTransform>
+                        <RotateTransform x:Name="StatusIconRotation"
+                                         CenterX="8"
+                                         CenterY="8" />
+                    </materialDesign:PackIcon.RenderTransform>
+                    <materialDesign:PackIcon.Style>
+                        <Style TargetType="materialDesign:PackIcon">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
+                                             Value="True">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard RepeatBehavior="Forever">
+                                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(RotateTransform.Angle)"
+                                                                 From="0"
+                                                                 To="360"
+                                                                 Duration="0:0:1.2" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </materialDesign:PackIcon.Style>
+                </materialDesign:PackIcon>
+                <TextBlock VerticalAlignment="Center"
+                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                           Text="{Binding LoopCount,Mode=OneWay,StringFormat=🔄 轮 {0}}" />
+                <TextBlock VerticalAlignment="Center"
+                           Margin="10,0,0,0"
+                           MaxWidth="500"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                           Text="{Binding CurrentStatus,Mode=OneWay}"
+                           Visibility="{Binding CurrentStatus,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}" />
+            </StackPanel>
         </StackPanel>
     </DataTemplate>
 

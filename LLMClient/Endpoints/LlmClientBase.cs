@@ -240,7 +240,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                              NoOpChatHistoryCompressionStrategy.Instance;
 
             var reactRoundNumber = 0;
-            _durationStopwatch.Reset();
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
                 while (true)
@@ -315,26 +314,24 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         ChatFinishReason? finishReason = null;
         var responseMessages = new List<ChatMessage>();
         var stepResult = new StepResult() { MaxContextTokens = Model.MaxContextSize };
+        int? latency = null;
         try
         {
-            _latencyStopwatch.Restart();
-            if (!_durationStopwatch.IsRunning)
-            {
-                _durationStopwatch.Start();
-            }
-
             if (reactRoundNumber == 1)
             {
                 await CompressPreambleIfNeededAsync(step, chatMessages, historyCompressionOptions, cancellationToken);
             }
 
+            _durationStopwatch.Restart();
             ChatResponse? preResponse;
             if (streaming)
             {
+                _latencyStopwatch.Restart();
                 await foreach (var update in chatClient
                                    .GetStreamingResponseAsync(chatMessages, requestOptions,
                                        cancellationToken))
                 {
+                    latency ??= (int)_latencyStopwatch.ElapsedMilliseconds;
                     update.TryAddExtendedData();
                     preUpdates.Add(update);
                     chatContext.CompleteStreamResponse(stepResult, update);
@@ -477,6 +474,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     CurrentRound = reactRoundNumber,
                     CurrentClient = this,
                     Options = historyCompressionOptions,
+                    Step = step,
                 };
                 step.EmitHistoryCompressionStarted(compressionKind.Value);
                 await historyCompressionStrategy.CompressAsync(compressionContext, cancellationToken);
@@ -586,7 +584,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             stepResult.Exception = exception;
             stepResult.Usage = loopUsageDetails;
             stepResult.FinishReason = finishReason;
-            stepResult.Latency = (int)_latencyStopwatch.ElapsedMilliseconds;
+            stepResult.Latency = latency ?? 0;
+            stepResult.Duration = (int)_durationStopwatch.Elapsed.TotalSeconds;
             stepResult.Messages = responseMessages;
             step.Complete(stepResult);
         }
@@ -641,6 +640,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             Options = historyCompressionOptions,
             CurrentRound = 0,
             CurrentClient = this,
+            Step = step,
         };
 
         step.EmitHistoryCompressionStarted(HistoryCompressionKind.PreambleSummary);

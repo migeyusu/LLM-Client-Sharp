@@ -30,7 +30,9 @@ public class DialogItemPersistenceProfile : Profile
             .IncludeBase<IDialogItem, IDialogPersistItem>()
             .ForMember(item => item.ResponseItems, opt => opt.MapFrom(item => item.Items));
         CreateMap<LinearResponseViewItem, LinearHistoryResponsePersistItem>()
-            .IncludeBase<IDialogItem, IDialogPersistItem>();
+            .IncludeBase<IDialogItem, IDialogPersistItem>()
+            .ForMember(dest => dest.Response, opt => opt.MapFrom(src => src.Response))
+            .ForMember(dest => dest.Items, opt => opt.Ignore());
 
         CreateMap<IDialogPersistItem, IDialogItem>()
             .Include<RequestPersistItem, RequestViewItem>()
@@ -90,16 +92,11 @@ public class DialogItemPersistenceProfile : Profile
                 var agent = source.Agent != null
                     ? context.Mapper.Map<IAgent>(source.Agent)
                     : null;
-                return new LinearResponseViewItem(parentViewModel, agent);
-            })
-            .AfterMap((source, destination, context) =>
-            {
-                var items = source.Items.Select(x =>
-                    context.Mapper.Map<RawResponsePersistItem, RawResponseViewItem>(x)).ToArray();
-                foreach (var item in items)
-                {
-                    destination.Items.Add(item);
-                }
+                var persistedResponse = source.Response ?? source.Items?.FirstOrDefault();
+                var response = persistedResponse != null
+                    ? context.Mapper.Map<RawResponsePersistItem, RawResponseViewItem>(persistedResponse)
+                    : new RawResponseViewItem();
+                return new LinearResponseViewItem(parentViewModel, agent, response);
             });
 
         CreateMap<IResponse, ResponseViewItemBase>()
