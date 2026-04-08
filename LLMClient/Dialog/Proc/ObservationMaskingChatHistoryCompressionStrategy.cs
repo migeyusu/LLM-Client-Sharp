@@ -20,6 +20,15 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
         for (var index = 0; index < segmentation.Rounds.Count; index++)
         {
             var round = segmentation.Rounds[index];
+
+            if (context.Options.SummaryErrorLoop && round.HasError && index < segmentation.Rounds.Count - 1)
+            {
+                var summaryMsg = new ChatMessage(ChatRole.System, "[A previous erroneous action and its output have been omitted for brevity]");
+                ReactHistorySegmenter.TagMessage(summaryMsg, round.RoundNumber, ReactHistoryMessageKind.Observation);
+                replacement.Add(summaryMsg);
+                continue;
+            }
+
             replacement.AddRange(round.AssistantMessages);
             if (index >= keepFromIndex)
             {
@@ -64,4 +73,3 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
         return placeholderMessage;
     }
 }
-

@@ -31,12 +31,14 @@
                 <Style TargetType="{x:Type TextBlock}"
                        BasedOn="{StaticResource {x:Type TextBlock}}">
                     <Setter Property="VerticalAlignment"
-                            Value="Center" />
+                            Value="Bottom" />
                 </Style>
                 <Style TargetType="{x:Type TextBox}"
                        BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="Margin"
                             Value="0,0,10,0" />
+                    <Setter Property="VerticalContentAlignment"
+                            Value="Bottom"/>
                 </Style>
             </Grid.Resources>
             <Grid.RowDefinitions>
