@@ -17,6 +17,9 @@ public class FunctionCallException : Exception
 
 public abstract class FunctionCallEngine
 {
+    /// <summary>
+    /// whether use opanai api tool protocol
+    /// </summary>
     public abstract bool IsToolCallMode { get; }
 
     /// <summary>

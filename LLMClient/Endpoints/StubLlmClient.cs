@@ -109,7 +109,7 @@ public class StubLlmClient : ILLMChatClient
         }
     ];
 
-    public async IAsyncEnumerable<ReactStep> SendRequestAsync(RequestContext context,
+    public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         IsResponding = true;
@@ -175,7 +175,7 @@ public class StubLlmClient : ILLMChatClient
                             step.Complete(new StepResult
                             {
                                 IsCompleted = false,
-                                LatencyMs = random.Next(50, 200),
+                                Latency = random.Next(50, 200),
                                 Usage = loop.Usage ?? new UsageDetails
                                 {
                                     // Default simulated token usage for an intermediate function-call step
@@ -195,7 +195,7 @@ public class StubLlmClient : ILLMChatClient
                             {
                                 IsCompleted = true,
                                 FinishReason = ChatFinishReason.Stop,
-                                LatencyMs = random.Next(50, 200),
+                                Latency = random.Next(50, 200),
                                 Usage = loop.Usage ?? new UsageDetails
                                 {
                                     InputTokenCount = 256,

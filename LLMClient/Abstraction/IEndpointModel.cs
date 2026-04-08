@@ -23,7 +23,12 @@ public interface IEndpointModel : IModel
 
     ILLMAPIEndpoint Endpoint { get; }
 
+    /// <summary>
+    /// thinking include between tasks
+    /// </summary>
     ThinkingIncludeMode ThinkingIncludeMode { get; }
+    
+    ReactHistoryCompressionOptions HistoryCompression { get; }
 
     #region feature
 
@@ -65,8 +70,6 @@ public interface IEndpointModel : IModel
     bool SupportFunctionCall { get; }
 
     bool FunctionCallOnStreaming { get; }
-
-    ReactHistoryCompressionOptions HistoryCompression { get; }
 
     #endregion
 

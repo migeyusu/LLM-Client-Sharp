@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using LLMClient.Component.CustomControl;
 using LLMClient.Dialog;
 using Microsoft.Extensions.AI;
 
@@ -73,6 +74,14 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
         var modelMaxContextSize = context.CurrentClient.Model.MaxContextSize;
         var threshold = options.PreambleTokenThresholdPercent * modelMaxContextSize;
         if (estimatedTokens <= threshold)
+        {
+            return;
+        }
+
+        if (!MessageBoxes.Question(
+                "The conversation history contains a large amount of context from previous interactions. " +
+                "Compressing this context may help improve performance and reduce costs, but may also result in loss of detail. " +
+                "Do you want to proceed with compression?", "Compress Conversation History"))
         {
             return;
         }

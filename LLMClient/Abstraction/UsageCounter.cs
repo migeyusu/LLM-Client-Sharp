@@ -78,7 +78,7 @@ public class UsageCounter : BaseViewModel
     {
     }
 
-    public UsageCounter(ChatCallResult result)
+    public UsageCounter(CallResult result)
     {
         this.ErrorTimes = result is { IsInterrupt: true, IsCanceled: false } ? 1 : 0;
         this.CallTimes = result.ValidCallTimes;
@@ -104,7 +104,7 @@ public class UsageCounter : BaseViewModel
         this.AvgLatencyPerTokens = other.AvgLatencyPerTokens;
     }
 
-    public void Add(ChatCallResult result)
+    public void Add(CallResult result)
     {
         this.ErrorTimes += result is { IsInterrupt: true, IsCanceled: false } ? 1 : 0;
         this.CallTimes += result.ValidCallTimes;

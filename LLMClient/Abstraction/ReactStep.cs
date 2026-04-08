@@ -1,4 +1,5 @@
-﻿using System.Threading.Channels;
+﻿using System.Text;
+using System.Threading.Channels;
 
 namespace LLMClient.Abstraction;
 
@@ -15,6 +16,8 @@ public sealed class ReactStep : IAsyncEnumerable<LoopEvent>
     /// 该轮结束后的结果（在内层枚举结束后可用）
     /// </summary>
     public StepResult? Result { get; private set; }
+
+    public StringBuilder History { get; init; } = new();
 
     // ── 生产者 API（internal）──
 

@@ -135,7 +135,7 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
         if (Agent == null)
         {
             MessageBoxes.Error("No agent configured.");
-            return ChatCallResult.Empty;
+            return AgentTaskResult.Empty;
         }
 
         this.ErrorMessage = null;
@@ -172,7 +172,7 @@ public class LinearResponseViewItem : MultiResponseViewItem<RawResponseViewItem>
         {
             MessageBoxes.Error(e.Message, "响应失败");
             this.ErrorMessage = e.Message;
-            return new ChatCallResult { Exception = e };
+            return new AgentTaskResult { Exception = e };
         }
         finally
         {

@@ -30,7 +30,7 @@ public class InvokePermissionContextTests
     {
         var requestContext = new RequestContext
         {
-            ChatHistory = [],
+            ChatMessages = [],
             FunctionCallEngine = FunctionCallEngine.Create(FunctionCallEngineType.Prompt),
             RequestOptions = new ChatOptions(),
             AutoApproveAllInvocations = false,

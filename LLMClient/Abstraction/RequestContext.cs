@@ -2,9 +2,28 @@
 
 namespace LLMClient.Abstraction;
 
-public sealed class RequestContext
+public interface IRequestContext
 {
-    public required List<ChatMessage> ChatHistory { get; init; }
+    /// <summary>
+    /// 从接口上约定使用者不可添加，消除歧义
+    /// </summary>
+    IReadOnlyList<ChatMessage> ReadonlyHistory { get; }
+
+    FunctionCallEngine FunctionCallEngine { get; }
+    ChatOptions RequestOptions { get; }
+    AdditionalPropertiesDictionary? TempAdditionalProperties { get; }
+    bool AutoApproveAllInvocations { get; }
+    bool ShowRequestJson { get; }
+}
+
+public sealed class RequestContext : IRequestContext
+{
+    public IReadOnlyList<ChatMessage> ReadonlyHistory
+    {
+        get { return ChatMessages; }
+    }
+
+    public required List<ChatMessage> ChatMessages { get; init; }
 
     public required FunctionCallEngine FunctionCallEngine { get; init; }
 
@@ -13,7 +32,6 @@ public sealed class RequestContext
     public AdditionalPropertiesDictionary? TempAdditionalProperties { get; init; }
 
     public bool AutoApproveAllInvocations { get; init; }
-
 
     public bool ShowRequestJson { get; set; }
 }

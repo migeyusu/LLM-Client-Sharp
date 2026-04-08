@@ -46,7 +46,21 @@ public class SummaryAgent : IAgent
 
     private static bool ShouldCompactContext(StepResult? lastResult)
     {
-        return lastResult is { Exception: null, Messages.Count: > 0 };
+        if (lastResult == null)
+        {
+            return false;
+        }
+
+        if (lastResult.Exception != null)
+        {
+            return false;
+        }
+
+        if (!lastResult.Messages.Any())
+        {
+            return false;
+        }
+
+        return true;
     }
 }
-

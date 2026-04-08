@@ -94,7 +94,7 @@ public class EmptyLlmModelClient : ILLMChatClient
         this._fakeFilePath = fakeFilePath;
     }
 
-    public async IAsyncEnumerable<ReactStep> SendRequestAsync(RequestContext context,
+    public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var step = new ReactStep();

@@ -174,10 +174,10 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public CancellationTokenSource? RequestTokenSource { get; private set; }
 
-    public virtual async Task<ChatCallResult> Process(DefaultDialogContextBuilder contextBuilder,
+    public virtual async Task<AgentTaskResult> Process(DefaultDialogContextBuilder contextBuilder,
         CancellationToken token = default)
     {
-        var completedResult = ChatCallResult.Empty;
+        var completedResult = AgentTaskResult.Empty;
         try
         {
             if (Client == null)

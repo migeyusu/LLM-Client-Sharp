@@ -47,7 +47,7 @@ public class RequesterViewModelTests
             Assert.Same(requester.DefaultClient, option.DefaultClient);
             Assert.Equal(new GlobalOptions().ContextSummarizePrompt, summaryRequest.RawTextMessage);
 
-            responseRelease.SetResult(new ChatCallResult());
+            responseRelease.SetResult(new AgentTaskResult());
 
             Assert.True(requestCompleted.Wait(TimeSpan.FromSeconds(5)));
             WaitUntil(() => !requester.IsNewResponding, TimeSpan.FromSeconds(5));

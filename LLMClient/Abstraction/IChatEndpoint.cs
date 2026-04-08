@@ -13,6 +13,6 @@ public interface IChatEndpoint
     /// 以 ReAct 循环流的形式发送请求。每个 ReactStep 代表一轮 Reasoning + Acting。
     /// </summary>
     IAsyncEnumerable<ReactStep> SendRequestAsync(
-        RequestContext context,
+        IRequestContext context,
         CancellationToken cancellationToken = default);
 }

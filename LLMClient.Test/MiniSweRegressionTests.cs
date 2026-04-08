@@ -52,7 +52,10 @@ public class MiniSweRegressionTests
         await foreach (var step in agent.Execute(session, cancellationToken: CancellationToken.None))
         {
             // Consume all events so step.Result becomes available
-            await foreach (var _ in step) { }
+            await foreach (var _ in step)
+            {
+            }
+
             if (step.Result != null)
                 results.Add(step.Result);
         }
@@ -69,7 +72,7 @@ public class MiniSweRegressionTests
         var engine = new AgentFlowCompletionEngine();
         var requestContext = new RequestContext
         {
-            ChatHistory = [new ChatMessage(ChatRole.User, "finish the task")],
+            ChatMessages = [new ChatMessage(ChatRole.User, "finish the task")],
             FunctionCallEngine = engine,
             RequestOptions = new ChatOptions(),
         };
@@ -80,7 +83,8 @@ public class MiniSweRegressionTests
 
         Assert.Null(result.Exception);
         Assert.Equal(ChatFinishReason.Stop, result.FinishReason);
-        Assert.Contains(result.Messages, message => message.Role == ChatRole.Assistant && message.Text == "final submission");
+        Assert.Contains(result.Messages,
+            message => message.Role == ChatRole.Assistant && message.Text == "final submission");
     }
 
     [Fact]
@@ -94,7 +98,7 @@ public class MiniSweRegressionTests
         var engine = new LoopingToolCallEngine();
         var requestContext = new RequestContext
         {
-            ChatHistory = [new ChatMessage(ChatRole.User, "run the tool and finish")],
+            ChatMessages = [new ChatMessage(ChatRole.User, "run the tool and finish")],
             FunctionCallEngine = engine,
             RequestOptions = new ChatOptions(),
         };
@@ -124,7 +128,7 @@ public class MiniSweRegressionTests
         var engine = new LoopingToolCallEngine();
         var requestContext = new RequestContext
         {
-            ChatHistory = [new ChatMessage(ChatRole.User, "run the tool and fail later")],
+            ChatMessages = [new ChatMessage(ChatRole.User, "run the tool and fail later")],
             FunctionCallEngine = engine,
             RequestOptions = new ChatOptions(),
         };
@@ -144,35 +148,35 @@ public class MiniSweRegressionTests
     {
         var firstUsage = new UsageDetails { InputTokenCount = 7, OutputTokenCount = 2, TotalTokenCount = 9 };
         var secondUsage = new UsageDetails { InputTokenCount = 13, OutputTokenCount = 5, TotalTokenCount = 18 };
-        var firstResult = new ChatCallResult
+        var firstResult = new AgentTaskResult
         {
             Usage = firstUsage,
             LastSuccessfulUsage = firstUsage,
             ValidCallTimes = 1,
         };
-        var secondResult = new ChatCallResult
+        var secondResult = new AgentTaskResult
         {
             Usage = secondUsage,
             LastSuccessfulUsage = secondUsage,
             ValidCallTimes = 1,
         };
-        var interruptedResult = new ChatCallResult
+        var interruptedResult = new AgentTaskResult
         {
             Exception = new Exception("interrupted"),
             ValidCallTimes = 0,
         };
 
-        var combined = firstResult + secondResult;
-        AssertUsage(combined.Usage, new UsageDetails
+        firstResult.Add(secondResult);
+        AssertUsage(firstResult.Usage, new UsageDetails
         {
             InputTokenCount = firstUsage.InputTokenCount + secondUsage.InputTokenCount,
             OutputTokenCount = firstUsage.OutputTokenCount + secondUsage.OutputTokenCount,
             TotalTokenCount = firstUsage.TotalTokenCount + secondUsage.TotalTokenCount,
         });
-        AssertUsage(combined.LastSuccessfulUsage, secondUsage);
+        AssertUsage(firstResult.LastSuccessfulUsage, secondUsage);
 
-        var preserved = combined + interruptedResult;
-        AssertUsage(preserved.LastSuccessfulUsage, secondUsage);
+        firstResult.Add(interruptedResult);
+        AssertUsage(firstResult.LastSuccessfulUsage, secondUsage);
     }
 
     [Theory]
@@ -267,15 +271,13 @@ public class MiniSweRegressionTests
 
         public bool IsResponding { get; set; }
 
-        public async IAsyncEnumerable<ReactStep> SendRequestAsync(RequestContext context,
+        public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            ChatHistoryCounts.Add(context.ChatHistory.Count);
+            ChatHistoryCounts.Add(context.ReadonlyHistory.Count);
             _callCount++;
             var text = _callCount == 1 ? "retry required" : "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT";
             var message = new ChatMessage(ChatRole.Assistant, text);
-            context.ChatHistory.Add(message);
-
             var step = new ReactStep();
             step.EmitText(text);
             var stepResult = new StepResult
@@ -611,4 +613,3 @@ public class MiniSweRegressionTests
         public override string? SystemPrompt => null;
     }
 }
-

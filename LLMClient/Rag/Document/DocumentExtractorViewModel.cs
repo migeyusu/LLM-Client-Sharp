@@ -311,7 +311,7 @@ public abstract class DocumentExtractorViewModel<T, TK> : BaseViewModel where T 
                 return result;
             }
 
-            var response = new ChatCallResult();
+            var response = new AgentTaskResult();
             await clientSemaphore.WaitAsync(token);
             try
             {

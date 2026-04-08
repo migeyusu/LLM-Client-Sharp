@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
@@ -126,10 +127,9 @@ public class MiniSweAgent : IAgent
                 await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))
                 {
                     yield return step;
-
                     if (step.Result != null)
                     {
-                        AppendMessagesIfNeeded(requestContext.ChatHistory, step.Result.Messages);
+                        requestContext.ChatMessages.AddRange(step.Result.Messages);
                         lastStepResult = step.Result;
                     }
                 }
@@ -145,8 +145,9 @@ public class MiniSweAgent : IAgent
                     yield break;
                 }
 
-                if (lastStepResult?.Exception == null)
+                if (lastStepResult?.Exception is AgentFlowException)
                 {
+                    //detect agent exception
                     break;
                 }
 
@@ -157,7 +158,7 @@ public class MiniSweAgent : IAgent
 
             CallCount++;
 
-            var lastMessage = requestContext.ChatHistory.LastOrDefault();
+            var lastMessage = requestContext.ReadonlyHistory.LastOrDefault();
             if (IsExitMessage(lastMessage))
             {
                 break;
@@ -200,34 +201,5 @@ public class MiniSweAgent : IAgent
         }
 
         return message?.Text?.Contains(Config.TaskCompleteFlag, StringComparison.Ordinal) == true;
-    }
-
-    private static void AppendMessagesIfNeeded(List<ChatMessage> chatHistory, IReadOnlyList<ChatMessage> messages)
-    {
-        if (messages.Count == 0)
-        {
-            return;
-        }
-
-        if (chatHistory.Count >= messages.Count)
-        {
-            var startIndex = chatHistory.Count - messages.Count;
-            var suffixMatches = true;
-            for (var index = 0; index < messages.Count; index++)
-            {
-                if (!ReferenceEquals(chatHistory[startIndex + index], messages[index]))
-                {
-                    suffixMatches = false;
-                    break;
-                }
-            }
-
-            if (suffixMatches)
-            {
-                return;
-            }
-        }
-
-        chatHistory.AddRange(messages);
     }
 }

@@ -129,7 +129,7 @@ public class HistoryCompressionStrategyTests
         client.ModelInfo.HistoryCompression.ObservationPlaceholder = "[details omitted for brevity]";
         var requestContext = new RequestContext
         {
-            ChatHistory = [new ChatMessage(ChatRole.User, "solve the issue")],
+            ChatMessages = [new ChatMessage(ChatRole.User, "solve the issue")],
             FunctionCallEngine = new LoopingToolCallEngine(),
             RequestOptions = new ChatOptions(),
         };
@@ -293,7 +293,7 @@ public class HistoryCompressionStrategyTests
 
         var requestContext = new RequestContext
         {
-            ChatHistory = chatHistory,
+            ChatMessages = chatHistory,
             FunctionCallEngine = new LoopingToolCallEngine(),
             RequestOptions = new ChatOptions(),
         };
@@ -329,7 +329,7 @@ public class HistoryCompressionStrategyTests
 
         var requestContext = new RequestContext
         {
-            ChatHistory =
+            ChatMessages =
             [
                 new ChatMessage(ChatRole.System, "You are helpful."),
                 new ChatMessage(ChatRole.User, "Previous task: fix authentication"),
@@ -368,7 +368,7 @@ public class HistoryCompressionStrategyTests
 
         var requestContext = new RequestContext
         {
-            ChatHistory = [new ChatMessage(ChatRole.User, "solve the issue")],
+            ChatMessages = [new ChatMessage(ChatRole.User, "solve the issue")],
             FunctionCallEngine = new LoopingToolCallEngine(),
             RequestOptions = new ChatOptions(),
         };
@@ -625,7 +625,7 @@ public class HistoryCompressionStrategyTests
 
         public bool IsResponding { get; set; }
 
-        public async IAsyncEnumerable<ReactStep> SendRequestAsync(RequestContext requestContext,
+        public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext requestContext,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var step = new ReactStep();

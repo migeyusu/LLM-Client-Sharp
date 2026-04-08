@@ -36,4 +36,20 @@ public static class ReadOnlyListExtensions
 
         return -1;
     }
+
+    public static int FindLastIndex<T>(this IReadOnlyList<T> list, Predicate<T> match)
+    {
+        ArgumentNullException.ThrowIfNull(list);
+        ArgumentNullException.ThrowIfNull(match);
+
+        for (int i = list.Count - 1; i >= 0; i--)
+        {
+            if (match(list[i]))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
 }

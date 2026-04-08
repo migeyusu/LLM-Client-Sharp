@@ -142,7 +142,7 @@ public class DefaultDialogContextBuilder : IChatRequest
 
         return new RequestContext
         {
-            ChatHistory = chatHistory,
+            ChatMessages = chatHistory,
             FunctionCallEngine = functionCallEngine,
             RequestOptions = requestOptions,
             TempAdditionalProperties = TempAdditionalProperties,

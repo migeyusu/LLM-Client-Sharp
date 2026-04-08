@@ -27,6 +27,7 @@ public class OpenAIChatClientEx : ChatClient
     {
         var clientContext = AsyncContextStore<ChatContext>.Current;
         var shouldProcessNonStreamingResponse = clientContext?.Streaming != true;
+        var history = clientContext?.CurrentStep?.History;
         if (clientContext != null)
         {
             if (clientContext.AdditionalObjects.Count != 0 || clientContext.ShowRequestJson ||
@@ -65,9 +66,9 @@ public class OpenAIChatClientEx : ChatClient
                         };
 
                         var formattedJson = jsonNode.ToJsonString(jsonOptions);
-                        clientContext.InteractionHistory.AppendLine("<request>");
-                        clientContext.InteractionHistory.AppendLine(formattedJson);
-                        clientContext.InteractionHistory.AppendLine("</request>");
+                        history!.AppendLine("<request>");
+                        history.AppendLine(formattedJson);
+                        history.AppendLine("</request>");
                     }
 
                     oriStream.SetLength(0);
@@ -101,18 +102,18 @@ public class OpenAIChatClientEx : ChatClient
 
         if (clientContext != null)
         {
-            clientContext.InteractionHistory.AppendLine("<response>");
+            history!.AppendLine("<response>");
             if (shouldProcessNonStreamingResponse)
             {
                 var response = await GetResponseTextAsync(result.GetRawResponse());
-                clientContext.InteractionHistory.AppendLine(response ?? string.Empty);
+                history.AppendLine(response ?? string.Empty);
             }
             else
             {
-                clientContext.InteractionHistory.AppendLine("<streaming response omitted>");
+                history.AppendLine("<streaming response omitted>");
             }
 
-            clientContext.InteractionHistory.AppendLine("</response>");
+            history.AppendLine("</response>");
         }
         // var binaryData = result.GetRawResponse();
         /*var jsonNode = JsonNode.Parse(contentString);
@@ -147,7 +148,8 @@ public class OpenAIChatClientEx : ChatClient
             using var document = JsonDocument.Parse(responseText);
             var root = document.RootElement;
             if (!_treatNullChoicesAsEmptyResponse || root.ValueKind != JsonValueKind.Object ||
-                !root.TryGetProperty("choices", out var choicesElement) || choicesElement.ValueKind != JsonValueKind.Null)
+                !root.TryGetProperty("choices", out var choicesElement) ||
+                choicesElement.ValueKind != JsonValueKind.Null)
             {
                 return;
             }
@@ -173,11 +175,8 @@ public class OpenAIChatClientEx : ChatClient
             };
             var normalizedResponseText = rootNode.ToJsonString();
             ReplaceResponseContent(response, normalizedResponseText);
-            if (clientContext != null)
-            {
-                clientContext.InteractionHistory.AppendLine(
-                    "<warning>Applied OpenAI-compatible fallback: converted null choices to an empty array.</warning>");
-            }
+            clientContext?.CurrentStep?.History?.AppendLine(
+                "<warning>Applied OpenAI-compatible fallback: converted null choices to an empty array.</warning>");
         }
         catch (JsonException)
         {

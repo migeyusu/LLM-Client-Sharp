@@ -282,9 +282,9 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
     /// <summary>
     /// 消费 IAsyncEnumerable&lt;ReactStep&gt; 流，将每轮循环写入 <paramref name="loops"/>
-    /// 并累积为 <see cref="ChatCallResult"/>。供 ClientResponseViewItem / LinearResponseViewItem 共用。
+    /// 并累积为 <see cref="AgentTaskResult"/>。供 ClientResponseViewItem / LinearResponseViewItem 共用。
     /// </summary>
-    internal static async Task<ChatCallResult> ConsumeReactStepsAsync(
+    internal static async Task<AgentTaskResult> ConsumeReactStepsAsync(
         IAsyncEnumerable<ReactStep> steps,
         ObservableCollection<ReactLoopViewModel> loops,
         Action<int> setLoopCount,
@@ -361,7 +361,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             {
                 var maxCtx = result.MaxContextTokens > 0 ? result.MaxContextTokens : fallbackMaxContextTokens;
                 loopVm.ContextUsage = new ContextUsageViewModel(result.Usage, maxCtx);
-                loopVm.LatencyMs = result.LatencyMs;
+                loopVm.LatencyMs = result.Latency;
                 loopVm.IsCompleted = true;
                 loopVm.IsExpanded = false;
 
@@ -374,12 +374,12 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                 allMessages.AddRange(result.Messages);
                 finishReason = result.FinishReason;
                 exception ??= result.Exception;
-                totalLatency += result.LatencyMs;
+                totalLatency += result.Latency;
                 if (result.Exception == null) validCallTimes++;
             }
         }
 
-        return new ChatCallResult
+        return new AgentTaskResult
         {
             Usage = totalUsage,
             LastSuccessfulUsage = lastSuccessfulUsage,
@@ -395,7 +395,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     /// <summary>
     /// 实例便捷方法 — 使用当前实例的 <see cref="Loops"/> 和 <see cref="LoopCount"/>。
     /// </summary>
-    protected Task<ChatCallResult> ConsumeReactStepsAsync(
+    protected Task<AgentTaskResult> ConsumeReactStepsAsync(
         IAsyncEnumerable<ReactStep> steps,
         CancellationToken cancellationToken,
         int? fallbackMaxContextTokens = null)

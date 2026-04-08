@@ -141,7 +141,7 @@ public class ClientResponseViewItemTests
 
         public bool IsResponding { get; set; }
 
-        public IAsyncEnumerable<ReactStep> SendRequestAsync(RequestContext context,
+        public IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
             CancellationToken cancellationToken = default)
         {
             throw new InvalidOperationException(

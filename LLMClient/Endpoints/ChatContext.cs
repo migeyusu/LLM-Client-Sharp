@@ -40,11 +40,9 @@ public class ChatContext
 
     public bool EnableSchemaCleaning { get; set; } = true;
 
-    public StringBuilder InteractionHistory { get; } = new();
-
     public ClientResult? Result { get; set; }
 
-    public static ChatContext CreateForRequest(RequestContext requestContext,
+    public static ChatContext CreateForRequest(IRequestContext requestContext,
         AdditionalPropertiesDictionary? additionalObjects,
         bool streaming,
         ChatContext? parentContext = null)
@@ -64,7 +62,7 @@ public class ChatContext
 
     private static PropertyInfo? _choiceAdditional;
 
-    public void CompleteStreamResponse(ChatCallResult result, ChatResponseUpdate update)
+    public void CompleteStreamResponse(StepResult result, ChatResponseUpdate update)
     {
         result.Annotations ??= new List<ChatAnnotation>();
         result.AdditionalProperties ??= new AdditionalPropertiesDictionary();
@@ -140,7 +138,7 @@ public class ChatContext
         }
     }
 
-    public async Task CompleteResponse(ChatResponse response, ChatCallResult result)
+    public async Task CompleteResponse(ChatResponse response, StepResult result)
     {
         if (this.Result == null)
         {

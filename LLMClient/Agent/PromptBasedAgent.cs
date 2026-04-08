@@ -24,10 +24,10 @@ public class PromptBasedAgent
 
     public Duration Timeout { get; set; } = Duration.Forever;
 
-    public async Task<ChatCallResult> SendRequestAsync(DefaultDialogContextBuilder contextBuilder,
+    public async Task<AgentTaskResult> SendRequestAsync(DefaultDialogContextBuilder contextBuilder,
         CancellationToken cancellationToken = default)
     {
-        ChatCallResult? completedResult = null;
+        AgentTaskResult? completedResult = null;
         var tryCount = 0;
         var requestContext = await contextBuilder.BuildAsync(_chatClient.Model, cancellationToken);
         while (tryCount < RetryCount && !cancellationToken.IsCancellationRequested)
