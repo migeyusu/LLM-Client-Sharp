@@ -238,7 +238,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 streaming, parentContext);
             var historyCompressionOptions = Model.HistoryCompression;
             var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions) ??
-                                             NoOpChatHistoryCompressionStrategy.Instance;
+                                             new NoOpChatHistoryCompressionStrategy();
 
             var reactRoundNumber = 0;
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
@@ -467,7 +467,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 preFunctionCalls, step, cancellationToken);
 
             var compressionKind = GetHistoryCompressionKind(historyCompressionOptions.Mode);
-            if (compressionKind.HasValue)
+            var shouldRunCompression = compressionKind.HasValue || historyCompressionOptions.SummaryErrorLoop;
+            if (shouldRunCompression)
             {
                 var compressionContext = new ChatHistoryCompressionContext
                 {
@@ -477,9 +478,21 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     Options = historyCompressionOptions,
                     Step = step,
                 };
-                step.EmitHistoryCompressionStarted(compressionKind.Value);
-                await historyCompressionStrategy.CompressAsync(compressionContext, cancellationToken);
-                step.EmitHistoryCompressionCompleted(compressionKind.Value, compressionContext.CompressionApplied);
+
+                if (historyCompressionStrategy.ShouldCompress(compressionContext))
+                {
+                    if (compressionKind.HasValue)
+                    {
+                        step.EmitHistoryCompressionStarted(compressionKind.Value);
+                    }
+
+                    await historyCompressionStrategy.CompressAsync(compressionContext, cancellationToken);
+
+                    if (compressionKind.HasValue)
+                    {
+                        step.EmitHistoryCompressionCompleted(compressionKind.Value, compressionContext.CompressionApplied);
+                    }
+                }
             }
 
 
@@ -645,11 +658,16 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             Step = step,
         };
 
+        var preambleStrategy = viewModelFactory.Create<PreambleSummaryChatHistoryCompressionStrategy>();
+        if (!preambleStrategy.ShouldCompress(compressionContext))
+        {
+            return;
+        }
+
         step.EmitHistoryCompressionStarted(HistoryCompressionKind.PreambleSummary);
         PreambleCompressionActive.Value = true;
         try
         {
-            var preambleStrategy = viewModelFactory.Create<PreambleSummaryChatHistoryCompressionStrategy>();
             await preambleStrategy.CompressAsync(compressionContext, cancellationToken);
             step.EmitHistoryCompressionCompleted(HistoryCompressionKind.PreambleSummary,
                 compressionContext.CompressionApplied);
@@ -671,3 +689,4 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         };
     }
 }
+

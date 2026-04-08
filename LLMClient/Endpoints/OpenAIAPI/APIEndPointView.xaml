@@ -72,9 +72,6 @@
                   Grid.Column="0"
                   Grid.ColumnSpan="4"
                   Margin="0,0,0,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="70" />
                     <ColumnDefinition Width="90" />
@@ -87,11 +84,11 @@
 
                 <TextBlock Grid.Row="0"
                            Grid.Column="0"
-                           Text="Source：" />
+                           Text="Source:" />
 
                 <ComboBox Grid.Row="0"
                           Grid.Column="1"
-                          VerticalAlignment="Center"
+                          VerticalAlignment="Bottom"
                           HorizontalAlignment="Stretch"
                           SelectedValue="{Binding ModelsSource,Mode=TwoWay}"
                           Width="80">
@@ -106,7 +103,7 @@
 
                 <TextBlock Grid.Row="0"
                            Grid.Column="2"
-                           Text="API Usage Url：">
+                           Text="API Usage Url:">
                     <TextBlock.Style>
                         <Style TargetType="{x:Type TextBlock}"
                                BasedOn="{StaticResource {x:Type TextBlock}}">
@@ -240,14 +237,17 @@
                     </Button.Style>
                 </Button>
             </Grid>
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Proxy：" />
-            <StackPanel Grid.Row="3" Grid.Column="1"
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Proxy:" />
+            <StackPanel Grid.Row="3" 
+						Grid.Column="1"
                         Orientation="Horizontal"
-                        VerticalAlignment="Center"
+                        VerticalAlignment="Bottom"
                         DataContext="{Binding ConfigOption,Mode=OneTime}">
                 <RadioButton IsChecked="{Binding ProxySetting.UseGlobalProxy,Mode=TwoWay}"
+                             Padding="6,0"
                              Content="使用共享设置" />
                 <RadioButton Margin="10,0,0,0"
+                             Padding="6,0"
                              IsChecked="{Binding  ProxySetting.UseGlobalProxy,Mode=TwoWay,Converter={StaticResource InvertBooleanConverter}}">
                     <DockPanel>
                         <TextBlock Text="独立配置："
@@ -270,7 +270,7 @@
             <StackPanel Grid.Row="3" Grid.Column="2"
                         Grid.ColumnSpan="2"
                         Orientation="Horizontal"
-                        VerticalAlignment="Center">
+                        VerticalAlignment="Bottom">
                 <CheckBox VerticalAlignment="Center"
                           IsChecked="{Binding ConfigOption.IsOpenAICompatible,Mode=TwoWay}"
                           materialDesign:CheckBoxAssist.CheckBoxSize="30"

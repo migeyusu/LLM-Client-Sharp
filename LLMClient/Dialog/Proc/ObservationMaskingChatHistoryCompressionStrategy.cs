@@ -5,27 +5,56 @@ namespace LLMClient.Dialog.Proc;
 
 public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHistoryCompressionStrategy
 {
-    public Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
+    private readonly Summarizer? _summarizer;
+
+    public ObservationMaskingChatHistoryCompressionStrategy(Summarizer? summarizer = null)
+    {
+        _summarizer = summarizer;
+    }
+
+    public bool ShouldCompress(ChatHistoryCompressionContext context)
     {
         var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
         var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
         if (segmentation.Rounds.Count <= roundsToKeep)
         {
-            return Task.CompletedTask;
+            return false;
         }
 
+        var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
+        if (context.Options.SummaryErrorLoop && segmentation.Rounds.Take(keepFromIndex).Any(round => round.HasError))
+        {
+            return true;
+        }
+
+        return segmentation.Rounds.Take(keepFromIndex).Any(round => round.ObservationMessages.Count > 0);
+    }
+
+    public async Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
+    {
+        if (!ShouldCompress(context))
+        {
+            return;
+        }
+
+        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
+        var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
         var replacement = new List<ChatMessage>(segmentation.PreambleMessages);
         var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
+        var changed = false;
 
         for (var index = 0; index < segmentation.Rounds.Count; index++)
         {
             var round = segmentation.Rounds[index];
 
-            if (context.Options.SummaryErrorLoop && round.HasError && index < segmentation.Rounds.Count - 1)
+            if (context.Options.SummaryErrorLoop && round.HasError && index < keepFromIndex)
             {
-                var summaryMsg = new ChatMessage(ChatRole.System, "[A previous erroneous action and its output have been omitted for brevity]");
-                ReactHistorySegmenter.TagMessage(summaryMsg, round.RoundNumber, ReactHistoryMessageKind.Observation);
-                replacement.Add(summaryMsg);
+                replacement.Add(await ReactErrorRoundSummarizer.BuildErrorSummaryMessageAsync(
+                    round,
+                    _summarizer,
+                    context.CurrentClient,
+                    cancellationToken));
+                changed = true;
                 continue;
             }
 
@@ -41,12 +70,21 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
                 replacement.Add(CreateObservationPlaceholder(observationMessage, round.RoundNumber,
                     context.Options.ObservationPlaceholder));
             }
+
+            if (round.ObservationMessages.Count > 0)
+            {
+                changed = true;
+            }
+        }
+
+        if (!changed)
+        {
+            return;
         }
 
         context.ChatHistory.Clear();
         context.ChatHistory.AddRange(replacement);
         context.CompressionApplied = true;
-        return Task.CompletedTask;
     }
 
     private static ChatMessage CreateObservationPlaceholder(ChatMessage originalMessage, int roundNumber, string placeholder)

@@ -396,6 +396,91 @@ public class HistoryCompressionStrategyTests
         Assert.Contains("call-ok", historyForRound3);
     }
 
+    [Fact]
+    public async Task NoOp_SummaryErrorLoop_UsesPreserveRecentRoundsAndDropsPreamble()
+    {
+        var chatHistory = CreateHistoryWithErrorAndSuccessRounds();
+        var strategy = new NoOpChatHistoryCompressionStrategy(new Summarizer(new GlobalOptions()));
+        var summaryClient = new SummaryOnlyLlmClient("What was done: called broken_tool - What result: tool failed");
+
+        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        {
+            ChatHistory = chatHistory,
+            Options = new ReactHistoryCompressionOptions
+            {
+                Mode = ReactHistoryCompressionMode.None,
+                SummaryErrorLoop = true,
+                PreserveRecentRounds = 1,
+            },
+            CurrentRound = 2,
+            CurrentClient = summaryClient,
+        });
+
+        Assert.DoesNotContain(chatHistory, message => message.Role == ChatRole.System && message.Text == "You are helpful.");
+        Assert.DoesNotContain(chatHistory, message => message.Role == ChatRole.User && message.Text == "Fix the failing workflow.");
+        Assert.Contains(chatHistory, message => message.Text.Contains("[Round 1 error summary]", StringComparison.Ordinal));
+        Assert.DoesNotContain(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
+            content => content.CallId == "call-err-1");
+        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
+            content => content.CallId == "call-ok-2");
+    }
+
+    [Fact]
+    public async Task ObservationMasking_SummaryErrorLoop_DoesNotMaskRecentErrorRound()
+    {
+        var chatHistory = CreateHistoryWithRecentErrorRound();
+        var strategy = new ObservationMaskingChatHistoryCompressionStrategy(new Summarizer(new GlobalOptions()));
+        var summaryClient = new SummaryOnlyLlmClient("What was done: called old_tool - What result: old tool failed");
+
+        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        {
+            ChatHistory = chatHistory,
+            Options = new ReactHistoryCompressionOptions
+            {
+                Mode = ReactHistoryCompressionMode.ObservationMasking,
+                SummaryErrorLoop = true,
+                PreserveRecentRounds = 1,
+                ObservationPlaceholder = "[details omitted for brevity]",
+            },
+            CurrentRound = 2,
+            CurrentClient = summaryClient,
+        });
+
+        Assert.DoesNotContain(chatHistory, message =>
+            message.Text.StartsWith("[Round 2 error summary]", StringComparison.Ordinal));
+        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
+            content => content.CallId == "call-err-recent" && Equals(content.Result, "recent error payload"));
+    }
+
+    [Fact]
+    public async Task LlmClientBase_ModeNoneWithSummaryErrorLoop_CompressesOlderErrorRound()
+    {
+        var chatClient = new RecordingSequentialChatClient(
+            CreateToolCallResponse("call-err", "error value"),
+            CreateToolCallResponse("call-ok", "good value"),
+            CreateTextResponse("all done"));
+        var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.None);
+        client.ModelInfo.HistoryCompression.SummaryErrorLoop = true;
+        client.ModelInfo.HistoryCompression.PreserveRecentRounds = 1;
+
+        var requestContext = new RequestContext
+        {
+            ChatMessages = [new ChatMessage(ChatRole.User, "do work")],
+            FunctionCallEngine = new FailFirstToolCallEngine(),
+            RequestOptions = new ChatOptions(),
+        };
+
+#pragma warning disable SKEXP0001
+        var result = await client.SendRequestCompatAsync(requestContext, CancellationToken.None);
+#pragma warning restore SKEXP0001
+
+        Assert.Null(result.Exception);
+        Assert.Equal(3, chatClient.SeenHistories.Count);
+        var historyForRound3 = chatClient.SeenHistories[2];
+        Assert.DoesNotContain("call:noop:call-err", historyForRound3);
+        Assert.Contains("error summary", historyForRound3);
+    }
+
     private static List<ChatMessage> CreateHistoryWithErrorAndSuccessRounds()
     {
         var history = new List<ChatMessage>
@@ -441,6 +526,48 @@ public class HistoryCompressionStrategyTests
         return history;
     }
 
+    private static List<ChatMessage> CreateHistoryWithRecentErrorRound()
+    {
+        var history = new List<ChatMessage>
+        {
+            new(ChatRole.System, "You are helpful."),
+            new(ChatRole.User, "Fix the failing workflow."),
+        };
+
+        var assistantRound1 = new ChatMessage(ChatRole.Assistant,
+        [
+            new FunctionCallContent("call-ok-old", "old_tool", new Dictionary<string, object?>()),
+        ]);
+        ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+        history.Add(assistantRound1);
+
+        var observationRound1 = new ChatMessage(ChatRole.Tool,
+        [
+            new FunctionResultContent("call-ok-old", "old success payload"),
+        ]);
+        ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+        history.Add(observationRound1);
+
+        var assistantRound2 = new ChatMessage(ChatRole.Assistant,
+        [
+            new FunctionCallContent("call-err-recent", "recent_tool", new Dictionary<string, object?>()),
+        ]);
+        ReactHistorySegmenter.TagMessage(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
+        history.Add(assistantRound2);
+
+        var observationRound2 = new ChatMessage(ChatRole.Tool,
+        [
+            new FunctionResultContent("call-err-recent", "recent error payload")
+            {
+                Exception = new InvalidOperationException("recent tool failure"),
+            },
+        ]);
+        ReactHistorySegmenter.TagMessage(observationRound2, 2, ReactHistoryMessageKind.Observation);
+        history.Add(observationRound2);
+
+        return history;
+    }
+
     [Fact]
     public async Task LlmClientBase_ObservationMasking_EmitsCompressionLoopEvents()
     {
@@ -463,14 +590,8 @@ public class HistoryCompressionStrategyTests
 #pragma warning restore SKEXP0001
 
         Assert.Equal(3, stepEvents.Count);
-        Assert.Contains(stepEvents[0],
-            evt => evt is HistoryCompressionStarted { Kind: HistoryCompressionKind.ObservationMasking });
-        Assert.Contains(stepEvents[0],
-            evt => evt is HistoryCompressionCompleted
-            {
-                Kind: HistoryCompressionKind.ObservationMasking,
-                Applied: false,
-            });
+        Assert.DoesNotContain(stepEvents[0], evt => evt is HistoryCompressionStarted or HistoryCompressionCompleted);
+        Assert.Contains(stepEvents[1], evt => evt is HistoryCompressionStarted { Kind: HistoryCompressionKind.ObservationMasking });
         Assert.Contains(stepEvents[1],
             evt => evt is HistoryCompressionCompleted
             {

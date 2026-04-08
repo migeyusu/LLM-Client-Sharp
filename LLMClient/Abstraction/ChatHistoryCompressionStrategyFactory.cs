@@ -19,8 +19,7 @@ public class ChatHistoryCompressionStrategyFactory
             ReactHistoryCompressionMode.TaskSummary => _viewModelFactory.Create<TaskSummaryChatHistoryCompressionStrategy>(),
             ReactHistoryCompressionMode.ObservationMasking => _viewModelFactory.Create<ObservationMaskingChatHistoryCompressionStrategy>(),
             ReactHistoryCompressionMode.InfoCleaning => _viewModelFactory.Create<InfoCleaningChatHistoryCompressionStrategy>(),
-            _ => NoOpChatHistoryCompressionStrategy.Instance,
+            _ => _viewModelFactory.Create<NoOpChatHistoryCompressionStrategy>(),
         };
     }
 }
-

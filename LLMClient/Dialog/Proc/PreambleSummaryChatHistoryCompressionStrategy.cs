@@ -21,14 +21,57 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
         _summarizer = summarizer;
     }
 
-    public async Task CompressAsync(ChatHistoryCompressionContext context,
-        CancellationToken cancellationToken = default)
+    public bool ShouldCompress(ChatHistoryCompressionContext context)
     {
         var options = context.Options;
         if (!options.PreambleCompression)
         {
+            return false;
+        }
+
+        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
+        var preamble = segmentation.PreambleMessages;
+
+        // Need at least: system + some historical messages + current user message
+        if (preamble.Count <= 2)
+        {
+            return false;
+        }
+
+        var startIndex = 0;
+        while (startIndex < preamble.Count && preamble[startIndex].Role == ChatRole.System)
+        {
+            startIndex++;
+        }
+
+        var endIndex = preamble.Count - 1;
+        if (endIndex >= startIndex && preamble[endIndex].Role == ChatRole.User)
+        {
+            endIndex--;
+        }
+
+        var historicalCount = endIndex - startIndex + 1;
+        if (historicalCount <= 0)
+        {
+            return false;
+        }
+
+        var historicalMessages = preamble.Skip(startIndex).Take(historicalCount).ToArray();
+        var estimatedTokens = EstimateTokens(historicalMessages);
+        var modelMaxContextSize = context.CurrentClient.Model.MaxContextSize;
+        var threshold = options.PreambleTokenThresholdPercent * modelMaxContextSize;
+        return estimatedTokens > threshold;
+    }
+
+    public async Task CompressAsync(ChatHistoryCompressionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        if (!ShouldCompress(context))
+        {
             return;
         }
+
+        var options = context.Options;
 
         var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
         var preamble = segmentation.PreambleMessages;
