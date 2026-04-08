@@ -140,7 +140,7 @@
                                                      TextWrapping="Wrap"
                                                      Foreground="Red"
                                                      Padding="10"
-                                                     Visibility="{Binding IsInterrupt,Mode=OneTime,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                                                     Visibility="{Binding Response.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                                         </Grid>
                                     </materialDesign:Card>
                                 </DataTemplate>

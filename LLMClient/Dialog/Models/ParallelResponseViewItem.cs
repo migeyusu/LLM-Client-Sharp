@@ -396,6 +396,12 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
             ParentSession.OnResponseCompleted(completedResult);
             return completedResult;
         }
+        catch (Exception exception)
+        {
+            responseViewItem.ErrorMessage = exception.Message;
+            responseViewItem.IsInterrupt = true;
+            return responseViewItem;
+        }
         finally
         {
             responseViewItem.ReleaseRespondingState();

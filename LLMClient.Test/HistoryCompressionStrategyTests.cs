@@ -603,10 +603,11 @@ public class HistoryCompressionStrategyTests
     [Fact]
     public async Task ResponseViewItemBase_RendersHistoryCompressionEventsIntoLoopBuffer()
     {
-        var loops = new ObservableCollection<ReactLoopViewModel>();
+        var response = new RawResponseViewItem();
 
-        await ResponseViewItemBase.ConsumeReactStepsAsync(CreateCompressionEventSteps(), loops, _ => { },
-            CancellationToken.None);
+        await response.ConsumeReactStepsAsync(CreateCompressionEventSteps(), CancellationToken.None);
+
+        var loops = response.Loops;
 
         var loop = Assert.Single(loops);
         var renderedText = string.Concat(loop.ResponseBuffer);

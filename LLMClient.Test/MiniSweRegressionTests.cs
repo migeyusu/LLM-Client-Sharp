@@ -237,6 +237,20 @@ public class MiniSweRegressionTests
         Assert.False(result.IsInterrupt);
     }
 
+    [Fact]
+    public async Task LinearResponseViewItem_CancelCommand_AfterCompletion_DoesNotThrow()
+    {
+        var agent = new CompletedAgent();
+        var parentSession = new TestDialogSessionViewModel();
+        var session = new PassiveTextDialogSession();
+        var viewItem = new LinearResponseViewItem(parentSession, agent);
+
+        await viewItem.ProcessAsync(session, CancellationToken.None);
+
+        var exception = Record.Exception(() => viewItem.CancelCommand.Execute(null));
+        Assert.Null(exception);
+    }
+
     private sealed class RetryRecordingChatClient : ILLMChatClient
     {
         private int _callCount;
@@ -512,6 +526,18 @@ public class MiniSweRegressionTests
                 await Task.Delay(10, CancellationToken.None);
             }
 
+            yield break;
+        }
+    }
+
+    private sealed class CompletedAgent : IAgent
+    {
+        public string Name => "CompletedAgent";
+
+        public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
             yield break;
         }
     }

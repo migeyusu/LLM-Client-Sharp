@@ -103,23 +103,8 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         };
         tempWindow.ShowDialog();
     });
-
-    //标记为有效结果
-    public static ICommand MarkValidCommand { get; } = new RelayCommand<ClientResponseViewItem>((o =>
-    {
-        if (o == null)
-        {
-            return;
-        }
-
-        o.IsManualValid = true;
-    }));
-
-    public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<ClientResponseViewItem>(o =>
-    {
-        o?.SwitchAvailableInContext();
-    });
-
+    
+    
     private readonly Lazy<SearchableDocument> _lazyDocument = new(() =>
     {
         return new SearchableDocument(new FlowDocument());
@@ -138,38 +123,10 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             });
         }
     }
-
-    /// <summary>
-    /// 手动标记为有效 
-    /// </summary>
-    public bool IsManualValid
-    {
-        get;
-        set
-        {
-            if (value == field) return;
-            field = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsAvailableInContext));
-        }
-    } = false;
-
-
-    /// <summary>
-    /// 可以通过手动控制实现叠加的上下文可用性
-    /// </summary>
-    public bool IsAvailableInContextSwitch { get; set; } = true;
-
-    public bool IsAvailableInContext
-    {
-        get { return (IsManualValid || !IsInterrupt) && IsAvailableInContextSwitch; }
-    }
-
+    
     #region responding
 
     public ICommand CancelCommand { get; }
-
-    public CancellationTokenSource? RequestTokenSource { get; private set; }
 
     public virtual async Task<AgentTaskResult> Process(DefaultDialogContextBuilder contextBuilder,
         CancellationToken token = default)
@@ -190,17 +147,13 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             AcquireRespondingState();
             ErrorMessage = null;
             Messages = [];
-            RequestTokenSource = token != CancellationToken.None
-                ? CancellationTokenSource.CreateLinkedTokenSource(token)
-                : new CancellationTokenSource();
+            RequestTokenSource = CreateRequestTokenSource(token);
             using (RequestTokenSource)
             {
                 var ct = RequestTokenSource.Token;
-                var requestContext = await contextBuilder.BuildAsync(Client.Model, token);
-
+                var requestContext = await contextBuilder.BuildAsync(Client.Model, ct);
                 completedResult = await ConsumeReactStepsAsync(
                     Client.SendRequestAsync(requestContext, ct), ct);
-
                 ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(completedResult, this);
                 PostOnPropertyChanged(nameof(TpS));
             }
@@ -214,6 +167,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         {
             _history.Clear();
             _history.Append(completedResult.History);
+            RequestTokenSource = null;
             ReleaseRespondingState();
             InvalidateAsyncProperty(nameof(SearchableDocument));
         }
@@ -226,23 +180,9 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     public ClientResponseViewItem(ILLMChatClient client)
     {
         Client = client;
-        CancelCommand = new ActionCommand(o => { RequestTokenSource?.Cancel(); });
+        CancelCommand = new ActionCommand(_ => CancelRequest(RequestTokenSource));
     }
-
-    /// <summary>
-    /// 切换在上下文中的可用性
-    /// </summary>
-    public void SwitchAvailableInContext()
-    {
-        if (!IsManualValid && IsInterrupt)
-        {
-            MessageEventBus.Publish("无法切换中断的响应，请先标记为有效");
-            return;
-        }
-
-        IsAvailableInContextSwitch = !IsAvailableInContextSwitch;
-    }
-
+    
     public void TriggerTextContentUpdate()
     {
         InvalidateAsyncProperty(nameof(SearchableDocument));

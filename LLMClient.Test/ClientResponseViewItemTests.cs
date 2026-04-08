@@ -57,6 +57,9 @@ public class ClientResponseViewItemTests
 
         Assert.False(responseViewItem.IsResponding);
         Assert.Equal(0, session.RespondingCount);
+
+        var exception = Record.Exception(() => responseViewItem.CancelCommand.Execute(null));
+        Assert.Null(exception);
     }
 
     [Fact]

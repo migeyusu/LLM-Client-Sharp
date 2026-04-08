@@ -2,8 +2,11 @@
 using System.Diagnostics;
 using System.Text;
 using System.Windows.Documents;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.Render;
+using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
@@ -11,12 +14,6 @@ using Markdig;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
-
-public class FunctionCallInteraction
-{
-    public required FunctionCallContent Call { get; init; }
-    public FunctionResultContent? Result { get; init; }
-}
 
 public class ResponseViewItemBase : BaseViewModel, IResponse
 {
@@ -33,7 +30,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     /// <summary>
     /// 上下文占比信息（无模型信息时返回空 ViewModel）
     /// </summary>
-    public virtual ContextUsageViewModel ContextUsage => new ContextUsageViewModel();
+    public virtual ContextUsageViewModel ContextUsage => new();
 
     public int Latency
     {
@@ -119,6 +116,59 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         }
     }
 
+    /// <summary>
+    /// 手动标记为有效 
+    /// </summary>
+    public bool IsManualValid
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAvailableInContext));
+        }
+    } = false;
+
+
+    /// <summary>
+    /// 可以通过手动控制实现叠加的上下文可用性
+    /// </summary>
+    public bool IsAvailableInContextSwitch
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAvailableInContext));
+        }
+    } = true;
+
+    public bool IsAvailableInContext
+    {
+        get { return (IsManualValid || !IsInterrupt) && IsAvailableInContextSwitch; }
+    }
+    
+    //标记为有效结果
+    public static ICommand MarkValidCommand { get; } = new RelayCommand<ResponseViewItemBase>((o =>
+    {
+        if (o == null)
+        {
+            return;
+        }
+
+        o.IsManualValid = true;
+    }));
+
+    public static ICommand SetAsAvailableCommand { get; } = new RelayCommand<ResponseViewItemBase>(o =>
+    {
+        o?.SwitchAvailableInContext();
+    });
+
+
     public bool IsResponding
     {
         get;
@@ -129,6 +179,8 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             OnPropertyChanged();
         }
     }
+
+    public CancellationTokenSource? RequestTokenSource { get; set; }
 
 
     /// <summary>
@@ -289,12 +341,12 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         await PopulateDocumentAsync(flowDocument, Messages, Annotations);
         return flowDocument;
     }
-
+    
     /// <summary>
     /// 消费 IAsyncEnumerable&lt;ReactStep&gt; 流，将每轮循环写入 <paramref name="loops"/>
     /// 并累积为 <see cref="AgentTaskResult"/>。供 ClientResponseViewItem / LinearResponseViewItem 共用。
     /// </summary>
-    internal static async Task<AgentTaskResult> ConsumeReactStepsAsync(
+    private static async Task<AgentTaskResult> ConsumeReactStepsCoreAsync(
         IAsyncEnumerable<ReactStep> steps,
         ObservableCollection<ReactLoopViewModel> loops,
         Action<int> setLoopCount,
@@ -367,7 +419,8 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                     }
                     case HistoryCompressionStarted compressionStarted:
                     {
-                        var msg = $"History compression: {FormatHistoryCompressionKind(compressionStarted.Kind)} started.";
+                        var msg =
+                            $"History compression: {FormatHistoryCompressionKind(compressionStarted.Kind)} started.";
                         loopVm.ResponseBuffer.Add(msg + "\n");
                         loopVm.NotifyFirstLine();
                         statusCallback?.Invoke(msg);
@@ -424,13 +477,20 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     }
 
     /// <summary>
-    /// 实例便捷方法 — 使用当前实例的 <see cref="Loops"/> 和 <see cref="LoopCount"/>。
+    /// 使用当前实例的 <see cref="Loops"/> 和 <see cref="LoopCount"/> 消费 ReAct 步骤。
     /// </summary>
-    protected Task<AgentTaskResult> ConsumeReactStepsAsync(
+    internal Task<AgentTaskResult> ConsumeReactStepsAsync(
         IAsyncEnumerable<ReactStep> steps,
         CancellationToken cancellationToken,
-        int? fallbackMaxContextTokens = null)
-        => ConsumeReactStepsAsync(steps, Loops, count => LoopCount = count, cancellationToken, fallbackMaxContextTokens);
+        int? fallbackMaxContextTokens = null,
+        Action<string>? statusCallback = null)
+        => ConsumeReactStepsCoreAsync(
+            steps,
+            Loops,
+            count => LoopCount = count,
+            cancellationToken,
+            fallbackMaxContextTokens,
+            statusCallback);
 
     private static string FormatHistoryCompressionKind(HistoryCompressionKind kind)
     {
@@ -446,6 +506,42 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
     protected virtual void OnUsagePropertiesChanged()
     {
-        
+    }
+    
+    /// <summary>
+    /// 切换在上下文中的可用性
+    /// </summary>
+    public void SwitchAvailableInContext()
+    {
+        if (!IsManualValid && IsInterrupt)
+        {
+            MessageEventBus.Publish("无法切换中断的响应，请先标记为有效");
+            return;
+        }
+
+        IsAvailableInContextSwitch = !IsAvailableInContextSwitch;
+    }
+
+    protected CancellationTokenSource CreateRequestTokenSource(CancellationToken token)
+    {
+        return token != CancellationToken.None
+            ? CancellationTokenSource.CreateLinkedTokenSource(token)
+            : new CancellationTokenSource();
+    }
+
+    internal static void CancelRequest(CancellationTokenSource? requestTokenSource)
+    {
+        if (requestTokenSource == null) return;
+        try
+        {
+            if (!requestTokenSource.IsCancellationRequested)
+            {
+                requestTokenSource.Cancel();
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // Request already completed and CTS already disposed.
+        }
     }
 }

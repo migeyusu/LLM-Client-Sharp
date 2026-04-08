@@ -14,7 +14,6 @@
                     xmlns:models="clr-namespace:LLMClient.Dialog.Models"
                     xmlns:userControls="clr-namespace:LLMClient.Component.UserControls"
                     xmlns:render="clr-namespace:LLMClient.Component.Render"
-                    xmlns:extension="clr-namespace:LLMClient.Component.Extension"
                     xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
                     xmlns:miniSwe="clr-namespace:LLMClient.Agent.MiniSWE"
                     xmlns:agent="clr-namespace:LLMClient.Agent"
@@ -648,6 +647,23 @@
             </materialDesign:PopupBox>
         </StackPanel>
     </DataTemplate>
+    <DataTemplate x:Key="ChatClientIdentityTemplate"
+                  DataType="{x:Type abstraction:ILLMChatClient}">
+        <StackPanel Orientation="Horizontal">
+            <Image VerticalAlignment="Center"
+                   RenderOptions.BitmapScalingMode="HighQuality"
+                   Source="{Binding Model.Icon.CurrentSource,Mode=OneWay}"
+                   Width="26"
+                   Height="26" />
+            <TextBlock Text="{Binding Name,Mode=OneTime}"
+                       VerticalAlignment="Center"
+                       Margin="6,0,0,0"
+                       MaxWidth="200"
+                       TextTrimming="CharacterEllipsis"
+                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+        </StackPanel>
+    </DataTemplate>
+
     <DataTemplate x:Key="MultiResponseViewItemDataTemplate"
                   DataType="{x:Type models:ParallelResponseViewItem}">
         <StackPanel>
@@ -681,17 +697,8 @@
                                             Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                             Command="{Binding CancelCommand}"
                                             Style="{StaticResource ResponseCancelButtonStyle}" />
-                                    <Image VerticalAlignment="Center"
-                                           RenderOptions.BitmapScalingMode="HighQuality"
-                                           Source="{Binding Model.Icon.CurrentSource,Mode=OneWay}"
-                                           Width="26"
-                                           Height="26" />
-                                    <TextBlock Text="{Binding ModelName,Mode=OneTime}"
-                                               VerticalAlignment="Center"
-                                               Margin="6,0,0,0"
-                                               MaxWidth="200"
-                                               TextTrimming="CharacterEllipsis"
-                                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                    <ContentControl Content="{Binding Model,Mode=OneTime}"
+                                                    ContentTemplate="{StaticResource ChatClientIdentityTemplate}" />
                                     <materialDesign:PackIcon Kind="Exclamation"
                                                              Foreground="Red"
                                                              Height="30"
@@ -863,17 +870,8 @@
         <StackPanel Orientation="Horizontal"
                     ToolTipService.InitialShowDelay="0"
                     ToolTip="{Binding ChatClient.Endpoint.DisplayName,Mode=OneTime}">
-            <Image VerticalAlignment="Center"
-                   RenderOptions.BitmapScalingMode="HighQuality"
-                   Source="{Binding ChatClient.Model.Icon.CurrentSource,Mode=OneWay}"
-                   Width="26"
-                   Height="26" />
-            <TextBlock Text="{Binding ChatClient.Name,Mode=OneTime}"
-                       VerticalAlignment="Center"
-                       Margin="6,0,0,0"
-                       MaxWidth="200"
-                       TextTrimming="CharacterEllipsis"
-                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+            <ContentControl Content="{Binding ChatClient,Mode=OneTime}"
+                            ContentTemplate="{StaticResource ChatClientIdentityTemplate}" />
         </StackPanel>
     </DataTemplate>
 
@@ -906,18 +904,9 @@
                                                            VerticalAlignment="Center"
                                                            Text="mini-SWE"
                                                            FontWeight="Black" />
-                                                <Image VerticalAlignment="Center"
-                                                       RenderOptions.BitmapScalingMode="HighQuality"
-                                                       Margin="6,0,0,0"
-                                                       Source="{Binding ChatClient.Model.Icon.CurrentSource,Mode=OneWay}"
-                                                       Width="26"
-                                                       Height="26" />
-                                                <TextBlock Text="{Binding ChatClient.Name,Mode=OneTime}"
-                                                           VerticalAlignment="Center"
-                                                           Margin="6,0,0,0"
-                                                           MaxWidth="200"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                                <ContentControl Content="{Binding ChatClient,Mode=OneTime}"
+                                                                ContentTemplate="{StaticResource ChatClientIdentityTemplate}"
+                                                                Margin="6,0,0,0" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </component:DataTemplateTypePair>
@@ -953,7 +942,7 @@
                                                  VerticalAlignment="Center"
                                                  Margin="-5,0"
                                                  ToolTip="当前回复有错误，将不加入对话上下文"
-                                                 Visibility="{Binding IsAvailableInContext,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
+                                                 Visibility="{Binding Response.IsAvailableInContext,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
                     </StackPanel>
                 </materialDesign:Chip>
                 <StackPanel Grid.Column="1"
@@ -966,8 +955,8 @@
                                   Padding="0">
                             <MenuItem Header="标记为有效回复"
                                       IsCheckable="True"
-                                      IsChecked="{Binding IsManualValid,Mode=TwoWay}"
-                                      Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                                      IsChecked="{Binding Response.IsManualValid,Mode=TwoWay}"
+                                      Visibility="{Binding Response.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                         </MenuItem>
                     </Menu>
                     <materialDesign:PopupBox Padding="4,0"
@@ -1004,9 +993,9 @@
                             Margin="16,0,0,0">
                     <CheckBox VerticalAlignment="Center"
                               Margin="6,0"
-                              Command="{Binding SetAsAvailableCommand}"
+                              Command="{Binding Response.SetAsAvailableCommand}"
                               ToolTip="通过将当前回复设置为在上下文中无效，可以跳过一些交互，减少上下文的长度"
-                              IsChecked="{Binding IsAvailableInContext,Mode=OneWay}">
+                              IsChecked="{Binding Response.IsAvailableInContext,Mode=OneWay}">
                         参与上下文
                     </CheckBox>
                 </StackPanel>
@@ -1018,7 +1007,7 @@
                                  Style="{StaticResource MaterialDesignOutlinedCard}">
                 <StackPanel>
                     <!-- 每轮 ReAct 循环的可折叠列表 -->
-                    <ItemsControl ItemsSource="{Binding Loops,Mode=OneTime}"
+                    <ItemsControl ItemsSource="{Binding Response.Loops,Mode=OneTime}"
                                   ItemTemplate="{StaticResource ReactLoopItemTemplate}"
                                   Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
                     <customControl:FlowDocumentScrollViewerEx FontFamily="Segoe UI Emoji"
@@ -1029,7 +1018,7 @@
                                TextWrapping="Wrap"
                                Foreground="Red"
                                Padding="10"
-                               Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                               Visibility="{Binding Response.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                 </StackPanel>
             </materialDesign:Card>
             <ContentControl Content="{Binding Response,Mode=OneWay}"
@@ -1097,7 +1086,7 @@
                 </materialDesign:PackIcon>
                 <TextBlock VerticalAlignment="Center"
                            Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
-                           Text="{Binding LoopCount,Mode=OneWay,StringFormat=🔄 轮 {0}}" />
+                           Text="{Binding  Response.LoopCount,Mode=OneWay,StringFormat=🔄 轮 {0}}" />
                 <TextBlock VerticalAlignment="Center"
                            Margin="10,0,0,0"
                            MaxWidth="500"

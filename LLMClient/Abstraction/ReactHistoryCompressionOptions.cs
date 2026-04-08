@@ -7,7 +7,7 @@ public class ReactHistoryCompressionOptions
     [JsonPropertyName("Mode")] public ReactHistoryCompressionMode Mode { get; set; } = ReactHistoryCompressionMode.None;
 
     [JsonPropertyName("PreserveRecentRounds")]
-    public int PreserveRecentRounds { get; set; } = 2;
+    public int PreserveRecentRounds { get; set; } = 10;
 
     [JsonPropertyName("ObservationPlaceholder")]
     public string ObservationPlaceholder { get; set; } = "[details omitted for brevity]";
