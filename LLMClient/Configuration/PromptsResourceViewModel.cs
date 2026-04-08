@@ -4,7 +4,8 @@ using System.Text.Json;
 using System.Windows.Input;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
-using LLMClient.Data;
+
+using LLMClient.Persistance;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Configuration;

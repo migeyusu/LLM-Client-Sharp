@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using LLMClient.Component.CustomControl;
-using LLMClient.Data;
+
+using LLMClient.Persistance;
 
 namespace LLMClient.Rag.Document;
 

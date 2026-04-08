@@ -5,7 +5,8 @@ using System.Windows.Media;
 using System.Xml;
 using System.Xml.Linq;
 using LatexToMathML;
-using LLMClient.Data;
+
+using LLMClient.Persistance;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
 using SvgMath;

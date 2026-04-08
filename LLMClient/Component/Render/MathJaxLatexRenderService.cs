@@ -3,7 +3,8 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
-using LLMClient.Data;
+
+using LLMClient.Persistance;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 

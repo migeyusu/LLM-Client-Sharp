@@ -1,10 +1,7 @@
 ﻿using System.Text.Json.Serialization;
-using LLMClient.Agent;
-using LLMClient.Agent.MiniSWE;
 using LLMClient.Dialog;
-using LLMClient.Workflow.Research;
 
-namespace LLMClient.Data;
+namespace LLMClient.Persistance;
 
 [JsonDerivedType(typeof(MiniSweAgentPersistModel), "miniSweAgent")]
 [JsonDerivedType(typeof(SummaryAgentPersistModel), "summaryAgent")]

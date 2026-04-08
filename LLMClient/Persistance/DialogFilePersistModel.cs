@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Dialog;
 
-namespace LLMClient.Data;
+namespace LLMClient.Persistance;
 
 /// <summary>
 /// 用于持久化

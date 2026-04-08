@@ -2,8 +2,9 @@
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
-using LLMClient.Data;
+
 using LLMClient.Dialog;
+using LLMClient.Persistance;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LLMClient.Component.ViewModel;

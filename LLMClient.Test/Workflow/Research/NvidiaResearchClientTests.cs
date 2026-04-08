@@ -4,16 +4,18 @@ using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
-using LLMClient.Data;
+
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.Persistance;
 using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.Workflow.Research;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
+using LLM_DataSerializeContext = LLMClient.Persistance.LLM_DataSerializeContext;
 
 namespace LLMClient.Test.Workflow.Research;
 

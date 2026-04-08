@@ -1,7 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
-using LLMClient.Data;
+
+using LLMClient.Persistance;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Agent;

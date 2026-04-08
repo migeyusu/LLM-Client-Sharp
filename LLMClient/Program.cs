@@ -7,10 +7,11 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering.Analysis;
-using LLMClient.Data;
+
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Log;
+using LLMClient.Persistance;
 using LLMClient.Rag;
 using LLMClient.Test;
 using LLMClient.ToolCall.DefaultPlugins;

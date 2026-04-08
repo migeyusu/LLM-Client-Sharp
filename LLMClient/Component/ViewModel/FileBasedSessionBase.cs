@@ -9,9 +9,11 @@ using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
-using LLMClient.Data;
+
 using LLMClient.Dialog;
+using LLMClient.Persistance;
 using Microsoft.Win32;
+using LLM_DataSerializeContext = LLMClient.Persistance.LLM_DataSerializeContext;
 
 namespace LLMClient.Component.ViewModel;
 

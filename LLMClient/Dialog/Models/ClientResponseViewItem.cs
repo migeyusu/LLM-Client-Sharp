@@ -10,8 +10,9 @@ using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
-using LLMClient.Data;
+
 using LLMClient.Endpoints;
+using LLMClient.Persistance;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xaml.Behaviors.Core;
 

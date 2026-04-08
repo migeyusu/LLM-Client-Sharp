@@ -1,7 +1,8 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
-using LLMClient.Data;
+
+using LLMClient.Persistance;
 
 namespace LLMClient.Endpoints.Azure;
 

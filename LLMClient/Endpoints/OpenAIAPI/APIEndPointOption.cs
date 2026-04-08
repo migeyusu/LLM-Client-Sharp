@@ -4,8 +4,9 @@ using System.Windows.Input;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
-using LLMClient.Data;
+
 using LLMClient.Endpoints.Converters;
+using LLMClient.Persistance;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;

@@ -10,13 +10,14 @@ using ImageMagick;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
-using LLMClient.Data;
+
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure.Models;
 using LLMClient.Endpoints.Messages;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.Persistance;
 using LLMClient.Rag;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;

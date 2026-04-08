@@ -3,7 +3,7 @@ using Microsoft.Extensions.AI;
 
 // 这个类是 FunctionCallContent 的一个简单数据表示
 // 它可以被源码生成器轻松处理
-namespace LLMClient.Data;
+namespace LLMClient.Persistance;
 
 [JsonDerivedType(typeof(FunctionCallContentPO), "function_call")]
 [JsonDerivedType(typeof(TextContentPO), "text")]

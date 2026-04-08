@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Forms;
 using System.Windows.Input;
-using LLMClient.Data;
+
 using LLMClient.Dialog.Models;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;

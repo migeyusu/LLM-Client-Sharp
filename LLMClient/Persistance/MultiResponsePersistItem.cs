@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace LLMClient.Data;
+namespace LLMClient.Persistance;
 
 public class MultiResponsePersistItem : BaseDialogPersistItem
 {

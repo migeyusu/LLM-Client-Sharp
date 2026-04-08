@@ -3,7 +3,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
-using LLMClient.Data;
+
+using LLMClient.Persistance;
 using Markdig.Renderers;
 using Markdig.Renderers.Wpf.Inlines;
 using Markdig.Syntax.Inlines;

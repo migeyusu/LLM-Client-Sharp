@@ -3,7 +3,7 @@ using LLMClient.Configuration;
 using LLMClient.ToolCall;
 using ModelContextProtocol.Client;
 
-namespace LLMClient.Data;
+namespace LLMClient.Persistance;
 
 [JsonDerivedType(typeof(StdIOServerItemPersistModel), "stdio")]
 [JsonDerivedType(typeof(SseServerItemPersistModel), "sse")]

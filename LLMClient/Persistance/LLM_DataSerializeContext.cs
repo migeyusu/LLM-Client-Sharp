@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using LLMClient.Configuration;
-using LLMClient.Data;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.ToolCall;
@@ -9,7 +8,7 @@ using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
 
-namespace LLMClient.Data;
+namespace LLMClient.Persistance;
 
 [JsonSourceGenerationOptions(WriteIndented = true, GenerationMode = JsonSourceGenerationMode.Metadata)]
 [JsonSerializable(typeof(DialogFilePersistModel))]

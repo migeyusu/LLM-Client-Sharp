@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Project;
 
-namespace LLMClient.Data;
+namespace LLMClient.Persistance;
 
 public class ProjectOptionsPersistModel
 {

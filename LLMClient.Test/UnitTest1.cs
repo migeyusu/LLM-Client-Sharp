@@ -9,10 +9,11 @@ using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
-using LLMClient.Data;
+
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
+using LLMClient.Persistance;
 using LLMClient.Rag;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;

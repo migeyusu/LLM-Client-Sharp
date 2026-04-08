@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Windows.Media;
-using LLMClient.Data;
+
+using LLMClient.Persistance;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Data;

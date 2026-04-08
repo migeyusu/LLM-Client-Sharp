@@ -10,7 +10,8 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using Windows.Services.Maps.LocalSearch;
 using CommunityToolkit.Mvvm.Input;
-using LLMClient.Data;
+
+using LLMClient.Persistance;
 using Microsoft.SemanticKernel;
 using Microsoft.Xaml.Behaviors.Core;
 using TextContent = Microsoft.Extensions.AI.TextContent;

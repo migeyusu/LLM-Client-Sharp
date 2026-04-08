@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 
-namespace LLMClient.Data;
+namespace LLMClient.Persistance;
 
 public class AIFunctionGroupPersistObject
 {

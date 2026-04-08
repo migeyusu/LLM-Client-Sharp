@@ -1,6 +1,6 @@
 ﻿using LLMClient.Configuration;
 
-namespace LLMClient.Data;
+namespace LLMClient.Persistance;
 
 public interface IPromptsResource
 {
