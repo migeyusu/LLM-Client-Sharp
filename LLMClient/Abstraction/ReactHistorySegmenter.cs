@@ -95,6 +95,7 @@ public static class ReactHistorySegmenter
         }
     }
 
+
     private static ReactHistoryMessageKind GetMessageKind(ChatMessage message)
     {
         var additionalProperties = message.AdditionalProperties;

@@ -1,4 +1,6 @@
-﻿namespace LLMClient.Abstraction;
+﻿using LLMClient.Abstraction;
+
+namespace LLMClient.Dialog.Proc;
 
 public sealed class NoOpChatHistoryCompressionStrategy : IChatHistoryCompressionStrategy
 {

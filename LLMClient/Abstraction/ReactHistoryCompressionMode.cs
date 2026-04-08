@@ -9,12 +9,10 @@ namespace LLMClient.Abstraction;
 public enum ReactHistoryCompressionMode
 {
     [Description("No Compression")] None,
-    
+
     [Description("Summary All")] TaskSummary,
 
     [Description("Masking Observation")] ObservationMasking,
 
     [Description("Summary Each Loop")] InfoCleaning,
-    
-    [Description("Remove Error ToolCall")] RemoveErrorCall
 }

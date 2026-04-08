@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Text.Json.Serialization;
 using LLMClient.Component.Converters;
-using LLMClient.Rag;
 
 namespace LLMClient.Abstraction;
 

@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using System.Windows;
-using LLMClient.Dialog;
+using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Proc;
 
 public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCompressionStrategy
 {

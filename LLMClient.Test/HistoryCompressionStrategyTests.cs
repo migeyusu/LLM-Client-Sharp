@@ -7,6 +7,7 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
+using LLMClient.Dialog.Proc;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
@@ -354,6 +355,90 @@ public class HistoryCompressionStrategyTests
                 Kind: HistoryCompressionKind.PreambleSummary,
                 Applied: true,
             });
+    }
+
+    [Fact]
+    public async Task LlmClientBase_RemoveErrorLoop_FiltersErrorPairsFromOlderRoundsBeforeNextRequest()
+    {
+        // Round 1: LLM returns a tool call, the tool FAILS (engine throws).
+        // Round 2: LLM returns a tool call, the tool succeeds.
+        // Round 3: LLM returns Stop.
+        // PreserveRecentRounds = 1, RemoveErrorLoop = true.
+        // History seen by Round 3 request must NOT contain the error pair from round 1.
+        var chatClient = new RecordingSequentialChatClient(
+            CreateToolCallResponse("call-err", "error value"),
+            CreateToolCallResponse("call-ok", "good value"),
+            CreateTextResponse("all done"));
+
+        var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.ObservationMasking);
+        client.ModelInfo.HistoryCompression.SummaryErrorLoop = true;
+        client.ModelInfo.HistoryCompression.PreserveRecentRounds = 1;
+
+        var requestContext = new RequestContext
+        {
+            ChatMessages = [new ChatMessage(ChatRole.User, "do work")],
+            FunctionCallEngine = new FailFirstToolCallEngine(),
+            RequestOptions = new ChatOptions(),
+        };
+
+#pragma warning disable SKEXP0001
+        var result = await client.SendRequestCompatAsync(requestContext, CancellationToken.None);
+#pragma warning restore SKEXP0001
+
+        Assert.Null(result.Exception);
+        Assert.Equal(3, chatClient.SeenHistories.Count);
+
+        // Round 3's request history should not contain the error call or its result.
+        var historyForRound3 = chatClient.SeenHistories[2];
+        Assert.DoesNotContain("call:noop:call-err", historyForRound3);
+        Assert.DoesNotContain("result:call-err", historyForRound3);
+        // Round 2's success pair must still be present (it is within PreserveRecentRounds=1).
+        Assert.Contains("call-ok", historyForRound3);
+    }
+
+    private static List<ChatMessage> CreateHistoryWithErrorAndSuccessRounds()
+    {
+        var history = new List<ChatMessage>
+        {
+            new(ChatRole.System, "You are helpful."),
+            new(ChatRole.User, "Fix the failing workflow."),
+        };
+
+        // Round 1: one error call + one success call.
+        var assistantRound1 = new ChatMessage(ChatRole.Assistant,
+        [
+            new TextContent("Inspecting."),
+            new FunctionCallContent("call-err-1", "broken_tool", new Dictionary<string, object?>()),
+            new FunctionCallContent("call-ok-1", "working_tool", new Dictionary<string, object?>()),
+        ]);
+        ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+        history.Add(assistantRound1);
+
+        var observationRound1 = new ChatMessage(ChatRole.Tool,
+        [
+            new FunctionResultContent("call-err-1", "error message") { Exception = new Exception("tool error") },
+            new FunctionResultContent("call-ok-1", "file content"),
+        ]);
+        ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+        history.Add(observationRound1);
+
+        // Round 2 (preserved): normal success call.
+        var assistantRound2 = new ChatMessage(ChatRole.Assistant,
+        [
+            new TextContent("Applying fix."),
+            new FunctionCallContent("call-ok-2", "edit_file", new Dictionary<string, object?>()),
+        ]);
+        ReactHistorySegmenter.TagMessage(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
+        history.Add(assistantRound2);
+
+        var observationRound2 = new ChatMessage(ChatRole.Tool,
+        [
+            new FunctionResultContent("call-ok-2", "edit applied"),
+        ]);
+        ReactHistorySegmenter.TagMessage(observationRound2, 2, ReactHistoryMessageKind.Observation);
+        history.Add(observationRound2);
+
+        return history;
     }
 
     [Fact]
@@ -717,6 +802,51 @@ public class HistoryCompressionStrategyTests
         }
 
         public override bool IsToolCallMode => false;
+
+        public override void PreviewRequest(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
+        {
+        }
+
+        public override Task<List<FunctionCallContent>> TryParseFunctionCalls(ChatResponse response)
+        {
+            return Task.FromResult(ExtractFunctionCallsFromResponse(response));
+        }
+
+        public override Task AfterProcess(ChatMessage replyMessage, IList<FunctionResultContent> results)
+        {
+            EncapsulateReply(replyMessage, results);
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// A tool call engine whose "noop" function throws on the very first invocation,
+    /// producing a <see cref="FunctionResultContent"/> with a non-null
+    /// <see cref="FunctionResultContent.Exception"/>.  All subsequent calls succeed.
+    /// </summary>
+    private sealed class FailFirstToolCallEngine : FunctionCallEngine
+    {
+        private int _callCount;
+
+        public FailFirstToolCallEngine()
+        {
+            KernelPluginCollection.AddFromFunctions("Test",
+            [
+                KernelFunctionFactory.CreateFromMethod(
+                    (string value) =>
+                    {
+                        if (Interlocked.Increment(ref _callCount) == 1)
+                        {
+                            throw new InvalidOperationException("Simulated tool failure");
+                        }
+
+                        return value;
+                    },
+                    new KernelFunctionFromMethodOptions { FunctionName = "noop" })
+            ]);
+        }
+
+        public override bool IsToolCallMode => true;
 
         public override void PreviewRequest(ChatOptions options, IEndpointModel model, IList<ChatMessage> chatMessages)
         {

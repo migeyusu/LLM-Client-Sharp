@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.AI;
+﻿using LLMClient.Abstraction;
+using Microsoft.Extensions.AI;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Proc;
 
 public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHistoryCompressionStrategy
 {

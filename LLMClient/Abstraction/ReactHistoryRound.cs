@@ -11,5 +11,6 @@ public sealed class ReactHistoryRound
     public List<ChatMessage> ObservationMessages { get; } = [];
 
     public IEnumerable<ChatMessage> Messages => AssistantMessages.Concat(ObservationMessages);
-}
 
+    public bool HasError => ObservationMessages.Any(m => m.Contents.OfType<FunctionResultContent>().Any(r => r.Exception != null));
+}

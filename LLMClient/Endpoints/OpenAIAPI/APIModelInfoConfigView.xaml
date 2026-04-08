@@ -169,19 +169,22 @@
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Compression Mode:" />
                     <ComboBox Margin="8,0"
-                              Width="200"
+                              Width="180"
                               Padding="12,8"
                               ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type abstraction:ReactHistoryCompressionMode}}}"
                               SelectedValue="{Binding Mode,Mode=TwoWay}"
                               Style="{StaticResource MaterialDesignOutlinedComboBox}" />
                     <CheckBox VerticalAlignment="Center"
                               Margin="0,0,0,0"
+                              Padding="6,0"
                               Content="Preamble Compression (cross-task context)"
                               IsChecked="{Binding PreambleCompression,Mode=TwoWay}"
                               ToolTip="Summarize previous task context before starting the ReAct loop when it exceeds the token threshold" />
                 </StackPanel>
 
                 <WrapPanel Margin="0,10,0,0">
+                    <CheckBox Content="Remove Error ToolCall"
+                              IsChecked="{Binding SummaryErrorLoop,Mode=TwoWay}"/>
                     <TextBlock Margin="0,0,0,0"
                                Text="Precompress Trigger Threshold(100%):" />
                     <Slider Width="120"

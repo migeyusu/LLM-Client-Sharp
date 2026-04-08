@@ -1,9 +1,9 @@
 ﻿using System.Windows;
+using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
-using LLMClient.Dialog;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Proc;
 
 /// <summary>
 /// One-time pre-processing strategy that compresses preamble messages (previous task context)

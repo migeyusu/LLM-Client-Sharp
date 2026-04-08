@@ -4,8 +4,7 @@ namespace LLMClient.Abstraction;
 
 public class ReactHistoryCompressionOptions
 {
-    [JsonPropertyName("Mode")]
-    public ReactHistoryCompressionMode Mode { get; set; } = ReactHistoryCompressionMode.None;
+    [JsonPropertyName("Mode")] public ReactHistoryCompressionMode Mode { get; set; } = ReactHistoryCompressionMode.None;
 
     [JsonPropertyName("PreserveRecentRounds")]
     public int PreserveRecentRounds { get; set; } = 2;
@@ -27,5 +26,10 @@ public class ReactHistoryCompressionOptions
     /// </summary>
     [JsonPropertyName("PreambleTokenThreshold")]
     public double PreambleTokenThresholdPercent { get; set; }
-}
 
+    /// <summary>
+    /// whether to remove error function call messages from the history, as they may contain long error details that are not useful for the model to see and may cause token overflow.
+    /// </summary>
+    [JsonPropertyName("SummaryErrorLoop")]
+    public bool SummaryErrorLoop { get; set; }
+}

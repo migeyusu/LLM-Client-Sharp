@@ -11,6 +11,7 @@ using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Component.ViewModel;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Proc;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -480,6 +481,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 await historyCompressionStrategy.CompressAsync(compressionContext, cancellationToken);
                 step.EmitHistoryCompressionCompleted(compressionKind.Value, compressionContext.CompressionApplied);
             }
+
 
             // 该轮未完成（有 function call），继续下一轮
             stepResult.IsCompleted = false;
