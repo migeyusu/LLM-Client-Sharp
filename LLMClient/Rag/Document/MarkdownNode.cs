@@ -46,7 +46,7 @@ public class MarkdownText : BaseViewModel, IContentUnit
         {
             if (Equals(value, _imageSources)) return;
             _imageSources = value;
-            OnPropertyChangedAsync();
+            PostOnPropertyChanged();
         }
     }
 

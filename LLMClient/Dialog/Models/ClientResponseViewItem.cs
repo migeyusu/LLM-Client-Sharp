@@ -75,9 +75,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         get { return this.CalculateTps(); }
     }
 
-
-    public ObservableCollection<AsyncPermissionViewModel> PermissionViewModels { get; } = [];
-
     /// <summary>
     /// 缓存 ChatContext.InteractionHistory，用于调试查看
     /// </summary>
@@ -205,7 +202,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                     Client.SendRequestAsync(requestContext, ct), ct);
 
                 ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(completedResult, this);
-                OnPropertyChangedAsync(nameof(TpS));
+                PostOnPropertyChanged(nameof(TpS));
             }
         }
         catch (Exception exception)

@@ -16,7 +16,7 @@ namespace LLMClient.Agent.MiniSWE;
 /// Mini-SWE-Agent 核心ReAct循环实现
 /// </summary>
 [Description("MiniSWE Agent")]
-public class MiniSweAgent : IAgent
+public class MiniSweAgent : ISingleClientAgent
 {
     public int CallCount { get; set; }
 

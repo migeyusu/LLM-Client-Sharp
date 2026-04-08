@@ -853,7 +853,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     protected virtual void DialogOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         this.IsDataChanged = true;
-        OnPropertyChangedAsync(nameof(Shortcut));
+        PostOnPropertyChanged(nameof(Shortcut));
         OnPropertyChanged(nameof(CurrentContextTokens));
     }
 }

@@ -104,7 +104,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
         {
             if (Equals(value, _icon)) return;
             _icon = value;
-            OnPropertyChangedAsync();
+            PostOnPropertyChanged();
         }
     }
 

@@ -108,7 +108,7 @@ public class AsyncThemedIcon : ThemedIcon
             this.DarkModeSource = await darkModeSourceTask();
         }
 
-        OnPropertyChangedAsync(nameof(CurrentSource));
+        PostOnPropertyChanged(nameof(CurrentSource));
     }
 
     public static AsyncThemedIcon FromUri(Uri lightModeUri, Uri? darkModeUri = null, ImageSource? emptyIcon = null)
@@ -179,6 +179,6 @@ public class UriThemedIcon : ThemedIcon
             this.DarkModeSource = await darkModeUri.GetImageSourceAsync() ?? _darkModeFallbackValue;
         }
 
-        OnPropertyChangedAsync(nameof(CurrentSource));
+        PostOnPropertyChanged(nameof(CurrentSource));
     }
 }

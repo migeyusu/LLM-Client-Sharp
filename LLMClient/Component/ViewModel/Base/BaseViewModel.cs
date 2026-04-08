@@ -226,7 +226,7 @@ public class BaseViewModel : INotifyPropertyChanged
                 _tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
 
-            _viewModel.OnPropertyChangedAsync(_propertyName);
+            _viewModel.PostOnPropertyChanged(_propertyName);
         }
 
         private void TriggerLoading()
@@ -314,7 +314,7 @@ public class BaseViewModel : INotifyPropertyChanged
         return true;
     }
 
-    protected virtual async void OnPropertyChangedAsync([CallerMemberName] string? propertyName = null)
+    protected virtual async void PostOnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         if (PropertyChanged == null || string.IsNullOrEmpty(propertyName))
         {

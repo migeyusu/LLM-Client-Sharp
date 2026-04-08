@@ -64,8 +64,6 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         get { return Response.IsInterrupt; }
     }
 
-    public string? ErrorMessage => Response.ErrorMessage;
-
     public bool IsResponding
     {
         get { return field; }
@@ -182,7 +180,6 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             {
                 var cancellationToken = RequestTokenSource.Token;
                 await ParentSession.OnPreviewRequest(cancellationToken);
-
                 var totalCallResult = await ResponseViewItemBase.ConsumeReactStepsAsync(
                     Agent.Execute(session, cancellationToken: cancellationToken),
                     Loops,
@@ -217,7 +214,6 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             Response.RawTextContent = null;
             Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
             OnPropertyChanged(nameof(IsInterrupt));
-            OnPropertyChanged(nameof(ErrorMessage));
             OnPropertyChanged(nameof(IsAvailableInContext));
         }
     }
@@ -237,7 +233,6 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         CurrentStatus = null;
         OnPropertyChanged(nameof(Messages));
         OnPropertyChanged(nameof(Tokens));
-        OnPropertyChanged(nameof(ErrorMessage));
         OnPropertyChanged(nameof(IsInterrupt));
         OnPropertyChanged(nameof(IsAvailableInContext));
     }
@@ -246,9 +241,6 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
     {
         switch (e.PropertyName)
         {
-            case nameof(RawResponseViewItem.ErrorMessage):
-                OnPropertyChanged(nameof(ErrorMessage));
-                break;
             case nameof(RawResponseViewItem.Usage):
             case nameof(RawResponseViewItem.Tokens):
                 OnPropertyChanged(nameof(Tokens));

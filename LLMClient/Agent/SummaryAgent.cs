@@ -6,7 +6,7 @@ using LLMClient.Dialog.Models;
 namespace LLMClient.Agent;
 
 [Description("Summary Agent")]
-public class SummaryAgent : IAgent
+public class SummaryAgent : ISingleClientAgent
 {
     public SummaryAgent(ILLMChatClient chatClient)
     {

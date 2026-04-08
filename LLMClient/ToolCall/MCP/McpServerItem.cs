@@ -24,7 +24,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         {
             if (value == _errorMessage) return;
             _errorMessage = value;
-            OnPropertyChangedAsync();
+            PostOnPropertyChanged();
         }
     }
 
@@ -96,7 +96,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         {
             if (Equals(value, _availableTools)) return;
             _availableTools = value;
-            OnPropertyChangedAsync();
+            PostOnPropertyChanged();
         }
     }
 
@@ -108,7 +108,7 @@ public abstract class McpServerItem : NotifyDataErrorInfoViewModelBase, IAIFunct
         {
             if (value == _isAvailable) return;
             _isAvailable = value;
-            OnPropertyChangedAsync();
+            PostOnPropertyChanged();
         }
     }
 

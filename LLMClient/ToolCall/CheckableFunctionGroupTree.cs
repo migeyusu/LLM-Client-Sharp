@@ -110,8 +110,8 @@ public class CheckableFunctionGroupTree : BaseViewModel, IAIFunctionGroup
             }
         }
 
-        OnPropertyChangedAsync(nameof(Functions));
-        OnPropertyChangedAsync(nameof(AvailableTools));
+        PostOnPropertyChanged(nameof(Functions));
+        PostOnPropertyChanged(nameof(AvailableTools));
     }
 
     public void RefreshCheckState()

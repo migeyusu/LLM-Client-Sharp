@@ -136,7 +136,7 @@
                                                      materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
                                                      HorizontalAlignment="Right"
                                                      BorderThickness="0"
-                                                     Text="{Binding ErrorMessage,Mode=OneTime}"
+                                                     Text="{Binding Response.ErrorMessage}"
                                                      TextWrapping="Wrap"
                                                      Foreground="Red"
                                                      Padding="10"

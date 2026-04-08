@@ -57,6 +57,52 @@ public class RequesterViewModelTests
         });
     }
 
+    [Fact]
+    public void ComplexSummary_UsesSharedRequestPipeline_AndKeepsPromptText()
+    {
+        RunInSta(() =>
+        {
+            var requestSeen = new ManualResetEventSlim();
+            var requestCompleted = new ManualResetEventSlim();
+            var responseRelease = new TaskCompletionSource<IResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+            RequestOption? capturedOption = null;
+            GetResponseHandler handler = async (option, _, _) =>
+            {
+                capturedOption = option;
+                requestSeen.Set();
+                return await responseRelease.Task;
+            };
+            var requester = CreateRequester(handler, "keep me");
+            requester.IsAgentMode = false;
+            requester.SelectedAgent = requester.AvailableAgents.First(agent => agent.Type == typeof(MiniSweAgent));
+            requester.RequestCompleted += _ => requestCompleted.Set();
+
+            requester.ComplexSummaryCommand.Execute(null);
+
+            Assert.True(requestSeen.Wait(TimeSpan.FromSeconds(5)));
+            if (capturedOption == null)
+            {
+                throw new InvalidOperationException("Complex summary request option was not captured.");
+            }
+
+            var option = capturedOption;
+            var summaryRequest = Assert.IsType<RequestViewItem>(option.RequestItem);
+            Assert.True(requester.IsNewResponding);
+            Assert.True(option.UseAgent);
+            Assert.Equal(typeof(SummaryAgent), option.Agent?.Type);
+            Assert.Same(requester.DefaultClient, option.DefaultClient);
+            Assert.Equal(new Summarizer(new GlobalOptions()).ConversationHistorySummaryPrompt, summaryRequest.RawTextMessage);
+
+            responseRelease.SetResult(new AgentTaskResult());
+
+            Assert.True(requestCompleted.Wait(TimeSpan.FromSeconds(5)));
+            WaitUntil(() => !requester.IsNewResponding, TimeSpan.FromSeconds(5));
+
+            Assert.Equal("keep me", requester.PromptEditViewModel.FinalText);
+            Assert.False(requester.IsNewResponding);
+        });
+    }
+
     private static RequesterViewModel CreateRequester(GetResponseHandler handler, string initialPrompt)
     {
         return new RequesterViewModel(

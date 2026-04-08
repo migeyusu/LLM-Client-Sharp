@@ -27,7 +27,7 @@ public class EnvironmentVariablesViewModel : BaseViewModel
         {
             if (Equals(value, _systemVariables)) return;
             _systemVariables = value;
-            OnPropertyChangedAsync();
+            PostOnPropertyChanged();
         }
     }
 

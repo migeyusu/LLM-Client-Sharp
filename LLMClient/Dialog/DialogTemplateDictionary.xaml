@@ -323,12 +323,12 @@
                             <ProgressBar IsIndeterminate="True"
                                          Style="{StaticResource MaterialDesignCircularProgressBar}"
                                          Value="0"
-                                         Margin="8,0,0,0"
                                          Width="14"
                                          Height="14"
                                          VerticalAlignment="Center"
                                          Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
                             <TextBlock VerticalAlignment="Center"
+                                       Margin="8,0,0,0"
                                        Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
                                        Text="{Binding LoopNumber,StringFormat=第 {0} 轮}" />
                         </StackPanel>
@@ -374,17 +374,6 @@
     </DataTemplate>
     <DataTemplate x:Key="ResponseContentTemplate" DataType="{x:Type models:ClientResponseViewItem}">
         <StackPanel>
-            <ItemsControl ItemsSource="{Binding PermissionViewModels}"
-                          Margin="10"
-                          Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="{x:Type dialog:AsyncPermissionViewModel}">
-                        <Expander Style="{StaticResource AsyncPermissionExpanderStyle}"
-                                  Content="{Binding}"
-                                  Header="{Binding}" />
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
             <customControl:FlowDocumentScrollViewerEx
                 FontFamily="Segoe UI Emoji"
                 BorderThickness="0"
@@ -433,14 +422,11 @@
             <ItemsControl ItemsSource="{Binding Loops,Mode=OneTime}"
                           ItemTemplate="{StaticResource ReactLoopItemTemplate}"
                           Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
-            <TextBox IsReadOnly="True"
-                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                     BorderThickness="0"
-                     Text="{Binding ErrorMessage,Mode=OneWay}"
-                     TextWrapping="Wrap"
-                     Foreground="Red"
-                     Padding="10"
-                     Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+            <TextBlock Text="{Binding ErrorMessage,Mode=OneWay}"
+                       TextWrapping="Wrap"
+                       Foreground="Red"
+                       Padding="10"
+                       Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
         </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="EraseDataTemplate"
@@ -871,61 +857,24 @@
                             ContentTemplate="{StaticResource ResponseStatsTemplate}" />
         </StackPanel>
     </DataTemplate>
-    <DataTemplate x:Key="RawResponseItemTemplate"
-                  DataType="{x:Type models:RawResponseViewItem}">
-        <Grid Margin="0,4">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            <materialDesign:PackIcon Grid.Column="0"
-                                     Width="20"
-                                     Height="20"
-                                     Margin="10,10,6,0"
-                                     VerticalAlignment="Top">
-                <materialDesign:PackIcon.Style>
-                    <Style TargetType="{x:Type materialDesign:PackIcon}">
-                        <Setter Property="Kind"
-                                Value="Check" />
-                        <Setter Property="Foreground"
-                                Value="Green" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
-                                         Value="True">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsInterrupt,Mode=OneWay}">
-                                <Setter Property="Kind"
-                                        Value="Close" />
-                                <Setter Property="Foreground"
-                                        Value="Red" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </materialDesign:PackIcon.Style>
-            </materialDesign:PackIcon>
-            <customControl:FlowDocumentScrollViewerEx Grid.Row="0"
-                                                      Grid.Column="1"
-                                                      FontFamily="Segoe UI Emoji"
-                                                      BorderThickness="0"
-                                                      SafeDocument="{Binding FullDocument,Mode=OneWay}"
-                                                      Style="{StaticResource ExFlowDocumentScrollViewerStyle}" />
-            <TextBox Grid.Row="1"
-                     Grid.Column="0"
-                     Grid.ColumnSpan="2"
-                     IsReadOnly="True"
-                     materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
-                     BorderThickness="0"
-                     Text="{Binding ErrorMessage,Mode=OneWay}"
-                     TextWrapping="Wrap"
-                     Foreground="Red"
-                     Padding="10"
-                     Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-        </Grid>
+
+    <DataTemplate x:Key="SingleClientAgentTemplate"
+                  DataType="{x:Type agent:ISingleClientAgent}">
+        <StackPanel Orientation="Horizontal"
+                    ToolTipService.InitialShowDelay="0"
+                    ToolTip="{Binding ChatClient.Endpoint.DisplayName,Mode=OneTime}">
+            <Image VerticalAlignment="Center"
+                   RenderOptions.BitmapScalingMode="HighQuality"
+                   Source="{Binding ChatClient.Model.Icon.CurrentSource,Mode=OneWay}"
+                   Width="26"
+                   Height="26" />
+            <TextBlock Text="{Binding ChatClient.Name,Mode=OneTime}"
+                       VerticalAlignment="Center"
+                       Margin="6,0,0,0"
+                       MaxWidth="200"
+                       TextTrimming="CharacterEllipsis"
+                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+        </StackPanel>
     </DataTemplate>
 
     <DataTemplate x:Key="LinearHistoryResponseViewItemTemplate"
@@ -972,6 +921,8 @@
                                             </StackPanel>
                                         </DataTemplate>
                                     </component:DataTemplateTypePair>
+                                    <component:DataTemplateTypePair
+                                        Template="{StaticResource SingleClientAgentTemplate}" />
                                     <component:DataTemplateTypePair>
                                         <DataTemplate DataType="{x:Type agent:TestSuccessAgent}">
                                             <StackPanel Orientation="Horizontal">
@@ -1066,13 +1017,19 @@
                                  BorderThickness="0"
                                  Style="{StaticResource MaterialDesignOutlinedCard}">
                 <StackPanel>
-                    <ContentControl
-                        Content="{Binding Response,Mode=OneWay}"
-                        ContentTemplate="{StaticResource RawResponseItemTemplate}" />
                     <!-- 每轮 ReAct 循环的可折叠列表 -->
                     <ItemsControl ItemsSource="{Binding Loops,Mode=OneTime}"
                                   ItemTemplate="{StaticResource ReactLoopItemTemplate}"
                                   Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <customControl:FlowDocumentScrollViewerEx FontFamily="Segoe UI Emoji"
+                                                              BorderThickness="0"
+                                                              SafeDocument="{Binding Response.FullDocument,Mode=OneWay}"
+                                                              Style="{StaticResource ExFlowDocumentScrollViewerStyle}" />
+                    <TextBlock Text="{Binding Response.ErrorMessage,Mode=OneWay}"
+                               TextWrapping="Wrap"
+                               Foreground="Red"
+                               Padding="10"
+                               Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                 </StackPanel>
             </materialDesign:Card>
             <ContentControl Content="{Binding Response,Mode=OneWay}"
@@ -1125,10 +1082,11 @@
                                     <DataTrigger.EnterActions>
                                         <BeginStoryboard>
                                             <Storyboard RepeatBehavior="Forever">
-                                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(RotateTransform.Angle)"
-                                                                 From="0"
-                                                                 To="360"
-                                                                 Duration="0:0:1.2" />
+                                                <DoubleAnimation
+                                                    Storyboard.TargetProperty="RenderTransform.(RotateTransform.Angle)"
+                                                    From="0"
+                                                    To="360"
+                                                    Duration="0:0:1.2" />
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </DataTrigger.EnterActions>

@@ -323,7 +323,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                 }
             }
 
-            OnPropertyChangedAsync(nameof(SuggestedModels));
+            PostOnPropertyChanged(nameof(SuggestedModels));
         }
 
         if (endPoints.TryGetPropertyValue(HistoryModelKey, out var historyModels))
@@ -346,7 +346,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                 }
             }
 
-            OnPropertyChangedAsync(nameof(HistoryModels));
+            PostOnPropertyChanged(nameof(HistoryModels));
         }
 
         if (root.AsObject().TryGetPropertyValue(TelemetryKey, out var telemetry))

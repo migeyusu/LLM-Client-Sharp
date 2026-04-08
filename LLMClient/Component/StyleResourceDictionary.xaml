@@ -576,65 +576,6 @@
         <component:DataTemplateTypePair Template="{StaticResource FileEditRequestTemplate}" />
     </component:TypeBasedDataTemplateSelector>
 
-    <Style TargetType="{x:Type Expander}"
-           BasedOn="{StaticResource ContentExpander}"
-           x:Key="AsyncPermissionExpanderStyle">
-        <Setter Property="Padding"
-                Value="12,4" />
-        <Setter Property="IsExpanded"
-                Value="False" />
-        <Setter Property="HeaderTemplate">
-            <Setter.Value>
-                <DataTemplate DataType="{x:Type dialog:AsyncPermissionViewModel}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <materialDesign:PackIcon Kind="LockOpenOutline"
-                                                 VerticalAlignment="Center"
-                                                 Width="22"
-                                                 Height="22" />
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding Title,Mode=OneTime,StringFormat=权限请求：{0},TargetNullValue=权限请求}"
-                                   VerticalAlignment="Center"
-                                   Margin="6,0,0,0"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
-                        <StackPanel Grid.Column="3"
-                                    Orientation="Horizontal"
-                                    VerticalAlignment="Center"
-                                    Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
-                            <Button Content="Decline"
-                                    Margin="0,8,8,0"
-                                    IsCancel="True"
-                                    Command="{Binding RejectCommand}"
-                                    Style="{StaticResource MaterialDesignOutlinedSecondaryButton}" />
-                            <Button Margin="0,8,0,0"
-                                    Command="{Binding PermitCommand}"
-                                    Content="YES"
-                                    IsDefault="True"
-                                    Style="{StaticResource MaterialDesignFlatMidBgButton}" />
-                        </StackPanel>
-                    </Grid>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="ContentTemplate">
-            <Setter.Value>
-                <DataTemplate DataType="{x:Type dialog:AsyncPermissionViewModel}">
-                    <StackPanel>
-                        <ContentPresenter Margin="10"
-                                          Content="{Binding Content,Mode=OneTime}"
-                                          ContentTemplateSelector="{StaticResource InvokePermissionContentTemplateSelector}" />
-                    </StackPanel>
-                </DataTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <Style x:Key="ListBoxItemHoverButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignIconButton}">

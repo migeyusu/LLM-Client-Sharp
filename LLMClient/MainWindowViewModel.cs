@@ -82,7 +82,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
             }
 
             _isDarkTheme = value;
-            OnPropertyChangedAsync();
+            PostOnPropertyChanged();
             ModifyTheme(theme => theme.SetBaseTheme(value ? BaseTheme.Dark : BaseTheme.Light));
             UITheme.IsDarkMode = value;
             this.ThemeName = value ? ThemeName.DarkPlus : ThemeName.LightPlus;
