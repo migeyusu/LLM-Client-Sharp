@@ -148,6 +148,31 @@ public class HistoryCompressionStrategyTests
     }
 
     [Fact]
+    public async Task LlmClientBase_ToolCallRounds_DeduplicatesRepeatedThinkingInHistory()
+    {
+        const string repeatedThinking = "Need to inspect configuration before next action.";
+        var chatClient = new RecordingSequentialChatClient(
+            CreateToolCallResponse("call-1", "first observation", repeatedThinking),
+            CreateToolCallResponse("call-2", "second observation", repeatedThinking),
+            CreateTextResponse("done"));
+        var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.None);
+        var requestContext = new RequestContext
+        {
+            ChatMessages = [new ChatMessage(ChatRole.User, "solve the issue")],
+            FunctionCallEngine = new LoopingToolCallEngine(),
+            RequestOptions = new ChatOptions(),
+        };
+
+#pragma warning disable SKEXP0001
+        var result = await client.SendRequestCompatAsync(requestContext, CancellationToken.None);
+#pragma warning restore SKEXP0001
+
+        Assert.Null(result.Exception);
+        Assert.Equal(3, chatClient.SeenHistories.Count);
+        Assert.Equal(1, CountOccurrences(chatClient.SeenHistories[2], $"assistant:reasoning:{repeatedThinking}"));
+    }
+
+    [Fact]
     public async Task PreambleSummary_SkipsWhenBelowThreshold()
     {
         var chatHistory = CreateHistoryWithPreambleAndRounds(shortPreamble: true);
@@ -699,15 +724,20 @@ public class HistoryCompressionStrategyTests
         return history;
     }
 
-    private static ChatResponse CreateToolCallResponse(string callId, string observation)
+    private static ChatResponse CreateToolCallResponse(string callId, string observation, string? reasoning = null)
     {
-        var message = new ChatMessage(ChatRole.Assistant,
-        [
-            new FunctionCallContent(callId, "noop", new Dictionary<string, object?>
+        var contents = new List<AIContent>();
+        if (!string.IsNullOrWhiteSpace(reasoning))
+        {
+            contents.Add(new TextReasoningContent(reasoning));
+        }
+
+        contents.Add(new FunctionCallContent(callId, "noop", new Dictionary<string, object?>
             {
                 ["value"] = observation,
-            })
-        ]);
+            }));
+
+        var message = new ChatMessage(ChatRole.Assistant, contents);
 
         return new ChatResponse([message])
         {
@@ -741,6 +771,24 @@ public class HistoryCompressionStrategyTests
         }
 
         return results;
+    }
+
+    private static int CountOccurrences(string source, string value)
+    {
+        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(value))
+        {
+            return 0;
+        }
+
+        var count = 0;
+        var index = 0;
+        while ((index = source.IndexOf(value, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += value.Length;
+        }
+
+        return count;
     }
 
     private static async IAsyncEnumerable<ReactStep> CreateCompressionEventSteps()

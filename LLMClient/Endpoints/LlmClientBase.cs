@@ -358,6 +358,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
             _durationStopwatch.Stop();
             var preResponseMessages = preResponse.Messages;
+            if (reactRoundNumber > 1 && functionCallEngine.HasFunctions)
+            {
+                DeduplicateRepeatedThinking(preResponseMessages, chatMessages);
+            }
+
             ReactHistorySegmenter.TagMessages(preResponseMessages, reactRoundNumber, ReactHistoryMessageKind.Assistant);
             foreach (var preResponseMessage in preResponseMessages)
             {
@@ -689,5 +694,84 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             ReactHistoryCompressionMode.TaskSummary => HistoryCompressionKind.TaskSummary,
             _ => null,
         };
+    }
+
+    private static void DeduplicateRepeatedThinking(IList<ChatMessage> currentMessages,
+        IList<ChatMessage> historyMessages)
+    {
+        var previousReasoningSet = GetLastAssistantReasoningSet(historyMessages);
+        if (previousReasoningSet.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var message in currentMessages)
+        {
+            if (message.Role != ChatRole.Assistant)
+            {
+                continue;
+            }
+
+            for (int i = message.Contents.Count - 1; i >= 0; i--)
+            {
+                if (message.Contents[i] is not TextReasoningContent reasoningContent)
+                {
+                    continue;
+                }
+
+                var normalized = NormalizeReasoning(reasoningContent.Text);
+                if (normalized != null && previousReasoningSet.Contains(normalized))
+                {
+                    message.Contents.RemoveAt(i);
+                }
+            }
+        }
+    }
+
+    private static HashSet<string> GetLastAssistantReasoningSet(IList<ChatMessage> historyMessages)
+    {
+        for (int i = historyMessages.Count - 1; i >= 0; i--)
+        {
+            var message = historyMessages[i];
+            if (message.Role != ChatRole.Assistant)
+            {
+                continue;
+            }
+
+            var result = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var content in message.Contents)
+            {
+                if (content is not TextReasoningContent reasoningContent)
+                {
+                    continue;
+                }
+
+                var normalized = NormalizeReasoning(reasoningContent.Text);
+                if (normalized != null)
+                {
+                    result.Add(normalized);
+                }
+            }
+
+            if (result.Count > 0)
+            {
+                return result;
+            }
+        }
+
+        return [];
+    }
+
+    private static string? NormalizeReasoning(string? reasoning)
+    {
+        if (string.IsNullOrWhiteSpace(reasoning))
+        {
+            return null;
+        }
+
+        return reasoning
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Trim();
     }
 }
