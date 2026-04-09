@@ -10,7 +10,6 @@ using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
-
 using LLMClient.Endpoints;
 using LLMClient.Persistance;
 using Microsoft.Extensions.DependencyInjection;
@@ -96,6 +95,11 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             {
                 Content = new TextBox()
                 {
+                    TextAlignment = TextAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Stretch,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalContentAlignment = VerticalAlignment.Top,
+                    HorizontalContentAlignment = HorizontalAlignment.Left,
                     IsReadOnly = true,
                     Text = o._history.ToString(),
                     TextWrapping = TextWrapping.Wrap
@@ -104,12 +108,9 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         };
         tempWindow.ShowDialog();
     });
-    
-    
-    private readonly Lazy<SearchableDocument> _lazyDocument = new(() =>
-    {
-        return new SearchableDocument(new FlowDocument());
-    });
+
+
+    private readonly Lazy<SearchableDocument> _lazyDocument = new(() => new SearchableDocument(new FlowDocument()));
 
     public SearchableDocument? SearchableDocument
     {
@@ -124,10 +125,8 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             });
         }
     }
-    
-    #region responding
 
-    public ICommand CancelCommand { get; }
+    #region responding
 
     public virtual async Task<AgentTaskResult> Process(DefaultDialogContextBuilder contextBuilder,
         CancellationToken token = default)
@@ -154,23 +153,23 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 var ct = RequestTokenSource.Token;
                 var requestContext = await contextBuilder.BuildAsync(Client.Model, ct);
                 completedResult = await ConsumeReactStepsAsync(
-                    Client.SendRequestAsync(requestContext, ct), ct);
-                ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(completedResult, this);
-                PostOnPropertyChanged(nameof(TpS));
+                    Client.SendRequestAsync(requestContext, ct));
             }
         }
         catch (Exception exception)
         {
-            MessageBoxes.Error(exception.Message, "响应失败");
-            ErrorMessage = exception.Message;
+            MessageBoxes.Error(exception.Message, "响应中止");
+            completedResult.Exception = exception;
         }
         finally
         {
             _history.Clear();
-            _history.Append(completedResult.History);
+            _history.Append(completedResult.ProtocolLog);
+            ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(completedResult, this);
+            PostOnPropertyChanged(nameof(TpS));
+            InvalidateAsyncProperty(nameof(SearchableDocument));
             RequestTokenSource = null;
             ReleaseRespondingState();
-            InvalidateAsyncProperty(nameof(SearchableDocument));
         }
 
         return completedResult;
@@ -181,9 +180,8 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     public ClientResponseViewItem(ILLMChatClient client)
     {
         Client = client;
-        CancelCommand = new ActionCommand(_ => CancelRequest(RequestTokenSource));
     }
-    
+
     public void TriggerTextContentUpdate()
     {
         InvalidateAsyncProperty(nameof(SearchableDocument));

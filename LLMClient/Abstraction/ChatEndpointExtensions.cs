@@ -14,7 +14,6 @@ public static class ChatEndpointExtensions
         CancellationToken cancellationToken = default)
     {
         var totalResult = new AgentTaskResult();
-        var historyBuilder = totalResult.History;
         await foreach (var step in endpoint.SendRequestAsync(context, cancellationToken))
         {
             // 必须消费完内层事件流，否则 step.Result 不可用
@@ -24,7 +23,6 @@ public static class ChatEndpointExtensions
 
             var result = step.Result;
             if (result == null) continue;
-            historyBuilder.Append(result.HistoryBuilder);
             totalResult.Add(result);
         }
 

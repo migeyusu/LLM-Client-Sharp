@@ -847,8 +847,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     private void OnRootCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (_options.EnableAutoSubjectGeneration &&
-            e.Action is NotifyCollectionChangedAction.Remove or NotifyCollectionChangedAction.Reset
-            && this.DialogItems.Count == 0)
+            e.Action is NotifyCollectionChangedAction.Remove or NotifyCollectionChangedAction.Reset)
         {
             this.Topic = "新建会话";
         }

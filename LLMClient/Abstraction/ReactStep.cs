@@ -17,7 +17,7 @@ public sealed class ReactStep : IAsyncEnumerable<LoopEvent>
     /// </summary>
     public StepResult? Result { get; private set; }
 
-    public StringBuilder History { get; init; } = new();
+    public StringBuilder ProtocolLog { get; } = new();
 
     // ── 生产者 API（internal）──
 
@@ -68,4 +68,3 @@ public sealed class ReactStep : IAsyncEnumerable<LoopEvent>
     public IAsyncEnumerator<LoopEvent> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         => _channel.Reader.ReadAllAsync(cancellationToken).GetAsyncEnumerator(cancellationToken);
 }
-

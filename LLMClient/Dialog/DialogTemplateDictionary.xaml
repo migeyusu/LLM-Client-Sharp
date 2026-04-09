@@ -370,7 +370,8 @@
             </Expander>
         </materialDesign:Card>
     </DataTemplate>
-    <DataTemplate x:Key="ResponseContentTemplate" DataType="{x:Type models:ClientResponseViewItem}">
+    <DataTemplate x:Key="ClientResponseContentTemplate"
+                  DataType="{x:Type models:ClientResponseViewItem}">
         <StackPanel>
             <customControl:FlowDocumentScrollViewerEx
                 FontFamily="Segoe UI Emoji"
@@ -416,7 +417,6 @@
                     </ContextMenu>
                 </customControl:FlowDocumentScrollViewerEx.ContextMenu>
             </customControl:FlowDocumentScrollViewerEx>
-            <!-- 每轮 ReAct 循环的可折叠列表 -->
             <ItemsControl ItemsSource="{Binding Loops,Mode=OneTime}"
                           ItemTemplate="{StaticResource ReactLoopItemTemplate}"
                           Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
@@ -646,6 +646,20 @@
             </materialDesign:PopupBox>
         </StackPanel>
     </DataTemplate>
+    <Style x:Key="ResponseStatsStyle"
+           TargetType="{x:Type ContentControl}">
+        <Setter Property="ContentTemplate"
+                Value="{StaticResource ResponseStatsTemplate}" />
+        <Setter Property="Visibility"
+                Value="Visible" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
+                         Value="True">
+                <Setter Property="Visibility"
+                        Value="Collapsed" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
     <DataTemplate x:Key="ChatClientIdentityTemplate"
                   DataType="{x:Type abstraction:ILLMChatClient}">
         <StackPanel Orientation="Horizontal">
@@ -660,6 +674,57 @@
                        MaxWidth="200"
                        TextTrimming="CharacterEllipsis"
                        Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="ResponseProcTemplate"
+                  DataType="{x:Type models:ResponseViewItemBase}">
+        <StackPanel>
+            <StackPanel Orientation="Horizontal"
+                        Margin="0,6,0,0">
+                <materialDesign:PackIcon Kind="Sync"
+                                         Width="16"
+                                         Height="16"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,6,0"
+                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary}">
+                    <materialDesign:PackIcon.RenderTransform>
+                        <RotateTransform x:Name="StatusIconRotation"
+                                         CenterX="8"
+                                         CenterY="8" />
+                    </materialDesign:PackIcon.RenderTransform>
+                    <materialDesign:PackIcon.Style>
+                        <Style TargetType="materialDesign:PackIcon">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
+                                             Value="True">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard RepeatBehavior="Forever">
+                                                <DoubleAnimation
+                                                    Storyboard.TargetProperty="RenderTransform.(RotateTransform.Angle)"
+                                                    From="0"
+                                                    To="360"
+                                                    Duration="0:0:1.2" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </materialDesign:PackIcon.Style>
+                </materialDesign:PackIcon>
+                <TextBlock VerticalAlignment="Center"
+                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                           Text="{Binding  LoopCount,Mode=OneWay,StringFormat=🔄 轮 {0}}" />
+                <TextBlock VerticalAlignment="Center"
+                           Margin="10,0,0,0"
+                           MaxWidth="500"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                           Text="{Binding CurrentStatus,Mode=OneWay}"
+                           Visibility="{Binding CurrentStatus,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}" />
+            </StackPanel>
         </StackPanel>
     </DataTemplate>
 
@@ -857,10 +922,10 @@
                                  BorderThickness="0"
                                  Style="{StaticResource MaterialDesignOutlinedCard}">
                 <ContentControl Content="{Binding AcceptedResponse,Mode=OneWay}"
-                                ContentTemplate="{StaticResource ResponseContentTemplate}" />
+                                ContentTemplate="{StaticResource ClientResponseContentTemplate}" />
             </materialDesign:Card>
             <ContentControl Content="{Binding AcceptedResponse,Mode=OneWay}"
-                            ContentTemplate="{StaticResource ResponseStatsTemplate}" />
+                            Style="{StaticResource ResponseStatsStyle}" />
         </StackPanel>
     </DataTemplate>
 
@@ -889,7 +954,7 @@
                         <Button Margin="0,0,6,0"
                                 VerticalAlignment="Center"
                                 Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                Command="{Binding CancelCommand}"
+                                Command="{Binding Response.CancelCommand}"
                                 Style="{StaticResource ResponseCancelButtonStyle}" />
                         <ContentPresenter Content="{Binding Agent,Mode=OneTime}">
                             <ContentPresenter.ContentTemplateSelector>
@@ -999,13 +1064,12 @@
                     </CheckBox>
                 </StackPanel>
             </Grid>
-            <materialDesign:Card Padding="16"
+            <materialDesign:Card Padding="0"
                                  UniformCornerRadius="8"
                                  HorizontalAlignment="Stretch"
                                  BorderThickness="0"
                                  Style="{StaticResource MaterialDesignOutlinedCard}">
                 <StackPanel>
-                    <!-- 每轮 ReAct 循环的可折叠列表 -->
                     <ItemsControl ItemsSource="{Binding Response.Loops,Mode=OneTime}"
                                   ItemTemplate="{StaticResource ReactLoopItemTemplate}"
                                   Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
@@ -1021,79 +1085,9 @@
                 </StackPanel>
             </materialDesign:Card>
             <ContentControl Content="{Binding Response,Mode=OneWay}"
-                            ContentTemplate="{StaticResource ResponseStatsTemplate}">
-                <ContentControl.Style>
-                    <Style TargetType="ContentControl">
-                        <Setter Property="Visibility"
-                                Value="Visible" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
-                                         Value="True">
-                                <Setter Property="Visibility"
-                                        Value="Collapsed" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ContentControl.Style>
-            </ContentControl>
-            <StackPanel Orientation="Horizontal"
-                        Margin="0,6,0,0">
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
-                        <Setter Property="Visibility"
-                                Value="Collapsed" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
-                                         Value="True">
-                                <Setter Property="Visibility"
-                                        Value="Visible" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </StackPanel.Style>
-                <materialDesign:PackIcon Kind="Sync"
-                                         Width="16"
-                                         Height="16"
-                                         VerticalAlignment="Center"
-                                         Margin="0,0,6,0"
-                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary}">
-                    <materialDesign:PackIcon.RenderTransform>
-                        <RotateTransform x:Name="StatusIconRotation"
-                                         CenterX="8"
-                                         CenterY="8" />
-                    </materialDesign:PackIcon.RenderTransform>
-                    <materialDesign:PackIcon.Style>
-                        <Style TargetType="materialDesign:PackIcon">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
-                                             Value="True">
-                                    <DataTrigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard RepeatBehavior="Forever">
-                                                <DoubleAnimation
-                                                    Storyboard.TargetProperty="RenderTransform.(RotateTransform.Angle)"
-                                                    From="0"
-                                                    To="360"
-                                                    Duration="0:0:1.2" />
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </DataTrigger.EnterActions>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </materialDesign:PackIcon.Style>
-                </materialDesign:PackIcon>
-                <TextBlock VerticalAlignment="Center"
-                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
-                           Text="{Binding  Response.LoopCount,Mode=OneWay,StringFormat=🔄 轮 {0}}" />
-                <TextBlock VerticalAlignment="Center"
-                           Margin="10,0,0,0"
-                           MaxWidth="500"
-                           TextTrimming="CharacterEllipsis"
-                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
-                           Text="{Binding CurrentStatus,Mode=OneWay}"
-                           Visibility="{Binding CurrentStatus,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}" />
-            </StackPanel>
+                            Style="{StaticResource ResponseStatsStyle}" />
+            <ContentControl Content="{Binding Response,Mode=OneWay}"
+                            ContentTemplate="{StaticResource ResponseProcTemplate}" />
         </StackPanel>
     </DataTemplate>
 
@@ -1223,47 +1217,47 @@
     <component:TypeBasedDataTemplateSelector x:Key="TextEditTemplateSelector">
         <component:DataTemplateTypePair>
             <DataTemplate DataType="{x:Type dialog:TextContentCodeEditViewModel}">
-                <Grid>
-                    <RichTextBox IsDocumentEnabled="True"
-                                 AcceptsReturn="True"
-                                 AcceptsTab="True"
-                                 AllowDrop="True"
-                                 Padding="8,8,4,4"
-                                 Background="Transparent"
-                                 VerticalScrollBarVisibility="Auto"
-                                 BorderThickness="0"
-                                 BorderBrush="DodgerBlue"
-                                 PreviewDragEnter="TextBox_OnDragEnter"
-                                 PreviewDragLeave="TextBox_OnDragLeave"
-                                 Drop="TextBox_OnDrop"
-                                 PreviewDragOver="TextBox_OnPreviewDragOver"
-                                 materialDesign:TextFieldAssist.DecorationVisibility="Collapsed">
-                        <b:Interaction.Behaviors>
-                            <render:RichTextBoxDocumentBehaviour Document="{Binding EditDocument,Mode=OneWay}" />
-                            <render:RichTextBoxPasteCommandBehavior PasteCommand="{Binding PastCommand}" />
-                        </b:Interaction.Behaviors>
-                    </RichTextBox>
-                </Grid>
+                <RichTextBox IsDocumentEnabled="True"
+                             AcceptsReturn="True"
+                             VerticalContentAlignment="Top"
+                             HorizontalContentAlignment="Left"
+                             AcceptsTab="True"
+                             AllowDrop="True"
+                             Padding="8,8,4,4"
+                             Background="Transparent"
+                             VerticalScrollBarVisibility="Auto"
+                             BorderThickness="0"
+                             BorderBrush="DodgerBlue"
+                             PreviewDragEnter="TextBox_OnDragEnter"
+                             PreviewDragLeave="TextBox_OnDragLeave"
+                             Drop="TextBox_OnDrop"
+                             PreviewDragOver="TextBox_OnPreviewDragOver"
+                             materialDesign:TextFieldAssist.DecorationVisibility="Collapsed">
+                    <b:Interaction.Behaviors>
+                        <render:RichTextBoxDocumentBehaviour Document="{Binding EditDocument,Mode=OneWay}" />
+                        <render:RichTextBoxPasteCommandBehavior PasteCommand="{Binding PastCommand}" />
+                    </b:Interaction.Behaviors>
+                </RichTextBox>
             </DataTemplate>
         </component:DataTemplateTypePair>
         <component:DataTemplateTypePair>
             <DataTemplate DataType="{x:Type dialog:TextContentRawEditViewModel}">
-                <Grid>
-                    <TextBox Text="{Binding Text,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
-                             AcceptsReturn="True"
-                             AcceptsTab="True"
-                             AllowDrop="True"
-                             BorderBrush="DodgerBlue"
-                             DragEnter="TextBox_OnDragEnter"
-                             DragLeave="TextBox_OnDragLeave"
-                             Drop="TextBox_OnDrop"
-                             Padding="8,8,4,4"
-                             TextWrapping="Wrap"
-                             Background="Transparent"
-                             VerticalScrollBarVisibility="Auto"
-                             BorderThickness="0"
-                             materialDesign:TextFieldAssist.DecorationVisibility="Collapsed" />
-                </Grid>
+                <TextBox Text="{Binding Text,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True"
+                         AcceptsTab="True"
+                         AllowDrop="True"
+                         VerticalContentAlignment="Top"
+                         HorizontalContentAlignment="Left"
+                         BorderBrush="DodgerBlue"
+                         DragEnter="TextBox_OnDragEnter"
+                         DragLeave="TextBox_OnDragLeave"
+                         Drop="TextBox_OnDrop"
+                         Padding="8,8,4,4"
+                         TextWrapping="Wrap"
+                         Background="Transparent"
+                         VerticalScrollBarVisibility="Auto"
+                         BorderThickness="0"
+                         materialDesign:TextFieldAssist.DecorationVisibility="Collapsed" />
             </DataTemplate>
         </component:DataTemplateTypePair>
     </component:TypeBasedDataTemplateSelector>

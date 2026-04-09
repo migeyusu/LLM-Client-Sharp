@@ -605,7 +605,7 @@ public class HistoryCompressionStrategyTests
     {
         var response = new RawResponseViewItem();
 
-        await response.ConsumeReactStepsAsync(CreateCompressionEventSteps(), CancellationToken.None);
+        await response.ConsumeReactStepsAsync(CreateCompressionEventSteps());
 
         var loops = response.Loops;
 

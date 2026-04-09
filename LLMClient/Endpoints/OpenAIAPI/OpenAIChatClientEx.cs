@@ -27,7 +27,7 @@ public class OpenAIChatClientEx : ChatClient
     {
         var clientContext = AsyncContextStore<ChatContext>.Current;
         var shouldProcessNonStreamingResponse = clientContext?.Streaming != true;
-        var history = clientContext?.CurrentStep?.History;
+        var history = clientContext?.CurrentStep?.ProtocolLog;
         if (clientContext != null)
         {
             if (clientContext.AdditionalObjects.Count != 0 || clientContext.ShowRequestJson ||
@@ -175,7 +175,7 @@ public class OpenAIChatClientEx : ChatClient
             };
             var normalizedResponseText = rootNode.ToJsonString();
             ReplaceResponseContent(response, normalizedResponseText);
-            clientContext?.CurrentStep?.History?.AppendLine(
+            clientContext?.CurrentStep?.ProtocolLog?.AppendLine(
                 "<warning>Applied OpenAI-compatible fallback: converted null choices to an empty array.</warning>");
         }
         catch (JsonException)

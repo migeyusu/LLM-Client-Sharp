@@ -287,7 +287,7 @@ public class MiniSweRegressionTests
         var processingTask = viewItem.ProcessAsync(session, CancellationToken.None);
         var observedToken = await agent.TokenCaptured.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        viewItem.CancelCommand.Execute(null);
+        viewItem.Response.CancelCommand.Execute(null);
         var result = await processingTask.WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.True(observedToken.IsCancellationRequested);
@@ -304,7 +304,7 @@ public class MiniSweRegressionTests
 
         await viewItem.ProcessAsync(session, CancellationToken.None);
 
-        var exception = Record.Exception(() => viewItem.CancelCommand.Execute(null));
+        var exception = Record.Exception(() => viewItem.Response.CancelCommand.Execute(null));
         Assert.Null(exception);
     }
 

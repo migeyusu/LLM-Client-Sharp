@@ -261,8 +261,8 @@
                                                         <StackPanel Orientation="Horizontal"
                                                                     Margin="8,6">
                                                             <materialDesign:PackIcon Kind="ChatOutline"
-                                                                                     VerticalAlignment="Center"
-                                                                                     Margin="0,0,8,0" />
+                                                                    VerticalAlignment="Center"
+                                                                    Margin="0,0,8,0" />
                                                             <StackPanel>
                                                                 <TextBlock
                                                                     Text="{Binding Topic, Mode=OneWay, TargetNullValue=未命名对话}"

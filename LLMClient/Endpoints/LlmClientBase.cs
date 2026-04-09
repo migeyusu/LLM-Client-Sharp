@@ -490,7 +490,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                     if (compressionKind.HasValue)
                     {
-                        step.EmitHistoryCompressionCompleted(compressionKind.Value, compressionContext.CompressionApplied);
+                        step.EmitHistoryCompressionCompleted(compressionKind.Value,
+                            compressionContext.CompressionApplied);
                     }
                 }
             }
@@ -602,6 +603,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             stepResult.Latency = latency ?? 0;
             stepResult.Duration = (int)_durationStopwatch.Elapsed.TotalSeconds;
             stepResult.Messages = responseMessages;
+            stepResult.ProtocolLog = step.ProtocolLog;
             step.Complete(stepResult);
         }
     }
@@ -689,4 +691,3 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         };
     }
 }
-

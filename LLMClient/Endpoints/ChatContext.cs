@@ -186,7 +186,7 @@ public class ChatContext
                             reasoning = message["reasoning_content"]?.ToString();
                         }
 
-                        if (!string.IsNullOrEmpty(reasoning))
+                        if (!string.IsNullOrEmpty(reasoning) && !HasReasoningContent(chatMessage, reasoning))
                         {
                             chatMessage.Contents.Insert(0, new TextReasoningContent(reasoning));
                         }
@@ -232,5 +232,19 @@ public class ChatContext
                 }
             }
         }
+    }
+
+    private static bool HasReasoningContent(ChatMessage chatMessage, string reasoning)
+    {
+        foreach (var content in chatMessage.Contents)
+        {
+            if (content is TextReasoningContent reasoningContent &&
+                string.Equals(reasoningContent.Text, reasoning, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

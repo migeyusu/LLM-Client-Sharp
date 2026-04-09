@@ -45,36 +45,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     public override IEnumerable<ChatMessage> Messages => Response.Messages;
 
-    /// <summary>
-    /// 响应过程中当前正在执行的操作（状态事件描述）
-    /// </summary>
-    public string? CurrentStatus
-    {
-        get;
-        private set
-        {
-            if (value == field) return;
-            field = value;
-            OnPropertyChanged();
-        }
-    }
-
     public IAgent? Agent { get; }
-
-    /// <summary>
-    /// 模型的最大上下文长度（用于计算上下文占比）
-    /// </summary>
-    public int? MaxContextTokens => Agent is MiniSweAgent miniSweAgent
-        ? miniSweAgent.ChatClient.Model.MaxContextSize
-        : null;
-
-    public CancellationTokenSource? RequestTokenSource
-    {
-        get { return Response.RequestTokenSource; }
-        private set { Response.RequestTokenSource = value; }
-    }
-
-    public ICommand CancelCommand { get; }
 
     public Guid InteractionId
     {
@@ -95,7 +66,6 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         ParentSession = parentSession;
         Agent = agent;
         Response = response ?? new RawResponseViewItem();
-        CancelCommand = new ActionCommand(_ => ResponseViewItemBase.CancelRequest(RequestTokenSource));
     }
 
     public async Task<IResponse> ProcessAsync(ITextDialogSession session, CancellationToken token)
@@ -106,23 +76,16 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             return AgentTaskResult.Empty;
         }
 
-        Response.LoopCount = 0;
-        CurrentStatus = null;
         IsResponding = true;
         try
         {
-            RequestTokenSource = token != CancellationToken.None
-                ? CancellationTokenSource.CreateLinkedTokenSource(token)
-                : new CancellationTokenSource();
-            using (RequestTokenSource)
+            Response.RequestTokenSource = Response.CreateRequestTokenSource(token);
+            using (Response.RequestTokenSource)
             {
-                var cancellationToken = RequestTokenSource.Token;
+                var cancellationToken = Response.RequestTokenSource.Token;
                 await ParentSession.OnPreviewRequest(cancellationToken);
                 var totalCallResult = await Response.ConsumeReactStepsAsync(
-                    Agent.Execute(session, cancellationToken: cancellationToken),
-                    cancellationToken,
-                    MaxContextTokens,
-                    status => Dispatch(() => CurrentStatus = status));
+                    Agent.Execute(session, cancellationToken: cancellationToken));
                 ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(totalCallResult, Response);
                 ParentSession.OnResponseCompleted(totalCallResult);
                 return totalCallResult;
@@ -141,7 +104,6 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         }
         finally
         {
-            RequestTokenSource = null;
             IsResponding = false;
             Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
         }

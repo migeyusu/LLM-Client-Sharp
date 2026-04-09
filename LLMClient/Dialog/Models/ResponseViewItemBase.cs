@@ -12,6 +12,7 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
 using Markdig;
 using Microsoft.Extensions.AI;
+using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog.Models;
 
@@ -131,7 +132,6 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         }
     } = false;
 
-
     /// <summary>
     /// 可以通过手动控制实现叠加的上下文可用性
     /// </summary>
@@ -151,7 +151,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     {
         get { return (IsManualValid || !IsInterrupt) && IsAvailableInContextSwitch; }
     }
-    
+
     //标记为有效结果
     public static ICommand MarkValidCommand { get; } = new RelayCommand<ResponseViewItemBase>((o =>
     {
@@ -168,6 +168,21 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         o?.SwitchAvailableInContext();
     });
 
+    public ICommand CancelCommand { get; }
+
+    /// <summary>
+    /// 响应过程中当前正在执行的操作（状态事件描述）
+    /// </summary>
+    public string? CurrentStatus
+    {
+        get;
+        private set
+        {
+            if (value == field) return;
+            field = value;
+            PostOnPropertyChanged();
+        }
+    }
 
     public bool IsResponding
     {
@@ -181,7 +196,6 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     }
 
     public CancellationTokenSource? RequestTokenSource { get; set; }
-
 
     /// <summary>
     /// 每轮 ReAct 循环的 ViewModel 列表
@@ -265,6 +279,11 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     } = null;
 
 
+    protected ResponseViewItemBase()
+    {
+        CancelCommand = new ActionCommand(_ => CancelRequest(RequestTokenSource));
+    }
+
     protected static async Task PopulateDocumentAsync(FlowDocument flowDocument,
         IEnumerable<ChatMessage>? responseMessages,
         IList<ChatAnnotation>? annotations)
@@ -341,43 +360,27 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         await PopulateDocumentAsync(flowDocument, Messages, Annotations);
         return flowDocument;
     }
-    
+
     /// <summary>
     /// 消费 IAsyncEnumerable&lt;ReactStep&gt; 流，将每轮循环写入 <paramref name="loops"/>
     /// 并累积为 <see cref="AgentTaskResult"/>。供 ClientResponseViewItem / LinearResponseViewItem 共用。
     /// </summary>
-    private static async Task<AgentTaskResult> ConsumeReactStepsCoreAsync(
-        IAsyncEnumerable<ReactStep> steps,
-        ObservableCollection<ReactLoopViewModel> loops,
-        Action<int> setLoopCount,
-        CancellationToken cancellationToken,
-        int? fallbackMaxContextTokens = null,
-        Action<string>? statusCallback = null)
+    internal async Task<AgentTaskResult> ConsumeReactStepsAsync(
+        IAsyncEnumerable<ReactStep> steps)
     {
-        var totalUsage = new UsageDetails
-        {
-            InputTokenCount = 0, OutputTokenCount = 0, TotalTokenCount = 0,
-        };
-        var allMessages = new List<ChatMessage>();
-        ChatFinishReason? finishReason = null;
-        Exception? exception = null;
-        int totalLatency = 0;
-        int validCallTimes = 0;
-        UsageDetails? lastSuccessfulUsage = null;
-        var sw = Stopwatch.StartNew();
-        int loopCount = 0;
-
-        loops.Clear();
-        setLoopCount(0);
-
-        await foreach (var step in steps.WithCancellation(cancellationToken))
+        var agentTaskResult = new AgentTaskResult();
+        var loopCount = 0;
+        Loops.Clear();
+        LoopCount = 0;
+        CurrentStatus = null;
+        await foreach (var step in steps)
         {
             loopCount++;
-            setLoopCount(loopCount);
+            LoopCount = loopCount;
             var loopVm = new ReactLoopViewModel { LoopNumber = loopCount };
-            loops.Add(loopVm);
+            Loops.Add(loopVm);
 
-            await foreach (var evt in step.WithCancellation(cancellationToken))
+            await foreach (var evt in step)
             {
                 switch (evt)
                 {
@@ -393,7 +396,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                         var msg = $"Function call: {fc.Call.Name}";
                         loopVm.ResponseBuffer.Add(msg + "\n");
                         loopVm.NotifyFirstLine();
-                        statusCallback?.Invoke(msg);
+                        CurrentStatus = msg;
                         break;
                     }
                     case FunctionCallCompleted fc:
@@ -402,7 +405,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                             ? $"Function result received: {fc.CallId}"
                             : $"Function call failed: {fc.CallId}";
                         loopVm.ResponseBuffer.Add(msg + "\n");
-                        statusCallback?.Invoke(msg);
+                        CurrentStatus = msg;
                         break;
                     }
                     case PermissionRequest pr:
@@ -414,7 +417,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                         var msg = $"[{dm.Level}] {dm.Message}";
                         loopVm.ResponseBuffer.Add(msg + "\n");
                         loopVm.NotifyFirstLine();
-                        statusCallback?.Invoke(msg);
+                        CurrentStatus = msg;
                         break;
                     }
                     case HistoryCompressionStarted compressionStarted:
@@ -423,7 +426,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                             $"History compression: {FormatHistoryCompressionKind(compressionStarted.Kind)} started.";
                         loopVm.ResponseBuffer.Add(msg + "\n");
                         loopVm.NotifyFirstLine();
-                        statusCallback?.Invoke(msg);
+                        CurrentStatus = msg;
                         break;
                     }
                     case HistoryCompressionCompleted compressionCompleted:
@@ -433,64 +436,25 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                             : $"History compression: {FormatHistoryCompressionKind(compressionCompleted.Kind)} skipped.";
                         loopVm.ResponseBuffer.Add(msg + "\n");
                         loopVm.NotifyFirstLine();
-                        statusCallback?.Invoke(msg);
+                        CurrentStatus = msg;
                         break;
                     }
                 }
             }
 
-            // EndLoop
             var result = step.Result;
             if (result != null)
             {
-                var maxCtx = result.MaxContextTokens > 0 ? result.MaxContextTokens : fallbackMaxContextTokens;
-                loopVm.ContextUsage = new ContextUsageViewModel(result.Usage, maxCtx);
+                loopVm.ContextUsage = new ContextUsageViewModel(result.Usage, result.MaxContextTokens);
                 loopVm.LatencyMs = result.Latency;
                 loopVm.IsCompleted = true;
                 loopVm.IsExpanded = false;
-
-                if (result.Usage != null)
-                {
-                    totalUsage.Add(result.Usage);
-                    lastSuccessfulUsage = result.Usage;
-                }
-
-                allMessages.AddRange(result.Messages);
-                finishReason = result.FinishReason;
-                exception ??= result.Exception;
-                totalLatency += result.Latency;
-                if (result.Exception == null) validCallTimes++;
+                agentTaskResult.Add(result);
             }
         }
 
-        return new AgentTaskResult
-        {
-            Usage = totalUsage,
-            LastSuccessfulUsage = lastSuccessfulUsage,
-            Messages = allMessages,
-            FinishReason = finishReason,
-            Exception = exception,
-            Latency = totalLatency,
-            Duration = (int)Math.Ceiling(sw.ElapsedMilliseconds / 1000f),
-            ValidCallTimes = validCallTimes,
-        };
+        return agentTaskResult;
     }
-
-    /// <summary>
-    /// 使用当前实例的 <see cref="Loops"/> 和 <see cref="LoopCount"/> 消费 ReAct 步骤。
-    /// </summary>
-    internal Task<AgentTaskResult> ConsumeReactStepsAsync(
-        IAsyncEnumerable<ReactStep> steps,
-        CancellationToken cancellationToken,
-        int? fallbackMaxContextTokens = null,
-        Action<string>? statusCallback = null)
-        => ConsumeReactStepsCoreAsync(
-            steps,
-            Loops,
-            count => LoopCount = count,
-            cancellationToken,
-            fallbackMaxContextTokens,
-            statusCallback);
 
     private static string FormatHistoryCompressionKind(HistoryCompressionKind kind)
     {
@@ -507,7 +471,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     protected virtual void OnUsagePropertiesChanged()
     {
     }
-    
+
     /// <summary>
     /// 切换在上下文中的可用性
     /// </summary>
@@ -522,7 +486,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         IsAvailableInContextSwitch = !IsAvailableInContextSwitch;
     }
 
-    protected CancellationTokenSource CreateRequestTokenSource(CancellationToken token)
+    public CancellationTokenSource CreateRequestTokenSource(CancellationToken token)
     {
         return token != CancellationToken.None
             ? CancellationTokenSource.CreateLinkedTokenSource(token)

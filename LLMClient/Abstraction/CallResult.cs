@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
@@ -42,6 +43,8 @@ public class CallResult : IResponse
     }
 
     public IEnumerable<ChatMessage> Messages { get; set; } = [];
+
+    public StringBuilder? ProtocolLog { get; set; }
 
     public int Latency { get; set; }
 

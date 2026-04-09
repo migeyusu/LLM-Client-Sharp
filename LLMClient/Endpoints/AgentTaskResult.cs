@@ -19,8 +19,6 @@ public class AgentTaskResult : CallResult
     {
         get { return Messages?.FirstOrDefault()?.Text; }
     }
-    
-    public StringBuilder History { get; } = new();
 
     public string? GetContentAsString()
     {
@@ -72,6 +70,9 @@ public class AgentTaskResult : CallResult
                 AdditionalProperties[kvp.Key] = kvp.Value;
             }
         }
+
+        ProtocolLog ??= new StringBuilder();
+        ProtocolLog.Append(right.ProtocolLog);
     }
 
     private static UsageDetails? CloneUsageDetails(UsageDetails? usage)

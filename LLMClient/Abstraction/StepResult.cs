@@ -10,6 +10,4 @@ public sealed class StepResult : CallResult
     public bool IsCompleted { get; set; } = true;
 
     public int MaxContextTokens { get; init; }
-
-    public StringBuilder HistoryBuilder { get; } = new();
 }
