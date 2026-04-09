@@ -317,7 +317,6 @@
                                                      Height="16"
                                                      Foreground="Green"
                                                      VerticalAlignment="Center"
-                                                     Margin="8,0,0,0"
                                                      Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                             <ProgressBar IsIndeterminate="True"
                                          Style="{StaticResource MaterialDesignCircularProgressBar}"

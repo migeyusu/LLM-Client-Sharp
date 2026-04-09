@@ -79,12 +79,10 @@ public sealed class CodeReadingPluginTests
     }
 
     [Fact]
-    public void ReadFile_ReturnsErrorJson_WhenFileMissing()
+    public void ReadFile_Throws_WhenFileMissing()
     {
-        var json = _plugin.ReadFile("non-existing-file.cs");
+        var exception = Assert.Throws<FileNotFoundException>(() => _plugin.ReadFile("non-existing-file.cs"));
 
-        using var doc = JsonDocument.Parse(json);
-        Assert.True(doc.RootElement.TryGetProperty("error", out var errorProp));
-        Assert.Contains("File not found", errorProp.GetString());
+        Assert.Contains("File not found", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -49,7 +49,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
         string? scope = null,
         [Description("Maximum results to return. Range: 1–100. Default: 20.")]
         int topK = 20)
-        => Try(() => Serialize(_service.SearchSymbols(query, kind, scope, topK)));
+        => Serialize(_service.SearchSymbols(query, kind, scope, topK));
 
     // ── get_symbol_detail ─────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
             "The 'symbolId' value from a previous search_symbols or get_type_members response. " +
             "Typically the documentation comment ID, e.g. 'M:MyApp.Core.UserService.SaveAsync(MyApp.Core.User)'.")]
         string symbolId)
-        => Try(() => Serialize(_service.GetSymbolDetail(symbolId)));
+        => Serialize(_service.GetSymbolDetail(symbolId));
 
     // ── get_type_members ──────────────────────────────────────────────────
 
@@ -86,7 +86,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
             "Optional accessibility filter: Public, Protected, Internal, Private. " +
             "Partial matches are accepted, e.g. 'Public' matches 'Public'.")]
         string? accessibilityFilter = null)
-        => Try(() => Serialize(_service.GetTypeMembers(typeId, kindFilter, accessibilityFilter)));
+        => Serialize(_service.GetTypeMembers(typeId, kindFilter, accessibilityFilter));
 
     // ── get_type_hierarchy ────────────────────────────────────────────────
 
@@ -100,8 +100,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
         [Description("symbolId or plain name of the class or interface to inspect.")]
         string typeId,
         CancellationToken cancellationToken = default)
-        => await TryAsync(() => _service.GetTypeHierarchyAsync(typeId, cancellationToken)
-            .ContinueWith(t => Serialize(t.Result), cancellationToken));
+        => Serialize(await _service.GetTypeHierarchyAsync(typeId, cancellationToken));
 
     // ── get_interface_implementations ─────────────────────────────────────
 
@@ -115,8 +114,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
         [Description("symbolId or plain name of the interface, e.g. 'IUserRepository'.")]
         string interfaceId,
         CancellationToken cancellationToken = default)
-        => await TryAsync(() => _service.GetInterfaceImplementationsAsync(interfaceId, cancellationToken)
-            .ContinueWith(t => Serialize(t.Result), cancellationToken));
+        => Serialize(await _service.GetInterfaceImplementationsAsync(interfaceId, cancellationToken));
 
     // ── get_callers ────────────────────────────────────────────────────────
 
@@ -134,8 +132,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
             "Omit to search the full solution.")]
         string? scope = null,
         CancellationToken cancellationToken = default)
-        => await TryAsync(() => _service.GetCallersAsync(symbolId, scope, cancellationToken)
-            .ContinueWith(t => Serialize(t.Result), cancellationToken));
+        => Serialize(await _service.GetCallersAsync(symbolId, scope, cancellationToken));
 
     // ── get_callees ────────────────────────────────────────────────────────
 
@@ -149,8 +146,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
         [Description("symbolId of the method or constructor whose body to analyse.")]
         string symbolId,
         CancellationToken cancellationToken = default)
-        => await TryAsync(() => _service.GetCalleesAsync(symbolId, cancellationToken)
-            .ContinueWith(t => Serialize(t.Result), cancellationToken));
+        => Serialize(await _service.GetCalleesAsync(symbolId, cancellationToken));
 
     // ── get_usages ─────────────────────────────────────────────────────────
 
@@ -165,8 +161,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
         [Description("symbolId of the type, method, property, or field to find usages for.")]
         string symbolId,
         CancellationToken cancellationToken = default)
-        => await TryAsync(() => _service.GetUsagesAsync(symbolId, cancellationToken)
-            .ContinueWith(t => Serialize(t.Result), cancellationToken));
+        => Serialize(await _service.GetUsagesAsync(symbolId, cancellationToken));
 
     // ── get_dependency_graph ───────────────────────────────────────────────
 
@@ -185,7 +180,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
             "How many hops of project references to follow. Range: 1–5. Default: 2. " +
             "Packages are only shown for the root project regardless of depth.")]
         int depth = 2)
-        => Try(() => Serialize(_service.GetDependencyGraph(projectName, depth)));
+        => Serialize(_service.GetDependencyGraph(projectName, depth));
 
     // ── get_namespace_types ────────────────────────────────────────────────
 
@@ -203,31 +198,12 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
             "When true (default), also includes types in child namespaces such as " +
             "'MyApp.Core.Services.Auth'. Set to false for strict namespace-only results.")]
         bool includeSubNamespaces = true)
-        => Try(() => Serialize(_service.GetNamespaceTypes(namespaceName, includeSubNamespaces)));
+        => Serialize(_service.GetNamespaceTypes(namespaceName, includeSubNamespaces));
 
     // ── 内部工具 ─────────────────────────────────────────────────────────
 
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value, JsonOpts);
 
-    private static string Try(Func<string> action)
-    {
-        try { return action(); }
-        catch (ArgumentException ex) { return Error(ex.Message); }
-        catch (InvalidOperationException ex) { return Error(ex.Message); }
-        catch (Exception ex) { return Error($"Unexpected error: {ex.Message}"); }
-    }
-
-    private static async Task<string> TryAsync(Func<Task<string>> action)
-    {
-        try { return await action(); }
-        catch (ArgumentException ex) { return Error(ex.Message); }
-        catch (InvalidOperationException ex) { return Error(ex.Message); }
-        catch (OperationCanceledException) { return Error("Operation was cancelled."); }
-        catch (Exception ex) { return Error($"Unexpected error: {ex.Message}"); }
-    }
-
-    private static string Error(string msg)
-        => JsonSerializer.Serialize(new { error = msg }, JsonOpts);
 
     public override string? AdditionPrompt { get; } =
         "SymbolSemanticPlugin provides deep code intelligence for the loaded solution. " +

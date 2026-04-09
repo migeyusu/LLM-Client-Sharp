@@ -278,6 +278,11 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
     /// </summary>
     public virtual ContextPromptViewModel? ProjectContext { get; }
 
+    public virtual IEnumerable<IAIFunctionGroup> GetInspectorFunctionGroups()
+    {
+        yield break;
+    }
+
     private long _tokensConsumption;
 
     public long TokensConsumption

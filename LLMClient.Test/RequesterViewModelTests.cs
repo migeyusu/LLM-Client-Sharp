@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
+using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Configuration;
 using LLMClient.Dialog;
@@ -11,6 +12,17 @@ namespace LLMClient.Test;
 
 public class RequesterViewModelTests
 {
+    [Fact]
+    public void AvailableAgents_ContainsInspectAgent()
+    {
+        RunInSta(() =>
+        {
+            var requester = CreateRequester((_, _, _) => Task.FromResult<IResponse>(AgentTaskResult.Empty), string.Empty);
+
+            Assert.Contains(requester.AvailableAgents, agent => agent.Type == typeof(InspectAgent));
+        });
+    }
+
     [Fact]
     public void Summarize_UsesSharedRequestPipeline_AndKeepsPromptText()
     {

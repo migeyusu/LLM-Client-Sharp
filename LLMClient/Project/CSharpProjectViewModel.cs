@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
+using LLMClient.Agent.Inspector;
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.ContextEngineering.Tools;
@@ -89,11 +90,13 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
             throw new InvalidOperationException("Please select a solution file before sending the request.");
         }
 
-        //检查是否使用了project相关工具
-        if (this.SelectedSession?.SelectedFunctionGroups?.Any(group =>
+        var usesProjectFunctions = this.SelectedSession?.SelectedFunctionGroups?.Any(group =>
             {
                 return _projectFunctions.Any(function => function == group.Data);
-            }) == true)
+            }) == true;
+        var usesInspectAgent = Requester.IsAgentMode
+            && Requester.SelectedAgent?.Type == typeof(InspectAgent);
+        if (usesProjectFunctions || usesInspectAgent)
         {
             if (_solutionContext.IsLoaded)
             {
@@ -106,6 +109,11 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         }
 
         await base.PreviewProcessing(token);
+    }
+
+    public override IEnumerable<IAIFunctionGroup> GetInspectorFunctionGroups()
+    {
+        return _projectFunctions;
     }
 
     public override bool TryResolvePersistedFunctionGroup(AIFunctionGroupDefinitionPersistModel persistModel,

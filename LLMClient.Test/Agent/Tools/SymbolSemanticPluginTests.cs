@@ -3,13 +3,14 @@ using AutoMapper;
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.Tools;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LLMClient.Test.Agent.Tools;
 
 /// <summary>
 /// Plugin 层测试的关注点：
-/// 1. 所有路径均返回合法 JSON（不抛出异常）
-/// 2. 错误场景返回 { "error": "..." } 结构
+/// 1. 成功路径返回合法 JSON
+/// 2. 错误场景直接抛出异常，由上层函数调用引擎负责封装
 /// 3. 成功场景返回含预期字段的 JSON 对象
 /// </summary>
 public class SymbolSemanticPluginTests
@@ -32,13 +33,13 @@ public class SymbolSemanticPluginTests
 
     private static SymbolSemanticPlugin CreatePlugin(SolutionInfo? solution = null)
     {
-        var ctx = new SolutionContext(null!);
-        if (solution != null)
-            ctx.SetForTesting(solution);
-
         var config = new MapperConfiguration(cfg => cfg.AddProfile<RoslynMappingProfile>(),
             LoggerFactory.Create(builder => builder.AddDebug()));
         var mapper = config.CreateMapper();
+        var analyzer = new RoslynProjectAnalyzer(null, mapper);
+        var ctx = new SolutionContext(analyzer);
+        if (solution != null)
+            ctx.SetForTesting(solution);
 
         var svc = new SymbolSemanticService(ctx, mapper);
         
@@ -62,102 +63,76 @@ public class SymbolSemanticPluginTests
         return node!;
     }
 
-    private static bool IsErrorJson(string json)
-    {
-        try
-        {
-            var node = JsonNode.Parse(json);
-            return node?["error"] != null;
-        }
-        catch { return false; }
-    }
-
     private static bool IsArrayJson(string json) =>
         json.TrimStart().StartsWith('[');
 
     // ══════════════════════════════════════════════════════════════════════
-    // 通用守卫：未加载 solution 时所有工具返回 error JSON
+    // 通用守卫：未加载 solution 时所有工具抛出异常
     // ══════════════════════════════════════════════════════════════════════
 
     [Fact]
-    public void SearchSymbols_WhenNotLoaded_ReturnsErrorJson()
+    public void SearchSymbols_WhenNotLoaded_Throws()
     {
         var plugin = CreatePlugin(); // 无 solution
 
-        var result = plugin.SearchSymbols("anything");
-
-        Assert.True(IsErrorJson(result), $"Expected error JSON, got: {result}");
+        Assert.Throws<InvalidOperationException>(() => plugin.SearchSymbols("anything"));
     }
 
     [Fact]
-    public void GetSymbolDetail_WhenNotLoaded_ReturnsErrorJson()
+    public void GetSymbolDetail_WhenNotLoaded_Throws()
     {
         var plugin = CreatePlugin();
 
-        var result = plugin.GetSymbolDetail("T:Any.Type");
-
-        Assert.True(IsErrorJson(result));
+        Assert.Throws<InvalidOperationException>(() => plugin.GetSymbolDetail("T:Any.Type"));
     }
 
     [Fact]
-    public void GetTypeMembers_WhenNotLoaded_ReturnsErrorJson()
+    public void GetTypeMembers_WhenNotLoaded_Throws()
     {
         var plugin = CreatePlugin();
 
-        var result = plugin.GetTypeMembers("T:Any.Type");
-
-        Assert.True(IsErrorJson(result));
+        Assert.Throws<InvalidOperationException>(() => plugin.GetTypeMembers("T:Any.Type"));
     }
 
     [Fact]
-    public async Task GetTypeHierarchyAsync_WhenNotLoaded_ReturnsErrorJson()
+    public async Task GetTypeHierarchyAsync_WhenNotLoaded_Throws()
     {
         var plugin = CreatePlugin();
 
-        var result = await plugin.GetTypeHierarchyAsync("T:Any.Type");
-
-        Assert.True(IsErrorJson(result));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => plugin.GetTypeHierarchyAsync("T:Any.Type"));
     }
 
     [Fact]
-    public async Task GetInterfaceImplementationsAsync_WhenNotLoaded_ReturnsErrorJson()
+    public async Task GetInterfaceImplementationsAsync_WhenNotLoaded_Throws()
     {
         var plugin = CreatePlugin();
 
-        var result = await plugin.GetInterfaceImplementationsAsync("T:Any.Interface");
-
-        Assert.True(IsErrorJson(result));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => plugin.GetInterfaceImplementationsAsync("T:Any.Interface"));
     }
 
     [Fact]
-    public async Task GetCallersAsync_WhenRoslynUnavailable_ReturnsErrorJson()
+    public async Task GetCallersAsync_WhenRoslynUnavailable_Throws()
     {
         // solution 已加载但 RoslynSolution 为 null（SetForTesting 行为）
         var plugin = CreateRichPlugin();
 
-        var result = await plugin.GetCallersAsync(SymbolSemanticFixtures.SaveAsyncId);
-
-        Assert.True(IsErrorJson(result), $"Expected error JSON, got: {result}");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => plugin.GetCallersAsync(SymbolSemanticFixtures.SaveAsyncId));
     }
 
     [Fact]
-    public async Task GetCalleesAsync_WhenRoslynUnavailable_ReturnsErrorJson()
+    public async Task GetCalleesAsync_WhenRoslynUnavailable_Throws()
     {
         var plugin = CreateRichPlugin();
 
-        var result = await plugin.GetCalleesAsync(SymbolSemanticFixtures.SaveAsyncId);
-
-        Assert.True(IsErrorJson(result));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => plugin.GetCalleesAsync(SymbolSemanticFixtures.SaveAsyncId));
     }
 
     [Fact]
-    public async Task GetUsagesAsync_WhenRoslynUnavailable_ReturnsErrorJson()
+    public async Task GetUsagesAsync_WhenRoslynUnavailable_Throws()
     {
         var plugin = CreateRichPlugin();
 
-        var result = await plugin.GetUsagesAsync(SymbolSemanticFixtures.UserServiceId);
-
-        Assert.True(IsErrorJson(result));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => plugin.GetUsagesAsync(SymbolSemanticFixtures.UserServiceId));
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -248,13 +223,11 @@ public class SymbolSemanticPluginTests
     }
 
     [Fact]
-    public void GetSymbolDetail_UnknownId_ReturnsErrorJson()
+    public void GetSymbolDetail_UnknownId_Throws()
     {
         var plugin = CreateRichPlugin();
 
-        var result = plugin.GetSymbolDetail("T:Totally.Unknown.Symbol");
-
-        Assert.True(IsErrorJson(result));
+        Assert.Throws<ArgumentException>(() => plugin.GetSymbolDetail("T:Totally.Unknown.Symbol"));
     }
 
     [Fact]

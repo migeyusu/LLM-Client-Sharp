@@ -10,8 +10,7 @@ public class CodeReadingServiceTests
 {
     private static CodeReadingService CreateService(SolutionInfo solution)
     {
-        var solutionContext = new SolutionContext(null!);
-        solutionContext.SetForTesting(solution);
+        var solutionContext = SolutionContextTestFactory.CreateLoaded(solution);
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<RoslynMappingProfile>(),
             LoggerFactory.Create(builder => builder.AddDebug()));

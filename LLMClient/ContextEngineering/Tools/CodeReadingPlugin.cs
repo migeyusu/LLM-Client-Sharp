@@ -3,7 +3,6 @@
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using LLMClient.ContextEngineering.Tools.Models;
 using LLMClient.ToolCall;
 using Microsoft.SemanticKernel;
 
@@ -53,7 +52,7 @@ public sealed class CodeReadingPlugin : KernelFunctionGroup
             "Maximum token budget for the returned content. Default is 8000. " +
             "Reduce this when you only need a small section; increase carefully as it affects context size.")]
         int? maxTokens = null)
-        => Try(() => Serialize(_service.ReadFile(path, startLine, endLine, maxTokens)));
+        => Serialize(_service.ReadFile(path, startLine, endLine, maxTokens));
 
     // ── read_symbol_body ──────────────────────────────────────────────────
 
@@ -74,8 +73,7 @@ public sealed class CodeReadingPlugin : KernelFunctionGroup
             "Default 0 returns only the declaration. Use 3–5 to see surrounding code.")]
         int contextLines = 0,
         CancellationToken cancellationToken = default)
-        => await TryAsync(async () =>
-            Serialize(await _service.ReadSymbolBodyAsync(symbolId, contextLines, cancellationToken)));
+        => Serialize(await _service.ReadSymbolBodyAsync(symbolId, contextLines, cancellationToken));
 
     // ── get_file_outline ──────────────────────────────────────────────────
 
@@ -90,7 +88,7 @@ public sealed class CodeReadingPlugin : KernelFunctionGroup
             "Solution-relative or absolute path to the file. " +
             "Obtain valid paths from list_files or get_file_tree.")]
         string path)
-        => Try(() => Serialize(_service.GetFileOutline(path)));
+        => Serialize(_service.GetFileOutline(path));
 
     // ── list_files ────────────────────────────────────────────────────────
 
@@ -117,59 +115,13 @@ public sealed class CodeReadingPlugin : KernelFunctionGroup
             "Maximum number of files to return. Accepted range: 1–500. Default is 300. " +
             "When 'truncated: true', narrow the path or add a filter.")]
         int maxCount = 300)
-        => Try(() => Serialize(_service.ListFiles(path, filter, recursive, maxCount)));
+        => Serialize(_service.ListFiles(path, filter, recursive, maxCount));
 
     // ── 内部工具（与 ProjectAwarenessPlugin 保持一致的模式）──────────────
 
     private static string Serialize<T>(T value)
         => JsonSerializer.Serialize(value, JsonOptions);
 
-    private static string Error(string message)
-        => JsonSerializer.Serialize(new { error = message }, JsonOptions);
-
-    private static string Try(Func<string> action)
-    {
-        try
-        {
-            return action();
-        }
-        catch (FileNotFoundException ex)
-        {
-            return Error($"File not found: {ex.Message}");
-        }
-        catch (DirectoryNotFoundException ex)
-        {
-            return Error($"Directory not found: {ex.Message}");
-        }
-        catch (ArgumentException ex)
-        {
-            return Error(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Error(ex.Message);
-        }
-    }
-
-    private static async Task<string> TryAsync(Func<Task<object>> action)
-    {
-        try
-        {
-            return Serialize(await action());
-        }
-        catch (FileNotFoundException ex)
-        {
-            return Error($"File not found: {ex.Message}");
-        }
-        catch (ArgumentException ex)
-        {
-            return Error(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Error(ex.Message);
-        }
-    }
 
     public override string? AdditionPrompt { get; } =
         "CodeReadingPlugin provides read-only access to source file contents and structural outlines. " +

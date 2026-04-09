@@ -1,5 +1,6 @@
 using LLMClient.Abstraction;
 using LLMClient.Agent;
+using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using System.Runtime.CompilerServices;
 using System.Reflection;
+using System.Windows;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
 using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
 using TextContent = Microsoft.Extensions.AI.TextContent;
@@ -63,6 +65,61 @@ public class MiniSweRegressionTests
         Assert.Equal(2, results.Count);
         Assert.Equal(2, client.ChatHistoryCounts.Count);
         Assert.Equal(client.ChatHistoryCounts[0] + 1, client.ChatHistoryCounts[1]);
+    }
+
+    [Fact]
+    public void InspectAgent_UsesReadOnlyTools_AndCompletes()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var application = Application.Current ?? new Application();
+            try
+            {
+                ExecuteAsync().GetAwaiter().GetResult();
+
+                async Task ExecuteAsync()
+                {
+                    var client = new InspectRecordingChatClient();
+                    var request = new RequestViewItem("inspect the project")
+                    {
+                        FunctionGroups =
+                        [
+                            new CheckableFunctionGroupTree(new FileSystemPlugin())
+                        ]
+                    };
+                    var session = new TestTextDialogSession(request);
+                    var agent = new InspectAgent(client, new AgentOption
+                    {
+                        Platform = AgentPlatform.Windows,
+                        WorkingDirectory = Environment.CurrentDirectory,
+                    });
+
+                    var results = new List<StepResult>();
+                    await foreach (var step in agent.Execute(session, CancellationToken.None))
+                    {
+                        await foreach (var _ in step)
+                        {
+                        }
+
+                        if (step.Result != null)
+                        {
+                            results.Add(step.Result);
+                        }
+                    }
+
+                    Assert.Single(results);
+                    Assert.Contains("WinCLI", client.PluginNames);
+                    Assert.DoesNotContain("FileSystem", client.PluginNames);
+                }
+            }
+            finally
+            {
+                if (Application.Current == application)
+                {
+                    application.Shutdown();
+                }
+            }
+        });
     }
 
     [Fact]
@@ -313,6 +370,59 @@ public class MiniSweRegressionTests
 
             step.Complete(stepResult);
             yield return step;
+        }
+    }
+
+    private sealed class InspectRecordingChatClient : ILLMChatClient
+    {
+        public List<string> PluginNames { get; } = [];
+
+        public string Name => "InspectRecordingChatClient";
+
+        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+
+        public IEndpointModel Model { get; } = new APIModelInfo
+        {
+            APIId = "fake-inspect-model",
+            Name = "Fake Inspect Model",
+            Endpoint = EmptyLLMEndpoint.Instance,
+            SupportFunctionCall = true,
+            SupportStreaming = false,
+            SupportSystemPrompt = true,
+            FunctionCallOnStreaming = true,
+            SupportTextGeneration = true,
+            TopPEnable = true,
+            TopKEnable = true,
+            TemperatureEnable = true,
+            MaxTokensEnable = true,
+            FrequencyPenaltyEnable = true,
+            PresencePenaltyEnable = true,
+            SeedEnable = true,
+            PriceCalculator = new TokenBasedPriceCalculator()
+        };
+
+        public IModelParams Parameters { get; set; } = new DefaultModelParam { Streaming = false };
+
+        public bool IsResponding { get; set; }
+
+        public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            PluginNames.Clear();
+            PluginNames.AddRange(context.FunctionCallEngine.KernelPluginCollection.Select(plugin => plugin.Name));
+
+            var text = "Inspection summary\nINSPECTION_COMPLETE";
+            var message = new ChatMessage(ChatRole.Assistant, text);
+            var step = new ReactStep();
+            step.EmitText(text);
+            step.Complete(new StepResult
+            {
+                FinishReason = ChatFinishReason.Stop,
+                IsCompleted = true,
+                Messages = [message],
+            });
+            yield return step;
+            await Task.CompletedTask;
         }
     }
 

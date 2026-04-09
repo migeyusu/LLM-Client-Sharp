@@ -4,6 +4,7 @@ using LLMClient.Dialog;
 namespace LLMClient.Persistance;
 
 [JsonDerivedType(typeof(MiniSweAgentPersistModel), "miniSweAgent")]
+[JsonDerivedType(typeof(InspectAgentPersistModel), "inspectAgent")]
 [JsonDerivedType(typeof(SummaryAgentPersistModel), "summaryAgent")]
 [JsonDerivedType(typeof(NvidiaResearchClientPersistModel), "nvidiaResearchClient")]
 public abstract class AgentPersistModel
@@ -17,6 +18,15 @@ public class MiniSweAgentPersistModel : AgentPersistModel
     public AgentOption? AgentOption { get; set; }
     public ParameterizedLLMModelPO? ChatClient { get; set; }
     public Dictionary<string, object?> ExtraTemplateVars { get; set; } = [];
+}
+
+public class InspectAgentPersistModel : AgentPersistModel
+{
+    public int CallCount { get; set; }
+
+    public AgentOption? AgentOption { get; set; }
+
+    public ParameterizedLLMModelPO? ChatClient { get; set; }
 }
 
 public class NvidiaResearchClientPersistModel : AgentPersistModel

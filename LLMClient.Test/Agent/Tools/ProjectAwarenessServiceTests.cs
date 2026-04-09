@@ -11,10 +11,76 @@ public class ProjectAwarenessServiceTests
 {
     private static ProjectAwarenessService CreateService(SolutionInfo solution)
     {
-        var solutionContext = new SolutionContext(null!); // analyzer 不会被调用
-        solutionContext.SetForTesting(solution);
-        var svc = new ProjectAwarenessService(solutionContext);
-        return svc;
+        return new ProjectAwarenessService(SolutionContextTestFactory.CreateLoaded(solution));
+    }
+
+    private sealed class MaterializedSolutionScope : IDisposable
+    {
+        public string RootDir { get; }
+        public string CoreProjectRelativePath { get; }
+        public string ServicesRelativePath { get; }
+        public ProjectAwarenessService Service { get; }
+
+        public MaterializedSolutionScope()
+        {
+            RootDir = Path.Combine(Path.GetTempPath(), $"ProjectAwarenessTests_{Guid.NewGuid():N}");
+            var solutionPath = Path.Combine(RootDir, "MyApp.sln");
+            var coreRoot = Path.Combine(RootDir, "MyApp.Core");
+
+            Directory.CreateDirectory(Path.Combine(coreRoot, "Services"));
+            Directory.CreateDirectory(Path.Combine(coreRoot, "Models"));
+            Directory.CreateDirectory(Path.Combine(coreRoot, "Interfaces"));
+
+            File.WriteAllText(solutionPath, "Microsoft Visual Studio Solution File");
+            File.WriteAllText(Path.Combine(coreRoot, "MyApp.Core.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+            File.WriteAllText(Path.Combine(coreRoot, "Services", "UserService.cs"), "public class UserService { }");
+            File.WriteAllText(Path.Combine(coreRoot, "Services", "OrderService.cs"), "public class OrderService { }");
+            File.WriteAllText(Path.Combine(coreRoot, "Models", "User.cs"), "public class User { }");
+            File.WriteAllText(Path.Combine(coreRoot, "Models", "Order.cs"), "public class Order { }");
+            File.WriteAllText(Path.Combine(coreRoot, "Interfaces", "IUserService.cs"), "public interface IUserService { }");
+
+            var project = TestFixtures.BuildCoreProject();
+            project.ProjectFilePath = Path.Combine(coreRoot, "MyApp.Core.csproj");
+            project.FullRootDir = coreRoot;
+            project.RelativeRootDir = Path.GetRelativePath(RootDir, project.ProjectFilePath);
+            project.Files.Clear();
+            project.Files.AddRange([
+                TestFixtures.BuildFile(coreRoot, @"Services\UserService.cs", "Source", 200,
+                    new DateTime(2025, 6, 1, 10, 0, 0, DateTimeKind.Utc)),
+                TestFixtures.BuildFile(coreRoot, @"Services\OrderService.cs", "Source", 150,
+                    new DateTime(2025, 5, 31, 10, 0, 0, DateTimeKind.Utc)),
+                TestFixtures.BuildFile(coreRoot, @"Models\User.cs", "Source", 80,
+                    new DateTime(2025, 5, 30, 10, 0, 0, DateTimeKind.Utc)),
+                TestFixtures.BuildFile(coreRoot, @"Models\Order.cs", "Source", 60,
+                    new DateTime(2025, 5, 29, 10, 0, 0, DateTimeKind.Utc)),
+                TestFixtures.BuildFile(coreRoot, @"Interfaces\IUserService.cs", "Source", 30,
+                    new DateTime(2025, 5, 28, 10, 0, 0, DateTimeKind.Utc))
+            ]);
+            project.Statistics.FilesCount = project.Files.Count;
+            project.Statistics.LinesOfCode = project.Files.Sum(f => f.LinesOfCode);
+
+            var solution = TestFixtures.BuildSolution(project);
+            solution.SolutionPath = solutionPath;
+
+            CoreProjectRelativePath = Path.GetRelativePath(RootDir, project.ProjectFilePath);
+            ServicesRelativePath = Path.Combine("MyApp.Core", "Services");
+            Service = CreateService(solution);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                if (Directory.Exists(RootDir))
+                {
+                    Directory.Delete(RootDir, recursive: true);
+                }
+            }
+            catch
+            {
+                // ignore cleanup errors in tests
+            }
+        }
     }
 
     // ── RequireSolution 守卫 ─────────────────────────────────────────────
@@ -22,7 +88,7 @@ public class ProjectAwarenessServiceTests
     [Fact]
     public void GetSolutionInfo_WhenNotLoaded_ThrowsInvalidOperation()
     {
-        var svc = new ProjectAwarenessService(null!);
+        var svc = new ProjectAwarenessService(SolutionContextTestFactory.CreateEmpty());
 
         Assert.Throws<InvalidOperationException>(() => svc.GetSolutionInfoView());
     }
@@ -93,11 +159,9 @@ public class ProjectAwarenessServiceTests
     [Fact]
     public void GetProjectMetadataView_ByRelativeCsprojPath_ReturnsCorrectProject()
     {
-        var svc = CreateService(TestFixtures.BuildSolution());
-        // 相对 solution 根目录的 .csproj 路径
-        var relPath = Path.GetRelativePath(TestFixtures.SolutionDir, TestFixtures.CoreProjectPath);
+        using var scope = new MaterializedSolutionScope();
 
-        var view = svc.GetProjectMetadataView(relPath);
+        var view = scope.Service.GetProjectMetadataView(scope.CoreProjectRelativePath);
 
         Assert.Equal("MyApp.Core", view.Name);
     }
@@ -143,8 +207,8 @@ public class ProjectAwarenessServiceTests
     [Fact]
     public void GetFileTree_DotPath_IncludesAllProjectFiles()
     {
-        var svc = CreateService(TestFixtures.BuildSolution());
-        var result = svc.GetFileTree(".", 4, null);
+        using var scope = new MaterializedSolutionScope();
+        var result = scope.Service.GetFileTree(".", 4, null);
 
         Assert.Contains("UserService.cs", result);
         Assert.Contains("OrderService.cs", result);
@@ -153,11 +217,10 @@ public class ProjectAwarenessServiceTests
     [Fact]
     public void GetFileTree_SubdirectoryPath_OnlyIncludesFilesUnderIt()
     {
-        var solution = TestFixtures.BuildSolution(TestFixtures.BuildCoreProject());
-        var svc = CreateService(solution);
+        using var scope = new MaterializedSolutionScope();
 
         // 只看 Services 目录
-        var result = svc.GetFileTree(@"MyApp.Core\Services", 4, null);
+        var result = scope.Service.GetFileTree(scope.ServicesRelativePath, 4, null);
 
         Assert.Contains("UserService.cs", result);
         Assert.DoesNotContain("User.cs", result); // Models 下的文件不应出现

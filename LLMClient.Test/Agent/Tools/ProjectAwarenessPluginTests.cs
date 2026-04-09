@@ -151,7 +151,7 @@ public class ProjectAwarenessPluginTests
     }
 
     [Fact]
-    public void GetSolutionInfo_ServiceThrowsInvalidOperation_ReturnsErrorJson()
+    public void GetSolutionInfo_ServiceThrowsInvalidOperation_Throws()
     {
         var fake = new FakeService
         {
@@ -159,11 +159,9 @@ public class ProjectAwarenessPluginTests
         };
         var plugin = CreatePlugin(fake);
 
-        var json = plugin.GetSolutionInfo();
+        var exception = Assert.Throws<InvalidOperationException>(() => plugin.GetSolutionInfo());
 
-        var doc = JsonDocument.Parse(json);
-        Assert.True(doc.RootElement.TryGetProperty("error", out _));
-        Assert.Contains("No solution loaded.", doc.RootElement.GetProperty("error").GetString());
+        Assert.Contains("No solution loaded.", exception.Message);
     }
 
     // ── GetProjectMetadata ───────────────────────────────────────────────
@@ -194,7 +192,7 @@ public class ProjectAwarenessPluginTests
     }
 
     [Fact]
-    public void GetProjectMetadata_InvalidId_ReturnsErrorJson()
+    public void GetProjectMetadata_InvalidId_Throws()
     {
         var fake = new FakeService
         {
@@ -202,11 +200,9 @@ public class ProjectAwarenessPluginTests
         };
         var plugin = CreatePlugin(fake);
 
-        var json = plugin.GetProjectMetadata("Unknown");
+        var exception = Assert.Throws<ArgumentException>(() => plugin.GetProjectMetadata("Unknown"));
 
-        var doc = JsonDocument.Parse(json);
-        Assert.True(doc.RootElement.TryGetProperty("error", out var err));
-        Assert.Contains("not found", err.GetString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("not found", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     // ── GetFileTree ──────────────────────────────────────────────────────
@@ -288,7 +284,7 @@ public class ProjectAwarenessPluginTests
     }
 
     [Fact]
-    public void GetFileMetadata_FileNotFound_ReturnsErrorJson()
+    public void GetFileMetadata_FileNotFound_Throws()
     {
         var fake = new FakeService
         {
@@ -296,10 +292,9 @@ public class ProjectAwarenessPluginTests
         };
         var plugin = CreatePlugin(fake);
 
-        var json = plugin.GetFileMetadata("Missing.cs");
+        var exception = Assert.Throws<FileNotFoundException>(() => plugin.GetFileMetadata("Missing.cs"));
 
-        var doc = JsonDocument.Parse(json);
-        Assert.True(doc.RootElement.TryGetProperty("error", out _));
+        Assert.Contains("File not found", exception.Message);
     }
 
     // ── DetectConventions ────────────────────────────────────────────────

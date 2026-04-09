@@ -241,19 +241,17 @@ public sealed class CodeSearchPluginTests : IClassFixture<CodeSearchTestFixture>
     }
 
     [Fact]
-    public void SearchInFile_WithNonExistingFile_ReturnsErrorJson()
+    public void SearchInFile_WithNonExistingFile_Throws()
     {
         // Arrange
         var filePath = "NonExisting/File.cs";
         var pattern = "test";
 
         // Act
-        var json = _plugin.SearchInFile(filePath, pattern);
+        var exception = Assert.Throws<FileNotFoundException>(() => _plugin.SearchInFile(filePath, pattern));
 
         // Assert
-        Assert.NotNull(json);
-        Assert.Contains("error", json, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("not found", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("not found", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     // ── Plugin Metadata Tests ─────────────────────────────────────────

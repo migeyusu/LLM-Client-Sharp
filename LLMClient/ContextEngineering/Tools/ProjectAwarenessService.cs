@@ -210,4 +210,5 @@ internal sealed class ProjectAwarenessService : IProjectAwarenessService
         TestFrameworkHint = c.TestFrameworkHint,
         NotableFiles = c.NotableFiles.ToList()
     };
+
 }

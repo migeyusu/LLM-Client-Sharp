@@ -45,6 +45,7 @@ namespace LLMClient.Persistance;
 [JsonSerializable(typeof(SymbolSemanticPluginPersistModel))]
 [JsonSerializable(typeof(CodeSearchPluginPersistModel))]
 [JsonSerializable(typeof(CodeReadingPluginPersistModel))]
+[JsonSerializable(typeof(InspectAgentPersistModel))]
 [JsonSerializable(typeof(SummaryAgentPersistModel))]
 [JsonSerializable(typeof(NvidiaResearchClientPersistModel))]
 [JsonSerializable(typeof(VariableItem))]

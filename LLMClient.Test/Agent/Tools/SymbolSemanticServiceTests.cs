@@ -59,9 +59,9 @@ public class SymbolSemanticServiceTests
 
     private static SymbolSemanticService CreateService(SolutionInfo? solution = null)
     {
-        var ctx = new SolutionContext(null!);
-        if (solution != null)
-            ctx.SetForTesting(solution);
+        var ctx = solution == null
+            ? SolutionContextTestFactory.CreateEmpty()
+            : SolutionContextTestFactory.CreateLoaded(solution);
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<RoslynMappingProfile>(),
             LoggerFactory.Create(builder => builder.AddDebug()));
@@ -437,8 +437,7 @@ public class SymbolSemanticServiceTests
         };
         solution.Projects.First().Namespaces.First().Types.Add(loneInterface);
 
-        var ctx = new SolutionContext(null!);
-        ctx.SetForTesting(solution);
+        var ctx = SolutionContextTestFactory.CreateLoaded(solution);
         var config = new MapperConfiguration(cfg => cfg.AddProfile<RoslynMappingProfile>(),
             LoggerFactory.Create(builder => builder.AddDebug()));
         var mapper = config.CreateMapper();

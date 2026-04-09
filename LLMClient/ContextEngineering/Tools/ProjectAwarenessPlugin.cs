@@ -9,7 +9,7 @@ namespace LLMClient.ContextEngineering.Tools;
 /// Semantic Kernel Plugin：项目感知工具集。
 /// 所有路径参数均使用相对于 solution 根目录的相对路径；
 /// 内部由 ProjectAwarenessService 负责与绝对路径的互转。
-/// 所有方法统一返回 string（JSON 或错误消息），便于 LLM 直接消费。
+/// 所有方法统一返回 JSON 字符串；异常由上层工具调用引擎捕获。
 /// </summary>
 public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
 {
@@ -36,7 +36,7 @@ public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
         "Always call this first to orient yourself before exploring any specific project or file. " +
         "The returned project 'name' field can be used directly in get_project_metadata.")]
     public string GetSolutionInfo()
-        => Try(() => Serialize(_service.GetSolutionInfoView()));
+        => Serialize(_service.GetSolutionInfoView());
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -52,7 +52,7 @@ public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
             "(e.g. 'src/MyApp.Core/MyApp.Core.csproj'). " +
             "Project names are listed in get_solution_info output.")]
         string projectId)
-        => Try(() => Serialize(_service.GetProjectMetadataView(projectId)));
+        => Serialize(_service.GetProjectMetadataView(projectId));
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
             "Matched as case-insensitive substrings against each entry's path. " +
             "Default covers standard build and VCS artifacts.")]
         string excludePatterns = "obj,bin,.vs,.git")
-        => Try(() => _service.GetFileTree(path, maxDepth, ParsePatterns(excludePatterns)));
+        => _service.GetFileTree(path, maxDepth, ParsePatterns(excludePatterns));
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -94,7 +94,7 @@ public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
             "Obtain valid paths from get_file_tree output. " +
             "Absolute paths are also accepted.")]
         string filePath)
-        => Try(() => Serialize(_service.GetFileMetadata(filePath)));
+        => Serialize(_service.GetFileMetadata(filePath));
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -106,7 +106,7 @@ public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
         "and notable documentation files (README, ADR). " +
         "Consult this before generating new code to match existing project style.")]
     public string DetectConventions()
-        => Try(() => Serialize(_service.DetectConventions()));
+        => Serialize(_service.DetectConventions());
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -125,42 +125,12 @@ public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
             "Use a smaller value (e.g. 10) for a quick orientation; " +
             "use a larger value only when building a comprehensive change inventory.")]
         int count = 30)
-        => Try(() => Serialize(_service.GetRecentlyModifiedFiles(sinceUtc, count)));
+        => Serialize(_service.GetRecentlyModifiedFiles(sinceUtc, count));
 
     // ── 内部工具 ─────────────────────────────────────────────────────────
 
     private static string Serialize<T>(T value)
         => JsonSerializer.Serialize(value, JsonOptions);
-
-    private static string Error(string message)
-        => JsonSerializer.Serialize(new { error = message }, JsonOptions);
-
-    /// <summary>
-    /// 统一异常处理：将异常转为 LLM 可理解的错误消息，避免 tool call 直接失败。
-    /// </summary>
-    private static string Try(Func<string> action)
-    {
-        try
-        {
-            return action();
-        }
-        catch (FileNotFoundException ex)
-        {
-            return Error($"File not found: {ex.Message}");
-        }
-        catch (DirectoryNotFoundException ex)
-        {
-            return Error($"Directory not found: {ex.Message}");
-        }
-        catch (ArgumentException ex)
-        {
-            return Error(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Error(ex.Message);
-        }
-    }
 
     private static List<string> ParsePatterns(string raw)
         => raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -169,7 +139,7 @@ public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
     public override string? AdditionPrompt { get; } =
         "ProjectAwarenessPlugin provides structured information about the loaded solution, projects, and files. " +
         "Use it to explore the codebase and understand its structure and conventions before generating or modifying code. " +
-        "All methods return JSON strings with the requested information or an error message.";
+        "All methods return JSON strings with the requested information.";
 
     public override object Clone()
     {

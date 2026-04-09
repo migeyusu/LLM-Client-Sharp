@@ -58,8 +58,7 @@ internal sealed class CodeSearchPlugin : KernelFunctionGroup
             "Number of context lines to include before/after each match (0-3). Default is 1. " +
             "Higher values provide more context but increase token usage.")]
         int contextLines = 1)
-        => Try(() =>
-            Serialize(_service.SearchText(pattern, scope, fileFilter, useRegex, Math.Clamp(contextLines, 0, 3))));
+        => Serialize(_service.SearchText(pattern, scope, fileFilter, useRegex, Math.Clamp(contextLines, 0, 3)));
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -78,7 +77,7 @@ internal sealed class CodeSearchPlugin : KernelFunctionGroup
             "Maximum number of results to return (1-50). Default is 20. " +
             "Use lower values (e.g. 5-10) for focused exploration.")]
         int topK = 20)
-        => await TryAsync(async () => Serialize(await _service.SearchSemanticAsync(query, topK)));
+        => Serialize(await _service.SearchSemanticAsync(query, topK));
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -96,7 +95,7 @@ internal sealed class CodeSearchPlugin : KernelFunctionGroup
         [Description(
             "Maximum number of similar snippets to return (1-50). Default is 10.")]
         int topK = 10)
-        => await TryAsync(async () => Serialize(await _service.FindSimilarCodeAsync(codeSnippet, topK)));
+        => Serialize(await _service.FindSimilarCodeAsync(codeSnippet, topK));
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -115,7 +114,7 @@ internal sealed class CodeSearchPlugin : KernelFunctionGroup
             "Optional project name to limit search scope, e.g. 'MyApp.Core'. " +
             "Leave empty to search entire solution.")]
         string? scope = null)
-        => Try(() => Serialize(_service.FindByAttribute(attributeName, scope)));
+        => Serialize(_service.FindByAttribute(attributeName, scope));
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -140,67 +139,13 @@ internal sealed class CodeSearchPlugin : KernelFunctionGroup
         [Description(
             "Number of context lines before/after each match (0-3). Default is 1.")]
         int contextLines = 1)
-        => Try(() => Serialize(_service.SearchInFile(filePath, pattern, useRegex, Math.Clamp(contextLines, 0, 3))));
+        => Serialize(_service.SearchInFile(filePath, pattern, useRegex, Math.Clamp(contextLines, 0, 3)));
 
     // ── 内部工具 ─────────────────────────────────────────────────────────
 
     private static string Serialize<T>(T value)
         => JsonSerializer.Serialize(value, JsonOptions);
 
-    private static string Error(string message)
-        => JsonSerializer.Serialize(new { error = message }, JsonOptions);
-
-    private static string Try(Func<string> action)
-    {
-        try
-        {
-            return action();
-        }
-        catch (FileNotFoundException ex)
-        {
-            return Error($"File not found: {ex.Message}");
-        }
-        catch (DirectoryNotFoundException ex)
-        {
-            return Error($"Directory not found: {ex.Message}");
-        }
-        catch (ArgumentException ex)
-        {
-            return Error(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Error(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return Error($"Search failed: {ex.Message}");
-        }
-    }
-
-    private static async Task<string> TryAsync(Func<Task<string>> action)
-    {
-        try
-        {
-            return await action();
-        }
-        catch (FileNotFoundException ex)
-        {
-            return Error($"File not found: {ex.Message}");
-        }
-        catch (ArgumentException ex)
-        {
-            return Error(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Error(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return Error($"Semantic search failed: {ex.Message}");
-        }
-    }
 
     public override string? AdditionPrompt { get; } =
         "CodeSearchPlugin provides powerful search capabilities across the codebase: " +

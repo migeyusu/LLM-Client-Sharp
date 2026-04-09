@@ -12,6 +12,7 @@ using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog.Controls;
 using LLMClient.Dialog.Models;
 using LLMClient.Agent;
+using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Workflow.Research;
 using LLMClient.Configuration;
@@ -604,6 +605,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         if (agentType == typeof(MiniSweAgent))
         {
             agent = new MiniSweAgent(client, agentOption);
+        }
+        else if (agentType == typeof(InspectAgent))
+        {
+            agent = new InspectAgent(client, agentOption);
         }
         else if (agentType == typeof(SummaryAgent))
         {
