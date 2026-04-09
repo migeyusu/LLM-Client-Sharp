@@ -10,7 +10,6 @@ using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Persistance;
 using LLMClient.Project;
-using LLMClient.ToolCall;
 
 namespace LLMClient;
 

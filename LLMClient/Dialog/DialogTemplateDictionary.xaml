@@ -334,8 +334,8 @@
                         <TextBlock Grid.Column="1"
                                    Text="{Binding FirstLine,Mode=OneWay}"
                                    VerticalAlignment="Center"
-                                   Margin="12,0,0,0"
-                                   MaxWidth="200"
+                                   HorizontalAlignment="Left"
+                                   Margin="12,0"
                                    TextWrapping="NoWrap"
                                    TextTrimming="CharacterEllipsis"
                                    Style="{StaticResource MaterialDesignCaptionTextBlock}"
@@ -697,7 +697,7 @@
                                             Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                             Command="{Binding CancelCommand}"
                                             Style="{StaticResource ResponseCancelButtonStyle}" />
-                                    <ContentControl Content="{Binding Model,Mode=OneTime}"
+                                    <ContentControl Content="{Binding Client,Mode=OneTime}"
                                                     ContentTemplate="{StaticResource ChatClientIdentityTemplate}" />
                                     <materialDesign:PackIcon Kind="Exclamation"
                                                              Foreground="Red"
