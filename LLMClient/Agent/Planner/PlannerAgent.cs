@@ -76,6 +76,9 @@ public class PlannerAgent : ReadOnlyCompactAgentBase
             - Use project-awareness, code-reading, symbol-analysis, and code-search tools to gather evidence.
             - Use CLI only for safe inspection tasks such as git status, directory inspection, or non-destructive project metadata commands.
             - Do not guess. Trace symbols and files before proposing actions.
+            - Inherit prior Inspector outputs from conversation history when available.
+            - If history already includes inspection handoff markers like INSPECTION_COMPLETE or [INSPECT_COMPACT_HANDOFF],
+              reuse that context first and only run additional inspection tools to fill clear gaps.
             - When enough context has been gathered, provide an actionable phased plan and include PLANNING_COMPLETE.
 
             Expected output focus:
@@ -92,6 +95,11 @@ public class PlannerAgent : ReadOnlyCompactAgentBase
             <task>
             {{task}}
             </task>
+
+            Context inheritance:
+            - First read and trust relevant Inspector handoff from prior conversation history.
+            - Treat prior inspection summary as baseline context for planning.
+            - Only re-inspect files/symbols when the inherited context is missing, ambiguous, or stale.
 
             Planning workflow:
             1. Identify relevant project scope and constraints.

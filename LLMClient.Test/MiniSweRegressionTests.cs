@@ -258,6 +258,84 @@ public class MiniSweRegressionTests
             result.GetContentAsString());
     }
 
+    [Theory]
+    [InlineData("INSPECTION_COMPLETE")]
+    [InlineData("[INSPECT_COMPACT_HANDOFF]")]
+    public async Task PlannerAgent_UsesInspectorHandoffFromHistory(string handoffMarker)
+    {
+        var client = new PlannerHistoryAwareChatClient();
+        var request = new RequestViewItem("implement according to plan");
+        var history = new IChatHistoryItem[]
+        {
+            new TestChatHistoryItem(new ChatMessage(ChatRole.Assistant,
+                $"Inspector notes: focus FooService.BarMethod\n{handoffMarker}"))
+        };
+        var session = new TestTextDialogSession(request, history);
+        var agent = new PlannerAgent(client, new AgentOption
+        {
+            Platform = AgentPlatform.Windows,
+            WorkingDirectory = Environment.CurrentDirectory,
+        });
+
+        SetReadOnlyToolProviders(agent, Array.Empty<IAIFunctionGroup>());
+
+        var result = new AgentTaskResult();
+        var stepCount = 0;
+        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        {
+            stepCount++;
+            await foreach (var _ in step)
+            {
+            }
+
+            result.Add(step.Result);
+        }
+
+        Assert.Equal(1, stepCount);
+        Assert.True(client.SawInspectorHandoff);
+        Assert.Contains("FooService.BarMethod", client.FirstPlanningPrompt);
+        Assert.Contains("Phased plan for FooService.BarMethod", result.GetContentAsString());
+        Assert.Contains("PLANNING_COMPLETE", result.GetContentAsString());
+    }
+
+    [Fact]
+    public async Task PlannerAgent_NoInspectorHandoffInHistory_DoesNotMarkFlag_AndStillPlans()
+    {
+        var client = new PlannerHistoryAwareChatClient();
+        var request = new RequestViewItem("implement according to plan");
+        var history = new IChatHistoryItem[]
+        {
+            new TestChatHistoryItem(new ChatMessage(ChatRole.Assistant,
+                "Legacy context only: inspect artifacts not available yet"))
+        };
+        var session = new TestTextDialogSession(request, history);
+        var agent = new PlannerAgent(client, new AgentOption
+        {
+            Platform = AgentPlatform.Windows,
+            WorkingDirectory = Environment.CurrentDirectory,
+        });
+
+        SetReadOnlyToolProviders(agent, Array.Empty<IAIFunctionGroup>());
+
+        var result = new AgentTaskResult();
+        var stepCount = 0;
+        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        {
+            stepCount++;
+            await foreach (var _ in step)
+            {
+            }
+
+            result.Add(step.Result);
+        }
+
+        Assert.Equal(1, stepCount);
+        Assert.False(client.SawInspectorHandoff);
+        Assert.Contains("Legacy context only", client.FirstPlanningPrompt);
+        Assert.Contains("Phased plan for FooService.BarMethod", result.GetContentAsString());
+        Assert.Contains("PLANNING_COMPLETE", result.GetContentAsString());
+    }
+
     [Fact]
     public async Task SendRequest_AgentFlowException_IsTreatedAsControlledCompletion()
     {
@@ -753,6 +831,79 @@ public class MiniSweRegressionTests
         }
     }
 
+    private sealed class PlannerHistoryAwareChatClient : ILLMChatClient
+    {
+        public bool SawInspectorHandoff { get; private set; }
+
+        public string? FirstPlanningPrompt { get; private set; }
+
+        public string Name => "PlannerHistoryAwareChatClient";
+
+        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+
+        public IEndpointModel Model { get; } = new APIModelInfo
+        {
+            APIId = "fake-planner-history-model",
+            Name = "Fake Planner History Model",
+            Endpoint = EmptyLLMEndpoint.Instance,
+            SupportFunctionCall = true,
+            SupportStreaming = false,
+            SupportSystemPrompt = true,
+            FunctionCallOnStreaming = true,
+            SupportTextGeneration = true,
+            TopPEnable = true,
+            TopKEnable = true,
+            TemperatureEnable = true,
+            MaxTokensEnable = true,
+            FrequencyPenaltyEnable = true,
+            PresencePenaltyEnable = true,
+            SeedEnable = true,
+            PriceCalculator = new TokenBasedPriceCalculator()
+        };
+
+        public IModelParams Parameters { get; set; } = new DefaultModelParam { Streaming = false };
+
+        public bool IsResponding { get; set; }
+
+        public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var lastPrompt = context.ReadonlyHistory.LastOrDefault()?.Text ?? string.Empty;
+            if (lastPrompt.Contains("strict planning compactor", StringComparison.Ordinal))
+            {
+                var compactStep = new ReactStep();
+                var compactText = """{ "removeIndexes": [0], "summary": "Compacted phased plan\nPLANNING_COMPLETE" }""";
+                compactStep.EmitText(compactText);
+                compactStep.Complete(new StepResult
+                {
+                    FinishReason = ChatFinishReason.Stop,
+                    IsCompleted = true,
+                    Messages = [new ChatMessage(ChatRole.Assistant, compactText)],
+                });
+                yield return compactStep;
+                yield break;
+            }
+
+            FirstPlanningPrompt ??= string.Join("\n", context.ReadonlyHistory.Select(message => message.Text));
+            SawInspectorHandoff = context.ReadonlyHistory.Any(message =>
+                message.Role == ChatRole.Assistant
+                && (message.Text?.Contains("INSPECTION_COMPLETE", StringComparison.Ordinal) == true
+                    || message.Text?.Contains("[INSPECT_COMPACT_HANDOFF]", StringComparison.Ordinal) == true));
+
+            var firstStep = new ReactStep();
+            firstStep.EmitText("Phased plan for FooService.BarMethod\nPLANNING_COMPLETE");
+            firstStep.Complete(new StepResult
+            {
+                FinishReason = ChatFinishReason.Stop,
+                IsCompleted = true,
+                Messages = [new ChatMessage(ChatRole.Assistant, "Phased plan for FooService.BarMethod\nPLANNING_COMPLETE")],
+            });
+            yield return firstStep;
+
+            await Task.CompletedTask;
+        }
+    }
+
     private sealed class AgentFlowCompletionEngine : FunctionCallEngine
     {
         public AgentFlowCompletionEngine()
@@ -1037,9 +1188,10 @@ public class MiniSweRegressionTests
     {
         private readonly List<IChatHistoryItem> _history;
 
-        public TestTextDialogSession(IRequestItem request)
+        public TestTextDialogSession(IRequestItem request, IEnumerable<IChatHistoryItem>? history = null)
         {
-            _history = [request];
+            _history = history?.ToList() ?? [];
+            _history.Add(request);
             DialogItems = [];
         }
 
@@ -1056,6 +1208,16 @@ public class MiniSweRegressionTests
         }
 
         public string? SystemPrompt => null;
+    }
+
+    private sealed class TestChatHistoryItem : IChatHistoryItem
+    {
+        public TestChatHistoryItem(params ChatMessage[] messages)
+        {
+            Messages = messages;
+        }
+
+        public IEnumerable<ChatMessage> Messages { get; }
     }
 
     private sealed class PassiveTextDialogSession : ITextDialogSession
