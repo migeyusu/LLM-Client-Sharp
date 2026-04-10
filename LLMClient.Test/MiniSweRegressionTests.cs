@@ -136,9 +136,7 @@ public class MiniSweRegressionTests
             WorkingDirectory = Environment.CurrentDirectory,
         });
 
-        typeof(InspectAgent)
-            .GetField("_toolProviders", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(agent, Array.Empty<IAIFunctionGroup>());
+        SetReadOnlyToolProviders(agent, Array.Empty<IAIFunctionGroup>());
 
         var result = new AgentTaskResult();
         var stepCount = 0;
@@ -174,9 +172,7 @@ public class MiniSweRegressionTests
             WorkingDirectory = Environment.CurrentDirectory,
         });
 
-        typeof(InspectAgent)
-            .GetField("_toolProviders", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(agent, Array.Empty<IAIFunctionGroup>());
+        SetReadOnlyToolProviders(agent, Array.Empty<IAIFunctionGroup>());
 
         var result = new AgentTaskResult();
         var stepCount = 0;
@@ -207,9 +203,7 @@ public class MiniSweRegressionTests
             WorkingDirectory = Environment.CurrentDirectory,
         });
 
-        typeof(PlannerAgent)
-            .GetField("_toolProviders", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(agent, Array.Empty<IAIFunctionGroup>());
+        SetReadOnlyToolProviders(agent, Array.Empty<IAIFunctionGroup>());
 
         var result = new AgentTaskResult();
         var stepCount = 0;
@@ -231,6 +225,37 @@ public class MiniSweRegressionTests
         Assert.Contains("Actionable plan draft\nPLANNING_COMPLETE", content);
         Assert.Contains("[PLANNER_COMPACT_HANDOFF]", content);
         Assert.Contains("Compacted execution plan\nPLANNING_COMPLETE", content);
+    }
+
+    [Fact]
+    public async Task PlannerAgent_CompactFailure_FallsBackToRawMessages()
+    {
+        var client = new CompactingPlannerChatClient(returnInvalidCompactJson: true);
+        var request = new RequestViewItem("plan the implementation");
+        var session = new TestTextDialogSession(request);
+        var agent = new PlannerAgent(client, new AgentOption
+        {
+            Platform = AgentPlatform.Windows,
+            WorkingDirectory = Environment.CurrentDirectory,
+        });
+
+        SetReadOnlyToolProviders(agent, Array.Empty<IAIFunctionGroup>());
+
+        var result = new AgentTaskResult();
+        var stepCount = 0;
+        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        {
+            stepCount++;
+            await foreach (var _ in step)
+            {
+            }
+
+            result.Add(step.Result);
+        }
+
+        Assert.Equal(1, stepCount);
+        Assert.Equal("irrelevant planner chatter\nActionable plan draft\nPLANNING_COMPLETE",
+            result.GetContentAsString());
     }
 
     [Fact]
@@ -920,6 +945,14 @@ public class MiniSweRegressionTests
             }
         });
         return AsyncContextStore<ChatContext>.CreateInstance(chatContext);
+    }
+
+    private static void SetReadOnlyToolProviders(ReadOnlyCompactAgentBase agent,
+        IReadOnlyList<IAIFunctionGroup> providers)
+    {
+        var field = typeof(ReadOnlyCompactAgentBase)
+            .GetField("_toolProviders", BindingFlags.Instance | BindingFlags.NonPublic);
+        field?.SetValue(agent, providers);
     }
 
     private sealed class CancelAwareAgent : IAgent
