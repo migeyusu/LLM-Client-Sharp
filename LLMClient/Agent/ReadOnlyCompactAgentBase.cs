@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Channels;
 using LLMClient.Abstraction;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.ContextEngineering.PromptGeneration;
@@ -54,44 +53,26 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         Config = config;
         _toolProviders = CreateToolProviders(config);
     }
-
+/*  要求实现的功能：
+ *  1. ChatClient.SendRequestAsync返回的step可以被外界实时观察到
+ *  2. 拦截step.result里的Messages，使之为空，并缓存原始数据
+ *  3. 最终compact原始历史记录，将历史记录进行有效剔除
+ *  4. 生成一个新的StepResult，包含compact后的历史记录和最终的summary，供外界观察到
+ */
     public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        var channel = Channel.CreateUnbounded<ReactStep>(new UnboundedChannelOptions
-        {
-            SingleReader = true,
-            SingleWriter = true,
-        });
-
-        var producerTask = ProduceAsync(channel.Writer, dialogSession, cancellationToken);
-
-        await foreach (var step in channel.Reader.ReadAllAsync(cancellationToken))
-        {
-            yield return step;
-        }
-
-        await producerTask;
-    }
-
-    /// <summary>
-    /// Runs the main agent loop, emitting events to <paramref name="publicStep"/>
-    /// and completing it when finished (normal / cancel / error).
-    /// This runs as a concurrent <see cref="Task"/> so the consumer can read events in parallel.
-    /// </summary>
-    private async Task ProduceAsync(ChannelWriter<ReactStep> writer,
-        ITextDialogSession dialogSession,
-        CancellationToken cancellationToken)
     {
         var chatHistory = dialogSession.GetHistory();
         if (chatHistory.Count == 0 || chatHistory[^1] is not IRequestItem request)
         {
-            await WriteCompletedStepAsync(writer, new StepResult { IsCompleted = true }, cancellationToken);
-            writer.TryComplete();
-            return;
+            var emptyStep = new ReactStep();
+            emptyStep.Complete(new StepResult { IsCompleted = true });
+            yield return emptyStep;
+            yield break;
         }
 
-        RequestContext requestContext;
+        RequestContext? requestContext = null;
+        Exception? setupError = null;
         try
         {
             var contextBuilder = new AgentDialogContextBuilder(chatHistory)
@@ -129,100 +110,100 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         }
         catch (Exception ex)
         {
-            await WriteFaultedStepAsync(writer, ex, cancellationToken);
-            writer.TryComplete();
-            return;
+            setupError = ex;
+        }
+
+        if (setupError != null || requestContext == null)
+        {
+            var faultedStep = new ReactStep();
+            faultedStep.CompleteWithError(setupError ?? new InvalidOperationException("Failed to build request context"));
+            yield return faultedStep;
+            yield break;
         }
 
         var compactCandidates = new List<CompactCandidate>();
         var bufferedSteps = new List<BufferedStep>();
         StepResult? lastStepResult = null;
 
-        try
+        while (!cancellationToken.IsCancellationRequested)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            if (Config.StepLimit > 0 && CallCount >= Config.StepLimit)
             {
-                if (Config.StepLimit > 0 && CallCount >= Config.StepLimit)
+                throw new Exception("Step limit exceeded");
+            }
+
+            lastStepResult = null;
+            var retryCount = 0;
+            while (retryCount < StepRetryCount)
+            {
+                await foreach (var internalStep in ChatClient.SendRequestAsync(requestContext, cancellationToken))
                 {
-                    throw new Exception("Step limit exceeded");
+                    var publicStep = new ReactStep();
+                    // Start processing immediately so loop events are forwarded in real time.
+                    var processingTask = ProcessPublicStepAsync(internalStep,
+                        publicStep,
+                        request,
+                        dialogSession.SystemPrompt,
+                        requestContext,
+                        compactCandidates,
+                        bufferedSteps,
+                        cancellationToken);
+
+                    yield return publicStep;
+
+                    var stepOutcome = await processingTask;
+                    lastStepResult = stepOutcome.Result;
+                    if (stepOutcome.IsTerminal)
+                    {
+                        yield break;
+                    }
                 }
 
-                lastStepResult = null;
-                var retryCount = 0;
-                while (retryCount < StepRetryCount)
+                if (lastStepResult?.Exception is AgentFlowException)
                 {
-                    await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))
-                    {
-                        var publicStep = new ReactStep();
-                        await writer.WriteAsync(publicStep, cancellationToken);
-                        var outcome = await ProcessLoopStepAsync(publicStep,
-                            step,
-                            request,
-                            dialogSession.SystemPrompt,
-                            requestContext,
-                            compactCandidates,
-                            bufferedSteps,
-                            cancellationToken);
-                        lastStepResult = outcome.Result;
-                        if (outcome.IsTerminal)
-                        {
-                            writer.TryComplete();
-                            return;
-                        }
-                    }
-
-                    if (lastStepResult?.Exception is AgentFlowException)
-                    {
-                        break;
-                    }
-
-                    if (lastStepResult?.Exception == null)
-                    {
-                        break;
-                    }
-
-                    retryCount++;
+                    break;
                 }
 
-                CallCount++;
-
-                if (IsExitMessage(requestContext.ReadonlyHistory.LastOrDefault()))
+                if (lastStepResult?.Exception == null)
                 {
-                    writer.TryComplete();
-                    return;
+                    break;
                 }
+
+                retryCount++;
+            }
+
+            CallCount++;
+
+            if (IsExitMessage(requestContext.ReadonlyHistory.LastOrDefault()))
+            {
+                yield break;
             }
         }
-        catch (OperationCanceledException)
-        {
-            var cancelResult = CreateFinalStepResult(bufferedSteps, BuildFallbackMessages(bufferedSteps))
-                               ?? new StepResult();
-            cancelResult.Exception = new OperationCanceledException();
-            cancelResult.IsCompleted = true;
-            await WriteCompletedStepAsync(writer, cancelResult, cancellationToken);
-            writer.TryComplete();
-            return;
-        }
-        catch (Exception ex)
-        {
-            var fallback = CreateFinalStepResult(bufferedSteps, BuildFallbackMessages(bufferedSteps))
-                ?? new StepResult();
-            fallback.Exception = ex;
-            fallback.IsCompleted = true;
-            await WriteCompletedStepAsync(writer, fallback, cancellationToken);
-            writer.TryComplete();
-            return;
-        }
-
-        await WriteCompletedStepAsync(writer,
-            CreateFinalStepResult(bufferedSteps, BuildFallbackMessages(bufferedSteps))
-            ?? new StepResult { IsCompleted = true },
-            cancellationToken);
-        writer.TryComplete();
     }
 
-    private async Task<LoopProcessOutcome> ProcessLoopStepAsync(ReactStep publicStep,
-        ReactStep internalStep,
+    private static CompactCandidate CreateCompactCandidateFromResult(StepResult result, int compactIndex)
+    {
+        var content = result.Messages
+            .Select(message => message.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .Aggregate(new StringBuilder(), (builder, text) => builder.AppendLine(text), builder =>
+            {
+                var output = builder.ToString().Trim();
+                return string.IsNullOrWhiteSpace(output)
+                    ? "[NoMessageContent]"
+                    : output;
+            });
+
+        return new CompactCandidate
+        {
+            Index = compactIndex,
+            LoopNumber = compactIndex + 1,
+            Content = content,
+        };
+    }
+
+    private async Task<StepOutcome> ProcessPublicStepAsync(ReactStep internalStep,
+        ReactStep publicStep,
         IRequestItem request,
         string? systemPrompt,
         RequestContext requestContext,
@@ -232,40 +213,43 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
     {
         try
         {
-            var processedStep = await CaptureStepAsync(internalStep,
-                compactCandidates.Count,
-                cancellationToken,
-                loopEvent =>
-                {
-                    if (loopEvent is PermissionRequest)
-                    {
-                        return;
-                    }
-
-                    publicStep.Emit(loopEvent);
-                });
-            compactCandidates.Add(processedStep.Candidate);
-
-            if (processedStep.Result == null)
+            await foreach (var loopEvent in internalStep.WithCancellation(cancellationToken))
             {
-                var emptyResult = new StepResult { IsCompleted = true };
-                publicStep.Complete(emptyResult);
-                return new LoopProcessOutcome(emptyResult, false);
+                if (loopEvent is PermissionRequest permissionRequest)
+                {
+                    var allowed = await InvokePermissionDialog.RequestAsync(permissionRequest.Content);
+                    permissionRequest.Response.SetResult(allowed);
+                    continue;
+                }
+
+                publicStep.Emit(loopEvent);
             }
 
-            var sanitizedResult = SanitizeStepResult(processedStep.Result);
+            if (internalStep.Result == null)
+            {
+                publicStep.Complete(new StepResult { IsCompleted = true });
+                return new StepOutcome(null, false);
+            }
+
+            var rawResult = internalStep.Result;
+            var sanitizedResult = SanitizeStepResult(rawResult);
+            var candidate = CreateCompactCandidateFromResult(rawResult, compactCandidates.Count);
+            compactCandidates.Add(candidate);
             bufferedSteps.Add(new BufferedStep
             {
-                Candidate = processedStep.Candidate,
-                Result = sanitizedResult,
+                Candidate = candidate,
+                Result = rawResult,
             });
+
+            // Internal history uses sanitized messages to avoid failed tool-call pollution.
             requestContext.ChatMessages.AddRange(sanitizedResult.Messages);
 
             if (sanitizedResult.IsCanceled || sanitizedResult.IsInvalidRequest)
             {
-                var terminalResult = CloneStepResult(sanitizedResult, BuildFallbackMessages(bufferedSteps));
-                publicStep.Complete(terminalResult);
-                return new LoopProcessOutcome(sanitizedResult, true);
+                var fallback = CreateFinalStepResult(bufferedSteps, BuildFallbackMessages(bufferedSteps))
+                               ?? rawResult;
+                publicStep.Complete(fallback);
+                return new StepOutcome(sanitizedResult, true);
             }
 
             if (IsExitMessage(requestContext.ReadonlyHistory.LastOrDefault()))
@@ -275,73 +259,52 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
                     compactCandidates,
                     cancellationToken);
                 var visibleMessages = BuildVisibleMessages(bufferedSteps, compactDecision);
-                var terminalResult = CloneStepResult(sanitizedResult, visibleMessages);
-                publicStep.Complete(terminalResult);
-                return new LoopProcessOutcome(sanitizedResult, true);
+                var finalResult = CreateFinalStepResult(bufferedSteps, visibleMessages)
+                                  ?? rawResult;
+                publicStep.Complete(finalResult);
+                return new StepOutcome(sanitizedResult, true);
             }
 
-            var hiddenResult = CloneStepResult(sanitizedResult, [], clearException: true);
-            publicStep.Complete(hiddenResult);
-            return new LoopProcessOutcome(sanitizedResult, false);
+            // Intercept visible messages for non-terminal loops, while preserving loop metadata.
+            publicStep.Complete(new StepResult
+            {
+                Usage = rawResult.Usage,
+                LastSuccessfulUsage = rawResult.LastSuccessfulUsage,
+                FinishReason = rawResult.FinishReason,
+                Duration = rawResult.Duration,
+                Messages = [],
+                ProtocolLog = rawResult.ProtocolLog,
+                Latency = rawResult.Latency,
+                Price = rawResult.Price,
+                Exception = rawResult.Exception,
+                Annotations = rawResult.Annotations,
+                AdditionalProperties = rawResult.AdditionalProperties,
+                IsCompleted = rawResult.IsCompleted,
+                MaxContextTokens = rawResult.MaxContextTokens,
+            });
+
+            return new StepOutcome(sanitizedResult, false);
         }
         catch (OperationCanceledException)
         {
-            var cancelResult = CloneStepResult(internalStep.Result ?? new StepResult(),
-                BuildFallbackMessages(bufferedSteps));
-            cancelResult.Exception = new OperationCanceledException();
-            cancelResult.IsCompleted = true;
-            publicStep.Complete(cancelResult);
-            return new LoopProcessOutcome(cancelResult, true);
+            var cancel = new StepResult
+            {
+                Exception = new OperationCanceledException(),
+                IsCompleted = true,
+            };
+            publicStep.Complete(cancel);
+            return new StepOutcome(cancel, true);
         }
         catch (Exception ex)
         {
-            var errorResult = CloneStepResult(internalStep.Result ?? new StepResult(),
-                BuildFallbackMessages(bufferedSteps));
-            errorResult.Exception = ex;
-            errorResult.IsCompleted = true;
-            publicStep.Complete(errorResult);
-            return new LoopProcessOutcome(errorResult, true);
+            var error = new StepResult
+            {
+                Exception = ex,
+                IsCompleted = true,
+            };
+            publicStep.Complete(error);
+            return new StepOutcome(error, true);
         }
-    }
-
-    private static StepResult CloneStepResult(StepResult source,
-        IReadOnlyList<ChatMessage> messages,
-        bool clearException = false)
-    {
-        return new StepResult
-        {
-            Usage = source.Usage,
-            LastSuccessfulUsage = source.LastSuccessfulUsage,
-            FinishReason = source.FinishReason,
-            Duration = source.Duration,
-            Messages = messages.ToList(),
-            ProtocolLog = source.ProtocolLog,
-            Latency = source.Latency,
-            Price = source.Price,
-            Exception = clearException ? null : source.Exception,
-            Annotations = source.Annotations,
-            AdditionalProperties = source.AdditionalProperties,
-            IsCompleted = source.IsCompleted,
-            MaxContextTokens = source.MaxContextTokens,
-        };
-    }
-
-    private static async Task WriteCompletedStepAsync(ChannelWriter<ReactStep> writer,
-        StepResult result,
-        CancellationToken cancellationToken)
-    {
-        var step = new ReactStep();
-        step.Complete(result);
-        await writer.WriteAsync(step, cancellationToken);
-    }
-
-    private static async Task WriteFaultedStepAsync(ChannelWriter<ReactStep> writer,
-        Exception exception,
-        CancellationToken cancellationToken)
-    {
-        var step = new ReactStep();
-        step.CompleteWithError(exception);
-        await writer.WriteAsync(step, cancellationToken);
     }
 
     private async Task<CompactDecision?> CompactAsync(string? task,
@@ -536,47 +499,6 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         };
     }
 
-    private async Task<BufferedStep> CaptureStepAsync(ReactStep step,
-        int compactIndex,
-        CancellationToken cancellationToken,
-        Action<LoopEvent>? onLoopEvent = null)
-    {
-        var transcript = new StringBuilder();
-        await foreach (var loopEvent in step.WithCancellation(cancellationToken))
-        {
-            onLoopEvent?.Invoke(loopEvent);
-            transcript.AppendLine(FormatLoopEvent(loopEvent));
-            if (loopEvent is PermissionRequest permissionRequest)
-            {
-                var allowed = await InvokePermissionDialog.RequestAsync(permissionRequest.Content);
-                permissionRequest.Response.SetResult(allowed);
-            }
-        }
-
-        var result = step.Result;
-        if (result?.Messages != null)
-        {
-            foreach (var message in result.Messages)
-            {
-                if (!string.IsNullOrWhiteSpace(message.Text))
-                {
-                    transcript.AppendLine(message.Text);
-                }
-            }
-        }
-
-        return new BufferedStep
-        {
-            Result = result,
-            Candidate = new CompactCandidate
-            {
-                Index = compactIndex,
-                LoopNumber = compactIndex + 1,
-                Content = transcript.ToString().Trim(),
-            }
-        };
-    }
-
     private static StepResult SanitizeStepResult(StepResult result)
     {
         var failedCallIds = result.Messages
@@ -632,26 +554,6 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         }
 
         return false;
-    }
-
-    private static string FormatLoopEvent(LoopEvent loopEvent)
-    {
-        return loopEvent switch
-        {
-            TextDelta textDelta => textDelta.Text,
-            ReasoningDelta reasoningDelta => $"[Reasoning] {reasoningDelta.Text}",
-            FunctionCallStarted functionCallStarted => $"[ToolCall] {functionCallStarted.Call.Name}",
-            FunctionCallCompleted functionCallCompleted => functionCallCompleted.Error == null
-                ? $"[ToolResult] {functionCallCompleted.FunctionName}: {functionCallCompleted.CallId}"
-                : $"[ToolError] {functionCallCompleted.FunctionName}: {functionCallCompleted.Error.Message}",
-            DiagnosticMessage diagnosticMessage => $"[Diagnostic:{diagnosticMessage.Level}] {diagnosticMessage.Message}",
-            HistoryCompressionStarted historyCompressionStarted =>
-                $"[CompressionStarted] {historyCompressionStarted.Kind}",
-            HistoryCompressionCompleted historyCompressionCompleted =>
-                $"[CompressionCompleted] {historyCompressionCompleted.Kind}: applied={historyCompressionCompleted.Applied}",
-            PermissionRequest => "[PermissionRequest]",
-            _ => loopEvent.ToString() ?? string.Empty,
-        };
     }
 
     private string EnsureCompletionFlag(string summary)
@@ -815,9 +717,9 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         public string? Summary { get; set; }
     }
 
-    private sealed class LoopProcessOutcome
+    private sealed class StepOutcome
     {
-        public LoopProcessOutcome(StepResult? result, bool isTerminal)
+        public StepOutcome(StepResult? result, bool isTerminal)
         {
             Result = result;
             IsTerminal = isTerminal;
@@ -827,5 +729,6 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
 
         public bool IsTerminal { get; }
     }
+
 }
 
