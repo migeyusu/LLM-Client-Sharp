@@ -5,6 +5,7 @@ using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.Agent.Inspector;
+using LLMClient.Agent.Planner;
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.ContextEngineering.Tools;
@@ -96,7 +97,9 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
             }) == true;
         var usesInspectAgent = Requester.IsAgentMode
             && Requester.SelectedAgent?.Type == typeof(InspectAgent);
-        if (usesProjectFunctions || usesInspectAgent)
+        var usesPlannerAgent = Requester.IsAgentMode
+            && Requester.SelectedAgent?.Type == typeof(PlannerAgent);
+        if (usesProjectFunctions || usesInspectAgent || usesPlannerAgent)
         {
             if (_solutionContext.IsLoaded)
             {

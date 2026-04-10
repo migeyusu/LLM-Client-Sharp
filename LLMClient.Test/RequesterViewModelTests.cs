@@ -3,6 +3,7 @@ using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
+using LLMClient.Agent.Planner;
 using LLMClient.Configuration;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
@@ -20,6 +21,17 @@ public class RequesterViewModelTests
             var requester = CreateRequester((_, _, _) => Task.FromResult<IResponse>(AgentTaskResult.Empty), string.Empty);
 
             Assert.Contains(requester.AvailableAgents, agent => agent.Type == typeof(InspectAgent));
+        });
+    }
+
+    [Fact]
+    public void AvailableAgents_ContainsPlannerAgent()
+    {
+        RunInSta(() =>
+        {
+            var requester = CreateRequester((_, _, _) => Task.FromResult<IResponse>(AgentTaskResult.Empty), string.Empty);
+
+            Assert.Contains(requester.AvailableAgents, agent => agent.Type == typeof(PlannerAgent));
         });
     }
 

@@ -2,6 +2,7 @@ using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
+using LLMClient.Agent.Planner;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
@@ -23,6 +24,7 @@ using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Test;
 
+[Collection("UI thread tests")]
 public class MiniSweRegressionTests
 {
     public MiniSweRegressionTests()
@@ -120,6 +122,115 @@ public class MiniSweRegressionTests
                 }
             }
         });
+    }
+
+    [Fact]
+    public async Task InspectAgent_CompactsFinalSummary_AtCompletion()
+    {
+        var client = new CompactingInspectChatClient(returnInvalidCompactJson: false);
+        var request = new RequestViewItem("inspect the agent flow");
+        var session = new TestTextDialogSession(request);
+        var agent = new InspectAgent(client, new AgentOption
+        {
+            Platform = AgentPlatform.Windows,
+            WorkingDirectory = Environment.CurrentDirectory,
+        });
+
+        typeof(InspectAgent)
+            .GetField("_toolProviders", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(agent, Array.Empty<IAIFunctionGroup>());
+
+        var result = new AgentTaskResult();
+        var stepCount = 0;
+        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        {
+            stepCount++;
+            await foreach (var _ in step)
+            {
+            }
+
+            result.Add(step.Result);
+        }
+
+        Assert.Equal(1, stepCount);
+        Assert.Contains("[0]|loop=1", client.LastCompactPrompt);
+        Assert.Contains("[1]|loop=2", client.LastCompactPrompt);
+        var content = result.GetContentAsString();
+        Assert.DoesNotContain("Irrelevant tool chatter", content);
+        Assert.Contains("Relevant inspection summary\nINSPECTION_COMPLETE", content);
+        Assert.Contains("[INSPECT_COMPACT_HANDOFF]", content);
+        Assert.Contains("Compacted inspection handoff\nINSPECTION_COMPLETE", content);
+    }
+
+    [Fact]
+    public async Task InspectAgent_CompactFailure_FallsBackToRawMessages()
+    {
+        var client = new CompactingInspectChatClient(returnInvalidCompactJson: true);
+        var request = new RequestViewItem("inspect the agent flow");
+        var session = new TestTextDialogSession(request);
+        var agent = new InspectAgent(client, new AgentOption
+        {
+            Platform = AgentPlatform.Windows,
+            WorkingDirectory = Environment.CurrentDirectory,
+        });
+
+        typeof(InspectAgent)
+            .GetField("_toolProviders", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(agent, Array.Empty<IAIFunctionGroup>());
+
+        var result = new AgentTaskResult();
+        var stepCount = 0;
+        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        {
+            stepCount++;
+            await foreach (var _ in step)
+            {
+            }
+
+            result.Add(step.Result);
+        }
+
+        Assert.Equal(1, stepCount);
+        Assert.Equal("Irrelevant tool chatter\nRelevant inspection summary\nINSPECTION_COMPLETE",
+            result.GetContentAsString());
+    }
+
+    [Fact]
+    public async Task PlannerAgent_CompactsFinalPlan_AtCompletion()
+    {
+        var client = new CompactingPlannerChatClient(returnInvalidCompactJson: false);
+        var request = new RequestViewItem("plan the implementation");
+        var session = new TestTextDialogSession(request);
+        var agent = new PlannerAgent(client, new AgentOption
+        {
+            Platform = AgentPlatform.Windows,
+            WorkingDirectory = Environment.CurrentDirectory,
+        });
+
+        typeof(PlannerAgent)
+            .GetField("_toolProviders", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(agent, Array.Empty<IAIFunctionGroup>());
+
+        var result = new AgentTaskResult();
+        var stepCount = 0;
+        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        {
+            stepCount++;
+            await foreach (var _ in step)
+            {
+            }
+
+            result.Add(step.Result);
+        }
+
+        Assert.Equal(1, stepCount);
+        Assert.Contains("[0]|loop=1", client.LastCompactPrompt);
+        Assert.Contains("[1]|loop=2", client.LastCompactPrompt);
+        var content = result.GetContentAsString();
+        Assert.DoesNotContain("irrelevant planner chatter", content);
+        Assert.Contains("Actionable plan draft\nPLANNING_COMPLETE", content);
+        Assert.Contains("[PLANNER_COMPACT_HANDOFF]", content);
+        Assert.Contains("Compacted execution plan\nPLANNING_COMPLETE", content);
     }
 
     [Fact]
@@ -377,6 +488,8 @@ public class MiniSweRegressionTests
     {
         public List<string> PluginNames { get; } = [];
 
+        public string? LastCompactPrompt { get; private set; }
+
         public string Name => "InspectRecordingChatClient";
 
         public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
@@ -408,6 +521,23 @@ public class MiniSweRegressionTests
         public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
+            var lastPrompt = context.ReadonlyHistory.LastOrDefault()?.Text ?? string.Empty;
+            if (lastPrompt.Contains("strict inspection compactor", StringComparison.Ordinal))
+            {
+                LastCompactPrompt = lastPrompt;
+                var compactStep = new ReactStep();
+                var compactJson = """{ "removeIndexes": [0], "summary": "Compact inspection summary\nINSPECTION_COMPLETE" }""";
+                compactStep.EmitText(compactJson);
+                compactStep.Complete(new StepResult
+                {
+                    FinishReason = ChatFinishReason.Stop,
+                    IsCompleted = true,
+                    Messages = [new ChatMessage(ChatRole.Assistant, compactJson)],
+                });
+                yield return compactStep;
+                yield break;
+            }
+
             PluginNames.Clear();
             PluginNames.AddRange(context.FunctionCallEngine.KernelPluginCollection.Select(plugin => plugin.Name));
 
@@ -422,6 +552,178 @@ public class MiniSweRegressionTests
                 Messages = [message],
             });
             yield return step;
+            await Task.CompletedTask;
+        }
+    }
+
+    private sealed class CompactingInspectChatClient : ILLMChatClient
+    {
+        private readonly bool _returnInvalidCompactJson;
+
+        public CompactingInspectChatClient(bool returnInvalidCompactJson)
+        {
+            _returnInvalidCompactJson = returnInvalidCompactJson;
+        }
+
+        public string? LastCompactPrompt { get; private set; }
+
+        public string Name => "CompactingInspectChatClient";
+
+        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+
+        public IEndpointModel Model { get; } = new APIModelInfo
+        {
+            APIId = "fake-compact-inspect-model",
+            Name = "Fake Compact Inspect Model",
+            Endpoint = EmptyLLMEndpoint.Instance,
+            SupportFunctionCall = true,
+            SupportStreaming = false,
+            SupportSystemPrompt = true,
+            FunctionCallOnStreaming = true,
+            SupportTextGeneration = true,
+            TopPEnable = true,
+            TopKEnable = true,
+            TemperatureEnable = true,
+            MaxTokensEnable = true,
+            FrequencyPenaltyEnable = true,
+            PresencePenaltyEnable = true,
+            SeedEnable = true,
+            PriceCalculator = new TokenBasedPriceCalculator()
+        };
+
+        public IModelParams Parameters { get; set; } = new DefaultModelParam { Streaming = false };
+
+        public bool IsResponding { get; set; }
+
+        public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var lastPrompt = context.ReadonlyHistory.LastOrDefault()?.Text ?? string.Empty;
+            if (lastPrompt.Contains("strict inspection compactor", StringComparison.Ordinal))
+            {
+                LastCompactPrompt = lastPrompt;
+                var compactStep = new ReactStep();
+                var compactText = _returnInvalidCompactJson
+                    ? "not-json"
+                    : """{ "removeIndexes": [0], "summary": "Compacted inspection handoff\nINSPECTION_COMPLETE" }""";
+                compactStep.EmitText(compactText);
+                compactStep.Complete(new StepResult
+                {
+                    FinishReason = ChatFinishReason.Stop,
+                    IsCompleted = true,
+                    Messages = [new ChatMessage(ChatRole.Assistant, compactText)],
+                });
+                yield return compactStep;
+                yield break;
+            }
+
+            var firstStep = new ReactStep();
+            firstStep.EmitDiagnostic(DiagLevel.Info, "searching workspace");
+            firstStep.Complete(new StepResult
+            {
+                FinishReason = ChatFinishReason.Stop,
+                IsCompleted = true,
+                Messages = [new ChatMessage(ChatRole.Assistant, "Irrelevant tool chatter\n")],
+            });
+            yield return firstStep;
+
+            var secondStep = new ReactStep();
+            var finalText = "Relevant inspection summary\nINSPECTION_COMPLETE";
+            secondStep.EmitText(finalText);
+            secondStep.Complete(new StepResult
+            {
+                FinishReason = ChatFinishReason.Stop,
+                IsCompleted = true,
+                Messages = [new ChatMessage(ChatRole.Assistant, finalText)],
+            });
+            yield return secondStep;
+
+            await Task.CompletedTask;
+        }
+    }
+
+    private sealed class CompactingPlannerChatClient : ILLMChatClient
+    {
+        private readonly bool _returnInvalidCompactJson;
+
+        public CompactingPlannerChatClient(bool returnInvalidCompactJson)
+        {
+            _returnInvalidCompactJson = returnInvalidCompactJson;
+        }
+
+        public string? LastCompactPrompt { get; private set; }
+
+        public string Name => "CompactingPlannerChatClient";
+
+        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+
+        public IEndpointModel Model { get; } = new APIModelInfo
+        {
+            APIId = "fake-compact-planner-model",
+            Name = "Fake Compact Planner Model",
+            Endpoint = EmptyLLMEndpoint.Instance,
+            SupportFunctionCall = true,
+            SupportStreaming = false,
+            SupportSystemPrompt = true,
+            FunctionCallOnStreaming = true,
+            SupportTextGeneration = true,
+            TopPEnable = true,
+            TopKEnable = true,
+            TemperatureEnable = true,
+            MaxTokensEnable = true,
+            FrequencyPenaltyEnable = true,
+            PresencePenaltyEnable = true,
+            SeedEnable = true,
+            PriceCalculator = new TokenBasedPriceCalculator()
+        };
+
+        public IModelParams Parameters { get; set; } = new DefaultModelParam { Streaming = false };
+
+        public bool IsResponding { get; set; }
+
+        public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var lastPrompt = context.ReadonlyHistory.LastOrDefault()?.Text ?? string.Empty;
+            if (lastPrompt.Contains("strict planning compactor", StringComparison.Ordinal))
+            {
+                LastCompactPrompt = lastPrompt;
+                var compactStep = new ReactStep();
+                var compactText = _returnInvalidCompactJson
+                    ? "not-json"
+                    : """{ "removeIndexes": [0], "summary": "Compacted execution plan\nPLANNING_COMPLETE" }""";
+                compactStep.EmitText(compactText);
+                compactStep.Complete(new StepResult
+                {
+                    FinishReason = ChatFinishReason.Stop,
+                    IsCompleted = true,
+                    Messages = [new ChatMessage(ChatRole.Assistant, compactText)],
+                });
+                yield return compactStep;
+                yield break;
+            }
+
+            var firstStep = new ReactStep();
+            firstStep.EmitDiagnostic(DiagLevel.Info, "collecting project context");
+            firstStep.Complete(new StepResult
+            {
+                FinishReason = ChatFinishReason.Stop,
+                IsCompleted = true,
+                Messages = [new ChatMessage(ChatRole.Assistant, "irrelevant planner chatter\n")],
+            });
+            yield return firstStep;
+
+            var secondStep = new ReactStep();
+            var finalText = "Actionable plan draft\nPLANNING_COMPLETE";
+            secondStep.EmitText(finalText);
+            secondStep.Complete(new StepResult
+            {
+                FinishReason = ChatFinishReason.Stop,
+                IsCompleted = true,
+                Messages = [new ChatMessage(ChatRole.Assistant, finalText)],
+            });
+            yield return secondStep;
+
             await Task.CompletedTask;
         }
     }

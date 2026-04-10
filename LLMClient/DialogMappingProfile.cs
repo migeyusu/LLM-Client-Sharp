@@ -3,6 +3,7 @@ using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
+using LLMClient.Agent.Planner;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 
@@ -44,6 +45,16 @@ public class DialogMappingProfile : Profile
                     ? ctx.Mapper.Map<ILLMChatClient>(src.ChatClient)
                     : EmptyLlmModelClient.Instance;
                 return new InspectAgent(client, src.AgentOption ?? new AgentOption());
+            });
+
+        CreateMap<PlannerAgent, PlannerAgentPersistModel>();
+        CreateMap<PlannerAgentPersistModel, PlannerAgent>()
+            .ConstructUsing((src, ctx) =>
+            {
+                var client = src.ChatClient != null
+                    ? ctx.Mapper.Map<ILLMChatClient>(src.ChatClient)
+                    : EmptyLlmModelClient.Instance;
+                return new PlannerAgent(client, src.AgentOption ?? new AgentOption());
             });
 
         CreateMap<SummaryAgent, SummaryAgentPersistModel>();

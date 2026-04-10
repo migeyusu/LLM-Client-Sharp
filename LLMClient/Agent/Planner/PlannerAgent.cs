@@ -6,8 +6,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Agent.MiniSWE;
-using LLMClient.ContextEngineering.Tools;
 using LLMClient.ContextEngineering.PromptGeneration;
+using LLMClient.ContextEngineering.Tools;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
@@ -16,17 +16,17 @@ using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.Agent.Inspector;
+namespace LLMClient.Agent.Planner;
 
 /// <summary>
-/// Inspector agent that gathers structured project and code context for downstream agents.
-/// It is intentionally read-only and only exposes inspection-safe tool groups.
+/// Planner agent that iterates between context inspection and plan synthesis for downstream coding execution.
+/// It is read-only and only exposes inspection-safe tool groups.
 /// </summary>
-[Description("Inspect Agent")]
-public class InspectAgent : ISingleClientAgent
+[Description("Planner Agent")]
+public class PlannerAgent : ISingleClientAgent
 {
-    private const string InspectionCompleteFlag = "INSPECTION_COMPLETE";
-    private const string CompactHandoffSeparator = "[INSPECT_COMPACT_HANDOFF]";
+    private const string PlanningCompleteFlag = "PLANNING_COMPLETE";
+    private const string CompactHandoffSeparator = "[PLANNER_COMPACT_HANDOFF]";
     private const int CompactTimeoutSeconds = 30;
 
     public int CallCount { get; set; }
@@ -41,7 +41,7 @@ public class InspectAgent : ISingleClientAgent
 
     public AgentOption AgentOption { get; }
 
-    public InspectAgent(ILLMChatClient agent, AgentOption agentOption)
+    public PlannerAgent(ILLMChatClient agent, AgentOption agentOption)
     {
         ChatClient = agent;
         AgentOption = agentOption;
@@ -49,7 +49,7 @@ public class InspectAgent : ISingleClientAgent
         _toolProviders = CreateToolProviders(Config);
     }
 
-    public string Name { get; } = "Inspect Agent";
+    public string Name { get; } = "Planner Agent";
 
     public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -71,7 +71,7 @@ public class InspectAgent : ISingleClientAgent
             InstanceTemplate = Config.InstanceTemplate,
         };
         contextBuilder.MapFromRequest(request);
-        contextBuilder.FunctionGroups = FilterInspectFunctionGroups(contextBuilder.FunctionGroups);
+        contextBuilder.FunctionGroups = FilterReadOnlyFunctionGroups(contextBuilder.FunctionGroups);
 
         string? workingDirectory;
         if (dialogSession is ProjectSessionViewModel projectSession)
@@ -92,8 +92,8 @@ public class InspectAgent : ISingleClientAgent
 
         contextBuilder.CallEngine = new MiniSWEFunctionCallEngine(Config);
         var requestContext = await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
-        var compactCandidates = new List<InspectCompactCandidate>();
-        var bufferedSteps = new List<BufferedInspectStep>();
+        var compactCandidates = new List<PlannerCompactCandidate>();
+        var bufferedSteps = new List<BufferedPlannerStep>();
         while (!cancellationToken.IsCancellationRequested)
         {
             if (Config.StepLimit > 0 && CallCount >= Config.StepLimit)
@@ -150,7 +150,7 @@ public class InspectAgent : ISingleClientAgent
             var lastMessage = requestContext.ReadonlyHistory.LastOrDefault();
             if (IsExitMessage(lastMessage))
             {
-                var compactDecision = await CompactInspectionAsync(request.UserPrompt,
+                var compactDecision = await CompactPlanningAsync(request.UserPrompt,
                     dialogSession.SystemPrompt,
                     compactCandidates,
                     cancellationToken);
@@ -166,9 +166,9 @@ public class InspectAgent : ISingleClientAgent
         }
     }
 
-    private async Task<InspectCompactDecision?> CompactInspectionAsync(string? task,
+    private async Task<PlannerCompactDecision?> CompactPlanningAsync(string? task,
         string? systemPrompt,
-        IReadOnlyList<InspectCompactCandidate> compactCandidates,
+        IReadOnlyList<PlannerCompactCandidate> compactCandidates,
         CancellationToken cancellationToken)
     {
         if (compactCandidates.Count == 0)
@@ -183,12 +183,12 @@ public class InspectAgent : ISingleClientAgent
         }
 
         var prompt = """
-                     You are a strict inspection compactor. Output JSON only.
+                     You are a strict planning compactor. Output JSON only.
 
                      # Goal
-                     You will receive indexed loop outputs produced by an inspector agent.
+                     You will receive indexed loop outputs produced by a planner agent.
                      Remove loops that are irrelevant, repetitive, or mostly tool-call noise,
-                     then produce a compact inspection handoff for downstream coding agents.
+                     then produce a compact execution plan handoff for downstream coding agents.
 
                      # Task
                      {{$task}}
@@ -201,9 +201,9 @@ public class InspectAgent : ISingleClientAgent
                      2. JSON shape must be: { "removeIndexes": [int], "summary": "string" }.
                      3. `removeIndexes` should contain loop indexes that can be discarded from downstream context.
                      4. Prefer removing loops that are duplicate exploration, dead-end searches, or pure tool chatter.
-                     5. `summary` must keep only task-relevant findings: files, symbols, dependencies, call paths, risks, and uncertainties.
+                     5. `summary` must keep only task-relevant findings and an executable plan: goals, files/symbols, ordered steps, risks, dependencies, and uncertainties.
                      6. Do not invent facts. If something is uncertain, say so explicitly.
-                     7. The summary must end with INSPECTION_COMPLETE.
+                     7. The summary must end with PLANNING_COMPLETE.
 
                      # Indexed Loop Records
                      {{$input}}
@@ -242,7 +242,7 @@ public class InspectAgent : ISingleClientAgent
             {
                 decision.Summary = EnsureCompletionFlag(decision.Summary.Trim());
             }
-            
+
             if (decision.RemoveIndexes != null)
             {
                 decision.RemoveIndexes = decision.RemoveIndexes
@@ -256,12 +256,12 @@ public class InspectAgent : ISingleClientAgent
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"[InspectCompact Error]: {ex.Message}");
+            Trace.WriteLine($"[PlannerCompact Error]: {ex.Message}");
             return null;
         }
     }
 
-    private static InspectCompactDecision? DeserializeCompactDecision(string jsonResponse)
+    private static PlannerCompactDecision? DeserializeCompactDecision(string jsonResponse)
     {
         var json = ExtractJsonObject(jsonResponse);
         if (string.IsNullOrWhiteSpace(json))
@@ -269,7 +269,7 @@ public class InspectAgent : ISingleClientAgent
             return null;
         }
 
-        return JsonSerializer.Deserialize<InspectCompactDecision>(json);
+        return JsonSerializer.Deserialize<PlannerCompactDecision>(json);
     }
 
     private static string? ExtractJsonObject(string? response)
@@ -289,7 +289,7 @@ public class InspectAgent : ISingleClientAgent
         return response[start..(end + 1)];
     }
 
-    private static string BuildIndexedCompactInput(IReadOnlyList<InspectCompactCandidate> compactCandidates)
+    private static string BuildIndexedCompactInput(IReadOnlyList<PlannerCompactCandidate> compactCandidates)
     {
         var builder = new StringBuilder();
         foreach (var candidate in compactCandidates)
@@ -302,7 +302,7 @@ public class InspectAgent : ISingleClientAgent
         return builder.ToString().TrimEnd();
     }
 
-    private static IReadOnlyList<ChatMessage> BuildFallbackMessages(IReadOnlyList<BufferedInspectStep> bufferedSteps)
+    private static IReadOnlyList<ChatMessage> BuildFallbackMessages(IReadOnlyList<BufferedPlannerStep> bufferedSteps)
     {
         return bufferedSteps
             .Where(step => step.Result != null)
@@ -310,8 +310,8 @@ public class InspectAgent : ISingleClientAgent
             .ToList();
     }
 
-    private static IReadOnlyList<ChatMessage> BuildVisibleMessages(IReadOnlyList<BufferedInspectStep> bufferedSteps,
-        InspectCompactDecision? compactDecision)
+    private static IReadOnlyList<ChatMessage> BuildVisibleMessages(IReadOnlyList<BufferedPlannerStep> bufferedSteps,
+        PlannerCompactDecision? compactDecision)
     {
         var historyMessages = BuildHistoryMessages(bufferedSteps, compactDecision?.RemoveIndexes);
         if (string.IsNullOrWhiteSpace(compactDecision?.Summary))
@@ -327,7 +327,7 @@ public class InspectAgent : ISingleClientAgent
         return visibleMessages;
     }
 
-    private static IReadOnlyList<ChatMessage> BuildHistoryMessages(IReadOnlyList<BufferedInspectStep> bufferedSteps,
+    private static IReadOnlyList<ChatMessage> BuildHistoryMessages(IReadOnlyList<BufferedPlannerStep> bufferedSteps,
         IReadOnlyList<int>? removeIndexes)
     {
         if (removeIndexes == null || removeIndexes.Count == 0)
@@ -345,7 +345,7 @@ public class InspectAgent : ISingleClientAgent
             : BuildFallbackMessages(bufferedSteps);
     }
 
-    private static ReactStep? CreateFinalStep(IReadOnlyList<BufferedInspectStep> bufferedSteps,
+    private static ReactStep? CreateFinalStep(IReadOnlyList<BufferedPlannerStep> bufferedSteps,
         IReadOnlyList<ChatMessage> visibleMessages)
     {
         var result = CreateFinalStepResult(bufferedSteps, visibleMessages);
@@ -359,7 +359,7 @@ public class InspectAgent : ISingleClientAgent
         return replayStep;
     }
 
-    private static StepResult? CreateFinalStepResult(IReadOnlyList<BufferedInspectStep> bufferedSteps,
+    private static StepResult? CreateFinalStepResult(IReadOnlyList<BufferedPlannerStep> bufferedSteps,
         IReadOnlyList<ChatMessage> visibleMessages)
     {
         var completedResults = bufferedSteps
@@ -395,7 +395,7 @@ public class InspectAgent : ISingleClientAgent
         };
     }
 
-    private async Task<BufferedInspectStep> CaptureStepAsync(ReactStep step,
+    private async Task<BufferedPlannerStep> CaptureStepAsync(ReactStep step,
         int compactIndex,
         CancellationToken cancellationToken)
     {
@@ -422,10 +422,10 @@ public class InspectAgent : ISingleClientAgent
             }
         }
 
-        return new BufferedInspectStep
+        return new BufferedPlannerStep
         {
             Result = result,
-            Candidate = new InspectCompactCandidate
+            Candidate = new PlannerCompactCandidate
             {
                 Index = compactIndex,
                 LoopNumber = compactIndex + 1,
@@ -456,12 +456,12 @@ public class InspectAgent : ISingleClientAgent
 
     private static string EnsureCompletionFlag(string summary)
     {
-        if (summary.Contains(InspectionCompleteFlag, StringComparison.Ordinal))
+        if (summary.Contains(PlanningCompleteFlag, StringComparison.Ordinal))
         {
             return summary;
         }
 
-        return $"{summary.TrimEnd()}\n\n{InspectionCompleteFlag}";
+        return $"{summary.TrimEnd()}\n\n{PlanningCompleteFlag}";
     }
 
     private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentOption agentOption)
@@ -476,30 +476,30 @@ public class InspectAgent : ISingleClientAgent
             _ => throw new ArgumentOutOfRangeException(nameof(agentOption.Platform)),
         };
 
-        config.TaskCompleteFlag = InspectionCompleteFlag;
+        config.TaskCompleteFlag = PlanningCompleteFlag;
         config.IncludeToolInstructions = true;
         config.IncludeRagInstructions = true;
-        config.StepLimit = 8;
+        config.StepLimit = 10;
         config.SystemTemplate = """
-            You are an Inspector agent in a multi-agent software workflow.
+            You are a Planner agent in a multi-agent software workflow.
 
-            Your responsibility is to understand the task, collect the minimum necessary context,
-            and hand off a reliable investigation summary for downstream agents.
+            Your responsibility is to inspect the codebase, build an executable plan,
+            and hand off a reliable implementation roadmap for downstream coding agents.
 
             Core rules:
             - You are read-only. Do not modify files, create files, or apply patches.
+            - Integrate context inspection and planning in one iterative loop.
             - Prefer structured code intelligence tools over ad-hoc shell inspection.
-            - Start broad, then narrow down based on evidence.
-            - Use project-awareness, code-reading, symbol-analysis, and code-search tools to understand the workspace.
+            - Use project-awareness, code-reading, symbol-analysis, and code-search tools to gather evidence.
             - Use CLI only for safe inspection tasks such as git status, directory inspection, or non-destructive project metadata commands.
-            - Do not guess. Trace symbols and files before concluding.
-            - When enough context has been gathered, produce a concise final inspection report and include the flag INSPECTION_COMPLETE.
+            - Do not guess. Trace symbols and files before proposing actions.
+            - When enough context has been gathered, provide an actionable phased plan and include PLANNING_COMPLETE.
 
             Expected output focus:
             - relevant projects / modules
-            - likely files and symbols
-            - important dependencies and call paths
-            - uncertainties or missing context
+            - key files and symbols to touch
+            - implementation sequence and dependencies
+            - risks, assumptions, and validation strategy
 
             {{{project_information}}}
 
@@ -510,18 +510,18 @@ public class InspectAgent : ISingleClientAgent
             {{{rag_instructions}}}
             """;
         config.InstanceTemplate = """
-            Please inspect the following task and gather the context needed by later agents.
+            Please plan the following task by combining context inspection and planning.
 
             <task>
             {{task}}
             </task>
 
-            Inspection workflow:
-            1. Identify the relevant project or subsystem.
-            2. Explore structure and conventions.
-            3. Search for candidate files, types, and symbols.
-            4. Read only the most relevant code or symbol bodies.
-            5. Summarize findings, risks, and next implementation targets.
+            Planning workflow:
+            1. Identify relevant project scope and constraints.
+            2. Inspect structure, conventions, and existing implementations.
+            3. Locate candidate files, types, and symbols.
+            4. Analyze dependencies and likely impact surface.
+            5. Produce a phased implementation plan with risks and verification steps.
 
             Tool priorities:
             - Prefer ProjectAwareness for solution/project/file overview.
@@ -530,8 +530,8 @@ public class InspectAgent : ISingleClientAgent
             - Prefer CodeSearch when symbol names are unknown.
             - Prefer CLI only for VCS or environment inspection.
 
-            Finish once you can provide an actionable inspection summary for another agent.
-            Your final response must include INSPECTION_COMPLETE.
+            Finish once you can provide an actionable plan for another coding agent.
+            Your final response must include PLANNING_COMPLETE.
             """;
         return config;
     }
@@ -584,7 +584,7 @@ public class InspectAgent : ISingleClientAgent
         }
     }
 
-    private static List<CheckableFunctionGroupTree>? FilterInspectFunctionGroups(
+    private static List<CheckableFunctionGroupTree>? FilterReadOnlyFunctionGroups(
         List<CheckableFunctionGroupTree>? functionGroups)
     {
         if (functionGroups == null || functionGroups.Count == 0)
@@ -624,15 +624,14 @@ public class InspectAgent : ISingleClientAgent
         return message.Text.Contains(Config.TaskCompleteFlag, StringComparison.Ordinal);
     }
 
-    private sealed class BufferedInspectStep
+    private sealed class BufferedPlannerStep
     {
-
-        public required InspectCompactCandidate Candidate { get; init; }
+        public required PlannerCompactCandidate Candidate { get; init; }
 
         public StepResult? Result { get; init; }
     }
 
-    private sealed class InspectCompactCandidate
+    private sealed class PlannerCompactCandidate
     {
         public required int Index { get; init; }
 
@@ -641,7 +640,7 @@ public class InspectAgent : ISingleClientAgent
         public required string Content { get; init; }
     }
 
-    private sealed class InspectCompactDecision
+    private sealed class PlannerCompactDecision
     {
         [JsonPropertyName("removeIndexes")]
         public List<int>? RemoveIndexes { get; set; }
@@ -650,3 +649,4 @@ public class InspectAgent : ISingleClientAgent
         public string? Summary { get; set; }
     }
 }
+

@@ -14,6 +14,7 @@ using LLMClient.Dialog.Models;
 using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
+using LLMClient.Agent.Planner;
 using LLMClient.Workflow.Research;
 using LLMClient.Configuration;
 using LLMClient.ToolCall;
@@ -609,6 +610,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         else if (agentType == typeof(InspectAgent))
         {
             agent = new InspectAgent(client, agentOption);
+        }
+        else if (agentType == typeof(PlannerAgent))
+        {
+            agent = new PlannerAgent(client, agentOption);
         }
         else if (agentType == typeof(SummaryAgent))
         {

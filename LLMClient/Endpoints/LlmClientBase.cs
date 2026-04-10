@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.Render;
@@ -56,6 +57,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     protected virtual void ApplyChatOptions(ChatOptions chatOptions)
     {
+        /*MapperConfiguration mapperConfiguration = new MapperConfiguration((expression =>
+        {
+            expression.CreateMap<IEndpointModel,ChatOptions>()
+                .ForMember((options => options.TopP),(configurationExpression => configurationExpression.Condition((model => model.TopPEnable)),));
+        }));*/
         var modelInfo = this.Model;
         var modelParams = this.Parameters;
         chatOptions.ModelId = modelInfo.APIId;

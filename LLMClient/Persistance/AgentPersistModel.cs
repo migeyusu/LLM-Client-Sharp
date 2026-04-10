@@ -5,6 +5,7 @@ namespace LLMClient.Persistance;
 
 [JsonDerivedType(typeof(MiniSweAgentPersistModel), "miniSweAgent")]
 [JsonDerivedType(typeof(InspectAgentPersistModel), "inspectAgent")]
+[JsonDerivedType(typeof(PlannerAgentPersistModel), "plannerAgent")]
 [JsonDerivedType(typeof(SummaryAgentPersistModel), "summaryAgent")]
 [JsonDerivedType(typeof(NvidiaResearchClientPersistModel), "nvidiaResearchClient")]
 public abstract class AgentPersistModel
@@ -21,6 +22,15 @@ public class MiniSweAgentPersistModel : AgentPersistModel
 }
 
 public class InspectAgentPersistModel : AgentPersistModel
+{
+    public int CallCount { get; set; }
+
+    public AgentOption? AgentOption { get; set; }
+
+    public ParameterizedLLMModelPO? ChatClient { get; set; }
+}
+
+public class PlannerAgentPersistModel : AgentPersistModel
 {
     public int CallCount { get; set; }
 
