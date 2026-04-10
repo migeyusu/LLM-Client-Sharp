@@ -1,3 +1,4 @@
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
@@ -13,6 +14,8 @@ using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using System.Runtime.CompilerServices;
@@ -32,6 +35,9 @@ public class MiniSweRegressionTests
         var services = new ServiceCollection()
             .AddTransient<AutoMapModelTypeConverter>()
             .AddSingleton<ITokensCounter, DefaultTokensCounter>()
+            .AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance)
+            .AddSingleton(typeof(ILogger<>), typeof(NullLogger<>))
+            .AddSingleton<Profile, DialogItemPersistenceProfile>()
             .AddMap()
             .BuildServiceProvider();
         BaseViewModel.ServiceLocator = services;
@@ -150,7 +156,7 @@ public class MiniSweRegressionTests
             result.Add(step.Result);
         }
 
-        Assert.Equal(1, stepCount);
+        Assert.Equal(2, stepCount);
         Assert.Contains("[0]|loop=1", client.LastCompactPrompt);
         Assert.Contains("[1]|loop=2", client.LastCompactPrompt);
         var content = result.GetContentAsString();
@@ -186,7 +192,7 @@ public class MiniSweRegressionTests
             result.Add(step.Result);
         }
 
-        Assert.Equal(1, stepCount);
+        Assert.Equal(2, stepCount);
         Assert.Equal("Irrelevant tool chatter\nRelevant inspection summary\nINSPECTION_COMPLETE",
             result.GetContentAsString());
     }
@@ -217,7 +223,7 @@ public class MiniSweRegressionTests
             result.Add(step.Result);
         }
 
-        Assert.Equal(1, stepCount);
+        Assert.Equal(2, stepCount);
         Assert.Contains("[0]|loop=1", client.LastCompactPrompt);
         Assert.Contains("[1]|loop=2", client.LastCompactPrompt);
         var content = result.GetContentAsString();
@@ -253,7 +259,7 @@ public class MiniSweRegressionTests
             result.Add(step.Result);
         }
 
-        Assert.Equal(1, stepCount);
+        Assert.Equal(2, stepCount);
         Assert.Equal("irrelevant planner chatter\nActionable plan draft\nPLANNING_COMPLETE",
             result.GetContentAsString());
     }
