@@ -36,6 +36,53 @@ public class RequesterViewModelTests
     }
 
     [Fact]
+    public void RequestMode_DefaultsToDialog()
+    {
+        RunInSta(() =>
+        {
+            var requester = CreateRequester((_, _, _) => Task.FromResult<IResponse>(AgentTaskResult.Empty), string.Empty);
+
+            Assert.False(requester.IsAgentMode);
+            Assert.Equal("Dialog", requester.RequestModeDisplayName);
+        });
+    }
+
+    [Fact]
+    public void EnablingAgentMode_UpdatesDisplayNameWithSelectedAgent()
+    {
+        RunInSta(() =>
+        {
+            var requester = CreateRequester((_, _, _) => Task.FromResult<IResponse>(AgentTaskResult.Empty), string.Empty);
+            var plannerAgent = requester.AvailableAgents.First(agent => agent.Type == typeof(PlannerAgent));
+
+            requester.SelectedAgent = plannerAgent;
+            requester.IsAgentMode = true;
+
+            Assert.True(requester.IsAgentMode);
+            Assert.Equal(typeof(PlannerAgent), requester.SelectedAgent?.Type);
+            Assert.Equal(plannerAgent.Name, requester.RequestModeDisplayName);
+        });
+    }
+
+    [Fact]
+    public void DisablingAgentMode_KeepsLastAgent_AndRestoresDialogDisplayName()
+    {
+        RunInSta(() =>
+        {
+            var requester = CreateRequester((_, _, _) => Task.FromResult<IResponse>(AgentTaskResult.Empty), string.Empty);
+            var inspectAgent = requester.AvailableAgents.First(agent => agent.Type == typeof(InspectAgent));
+
+            requester.SelectedAgent = inspectAgent;
+            requester.IsAgentMode = true;
+            requester.IsAgentMode = false;
+
+            Assert.False(requester.IsAgentMode);
+            Assert.Equal(typeof(InspectAgent), requester.SelectedAgent?.Type);
+            Assert.Equal("Dialog", requester.RequestModeDisplayName);
+        });
+    }
+
+    [Fact]
     public void Summarize_UsesSharedRequestPipeline_AndKeepsPromptText()
     {
         RunInSta(() =>

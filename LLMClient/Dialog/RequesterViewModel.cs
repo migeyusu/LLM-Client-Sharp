@@ -1,10 +1,8 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
-using System.Text;
 using System.Windows.Input;
 using LLMClient.Abstraction;
-using LLMClient.Component.CustomControl;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
@@ -342,8 +340,15 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         set
         {
             if (value == _isAgentMode) return;
+
+            if (value && SelectedAgent == null)
+            {
+                SelectedAgent = AvailableAgents.FirstOrDefault();
+            }
+
             _isAgentMode = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(RequestModeDisplayName));
         }
     }
 
@@ -359,8 +364,13 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
             if (Equals(value, _selectedAgent)) return;
             _selectedAgent = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(RequestModeDisplayName));
         }
     }
+
+    public string RequestModeDisplayName => IsAgentMode
+        ? SelectedAgent?.Name ?? "Agent"
+        : "Dialog";
 
     #endregion
 
@@ -587,6 +597,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
     {
         IsDataChanged = true;
     }
+
 
     private RequestOption CreateRequestOption(IRequestItem requestItem, ILLMChatClient? client = null)
     {

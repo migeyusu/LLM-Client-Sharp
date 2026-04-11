@@ -312,34 +312,195 @@
                                     Height="30"
                                     Content="安全黏贴"
                                     Click="TestPaste_OnClick"/>-->
-                            <!--agent selection-->
-                            <materialDesign:Card Padding="4,0"
-                                                 Margin="6,0,0,0"
-                                                 UniformCornerRadius="12"
-                                                 Height="32"
-                                                 Visibility="{Binding IsAgentMode, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                 materialDesign:ElevationAssist.Elevation="Dp3">
-                                <StackPanel Orientation="Horizontal"
-                                            Margin="0,0,0,0">
-                                    <ComboBox ItemsSource="{Binding AvailableAgents}"
-                                              DisplayMemberPath="Name"
-                                              SelectedItem="{Binding SelectedAgent}"
-                                              ToolTip="Select Agent"
-                                              materialDesign:HintAssist.Hint="Select Agent"
-                                              Width="120"
-                                              VerticalAlignment="Center"
-                                              Padding="16,8"
-                                              Style="{StaticResource  MaterialDesignComboBox}" />
-                                    <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
-                                            ToolTip="Config Agent"
-                                            Margin="6,0,0,0"
-                                            Width="30"
-                                            Height="30"
-                                            Style="{StaticResource MaterialDesignIconButton}"
-                                            Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                            CommandParameter="{Binding AgentOption,Mode=OneWay}" />
-                                </StackPanel>
-                            </materialDesign:Card>
+                            <!--request mode selection-->
+                            <ToggleButton
+                                x:Name="RequestModeToggleButton"
+                                Margin="6,0,0,0"
+                                Cursor="Hand"
+                                Focusable="False"
+                                Style="{x:Null}"
+                                ToolTip="Select request mode">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                        <Border
+                                            x:Name="ToggleBorder"
+                                            Height="32"
+                                            Padding="10,0"
+                                            CornerRadius="12"
+                                            Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
+                                            SnapsToDevicePixels="True">
+                                            <Border.Effect>
+                                                <DropShadowEffect
+                                                    BlurRadius="8"
+                                                    ShadowDepth="2"
+                                                    Direction="270"
+                                                    Opacity="0.28"
+                                                    Color="Black" />
+                                            </Border.Effect>
+                                            <StackPanel
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center"
+                                                TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
+                                                <materialDesign:PackIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Margin="0,0,6,0"
+                                                    VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon.Style>
+                                                        <Style TargetType="{x:Type materialDesign:PackIcon}">
+                                                            <Setter Property="Kind" Value="MessageTextOutline" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsAgentMode, Mode=OneWay}" Value="True">
+                                                                    <Setter Property="Kind" Value="RobotOutline" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </materialDesign:PackIcon.Style>
+                                                </materialDesign:PackIcon>
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    Text="{Binding RequestModeDisplayName, Mode=OneWay}" />
+                                                <materialDesign:PackIcon
+                                                    Kind="MenuDown"
+                                                    Width="18"
+                                                    Height="18"
+                                                    Margin="6,0,0,0"
+                                                    VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon.RenderTransform>
+                                                        <RotateTransform Angle="0" CenterX="9" CenterY="9" />
+                                                    </materialDesign:PackIcon.RenderTransform>
+                                                    <materialDesign:PackIcon.Style>
+                                                        <Style TargetType="{x:Type materialDesign:PackIcon}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                                                                    <DataTrigger.EnterActions>
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard>
+                                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="180" Duration="0:0:0.2" />
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </DataTrigger.EnterActions>
+                                                                    <DataTrigger.ExitActions>
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard>
+                                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="0" Duration="0:0:0.2" />
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </DataTrigger.ExitActions>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </materialDesign:PackIcon.Style>
+                                                </materialDesign:PackIcon>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="ToggleBorder" Property="Background" Value="{DynamicResource MaterialDesign.Brush.Primary.Light}" />
+                                            </Trigger>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="ToggleBorder" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="3" ShadowDepth="1" Direction="270" Opacity="0.15" Color="Black" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <Popup x:Name="RequestModePopup"
+                                   PlacementTarget="{Binding ElementName=RequestModeToggleButton}"
+                                   Placement="Top"
+                                   StaysOpen="False"
+                                   AllowsTransparency="True"
+                                   DataContext="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource Self}}"
+                                   IsOpen="{Binding IsChecked,ElementName=RequestModeToggleButton,Mode=TwoWay}"
+                                   Opened="RequestModePopup_OnOpened">
+                                <Border MinWidth="220"
+                                        Padding="4"
+                                        Background="{DynamicResource MaterialDesign.Brush.Card.Background}">
+                                    <StackPanel>
+                                        <Button Click="DialogModeButton_OnClick"
+                                                Padding="12,8"
+                                                HorizontalContentAlignment="Stretch"
+                                                Style="{StaticResource MaterialDesignFlatButton}">
+                                            <DockPanel>
+                                                <materialDesign:PackIcon
+                                                    DockPanel.Dock="Right"
+                                                    Kind="Check"
+                                                    Width="18"
+                                                    Height="18"
+                                                    VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon.Style>
+                                                        <Style TargetType="{x:Type materialDesign:PackIcon}">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger
+                                                                    Binding="{Binding IsAgentMode,Mode=OneWay}"
+                                                                    Value="False">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </materialDesign:PackIcon.Style>
+                                                </materialDesign:PackIcon>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon
+                                                        Kind="MessageTextOutline"
+                                                        Width="18"
+                                                        Height="18"
+                                                        VerticalAlignment="Center" />
+                                                    <TextBlock
+                                                        Text="Dialog"
+                                                        Margin="8,0,0,0"
+                                                        VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Button>
+                                        <Separator Margin="0,4" />
+                                        <ListBox x:Name="AgentModeListBox"
+                                                 ItemsSource="{Binding AvailableAgents,Mode=OneWay}"
+                                                 BorderThickness="0"
+                                                 SelectionChanged="AgentModeListBox_OnSelectionChanged"
+                                                 Background="Transparent"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type local:AgentDescriptor}">
+                                                    <DockPanel>
+                                                        <materialDesign:PackIcon
+                                                            DockPanel.Dock="Right"
+                                                            Kind="ChevronRight"
+                                                            Width="18"
+                                                            Height="18"
+                                                            VerticalAlignment="Center" />
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <materialDesign:PackIcon
+                                                                Kind="RobotOutline"
+                                                                Width="18"
+                                                                Height="18"
+                                                                VerticalAlignment="Center" />
+                                                            <TextBlock
+                                                                Text="{Binding Name,Mode=OneWay}"
+                                                                Margin="8,0,0,0"
+                                                                VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </StackPanel>
+                                </Border>
+                            </Popup>
+                            <Button Content="{materialDesign:PackIcon Kind=CogOutline,Size=20}"
+                                    ToolTip="Config Agent"
+                                    Margin="6,0,0,0"
+                                    Width="30"
+                                    Height="30"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    Visibility="{Binding IsAgentMode,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                                    CommandParameter="{Binding AgentOption,Mode=OneWay}" />
 
                             <Menu VerticalAlignment="Center"
                                   Margin="6,0,0,0">
@@ -362,10 +523,6 @@
                                               IsCheckable="True"
                                               materialDesign:CheckBoxAssist.CheckBoxSize="30"
                                               IsChecked="{Binding AutoApproveAllInvocations,Mode=TwoWay}" />
-                                    <MenuItem Header="Agent Mode"
-                                              IsCheckable="True"
-                                              materialDesign:CheckBoxAssist.CheckBoxSize="30"
-                                              IsChecked="{Binding IsAgentMode,Mode=TwoWay}" />
                                 </MenuItem>
                             </Menu>
                             <Button Command="{Binding CancelLastCommand}"
