@@ -18,7 +18,14 @@ using Microsoft.Extensions.AI;
 namespace LLMClient.Agent;
 
 /// <summary>
-/// Shared read-only agent pipeline that captures all internal loops, compacts history, and emits a single final step.
+/// Read-only agent base class that wraps each ReAct round's <see cref="ReactStep"/>,
+/// suppresses intermediate <see cref="CallResult.Messages"/> (chat history),
+/// caches them per round, and at task completion uses an LLM to compact
+/// (remove low-value rounds such as failed commands) before emitting the final result.
+/// <para>
+/// Loop events (text, reasoning, tool calls, permissions, etc.) are forwarded
+/// to the caller in real time without modification.
+/// </para>
 /// </summary>
 public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
 {
@@ -54,76 +61,96 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         _toolProviders = CreateToolProviders(config);
     }
 
-    /*  功能说明:
-     *  1. 每轮 step 的 loop 事件实时转发给 publicStep，供 UI 实时观察
-     *  2. 每轮结果的 Messages 缓存后清空再 Complete publicStep，不向 UI 暴露中间历史
-     *  3. 所有轮次的 ChatMessage 按轮缓存，任务结束时 compact 剔除冗余轮次
-     *  4. 最终生成包含 compact 后历史和摘要的 StepResult，通过最后一个 publicStep 输出
+    // ── Setup result passed from BuildRequestContextAsync to Execute ──
+
+    private readonly record struct SetupResult(
+        RequestContext RequestContext,
+        string? UserPrompt,
+        string? SystemPrompt);
+
+    /// <summary>
+    /// Builds the <see cref="RequestContext"/> from the dialog session, filtering to read-only tools only.
+    /// Returns <c>null</c> when the session has no actionable request.
+    /// </summary>
+    private async Task<SetupResult?> BuildRequestContextAsync(
+        ITextDialogSession dialogSession,
+        CancellationToken cancellationToken)
+    {
+        var chatHistory = dialogSession.GetHistory();
+        if (chatHistory.Count == 0 || chatHistory[^1] is not IRequestItem request)
+            return null;
+
+        var contextBuilder = new AgentDialogContextBuilder(chatHistory)
+        {
+            PlatformId = Config.PlatformId,
+            IncludeHistoryMessages = true,
+            IncludeToolInstructions = Config.IncludeToolInstructions,
+            IncludeRagInstructions = Config.IncludeRagInstructions,
+            SystemTemplate = Config.SystemTemplate,
+            SystemPrompt = dialogSession.SystemPrompt,
+            InstanceTemplate = Config.InstanceTemplate,
+        };
+        contextBuilder.MapFromRequest(request);
+        contextBuilder.FunctionGroups = FilterReadOnlyFunctionGroups(contextBuilder.FunctionGroups);
+
+        string? workingDirectory;
+        if (dialogSession is ProjectSessionViewModel projectSession)
+        {
+            workingDirectory = projectSession.WorkingDirectory;
+            contextBuilder.ProjectInformation = projectSession.ParentProject.ProjectInformationPrompt;
+            await AddToolProvidersAsync(contextBuilder,
+                projectSession.ParentProject.GetInspectorFunctionGroups(),
+                cancellationToken);
+        }
+        else
+        {
+            workingDirectory = AgentOption.WorkingDirectory;
+        }
+
+        contextBuilder.WorkingDirectory = workingDirectory;
+        await AddToolProvidersAsync(contextBuilder, _toolProviders, cancellationToken);
+        contextBuilder.CallEngine = new MiniSWEFunctionCallEngine(Config);
+
+        var requestContext = await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
+        return new SetupResult(requestContext, request.UserPrompt, dialogSession.SystemPrompt);
+    }
+
+    /*  Pipeline overview:
+     *  1. Each round's loop events are forwarded to a publicStep in real time for the UI.
+     *  2. Each round's Messages are cached then cleared — the UI never sees intermediate history.
+     *  3. On task completion the cached rounds are compacted via LLM to prune low-value rounds.
+     *  4. The final publicStep carries the compacted messages for downstream agent consumption.
      */
     public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var chatHistory = dialogSession.GetHistory();
-        if (chatHistory.Count == 0 || chatHistory[^1] is not IRequestItem request)
-        {
-            var emptyStep = new ReactStep();
-            emptyStep.Complete(new StepResult { IsCompleted = true });
-            yield return emptyStep;
-            yield break;
-        }
-
-        RequestContext? requestContext = null;
+        // ── Phase 1: Build request context ──
+        SetupResult? setup;
         Exception? setupError = null;
         try
         {
-            var contextBuilder = new AgentDialogContextBuilder(chatHistory)
-            {
-                PlatformId = Config.PlatformId,
-                IncludeHistoryMessages = true,
-                IncludeToolInstructions = Config.IncludeToolInstructions,
-                IncludeRagInstructions = Config.IncludeRagInstructions,
-                SystemTemplate = Config.SystemTemplate,
-                SystemPrompt = dialogSession.SystemPrompt,
-                InstanceTemplate = Config.InstanceTemplate,
-            };
-            contextBuilder.MapFromRequest(request);
-            contextBuilder.FunctionGroups = FilterReadOnlyFunctionGroups(contextBuilder.FunctionGroups);
-
-            string? workingDirectory;
-            if (dialogSession is ProjectSessionViewModel projectSession)
-            {
-                workingDirectory = projectSession.WorkingDirectory;
-                contextBuilder.ProjectInformation = projectSession.ParentProject.ProjectInformationPrompt;
-                await AddToolProvidersAsync(contextBuilder,
-                    projectSession.ParentProject.GetInspectorFunctionGroups(),
-                    cancellationToken);
-            }
-            else
-            {
-                workingDirectory = AgentOption.WorkingDirectory;
-            }
-
-            contextBuilder.WorkingDirectory = workingDirectory;
-            await AddToolProvidersAsync(contextBuilder, _toolProviders, cancellationToken);
-
-            contextBuilder.CallEngine = new MiniSWEFunctionCallEngine(Config);
-            requestContext = await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
+            setup = await BuildRequestContextAsync(dialogSession, cancellationToken);
         }
         catch (Exception ex)
         {
+            setup = null;
             setupError = ex;
         }
 
-        if (setupError != null || requestContext == null)
+        if (setup == null)
         {
-            var faultedStep = new ReactStep();
-            faultedStep.CompleteWithError(setupError ?? new InvalidOperationException("Failed to build request context"));
-            yield return faultedStep;
+            var errorStep = new ReactStep();
+            if (setupError != null)
+                errorStep.CompleteWithError(setupError);
+            else
+                errorStep.Complete(new StepResult { IsCompleted = true });
+            yield return errorStep;
             yield break;
         }
 
-        // cachedRoundMessages[i] holds the ChatMessages from round i, used for compaction.
-        // aggregate accumulates metadata (usage, price, etc.) across all rounds.
+        var (requestContext, userPrompt, systemPrompt) = setup.Value;
+
+        // ── Phase 2: ReAct loop with message suppression ──
         var cachedRoundMessages = new List<IReadOnlyList<ChatMessage>>();
         var aggregate = new AgentTaskResult();
         var maxContextTokens = 0;
@@ -131,9 +158,7 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         while (!cancellationToken.IsCancellationRequested)
         {
             if (Config.StepLimit > 0 && CallCount >= Config.StepLimit)
-            {
                 throw new Exception("Step limit exceeded");
-            }
 
             StepResult? lastResult = null;
             var retryCount = 0;
@@ -142,9 +167,7 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
                 await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))
                 {
                     var publicStep = new ReactStep();
-                    // Start forwarding events immediately; yield publicStep so the UI observes in real time.
-                    // publicStep.Complete() is called below, after the forwarding task finishes.
-                    var forwardTask = ForwardLoopEventsAsync(step, publicStep);
+                    var forwardTask = ForwardEventsAsync(step, publicStep);
                     yield return publicStep;
                     var result = await forwardTask;
 
@@ -156,32 +179,32 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
 
                     lastResult = result;
 
-                    // Cache this round's messages before clearing them on the result object.
+                    // Cache this round's messages before suppressing them on the result.
                     var roundMessages = result.Messages.ToList();
                     cachedRoundMessages.Add(roundMessages);
-                    requestContext.ChatMessages.AddRange(roundMessages); // MiniSwe-style history accumulation
+                    requestContext.ChatMessages.AddRange(roundMessages);
                     aggregate.Add(result);
                     maxContextTokens = Math.Max(maxContextTokens, result.MaxContextTokens);
 
+                    // Fatal: emit all cached messages without compaction
                     if (result.IsCanceled || result.IsInvalidRequest)
                     {
-                        var allMessages = cachedRoundMessages.SelectMany(m => m).ToList();
-                        publicStep.Complete(CreateFinalStepResult(aggregate, maxContextTokens, allMessages));
+                        publicStep.Complete(CreateFinalStepResult(aggregate, maxContextTokens,
+                            cachedRoundMessages.SelectMany(m => m)));
                         yield break;
                     }
 
+                    // Task complete: compact then emit
                     if (IsExitMessage(requestContext.ReadonlyHistory.LastOrDefault()))
                     {
-                        var decision = await CompactAsync(request.UserPrompt,
-                            dialogSession.SystemPrompt,
-                            cachedRoundMessages,
-                            cancellationToken);
+                        var decision = await CompactAsync(userPrompt, systemPrompt,
+                            cachedRoundMessages, cancellationToken);
                         publicStep.Complete(CreateFinalStepResult(aggregate, maxContextTokens,
                             BuildCompactedMessages(cachedRoundMessages, decision)));
                         yield break;
                     }
 
-                    // Intermediate round: suppress messages so the UI only receives the final compacted history.
+                    // Intermediate round: suppress messages, pass through other metadata
                     result.Messages = [];
                     publicStep.Complete(result);
                 }
@@ -192,35 +215,18 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
             }
 
             CallCount++;
-
-            if (IsExitMessage(requestContext.ReadonlyHistory.LastOrDefault()))
-            {
-                yield break;
-            }
         }
     }
 
     /// <summary>
-    /// Forwards all loop events from <paramref name="step"/> to <paramref name="publicStep"/>.
-    /// Permission requests are handled inline and are not forwarded.
-    /// Returns when the internal step's channel closes; does NOT call Complete on publicStep.
+    /// Forwards all loop events from <paramref name="source"/> to <paramref name="target"/>.
+    /// Returns the source step's result after its channel closes; does NOT call Complete on target.
     /// </summary>
-    private static async Task<StepResult?> ForwardLoopEventsAsync(ReactStep step, ReactStep publicStep)
+    private static async Task<StepResult?> ForwardEventsAsync(ReactStep source, ReactStep target)
     {
-        await foreach (var loopEvent in step)
-        {
-            if (loopEvent is PermissionRequest permissionRequest)
-            {
-                var allowed = await InvokePermissionDialog.RequestAsync(permissionRequest.Content);
-                permissionRequest.Response.SetResult(allowed);
-            }
-            else
-            {
-                publicStep.Emit(loopEvent);
-            }
-        }
-
-        return step.Result;
+        await foreach (var evt in source)
+            target.Emit(evt);
+        return source.Result;
     }
 
     private async Task<CompactDecision?> CompactAsync(string? task,
