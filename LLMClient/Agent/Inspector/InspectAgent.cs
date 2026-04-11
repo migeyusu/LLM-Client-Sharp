@@ -13,7 +13,6 @@ namespace LLMClient.Agent.Inspector;
 public class InspectAgent : ReadOnlyCompactAgentBase
 {
     private const string InspectionCompleteFlag = "INSPECTION_COMPLETE";
-    private const string CompactSeparator = "[INSPECT_COMPACT_HANDOFF]";
 
     public InspectAgent(ILLMChatClient agent, AgentOption agentOption)
         : base(agent, agentOption, CreateConfig(agent, agentOption))
@@ -22,38 +21,6 @@ public class InspectAgent : ReadOnlyCompactAgentBase
 
     public override string Name { get; } = "Inspect Agent";
 
-    protected override string TaskCompleteFlag => InspectionCompleteFlag;
-
-    protected override string CompactHandoffSeparator => CompactSeparator;
-
-    protected override string CompactErrorTag => "InspectCompact";
-
-    protected override string CompactPromptTemplate => """
-                                                        You are a strict inspection compactor. Output JSON only.
-
-                                                        # Goal
-                                                        You will receive indexed loop outputs produced by an inspector agent.
-                                                        Remove loops that are irrelevant, repetitive, or mostly tool-call noise,
-                                                        then produce a compact inspection handoff for downstream coding agents.
-
-                                                        # Task
-                                                        {{$task}}
-
-                                                        # Context Hint
-                                                        {{$contextHint}}
-
-                                                        # Rules
-                                                        1. Return JSON only.
-                                                        2. JSON shape must be: { "removeIndexes": [int], "summary": "string" }.
-                                                        3. `removeIndexes` should contain loop indexes that can be discarded from downstream context.
-                                                        4. Prefer removing loops that are duplicate exploration, dead-end searches, or pure tool chatter.
-                                                        5. `summary` must keep only task-relevant findings: files, symbols, dependencies, call paths, risks, and uncertainties.
-                                                        6. Do not invent facts. If something is uncertain, say so explicitly.
-                                                        7. The summary must end with INSPECTION_COMPLETE.
-
-                                                        # Indexed Loop Records
-                                                        {{$input}}
-                                                        """;
 
     private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentOption agentOption)
     {
