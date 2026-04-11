@@ -77,6 +77,19 @@
                                 </StackPanel>
                             </StackPanel>
                         </GroupBox>
+                        <GroupBox Header="Task Summary (use same model as context summary)"
+                                  Margin="0,16,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Prompt：" />
+                                <TextBox Text="{Binding ConversationHistorySummaryPromptString}"
+                                         Margin="0,10,0,0"
+                                         MaxHeight="300"
+                                         AcceptsReturn="True"
+                                         AcceptsTab="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         Style="{StaticResource MaterialDesignFilledTextBox}" />
+                            </StackPanel>
+                        </GroupBox>
                         <GroupBox Margin="0,16,0,0"
                                   materialDesign:GroupBoxAssist.HeaderPadding="16,6">
                             <GroupBox.Header>
