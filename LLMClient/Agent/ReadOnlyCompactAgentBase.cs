@@ -53,12 +53,13 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         Config = config;
         _toolProviders = CreateToolProviders(config);
     }
-/*  要求实现的功能：
- *  1. ChatClient.SendRequestAsync返回的step可以被外界实时观察到
- *  2. 拦截step.result里的Messages，使之为空，并缓存原始数据
- *  3. 最终compact原始历史记录，将历史记录进行有效剔除
- *  4. 生成一个新的StepResult，包含compact后的历史记录和最终的summary，供外界观察到
- */
+
+    /*  功能说明:
+     *  1. 每轮 step 的 loop 事件实时转发给 publicStep，供 UI 实时观察
+     *  2. 每轮结果的 Messages 缓存后清空再 Complete publicStep，不向 UI 暴露中间历史
+     *  3. 所有轮次的 ChatMessage 按轮缓存，任务结束时 compact 剔除冗余轮次
+     *  4. 最终生成包含 compact 后历史和摘要的 StepResult，通过最后一个 publicStep 输出
+     */
     public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -121,9 +122,11 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
             yield break;
         }
 
-        var compactCandidates = new List<CompactCandidate>();
-        var bufferedSteps = new List<BufferedStep>();
-        StepResult? lastStepResult = null;
+        // cachedRoundMessages[i] holds the ChatMessages from round i, used for compaction.
+        // aggregate accumulates metadata (usage, price, etc.) across all rounds.
+        var cachedRoundMessages = new List<IReadOnlyList<ChatMessage>>();
+        var aggregate = new AgentTaskResult();
+        var maxContextTokens = 0;
 
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -132,43 +135,59 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
                 throw new Exception("Step limit exceeded");
             }
 
-            lastStepResult = null;
+            StepResult? lastResult = null;
             var retryCount = 0;
             while (retryCount < StepRetryCount)
             {
-                await foreach (var internalStep in ChatClient.SendRequestAsync(requestContext, cancellationToken))
+                await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))
                 {
                     var publicStep = new ReactStep();
-                    // Start processing immediately so loop events are forwarded in real time.
-                    var processingTask = ProcessPublicStepAsync(internalStep,
-                        publicStep,
-                        request,
-                        dialogSession.SystemPrompt,
-                        requestContext,
-                        compactCandidates,
-                        bufferedSteps,
-                        cancellationToken);
-
+                    // Start forwarding events immediately; yield publicStep so the UI observes in real time.
+                    // publicStep.Complete() is called below, after the forwarding task finishes.
+                    var forwardTask = ForwardLoopEventsAsync(step, publicStep);
                     yield return publicStep;
+                    var result = await forwardTask;
 
-                    var stepOutcome = await processingTask;
-                    lastStepResult = stepOutcome.Result;
-                    if (stepOutcome.IsTerminal)
+                    if (result == null)
                     {
+                        publicStep.Complete(new StepResult { IsCompleted = true });
+                        continue;
+                    }
+
+                    lastResult = result;
+
+                    // Cache this round's messages before clearing them on the result object.
+                    var roundMessages = result.Messages.ToList();
+                    cachedRoundMessages.Add(roundMessages);
+                    requestContext.ChatMessages.AddRange(roundMessages); // MiniSwe-style history accumulation
+                    aggregate.Add(result);
+                    maxContextTokens = Math.Max(maxContextTokens, result.MaxContextTokens);
+
+                    if (result.IsCanceled || result.IsInvalidRequest)
+                    {
+                        var allMessages = cachedRoundMessages.SelectMany(m => m).ToList();
+                        publicStep.Complete(CreateFinalStepResult(aggregate, maxContextTokens, allMessages));
                         yield break;
                     }
+
+                    if (IsExitMessage(requestContext.ReadonlyHistory.LastOrDefault()))
+                    {
+                        var decision = await CompactAsync(request.UserPrompt,
+                            dialogSession.SystemPrompt,
+                            cachedRoundMessages,
+                            cancellationToken);
+                        publicStep.Complete(CreateFinalStepResult(aggregate, maxContextTokens,
+                            BuildCompactedMessages(cachedRoundMessages, decision)));
+                        yield break;
+                    }
+
+                    // Intermediate round: suppress messages so the UI only receives the final compacted history.
+                    result.Messages = [];
+                    publicStep.Complete(result);
                 }
 
-                if (lastStepResult?.Exception is AgentFlowException)
-                {
-                    break;
-                }
-
-                if (lastStepResult?.Exception == null)
-                {
-                    break;
-                }
-
+                if (lastResult?.Exception is AgentFlowException) break;
+                if (lastResult?.Exception == null) break;
                 retryCount++;
             }
 
@@ -181,147 +200,38 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         }
     }
 
-    private static CompactCandidate CreateCompactCandidateFromResult(StepResult result, int compactIndex)
+    /// <summary>
+    /// Forwards all loop events from <paramref name="step"/> to <paramref name="publicStep"/>.
+    /// Permission requests are handled inline and are not forwarded.
+    /// Returns when the internal step's channel closes; does NOT call Complete on publicStep.
+    /// </summary>
+    private static async Task<StepResult?> ForwardLoopEventsAsync(ReactStep step, ReactStep publicStep)
     {
-        var content = result.Messages
-            .Select(message => message.Text)
-            .Where(text => !string.IsNullOrWhiteSpace(text))
-            .Aggregate(new StringBuilder(), (builder, text) => builder.AppendLine(text), builder =>
-            {
-                var output = builder.ToString().Trim();
-                return string.IsNullOrWhiteSpace(output)
-                    ? "[NoMessageContent]"
-                    : output;
-            });
-
-        return new CompactCandidate
+        await foreach (var loopEvent in step)
         {
-            Index = compactIndex,
-            LoopNumber = compactIndex + 1,
-            Content = content,
-        };
-    }
-
-    private async Task<StepOutcome> ProcessPublicStepAsync(ReactStep internalStep,
-        ReactStep publicStep,
-        IRequestItem request,
-        string? systemPrompt,
-        RequestContext requestContext,
-        List<CompactCandidate> compactCandidates,
-        List<BufferedStep> bufferedSteps,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await foreach (var loopEvent in internalStep.WithCancellation(cancellationToken))
+            if (loopEvent is PermissionRequest permissionRequest)
             {
-                if (loopEvent is PermissionRequest permissionRequest)
-                {
-                    var allowed = await InvokePermissionDialog.RequestAsync(permissionRequest.Content);
-                    permissionRequest.Response.SetResult(allowed);
-                    continue;
-                }
-
+                var allowed = await InvokePermissionDialog.RequestAsync(permissionRequest.Content);
+                permissionRequest.Response.SetResult(allowed);
+            }
+            else
+            {
                 publicStep.Emit(loopEvent);
             }
-
-            if (internalStep.Result == null)
-            {
-                publicStep.Complete(new StepResult { IsCompleted = true });
-                return new StepOutcome(null, false);
-            }
-
-            var rawResult = internalStep.Result;
-            var sanitizedResult = SanitizeStepResult(rawResult);
-            var candidate = CreateCompactCandidateFromResult(rawResult, compactCandidates.Count);
-            compactCandidates.Add(candidate);
-            bufferedSteps.Add(new BufferedStep
-            {
-                Candidate = candidate,
-                Result = rawResult,
-            });
-
-            // Internal history uses sanitized messages to avoid failed tool-call pollution.
-            requestContext.ChatMessages.AddRange(sanitizedResult.Messages);
-
-            if (sanitizedResult.IsCanceled || sanitizedResult.IsInvalidRequest)
-            {
-                var fallback = CreateFinalStepResult(bufferedSteps, BuildFallbackMessages(bufferedSteps))
-                               ?? rawResult;
-                publicStep.Complete(fallback);
-                return new StepOutcome(sanitizedResult, true);
-            }
-
-            if (IsExitMessage(requestContext.ReadonlyHistory.LastOrDefault()))
-            {
-                var compactDecision = await CompactAsync(request.UserPrompt,
-                    systemPrompt,
-                    compactCandidates,
-                    cancellationToken);
-                var visibleMessages = BuildVisibleMessages(bufferedSteps, compactDecision);
-                var finalResult = CreateFinalStepResult(bufferedSteps, visibleMessages)
-                                  ?? rawResult;
-                publicStep.Complete(finalResult);
-                return new StepOutcome(sanitizedResult, true);
-            }
-
-            // Intercept visible messages for non-terminal loops, while preserving loop metadata.
-            publicStep.Complete(new StepResult
-            {
-                Usage = rawResult.Usage,
-                LastSuccessfulUsage = rawResult.LastSuccessfulUsage,
-                FinishReason = rawResult.FinishReason,
-                Duration = rawResult.Duration,
-                Messages = [],
-                ProtocolLog = rawResult.ProtocolLog,
-                Latency = rawResult.Latency,
-                Price = rawResult.Price,
-                Exception = rawResult.Exception,
-                Annotations = rawResult.Annotations,
-                AdditionalProperties = rawResult.AdditionalProperties,
-                IsCompleted = rawResult.IsCompleted,
-                MaxContextTokens = rawResult.MaxContextTokens,
-            });
-
-            return new StepOutcome(sanitizedResult, false);
         }
-        catch (OperationCanceledException)
-        {
-            var cancel = new StepResult
-            {
-                Exception = new OperationCanceledException(),
-                IsCompleted = true,
-            };
-            publicStep.Complete(cancel);
-            return new StepOutcome(cancel, true);
-        }
-        catch (Exception ex)
-        {
-            var error = new StepResult
-            {
-                Exception = ex,
-                IsCompleted = true,
-            };
-            publicStep.Complete(error);
-            return new StepOutcome(error, true);
-        }
+
+        return step.Result;
     }
 
     private async Task<CompactDecision?> CompactAsync(string? task,
         string? systemPrompt,
-        IReadOnlyList<CompactCandidate> compactCandidates,
+        IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages,
         CancellationToken cancellationToken)
     {
-        if (compactCandidates.Count == 0)
-        {
-            return null;
-        }
+        if (roundMessages.Count == 0) return null;
 
-        var indexedInput = BuildIndexedCompactInput(compactCandidates);
-        if (string.IsNullOrWhiteSpace(indexedInput))
-        {
-            return null;
-        }
+        var indexedInput = BuildIndexedCompactInput(roundMessages);
+        if (string.IsNullOrWhiteSpace(indexedInput)) return null;
 
         try
         {
@@ -332,37 +242,26 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
                     { "contextHint", systemPrompt },
                     { "input", indexedInput }
                 });
-            var promptAgent = new PromptBasedAgent(ChatClient)
-            {
-                Timeout = TimeSpan.FromSeconds(CompactTimeoutSeconds),
-            };
-            var result = await promptAgent.SendRequestAsync(DefaultDialogContextBuilder.CreateFromHistory([
-                    new RequestViewItem(message)
-                ], systemPrompt),
+            var promptAgent = new PromptBasedAgent(ChatClient) { Timeout = TimeSpan.FromSeconds(CompactTimeoutSeconds) };
+            var result = await promptAgent.SendRequestAsync(
+                DefaultDialogContextBuilder.CreateFromHistory([new RequestViewItem(message)], systemPrompt),
                 cancellationToken);
+
             var jsonResponse = result.FirstTextResponse;
-            if (string.IsNullOrWhiteSpace(jsonResponse))
-            {
-                return null;
-            }
+            if (string.IsNullOrWhiteSpace(jsonResponse)) return null;
 
             var decision = DeserializeCompactDecision(jsonResponse);
-            if (decision == null)
-            {
-                return null;
-            }
+            if (decision == null) return null;
 
             if (!string.IsNullOrWhiteSpace(decision.Summary))
-            {
                 decision.Summary = EnsureCompletionFlag(decision.Summary.Trim());
-            }
 
             if (decision.RemoveIndexes != null)
             {
                 decision.RemoveIndexes = decision.RemoveIndexes
                     .Distinct()
-                    .Where(index => index >= 0 && index < compactCandidates.Count)
-                    .OrderBy(index => index)
+                    .Where(i => i >= 0 && i < roundMessages.Count)
+                    .OrderBy(i => i)
                     .ToList();
             }
 
@@ -370,7 +269,7 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         }
         catch (OperationCanceledException)
         {
-            throw; // Let cancellation propagate — do not swallow.
+            throw;
         }
         catch (Exception ex)
         {
@@ -379,191 +278,92 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         }
     }
 
-    private static CompactDecision? DeserializeCompactDecision(string jsonResponse)
+    /// <summary>
+    /// Applies the compact decision to produce the final visible message list.
+    /// Removes rounds specified by <see cref="CompactDecision.RemoveIndexes"/>, then appends the summary.
+    /// Falls back to all rounds if the filtered result would be empty.
+    /// </summary>
+    private IReadOnlyList<ChatMessage> BuildCompactedMessages(
+        IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages,
+        CompactDecision? decision)
     {
-        var json = ExtractJsonObject(jsonResponse);
-        if (string.IsNullOrWhiteSpace(json))
+        IEnumerable<IReadOnlyList<ChatMessage>> kept = roundMessages;
+        if (decision?.RemoveIndexes is { Count: > 0 } removeIndexes)
         {
-            return null;
+            var removeSet = removeIndexes.ToHashSet();
+            var filtered = roundMessages.Where((_, i) => !removeSet.Contains(i)).ToList();
+            if (filtered.Count > 0)
+                kept = filtered;
         }
 
-        return JsonSerializer.Deserialize<CompactDecision>(json);
+        var messages = kept.SelectMany(m => m).ToList();
+        if (!string.IsNullOrWhiteSpace(decision?.Summary))
+        {
+            var summaryText = messages.Count == 0
+                ? decision.Summary
+                : $"\n\n{CompactHandoffSeparator}\n{decision.Summary}";
+            messages.Add(new ChatMessage(ChatRole.Assistant, summaryText));
+        }
+
+        return messages;
     }
 
-    private static string? ExtractJsonObject(string? response)
-    {
-        if (string.IsNullOrWhiteSpace(response))
-        {
-            return null;
-        }
-
-        var start = response.IndexOf('{');
-        var end = response.LastIndexOf('}');
-        if (start < 0 || end <= start)
-        {
-            return null;
-        }
-
-        return response[start..(end + 1)];
-    }
-
-    private static string BuildIndexedCompactInput(IReadOnlyList<CompactCandidate> compactCandidates)
+    private static string BuildIndexedCompactInput(IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages)
     {
         var builder = new StringBuilder();
-        foreach (var candidate in compactCandidates)
+        for (var i = 0; i < roundMessages.Count; i++)
         {
-            builder.AppendLine($"[{candidate.Index}]|loop={candidate.LoopNumber}");
-            builder.AppendLine(candidate.Content);
+            var roundText = string.Join("\n", roundMessages[i]
+                .Select(m => m.Text)
+                .Where(t => !string.IsNullOrWhiteSpace(t)));
+            builder.AppendLine($"[{i}]");
+            builder.AppendLine(string.IsNullOrWhiteSpace(roundText) ? "[NoContent]" : roundText);
             builder.AppendLine("---");
         }
 
         return builder.ToString().TrimEnd();
     }
 
-    private static IReadOnlyList<ChatMessage> BuildFallbackMessages(IReadOnlyList<BufferedStep> bufferedSteps)
+    private static CompactDecision? DeserializeCompactDecision(string jsonResponse)
     {
-        return bufferedSteps
-            .Where(step => step.Result != null)
-            .SelectMany(step => step.Result!.Messages)
-            .ToList();
+        var json = ExtractJsonObject(jsonResponse);
+        return string.IsNullOrWhiteSpace(json) ? null : JsonSerializer.Deserialize<CompactDecision>(json);
     }
 
-    private IReadOnlyList<ChatMessage> BuildVisibleMessages(IReadOnlyList<BufferedStep> bufferedSteps,
-        CompactDecision? compactDecision)
+    private static string? ExtractJsonObject(string? response)
     {
-        var historyMessages = BuildHistoryMessages(bufferedSteps, compactDecision?.RemoveIndexes);
-        if (string.IsNullOrWhiteSpace(compactDecision?.Summary))
-        {
-            return historyMessages;
-        }
-
-        var visibleMessages = historyMessages.ToList();
-        var summaryText = visibleMessages.Count == 0
-            ? compactDecision.Summary
-            : $"\n\n{CompactHandoffSeparator}\n{compactDecision.Summary}";
-        visibleMessages.Add(new ChatMessage(ChatRole.Assistant, summaryText));
-        return visibleMessages;
+        if (string.IsNullOrWhiteSpace(response)) return null;
+        var start = response.IndexOf('{');
+        var end = response.LastIndexOf('}');
+        return start < 0 || end <= start ? null : response[start..(end + 1)];
     }
 
-    private static IReadOnlyList<ChatMessage> BuildHistoryMessages(IReadOnlyList<BufferedStep> bufferedSteps,
-        IReadOnlyList<int>? removeIndexes)
+    private static StepResult CreateFinalStepResult(AgentTaskResult aggregate, int maxContextTokens,
+        IEnumerable<ChatMessage> messages)
     {
-        if (removeIndexes == null || removeIndexes.Count == 0)
-        {
-            return BuildFallbackMessages(bufferedSteps);
-        }
-
-        var removeIndexSet = removeIndexes.ToHashSet();
-        var filteredMessages = bufferedSteps
-            .Where(step => !removeIndexSet.Contains(step.Candidate.Index) && step.Result != null)
-            .SelectMany(step => step.Result!.Messages)
-            .ToList();
-        return filteredMessages.Count > 0
-            ? filteredMessages
-            : BuildFallbackMessages(bufferedSteps);
-    }
-
-    private static StepResult? CreateFinalStepResult(IReadOnlyList<BufferedStep> bufferedSteps,
-        IReadOnlyList<ChatMessage> visibleMessages)
-    {
-        var completedResults = bufferedSteps
-            .Where(step => step.Result != null)
-            .Select(step => step.Result!)
-            .ToList();
-        if (completedResults.Count == 0)
-        {
-            return null;
-        }
-
-        var aggregate = new AgentTaskResult();
-        foreach (var result in completedResults)
-        {
-            aggregate.Add(result);
-        }
-
         return new StepResult
         {
             Usage = aggregate.Usage,
             LastSuccessfulUsage = aggregate.LastSuccessfulUsage,
             FinishReason = aggregate.FinishReason,
             Duration = aggregate.Duration,
-            Messages = visibleMessages,
+            Messages = messages.ToList(),
             ProtocolLog = aggregate.ProtocolLog,
             Latency = aggregate.Latency,
             Price = aggregate.Price,
             Exception = aggregate.Exception,
             Annotations = aggregate.Annotations,
             AdditionalProperties = aggregate.AdditionalProperties,
-            IsCompleted = completedResults.All(result => result.IsCompleted),
-            MaxContextTokens = completedResults.Max(result => result.MaxContextTokens),
+            IsCompleted = true,
+            MaxContextTokens = maxContextTokens,
         };
-    }
-
-    private static StepResult SanitizeStepResult(StepResult result)
-    {
-        var failedCallIds = result.Messages
-            .SelectMany(message => message.Contents.OfType<FunctionResultContent>())
-            .Where(content => content.Exception != null)
-            .Select(content => content.CallId)
-            .Where(callId => !string.IsNullOrWhiteSpace(callId))
-            .ToHashSet(StringComparer.Ordinal);
-
-        if (failedCallIds.Count == 0)
-        {
-            return result;
-        }
-
-        var messages = result.Messages
-            .Where(message => !ContainsFailedToolContent(message, failedCallIds))
-            .ToList();
-
-        return new StepResult
-        {
-            Usage = result.Usage,
-            LastSuccessfulUsage = result.LastSuccessfulUsage,
-            FinishReason = result.FinishReason,
-            Duration = result.Duration,
-            Messages = messages,
-            ProtocolLog = result.ProtocolLog,
-            Latency = result.Latency,
-            Price = result.Price,
-            Exception = result.Exception,
-            Annotations = result.Annotations,
-            AdditionalProperties = result.AdditionalProperties,
-            IsCompleted = result.IsCompleted,
-            MaxContextTokens = result.MaxContextTokens,
-        };
-    }
-
-    private static bool ContainsFailedToolContent(ChatMessage message, IReadOnlySet<string> failedCallIds)
-    {
-        foreach (var call in message.Contents.OfType<FunctionCallContent>())
-        {
-            if (!string.IsNullOrWhiteSpace(call.CallId) && failedCallIds.Contains(call.CallId))
-            {
-                return true;
-            }
-        }
-
-        foreach (var result in message.Contents.OfType<FunctionResultContent>())
-        {
-            if (!string.IsNullOrWhiteSpace(result.CallId) && failedCallIds.Contains(result.CallId))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private string EnsureCompletionFlag(string summary)
     {
-        if (summary.Contains(TaskCompleteFlag, StringComparison.Ordinal))
-        {
-            return summary;
-        }
-
-        return $"{summary.TrimEnd()}\n\n{TaskCompleteFlag}";
+        return summary.Contains(TaskCompleteFlag, StringComparison.Ordinal)
+            ? summary
+            : $"{summary.TrimEnd()}\n\n{TaskCompleteFlag}";
     }
 
     protected static MiniSweAgentConfig CreateBaseConfig(ILLMChatClient agent, AgentOption agentOption)
@@ -635,10 +435,7 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         var safeProviders = toolProviders
             .Where(IsReadOnlyGroup)
             .ToArray();
-        if (safeProviders.Length == 0)
-        {
-            return;
-        }
+        if (safeProviders.Length == 0) return;
 
         contextBuilder.FunctionGroups ??= [];
         var functionGroups = contextBuilder.FunctionGroups;
@@ -655,10 +452,7 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
     private static List<CheckableFunctionGroupTree>? FilterReadOnlyFunctionGroups(
         List<CheckableFunctionGroupTree>? functionGroups)
     {
-        if (functionGroups == null || functionGroups.Count == 0)
-        {
-            return functionGroups;
-        }
+        if (functionGroups == null || functionGroups.Count == 0) return functionGroups;
 
         return functionGroups
             .Where(IsReadOnlyGroup)
@@ -668,10 +462,7 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
 
     private static bool IsReadOnlyGroup(IAIFunctionGroup functionGroup)
     {
-        var rawGroup = functionGroup is CheckableFunctionGroupTree tree
-            ? tree.Data
-            : functionGroup;
-
+        var rawGroup = functionGroup is CheckableFunctionGroupTree tree ? tree.Data : functionGroup;
         return rawGroup is ProjectAwarenessPlugin
             or SymbolSemanticPlugin
             or CodeSearchPlugin
@@ -684,28 +475,8 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
 
     private bool IsExitMessage(ChatMessage? message)
     {
-        if (string.IsNullOrEmpty(message?.Text))
-        {
-            return false;
-        }
-
+        if (string.IsNullOrEmpty(message?.Text)) return false;
         return message.Text.Contains(Config.TaskCompleteFlag, StringComparison.Ordinal);
-    }
-
-    private sealed class BufferedStep
-    {
-        public required CompactCandidate Candidate { get; init; }
-
-        public StepResult? Result { get; init; }
-    }
-
-    private sealed class CompactCandidate
-    {
-        public required int Index { get; init; }
-
-        public required int LoopNumber { get; init; }
-
-        public required string Content { get; init; }
     }
 
     private sealed class CompactDecision
@@ -716,19 +487,4 @@ public abstract class ReadOnlyCompactAgentBase : ISingleClientAgent
         [JsonPropertyName("summary")]
         public string? Summary { get; set; }
     }
-
-    private sealed class StepOutcome
-    {
-        public StepOutcome(StepResult? result, bool isTerminal)
-        {
-            Result = result;
-            IsTerminal = isTerminal;
-        }
-
-        public StepResult? Result { get; }
-
-        public bool IsTerminal { get; }
-    }
-
 }
-
