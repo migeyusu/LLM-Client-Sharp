@@ -4,6 +4,7 @@ using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Agent.Planner;
+using LLMClient.Agent.Research;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 
@@ -11,7 +12,6 @@ using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Persistance;
-using LLMClient.Workflow.Research;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient;

@@ -28,7 +28,7 @@
                               xmlns:controls="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf"
                               xmlns:controls1="clr-namespace:LLMClient.Dialog.Controls"
                               xmlns:mcp="clr-namespace:LLMClient.ToolCall.MCP"
-                              xmlns:research1="clr-namespace:LLMClient.Workflow.Research"
+                              xmlns:research1="clr-namespace:LLMClient.Agent.Research"
                               mc:Ignorable="d"
                               FontFamily="Microsoft YaHei UI"
                               Title="LLM Client"

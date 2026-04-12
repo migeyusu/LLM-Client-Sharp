@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
+using LLMClient.Agent.Research;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 
@@ -11,7 +12,6 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.Persistance;
 using LLMClient.ToolCall.DefaultPlugins;
-using LLMClient.Workflow.Research;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;

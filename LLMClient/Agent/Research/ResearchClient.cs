@@ -1,9 +1,8 @@
 ﻿using LLMClient.Abstraction;
-using LLMClient.Agent;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog.Models;
 
-namespace LLMClient.Workflow.Research;
+namespace LLMClient.Agent.Research;
 
 public abstract class ResearchClient : BaseViewModel, IAgent
 {

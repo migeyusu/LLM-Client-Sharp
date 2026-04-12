@@ -2,11 +2,10 @@
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
-
 using LLMClient.Endpoints;
 using LLMClient.Persistance;
 
-namespace LLMClient.Workflow.Research;
+namespace LLMClient.Agent.Research;
 
 public class NvidiaResearchClientOption : BaseViewModel, IResearchCreationOption
 {

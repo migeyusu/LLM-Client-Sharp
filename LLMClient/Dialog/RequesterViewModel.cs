@@ -19,7 +19,7 @@ using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Agent.Planner;
-using LLMClient.Workflow.Research;
+using LLMClient.Agent.Research;
 
 namespace LLMClient.Dialog;
 

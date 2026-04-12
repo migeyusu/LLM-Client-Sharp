@@ -2,7 +2,7 @@
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 
-namespace LLMClient.Workflow.Research;
+namespace LLMClient.Agent.Research;
 
 public class ResearchSession : FileBasedSessionBase, ILLMSessionLoader<ResearchSession>
 {

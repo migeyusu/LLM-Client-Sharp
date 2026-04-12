@@ -1,6 +1,6 @@
 ﻿using LLMClient.Component.CustomControl;
 
-namespace LLMClient.Workflow.Research;
+namespace LLMClient.Agent.Research;
 
 public interface IResearchCreationOption
 {

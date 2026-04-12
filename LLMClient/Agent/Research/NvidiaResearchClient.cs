@@ -5,14 +5,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 using LLMClient.Abstraction;
-using LLMClient.Agent;
 using LLMClient.Configuration;
 using LLMClient.Dialog.Models;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel.Data;
 
-namespace LLMClient.Workflow.Research;
+namespace LLMClient.Agent.Research;
 
 [Description("Nvidia Deep Research")]
 public class NvidiaResearchClient : ResearchClient

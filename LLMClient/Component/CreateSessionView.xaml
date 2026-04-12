@@ -7,7 +7,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:LLMClient.Component.Converters"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-             xmlns:research1="clr-namespace:LLMClient.Workflow.Research"
+             xmlns:research1="clr-namespace:LLMClient.Agent.Research"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="700"
              d:DataContext="{d:DesignInstance local:CreateSessionViewModel}">

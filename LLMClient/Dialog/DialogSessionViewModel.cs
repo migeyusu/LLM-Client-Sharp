@@ -15,7 +15,7 @@ using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Agent.Planner;
-using LLMClient.Workflow.Research;
+using LLMClient.Agent.Research;
 using LLMClient.Configuration;
 using LLMClient.ToolCall;
 using Microsoft.Win32;

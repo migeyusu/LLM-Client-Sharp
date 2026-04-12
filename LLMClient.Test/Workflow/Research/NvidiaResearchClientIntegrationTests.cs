@@ -1,8 +1,8 @@
 using LLMClient.Abstraction;
 using LLMClient.Agent;
+using LLMClient.Agent.Research;
 using LLMClient.Configuration;
 using LLMClient.Dialog.Models;
-using LLMClient.Workflow.Research;
 using Moq;
 using Xunit;
 

@@ -2,6 +2,7 @@
 using System.Windows;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Agent.Research;
 using LLMClient.Component;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
@@ -16,7 +17,6 @@ using LLMClient.Rag;
 using LLMClient.Test;
 using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.MCP;
-using LLMClient.Workflow.Research;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;

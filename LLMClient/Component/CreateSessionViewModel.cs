@@ -1,12 +1,12 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.Agent.Research;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog;
 using LLMClient.Project;
-using LLMClient.Workflow.Research;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Component;
