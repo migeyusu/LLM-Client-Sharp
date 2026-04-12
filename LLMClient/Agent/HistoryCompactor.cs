@@ -11,24 +11,16 @@ using Microsoft.Extensions.AI;
 namespace LLMClient.Agent;
 
 /// <summary>
-/// Prompt-based agent that prunes low-value rounds from a per-round message cache
-/// and produces a compact handoff summary for downstream agents.
+/// Prompt-based agent that prunes low-value rounds from a per-round message cache.
 /// Extends <see cref="PromptBasedAgent"/> — the LLM invocation mechanics are handled by the base class.
 /// <para>
-/// Encapsulates all compaction concerns: prompt rendering, decision deserialization,
-/// round filtering, and summary assembly.
+/// The LLM decides which round indexes to remove; the class filters them out and returns the flat message list.
 /// </para>
 /// </summary>
 public sealed class HistoryCompactor : PromptBasedAgent
 {
     /// <summary>Prompt template rendered with {{$task}}, {{$contextHint}}, {{$input}} placeholders.</summary>
     public required string PromptTemplate { get; init; }
-
-    /// <summary>Separator text prepended to the LLM summary when kept messages are non-empty.</summary>
-    public required string HandoffSeparator { get; init; }
-
-    /// <summary>Completion flag that must appear at the end of the summary.</summary>
-    public required string CompletionFlag { get; init; }
 
     /// <summary>Tag used in error trace messages, e.g. "InspectCompact".</summary>
     public required string ErrorTag { get; init; }
@@ -39,8 +31,9 @@ public sealed class HistoryCompactor : PromptBasedAgent
     }
 
     /// <summary>
-    /// Compacts <paramref name="roundMessages"/> via LLM and returns the final visible message list.
-    /// Falls back to the full message set when compaction fails or is not applicable.
+    /// Prunes low-value rounds from <paramref name="roundMessages"/> via LLM decision
+    /// and returns the filtered flat message list.
+    /// Falls back to the full message set when pruning fails or is not applicable.
     /// </summary>
     public async Task<IReadOnlyList<ChatMessage>> CompactAsync(
         string? task,
@@ -48,11 +41,11 @@ public sealed class HistoryCompactor : PromptBasedAgent
         IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages,
         CancellationToken cancellationToken)
     {
-        var decision = await TryGetDecisionAsync(task, systemPrompt, roundMessages, cancellationToken);
-        return BuildMessages(roundMessages, decision);
+        var removeIndexes = await TryGetRemoveIndexesAsync(task, systemPrompt, roundMessages, cancellationToken);
+        return BuildMessages(roundMessages, removeIndexes);
     }
 
-    private async Task<CompactDecision?> TryGetDecisionAsync(
+    private async Task<IReadOnlyList<int>?> TryGetRemoveIndexesAsync(
         string? task,
         string? systemPrompt,
         IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages,
@@ -80,22 +73,14 @@ public sealed class HistoryCompactor : PromptBasedAgent
             var jsonResponse = result.FirstTextResponse;
             if (string.IsNullOrWhiteSpace(jsonResponse)) return null;
 
-            var decision = Deserialize(jsonResponse);
-            if (decision == null) return null;
+            var indexes = Deserialize(jsonResponse);
+            if (indexes is not { Count: > 0 }) return null;
 
-            if (!string.IsNullOrWhiteSpace(decision.Summary))
-                decision.Summary = EnsureCompletionFlag(decision.Summary.Trim());
-
-            if (decision.RemoveIndexes != null)
-            {
-                decision.RemoveIndexes = decision.RemoveIndexes
-                    .Distinct()
-                    .Where(i => i >= 0 && i < roundMessages.Count)
-                    .OrderBy(i => i)
-                    .ToList();
-            }
-
-            return decision;
+            return indexes
+                .Distinct()
+                .Where(i => i >= 0 && i < roundMessages.Count)
+                .OrderBy(i => i)
+                .ToList();
         }
         catch (OperationCanceledException)
         {
@@ -109,40 +94,22 @@ public sealed class HistoryCompactor : PromptBasedAgent
     }
 
     /// <summary>
-    /// Applies <paramref name="decision"/> to produce the final visible message list.
-    /// Removes rounds in <see cref="CompactDecision.RemoveIndexes"/>, then appends the summary.
+    /// Removes the rounds at <paramref name="removeIndexes"/> and returns the remaining messages as a flat list.
     /// Falls back to all rounds when the filtered result would be empty.
     /// </summary>
-    private IReadOnlyList<ChatMessage> BuildMessages(
+    private static IReadOnlyList<ChatMessage> BuildMessages(
         IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages,
-        CompactDecision? decision)
+        IReadOnlyList<int>? removeIndexes)
     {
-        IEnumerable<IReadOnlyList<ChatMessage>> kept = roundMessages;
-        if (decision?.RemoveIndexes is { Count: > 0 } removeIndexes)
-        {
-            var removeSet = removeIndexes.ToHashSet();
-            var filtered = roundMessages.Where((_, i) => !removeSet.Contains(i)).ToList();
-            if (filtered.Count > 0)
-                kept = filtered;
-        }
+        if (removeIndexes is not { Count: > 0 })
+            return roundMessages.SelectMany(m => m).ToList();
 
-        var messages = kept.SelectMany(m => m).ToList();
-        if (!string.IsNullOrWhiteSpace(decision?.Summary))
-        {
-            var summaryText = messages.Count == 0
-                ? decision.Summary
-                : $"\n\n{HandoffSeparator}\n{decision.Summary}";
-            messages.Add(new ChatMessage(ChatRole.Assistant, summaryText));
-        }
-
-        return messages;
-    }
-
-    private string EnsureCompletionFlag(string summary)
-    {
-        return summary.Contains(CompletionFlag, StringComparison.Ordinal)
-            ? summary
-            : $"{summary.TrimEnd()}\n\n{CompletionFlag}";
+        var removeSet = removeIndexes.ToHashSet();
+        var filtered = roundMessages.Where((_, i) => !removeSet.Contains(i)).ToList();
+        var kept = filtered.Count > 0
+            ? (IEnumerable<IReadOnlyList<ChatMessage>>)filtered
+            : roundMessages;
+        return kept.SelectMany(m => m).ToList();
     }
 
     private static string BuildIndexedInput(IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages)
@@ -161,10 +128,12 @@ public sealed class HistoryCompactor : PromptBasedAgent
         return builder.ToString().TrimEnd();
     }
 
-    private static CompactDecision? Deserialize(string jsonResponse)
+    private static List<int>? Deserialize(string jsonResponse)
     {
         var json = ExtractJsonObject(jsonResponse);
-        return string.IsNullOrWhiteSpace(json) ? null : JsonSerializer.Deserialize<CompactDecision>(json);
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        var decision = JsonSerializer.Deserialize<RemoveDecision>(json);
+        return decision?.Indexes;
     }
 
     private static string? ExtractJsonObject(string? response)
@@ -175,13 +144,9 @@ public sealed class HistoryCompactor : PromptBasedAgent
         return start < 0 || end <= start ? null : response[start..(end + 1)];
     }
 
-    private sealed class CompactDecision
+    private sealed class RemoveDecision
     {
         [JsonPropertyName("removeIndexes")]
-        public List<int>? RemoveIndexes { get; set; }
-
-        [JsonPropertyName("summary")]
-        public string? Summary { get; set; }
+        public List<int>? Indexes { get; set; }
     }
 }
-
