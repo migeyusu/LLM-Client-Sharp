@@ -12,7 +12,7 @@ public static class CoreExtension
     [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_DebuggerDisplay")]
     public static extern string GetDebuggerDisplay(FunctionResultContent content);
 
-    private const string TokensCounterKey = "TokensCounter";
+    internal const string TokensCounterKey = "TokensCounter";
 
     internal static void ClearTokensCounterTag(this IEnumerable<ChatMessage> messages)
     {

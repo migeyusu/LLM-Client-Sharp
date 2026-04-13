@@ -75,8 +75,12 @@ public class DialogMappingProfile : Profile
 
         CreateMap<IAIContent, AIContent>().IncludeAllDerived();
         CreateMap<AIContent, IAIContent>().IncludeAllDerived();
-        CreateMap<ChatMessage, ChatMessagePO>();
-        CreateMap<ChatMessagePO, ChatMessage>();
+        CreateMap<ChatMessage, ChatMessagePO>()
+            .ForMember(dest => dest.AdditionalProperties,
+                opt => opt.MapFrom<ChatMessageToPoAdditionalPropertiesResolver>());
+        CreateMap<ChatMessagePO, ChatMessage>()
+            .ForMember(dest => dest.AdditionalProperties,
+                opt => opt.MapFrom<PoToChatMessageAdditionalPropertiesResolver>());
         CreateMap<TextContent, TextContentPO>();
         CreateMap<TextContentPO, TextContent>();
         CreateMap<FunctionCallContent, FunctionCallContentPO>();
@@ -130,5 +134,53 @@ public class DialogMappingProfile : Profile
             .ConvertUsing<AutoMapModelTypeConverter>();
         CreateMap<DialogFileViewModel, DialogFilePersistModel>()
             .ConvertUsing<AutoMapModelTypeConverter>();
+    }
+}
+
+/// <summary>
+/// 从 ChatMessage.AdditionalProperties 中只提取 TokensCounter 键，
+/// 以 Dictionary&lt;string, long&gt; 写入 ChatMessagePO，防止不可序列化对象污染。
+/// </summary>
+file sealed class ChatMessageToPoAdditionalPropertiesResolver
+    : IValueResolver<ChatMessage, ChatMessagePO, Dictionary<string, long>?>
+{
+    public Dictionary<string, long>? Resolve(
+        ChatMessage source, ChatMessagePO destination,
+        Dictionary<string, long>? destMember, ResolutionContext context)
+    {
+        if (source.AdditionalProperties == null ||
+            !source.AdditionalProperties.TryGetValue(CoreExtension.TokensCounterKey, out var tokenValue) ||
+            tokenValue == null)
+        {
+            return null;
+        }
+
+        return new Dictionary<string, long>
+        {
+            [CoreExtension.TokensCounterKey] = Convert.ToInt64(tokenValue)
+        };
+    }
+}
+
+/// <summary>
+/// 将 ChatMessagePO.AdditionalProperties 中的 TokensCounter 还原回
+/// ChatMessage.AdditionalProperties（AdditionalPropertiesDictionary）。
+/// </summary>
+file sealed class PoToChatMessageAdditionalPropertiesResolver
+    : IValueResolver<ChatMessagePO, ChatMessage, AdditionalPropertiesDictionary?>
+{
+    public AdditionalPropertiesDictionary? Resolve(
+        ChatMessagePO source, ChatMessage destination,
+        AdditionalPropertiesDictionary? destMember, ResolutionContext context)
+    {
+        if (source.AdditionalProperties == null ||
+            !source.AdditionalProperties.TryGetValue(CoreExtension.TokensCounterKey, out var tokenValue))
+        {
+            return null;
+        }
+
+        var result = new AdditionalPropertiesDictionary();
+        result[CoreExtension.TokensCounterKey] = tokenValue;
+        return result;
     }
 }
