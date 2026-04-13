@@ -5,6 +5,15 @@ namespace LLMClient.Abstraction;
 public class ReactHistoryCompressionOptions
 {
     [JsonPropertyName("Mode")] public ReactHistoryCompressionMode Mode { get; set; } = ReactHistoryCompressionMode.None;
+    
+    /// <summary>
+    /// Token threshold (as a fraction of the model's maximum context size) that triggers in-task
+    /// history compression. When the estimated token count of the current chat history exceeds
+    /// <c>ReactTokenThresholdPercent * model.MaxContextSize</c>, the active compression strategy
+    /// is invoked. A value of 0 or less disables token-based compression triggering.
+    /// </summary>
+    [JsonPropertyName("ReactTokenThresholdPercent")]
+    public double ReactTokenThresholdPercent { get; set; }
 
     [JsonPropertyName("PreserveRecentRounds")]
     public int PreserveRecentRounds { get; set; } = 10;
@@ -29,16 +38,8 @@ public class ReactHistoryCompressionOptions
 
     /// <summary>
     /// whether to summary error function call messages from the history, as they may contain long error details that are not useful for the model to see and may cause token overflow.
+    /// <para>only enabled after <see cref="Mode"/> is not <see cref="ReactHistoryCompressionMode.None"/></para>
     /// </summary>
     [JsonPropertyName("SummaryErrorLoop")]
     public bool SummaryErrorLoop { get; set; }
-
-    /// <summary>
-    /// Token threshold (as a fraction of the model's maximum context size) that triggers in-task
-    /// history compression. When the estimated token count of the current chat history exceeds
-    /// <c>ReactTokenThresholdPercent * model.MaxContextSize</c>, the active compression strategy
-    /// is invoked. A value of 0 or less disables token-based compression triggering.
-    /// </summary>
-    [JsonPropertyName("ReactTokenThresholdPercent")]
-    public double ReactTokenThresholdPercent { get; set; }
 }

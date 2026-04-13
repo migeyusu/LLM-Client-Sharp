@@ -254,6 +254,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                                              new NoOpChatHistoryCompressionStrategy();
 
             var reactRoundNumber = 0;
+            var loopState = new ReactLoopState();
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
                 while (true)
@@ -268,7 +269,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         step, chatContext, chatClient, chatMessages, requestOptions,
                         functionCallEngine, streaming, softFunctionCall,
                         preUpdates, ++reactRoundNumber, historyCompressionOptions,
-                        historyCompressionStrategy, cancellationToken);
+                        historyCompressionStrategy, loopState, cancellationToken);
 
                     // 立即 yield —— 消费者可以马上开始 await foreach (var evt in step)
                     yield return step;
@@ -318,6 +319,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         int reactRoundNumber,
         ReactHistoryCompressionOptions historyCompressionOptions,
         IChatHistoryCompressionStrategy historyCompressionStrategy,
+        ReactLoopState loopState,
         CancellationToken cancellationToken)
     {
         var reasoningStart = false;
@@ -410,6 +412,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             chatMessages.AddRange(preResponseMessages);
             responseMessages.AddRange(preResponseMessages);
             loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
+            // 利用本轮 InputTokenCount 与上一轮合计的差值，为上一轮工具结果消息打 token 标记
+            TryTagPendingObservationMessage(loopState, loopUsageDetails);
             finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();
             var completionToken = loopUsageDetails?.OutputTokenCount;
             if (completionToken > 0)
@@ -489,17 +493,18 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             responseMessages.Add(functionResultMessage);
             await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
                 preFunctionCalls, step, cancellationToken);
-
-            // 1. Pre-process: uniformly replace error rounds outside the preserve window with summaries
-            if (historyCompressionOptions.SummaryErrorLoop)
-            {
-                await PreprocessErrorRoundsAsync(chatMessages, historyCompressionOptions, cancellationToken);
-            }
-
-            // 2. Token-based in-task compression trigger
+            
+            // 1. Token-based in-task compression trigger
+            var compressionApplied = false;
             var compressionKind = GetHistoryCompressionKind(historyCompressionOptions.Mode);
             if (compressionKind.HasValue && await ShouldRunInTaskCompression(chatMessages, historyCompressionOptions))
             {
+                compressionApplied = true;
+                // 2. Pre-process: uniformly replace error rounds outside the preserve window with summaries
+                if (historyCompressionOptions.SummaryErrorLoop)
+                {
+                    await PreprocessErrorRoundsAsync(chatMessages, historyCompressionOptions, cancellationToken);
+                }
                 var compressionContext = new ChatHistoryCompressionContext
                 {
                     ChatHistory = chatMessages,
@@ -514,6 +519,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 step.EmitHistoryCompressionCompleted(compressionKind.Value, compressionContext.CompressionApplied);
             }
 
+            // 更新下一轮的循环状态，供 TryTagPendingObservationMessage 使用
+            loopState.PendingObservationMessage = functionResultMessage;
+            loopState.PrevRoundTotalTokens = (loopUsageDetails?.InputTokenCount ?? 0) +
+                                             (loopUsageDetails?.OutputTokenCount ?? 0);
+            loopState.PrevRoundCompressed = compressionApplied;
 
             // 该轮未完成（有 function call），继续下一轮
             stepResult.IsCompleted = false;
@@ -831,5 +841,48 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             .Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace('\r', '\n')
             .Trim();
+    }
+
+    /// <summary>
+    /// 跨轮次传递的循环状态，用于根据相邻轮次 input token 差值推算工具调用结果消息的 token 数。
+    /// </summary>
+    private sealed class ReactLoopState
+    {
+        /// <summary>上一轮产生的、尚未打 token 标记的工具结果消息。</summary>
+        public ChatMessage? PendingObservationMessage { get; set; }
+
+        /// <summary>上一轮的 InputTokens + OutputTokens 合计，作为差值计算的基准。</summary>
+        public long PrevRoundTotalTokens { get; set; }
+
+        /// <summary>上一轮是否触发了历史压缩（压缩会改变消息列表，差值不再可靠）。</summary>
+        public bool PrevRoundCompressed { get; set; }
+    }
+
+    /// <summary>
+    /// 利用当前轮次的 InputTokenCount 与上一轮合计的差值，为上一轮的工具结果消息打 token 标记。
+    /// 仅在上一轮未触发压缩时执行，以确保差值语义正确。
+    /// </summary>
+    private static void TryTagPendingObservationMessage(ReactLoopState loopState, UsageDetails? currentUsageDetails)
+    {
+        var pending = loopState.PendingObservationMessage;
+        loopState.PendingObservationMessage = null;
+
+        if (pending == null || loopState.PrevRoundCompressed)
+        {
+            return;
+        }
+
+        var inputCount = currentUsageDetails?.InputTokenCount ?? 0;
+        var prevTotal = loopState.PrevRoundTotalTokens;
+        if (inputCount <= 0 || prevTotal <= 0)
+        {
+            return;
+        }
+
+        var delta = inputCount - prevTotal;
+        if (delta > 0)
+        {
+            pending.TagTokensCounter(delta);
+        }
     }
 }

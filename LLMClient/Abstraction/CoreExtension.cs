@@ -34,6 +34,15 @@ public static class CoreExtension
     }
 
     /// <summary>
+    /// 为单个 message 打上 token 标记
+    /// </summary>
+    internal static void TagTokensCounter(this ChatMessage message, long tokens)
+    {
+        message.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        message.AdditionalProperties[TokensCounterKey] = tokens;
+    }
+
+    /// <summary>
     /// 除了最后一个message外全部设为0
     /// </summary>
     /// <param name="messages"></param>
