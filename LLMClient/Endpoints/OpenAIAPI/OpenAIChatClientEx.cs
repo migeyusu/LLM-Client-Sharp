@@ -1,5 +1,6 @@
 ﻿using System.ClientModel;
 using System.ClientModel.Primitives;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -57,7 +58,7 @@ public class OpenAIChatClientEx : ChatClient
                     }
 
                     // 2. 将清洗/修改后的 JSON 内容进行打印（如果有需要的话）
-                    if (clientContext.ShowRequestJson)
+                    if (clientContext.ShowRequestJson || Debugger.IsAttached)
                     {
                         var jsonOptions = new JsonSerializerOptions
                         {

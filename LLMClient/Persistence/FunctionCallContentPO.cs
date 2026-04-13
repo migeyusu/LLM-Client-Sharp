@@ -54,6 +54,8 @@ public class FunctionResultContentPO : IAIContent
     [JsonPropertyName("CallId")] public string CallId { get; set; } = string.Empty;
 
     [JsonPropertyName("Result")] public object? Result { get; set; }
+
+    [JsonPropertyName("ExceptionMessage")] public string? ExceptionMessage { get; set; }
 }
 
 public class TextReasoningContentPO : IAIContent

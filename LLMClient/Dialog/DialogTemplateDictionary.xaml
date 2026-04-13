@@ -942,6 +942,8 @@
             </materialDesign:Card>
             <ContentControl Content="{Binding AcceptedResponse,Mode=OneWay}"
                             Style="{StaticResource ResponseStatsStyle}" />
+            <ContentControl Content="{Binding AcceptedResponse,Mode=OneWay}"
+                            Style="{StaticResource ResponseProcStyle}" />
         </StackPanel>
     </DataTemplate>
 

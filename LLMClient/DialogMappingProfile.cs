@@ -7,11 +7,9 @@ using LLMClient.Agent.Planner;
 using LLMClient.Agent.Research;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
-
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
-
 using LLMClient.Persistence;
 using Microsoft.Extensions.AI;
 using System.Text.Json;
@@ -28,7 +26,7 @@ public class DialogMappingProfile : Profile
 
         CreateMap<IAgent, AgentPersistModel>().IncludeAllDerived();
         CreateMap<AgentPersistModel, IAgent>().IncludeAllDerived();
-        
+
         CreateMap<MiniSweAgent, MiniSweAgentPersistModel>();
         CreateMap<MiniSweAgentPersistModel, MiniSweAgent>()
             .ConstructUsing((src, ctx) =>
@@ -68,7 +66,7 @@ public class DialogMappingProfile : Profile
                     : EmptyLlmModelClient.Instance;
                 return new SummaryAgent(client);
             });
-        
+
         CreateMap<NvidiaResearchClient, NvidiaResearchClientPersistModel>();
         // Note: NvidiaResearchClientPersistModel -> NvidiaResearchClient mapping 
         // requires GlobalOptions and should be handled by NvidiaResearchClientFactory
@@ -105,9 +103,19 @@ public class DialogMappingProfile : Profile
             });
         CreateMap<ErrorContent, ErrorContentPO>();
         CreateMap<ErrorContentPO, ErrorContent>();
-        CreateMap<FunctionResultContent, FunctionResultContentPO>();
+        CreateMap<FunctionResultContent, FunctionResultContentPO>()
+            .ForMember((po => po.ExceptionMessage), opt =>
+            {
+                opt.PreCondition(content => content.Exception != null);
+                opt.MapFrom(content => content.Exception!.HierarchicalMessage());
+            });
         CreateMap<FunctionResultContentPO, FunctionResultContent>()
-            .ConstructUsing((po, _) => new FunctionResultContent(po.CallId, po.Result));
+            .ConstructUsing((po, _) => new FunctionResultContent(po.CallId, po.Result))
+            .ForMember(content => content.Exception, opt =>
+            {
+                opt.PreCondition(po => !string.IsNullOrEmpty(po.ExceptionMessage));
+                opt.MapFrom(po => new Exception(po.ExceptionMessage));
+            });
         CreateMap<TextReasoningContent, TextReasoningContentPO>();
         CreateMap<TextReasoningContentPO, TextReasoningContent>();
         CreateMap<UriContent, UriContentPO>();
