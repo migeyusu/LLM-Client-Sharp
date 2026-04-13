@@ -493,7 +493,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             responseMessages.Add(functionResultMessage);
             await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
                 preFunctionCalls, step, cancellationToken);
-            
+
             // 1. Token-based in-task compression trigger
             var compressionApplied = false;
             var compressionKind = GetHistoryCompressionKind(historyCompressionOptions.Mode);
@@ -505,6 +505,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 {
                     await PreprocessErrorRoundsAsync(chatMessages, historyCompressionOptions, cancellationToken);
                 }
+
                 var compressionContext = new ChatHistoryCompressionContext
                 {
                     ChatHistory = chatMessages,
@@ -632,6 +633,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             stepResult.Duration = (int)_durationStopwatch.Elapsed.TotalSeconds;
             stepResult.Messages = responseMessages;
             stepResult.ProtocolLog = step.ProtocolLog;
+            stepResult.LastSuccessfulUsage = loopUsageDetails;
             step.Complete(stepResult);
         }
     }
@@ -708,7 +710,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
     }
 
-    private async Task<bool> ShouldRunInTaskCompression(List<ChatMessage> chatMessages, ReactHistoryCompressionOptions options)
+    private async Task<bool> ShouldRunInTaskCompression(List<ChatMessage> chatMessages,
+        ReactHistoryCompressionOptions options)
     {
         var threshold = options.ReactTokenThresholdPercent;
         if (threshold <= 0) return false;

@@ -29,9 +29,10 @@ public class AgentTaskResult : CallResult
     {
         if (right is null || right == Empty) return;
 
-        LastSuccessfulUsage = right.ValidCallTimes > 0
-            ? CloneUsageDetails(right.LastSuccessfulUsage)
-            : CloneUsageDetails(LastSuccessfulUsage);
+        if (right.ValidCallTimes > 0)
+        {
+            LastSuccessfulUsage = CloneUsageDetails(right.Usage);
+        }
         Latency = Latency == 0 ? right.Latency : Latency;
         Duration += right.Duration;
         Exception ??= right.Exception;
