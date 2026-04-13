@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Dialog;
 
-namespace LLMClient.Persistance;
+namespace LLMClient.Persistence;
 
 [JsonDerivedType(typeof(MiniSweAgentPersistModel), "miniSweAgent")]
 [JsonDerivedType(typeof(InspectAgentPersistModel), "inspectAgent")]

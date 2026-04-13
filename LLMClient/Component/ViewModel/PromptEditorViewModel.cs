@@ -4,7 +4,8 @@ using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 
 using LLMClient.Dialog;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LLMClient.Component.ViewModel;

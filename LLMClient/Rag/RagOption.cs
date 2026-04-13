@@ -9,7 +9,8 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 
 using LLMClient.Dialog;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;

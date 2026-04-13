@@ -12,7 +12,8 @@ using LLMClient.ContextEngineering.Analysis;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Log;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Rag;
 using LLMClient.Test;
 using LLMClient.ToolCall.DefaultPlugins;

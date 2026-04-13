@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace LLMClient.Persistance;
+namespace LLMClient.Persistence;
 
 //为了保证兼容性，禁止更改名称
 [JsonDerivedType(typeof(ErasePersistItem), "erase")]

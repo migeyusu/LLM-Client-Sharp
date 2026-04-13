@@ -3,7 +3,8 @@ using LLMClient.Abstraction;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering.Tools;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Project;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;

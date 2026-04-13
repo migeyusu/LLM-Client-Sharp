@@ -2,7 +2,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
 using Microsoft.Extensions.AI;

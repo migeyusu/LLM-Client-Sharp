@@ -4,7 +4,8 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Markdig.Renderers;
 using Markdig.Renderers.Wpf.Inlines;
 using Markdig.Syntax.Inlines;

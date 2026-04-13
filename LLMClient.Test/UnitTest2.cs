@@ -17,7 +17,8 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.Azure.Models;
 using LLMClient.Endpoints.Messages;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Rag;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;

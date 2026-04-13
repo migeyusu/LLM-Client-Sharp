@@ -18,7 +18,8 @@ using LLMClient.Configuration;
 
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Project;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;

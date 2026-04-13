@@ -5,7 +5,8 @@ using LambdaConverters;
 using LLMClient.Abstraction;
 using LLMClient.Component.Utility;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 
 namespace LLMClient.Endpoints;
 

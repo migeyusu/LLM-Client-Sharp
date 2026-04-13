@@ -1,7 +1,7 @@
 ﻿using LLMClient.Abstraction;
 using Newtonsoft.Json;
 
-namespace LLMClient.Persistance;
+namespace LLMClient.Persistence;
 
 public class ParameterizedLLMModelPO : LLMModelPersistModel
 {

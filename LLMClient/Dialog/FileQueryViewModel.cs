@@ -6,7 +6,8 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 
 using LLMClient.Dialog.Models;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Rag;
 using Microsoft.Xaml.Behaviors.Core;
 

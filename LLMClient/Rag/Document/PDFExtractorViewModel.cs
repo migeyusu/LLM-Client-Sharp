@@ -5,7 +5,8 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using LLMClient.Component.CustomControl;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
 using Page = UglyToad.PdfPig.Content.Page;

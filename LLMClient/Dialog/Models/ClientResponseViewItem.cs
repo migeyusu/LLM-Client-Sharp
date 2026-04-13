@@ -10,7 +10,8 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Endpoints;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LLMClient.Dialog.Models;

@@ -3,7 +3,7 @@ using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 
-namespace LLMClient.Persistance;
+namespace LLMClient.Persistence;
 
 public class ResponsePersistItemBase
 {

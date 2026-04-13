@@ -10,12 +10,13 @@ using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
-using LLM_DataSerializeContext = LLMClient.Persistance.LLM_DataSerializeContext;
+using LLM_DataSerializeContext = LLMClient.Persistence.LLM_DataSerializeContext;
 
 namespace LLMClient.Test.Workflow.Research;
 

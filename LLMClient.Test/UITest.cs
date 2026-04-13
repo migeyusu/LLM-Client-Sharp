@@ -2,7 +2,8 @@
 using System.Text.Json;
 
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
 

@@ -4,7 +4,8 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 

@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Rag.Document;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;

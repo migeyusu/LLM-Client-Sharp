@@ -6,7 +6,8 @@ using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints.Azure.Models;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LLMClient.Endpoints.Azure;

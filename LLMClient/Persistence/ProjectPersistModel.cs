@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace LLMClient.Persistance;
+namespace LLMClient.Persistence;
 
 public abstract class ProjectPersistModel
 {

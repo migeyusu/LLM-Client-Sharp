@@ -10,7 +10,8 @@ using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.ContextEngineering.Tools;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.ToolCall;
 using Microsoft.Extensions.Logging;
 

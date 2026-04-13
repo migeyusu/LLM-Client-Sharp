@@ -5,7 +5,8 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Microsoft.Extensions.Logging;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis;

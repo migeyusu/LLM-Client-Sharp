@@ -2,7 +2,8 @@
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 
 namespace LLMClient.Endpoints.Azure;
 

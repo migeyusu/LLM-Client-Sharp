@@ -4,7 +4,7 @@ using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.Persistance;
+namespace LLMClient.Persistence;
 
 public class RequestPersistItem : BaseDialogPersistItem
 {

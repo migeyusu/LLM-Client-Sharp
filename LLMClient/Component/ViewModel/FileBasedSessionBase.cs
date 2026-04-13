@@ -11,9 +11,10 @@ using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 
 using LLMClient.Dialog;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Microsoft.Win32;
-using LLM_DataSerializeContext = LLMClient.Persistance.LLM_DataSerializeContext;
+using LLM_DataSerializeContext = LLMClient.Persistence.LLM_DataSerializeContext;
 
 namespace LLMClient.Component.ViewModel;
 

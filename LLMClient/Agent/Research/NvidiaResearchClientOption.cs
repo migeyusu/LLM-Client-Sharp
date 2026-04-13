@@ -3,7 +3,8 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.Endpoints;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 
 namespace LLMClient.Agent.Research;
 

@@ -1,4 +1,4 @@
-﻿namespace LLMClient.Persistance;
+﻿namespace LLMClient.Persistence;
 
 public class SummaryRequestPersistItem : BaseDialogPersistItem
 {

@@ -17,7 +17,8 @@ using LLMClient.ContextEngineering.PromptGeneration;
 
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using MaterialDesignThemes.Wpf;

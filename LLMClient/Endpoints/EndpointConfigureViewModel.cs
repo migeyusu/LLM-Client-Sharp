@@ -16,7 +16,8 @@ using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog;
 using LLMClient.Endpoints.Azure;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;

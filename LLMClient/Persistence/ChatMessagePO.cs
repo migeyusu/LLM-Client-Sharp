@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.Persistance;
+namespace LLMClient.Persistence;
 
 public class ChatMessagePO
 {

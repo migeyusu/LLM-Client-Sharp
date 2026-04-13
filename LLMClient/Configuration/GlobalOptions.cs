@@ -10,7 +10,8 @@ using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 
 using LLMClient.Dialog;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Rag;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;

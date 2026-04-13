@@ -5,7 +5,8 @@ using LLMClient.Agent;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 
 namespace LLMClient;
 

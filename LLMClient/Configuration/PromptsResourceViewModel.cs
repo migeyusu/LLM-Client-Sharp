@@ -5,7 +5,8 @@ using System.Windows.Input;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Configuration;

@@ -7,7 +7,8 @@ using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 
 namespace LLMClient.Endpoints.Azure.Models;
 

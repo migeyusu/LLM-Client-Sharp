@@ -6,7 +6,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Markdig.Wpf;
 
 namespace LLMClient.Component.CustomControl;

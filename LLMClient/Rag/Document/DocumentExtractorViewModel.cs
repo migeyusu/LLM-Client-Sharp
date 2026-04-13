@@ -8,7 +8,8 @@ using LLMClient.Component.ViewModel.Base;
 
 using LLMClient.Endpoints;
 using LLMClient.Log;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xaml.Behaviors.Core;
 

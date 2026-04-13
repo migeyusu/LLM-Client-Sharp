@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using MimeTypes;
 
-namespace LLMClient.Persistance;
+namespace LLMClient.Persistence;
 
 public class HttpContentCache
 {

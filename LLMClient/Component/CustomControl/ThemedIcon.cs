@@ -3,7 +3,8 @@ using System.Windows.Media.Imaging;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Component.CustomControl;

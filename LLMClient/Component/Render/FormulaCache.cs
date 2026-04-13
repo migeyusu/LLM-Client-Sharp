@@ -6,7 +6,8 @@ using System.Xml;
 using System.Xml.Linq;
 using LatexToMathML;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
 using SvgMath;

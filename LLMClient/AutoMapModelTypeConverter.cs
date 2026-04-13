@@ -4,7 +4,8 @@ using LLMClient.Component.ViewModel;
 
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.MCP;
 

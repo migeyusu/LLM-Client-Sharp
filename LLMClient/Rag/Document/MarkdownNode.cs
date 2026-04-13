@@ -3,7 +3,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LLMClient.Component.ViewModel.Base;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using Microsoft.Extensions.Logging;

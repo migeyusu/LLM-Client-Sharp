@@ -10,7 +10,8 @@ using LambdaConverters;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
 using MaterialDesignThemes.Wpf;

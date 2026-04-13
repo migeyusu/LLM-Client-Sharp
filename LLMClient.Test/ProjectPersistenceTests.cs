@@ -11,7 +11,8 @@ using LLMClient.ContextEngineering.Tools;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Project;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;

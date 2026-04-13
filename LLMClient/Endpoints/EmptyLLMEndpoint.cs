@@ -1,7 +1,8 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 
 namespace LLMClient.Endpoints
 {

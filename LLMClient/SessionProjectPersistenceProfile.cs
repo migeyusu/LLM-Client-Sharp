@@ -8,7 +8,8 @@ using LLMClient.Configuration;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using LLMClient.Project;
 
 namespace LLMClient;

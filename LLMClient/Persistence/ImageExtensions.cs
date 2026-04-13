@@ -18,7 +18,7 @@ using Brushes = System.Windows.Media.Brushes;
 using Pen = System.Windows.Media.Pen;
 using Size = System.Drawing.Size;
 
-namespace LLMClient.Persistance;
+namespace LLMClient.Persistence;
 
 public static class ImageExtensions
 {

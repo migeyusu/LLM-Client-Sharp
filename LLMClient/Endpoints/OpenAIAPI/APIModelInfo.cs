@@ -6,7 +6,8 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 
 using LLMClient.Dialog;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;

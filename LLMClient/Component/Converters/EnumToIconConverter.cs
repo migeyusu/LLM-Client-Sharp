@@ -2,7 +2,8 @@
 using System.Windows.Data;
 
 using LLMClient.Endpoints;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 
 namespace LLMClient.Component.Converters;
 

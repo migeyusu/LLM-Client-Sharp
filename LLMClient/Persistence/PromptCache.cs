@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace LLMClient.Persistance;
+namespace LLMClient.Persistence;
 
 public class PromptsCache
 {

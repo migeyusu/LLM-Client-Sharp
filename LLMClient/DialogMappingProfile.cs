@@ -11,7 +11,8 @@ using LLMClient.Configuration;
 using LLMClient.Dialog;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient;

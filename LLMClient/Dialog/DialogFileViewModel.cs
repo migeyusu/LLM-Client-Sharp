@@ -7,7 +7,8 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 
 using LLMClient.Dialog.Models;
-using LLMClient.Persistance;
+
+using LLMClient.Persistence;
 
 namespace LLMClient.Dialog;
 
