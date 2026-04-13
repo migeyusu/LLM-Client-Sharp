@@ -78,7 +78,7 @@ public class DefaultDialogContextBuilder : IChatRequest
         {
             if (dialogItem is RequestViewItem requestViewItem)
             {
-                await requestViewItem.EnsureInitializeAsync(cancellationToken);
+                await requestViewItem.EnsureDataAsync(cancellationToken);
             }
 
             var messages = dialogItem.Messages;

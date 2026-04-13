@@ -302,6 +302,7 @@
                   DataType="{x:Type models:ReactLoopViewModel}">
         <Expander IsExpanded="{Binding IsExpanded,Mode=TwoWay}"
                   materialDesign:ExpanderAssist.HorizontalHeaderPadding="12"
+                  Background="Transparent"
                   Style="{StaticResource MaterialDesignExpander}"
                   Padding="0">
             <Expander.Header>
@@ -417,8 +418,8 @@
                     </ContextMenu>
                 </customControl:FlowDocumentScrollViewerEx.ContextMenu>
             </customControl:FlowDocumentScrollViewerEx>
-            <materialDesign:Card
-                Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+            <materialDesign:Card Style="{StaticResource MaterialDesignOutlinedCard}"
+                                 Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ItemsControl ItemsSource="{Binding Loops,Mode=OneTime}"
                               ItemTemplate="{StaticResource ReactLoopItemTemplate}"
                               BorderBrush="{DynamicResource MaterialDesignLightSeparatorBackground}" />
@@ -1095,8 +1096,8 @@
                                  BorderThickness="0"
                                  Style="{StaticResource MaterialDesignOutlinedCard}">
                 <StackPanel>
-                    <materialDesign:Card
-                        Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <materialDesign:Card Style="{StaticResource MaterialDesignOutlinedCard}"
+                                         Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
                         <ItemsControl ItemsSource="{Binding Response.Loops,Mode=OneTime}"
                                       ItemTemplate="{StaticResource ReactLoopItemTemplate}" />
                     </materialDesign:Card>

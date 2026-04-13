@@ -217,7 +217,7 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
     private List<DataContent>? _dataContents;
 
     [MemberNotNull(nameof(_dataContents))]
-    public async Task EnsureInitializeAsync(CancellationToken cancellationToken = default)
+    public async Task EnsureDataAsync(CancellationToken cancellationToken = default)
     {
         //一旦被创建，就不再改变，所以使用lazy模式
         if (_dataContents == null)
@@ -249,20 +249,19 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
         }
     }
 
-    private ChatMessage _chatMessage = new ChatMessage(ChatRole.User, (string?)null);
+    private readonly ChatMessage _chatMessage = new(ChatRole.User, (string?)null);
 
     public override IEnumerable<ChatMessage> Messages
     {
         get
         {
-            if (_dataContents == null)
-            {
-                throw new NotSupportedException("No data content found.");
-            }
-
             _chatMessage.Contents.Clear();
             _chatMessage.Contents.Add(_textRequestContent);
-            _chatMessage.Contents.AddRange(_dataContents);
+            if (_dataContents != null)
+            {
+                _chatMessage.Contents.AddRange(_dataContents);
+            }
+
             yield return _chatMessage;
         }
     }

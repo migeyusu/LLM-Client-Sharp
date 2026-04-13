@@ -48,6 +48,7 @@ public class Program
         DailyRollingLogSink? logSink = null;
         DailyRollingTraceListener? traceFileListener = null;
         LoggerTraceListener? loggerTraceListener = null;
+        CrashGuard? crashGuard = null;
         var tempPath = new DirectoryInfo(Extension.TempPath);
         if (!tempPath.Exists)
         {
@@ -66,6 +67,9 @@ public class Program
             traceFileListener = new DailyRollingTraceListener(logSink);
             Trace.Listeners.Add(traceFileListener);
             Trace.AutoFlush = true;
+
+            crashGuard = new CrashGuard(logPath, () => serviceProvider?.GetService<ILogger<Program>>());
+            crashGuard.RegisterProcessHandlers();
 
             var serviceCollection = new ServiceCollection();
             var collection = serviceCollection
@@ -148,28 +152,11 @@ public class Program
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         loggerTraceListener = new LoggerTraceListener(loggerFactory);
         Trace.Listeners.Add(loggerTraceListener);
-
-        AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) =>
-        {
-            var ex = (Exception)eventArgs.ExceptionObject;
-            MessageBox.Show("发生未处理的异常: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            var logger = serviceProvider?.GetService<ILogger<Program>>();
-            logger?.LogCritical(ex, "发生未处理的异常，应用程序即将终止");
-        };
-        TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
-        {
-            var ex = eventArgs.Exception.Flatten();
-            var detail = string.Join(Environment.NewLine + Environment.NewLine,
-                ex.InnerExceptions.Select(exception => exception.ToString()));
-            MessageBox.Show("发生未观察到的任务异常: " + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            var logger = serviceProvider?.GetService<ILogger<Program>>();
-            logger?.LogError(ex, "发生未观察到的任务异常: {Detail}", detail);
-            eventArgs.SetObserved();
-        };
 #endif
             AnalyzerExtension.RegisterMsBuild();
             App app = new App();
             app.InitializeComponent();
+            crashGuard.AttachApplication(app);
             // app.Run(new AsyncTestWindow());
             mainWindow = serviceProvider.GetService<MainWindow>();
             app.Run(mainWindow);
@@ -194,6 +181,8 @@ public class Program
         }
         finally
         {
+            crashGuard?.Dispose();
+
             try
             {
                 Trace.Flush();

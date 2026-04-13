@@ -589,7 +589,6 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
             Attachments = Attachments.Count == 0 ? null : Attachments.ToList(),
         };
         DefaultDialogContextBuilder.IChatRequestMapper.Map<IChatRequest, RequestViewItem>(this, requestViewItem);
-        await requestViewItem.EnsureInitializeAsync();
         return requestViewItem;
     }
 
