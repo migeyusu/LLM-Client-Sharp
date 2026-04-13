@@ -38,18 +38,16 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
 
     public ThemedIcon Icon => Option.Icon;
 
-    private int _selectedModelIndex = -1;
-
     public int SelectedModelIndex
     {
-        get => _selectedModelIndex;
+        get;
         set
         {
-            if (value == _selectedModelIndex) return;
-            _selectedModelIndex = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = -1;
 
     private ObservableCollection<APIModelInfo> Models => Option.Models;
 

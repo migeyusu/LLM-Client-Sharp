@@ -5,7 +5,6 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints.Converters;
-
 using LLMClient.Persistence;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -188,23 +187,11 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         }
     }
 
-    static UriThemedIcon _defaultIcon =
+    private readonly UriThemedIcon _defaultIcon =
         new(null, ImageExtensions.APIIconImageLight, null, ImageExtensions.APIIconImageDark);
 
     [JsonIgnore]
-    public virtual UriThemedIcon Icon
-    {
-        get
-        {
-            if (field == null)
-            {
-                return _defaultIcon;
-            }
-
-            return field;
-        }
-        set;
-    }
+    public virtual UriThemedIcon Icon => _defaultIcon;
 
     /// <summary>
     /// 验证

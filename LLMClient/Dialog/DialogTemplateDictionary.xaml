@@ -20,6 +20,10 @@
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                     mc:Ignorable="d">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary
+            Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/materialdesigntheme.expander.xaml" />
+    </ResourceDictionary.MergedDictionaries>
     <Style x:Key="SmallIconButtonStyle"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource MaterialDesignIconButton}">
@@ -296,79 +300,75 @@
     </DataTemplate>
     <DataTemplate x:Key="ReactLoopItemTemplate"
                   DataType="{x:Type models:ReactLoopViewModel}">
-        <materialDesign:Card Margin="0,4"
-                             Padding="0"
-                             UniformCornerRadius="6"
-                             Style="{StaticResource MaterialDesignOutlinedCard}">
-            <Expander IsExpanded="{Binding IsExpanded,Mode=TwoWay}"
-                      materialDesign:ExpanderAssist.HorizontalHeaderPadding="12"
-                      Padding="0">
-                <Expander.Header>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+        <Expander IsExpanded="{Binding IsExpanded,Mode=TwoWay}"
+                  materialDesign:ExpanderAssist.HorizontalHeaderPadding="12"
+                  Style="{StaticResource MaterialDesignExpander}"
+                  Padding="0">
+            <Expander.Header>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Check"
+                                                 Width="16"
+                                                 Height="16"
+                                                 Foreground="Green"
+                                                 VerticalAlignment="Center"
+                                                 Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                        <ProgressBar IsIndeterminate="True"
+                                     Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                     Value="0"
+                                     Width="14"
+                                     Height="14"
+                                     VerticalAlignment="Center"
+                                     Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="8,0,0,0"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                   Text="{Binding LoopNumber,StringFormat=第 {0} 轮}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding FirstLine,Mode=OneWay}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               Margin="12,0"
+                               TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis"
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                               Foreground="{DynamicResource MaterialDesign.Brush.Foreground.Light}" />
+                    <!-- 用量信息区域 -->
+                    <Border Grid.Column="2"
+                            Padding="6,2"
+                            CornerRadius="8"
+                            Margin="8,0,0,0"
+                            Visibility="{Binding HasUsage,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Style="{StaticResource ContextUsageIndicatorBorderStyle}"
+                            DataContext="{Binding ContextUsage}">
                         <StackPanel Orientation="Horizontal"
                                     VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="Check"
-                                                     Width="16"
-                                                     Height="16"
-                                                     Foreground="Green"
-                                                     VerticalAlignment="Center"
-                                                     Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-                            <ProgressBar IsIndeterminate="True"
-                                         Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                         Value="0"
-                                         Width="14"
-                                         Height="14"
-                                         VerticalAlignment="Center"
-                                         Visibility="{Binding IsCompleted,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}" />
                             <TextBlock VerticalAlignment="Center"
-                                       Margin="8,0,0,0"
-                                       Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                       Text="{Binding LoopNumber,StringFormat=第 {0} 轮}" />
+                                       Style="{StaticResource ContextUsageIndicatorTextStyle}"
+                                       FontSize="11">
+                                <Run Text="输入" />
+                                <Run
+                                    Text="{Binding UsageDetails.InputTokenCount,Mode=OneWay,StringFormat={}{0:N0}}" />
+                                <Run Text="输出" />
+                                <Run
+                                    Text="{Binding UsageDetails.OutputTokenCount,Mode=OneWay,StringFormat={}{0:N0}}" />
+                            </TextBlock>
                         </StackPanel>
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding FirstLine,Mode=OneWay}"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Left"
-                                   Margin="12,0"
-                                   TextWrapping="NoWrap"
-                                   TextTrimming="CharacterEllipsis"
-                                   Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                   Foreground="{DynamicResource MaterialDesign.Brush.Foreground.Light}" />
-                        <!-- 用量信息区域 -->
-                        <Border Grid.Column="2"
-                                Padding="6,2"
-                                CornerRadius="8"
-                                Margin="8,0,0,0"
-                                Visibility="{Binding HasUsage,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
-                                Style="{StaticResource ContextUsageIndicatorBorderStyle}"
-                                DataContext="{Binding ContextUsage}">
-                            <StackPanel Orientation="Horizontal"
-                                        VerticalAlignment="Center">
-                                <TextBlock VerticalAlignment="Center"
-                                           Style="{StaticResource ContextUsageIndicatorTextStyle}"
-                                           FontSize="11">
-                                    <Run Text="输入" />
-                                    <Run
-                                        Text="{Binding UsageDetails.InputTokenCount,Mode=OneWay,StringFormat={}{0:N0}}" />
-                                    <Run Text="输出" />
-                                    <Run
-                                        Text="{Binding UsageDetails.OutputTokenCount,Mode=OneWay,StringFormat={}{0:N0}}" />
-                                </TextBlock>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Expander.Header>
-                <customControl:MarkdownTextBlock TextWrapping="Wrap"
-                                                 VerticalAlignment="Top"
-                                                 Margin="12,0,12,8"
-                                                 Source="{Binding ResponseBuffer,Mode=OneTime}" />
-            </Expander>
-        </materialDesign:Card>
+                    </Border>
+                </Grid>
+            </Expander.Header>
+            <customControl:MarkdownTextBlock TextWrapping="Wrap"
+                                             VerticalAlignment="Top"
+                                             Margin="12,0,12,8"
+                                             Source="{Binding ResponseBuffer,Mode=OneTime}" />
+        </Expander>
     </DataTemplate>
     <DataTemplate x:Key="ClientResponseContentTemplate"
                   DataType="{x:Type models:ClientResponseViewItem}">
@@ -417,9 +417,12 @@
                     </ContextMenu>
                 </customControl:FlowDocumentScrollViewerEx.ContextMenu>
             </customControl:FlowDocumentScrollViewerEx>
-            <ItemsControl ItemsSource="{Binding Loops,Mode=OneTime}"
-                          ItemTemplate="{StaticResource ReactLoopItemTemplate}"
-                          Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+            <materialDesign:Card
+                Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ItemsControl ItemsSource="{Binding Loops,Mode=OneTime}"
+                              ItemTemplate="{StaticResource ReactLoopItemTemplate}"
+                              BorderBrush="{DynamicResource MaterialDesignLightSeparatorBackground}" />
+            </materialDesign:Card>
             <TextBlock Text="{Binding ErrorMessage,Mode=OneWay}"
                        TextWrapping="Wrap"
                        Foreground="Red"
@@ -1092,9 +1095,11 @@
                                  BorderThickness="0"
                                  Style="{StaticResource MaterialDesignOutlinedCard}">
                 <StackPanel>
-                    <ItemsControl ItemsSource="{Binding Response.Loops,Mode=OneTime}"
-                                  ItemTemplate="{StaticResource ReactLoopItemTemplate}"
-                                  Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <materialDesign:Card
+                        Visibility="{Binding IsResponding,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ItemsControl ItemsSource="{Binding Response.Loops,Mode=OneTime}"
+                                      ItemTemplate="{StaticResource ReactLoopItemTemplate}" />
+                    </materialDesign:Card>
                     <customControl:FlowDocumentScrollViewerEx FontFamily="Segoe UI Emoji"
                                                               BorderThickness="0"
                                                               SafeDocument="{Binding Response.FullDocument,Mode=OneWay}"
