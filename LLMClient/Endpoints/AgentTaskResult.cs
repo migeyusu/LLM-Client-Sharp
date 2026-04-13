@@ -29,15 +29,6 @@ public class AgentTaskResult : CallResult
     {
         if (right is null || right == Empty) return;
 
-        var usage = Usage != null || right.Usage != null
-            ? new UsageDetails
-            {
-                InputTokenCount = (Usage?.InputTokenCount ?? 0) + (right.Usage?.InputTokenCount ?? 0),
-                OutputTokenCount = (Usage?.OutputTokenCount ?? 0) + (right.Usage?.OutputTokenCount ?? 0),
-                TotalTokenCount = (Usage?.TotalTokenCount ?? 0) + (right.Usage?.TotalTokenCount ?? 0),
-            }
-            : null;
-
         LastSuccessfulUsage = right.ValidCallTimes > 0
             ? CloneUsageDetails(right.LastSuccessfulUsage)
             : CloneUsageDetails(LastSuccessfulUsage);
@@ -47,7 +38,15 @@ public class AgentTaskResult : CallResult
         FinishReason = right.FinishReason ?? FinishReason;
         ValidCallTimes += right.ValidCallTimes;
         Price = (Price ?? 0) + (right.Price ?? 0);
-        Usage = usage;
+        if (this.Usage == null)
+        {
+            this.Usage = right.Usage;
+        }
+        else
+        {
+            this.Usage.Add(right.Usage ?? new UsageDetails());
+        }
+
         Messages = Messages.Concat(right.Messages).ToList();
 
         if (right.Annotations != null)

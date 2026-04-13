@@ -608,7 +608,7 @@
                                      Margin="10,0,0,0"
                                      Width="30"
                                      Height="30"
-                                     Visibility="{Binding Usage,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                     Visibility="{Binding LastSuccessfulUsage,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                      ToggleContent="{materialDesign:PackIcon Kind=InfoOutline}"
                                      PopupAnimation="Slide"
                                      PopupUniformCornerRadius="8"
@@ -616,7 +616,7 @@
                                      VerticalAlignment="Center"
                                      VerticalContentAlignment="Center"
                                      HorizontalContentAlignment="Center"
-                                     PopupContent="{Binding Usage,Mode=OneWay}"
+                                     PopupContent="{Binding LastSuccessfulUsage,Mode=OneWay}"
                                      PopupContentTemplate="{StaticResource UsageDetailDataTemplate}" />
             <materialDesign:PopupBox ToolTip="上下文占比"
                                      Margin="10,0,0,0"
