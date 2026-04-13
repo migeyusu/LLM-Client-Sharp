@@ -249,6 +249,8 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
         }
     }
 
+    private ChatMessage _chatMessage = new ChatMessage(ChatRole.User, (string?)null);
+
     public override IEnumerable<ChatMessage> Messages
     {
         get
@@ -258,14 +260,16 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
                 throw new NotSupportedException("No data content found.");
             }
 
-            var chatMessage = new ChatMessage(ChatRole.User, [_textRequestContent]);
-            chatMessage.Contents.AddRange(_dataContents);
-            yield return chatMessage;
+            _chatMessage.Contents.Clear();
+            _chatMessage.Contents.Add(_textRequestContent);
+            _chatMessage.Contents.AddRange(_dataContents);
+            yield return _chatMessage;
         }
     }
 
     public void TriggerTextContentUpdate()
     {
+        this.Messages.ClearTokensCounterTag();
         ParentSession?.IsDataChanged = true;
         OnPropertyChanged(nameof(RawTextMessage));
         InvalidateAsyncProperty(nameof(Tokens));

@@ -1,4 +1,4 @@
-ï»¿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Component;
@@ -128,6 +128,7 @@ public class HistoryCompressionStrategyTests
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.ObservationMasking);
         client.ModelInfo.HistoryCompression.PreserveRecentRounds = 1;
         client.ModelInfo.HistoryCompression.ObservationPlaceholder = "[details omitted for brevity]";
+        client.ModelInfo.HistoryCompression.ReactTokenThresholdPercent = 0.0001; // very low to always trigger
         var requestContext = new RequestContext
         {
             ChatMessages = [new ChatMessage(ChatRole.User, "solve the issue")],
@@ -178,7 +179,7 @@ public class HistoryCompressionStrategyTests
         var chatHistory = CreateHistoryWithPreambleAndRounds(shortPreamble: true);
         var summaryClient = new SummaryOnlyLlmClient("should not be called");
         var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer);
+        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
 
         var originalCount = chatHistory.Count;
         await strategy.CompressAsync(new ChatHistoryCompressionContext
@@ -203,7 +204,7 @@ public class HistoryCompressionStrategyTests
         var chatHistory = CreateHistoryWithPreambleAndRounds(shortPreamble: false);
         var summaryClient = new SummaryOnlyLlmClient("investigated auth module, fixed token refresh bug in AuthService.cs");
         var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer);
+        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
 
         await strategy.CompressAsync(new ChatHistoryCompressionContext
         {
@@ -211,7 +212,7 @@ public class HistoryCompressionStrategyTests
             Options = new ReactHistoryCompressionOptions
             {
                 PreambleCompression = true,
-                PreambleTokenThresholdPercent = 10, // very low threshold to trigger compression
+                PreambleTokenThresholdPercent = 0.0001, // very low threshold to trigger compression
             },
             CurrentRound = 0,
             CurrentClient = summaryClient,
@@ -249,7 +250,7 @@ public class HistoryCompressionStrategyTests
         var chatHistory = CreateHistoryWithPreambleAndRounds(shortPreamble: false);
         var summaryClient = new SummaryOnlyLlmClient("previous task summary");
         var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer);
+        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
 
         await strategy.CompressAsync(new ChatHistoryCompressionContext
         {
@@ -257,7 +258,7 @@ public class HistoryCompressionStrategyTests
             Options = new ReactHistoryCompressionOptions
             {
                 PreambleCompression = true,
-                PreambleTokenThresholdPercent = 10,
+                PreambleTokenThresholdPercent = 0.0001,
             },
             CurrentRound = 0,
             CurrentClient = summaryClient,
@@ -277,7 +278,7 @@ public class HistoryCompressionStrategyTests
         var chatHistory = CreateHistoryWithTwoRounds();
         var summaryClient = new SummaryOnlyLlmClient("should not be called");
         var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer);
+        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
 
         var originalCount = chatHistory.Count;
         await strategy.CompressAsync(new ChatHistoryCompressionContext
@@ -306,7 +307,7 @@ public class HistoryCompressionStrategyTests
             CreateTextResponse("done"));
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.None);
         client.ModelInfo.HistoryCompression.PreambleCompression = true;
-        client.ModelInfo.HistoryCompression.PreambleTokenThresholdPercent = 10;
+        client.ModelInfo.HistoryCompression.PreambleTokenThresholdPercent = 0.0001;
 
         // Build history: system + previous task messages + current user message
         var chatHistory = new List<ChatMessage>
@@ -351,7 +352,7 @@ public class HistoryCompressionStrategyTests
             CreateTextResponse("done"));
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.None);
         client.ModelInfo.HistoryCompression.PreambleCompression = true;
-        client.ModelInfo.HistoryCompression.PreambleTokenThresholdPercent = 10;
+        client.ModelInfo.HistoryCompression.PreambleTokenThresholdPercent = 0.0001;
 
         var requestContext = new RequestContext
         {
@@ -422,11 +423,11 @@ public class HistoryCompressionStrategyTests
     }
 
     [Fact]
-    public async Task NoOp_SummaryErrorLoop_UsesPreserveRecentRoundsAndDropsPreamble()
+    public async Task NoOp_CompressAsync_DoesNotModifyHistory()
     {
         var chatHistory = CreateHistoryWithErrorAndSuccessRounds();
-        var strategy = new NoOpChatHistoryCompressionStrategy(new Summarizer(new GlobalOptions()));
-        var summaryClient = new SummaryOnlyLlmClient("What was done: called broken_tool - What result: tool failed");
+        var strategy = new NoOpChatHistoryCompressionStrategy();
+        var originalCount = chatHistory.Count;
 
         await strategy.CompressAsync(new ChatHistoryCompressionContext
         {
@@ -438,24 +439,26 @@ public class HistoryCompressionStrategyTests
                 PreserveRecentRounds = 1,
             },
             CurrentRound = 2,
-            CurrentClient = summaryClient,
+            CurrentClient = new SummaryOnlyLlmClient("unused"),
         });
 
-        Assert.DoesNotContain(chatHistory, message => message.Role == ChatRole.System && message.Text == "You are helpful.");
-        Assert.DoesNotContain(chatHistory, message => message.Role == ChatRole.User && message.Text == "Fix the failing workflow.");
-        Assert.Contains(chatHistory, message => message.Text.Contains("[Round 1 error summary]", StringComparison.Ordinal));
-        Assert.DoesNotContain(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
-            content => content.CallId == "call-err-1");
+        // NoOp should never modify the history
+        Assert.Equal(originalCount, chatHistory.Count);
+        // Preamble messages must still be present
+        Assert.Contains(chatHistory, message => message.Role == ChatRole.System && message.Text == "You are helpful.");
+        Assert.Contains(chatHistory, message => message.Role == ChatRole.User && message.Text == "Fix the failing workflow.");
+        // Error round must still be present unchanged
         Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
-            content => content.CallId == "call-ok-2");
+            content => content.CallId == "call-err-1");
     }
 
     [Fact]
-    public async Task ObservationMasking_SummaryErrorLoop_DoesNotMaskRecentErrorRound()
+    public async Task ObservationMasking_MasksOlderRoundObservation_AndPreservesRecentRoundObservation()
     {
+        // Round 1: old success round (should be masked).
+        // Round 2: recent error round (should be preserved as-is ¡ª strategy does not process errors).
         var chatHistory = CreateHistoryWithRecentErrorRound();
-        var strategy = new ObservationMaskingChatHistoryCompressionStrategy(new Summarizer(new GlobalOptions()));
-        var summaryClient = new SummaryOnlyLlmClient("What was done: called old_tool - What result: old tool failed");
+        var strategy = new ObservationMaskingChatHistoryCompressionStrategy();
 
         await strategy.CompressAsync(new ChatHistoryCompressionContext
         {
@@ -463,14 +466,17 @@ public class HistoryCompressionStrategyTests
             Options = new ReactHistoryCompressionOptions
             {
                 Mode = ReactHistoryCompressionMode.ObservationMasking,
-                SummaryErrorLoop = true,
                 PreserveRecentRounds = 1,
                 ObservationPlaceholder = "[details omitted for brevity]",
             },
             CurrentRound = 2,
-            CurrentClient = summaryClient,
+            CurrentClient = new SummaryOnlyLlmClient("unused"),
         });
 
+        // Old round (round 1) observation should be masked with placeholder
+        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
+            content => content.CallId == "call-ok-old" && Equals(content.Result, "[details omitted for brevity]"));
+        // Recent error round (round 2) observation must be preserved unchanged (strategy does not summarize errors)
         Assert.DoesNotContain(chatHistory, message =>
             message.Text.StartsWith("[Round 2 error summary]", StringComparison.Ordinal));
         Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
@@ -602,6 +608,7 @@ public class HistoryCompressionStrategyTests
             CreateTextResponse("done"));
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.ObservationMasking);
         client.ModelInfo.HistoryCompression.PreserveRecentRounds = 1;
+        client.ModelInfo.HistoryCompression.ReactTokenThresholdPercent = 0.0001; // very low to always trigger
 
         var requestContext = new RequestContext
         {
@@ -650,7 +657,7 @@ public class HistoryCompressionStrategyTests
 
         if (!shortPreamble)
         {
-            // Previous task messages (no round tags â€” simulating persisted history from prior task)
+            // Previous task messages (no round tags ¡ª simulating persisted history from prior task)
             history.Add(new ChatMessage(ChatRole.User, "Fix the authentication bug."));
             history.Add(new ChatMessage(ChatRole.Assistant,
                 "I found the issue in AuthService.cs and applied a fix. The token refresh logic was incorrectly handling expired tokens."));
@@ -810,7 +817,8 @@ public class HistoryCompressionStrategyTests
     {
         private readonly IChatClient _chatClient;
 
-        public CompressionAwareLlmClient(IChatClient chatClient, ReactHistoryCompressionMode mode)
+        public CompressionAwareLlmClient(IChatClient chatClient, ReactHistoryCompressionMode mode,
+            ITokensCounter? tokensCounter = null) : base(tokensCounter ?? new DefaultTokensCounter())
         {
             _chatClient = chatClient;
             ModelInfo = new APIModelInfo

@@ -16,7 +16,7 @@ public class EmptyLlmModelClient : ILLMChatClient
     {
         get
         {
-            return new APIEndPoint(new APIEndPointOption() { Name = "NullLlmModelClient" }, NullLoggerFactory.Instance);
+            return new APIEndPoint(new APIEndPointOption() { Name = "NullLlmModelClient" }, NullLoggerFactory.Instance, new DefaultTokensCounter());
         }
     }
 

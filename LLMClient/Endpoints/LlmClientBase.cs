@@ -51,6 +51,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
     }
 
+    private ITokensCounter _tokensCounter;
+
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 
     protected abstract IChatClient GetChatClient();
@@ -111,6 +113,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     private readonly Stopwatch _durationStopwatch = new();
 
     private readonly Stopwatch _latencyStopwatch = new();
+
+    protected LlmClientBase(ITokensCounter tokensCounter)
+    {
+        _tokensCounter = tokensCounter;
+    }
 
     private const string ToolCalls = "ToolCalls";
 
@@ -404,6 +411,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             responseMessages.AddRange(preResponseMessages);
             loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
             finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();
+            var completionToken = loopUsageDetails?.OutputTokenCount;
+            if (completionToken > 0)
+            {
+                preResponseMessages.TagTokensCounter(completionToken.Value);
+            }
+
             var finishReasonValue = finishReason?.Value;
             if (finishReasonValue == null)
             {
@@ -477,9 +490,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
                 preFunctionCalls, step, cancellationToken);
 
+            // 1. Pre-process: uniformly replace error rounds outside the preserve window with summaries
+            if (historyCompressionOptions.SummaryErrorLoop)
+            {
+                await PreprocessErrorRoundsAsync(chatMessages, historyCompressionOptions, cancellationToken);
+            }
+
+            // 2. Token-based in-task compression trigger
             var compressionKind = GetHistoryCompressionKind(historyCompressionOptions.Mode);
-            var shouldRunCompression = compressionKind.HasValue || historyCompressionOptions.SummaryErrorLoop;
-            if (shouldRunCompression)
+            if (compressionKind.HasValue && await ShouldRunInTaskCompression(chatMessages, historyCompressionOptions))
             {
                 var compressionContext = new ChatHistoryCompressionContext
                 {
@@ -490,21 +509,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     Step = step,
                 };
 
-                if (historyCompressionStrategy.ShouldCompress(compressionContext))
-                {
-                    if (compressionKind.HasValue)
-                    {
-                        step.EmitHistoryCompressionStarted(compressionKind.Value);
-                    }
-
-                    await historyCompressionStrategy.CompressAsync(compressionContext, cancellationToken);
-
-                    if (compressionKind.HasValue)
-                    {
-                        step.EmitHistoryCompressionCompleted(compressionKind.Value,
-                            compressionContext.CompressionApplied);
-                    }
-                }
+                step.EmitHistoryCompressionStarted(compressionKind.Value);
+                await historyCompressionStrategy.CompressAsync(compressionContext, cancellationToken);
+                step.EmitHistoryCompressionCompleted(compressionKind.Value, compressionContext.CompressionApplied);
             }
 
 
@@ -672,7 +679,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         };
 
         var preambleStrategy = viewModelFactory.Create<PreambleSummaryChatHistoryCompressionStrategy>();
-        if (!preambleStrategy.ShouldCompress(compressionContext))
+        if (!await preambleStrategy.ShouldCompress(compressionContext))
         {
             return;
         }
@@ -689,6 +696,51 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         {
             PreambleCompressionActive.Value = false;
         }
+    }
+
+    private async Task<bool> ShouldRunInTaskCompression(List<ChatMessage> chatMessages, ReactHistoryCompressionOptions options)
+    {
+        var threshold = options.ReactTokenThresholdPercent;
+        if (threshold <= 0) return false;
+        var maxContext = Model.MaxContextSize;
+        if (maxContext <= 0) return false;
+        var estimateTokens = await _tokensCounter.EstimateTokens(chatMessages);
+        return estimateTokens > threshold * maxContext;
+    }
+
+    private async Task PreprocessErrorRoundsAsync(
+        List<ChatMessage> chatMessages,
+        ReactHistoryCompressionOptions options,
+        CancellationToken cancellationToken)
+    {
+        var segmentation = ReactHistorySegmenter.Segment(chatMessages);
+        var roundsToKeep = Math.Max(0, options.PreserveRecentRounds);
+        var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
+
+        var hasErrorsToProcess = segmentation.Rounds.Take(keepFromIndex).Any(round => round.HasError);
+        if (!hasErrorsToProcess)
+        {
+            return;
+        }
+
+        var summarizer = ServiceLocator.GetService<Summarizer>();
+        var replacement = new List<ChatMessage>(segmentation.PreambleMessages);
+        for (var i = 0; i < segmentation.Rounds.Count; i++)
+        {
+            var round = segmentation.Rounds[i];
+            if (i < keepFromIndex && round.HasError)
+            {
+                replacement.Add(await ReactErrorRoundSummarizer.BuildErrorSummaryMessageAsync(
+                    round, summarizer, this, cancellationToken));
+                continue;
+            }
+
+            replacement.AddRange(round.AssistantMessages);
+            replacement.AddRange(round.ObservationMessages);
+        }
+
+        chatMessages.Clear();
+        chatMessages.AddRange(replacement);
     }
 
     private static HistoryCompressionKind? GetHistoryCompressionKind(ReactHistoryCompressionMode mode)

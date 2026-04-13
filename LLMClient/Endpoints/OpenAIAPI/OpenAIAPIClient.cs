@@ -39,7 +39,7 @@ public class OpenAIAPIClient : LlmClientBase
     private APIDefaultOption _optionCopy;
 
     public OpenAIAPIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory, ITokensCounter tokensCounter) : base(tokensCounter)
     {
         _option = option;
         _optionCopy = Extension.Clone(option);

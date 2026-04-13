@@ -25,7 +25,6 @@ public class DefaultTokensCounter : ITokensCounter
             {
                 return 0;
             }
-
             return await Task.Run(() => _tokenizer.CountTokens(text));
         }
         catch (Exception e)

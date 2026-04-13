@@ -32,4 +32,13 @@ public class ReactHistoryCompressionOptions
     /// </summary>
     [JsonPropertyName("SummaryErrorLoop")]
     public bool SummaryErrorLoop { get; set; }
+
+    /// <summary>
+    /// Token threshold (as a fraction of the model's maximum context size) that triggers in-task
+    /// history compression. When the estimated token count of the current chat history exceeds
+    /// <c>ReactTokenThresholdPercent * model.MaxContextSize</c>, the active compression strategy
+    /// is invoked. A value of 0 or less disables token-based compression triggering.
+    /// </summary>
+    [JsonPropertyName("ReactTokenThresholdPercent")]
+    public double ReactTokenThresholdPercent { get; set; }
 }

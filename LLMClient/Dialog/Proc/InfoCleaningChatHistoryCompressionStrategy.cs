@@ -16,19 +16,8 @@ public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCom
         _summarizer = summarizer;
     }
 
-    public bool ShouldCompress(ChatHistoryCompressionContext context)
-    {
-        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
-        var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
-        return segmentation.Rounds.Count > roundsToKeep;
-    }
-
     public async Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
     {
-        if (!ShouldCompress(context))
-        {
-            return;
-        }
 
         var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
         var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);

@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Text;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Converters;
 using LLMClient.Endpoints.OpenAIAPI;
@@ -303,7 +304,7 @@ public class NewApiUsageQueryServiceTests
             }
         };
 
-        return new APIEndPoint(option, LoggerFactory.Create(_ => { }));
+        return new APIEndPoint(option, LoggerFactory.Create(_ => { }), new DefaultTokensCounter());
     }
 }
 

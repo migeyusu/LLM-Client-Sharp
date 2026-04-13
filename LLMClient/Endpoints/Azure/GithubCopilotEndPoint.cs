@@ -4,9 +4,10 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
-
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints.Azure.Models;
 using LLMClient.Persistance;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LLMClient.Endpoints.Azure;
 
@@ -161,7 +162,8 @@ public sealed class GithubCopilotEndPoint : AzureEndPointBase
     {
         if (model is AzureModelInfo azureModelInfo)
         {
-            return new AzureClientBase(this, azureModelInfo);
+            var tokensCounter = ServiceLocator.GetService<ITokensCounter>() ?? new DefaultTokensCounter();
+            return new AzureClientBase(this, azureModelInfo, tokensCounter);
         }
 
         return null;

@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,7 +12,6 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Endpoints;
 using LLMClient.Persistance;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog.Models;
 
@@ -184,6 +182,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public void TriggerTextContentUpdate()
     {
+        Messages.ClearTokensCounterTag();
         InvalidateAsyncProperty(nameof(SearchableDocument));
         RawTextContent = null;
         OnPropertyChanged(nameof(RawTextContent));

@@ -944,7 +944,8 @@ public class MiniSweRegressionTests
         private readonly IChatClient _chatClient;
         private readonly IEndpointModel _model;
 
-        public AgentFlowLlmClient(IChatClient chatClient)
+        public AgentFlowLlmClient(IChatClient chatClient, ITokensCounter? tokensCounter = null)
+            : base(tokensCounter ?? new DefaultTokensCounter())
         {
             _chatClient = chatClient;
             _model = new APIModelInfo

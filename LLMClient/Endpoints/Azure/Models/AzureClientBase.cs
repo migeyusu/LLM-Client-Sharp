@@ -40,7 +40,8 @@ public class AzureClientBase : LlmClientBase, ILLMChatClient
         get { return ModelInfo; }
     }
 
-    public AzureClientBase(AzureEndPointBase endPoint, AzureModelInfo modelInfo)
+    public AzureClientBase(AzureEndPointBase endPoint, AzureModelInfo modelInfo, ITokensCounter tokensCounter)
+        : base(tokensCounter)
     {
         this.Endpoint = endPoint;
         ModelInfo = modelInfo;

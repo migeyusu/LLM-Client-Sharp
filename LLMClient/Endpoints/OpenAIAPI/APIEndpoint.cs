@@ -157,11 +157,14 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
 
     private readonly ILoggerFactory _loggerFactory;
 
-    public APIEndPoint(APIEndPointOption option, ILoggerFactory loggerFactory)
+    private readonly ITokensCounter _tokensCounter;
+
+    public APIEndPoint(APIEndPointOption option, ILoggerFactory loggerFactory, ITokensCounter tokensCounter)
     {
         Option = option;
         option.PropertyChanged += OptionOnPropertyChanged;
         this._loggerFactory = loggerFactory;
+        this._tokensCounter = tokensCounter;
     }
 
     private void OptionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -181,7 +184,7 @@ public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
     {
         if (model is APIModelInfo apiModelInfo)
         {
-            return new OpenAIAPIClient(this, apiModelInfo, Option.ConfigOption, _loggerFactory);
+            return new OpenAIAPIClient(this, apiModelInfo, Option.ConfigOption, _loggerFactory, _tokensCounter);
         }
 
         return null;

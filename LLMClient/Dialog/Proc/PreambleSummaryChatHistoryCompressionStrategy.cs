@@ -1,6 +1,5 @@
 ﻿using System.Windows;
 using LLMClient.Abstraction;
-using LLMClient.Component.CustomControl;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Proc;
@@ -16,12 +15,15 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
 
     private readonly Summarizer _summarizer;
 
-    public PreambleSummaryChatHistoryCompressionStrategy(Summarizer summarizer)
+    private ITokensCounter _tokensCounter;
+
+    public PreambleSummaryChatHistoryCompressionStrategy(Summarizer summarizer, ITokensCounter tokensCounter)
     {
         _summarizer = summarizer;
+        _tokensCounter = tokensCounter;
     }
 
-    public bool ShouldCompress(ChatHistoryCompressionContext context)
+    public async Task<bool> ShouldCompress(ChatHistoryCompressionContext context)
     {
         var options = context.Options;
         if (!options.PreambleCompression)
@@ -57,7 +59,7 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
         }
 
         var historicalMessages = preamble.Skip(startIndex).Take(historicalCount).ToArray();
-        var estimatedTokens = EstimateTokens(historicalMessages);
+        var estimatedTokens = await _tokensCounter.EstimateTokens(historicalMessages);
         var modelMaxContextSize = context.CurrentClient.Model.MaxContextSize;
         var threshold = options.PreambleTokenThresholdPercent * modelMaxContextSize;
         return estimatedTokens > threshold;
@@ -66,7 +68,7 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
     public async Task CompressAsync(ChatHistoryCompressionContext context,
         CancellationToken cancellationToken = default)
     {
-        if (!ShouldCompress(context))
+        if (!await ShouldCompress(context))
         {
             return;
         }
@@ -113,18 +115,10 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
         }
 
         // Check if compression is needed based on token threshold
-        var estimatedTokens = EstimateTokens(historicalMessages);
+        var estimatedTokens = await _tokensCounter.EstimateTokens(historicalMessages);
         var modelMaxContextSize = context.CurrentClient.Model.MaxContextSize;
         var threshold = options.PreambleTokenThresholdPercent * modelMaxContextSize;
         if (estimatedTokens <= threshold)
-        {
-            return;
-        }
-
-        if (!MessageBoxes.Question(
-                "The conversation history contains a large amount of context from previous interactions. " +
-                "Compressing this context may help improve performance and reduce costs, but may also result in loss of detail. " +
-                "Do you want to proceed with compression?", "Compress Conversation History"))
         {
             return;
         }
@@ -159,41 +153,5 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
     {
         return new ChatMessage(ChatRole.Assistant,
             "[Previous task context summary]\n" + summary.Trim());
-    }
-
-    internal static long EstimateTokens(IReadOnlyList<ChatMessage> messages)
-    {
-        long totalChars = 0;
-        foreach (var message in messages)
-        {
-            foreach (var content in message.Contents)
-            {
-                switch (content)
-                {
-                    case TextContent textContent:
-                        totalChars += textContent.Text?.Length ?? 0;
-                        break;
-                    case TextReasoningContent reasoningContent:
-                        totalChars += reasoningContent.Text.Length;
-                        break;
-                    case FunctionCallContent functionCallContent:
-                        totalChars += functionCallContent.Name.Length;
-                        if (functionCallContent.Arguments != null)
-                        {
-                            foreach (var arg in functionCallContent.Arguments)
-                            {
-                                totalChars += arg.Value?.ToString()?.Length ?? 0;
-                            }
-                        }
-
-                        break;
-                    case FunctionResultContent functionResultContent:
-                        totalChars += functionResultContent.Result?.ToString()?.Length ?? 0;
-                        break;
-                }
-            }
-        }
-
-        return (long)(totalChars / 2.8);
     }
 }

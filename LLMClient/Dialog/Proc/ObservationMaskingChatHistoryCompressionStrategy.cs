@@ -5,58 +5,24 @@ namespace LLMClient.Dialog.Proc;
 
 public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHistoryCompressionStrategy
 {
-    private readonly Summarizer? _summarizer;
-
-    public ObservationMaskingChatHistoryCompressionStrategy(Summarizer? summarizer = null)
-    {
-        _summarizer = summarizer;
-    }
-
-    public bool ShouldCompress(ChatHistoryCompressionContext context)
+    public async Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
     {
         var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
         var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
-        if (segmentation.Rounds.Count <= roundsToKeep)
-        {
-            return false;
-        }
-
         var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
-        if (context.Options.SummaryErrorLoop && segmentation.Rounds.Take(keepFromIndex).Any(round => round.HasError))
-        {
-            return true;
-        }
 
-        return segmentation.Rounds.Take(keepFromIndex).Any(round => round.ObservationMessages.Count > 0);
-    }
-
-    public async Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
-    {
-        if (!ShouldCompress(context))
+        var hasObservationsToMask = segmentation.Rounds.Take(keepFromIndex).Any(round => round.ObservationMessages.Count > 0);
+        if (!hasObservationsToMask)
         {
             return;
         }
 
-        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
-        var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
         var replacement = new List<ChatMessage>(segmentation.PreambleMessages);
-        var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
         var changed = false;
 
         for (var index = 0; index < segmentation.Rounds.Count; index++)
         {
             var round = segmentation.Rounds[index];
-
-            if (context.Options.SummaryErrorLoop && round.HasError && index < keepFromIndex)
-            {
-                replacement.Add(await ReactErrorRoundSummarizer.BuildErrorSummaryMessageAsync(
-                    round,
-                    _summarizer,
-                    context.CurrentClient,
-                    cancellationToken));
-                changed = true;
-                continue;
-            }
 
             replacement.AddRange(round.AssistantMessages);
             if (index >= keepFromIndex)

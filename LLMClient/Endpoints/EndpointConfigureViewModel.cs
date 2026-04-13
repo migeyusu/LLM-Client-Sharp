@@ -30,6 +30,8 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 {
     private readonly ILoggerFactory _loggerFactory;
 
+    private readonly ITokensCounter _tokensCounter;
+
 
     public ILLMAPIEndpoint? SelectedEndpoint
     {
@@ -44,7 +46,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     public ICommand AddNewEndpointCommand => new ActionCommand(o =>
     {
-        Endpoints.Add(new APIEndPoint(new APIEndPointOption(), _loggerFactory));
+        Endpoints.Add(new APIEndPoint(new APIEndPointOption(), _loggerFactory, _tokensCounter));
     });
 
     public ICommand RemoveEndPointCommand => new RelayCommand<ILLMAPIEndpoint?>((o =>
@@ -204,9 +206,10 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     private ILLMAPIEndpoint? _selectedEndpoint;
 
-    public EndpointConfigureViewModel(ILoggerFactory loggerFactory, IMapper mapper)
+    public EndpointConfigureViewModel(ILoggerFactory loggerFactory, IMapper mapper, ITokensCounter tokensCounter)
     {
         this._loggerFactory = loggerFactory;
+        this._tokensCounter = tokensCounter;
         PopupSelectViewModel = new ModelSelectionPopupViewModel(OnModelSelected)
             { SuccessRoutedCommand = PopupBox.ClosePopupCommand };
         _suggestedModels = new ReadOnlyObservableCollection<IEndpointModel>(SuggestedModelsOb);
@@ -293,7 +296,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
                     var endPoint = jsonObject.Deserialize<APIEndPointOption>(Extension.DefaultJsonSerializerOptions);
                     if (endPoint != null)
                     {
-                        Endpoints.Add(new APIEndPoint(endPoint, _loggerFactory));
+                        Endpoints.Add(new APIEndPoint(endPoint, _loggerFactory, _tokensCounter));
                     }
                 }
             }

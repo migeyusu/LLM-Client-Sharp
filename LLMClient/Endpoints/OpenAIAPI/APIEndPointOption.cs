@@ -190,21 +190,19 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
     static UriThemedIcon _defaultIcon =
         new(null, ImageExtensions.APIIconImageLight, null, ImageExtensions.APIIconImageDark);
 
-    private UriThemedIcon? _icon;
-
     [JsonIgnore]
     public virtual UriThemedIcon Icon
     {
         get
         {
-            if (_icon == null)
+            if (field == null)
             {
                 return _defaultIcon;
             }
 
-            return _icon;
+            return field;
         }
-        set => field = value;
+        set;
     }
 
     /// <summary>
