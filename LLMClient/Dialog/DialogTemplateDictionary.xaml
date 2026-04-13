@@ -647,7 +647,8 @@
         </StackPanel>
     </DataTemplate>
     <Style x:Key="ResponseStatsStyle"
-           TargetType="{x:Type ContentControl}">
+           TargetType="{x:Type ContentControl}"
+           d:DataContext="{d:DesignInstance models:ResponseViewItemBase}">
         <Setter Property="ContentTemplate"
                 Value="{StaticResource ResponseStatsTemplate}" />
         <Setter Property="Visibility"
@@ -727,6 +728,21 @@
             </StackPanel>
         </StackPanel>
     </DataTemplate>
+
+    <Style TargetType="{x:Type ContentControl}"
+           x:Key="ResponseProcStyle"
+           d:DataContext="{d:DesignInstance models:RawResponseViewItem}">
+        <Setter Property="ContentTemplate" Value="{StaticResource ResponseProcTemplate}" />
+        <Setter Property="Visibility"
+                Value="Collapsed" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsResponding,Mode=OneWay}"
+                         Value="True">
+                <Setter Property="Visibility"
+                        Value="Visible" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
 
     <DataTemplate x:Key="MultiResponseViewItemDataTemplate"
                   DataType="{x:Type models:ParallelResponseViewItem}">
@@ -1091,7 +1107,7 @@
             <ContentControl Content="{Binding Response,Mode=OneWay}"
                             Style="{StaticResource ResponseStatsStyle}" />
             <ContentControl Content="{Binding Response,Mode=OneWay}"
-                            ContentTemplate="{StaticResource ResponseProcTemplate}" />
+                            Style="{StaticResource ResponseProcStyle}" />
         </StackPanel>
     </DataTemplate>
 
