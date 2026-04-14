@@ -64,33 +64,34 @@ public static class ContextPromptTemplates
     /// 当存在任何代码上下文时使用
     /// </summary>
     public const string CodeContextSectionTemplate = """
-                                                     <code_context>   
-                                                     <description>
-                                                     You have access to the following codebase context to assist with coding tasks.
-                                                     Use this information to provide accurate, contextually relevant responses.
-                                                     </description>
+                                                    <code_context>   
+                                                    <description>
+                                                    You have access to the following codebase context to assist with coding tasks.
+                                                    Use this information to provide accurate, contextually relevant responses.
+                                                    </description>
 
-                                                     {{{projectContext}}}
+                                                    {{{projectContext}}}
 
-                                                     {{{focusedContext}}}
+                                                    {{{focusedContext}}}
 
-                                                     {{{relevantSnippets}}}
+                                                    {{{relevantSnippets}}}
 
-                                                     <usage_guidelines>
-                                                     1. **Map vs. Territory**: The <ProjectStructure> provides namespaces, classes, and method signatures, but NOT the implementation details (method bodies).
-                                                     2. **Navigation Strategy**:
-                                                        - When asked to implement a feature, FIRST check <ProjectStructure> to see if relevant types or helpers already exist.
-                                                        - Do NOT guess implementation logic. If you need to see the code inside a method (e.g., `ProcessData`), use your file reading tool to read the file specified in the `FilePath`.
-                                                     3. **Consistency**:
-                                                        - Use the exact Namespaces and Type names defined in the structure.
-                                                        - Follow the naming conventions observed in the existing method signatures.
-                                                        - Respect the `TargetFramework` and defined `PackageReferences` (e.g., do not suggest Newtonsoft.Json if the project uses System.Text.Json).
-                                                     4. **Architecture Awareness**:
-                                                        - Identify the project boundaries (e.g., separate Core/Domain projects from UI/Infrastructure).
-                                                        - Do not suggest circular dependencies between defined projects.
-                                                     </usage_guidelines>
-                                                     </code_context>
-                                                     """;
+                                                    <usage_guidelines>
+                                                    1. **Map vs. Territory**: The <ProjectStructure> provides namespaces, classes, and method signatures, but NOT the implementation details (method bodies).
+                                                    2. **Navigation Strategy**:
+                                                       - When asked to implement a feature, FIRST check <ProjectStructure> to see if relevant types or helpers already exist.
+                                                       - Do NOT guess implementation logic. If you need to see the code inside a method (e.g., `ProcessData`), use your file reading tool to read the file specified in the `FilePath`.
+                                                    3. **Consistency**:
+                                                       - Use the exact Namespaces and Type names defined in the structure.
+                                                       - Follow the naming conventions observed in the existing method signatures.
+                                                       - Respect the `TargetFramework` and defined `PackageReferences` (e.g., do not suggest Newtonsoft.Json if the project uses System.Text.Json).
+                                                    4. **Architecture Awareness**:
+                                                       - Identify the project boundaries (e.g., separate Core/Domain projects from UI/Infrastructure).
+                                                       - Do not suggest circular dependencies between defined projects.
+                                                    </usage_guidelines>
+                                                    </code_context>
+                                                    """;
+
 
 
     /// <summary>
@@ -98,17 +99,17 @@ public static class ContextPromptTemplates
     /// </summary>
     public const string FocusedContextTemplate = """
                                                  <focused_context>
-                                                 <current_file path="{{$filePath}}">
+                                                 <current_file path="{{{filePath}}}">
                                                  <containing_type>
-                                                 {{$typeInfo}}
+                                                 {{{typeInfo}}}
                                                  </containing_type>
 
                                                  <visible_members>
-                                                 {{$memberSignatures}}
+                                                 {{{memberSignatures}}}
                                                  </visible_members>
 
                                                  <related_types>
-                                                 {{$relatedTypes}}
+                                                 {{{relatedTypes}}}
                                                  </related_types>
                                                  </current_file>
                                                  </focused_context>
@@ -118,8 +119,8 @@ public static class ContextPromptTemplates
     /// RAG 检索到的相关代码片段模板
     /// </summary>
     public const string RelevantSnippetsTemplate = """
-                                                   <relevant_snippets query="{{$searchQuery}}">
-                                                   {{$snippetsList}}
+                                                   <relevant_snippets query="{{{searchQuery}}}">
+                                                   {{{snippetsList}}}
                                                    </relevant_snippets>
                                                    """;
 
@@ -127,11 +128,11 @@ public static class ContextPromptTemplates
     /// 单个代码片段模板
     /// </summary>
     public const string CodeSnippetTemplate = """
-                                              <snippet source="{{$sourcePath}}" relevance="{{$relevanceScore}}">
-                                              <signature>{{$signature}}</signature>
-                                              <summary>{{$summary}}</summary>
+                                              <snippet source="{{{sourcePath}}}" relevance="{{{relevanceScore}}}">
+                                              <signature>{{{signature}}}</signature>
+                                              <summary>{{{summary}}}</summary>
                                               <code>
-                                              {{$codeContent}}
+                                              {{{codeContent}}}
                                               </code>
                                               </snippet>
                                               """;

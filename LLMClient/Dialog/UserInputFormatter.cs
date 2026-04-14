@@ -12,12 +12,12 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
 
-public class CodeBlockAnalysisResult
+public class CodeBlockSeparatorResult
 {
-    [JsonPropertyName("blocks")] public List<CodeBlockLocation>? Blocks { get; set; }
+    [JsonPropertyName("blocks")] public List<CodeBlockBoundary>? Blocks { get; set; }
 }
 
-public class CodeBlockLocation
+public class CodeBlockBoundary
 {
     [JsonPropertyName("start")] public int StartLineIndex { get; set; }
 
@@ -59,7 +59,7 @@ public class UserInputFormatter
 
                      # Context Hint
                      The user is likely discussing the following topics (use this to infer programming language if ambiguous): 
-                     {{$contextHint}}
+                     {{{contextHint}}}
 
                      # Rules
                      1. **Multi-line Only**: Only mark code blocks that span multiple lines or are distinct standalone code snippets.
@@ -79,12 +79,12 @@ public class UserInputFormatter
 
                      --------------------------------------------------
                      # User Input Analysis Table
-                     {{$input}}
+                     {{{input}}}
                      --------------------------------------------------
                      """;
         try
         {
-            var message = await PromptTemplateRenderer.RenderAsync(prompt,
+            var message = await PromptTemplateRenderer.RenderHandlebarsAsync(prompt,
                 new Dictionary<string, object?>
                 {
                     { "contextHint", systemPrompt },
@@ -106,7 +106,7 @@ public class UserInputFormatter
             }
 
             // 5. 反序列化
-            var analysis = JsonSerializer.Deserialize<CodeBlockAnalysisResult>(jsonResponse);
+            var analysis = JsonSerializer.Deserialize<CodeBlockSeparatorResult>(jsonResponse);
             if (analysis?.Blocks?.Count is null or 0)
                 return rawInput;
             // 6. 重组文本 
@@ -120,7 +120,7 @@ public class UserInputFormatter
         }
     }
 
-    private static string RebuildTextWithMarkdown(string[] lines, List<CodeBlockLocation> blocks)
+    private static string RebuildTextWithMarkdown(string[] lines, List<CodeBlockBoundary> blocks)
     {
         var sb = new StringBuilder();
         // 排序并去重，防止 LLM 发癫返回重叠区间

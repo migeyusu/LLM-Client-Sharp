@@ -22,15 +22,29 @@ namespace LLMClient.Agent;
 /// </summary>
 public sealed class HistoryCompactor : PromptBasedAgent
 {
-    /// <summary>Prompt template rendered with {{$task}}, {{$contextHint}}, {{$input}} placeholders.</summary>
+    /// <summary>Prompt template rendered with {{{task}}}, {{{contextHint}}}, {{{input}}} placeholders (Handlebars triple-brace for raw output).</summary>
     public string PromptTemplate { get; set; } = """
                                                  You are a precision history-pruning engine for an AI coding agent session.
 
-                                                 Task context: {{$task}}
-                                                 Context hint: {{$contextHint}}
+                                                 # Task context
+
+                                                 <task>
+                                                   {{{task}}}
+                                                 </task>
+
+                                                 # Context hint 
+
+                                                 <contextHint>
+                                                    {{{contextHint}}}
+                                                 </contextHint>
+
+                                                 # History MessageRounds
 
                                                  Below are indexed message rounds:
-                                                 {{$input}}
+
+                                                 <input>
+                                                     {{{input}}}
+                                                 </input>
 
                                                  Goal:
                                                  Remove only rounds that are irrelevant to the CURRENT coding objective.
@@ -106,17 +120,17 @@ public sealed class HistoryCompactor : PromptBasedAgent
 
         try
         {
-            var message = await PromptTemplateRenderer.RenderAsync(PromptTemplate,
+            var message = await PromptTemplateRenderer.RenderHandlebarsAsync(PromptTemplate,
                 new Dictionary<string, object?>
                 {
                     { "task", task },
                     { "contextHint", systemPrompt },
                     { "input", indexedInput }
                 });
-
-            var result = await SendRequestAsync(
-                DefaultDialogContextBuilder.CreateFromHistory([new RequestViewItem(message)], systemPrompt),
-                cancellationToken);
+            var contextBuilder =
+                DefaultDialogContextBuilder.CreateFromHistory([new RequestViewItem(message)], systemPrompt);
+            contextBuilder.ResponseFormat = ChatResponseFormat.ForJsonSchema<RemoveDecision>();
+            var result = await SendRequestAsync(contextBuilder, cancellationToken);
 
             var jsonResponse = result.FirstTextResponse;
             if (string.IsNullOrWhiteSpace(jsonResponse)) return null;
@@ -199,6 +213,7 @@ public sealed class HistoryCompactor : PromptBasedAgent
                             {
                                 roundParts.Add(text.Text);
                             }
+
                             break;
                         default:
                             // Include other content types as their string representation
@@ -207,6 +222,7 @@ public sealed class HistoryCompactor : PromptBasedAgent
                             {
                                 roundParts.Add(otherStr);
                             }
+
                             break;
                     }
                 }

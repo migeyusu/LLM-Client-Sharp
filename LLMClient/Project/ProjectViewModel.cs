@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -6,6 +6,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows.Input;
+using System.Xml;
+using System.Xml.Serialization;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.Converters;
@@ -207,24 +209,30 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
 
     private readonly StringBuilder _systemPromptBuilder = new(1024);
 
-    private readonly StringBuilder _promptInformationPromptBuilder = new(1024);
+    private static readonly XmlSerializer _projectInfoSerializer = new(typeof(ProjectInformation));
+    private static readonly XmlSerializerNamespaces _emptyNamespaces = CreateEmptyNamespaces();
+
+    private static XmlSerializerNamespaces CreateEmptyNamespaces()
+    {
+        var ns = new XmlSerializerNamespaces();
+        ns.Add(string.Empty, string.Empty);
+        return ns;
+    }
 
     public string ProjectInformationPrompt
     {
         get
         {
-            _promptInformationPromptBuilder.Clear();
-            _promptInformationPromptBuilder.AppendLine("<project_information>");
-            _promptInformationPromptBuilder.AppendFormat("这是一个名为{0}的{1}项目，项目代码位于路径：'{2}'。", Option.Name,
-                Option.Type.GetEnumDescription(), Option.RootPath);
-            if (!string.IsNullOrEmpty(Option.Description))
+            var projectInfo = new ProjectInformation
             {
-                _promptInformationPromptBuilder.AppendLine();
-                _promptInformationPromptBuilder.AppendLine(Option.Description);
-                _promptInformationPromptBuilder.AppendLine();
-            }
-
-            _promptInformationPromptBuilder.AppendLine("</project_information>");
+                Project = new ProjectInfo
+                {
+                    Name = Option.Name ?? string.Empty,
+                    Type = Option.Type.GetEnumDescription(),
+                    Path = Option.RootPath ?? string.Empty,
+                    Description = string.IsNullOrEmpty(Option.Description) ? null : Option.Description
+                }
+            };
 
             if (Option.IncludeAgentsMd && !string.IsNullOrEmpty(Option.RootPath))
             {
@@ -234,10 +242,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                     try
                     {
                         var agentsMdContent = File.ReadAllText(agentsMdPath);
-                        _promptInformationPromptBuilder.AppendLine();
-                        _promptInformationPromptBuilder.AppendLine("<agents_rules>");
-                        _promptInformationPromptBuilder.AppendLine(agentsMdContent);
-                        _promptInformationPromptBuilder.AppendLine("</agents_rules>");
+                        projectInfo.AgentsRules = new AgentsRules { Content = agentsMdContent };
                     }
                     catch (Exception e)
                     {
@@ -246,7 +251,14 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 }
             }
 
-            return _promptInformationPromptBuilder.ToString();
+            using var ms = new MemoryStream();
+            using (var writer = new StreamWriter(ms, Encoding.UTF8, leaveOpen: true))
+            {
+                using var xmlWriter = XmlWriter.Create(writer, new XmlWriterSettings { Indent = true, IndentChars = "    ", OmitXmlDeclaration = true });
+                _projectInfoSerializer.Serialize(xmlWriter, projectInfo, _emptyNamespaces);
+            }
+
+            return Encoding.UTF8.GetString(ms.ToArray());
         }
     }
 

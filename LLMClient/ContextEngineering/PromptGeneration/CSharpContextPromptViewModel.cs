@@ -1,4 +1,4 @@
-﻿using LLMClient.Abstraction;
+using LLMClient.Abstraction;
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.Project;
 
@@ -60,7 +60,7 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
             //todo: add doc
         };
 
-        return await PromptTemplateRenderer.RenderAsync(
+        return await PromptTemplateRenderer.RenderHandlebarsAsync(
             ContextPromptTemplates.FocusedContextTemplate,
             variables);
     }
@@ -81,7 +81,7 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
                 ["codeContent"] = snippet.CodeContent
             };
 
-            var rendered = await PromptTemplateRenderer.RenderAsync(
+            var rendered = await PromptTemplateRenderer.RenderHandlebarsAsync(
                 ContextPromptTemplates.CodeSnippetTemplate,
                 variables);
             snippetStrings.Add(rendered);
@@ -95,7 +95,7 @@ public class CSharpContextPromptViewModel : ContextPromptViewModel<CSharpProject
             ["snippetsList"] = allSnippets
         };
 
-        return await PromptTemplateRenderer.RenderAsync(
+        return await PromptTemplateRenderer.RenderHandlebarsAsync(
             ContextPromptTemplates.RelevantSnippetsTemplate,
             mainVariables);
     }
