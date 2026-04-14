@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -7,6 +7,9 @@ using LLMClient.Abstraction;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.Dialog.Models;
 using Microsoft.Extensions.AI;
+using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
+using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
+using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Agent;
 
@@ -162,10 +165,54 @@ public sealed class HistoryCompactor : PromptBasedAgent
         var builder = new StringBuilder();
         for (var i = 0; i < roundMessages.Count; i++)
         {
-            var roundText = string.Join("\n", roundMessages[i]
-                .Select(m => m.Text)
-                .Where(t => !string.IsNullOrWhiteSpace(t)));
             builder.AppendLine($"[{i}]");
+            var roundParts = new List<string>();
+            foreach (var message in roundMessages[i])
+            {
+                // Append Text if present
+                if (!string.IsNullOrWhiteSpace(message.Text))
+                {
+                    roundParts.Add(message.Text);
+                }
+
+                // Append structured Contents (FunctionCallContent, FunctionResultContent, etc.)
+                foreach (var content in message.Contents)
+                {
+                    switch (content)
+                    {
+                        case FunctionCallContent call:
+                            var argsStr = call.Arguments != null
+                                ? string.Join(", ", call.Arguments.Select(kv => $"{kv.Key}={kv.Value}"))
+                                : string.Empty;
+                            roundParts.Add($"[Tool Call: {call.Name}({argsStr})]");
+                            break;
+                        case FunctionResultContent result:
+                            var resultStr = result.Exception != null
+                                ? $"[Error: {result.Exception.Message}]"
+                                : result.Result?.ToString() ?? string.Empty;
+                            roundParts.Add($"[Result: {resultStr}]");
+                            break;
+                        case TextContent text:
+                            // Already handled via message.Text, but include for explicit structured text
+                            if (!string.IsNullOrWhiteSpace(text.Text) &&
+                                !roundParts.Contains(text.Text))
+                            {
+                                roundParts.Add(text.Text);
+                            }
+                            break;
+                        default:
+                            // Include other content types as their string representation
+                            var otherStr = content.ToString();
+                            if (!string.IsNullOrWhiteSpace(otherStr))
+                            {
+                                roundParts.Add(otherStr);
+                            }
+                            break;
+                    }
+                }
+            }
+
+            var roundText = string.Join("\n", roundParts.Where(t => !string.IsNullOrWhiteSpace(t)));
             builder.AppendLine(string.IsNullOrWhiteSpace(roundText) ? "[NoContent]" : roundText);
             builder.AppendLine("---");
         }
