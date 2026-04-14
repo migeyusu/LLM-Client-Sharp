@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
+using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
@@ -109,7 +110,14 @@ public abstract class FunctionCallEngine
                     var arguments = new AIFunctionArguments(functionCallContent.Arguments);
                     additionalFunctionCallResults.Clear();
                     additionalUserMessageBuilder.Clear();
-                    var invokeResult = await kernelFunction.InvokeAsync(arguments, token);
+                    
+                    object? invokeResult;
+                    // 显式恢复异步上下文，确保插件内部能通过 AsyncContextStore 访问到 CurrentStep 等信息
+                    using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
+                    {
+                        invokeResult = await kernelFunction.InvokeAsync(arguments, token);
+                    }
+
                     step?.Emit(new FunctionCallCompleted(functionCallContent.CallId,
                         functionCallContent.Name, invokeResult, null));
                     functionResultContents.Add(new FunctionResultContent(functionCallContent.CallId,
