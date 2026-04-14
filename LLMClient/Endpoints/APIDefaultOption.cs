@@ -1,4 +1,4 @@
-﻿using LLMClient.Component.ViewModel.Base;
+using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 
 namespace LLMClient.Endpoints;
@@ -23,6 +23,32 @@ public class APIDefaultOption : BaseViewModel<APIDefaultOption>
     private bool _isOpenAiCompatible = true;
 
     private bool _treatNullChoicesAsEmptyResponse;
+
+    private string? _userAgentPrefix;
+
+    public string? UserAgentPrefix
+    {
+        get => _userAgentPrefix;
+        set
+        {
+            if (value == _userAgentPrefix) return;
+            _userAgentPrefix = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string? _xRequestedWith;
+
+    public string? XRequestedWith
+    {
+        get => _xRequestedWith;
+        set
+        {
+            if (value == _xRequestedWith) return;
+            _xRequestedWith = value;
+            OnPropertyChanged();
+        }
+    }
 
     public string URL
     {

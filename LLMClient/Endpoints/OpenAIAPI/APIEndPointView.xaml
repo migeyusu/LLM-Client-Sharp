@@ -46,11 +46,12 @@
                 <RowDefinition Height="36" />
                 <RowDefinition Height="36" />
                 <RowDefinition Height="36" />
+                <RowDefinition Height="36" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="120" />
                 <ColumnDefinition />
-                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="120" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
             <TextBlock Text="Display Name：" />
@@ -283,6 +284,16 @@
                           Height="35"
                           Content="Null choices fallback" />
             </StackPanel>
+            <TextBlock Grid.Row="4" Grid.Column="0"
+                       Text="User-Agent:" />
+            <TextBox Grid.Row="4" Grid.Column="1"
+                     Text="{Binding ConfigOption.UserAgentPrefix,Mode=TwoWay}"
+                     ToolTip="自定义 User-Agent 前缀，将追加到默认 User-Agent 之前" />
+            <TextBlock Grid.Row="4" Grid.Column="2"
+                       Text="X-Requested-With:" />
+            <TextBox Grid.Row="4" Grid.Column="3"
+                     Text="{Binding ConfigOption.XRequestedWith,Mode=TwoWay}"
+                     ToolTip="自定义 X-Requested-With 请求头值，留空则不发送" />
         </Grid>
         <ListBox Grid.Row="1" Grid.Column="0"
                  Margin="0,16,0,0"

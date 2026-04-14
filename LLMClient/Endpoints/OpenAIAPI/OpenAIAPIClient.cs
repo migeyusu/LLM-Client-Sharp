@@ -73,6 +73,19 @@ public class OpenAIAPIClient : LlmClientBase
         _proxySettingCopy = Extension.Clone(proxyOption);
         var handler = proxyOption.CreateHandler();
         var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(10) };
+
+        // Inject custom request headers from configuration
+        if (!string.IsNullOrWhiteSpace(_option.UserAgentPrefix))
+        {
+            httpClient.DefaultRequestHeaders.UserAgent.Clear();
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_option.UserAgentPrefix);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_option.XRequestedWith))
+        {
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-Requested-With", _option.XRequestedWith);
+        }
+
         var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
         {
             Endpoint = apiUri,
