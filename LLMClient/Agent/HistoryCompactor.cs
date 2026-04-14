@@ -20,7 +20,52 @@ namespace LLMClient.Agent;
 public sealed class HistoryCompactor : PromptBasedAgent
 {
     /// <summary>Prompt template rendered with {{$task}}, {{$contextHint}}, {{$input}} placeholders.</summary>
-    public required string PromptTemplate { get; init; }
+    public string PromptTemplate { get; set; } = """
+                                                 You are a precision history-pruning engine for an AI coding agent session.
+
+                                                 Task context: {{$task}}
+                                                 Context hint: {{$contextHint}}
+
+                                                 Below are indexed message rounds:
+                                                 {{$input}}
+
+                                                 Goal:
+                                                 Remove only rounds that are irrelevant to the CURRENT coding objective.
+                                                 Preserve all information that may be needed for further coding actions.
+
+                                                 Hard KEEP rules (NEVER remove):
+                                                 1) Any round containing code evidence:
+                                                    - file/content reading results
+                                                    - symbol/search results
+                                                    - error logs/stack traces/test outputs
+                                                    - diffs/patches/edits/command outputs used for coding decisions
+                                                 2) Any round that defines or updates actionable plan/constraints/acceptance criteria.
+                                                 3) Any round with inspection findings that impact implementation choices.
+                                                 4) Any final conclusions, decisions, TODOs, or next-step instructions.
+                                                 5) Any user requirement, explicit preference, or safety/format constraint.
+                                                 6) If uncertain whether a round may be useful later, KEEP it.
+
+                                                 Allowed REMOVE rules (only if clearly true):
+                                                 A) Pure orchestration noise with no durable value:
+                                                    - "thinking aloud" with no decision
+                                                    - status chatter / progress filler
+                                                    - repeated planner/inspector text that is fully subsumed by a later retained round
+                                                 B) Tool-call wrappers that add no payload and no decision.
+                                                 C) Duplicate rounds with near-identical content, keeping the most complete/latest one.
+
+                                                 Safety constraints:
+                                                 - Prefer under-deletion over over-deletion.
+                                                 - Do NOT remove most rounds. If removal candidates exceed 40% of all rounds, keep only the highest-confidence candidates.
+                                                 - Never remove all plan/inspect rounds if they contain decision context linked to coding.
+                                                 - Never remove rounds required to understand why code changes were made.
+
+                                                 Output format:
+                                                 Return ONLY valid JSON, no prose:
+                                                 {"removeIndexes":[...]}
+                                                 Rules for output:
+                                                 - Indexes must be unique integers in ascending order.
+                                                 - If no high-confidence removals exist, return {"removeIndexes":[]}.
+                                                 """;
 
     /// <summary>Tag used in error trace messages, e.g. "InspectCompact".</summary>
     public required string ErrorTag { get; init; }
@@ -146,7 +191,6 @@ public sealed class HistoryCompactor : PromptBasedAgent
 
     private sealed class RemoveDecision
     {
-        [JsonPropertyName("removeIndexes")]
-        public List<int>? Indexes { get; set; }
+        [JsonPropertyName("removeIndexes")] public List<int>? Indexes { get; set; }
     }
 }

@@ -16,25 +16,6 @@ namespace LLMClient.Dialog.Models;
 /// </summary>
 public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 {
-    private const string CompactorPromptTemplate = """
-                                                   You are pruning the message history of an AI agent session.
-
-                                                   Task context: {{$task}}
-
-                                                   Context hint: {{$contextHint}}
-
-                                                   The following are indexed message rounds from the agent session:
-                                                   {{$input}}
-
-                                                   Instructions:
-                                                   - Identify which rounds are pure intermediate noise: tool invocations, raw observations, or redundant reasoning steps with no lasting value.
-                                                   - The final round(s) containing the agent's conclusions, findings, or plan MUST be kept.
-                                                   - Only remove rounds that add no value when re-read later.
-
-                                                   Respond with ONLY valid JSON, no other text:
-                                                   {"removeIndexes": [0, 1, ...]}
-                                                   """;
-
     public RawResponseViewItem Response { get; }
 
     public override long Tokens => Response.Tokens;
@@ -103,11 +84,11 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         if (Agent is not ReactAgentBase reactAgent) return;
 
         IsResponding = true;
+        ParentSession.RespondingCount++;
         try
         {
             var compactor = new HistoryCompactor(reactAgent.ChatClient)
             {
-                PromptTemplate = CompactorPromptTemplate,
                 ErrorTag = "HistoryCompact",
             };
 
@@ -136,6 +117,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         finally
         {
             IsResponding = false;
+            ParentSession.RespondingCount--;
         }
     }
 

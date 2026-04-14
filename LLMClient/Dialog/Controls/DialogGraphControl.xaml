@@ -129,6 +129,7 @@
                                                        FontWeight="Bold"
                                                        Margin="0,0,0,10" />
                                             <TextBlock Grid.Row="1"
+                                                       MaxHeight="300"
                                                        Text="{Binding Response.RawTextContent,Mode=OneTime}"
                                                        TextWrapping="Wrap" />
                                             <TextBox Grid.Row="0"

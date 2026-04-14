@@ -428,7 +428,16 @@
                        TextWrapping="Wrap"
                        Foreground="Red"
                        Padding="10"
-                       Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                       Visibility="{Binding IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}">
+                <TextBlock.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="{x:Static utility:CommonCommands.CopyCommand}"
+                                  CommandParameter="{Binding ErrorMessage, Mode=OneWay}"
+                                  Header="复制"
+                                  Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
+                    </ContextMenu>
+                </TextBlock.ContextMenu>
+            </TextBlock>
         </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="EraseDataTemplate"
@@ -1109,7 +1118,16 @@
                                TextWrapping="Wrap"
                                Foreground="Red"
                                Padding="10"
-                               Visibility="{Binding Response.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                               Visibility="{Binding Response.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}">
+                        <TextBlock.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Command="{x:Static utility:CommonCommands.CopyCommand}"
+                                          CommandParameter="{Binding Response.ErrorMessage, Mode=OneWay}"
+                                          Header="复制"
+                                          Icon="{materialDesign:PackIcon Kind=ContentCopy}" />
+                            </ContextMenu>
+                        </TextBlock.ContextMenu>
+                    </TextBlock>
                 </StackPanel>
             </materialDesign:Card>
             <ContentControl Content="{Binding Response,Mode=OneWay}"
