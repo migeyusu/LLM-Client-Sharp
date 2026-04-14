@@ -392,7 +392,6 @@ public class MiniSweRegressionTests
             OutputTokenCount = firstUsage.OutputTokenCount + secondUsage.OutputTokenCount,
             TotalTokenCount = firstUsage.TotalTokenCount + secondUsage.TotalTokenCount,
         });
-        AssertUsage(result.LastSuccessfulUsage, secondUsage);
     }
 
     [Fact]
@@ -417,30 +416,22 @@ public class MiniSweRegressionTests
         Assert.NotNull(result.Exception);
         Assert.Equal(1, result.ValidCallTimes);
         AssertUsage(result.Usage, firstUsage);
-        AssertUsage(result.LastSuccessfulUsage, firstUsage);
     }
 
     [Fact]
-    public void ChatCallResult_Add_UsesLatestSuccessfulUsageAcrossAggregation()
+    public void ChatCallResult_Add()
     {
         var firstUsage = new UsageDetails { InputTokenCount = 7, OutputTokenCount = 2, TotalTokenCount = 9 };
         var secondUsage = new UsageDetails { InputTokenCount = 13, OutputTokenCount = 5, TotalTokenCount = 18 };
         var firstResult = new AgentTaskResult
         {
             Usage = firstUsage,
-            LastSuccessfulUsage = firstUsage,
             ValidCallTimes = 1,
         };
         var secondResult = new AgentTaskResult
         {
             Usage = secondUsage,
-            LastSuccessfulUsage = secondUsage,
             ValidCallTimes = 1,
-        };
-        var interruptedResult = new AgentTaskResult
-        {
-            Exception = new Exception("interrupted"),
-            ValidCallTimes = 0,
         };
 
         firstResult.Add(secondResult);
@@ -450,10 +441,7 @@ public class MiniSweRegressionTests
             OutputTokenCount = firstUsage.OutputTokenCount + secondUsage.OutputTokenCount,
             TotalTokenCount = firstUsage.TotalTokenCount + secondUsage.TotalTokenCount,
         });
-        AssertUsage(firstResult.LastSuccessfulUsage, secondUsage);
-
-        firstResult.Add(interruptedResult);
-        AssertUsage(firstResult.LastSuccessfulUsage, secondUsage);
+        
     }
 
     [Theory]

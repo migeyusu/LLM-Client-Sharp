@@ -7,6 +7,4 @@ public interface IChatUsage
     double? Price { get; }
 
     UsageDetails? Usage { get; }
-
-    UsageDetails? LastSuccessfulUsage { get; }
 }

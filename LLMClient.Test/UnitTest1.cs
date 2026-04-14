@@ -367,12 +367,6 @@ public class UnitTest1
                 OutputTokenCount = 3_000,
                 TotalTokenCount = 19_000,
             },
-            LastSuccessfulUsage = new UsageDetails
-            {
-                InputTokenCount = 12_000,
-                OutputTokenCount = 1_000,
-                TotalTokenCount = 13_000,
-            },
         };
 
         var persisted = mapper.Map<ClientResponsePersistItem>(responseViewItem);

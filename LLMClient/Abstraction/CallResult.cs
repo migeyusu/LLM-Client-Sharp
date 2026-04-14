@@ -9,12 +9,7 @@ namespace LLMClient.Abstraction;
 public class CallResult : IResponse
 {
     public UsageDetails? Usage { get; set; }
-
-    /// <summary>
-    /// 最后一次成功调用返回的 usage，不参与多轮累计。
-    /// </summary>
-    public UsageDetails? LastSuccessfulUsage { get; set; }
-
+    
     public ChatFinishReason? FinishReason { get; set; }
 
     public long Tokens

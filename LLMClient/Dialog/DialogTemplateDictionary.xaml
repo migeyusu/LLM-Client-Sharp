@@ -614,11 +614,11 @@
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-            <materialDesign:PopupBox ToolTip="用量信息"
+            <materialDesign:PopupBox ToolTip="总用量信息"
                                      Margin="10,0,0,0"
                                      Width="30"
                                      Height="30"
-                                     Visibility="{Binding LastSuccessfulUsage,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
+                                     Visibility="{Binding Usage,Mode=OneWay,Converter={x:Static materialDesign:NullableToVisibilityConverter.CollapsedInstance}}"
                                      ToggleContent="{materialDesign:PackIcon Kind=InfoOutline}"
                                      PopupAnimation="Slide"
                                      PopupUniformCornerRadius="8"
@@ -626,21 +626,21 @@
                                      VerticalAlignment="Center"
                                      VerticalContentAlignment="Center"
                                      HorizontalContentAlignment="Center"
-                                     PopupContent="{Binding LastSuccessfulUsage,Mode=OneWay}"
+                                     PopupContent="{Binding Usage,Mode=OneWay}"
                                      PopupContentTemplate="{StaticResource UsageDetailDataTemplate}" />
             <materialDesign:PopupBox ToolTip="上下文占比"
                                      Margin="10,0,0,0"
                                      Padding="4,0"
                                      VerticalAlignment="Center"
-                                     Visibility="{Binding ContextUsage.HasContextUsage,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     Visibility="{Binding LastContextUsage.HasContextUsage,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                      PopupAnimation="Slide"
                                      PopupUniformCornerRadius="8"
-                                     PopupContent="{Binding ContextUsage,Mode=OneWay}"
+                                     PopupContent="{Binding LastContextUsage,Mode=OneWay}"
                                      PopupContentTemplate="{StaticResource ContextUsageDetailDataTemplate}">
                 <materialDesign:PopupBox.ToggleContent>
                     <Border Padding="8,4"
                             CornerRadius="12"
-                            DataContext="{Binding ContextUsage,Mode=OneWay}"
+                            DataContext="{Binding LastContextUsage,Mode=OneWay}"
                             Style="{StaticResource ContextUsageIndicatorBorderStyle}">
                         <StackPanel Orientation="Horizontal"
                                     VerticalAlignment="Center">

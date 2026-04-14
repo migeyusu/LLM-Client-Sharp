@@ -28,11 +28,6 @@ public class AgentTaskResult : CallResult
     public void Add(CallResult? right)
     {
         if (right is null || right == Empty) return;
-
-        if (right.ValidCallTimes > 0)
-        {
-            LastSuccessfulUsage = CloneUsageDetails(right.Usage);
-        }
         Latency = Latency == 0 ? right.Latency : Latency;
         Duration += right.Duration;
         Exception ??= right.Exception;

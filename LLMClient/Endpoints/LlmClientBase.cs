@@ -633,7 +633,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             stepResult.Duration = (int)_durationStopwatch.Elapsed.TotalSeconds;
             stepResult.Messages = responseMessages;
             stepResult.ProtocolLog = step.ProtocolLog;
-            stepResult.LastSuccessfulUsage = loopUsageDetails;
             step.Complete(stepResult);
         }
     }

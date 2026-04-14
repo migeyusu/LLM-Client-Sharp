@@ -62,33 +62,6 @@ public class ClientResponseViewItemTests
         Assert.Null(exception);
     }
 
-    [Fact]
-    public void ClientResponseViewItem_ContextUsage_UsesLastSuccessfulInputTokensAgainstModelMaxContext()
-    {
-        var client = new NeverInvokedChatClient(128_000);
-        var responseViewItem = new ClientResponseViewItem(client)
-        {
-            LastSuccessfulUsage = new UsageDetails
-            {
-                InputTokenCount = 32_000,
-                OutputTokenCount = 2_000,
-                TotalTokenCount = 34_000,
-            }
-        };
-
-        var usageViewModel = responseViewItem.ContextUsage;
-        Assert.True(usageViewModel.HasContextUsage);
-        Assert.Equal(32_000, usageViewModel.ContextUsageTokenCount);
-        Assert.Equal(128_000, usageViewModel.MaxContextTokens);
-        Assert.Equal(0.25d, usageViewModel.ContextUsageRatio);
-        Assert.Equal(25d, usageViewModel.ContextUsagePercent);
-        Assert.False(usageViewModel.IsContextUsageWarning);
-        Assert.False(usageViewModel.IsContextUsageCritical);
-        Assert.Contains("25%", usageViewModel.ContextUsageSummary);
-        Assert.Contains("32k", usageViewModel.ContextUsageSummary);
-        Assert.Contains("128k", usageViewModel.ContextUsageSummary);
-    }
-
     private sealed class PreviewBlockingDialogSessionViewModel : DialogSessionViewModel
     {
         public PreviewBlockingDialogSessionViewModel() : base(new GlobalOptions(), new Summarizer(new GlobalOptions()),

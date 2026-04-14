@@ -151,7 +151,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     protected override void OnUsagePropertiesChanged()
     {
         base.OnUsagePropertiesChanged();
-        OnPropertyChanged(nameof(ContextUsage));
+        OnPropertyChanged(nameof(LastContextUsage));
     }
 
     internal void AcquireRespondingState()

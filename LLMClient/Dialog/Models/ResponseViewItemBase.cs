@@ -33,7 +33,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     /// <summary>
     /// 上下文占比信息（无模型信息时返回空 ViewModel）
     /// </summary>
-    public ContextUsageViewModel? ContextUsage { get; set; }
+    public ContextUsageViewModel? LastContextUsage { get; set; }
 
     public int Latency
     {
@@ -89,18 +89,6 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(Tokens));
-            OnUsagePropertiesChanged();
-        }
-    }
-
-    public UsageDetails? LastSuccessfulUsage
-    {
-        get;
-        set
-        {
-            if (Equals(value, field)) return;
-            field = value;
-            OnPropertyChanged();
             OnUsagePropertiesChanged();
         }
     }
@@ -524,7 +512,8 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             }
         }
 
-        LastSuccessfulUsage = Loops.LastOrDefault()?.ContextUsage?.UsageDetails;
+        var lastContextUsage = Loops.LastOrDefault()?.ContextUsage;
+        LastContextUsage = lastContextUsage;
         ProtocolLog = agentTaskResult.ProtocolLog?.ToString();
         return agentTaskResult;
     }
