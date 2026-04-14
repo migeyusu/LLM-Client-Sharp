@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
 using System.Windows.Documents;
@@ -31,7 +31,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     /// <summary>
     /// 上下文占比信息（无模型信息时返回空 ViewModel）
     /// </summary>
-    public virtual ContextUsageViewModel ContextUsage => new();
+    public ContextUsageViewModel? ContextUsage { get; set; }
 
     public int Latency
     {
@@ -168,6 +168,48 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         o?.SwitchAvailableInContext();
     });
 
+    /// <summary>
+    /// 显示请求/响应的原始协议日志（HTTP headers、request body、response body 等）。
+    /// </summary>
+    public static ICommand ShowProtocolLogCommand { get; } = new RelayCommand<ResponseViewItemBase>(ShowProtocolLog);
+
+    private static void ShowProtocolLog(ResponseViewItemBase? item)
+    {
+        if (item?.ProtocolLog == null || string.IsNullOrEmpty(item.ProtocolLog))
+        {
+            return;
+        }
+
+        var window = new System.Windows.Window
+        {
+            Title = "请求/响应日志",
+            Width = 900,
+            Height = 700,
+            WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
+        };
+
+        var scrollViewer = new System.Windows.Controls.ScrollViewer
+        {
+            VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+        };
+
+        var textBox = new System.Windows.Controls.TextBox
+        {
+            Text = item.ProtocolLog,
+            IsReadOnly = true,
+            TextWrapping = System.Windows.TextWrapping.NoWrap,
+            FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+            FontSize = 12,
+            VerticalContentAlignment = System.Windows.VerticalAlignment.Top,
+            HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left,
+        };
+
+        scrollViewer.Content = textBox;
+        window.Content = scrollViewer;
+        window.Show();
+    }
+
     public ICommand CancelCommand { get; }
 
     /// <summary>
@@ -196,6 +238,12 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     }
 
     public CancellationTokenSource? RequestTokenSource { get; set; }
+
+    /// <summary>
+    /// 请求/响应的原始协议日志，包含 HTTP headers、request body、response body 等详细信息。
+    /// 用于调试查看，通过 <see cref="ShowProtocolLogCommand"/> 命令弹出日志窗口。
+    /// </summary>
+    public string? ProtocolLog { get; set; }
 
     /// <summary>
     /// 每轮 ReAct 循环的 ViewModel 列表
@@ -453,6 +501,8 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             }
         }
 
+        ContextUsage = Loops.LastOrDefault()?.ContextUsage;
+        ProtocolLog = agentTaskResult.ProtocolLog?.ToString();
         return agentTaskResult;
     }
 

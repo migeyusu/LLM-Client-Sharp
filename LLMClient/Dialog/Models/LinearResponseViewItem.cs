@@ -136,10 +136,11 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     public async Task<IResponse> ProcessAsync(ITextDialogSession session, CancellationToken token)
     {
+        var agentTaskResult = AgentTaskResult.Empty;
         if (Agent == null)
         {
             MessageBoxes.Error("No agent configured.");
-            return AgentTaskResult.Empty;
+            return agentTaskResult;
         }
 
         IsResponding = true;
@@ -151,11 +152,9 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             {
                 var cancellationToken = Response.RequestTokenSource.Token;
                 await ParentSession.OnPreviewRequest(cancellationToken);
-                var totalCallResult = await Response.ConsumeReactStepsAsync(
+                agentTaskResult = await Response.ConsumeReactStepsAsync(
                     Agent.Execute(session, cancellationToken: cancellationToken));
-                ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(totalCallResult, Response);
-                ParentSession.OnResponseCompleted(totalCallResult);
-                return totalCallResult;
+                ParentSession.OnResponseCompleted(agentTaskResult);
             }
         }
         catch (OperationCanceledException)
@@ -167,13 +166,17 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             MessageBoxes.Error(e.Message, "响应失败");
             Response.ErrorMessage = e.Message;
             Response.IsInterrupt = true;
-            return Response;
+            return agentTaskResult;
         }
         finally
         {
             IsResponding = false;
+            ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(agentTaskResult, Response);
             Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
             ParentSession.RespondingCount--;
+            Response.RequestTokenSource = null;
         }
+
+        return agentTaskResult;
     }
 }

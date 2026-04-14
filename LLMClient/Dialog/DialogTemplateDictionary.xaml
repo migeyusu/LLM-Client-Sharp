@@ -844,9 +844,9 @@
                                           Visibility="{Binding IsMultiResponse,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                           Command="{Binding ClearOthersCommand}" />
                                 <!--x:Static models:MultiResponseViewItem.RebaseCommand-->
-                                <MenuItem Header="查看响应日志"
-                                          Command="{x:Static models:ClientResponseViewItem.ShowTempResponseCommand}"
-                                          CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
+                                <MenuItem Header="查看协议日志"
+                                          ToolTip="查看的详细过程日志"
+                                          Command="{Binding  AcceptedResponse.ShowProtocolLogCommand}"
                                           Icon="{materialDesign:PackIcon Kind=History}" />
                                 <MenuItem Header="标记为有效回复"
                                           IsCheckable="True"
@@ -1056,6 +1056,11 @@
                                       Header="压缩到摘要"
                                       ToolTip="将Agent执行历史压缩为摘要文本，保留关键结论并清除中间步骤"
                                       Visibility="{Binding IsCompactable,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <MenuItem Header="查看执行过程"
+                                      ToolTip="查看Agent执行的详细过程日志"
+                                      Command="{Binding Response.ShowProtocolLogCommand}"
+                                      CommandParameter="{Binding Response}"
+                                      Icon="{materialDesign:PackIcon Kind=History}" />
                         </MenuItem>
                     </Menu>
                     <materialDesign:PopupBox Padding="4,0"
@@ -1110,6 +1115,33 @@
                         <ItemsControl ItemsSource="{Binding Response.Loops,Mode=OneTime}"
                                       ItemTemplate="{StaticResource ReactLoopItemTemplate}" />
                     </materialDesign:Card>
+                    <Expander Margin="8,4,8,0"
+                              Padding="0"
+                              materialDesign:ExpanderAssist.HorizontalHeaderPadding="8"
+                              Background="Transparent"
+                              Visibility="{Binding IsResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
+                        <Expander.Header>
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="History"
+                                                         Width="16"
+                                                         Height="16"
+                                                         VerticalAlignment="Center"
+                                                         Margin="0,0,6,0"
+                                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary}" />
+                                <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                           VerticalAlignment="Center"
+                                           Text="执行过程" />
+                                <TextBlock VerticalAlignment="Center"
+                                           Margin="8,0,0,0"
+                                           Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.Foreground.Light}"
+                                           Text="{Binding Response.LoopCount,Mode=OneWay,StringFormat=共 {0} 轮}" />
+                            </StackPanel>
+                        </Expander.Header>
+                        <ItemsControl ItemsSource="{Binding Response.Loops,Mode=OneTime}"
+                                      ItemTemplate="{StaticResource ReactLoopItemTemplate}" />
+                    </Expander>
                     <customControl:FlowDocumentScrollViewerEx FontFamily="Segoe UI Emoji"
                                                               BorderThickness="0"
                                                               SafeDocument="{Binding Response.FullDocument,Mode=OneWay}"

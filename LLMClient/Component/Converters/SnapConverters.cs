@@ -9,8 +9,6 @@ using System.Windows.Shell;
 using LambdaConverters;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
-
-
 using LLMClient.Persistence;
 using LLMClient.Rag;
 using LLMClient.Rag.Document;
@@ -58,20 +56,24 @@ internal static class SnapConverters
             : string.Empty);
 
     public static readonly IValueConverter ObjectToPrettyJsonConverter =
-        ValueConverter.Create<object?, string>(e => {
+        ValueConverter.Create<object?, string>(e =>
+        {
             if (e.Value == null) return string.Empty;
             if (e.Value is string s)
             {
                 try
                 {
                     using var jsonDoc = JsonDocument.Parse(s);
-                    return JsonSerializer.Serialize(jsonDoc.RootElement, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+                    return JsonSerializer.Serialize(jsonDoc.RootElement,
+                        new JsonSerializerOptions
+                            { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
                 }
                 catch
                 {
                     return s;
                 }
             }
+
             return JsonSerializer.Serialize(e.Value,
                 options: new(LLMClient.Extension.DefaultJsonSerializerOptions)
                 {
@@ -178,6 +180,9 @@ internal static class SnapConverters
 
             return Visibility.Visible;
         });
+
+    public static readonly IValueConverter DoubleToPercentageConverter =
+        ValueConverter.Create<double, string>(e => $"{e.Value * 100:0.##}%");
 
     /*public static readonly IValueConverter RAGIconConveter= ValueConverter.Create<IRagSource,PackIconKind>((args =>
     {

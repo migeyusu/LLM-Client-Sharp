@@ -43,17 +43,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public ILLMChatClient? Client { get; }
 
-    public override ContextUsageViewModel ContextUsage
-    {
-        get
-        {
-            var maxContextSize = Model?.MaxContextSize;
-            return new ContextUsageViewModel(
-                LastSuccessfulUsage,
-                maxContextSize > 0 ? maxContextSize : null);
-        }
-    }
-
     public override bool IsInterrupt
     {
         get;
@@ -73,41 +62,8 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     {
         get { return this.CalculateTps(); }
     }
-
-    /// <summary>
-    /// 缓存 ChatContext.InteractionHistory，用于调试查看
-    /// </summary>
-    private readonly StringBuilder _history = new();
-
+    
     private int _respondingStateRefCount;
-
-    public static ICommand ShowTempResponseCommand { get; } = new RelayCommand<ClientResponseViewItem>(o =>
-    {
-        if (o == null)
-        {
-            return;
-        }
-
-        var tempWindow = new Window()
-        {
-            Content = new ScrollViewer()
-            {
-                Content = new TextBox()
-                {
-                    TextAlignment = TextAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Stretch,
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    VerticalContentAlignment = VerticalAlignment.Top,
-                    HorizontalContentAlignment = HorizontalAlignment.Left,
-                    IsReadOnly = true,
-                    Text = o._history.ToString(),
-                    TextWrapping = TextWrapping.Wrap
-                }
-            }
-        };
-        tempWindow.ShowDialog();
-    });
-
 
     private readonly Lazy<SearchableDocument> _lazyDocument = new(() => new SearchableDocument(new FlowDocument()));
 
@@ -162,10 +118,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         }
         finally
         {
-            _history.Clear();
-            _history.Append(completedResult.ProtocolLog);
             ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(completedResult, this);
-            
             PostOnPropertyChanged(nameof(TpS));
             InvalidateAsyncProperty(nameof(SearchableDocument));
             RequestTokenSource = null;
