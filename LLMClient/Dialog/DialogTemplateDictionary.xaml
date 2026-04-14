@@ -845,9 +845,15 @@
                                           Command="{Binding ClearOthersCommand}" />
                                 <!--x:Static models:MultiResponseViewItem.RebaseCommand-->
                                 <MenuItem Header="查看协议日志"
-                                          ToolTip="查看的详细过程日志"
-                                          Command="{Binding  AcceptedResponse.ShowProtocolLogCommand}"
+                                          ToolTip="查看详细过程日志"
+                                          Command="{x:Static models:ResponseViewItemBase.ShowProtocolLogCommand}"
+                                          CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                           Icon="{materialDesign:PackIcon Kind=History}" />
+                                <MenuItem Header="保存协议日志"
+                                          ToolTip="保存详细过程日志"
+                                          Command="{x:Static models:ResponseViewItemBase.SaveProtocolLogCommand}"
+                                          CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
+                                          Icon="{materialDesign:PackIcon Kind=FileDocumentArrowRightOutline}" />
                                 <MenuItem Header="标记为有效回复"
                                           IsCheckable="True"
                                           IsChecked="{Binding AcceptedResponse.IsManualValid,Mode=TwoWay}"
@@ -1061,6 +1067,11 @@
                                       Command="{Binding Response.ShowProtocolLogCommand}"
                                       CommandParameter="{Binding Response}"
                                       Icon="{materialDesign:PackIcon Kind=History}" />
+                            <MenuItem Header="保存协议日志"
+                                      ToolTip="保存详细过程日志"
+                                      Command="{x:Static models:ResponseViewItemBase.SaveProtocolLogCommand}"
+                                      CommandParameter="{Binding Response,Mode=OneWay}"
+                                      Icon="{materialDesign:PackIcon Kind=FileDocumentArrowRightOutline}" />
                         </MenuItem>
                     </Menu>
                     <materialDesign:PopupBox Padding="4,0"

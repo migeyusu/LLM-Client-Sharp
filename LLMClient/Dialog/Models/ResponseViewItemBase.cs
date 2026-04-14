@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
@@ -13,6 +14,7 @@ using LLMClient.Endpoints.Messages;
 using Markdig;
 using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace LLMClient.Dialog.Models;
 
@@ -172,6 +174,27 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     /// 显示请求/响应的原始协议日志（HTTP headers、request body、response body 等）。
     /// </summary>
     public static ICommand ShowProtocolLogCommand { get; } = new RelayCommand<ResponseViewItemBase>(ShowProtocolLog);
+
+    public static ICommand SaveProtocolLogCommand { get; } = new RelayCommand<ResponseViewItemBase>(SaveProtocolLog);
+
+    private static void SaveProtocolLog(ResponseViewItemBase? item)
+    {
+        if (item?.ProtocolLog == null || string.IsNullOrEmpty(item.ProtocolLog))
+        {
+            return;
+        }
+
+        var saveFileDialog = new SaveFileDialog()
+        {
+            Title = "保存请求/响应日志",
+            Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*",
+            FileName = $"ProtocolLog_{DateTime.Now:yyyyMMdd_HHmmss}.txt"
+        };
+        if (saveFileDialog.ShowDialog() == true)
+        {
+            File.WriteAllText(saveFileDialog.FileName, item.ProtocolLog);
+        }
+    }
 
     private static void ShowProtocolLog(ResponseViewItemBase? item)
     {
@@ -501,7 +524,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             }
         }
 
-        ContextUsage = Loops.LastOrDefault()?.ContextUsage;
+        LastSuccessfulUsage = Loops.LastOrDefault()?.ContextUsage?.UsageDetails;
         ProtocolLog = agentTaskResult.ProtocolLog?.ToString();
         return agentTaskResult;
     }

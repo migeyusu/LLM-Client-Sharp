@@ -119,13 +119,3 @@ public class MiniSweAgentConfig
     /// </summary>
     public bool MapWorkingDirectoryToWsl { get; set; } = true;
 }
-
-/// <summary>
-/// Parsed action
-/// </summary>
-public class ParsedAction
-{
-    public string Command { get; set; } = string.Empty;
-
-    public string? ToolCallId { get; set; }
-}
