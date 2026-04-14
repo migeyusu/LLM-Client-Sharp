@@ -1115,33 +1115,6 @@
                         <ItemsControl ItemsSource="{Binding Response.Loops,Mode=OneTime}"
                                       ItemTemplate="{StaticResource ReactLoopItemTemplate}" />
                     </materialDesign:Card>
-                    <Expander Margin="8,4,8,0"
-                              Padding="0"
-                              materialDesign:ExpanderAssist.HorizontalHeaderPadding="8"
-                              Background="Transparent"
-                              Visibility="{Binding IsResponding,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.NotCollapsedInstance}}">
-                        <Expander.Header>
-                            <StackPanel Orientation="Horizontal"
-                                        VerticalAlignment="Center">
-                                <materialDesign:PackIcon Kind="History"
-                                                         Width="16"
-                                                         Height="16"
-                                                         VerticalAlignment="Center"
-                                                         Margin="0,0,6,0"
-                                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary}" />
-                                <TextBlock Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                           VerticalAlignment="Center"
-                                           Text="执行过程" />
-                                <TextBlock VerticalAlignment="Center"
-                                           Margin="8,0,0,0"
-                                           Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                           Foreground="{DynamicResource MaterialDesign.Brush.Foreground.Light}"
-                                           Text="{Binding Response.LoopCount,Mode=OneWay,StringFormat=共 {0} 轮}" />
-                            </StackPanel>
-                        </Expander.Header>
-                        <ItemsControl ItemsSource="{Binding Response.Loops,Mode=OneTime}"
-                                      ItemTemplate="{StaticResource ReactLoopItemTemplate}" />
-                    </Expander>
                     <customControl:FlowDocumentScrollViewerEx FontFamily="Segoe UI Emoji"
                                                               BorderThickness="0"
                                                               SafeDocument="{Binding Response.FullDocument,Mode=OneWay}"
