@@ -60,6 +60,7 @@ public class AzureClientBase : LlmClientBase, ILLMChatClient
     {
         _chatClient.Dispose();
         _chatClient = CreateChatClient();
+
     }
 
     // private readonly FieldInfo? _info = typeof(ChatCompletionsClient)

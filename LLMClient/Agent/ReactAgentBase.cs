@@ -16,8 +16,6 @@ public abstract class ReactAgentBase : ISingleClientAgent
 {
     public int CallCount { get; set; }
 
-    public int StepRetryCount { get; set; } = 3;
-
     public MiniSweAgentConfig Config { get; }
 
     public ILLMChatClient ChatClient { get; }
@@ -74,27 +72,18 @@ public abstract class ReactAgentBase : ISingleClientAgent
                 throw new Exception("Step limit exceeded");
 
             StepResult? lastResult = null;
-            var retryCount = 0;
-            while (retryCount < StepRetryCount)
+            await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))
             {
-                await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))
+                yield return step;
+                if (step.Result != null)
                 {
-                    yield return step;
-                    if (step.Result != null)
-                    {
-                        requestContext.ChatMessages.AddRange(step.Result.Messages);
-                        lastResult = step.Result;
-                    }
+                    requestContext.ChatMessages.AddRange(step.Result.Messages);
+                    lastResult = step.Result;
                 }
-
-                if (lastResult?.IsCanceled == true) yield break;
-                if (lastResult?.IsInvalidRequest == true) yield break;
-                if (lastResult?.Exception is AgentFlowException) break;
-                if (lastResult?.Exception == null) break; // success — do not retry
-                retryCount++;
             }
 
             CallCount++;
+            if (lastResult?.IsInterrupt == true) break;
 
             if (IsExitMessage(requestContext.ReadonlyHistory.LastOrDefault()))
                 break;
@@ -108,4 +97,3 @@ public abstract class ReactAgentBase : ISingleClientAgent
         return text.Contains(Config.TaskCompleteFlag, StringComparison.Ordinal);
     }
 }
-

@@ -2,12 +2,9 @@ using System.ClientModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json.Serialization;
-using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent.MiniSWE;
-using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Component.ViewModel;
@@ -51,7 +48,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
     }
 
-    private ITokensCounter _tokensCounter;
+    private readonly ITokensCounter _tokensCounter;
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
 
