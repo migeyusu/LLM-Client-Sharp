@@ -10,11 +10,6 @@ namespace LLMClient.ToolCall.MCP;
 
 public class SseServerItem : McpServerItem
 {
-    private string? _url;
-    private HttpTransportMode _transportMode = HttpTransportMode.AutoDetect;
-    private IDictionary<string, string>? _additionalHeaders;
-    private bool _bufferedRequest;
-    private bool _removeCharSet;
     public override string Type => "sse";
 
     public override bool Validate()
@@ -29,61 +24,61 @@ public class SseServerItem : McpServerItem
 
     public string? Url
     {
-        get => _url;
+        get;
         set
         {
-            if (value == _url) return;
+            if (value == field) return;
             ClearError();
             if (string.IsNullOrEmpty(value))
             {
                 AddError("Url cannot be null or empty.");
             }
 
-            _url = value;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public HttpTransportMode TransportMode
     {
-        get => _transportMode;
+        get;
         set
         {
-            if (value == _transportMode) return;
-            _transportMode = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = HttpTransportMode.AutoDetect;
 
     public bool BufferedRequest
     {
-        get => _bufferedRequest;
+        get;
         set
         {
-            if (value == _bufferedRequest) return;
-            _bufferedRequest = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool RemoveCharSet
     {
-        get => _removeCharSet;
+        get;
         set
         {
-            if (value == _removeCharSet) return;
-            _removeCharSet = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public IDictionary<string, string>? AdditionalHeaders
     {
-        get => _additionalHeaders;
+        get;
         set
         {
-            if (Equals(value, _additionalHeaders)) return;
-            _additionalHeaders = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }

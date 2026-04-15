@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:LLMClient.Endpoints.OpenAIAPI"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:LLMClient.Endpoints.Converters"
+             xmlns:converters1="clr-namespace:LLMClient.Component.Converters"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="800"
              d:DataContext="{d:DesignInstance local:APIEndPoint}">
@@ -38,7 +39,7 @@
                     <Setter Property="Margin"
                             Value="0,0,10,0" />
                     <Setter Property="VerticalContentAlignment"
-                            Value="Bottom"/>
+                            Value="Bottom" />
                 </Style>
             </Grid.Resources>
             <Grid.RowDefinitions>
@@ -239,8 +240,8 @@
                 </Button>
             </Grid>
             <TextBlock Grid.Row="3" Grid.Column="0" Text="Proxy:" />
-            <StackPanel Grid.Row="3" 
-						Grid.Column="1"
+            <StackPanel Grid.Row="3"
+                        Grid.Column="1"
                         Orientation="Horizontal"
                         VerticalAlignment="Bottom"
                         DataContext="{Binding ConfigOption,Mode=OneTime}">
@@ -284,16 +285,26 @@
                           Height="35"
                           Content="Null choices fallback" />
             </StackPanel>
-            <TextBlock Grid.Row="4" Grid.Column="0"
-                       Text="User-Agent:" />
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Http Headers:" />
             <TextBox Grid.Row="4" Grid.Column="1"
-                     Text="{Binding ConfigOption.UserAgentPrefix,Mode=TwoWay}"
-                     ToolTip="自定义 User-Agent 前缀，将追加到默认 User-Agent 之前" />
-            <TextBlock Grid.Row="4" Grid.Column="2"
-                       Text="X-Requested-With:" />
-            <TextBox Grid.Row="4" Grid.Column="3"
-                     Text="{Binding ConfigOption.XRequestedWith,Mode=TwoWay}"
-                     ToolTip="自定义 X-Requested-With 请求头值，留空则不发送" />
+                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                     Padding="6,2"
+                     VerticalContentAlignment="Center"
+                     HorizontalContentAlignment="Left"
+                     MinHeight="30"
+                     IsReadOnly="True"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     MaxHeight="100"
+                     Text="{Binding ConfigOption.AdditionalHeaders,Mode=OneWay,Converter={x:Static converters1:SnapConverters.ObjectToPrettyJsonConverter}}" />
+            <Button Grid.Row="4" Grid.Column="1"
+                    Width="30"
+                    Height="30"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Content="{materialDesign:PackIcon Kind=ReceiptTextEdit,Size=15}"
+                    Style="{StaticResource MaterialDesignIconForegroundButton}"
+                    Command="{Binding  ConfigOption.ConfigHeadersCommand}" />
         </Grid>
         <ListBox Grid.Row="1" Grid.Column="0"
                  Margin="0,16,0,0"

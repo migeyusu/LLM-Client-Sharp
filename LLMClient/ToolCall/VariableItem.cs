@@ -4,17 +4,14 @@ namespace LLMClient.ToolCall;
 
 public class VariableItem : BaseViewModel
 {
-    private string? _name;
-    private string? _value;
-
     public string? Name
     {
-        get => _name;
+        get;
         set
         {
-            if (_name != value)
+            if (field != value)
             {
-                _name = value;
+                field = value;
                 OnPropertyChanged();
             }
         }
@@ -22,12 +19,12 @@ public class VariableItem : BaseViewModel
 
     public string? Value
     {
-        get => _value;
+        get;
         set
         {
-            if (_value != value)
+            if (field != value)
             {
-                _value = value;
+                field = value;
                 OnPropertyChanged();
             }
         }

@@ -40,6 +40,8 @@ public class ChatContext
 
     public bool EnableSchemaCleaning { get; set; } = true;
 
+    public Dictionary<string, string>? AdditionalHttpHeader { get; set; }
+
     public ClientResult? Result { get; set; }
 
     public static ChatContext CreateForRequest(IRequestContext requestContext,

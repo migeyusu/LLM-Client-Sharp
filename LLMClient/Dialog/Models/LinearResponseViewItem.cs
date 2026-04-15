@@ -182,7 +182,6 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(agentTaskResult, Response);
             Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
             ParentSession.RespondingCount--;
-            Response.RequestTokenSource = null;
         }
 
         return agentTaskResult;

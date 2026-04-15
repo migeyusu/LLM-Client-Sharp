@@ -69,23 +69,14 @@ public class OpenAIAPIClient : LlmClientBase
 
         var apiToken = _option.APIToken;
         var apiUri = new Uri(_option.URL);
-        var proxyOption = _option.ProxySetting.GetRealProxy();
-        _proxySettingCopy = Extension.Clone(proxyOption);
-        var handler = proxyOption.CreateHandler();
+        HttpMessageHandler handler = _option.ProxySetting.GetRealProxy().CreateHandler();
+        var additionalHttpHeader = _option.AdditionalHeaders;
+        if (additionalHttpHeader != null && additionalHttpHeader.Any())
+        {
+            handler = new AddtionalHandler(handler, additionalHttpHeader);
+        }
+
         var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(10) };
-
-        // Inject custom request headers from configuration
-        if (!string.IsNullOrWhiteSpace(_option.UserAgentPrefix))
-        {
-            httpClient.DefaultRequestHeaders.UserAgent.Clear();
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_option.UserAgentPrefix);
-        }
-
-        if (!string.IsNullOrWhiteSpace(_option.XRequestedWith))
-        {
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-Requested-With", _option.XRequestedWith);
-        }
-
         var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
         {
             Endpoint = apiUri,
@@ -102,12 +93,9 @@ public class OpenAIAPIClient : LlmClientBase
         return kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
     }
 
-    private ProxyOption? _proxySettingCopy;
-
     protected override IChatClient GetChatClient()
     {
-        if (_chatClient == null || !_option.PublicEquals(_optionCopy) ||
-            !_option.ProxySetting.GetRealProxy().PublicEquals(_proxySettingCopy!))
+        if (_chatClient == null || !_option.PublicEquals(_optionCopy))
         {
             _chatClient = EnsureKernel();
             _optionCopy = Extension.Clone(_optionCopy);

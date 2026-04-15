@@ -1,87 +1,98 @@
+using System.Collections.ObjectModel;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
+using LLMClient.Component.UserControls;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
+using LLMClient.ToolCall;
 
 namespace LLMClient.Endpoints;
 
 public class APIDefaultOption : BaseViewModel<APIDefaultOption>
 {
-    private string _apiToken = string.Empty;
-
     public string APIToken
     {
-        get => _apiToken;
+        get;
         set
         {
-            if (value == _apiToken) return;
-            _apiToken = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
-
-    private string _url = string.Empty;
-    
-    private bool _isOpenAiCompatible = true;
-
-    private bool _treatNullChoicesAsEmptyResponse;
-
-    private string? _userAgentPrefix;
-
-    public string? UserAgentPrefix
-    {
-        get => _userAgentPrefix;
-        set
-        {
-            if (value == _userAgentPrefix) return;
-            _userAgentPrefix = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private string? _xRequestedWith;
-
-    public string? XRequestedWith
-    {
-        get => _xRequestedWith;
-        set
-        {
-            if (value == _xRequestedWith) return;
-            _xRequestedWith = value;
-            OnPropertyChanged();
-        }
-    }
+    } = string.Empty;
 
     public string URL
     {
-        get => _url;
+        get;
         set
         {
-            if (value == _url) return;
-            _url = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = string.Empty;
 
-    public ProxySetting ProxySetting { get; set; } = new ProxySetting();
+    public ProxySetting ProxySetting { get; set; } = new();
 
     public bool IsOpenAICompatible
     {
-        get => _isOpenAiCompatible;
+        get;
         set
         {
-            if (value == _isOpenAiCompatible) return;
-            _isOpenAiCompatible = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = true;
 
     public bool TreatNullChoicesAsEmptyResponse
     {
-        get => _treatNullChoicesAsEmptyResponse;
+        get;
         set
         {
-            if (value == _treatNullChoicesAsEmptyResponse) return;
-            _treatNullChoicesAsEmptyResponse = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
+    
+    public IDictionary<string, string>? AdditionalHeaders
+    {
+        get;
+        set
+        {
+            if (Equals(value, field)) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    public ICommand ConfigHeadersCommand => new RelayCommand(() =>
+    {
+        var envWindow = new KeyValueConfigWindow()
+        {
+            Title = "Http Headers",
+            UserVariables = new ObservableCollection<VariableItem>(this.AdditionalHeaders?.Select(item =>
+                new VariableItem()
+                {
+                    Name = item.Key,
+                    Value = item.Value
+                }) ?? []),
+        };
+        if (envWindow.ShowDialog() == true)
+        {
+            var userVariables = envWindow.UserVariables;
+            if (userVariables.Any())
+            {
+                this.AdditionalHeaders = userVariables.ToDictionary(
+                    item => item.Name!,
+                    item => item.Value ?? string.Empty,
+                    StringComparer.OrdinalIgnoreCase);
+            }
+            else
+            {
+                this.AdditionalHeaders = null;
+            }
+        }
+    });
 }

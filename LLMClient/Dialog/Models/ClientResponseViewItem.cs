@@ -119,7 +119,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(completedResult, this);
             PostOnPropertyChanged(nameof(TpS));
             InvalidateAsyncProperty(nameof(SearchableDocument));
-            RequestTokenSource = null;
             ReleaseRespondingState();
         }
 

@@ -427,7 +427,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
         }
     } = false;
 
-    public ReactHistoryCompressionOptions HistoryCompression
+    public ReactHistoryCompressionOptions? HistoryCompression
     {
         get;
         set
