@@ -102,13 +102,11 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             AcquireRespondingState();
             ErrorMessage = null;
             Messages = [];
-            RequestTokenSource = CreateRequestTokenSource(token);
-            using (RequestTokenSource)
+            using (CreateRequestTokenSource(token,out var liveToken))
             {
-                var ct = RequestTokenSource.Token;
-                var requestContext = await contextBuilder.BuildAsync(Client.Model, ct);
+                var requestContext = await contextBuilder.BuildAsync(Client.Model, liveToken);
                 completedResult = await ConsumeReactStepsAsync(
-                    Client.SendRequestAsync(requestContext, ct));
+                    Client.SendRequestAsync(requestContext, liveToken));
             }
         }
         catch (Exception exception)

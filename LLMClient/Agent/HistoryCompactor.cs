@@ -3,10 +3,12 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
+using Windows.ApplicationModel.Chat;
 using LLMClient.Abstraction;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.Dialog.Models;
 using Microsoft.Extensions.AI;
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
 using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
 using TextContent = Microsoft.Extensions.AI.TextContent;
@@ -93,24 +95,29 @@ public sealed class HistoryCompactor : PromptBasedAgent
     }
 
     /// <summary>
-    /// Prunes low-value rounds from <paramref name="roundMessages"/> via LLM decision
+    /// Prunes low-value rounds from <paramref name="rawHistory"/> via LLM decision
     /// and returns the filtered flat message list.
     /// Falls back to the full message set when pruning fails or is not applicable.
     /// </summary>
-    public async Task<IReadOnlyList<ChatMessage>> CompactAsync(
+    public async Task<List<ChatMessage>?> CompactAsync(
         string? task,
         string? systemPrompt,
-        IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages,
+        IReadOnlyList<ChatMessage> rawHistory,
         CancellationToken cancellationToken)
     {
-        var removeIndexes = await TryGetRemoveIndexesAsync(task, systemPrompt, roundMessages, cancellationToken);
-        return BuildMessages(roundMessages, removeIndexes);
+        var removeIndexes = await TryGetRemoveIndexesAsync(task, systemPrompt, rawHistory, cancellationToken);
+        if (removeIndexes == null || removeIndexes.Any())
+        {
+            return null;
+        }
+
+        return rawHistory.Where((_, index) => !removeIndexes.Contains(index)).ToList();
     }
 
     private async Task<IReadOnlyList<int>?> TryGetRemoveIndexesAsync(
         string? task,
         string? systemPrompt,
-        IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages,
+        IReadOnlyList<ChatMessage> roundMessages,
         CancellationToken cancellationToken)
     {
         if (roundMessages.Count == 0) return null;
@@ -155,76 +162,49 @@ public sealed class HistoryCompactor : PromptBasedAgent
         }
     }
 
-    /// <summary>
-    /// Removes the rounds at <paramref name="removeIndexes"/> and returns the remaining messages as a flat list.
-    /// Falls back to all rounds when the filtered result would be empty.
-    /// </summary>
-    private static IReadOnlyList<ChatMessage> BuildMessages(
-        IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages,
-        IReadOnlyList<int>? removeIndexes)
-    {
-        if (removeIndexes is not { Count: > 0 })
-            return roundMessages.SelectMany(m => m).ToList();
-
-        var removeSet = removeIndexes.ToHashSet();
-        var filtered = roundMessages.Where((_, i) => !removeSet.Contains(i)).ToList();
-        var kept = filtered.Count > 0
-            ? (IEnumerable<IReadOnlyList<ChatMessage>>)filtered
-            : roundMessages;
-        return kept.SelectMany(m => m).ToList();
-    }
-
-    private static string BuildIndexedInput(IReadOnlyList<IReadOnlyList<ChatMessage>> roundMessages)
+    private static string BuildIndexedInput(IReadOnlyList<ChatMessage> rawMessages)
     {
         var builder = new StringBuilder();
-        for (var i = 0; i < roundMessages.Count; i++)
+        for (var i = 0; i < rawMessages.Count; i++)
         {
             builder.AppendLine($"[{i}]");
+            var chatMessage = rawMessages[i];
             var roundParts = new List<string>();
-            foreach (var message in roundMessages[i])
+            // Append structured Contents (FunctionCallContent, FunctionResultContent, etc.)
+            foreach (var content in chatMessage.Contents)
             {
-                // Append Text if present
-                if (!string.IsNullOrWhiteSpace(message.Text))
+                switch (content)
                 {
-                    roundParts.Add(message.Text);
-                }
+                    case FunctionCallContent call:
+                        var argsStr = call.Arguments != null
+                            ? string.Join(", ", call.Arguments.Select(kv => $"{kv.Key}={kv.Value}"))
+                            : string.Empty;
+                        roundParts.Add($"[Tool Call: {call.Name}({argsStr})]");
+                        break;
+                    case FunctionResultContent result:
+                        var resultStr = result.Exception != null
+                            ? $"[Error: {result.Exception.Message}]"
+                            : result.Result?.ToString() ?? string.Empty;
+                        roundParts.Add($"[Result: {resultStr}]");
+                        break;
+                    case TextContent text:
+                        // Already handled via message.Text, but include for explicit structured text
+                        if (!string.IsNullOrWhiteSpace(text.Text) &&
+                            !roundParts.Contains(text.Text))
+                        {
+                            roundParts.Add(text.Text);
+                        }
 
-                // Append structured Contents (FunctionCallContent, FunctionResultContent, etc.)
-                foreach (var content in message.Contents)
-                {
-                    switch (content)
-                    {
-                        case FunctionCallContent call:
-                            var argsStr = call.Arguments != null
-                                ? string.Join(", ", call.Arguments.Select(kv => $"{kv.Key}={kv.Value}"))
-                                : string.Empty;
-                            roundParts.Add($"[Tool Call: {call.Name}({argsStr})]");
-                            break;
-                        case FunctionResultContent result:
-                            var resultStr = result.Exception != null
-                                ? $"[Error: {result.Exception.Message}]"
-                                : result.Result?.ToString() ?? string.Empty;
-                            roundParts.Add($"[Result: {resultStr}]");
-                            break;
-                        case TextContent text:
-                            // Already handled via message.Text, but include for explicit structured text
-                            if (!string.IsNullOrWhiteSpace(text.Text) &&
-                                !roundParts.Contains(text.Text))
-                            {
-                                roundParts.Add(text.Text);
-                            }
+                        break;
+                    default:
+                        // Include other content types as their string representation
+                        /*var otherStr = content.ToString();
+                        if (!string.IsNullOrWhiteSpace(otherStr))
+                        {
+                            roundParts.Add(otherStr);
+                        }*/
 
-                            break;
-                        default:
-                            // Include other content types as their string representation
-                            var otherStr = content.ToString();
-                            if (!string.IsNullOrWhiteSpace(otherStr))
-                            {
-                                roundParts.Add(otherStr);
-                            }
-
-                            break;
-                    }
+                        break;
                 }
             }
 

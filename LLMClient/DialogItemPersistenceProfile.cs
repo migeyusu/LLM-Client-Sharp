@@ -116,7 +116,10 @@ public class DialogItemPersistenceProfile : Profile
 
         CreateMap<ResponseViewItemBase, ResponsePersistItemBase>()
             .Include<ClientResponseViewItem, ClientResponsePersistItem>()
-            .Include<RawResponseViewItem, RawResponsePersistItem>();
+            .Include<RawResponseViewItem, RawResponsePersistItem>()
+            .ForMember(
+                dest => dest.LastSuccessfulUsage,
+                opt => opt.MapFrom(src => src.LastContextUsage != null ? src.LastContextUsage.UsageDetails : null));
         CreateMap<ClientResponseViewItem, ClientResponsePersistItem>()
             .IncludeBase<ResponseViewItemBase, ResponsePersistItemBase>()
             .PreserveReferences();
@@ -126,7 +129,13 @@ public class DialogItemPersistenceProfile : Profile
 
         CreateMap<ResponsePersistItemBase, ResponseViewItemBase>()
             .Include<ClientResponsePersistItem, ClientResponseViewItem>()
-            .Include<RawResponsePersistItem, RawResponseViewItem>();
+            .Include<RawResponsePersistItem, RawResponseViewItem>()
+            .ForMember(
+                dest => dest.LastContextUsage,
+                opt => opt.MapFrom(src =>
+                    src.LastSuccessfulUsage != null
+                        ? new ContextUsageViewModel(src.LastSuccessfulUsage)
+                        : null));
         CreateMap<ClientResponsePersistItem, ClientResponseViewItem>()
             .IncludeBase<ResponsePersistItemBase, ResponseViewItemBase>()
             .PreserveReferences()

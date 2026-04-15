@@ -82,6 +82,10 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
     private async Task CompactHistoryAsync(CancellationToken cancellationToken)
     {
         if (Agent is not ReactAgentBase reactAgent) return;
+        if (!Response.Messages.Any())
+        {
+            return;
+        }
 
         IsResponding = true;
         ParentSession.RespondingCount++;
@@ -92,18 +96,24 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
                 ErrorTag = "HistoryCompact",
             };
 
-            var roundMessages = Response.Messages
-                .Select(m => (IReadOnlyList<ChatMessage>)[m])
-                .ToList();
+            //last message is inspect or plan
+            var roundMessages = Response.Messages.SkipLast(1)
+                .ToArray();
+            using (Response.CreateRequestTokenSource(cancellationToken, out var liveToken))
+            {
+                var compacted = await compactor.CompactAsync(
+                    FindPrecedingTask(),
+                    ParentSession.SystemPrompt,
+                    roundMessages,
+                    liveToken);
+                if (compacted != null)
+                {
+                    compacted.Add(Response.Messages.Last());
+                    Response.Messages = compacted;
+                }
 
-            var compacted = await compactor.CompactAsync(
-                FindPrecedingTask(),
-                ParentSession.SystemPrompt,
-                roundMessages,
-                cancellationToken);
-
-            Response.Messages = compacted;
-            Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+                Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+            }
         }
         catch (OperationCanceledException)
         {
@@ -147,13 +157,11 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         ParentSession.RespondingCount++;
         try
         {
-            Response.RequestTokenSource = Response.CreateRequestTokenSource(token);
-            using (Response.RequestTokenSource)
+            using (Response.CreateRequestTokenSource(token, out var liveToken))
             {
-                var cancellationToken = Response.RequestTokenSource.Token;
-                await ParentSession.OnPreviewRequest(cancellationToken);
+                await ParentSession.OnPreviewRequest(liveToken);
                 agentTaskResult = await Response.ConsumeReactStepsAsync(
-                    Agent.Execute(session, cancellationToken: cancellationToken));
+                    Agent.Execute(session, liveToken));
                 ParentSession.OnResponseCompleted(agentTaskResult);
             }
         }

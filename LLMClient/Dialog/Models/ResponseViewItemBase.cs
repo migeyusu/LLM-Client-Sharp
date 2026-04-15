@@ -548,11 +548,13 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         IsAvailableInContextSwitch = !IsAvailableInContextSwitch;
     }
 
-    public CancellationTokenSource CreateRequestTokenSource(CancellationToken token)
+    public CancellationTokenSource CreateRequestTokenSource(CancellationToken token, out CancellationToken liveToken)
     {
-        return token != CancellationToken.None
+        this.RequestTokenSource = token != CancellationToken.None
             ? CancellationTokenSource.CreateLinkedTokenSource(token)
             : new CancellationTokenSource();
+        liveToken = this.RequestTokenSource.Token;
+        return this.RequestTokenSource;
     }
 
     internal static void CancelRequest(CancellationTokenSource? requestTokenSource)
