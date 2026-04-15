@@ -1,13 +1,10 @@
 ﻿using System.Net.Http;
-using LLMClient.Component.Utility;
-using LLMClient.Endpoints;
-using Microsoft.CodeAnalysis.Operations;
 
 public class AddtionalHandler : DelegatingHandler
 {
-    private readonly IDictionary<string, string> _additionalHttpHeader;
+    private readonly IReadOnlyDictionary<string, string> _additionalHttpHeader;
 
-    public AddtionalHandler(HttpMessageHandler innerHandler, IDictionary<string, string> additionalHttpHeader)
+    public AddtionalHandler(HttpMessageHandler innerHandler, IReadOnlyDictionary<string, string> additionalHttpHeader)
         : base(innerHandler)
     {
         this._additionalHttpHeader = additionalHttpHeader;
@@ -20,16 +17,17 @@ public class AddtionalHandler : DelegatingHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        if (_additionalHttpHeader.TryGetValue(UserAgentHeaderName, out var userAgentValue))
-        {
-            request.Headers.UserAgent.Clear();
-            request.Headers.UserAgent.ParseAdd(userAgentValue);
-            _additionalHttpHeader.Remove(UserAgentHeaderName);
-        }
-
         foreach (var (key, value) in _additionalHttpHeader)
         {
-            request.Headers.TryAddWithoutValidation(key, value);
+            if (key.Equals(UserAgentHeaderName, StringComparison.Ordinal))
+            {
+                request.Headers.UserAgent.Clear();
+                request.Headers.UserAgent.ParseAdd(value);
+            }
+            else
+            {
+                request.Headers.TryAddWithoutValidation(key, value);
+            }
         }
 
         return base.SendAsync(request, cancellationToken);

@@ -56,7 +56,7 @@ public class APIDefaultOption : BaseViewModel<APIDefaultOption>
         }
     }
     
-    public IDictionary<string, string>? AdditionalHeaders
+    public Dictionary<string, string>? AdditionalHeaders
     {
         get;
         set

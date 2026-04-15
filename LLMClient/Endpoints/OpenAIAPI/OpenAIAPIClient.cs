@@ -71,7 +71,7 @@ public class OpenAIAPIClient : LlmClientBase
         var apiUri = new Uri(_option.URL);
         HttpMessageHandler handler = _option.ProxySetting.GetRealProxy().CreateHandler();
         var additionalHttpHeader = _option.AdditionalHeaders;
-        if (additionalHttpHeader != null && additionalHttpHeader.Any())
+        if (additionalHttpHeader != null && additionalHttpHeader.Count != 0)
         {
             handler = new AddtionalHandler(handler, additionalHttpHeader);
         }
