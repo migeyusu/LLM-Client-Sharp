@@ -103,19 +103,7 @@ public class Program
                 .AddService("TelemetryConsoleQuickstart");
             // Enable model diagnostics with sensitive data.
             AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
-
-            using var traceProvider = Sdk.CreateTracerProviderBuilder()
-                .SetResourceBuilder(resourceBuilder)
-                .AddSource("Microsoft.SemanticKernel*")
-                .AddConsoleExporter()
-                .Build();
-
-            using var meterProvider = Sdk.CreateMeterProviderBuilder()
-                .SetResourceBuilder(resourceBuilder)
-                .AddMeter("Microsoft.SemanticKernel*")
-                .AddConsoleExporter()
-                .Build();
-
+            
             collection.AddLogging(builder =>
             {
                 builder.AddDebug();
@@ -123,9 +111,6 @@ public class Program
                 // Add OpenTelemetry as a logging provider
                 builder.AddOpenTelemetry(options =>
                 {
-                    options.SetResourceBuilder(resourceBuilder);
-                    options.AddConsoleExporter();
-                    // Format log messages. This is default to false.
                     options.IncludeFormattedMessage = true;
                     options.IncludeScopes = true;
                 });

@@ -1,16 +1,12 @@
-﻿using System.ClientModel;
-using System.ClientModel.Primitives;
-using System.Net.Http;
+﻿using System.Net.Http;
 using AutoMapper;
+using Betalgo.Ranul.OpenAI;
+using Betalgo.Ranul.OpenAI.Managers;
 using LLMClient.Abstraction;
-using LLMClient.Configuration;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using OpenAI;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
@@ -60,7 +56,9 @@ public class OpenAIAPIClient : LlmClientBase
 
     private readonly ILoggerFactory _loggerFactory;
 
-    private IChatClient EnsureKernel()
+    private const string UserAgentHeaderName = "User-Agent";
+
+    private IChatClient EnsureCreate()
     {
         if (_chatClient != null)
         {
@@ -68,36 +66,58 @@ public class OpenAIAPIClient : LlmClientBase
         }
 
         var apiToken = _option.APIToken;
-        var apiUri = new Uri(_option.URL);
         HttpMessageHandler handler = _option.ProxySetting.GetRealProxy().CreateHandler();
         var additionalHttpHeader = _option.AdditionalHeaders;
-        if (additionalHttpHeader != null && additionalHttpHeader.Count != 0)
+        try
         {
-            handler = new AddtionalHandler(handler, additionalHttpHeader);
-        }
+            var services = new ServiceCollection();
+            var httpClient = new HttpClient(handler)
+                { Timeout = TimeSpan.FromMinutes(10) };
+            if (additionalHttpHeader != null && additionalHttpHeader.Count != 0)
+            {
+                var headers = httpClient.DefaultRequestHeaders;
+                foreach (var (key, value) in additionalHttpHeader)
+                {
+                    if (key.Equals(UserAgentHeaderName, StringComparison.Ordinal))
+                    {
+                        headers.UserAgent.Clear();
+                        headers.UserAgent.ParseAdd(value);
+                    }
+                    else
+                    {
+                        headers.TryAddWithoutValidation(key, value);
+                    }
+                }
+            }
 
-        var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(10) };
-        var openAiClient = new OpenAIClientEx(new ApiKeyCredential(apiToken), new OpenAIClientOptions()
+            var openAiService = new OpenAIService(new OpenAIOptions()
+            {
+                ApiKey = apiToken,
+                BaseDomain = _option.URL,
+            }, httpClient);
+            services.AddSingleton<IChatClient>(openAiService);
+            var serviceProvider = services.BuildServiceProvider();
+            var chatClient = serviceProvider.GetRequiredService<IChatClient>();
+
+            return new ChatClientBuilder(chatClient)
+                .UseLogging(_loggerFactory)
+                .UseOpenTelemetry(_loggerFactory, sourceName: "OpenAIAPI",
+                    config => { config.EnableSensitiveData = true; })
+                .Build();
+        }
+        catch (Exception e)
         {
-            Endpoint = apiUri,
-            Transport = new HttpClientPipelineTransport(httpClient),
-            RetryPolicy = new ClientRetryPolicy(0),
-            NetworkTimeout = Timeout.InfiniteTimeSpan
-        }, _option.TreatNullChoicesAsEmptyResponse);
-        var builder = Kernel.CreateBuilder();
-#if DEBUG //只有debug模式下才需要获取每次请求的日志
-        builder.Services.AddSingleton(_loggerFactory);
-#endif
-        var kernel = builder.AddOpenAIChatCompletion(this.Model.APIId, openAiClient)
-            .Build();
-        return kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
+            var logger = _loggerFactory.CreateLogger<OpenAIAPIClient>();
+            logger.LogError(e, "Failed to create OpenAI chat client.");
+            throw;
+        }
     }
 
     protected override IChatClient GetChatClient()
     {
         if (_chatClient == null || !_option.PublicEquals(_optionCopy))
         {
-            _chatClient = EnsureKernel();
+            _chatClient = EnsureCreate();
             _optionCopy = Extension.Clone(_optionCopy);
         }
 
