@@ -26,16 +26,14 @@ public class NvidiaResearchClient : ResearchClient
 
     private readonly UrlFetcherPlugin _urlFetcherPlugin = new();
 
-    public NvidiaResearchClient(IParameterizedLLMModel promptModel, IParameterizedLLMModel reportModel,
-        GlobalOptions options)
-    {
-        PromptModel = promptModel;
-        ReportModel = reportModel;
-        _options = options;
-    }
+    private readonly ILLMChatClient _chatClient;
 
-    public IParameterizedLLMModel PromptModel { get; }
-    public IParameterizedLLMModel ReportModel { get; }
+    public NvidiaResearchClient(
+        GlobalOptions options, ILLMChatClient chatClient)
+    {
+        _options = options;
+        _chatClient = chatClient;
+    }
 
     [Experimental("SKEXP0110")]
     public override async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
@@ -56,9 +54,9 @@ public class NvidiaResearchClient : ResearchClient
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        var chatClient = PromptModel.Model.CreateChatClient() ?? throw new InvalidOperationException("Failed to create chat client from prompt model");
-        var agent = new PromptBasedAgent(chatClient);
-        
+        _chatClient.Parameters.Streaming = false;
+        var agent = new PromptBasedAgent(_chatClient);
+
         // ====================================================================
         // 阶段 1: 研究
         // ====================================================================
@@ -104,8 +102,8 @@ public class NvidiaResearchClient : ResearchClient
                         Top = 10,
                     }, cancellationToken);
                 var originalSearchResults = new ConcurrentBag<InternalSearchResult>();
-                await foreach (var textSearchResult in skTextSearchResult.Results.WithCancellation(
-                                   cancellationToken))
+                var searchResults = await skTextSearchResult.Results.ToArrayAsync(cancellationToken);
+                foreach (var textSearchResult in searchResults)
                 {
                     var objLink = textSearchResult.Link;
                     if (!string.IsNullOrWhiteSpace(objLink) && !string.IsNullOrWhiteSpace(textSearchResult.Value) &&
@@ -113,7 +111,7 @@ public class NvidiaResearchClient : ResearchClient
                     {
                         //重试3次
                         const int maxRetries = 3;
-                        const int delayMilliseconds = 3000;
+                        const int delayMilliseconds = 5000;
                         var attempt = 0;
                         Exception? exception = null;
                         while (attempt < maxRetries)
@@ -121,24 +119,30 @@ public class NvidiaResearchClient : ResearchClient
                             attempt++;
                             try
                             {
-                                using (var timeoutTokenSource =
+#if RELEASE
+                                  using (var timeoutTokenSource =
                                        new CancellationTokenSource(TimeSpan.FromMilliseconds(delayMilliseconds)))
                                 {
                                     using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
                                                cancellationToken,
                                                timeoutTokenSource.Token))
                                     {
-                                        var text = await _urlFetcherPlugin.FetchTextAsync(objLink,
-                                            cancellationToken: linkedTokenSource.Token);
-                                        if (!string.IsNullOrWhiteSpace(text))
-                                        {
-                                            originalSearchResults.Add(
-                                                new InternalSearchResult(objLink, textSearchResult.Name ?? "",
-                                                    text));
-                                            break;
-                                        }
+                                    cancellationToken = linkedTokenSource.Token
+#endif
+
+                                var text = await _urlFetcherPlugin.FetchTextAsync(objLink,
+                                    cancellationToken: cancellationToken);
+                                if (!string.IsNullOrWhiteSpace(text))
+                                {
+                                    originalSearchResults.Add(
+                                        new InternalSearchResult(objLink, textSearchResult.Name ?? "",
+                                            text));
+                                    break;
+                                }
+#if RELEASE
                                     }
                                 }
+#endif
                             }
                             catch (Exception e)
                             {
@@ -175,9 +179,7 @@ public class NvidiaResearchClient : ResearchClient
                         topicRelevantSegments[topic].AddRange(relevantSegments);
                     }
 
-                    Trace.TraceInformation(
-                        string.Format("Processed search result {0}. Found {1} relevant segments for URL {2}",
-                            searchResultUrlIndex, relevantSegments.Count, searchResult.Url));
+                    Trace.TraceInformation("Processed search result {0}. Found {1} relevant segments for URL {2}", searchResultUrlIndex, relevantSegments.Count, searchResult.Url);
                 }
             }
         }

@@ -10,7 +10,7 @@ namespace LLMClient.Agent;
 public class PromptBasedAgent
 {
     private readonly ILLMChatClient _chatClient;
-
+    
     public UsageDetails Usage { get; set; } = new();
 
     public double? Price { get; set; } = 0;

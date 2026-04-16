@@ -77,7 +77,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition />
                     </Grid.RowDefinitions>
-                    <ListBox ItemsSource="{Binding ResearchCreationOptions,Mode=OneTime}"
+                    <!--<ListBox ItemsSource="{Binding ResearchCreationOptions,Mode=OneTime}"
                              SelectedItem="{Binding SelectedCreationOption,Mode=TwoWay}"
                              Style="{StaticResource MaterialDesignChoiceChipPrimaryOutlineListBox}"
                              MaxHeight="120"
@@ -102,7 +102,7 @@
                                 <WrapPanel IsItemsHost="True" />
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
-                    </ListBox>
+                    </ListBox>-->
                 </Grid>
             </TabItem>
         </TabControl>

@@ -13,18 +13,13 @@ namespace LLMClient.Component;
 
 public class CreateSessionViewModel : BaseViewModel
 {
-    private int _selectedIndex;
-    private string _dialogTitle = "新建会话";
-    private bool _modelSelectionEnable = true;
-    private IResearchCreationOption? _selectedCreationOption;
-
     public int SelectedIndex
     {
-        get => _selectedIndex;
+        get;
         set
         {
-            if (value == _selectedIndex) return;
-            _selectedIndex = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             ModelSelectionEnable = value != 2;
         }
@@ -32,59 +27,43 @@ public class CreateSessionViewModel : BaseViewModel
 
     public string DialogTitle
     {
-        get => _dialogTitle;
+        get;
         set
         {
-            if (value == _dialogTitle) return;
-            _dialogTitle = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = "新建会话";
 
     public bool ModelSelectionEnable
     {
-        get => _modelSelectionEnable;
+        get;
         set
         {
-            if (value == _modelSelectionEnable) return;
-            _modelSelectionEnable = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = true;
 
     public ModelSelectionViewModel ModelSelection { get; set; } = new();
 
-    private ProjectOption _project = new() { TypeEditable = true };
-
     public ProjectOption Project
     {
-        get => _project;
+        get;
         set
         {
-            if (Equals(value, _project)) return;
-            _project = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(CreateSessionCommand));
         }
-    }
+    } = new() { TypeEditable = true };
 
     public ICommand CreateSessionCommand { get; }
 
-    public IReadOnlyList<IResearchCreationOption> ResearchCreationOptions { get; set; }
-
-    public IResearchCreationOption? SelectedCreationOption
-    {
-        get => _selectedCreationOption;
-        set
-        {
-            if (Equals(value, _selectedCreationOption)) return;
-            _selectedCreationOption = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public CreateSessionViewModel(IViewModelFactory factory, MainWindowViewModel mainWindowViewModel,
-        NvidiaResearchClientOption nvidiaResearchClientOption)
+    public CreateSessionViewModel(IViewModelFactory factory, MainWindowViewModel mainWindowViewModel)
     {
         CreateSessionCommand = new RelayCommand(() =>
         {
@@ -127,15 +106,6 @@ public class CreateSessionViewModel : BaseViewModel
                         }
 
                         break;
-                    case 2:
-                        var researchClient = SelectedCreationOption?.CreateResearchClient();
-                        if (researchClient == null)
-                        {
-                            return;
-                        }
-
-                        session = new ResearchSession(researchClient);
-                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -148,9 +118,5 @@ public class CreateSessionViewModel : BaseViewModel
                 MessageBoxes.Error("Failed to create session: " + e.Message);
             }
         });
-        ResearchCreationOptions = new List<IResearchCreationOption>
-        {
-            nvidiaResearchClientOption
-        };
     }
 }

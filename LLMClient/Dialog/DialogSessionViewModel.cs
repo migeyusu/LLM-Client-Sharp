@@ -621,10 +621,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
         else if (agentType == typeof(NvidiaResearchClient))
         {
-            // NvidiaResearchClient requires two models and GlobalOptions
-            // Use the same client for both prompt and report models
-            // GlobalOptions is injected through constructor
-            agent = new NvidiaResearchClient(client, client, _options);
+            agent = new NvidiaResearchClient(_options,client);
         }
         else
         {

@@ -77,25 +77,38 @@ public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         int maxLength = 8000,
         [Description("Optional: The starting character index for the content. Default is 0.")]
         int startIndex = 0,
-        CancellationToken cancellationToken = default(CancellationToken))
+        CancellationToken cancellationToken = default)
     {
         var htmlContent = await FetchContentAsync(url, token: cancellationToken);
 
-        var doc = new HtmlDocument();
-        doc.LoadHtml(htmlContent);
+        // 避免对超大/超深 HTML 构建 DOM 导致栈溢出：改为非 DOM 文本提取
+        var safeHtml = htmlContent.Length > 2_000_000
+            ? htmlContent[..2_000_000]
+            : htmlContent;
+        
+        // 优先提取 body 内容；无 body 时回退全文
+        var bodyMatch = Regex.Match(
+            safeHtml,
+            @"<body\b[^>]*>(?<content>[\s\S]*?)</body>",
+            RegexOptions.IgnoreCase);
 
-        // 移除所有 script 和 style 节点
-        doc.DocumentNode.Descendants()
-            .Where(n => n.Name == "script" || n.Name == "style")
-            .ToList()
-            .ForEach(n => n.Remove());
+        var bodyHtml = bodyMatch.Success
+            ? bodyMatch.Groups["content"].Value
+            : safeHtml;
 
-        // 获取body文本，如果body不存在则获取全文
-        var bodyNode = doc.DocumentNode.SelectSingleNode("//body") ?? doc.DocumentNode;
-        var text = bodyNode.InnerText;
+        // 移除 script/style 块
+        var noScriptStyle = Regex.Replace(
+            bodyHtml,
+            @"<(script|style)\b[^>]*>[\s\S]*?</\1>",
+            " ",
+            RegexOptions.IgnoreCase);
 
-        // 使用Regex进行规范化，将多个空白符合并为一个空格
-        var normalizedText = Regex.Replace(text, @"\s+", " ").Trim();
+        // 移除所有 HTML 标签
+        var plainText = Regex.Replace(noScriptStyle, @"<[^>]+>", " ");
+        
+        // 解码 HTML 实体并规范化空白
+        var decodedText = WebUtility.HtmlDecode(plainText);
+        var normalizedText = Regex.Replace(decodedText, @"\s+", " ").Trim();
 
         return ApplyLengthLimits(normalizedText, maxLength, startIndex);
     }

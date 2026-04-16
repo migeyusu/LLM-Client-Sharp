@@ -82,7 +82,6 @@ public class Program
                 .AddSingleton<IEndpointService, EndpointConfigureViewModel>()
                 .AddSingleton<NewApiUsageQueryService>()
                 .AddSingleton<IRagSourceCollection, RagSourceCollection>()
-                .AddTransient<NvidiaResearchClientOption>()
                 .AddSingleton<IMcpServiceCollection, McpServiceCollection>()
                 .AddSingleton<BuiltInFunctionsCollection>()
                 .AddSingleton<CreateSessionViewModel>()
