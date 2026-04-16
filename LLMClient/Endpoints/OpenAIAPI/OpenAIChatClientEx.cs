@@ -38,25 +38,25 @@ public class OpenAIChatClientEx : ChatClient
                 {
                     await content.WriteToAsync(oriStream);
                     oriStream.Position = 0;
-                    var jsonNode = await JsonNode.ParseAsync(oriStream);
-                    if (jsonNode == null)
+                    var requestObj = await JsonNode.ParseAsync(oriStream);
+                    if (requestObj == null)
                     {
                         throw new InvalidOperationException("Content is not valid JSON.");
                     }
-
+                    
                     // 1. 在原有的附加对象逻辑之前或之后，执行 Schema 清洗
                     if (clientContext.EnableSchemaCleaning)
                     {
-                        CleanTypeArrays(jsonNode);
+                        CleanTypeArrays(requestObj);
                     }
 
                     foreach (var additionalObject in clientContext.AdditionalObjects)
                     {
                         var node = JsonSerializer.SerializeToNode(additionalObject.Value,
                             Extension.DefaultJsonSerializerOptions);
-                        jsonNode[additionalObject.Key] = node;
+                        requestObj[additionalObject.Key] = node;
                     }
-
+                    
                     // 2. 将清洗/修改后的 JSON 内容进行打印（如果有需要的话）
                     if (clientContext.ShowRequestJson || Debugger.IsAttached)
                     {
@@ -66,7 +66,7 @@ public class OpenAIChatClientEx : ChatClient
                             Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                         };
 
-                        var formattedJson = jsonNode.ToJsonString(jsonOptions);
+                        var formattedJson = requestObj.ToJsonString(jsonOptions);
                         history!.AppendLine("<request>");
                         history.AppendLine(formattedJson);
                         history.AppendLine("</request>");
@@ -75,7 +75,7 @@ public class OpenAIChatClientEx : ChatClient
                     oriStream.SetLength(0);
                     await using (var writer = new Utf8JsonWriter(oriStream))
                     {
-                        jsonNode.WriteTo(writer);
+                        requestObj.WriteTo(writer);
                         await writer.FlushAsync();
                     }
 

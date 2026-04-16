@@ -167,25 +167,22 @@ public class ChatContext
         if (choicesNode is JsonArray choicesArray)
         {
             //往往只有1个choice
-            foreach (var choice in choicesArray)
+            foreach (var choiceNode in choicesArray)
             {
-                if (choice is JsonObject choiceObject)
+                if (choiceNode is JsonObject choice)
                 {
-                    /*var index = choiceObject["index"]?.GetValue<int>();
-                    if (index == null)
-                        continue;*/
                     var chatMessage = responseMessages[index];
-                    var message = choiceObject["message"]?.AsObject();
-                    if (message != null)
+                    var choiceMessage = choice["message"]?.AsObject();
+                    if (choiceMessage != null)
                     {
                         string? reasoning = null;
-                        if (message.ContainsKey("reasoning"))
+                        if (choiceMessage.ContainsKey("reasoning"))
                         {
-                            reasoning = message["reasoning"]?.ToString();
+                            reasoning = choiceMessage["reasoning"]?.ToString();
                         }
-                        else if (message.ContainsKey("reasoning_content"))
+                        else if (choiceMessage.ContainsKey("reasoning_content"))
                         {
-                            reasoning = message["reasoning_content"]?.ToString();
+                            reasoning = choiceMessage["reasoning_content"]?.ToString();
                         }
 
                         if (!string.IsNullOrEmpty(reasoning) && !HasReasoningContent(chatMessage, reasoning))
@@ -195,7 +192,7 @@ public class ChatContext
 
                         if (index == 0)
                         {
-                            var annotationsArray = message["annotations"]?.AsArray();
+                            var annotationsArray = choiceMessage["annotations"]?.AsArray();
                             if (annotationsArray != null)
                             {
                                 var annotations = TryGetAnnotations(annotationsArray);

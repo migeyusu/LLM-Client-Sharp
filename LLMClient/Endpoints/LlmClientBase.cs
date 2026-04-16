@@ -367,7 +367,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                 await chatContext.CompleteResponse(preResponse, stepResult);
             }
-
+            
             _durationStopwatch.Stop();
             var preResponseMessages = preResponse.Messages;
             if (reactRoundNumber > 1 && functionCallEngine.HasFunctions)

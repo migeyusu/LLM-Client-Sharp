@@ -90,7 +90,12 @@ public class OpenAIAPIClient : LlmClientBase
 #endif
         var kernel = builder.AddOpenAIChatCompletion(this.Model.APIId, openAiClient)
             .Build();
-        return kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
+        var chatClient = kernel.GetRequiredService<IChatCompletionService>().AsChatClient();
+        return new ChatClientBuilder(chatClient)
+            .UseLogging(_loggerFactory)
+            .UseOpenTelemetry(_loggerFactory, sourceName: "OpenAIAPI",
+                config => { config.EnableSensitiveData = true; })
+            .Build();
     }
 
     protected override IChatClient GetChatClient()

@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
 using System.Windows.Input;
@@ -16,6 +16,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using LLMClient.Agent;
+using LLMClient.Agent.Code;
 using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Agent.Planner;
@@ -404,6 +405,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         List<Type> agentTypes = new List<Type>
         {
             typeof(MiniSweAgent),
+            typeof(CoderAgent),
             typeof(InspectAgent),
             typeof(PlannerAgent),
             typeof(NvidiaResearchClient)
