@@ -33,16 +33,16 @@ public class OpenAIAPIClient : LlmClientBase
 
     public override ILLMAPIEndpoint Endpoint { get; }
 
-    private readonly APIDefaultOption _option;
+    protected readonly APIDefaultOption Option;
 
     private APIDefaultOption _optionCopy;
 
     public OpenAIAPIClient(APIEndPoint endPoint, APIModelInfo modelInfo, APIDefaultOption option,
         ILoggerFactory loggerFactory, ITokensCounter tokensCounter) : base(tokensCounter)
     {
-        _option = option;
+        Option = option;
         _optionCopy = Extension.Clone(option);
-        this._loggerFactory = loggerFactory;
+        this.LoggerFactory = loggerFactory;
         this.Endpoint = endPoint;
         ModelInfo = modelInfo;
         Mapper.Map<APIModelInfo, IModelParams>(modelInfo, this.Parameters);
@@ -57,7 +57,7 @@ public class OpenAIAPIClient : LlmClientBase
 
     private IChatClient? _chatClient;
 
-    private readonly ILoggerFactory _loggerFactory;
+    protected readonly ILoggerFactory LoggerFactory;
 
     private const string UserAgentHeaderName = "User-Agent";
 
@@ -68,12 +68,12 @@ public class OpenAIAPIClient : LlmClientBase
             _chatClient.Dispose();
         }
 
-        var apiToken = _option.APIToken;
-        HttpMessageHandler handler = _option.ProxySetting.GetRealProxy().CreateHandler();
+        var apiToken = Option.APIToken;
+        HttpMessageHandler handler = Option.ProxySetting.GetRealProxy().CreateHandler();
 #if DEBUG && REQUEST
-        handler = new LoggingHandler(handler, _loggerFactory.CreateLogger<LoggingHandler>());
+        handler = new LoggingHandler(handler, LoggerFactory.CreateLogger<LoggingHandler>());
 #endif
-        var additionalHttpHeader = _option.AdditionalHeaders;
+        var additionalHttpHeader = Option.AdditionalHeaders;
         try
         {
             var services = new ServiceCollection();
@@ -99,21 +99,21 @@ public class OpenAIAPIClient : LlmClientBase
             var openAiService = new OpenAIService(new OpenAIOptions()
             {
                 ApiKey = apiToken,
-                BaseDomain = _option.URL,
+                BaseDomain = Option.URL,
             }, httpClient);
             services.AddSingleton<IChatClient>(openAiService);
             var serviceProvider = services.BuildServiceProvider();
             var chatClient = serviceProvider.GetRequiredService<IChatClient>();
 
             return new ChatClientBuilder(chatClient)
-                .UseLogging(_loggerFactory)
-                .UseOpenTelemetry(_loggerFactory, sourceName: "OpenAIAPI",
+                .UseLogging(LoggerFactory)
+                .UseOpenTelemetry(LoggerFactory, sourceName: "OpenAIAPI",
                     config => { config.EnableSensitiveData = true; })
                 .Build();
         }
         catch (Exception e)
         {
-            var logger = _loggerFactory.CreateLogger<OpenAIAPIClient>();
+            var logger = LoggerFactory.CreateLogger<OpenAIAPIClient>();
             logger.LogError(e, "Failed to create OpenAI chat client.");
             throw;
         }
@@ -121,7 +121,7 @@ public class OpenAIAPIClient : LlmClientBase
 
     protected override IChatClient GetChatClient()
     {
-        if (_chatClient == null || !_option.PublicEquals(_optionCopy))
+        if (_chatClient == null || !Option.PublicEquals(_optionCopy))
         {
             _chatClient = EnsureCreate();
             _optionCopy = Extension.Clone(_optionCopy);
