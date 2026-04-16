@@ -90,7 +90,7 @@ public class OpenAIChatClientEx : ChatClient
 
         if (clientContext != null)
         {
-            clientContext.Result = result;
+            clientContext.ResponseResult = result;
         }
 
         if (shouldProcessNonStreamingResponse)

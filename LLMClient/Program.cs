@@ -98,6 +98,11 @@ public class Program
                 .AddSingleton<Summarizer>()
                 .AddMap();
 #if DEBUG
+            var resourceBuilder = ResourceBuilder
+                .CreateDefault()
+                .AddService("TelemetryConsoleQuickstart");
+            // Enable model diagnostics with sensitive data.
+            AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
             
             collection.AddLogging(builder =>
             {
@@ -106,8 +111,6 @@ public class Program
                 // Add OpenTelemetry as a logging provider
                 builder.AddOpenTelemetry(options =>
                 {
-                    options.AddConsoleExporter();
-                    // Format log messages. This is default to false.
                     options.IncludeFormattedMessage = true;
                     options.IncludeScopes = true;
                 });
