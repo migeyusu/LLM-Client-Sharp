@@ -42,7 +42,7 @@ public class ChatContext
 
     public Dictionary<string, string>? AdditionalHttpHeader { get; set; }
 
-    public ClientResult? Result { get; set; }
+    public ClientResult? ResponseResult { get; set; }
 
     public static ChatContext CreateForRequest(IRequestContext requestContext,
         AdditionalPropertiesDictionary? additionalObjects,
@@ -142,12 +142,12 @@ public class ChatContext
 
     public async Task CompleteResponse(ChatResponse response, StepResult result)
     {
-        if (this.Result == null)
+        if (this.ResponseResult == null)
         {
             return;
         }
 
-        var jsonNode = await this.Result.ToJsonNode();
+        var jsonNode = await this.ResponseResult.ToJsonNode();
         if (jsonNode == null)
         {
             return;

@@ -134,7 +134,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     {
         var message =
             "The LLM endpoint returned an invalid OpenAI-compatible response. Expected 'choices' to be an array.";
-        var rawResponse = TryGetRawResponseText(chatContext.Result);
+        var rawResponse = TryGetRawResponseText(chatContext.ResponseResult);
         if (!string.IsNullOrWhiteSpace(rawResponse))
         {
             message += $"{Environment.NewLine}Response Content: {TrimResponseForError(rawResponse)}";
@@ -371,6 +371,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             _durationStopwatch.Stop();
+            loopUsageDetails = preResponse.Usage;
             var preResponseMessages = preResponse.Messages;
             if (reactRoundNumber > 1 && functionCallEngine.HasFunctions)
             {

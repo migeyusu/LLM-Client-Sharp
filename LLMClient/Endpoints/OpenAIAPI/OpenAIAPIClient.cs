@@ -1,4 +1,6 @@
-﻿using System.Net.Http;
+﻿#define REQUEST
+
+using System.Net.Http;
 using AutoMapper;
 using Betalgo.Ranul.OpenAI;
 using Betalgo.Ranul.OpenAI.Managers;
@@ -7,6 +9,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
@@ -67,6 +70,9 @@ public class OpenAIAPIClient : LlmClientBase
 
         var apiToken = _option.APIToken;
         HttpMessageHandler handler = _option.ProxySetting.GetRealProxy().CreateHandler();
+#if DEBUG && REQUEST
+        handler = new LoggingHandler(handler, _loggerFactory.CreateLogger<LoggingHandler>());
+#endif
         var additionalHttpHeader = _option.AdditionalHeaders;
         try
         {
@@ -122,5 +128,40 @@ public class OpenAIAPIClient : LlmClientBase
         }
 
         return _chatClient;
+    }
+}
+
+public class LoggingHandler : DelegatingHandler
+{
+    private readonly ILogger _logger;
+
+    public LoggingHandler(HttpMessageHandler innerHandler, ILogger logger)
+        : base(innerHandler)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        // ★★★ 这里就是你想要的：打印实际发出的请求头 ★★★
+        _logger.LogInformation("🚀 [Outgoing Request] {Method} {Uri}",
+            request.Method, request.RequestUri);
+
+        _logger.LogInformation("📋 Headers: {Headers}",
+            request.Headers.ToString()); // 会完整打印 User-Agent 等所有 header
+
+        if (request.Content != null)
+        {
+            _logger.LogDebug("📦 Request Body (first 500 chars): {Body}",
+                (await request.Content.ReadAsStringAsync(cancellationToken)).Substring(0,
+                    Math.Min(500, (await request.Content.ReadAsStringAsync(cancellationToken)).Length)));
+        }
+
+        var response = await base.SendAsync(request, cancellationToken);
+
+        _logger.LogInformation("📥 Response Status: {StatusCode}", response.StatusCode);
+        return response;
     }
 }
