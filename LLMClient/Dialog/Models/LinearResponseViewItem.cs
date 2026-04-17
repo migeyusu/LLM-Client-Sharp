@@ -82,12 +82,52 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             CompactHistoryAsync, () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
         EliminateFailedHistoryCommand = new RelayCommand((() =>
         {
-            if (Agent is not ReactAgentBase reactAgent) return;
+            if (Agent is not ReactAgentBase) return;
             if (!Response.Messages.Any())
             {
                 return;
             }
-            
+
+            try
+            {
+                var messages = Response.Messages.ToList();
+                var segmentation = ReactHistorySegmenter.Segment(messages);
+                var keptMessages = new List<ChatMessage>(segmentation.PreambleMessages);
+
+                foreach (var round in segmentation.Rounds)
+                {
+                    var functionCalls = round.AssistantMessages
+                        .SelectMany(m => m.Contents.OfType<FunctionCallContent>())
+                        .ToList();
+
+                    if (functionCalls.Count == 0)
+                    {
+                        keptMessages.AddRange(round.Messages);
+                        continue;
+                    }
+
+                    var resultDict = round.ObservationMessages
+                        .SelectMany(m => m.Contents.OfType<FunctionResultContent>())
+                        .ToDictionary(r => r.CallId);
+
+                    var allFailed = functionCalls.All(call =>
+                        resultDict.TryGetValue(call.CallId, out var result) && result.Exception != null);
+
+                    if (!allFailed)
+                    {
+                        keptMessages.AddRange(round.Messages);
+                    }
+                }
+
+                Response.Messages = keptMessages;
+                Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+                SmartEliminateHistoryCommand.NotifyCanExecuteChanged();
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"[EliminateFailedHistory Error]: {ex.Message}");
+                MessageBoxes.Error(ex.Message, "清除失败历史失败");
+            }
         }), () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
     }
 

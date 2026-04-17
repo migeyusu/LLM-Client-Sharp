@@ -516,6 +516,169 @@ public class MiniSweRegressionTests
         Assert.Null(exception);
     }
 
+    [Fact]
+    public void LinearResponseViewItem_EliminateFailedHistoryCommand_RemovesFullyFailedRound()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var application = Application.Current ?? new Application();
+            var parentSession = new TestDialogSessionViewModel();
+            var agent = new DummyReactAgent();
+            var viewItem = new LinearResponseViewItem(parentSession, agent);
+
+            var systemMessage = new ChatMessage(ChatRole.System, "You are a helpful assistant.");
+
+            var assistantRound1 = new ChatMessage(ChatRole.Assistant,
+            [
+                new TextContent("Let me check."),
+                new FunctionCallContent("call-fail", "broken_tool", new Dictionary<string, object?>()),
+            ]);
+            ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+
+            var observationRound1 = new ChatMessage(ChatRole.Tool,
+            [
+                new FunctionResultContent("call-fail", "error message") { Exception = new InvalidOperationException("fail") },
+            ]);
+            ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+
+            var assistantRound2 = new ChatMessage(ChatRole.Assistant,
+            [
+                new TextContent("Let me try another."),
+                new FunctionCallContent("call-ok", "working_tool", new Dictionary<string, object?>()),
+            ]);
+            ReactHistorySegmenter.TagMessage(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
+
+            var observationRound2 = new ChatMessage(ChatRole.Tool,
+            [
+                new FunctionResultContent("call-ok", "success result"),
+            ]);
+            ReactHistorySegmenter.TagMessage(observationRound2, 2, ReactHistoryMessageKind.Observation);
+
+            viewItem.Response.Messages = new List<ChatMessage>
+            {
+                systemMessage, assistantRound1, observationRound1, assistantRound2, observationRound2
+            };
+
+            viewItem.EliminateFailedHistoryCommand.Execute(null);
+
+            var remaining = viewItem.Response.Messages.ToList();
+            Assert.Equal(3, remaining.Count);
+            Assert.Contains(systemMessage, remaining);
+            Assert.Contains(assistantRound2, remaining);
+            Assert.Contains(observationRound2, remaining);
+            Assert.DoesNotContain(assistantRound1, remaining);
+            Assert.DoesNotContain(observationRound1, remaining);
+        });
+    }
+
+    [Fact]
+    public void LinearResponseViewItem_EliminateFailedHistoryCommand_KeepsMixedResultRound()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var application = Application.Current ?? new Application();
+            var parentSession = new TestDialogSessionViewModel();
+            var agent = new DummyReactAgent();
+            var viewItem = new LinearResponseViewItem(parentSession, agent);
+
+            var assistantRound1 = new ChatMessage(ChatRole.Assistant,
+            [
+                new TextContent("Let me check both."),
+                new FunctionCallContent("call-ok", "working_tool", new Dictionary<string, object?>()),
+                new FunctionCallContent("call-fail", "broken_tool", new Dictionary<string, object?>()),
+            ]);
+            ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+
+            var observationRound1 = new ChatMessage(ChatRole.Tool,
+            [
+                new FunctionResultContent("call-ok", "success result"),
+                new FunctionResultContent("call-fail", "error message") { Exception = new InvalidOperationException("fail") },
+            ]);
+            ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+
+            viewItem.Response.Messages = new List<ChatMessage> { assistantRound1, observationRound1 };
+
+            viewItem.EliminateFailedHistoryCommand.Execute(null);
+
+            var remaining = viewItem.Response.Messages.ToList();
+            Assert.Equal(2, remaining.Count);
+            Assert.Contains(assistantRound1, remaining);
+            Assert.Contains(observationRound1, remaining);
+        });
+    }
+
+    [Fact]
+    public void LinearResponseViewItem_EliminateFailedHistoryCommand_KeepsRoundWithoutToolCalls()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var application = Application.Current ?? new Application();
+            var parentSession = new TestDialogSessionViewModel();
+            var agent = new DummyReactAgent();
+            var viewItem = new LinearResponseViewItem(parentSession, agent);
+
+            var finalAnswer = new ChatMessage(ChatRole.Assistant,
+            [
+                new TextContent("The task is complete."),
+            ]);
+            ReactHistorySegmenter.TagMessage(finalAnswer, 1, ReactHistoryMessageKind.Assistant);
+
+            viewItem.Response.Messages = new List<ChatMessage> { finalAnswer };
+
+            viewItem.EliminateFailedHistoryCommand.Execute(null);
+
+            var remaining = viewItem.Response.Messages.ToList();
+            Assert.Single(remaining);
+            Assert.Contains(finalAnswer, remaining);
+        });
+    }
+
+    [Fact]
+    public void LinearResponseViewItem_EliminateFailedHistoryCommand_KeepsSuccessRound()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var application = Application.Current ?? new Application();
+            var parentSession = new TestDialogSessionViewModel();
+            var agent = new DummyReactAgent();
+            var viewItem = new LinearResponseViewItem(parentSession, agent);
+
+            var assistantRound1 = new ChatMessage(ChatRole.Assistant,
+            [
+                new FunctionCallContent("call-ok", "working_tool", new Dictionary<string, object?>()),
+            ]);
+            ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+
+            var observationRound1 = new ChatMessage(ChatRole.Tool,
+            [
+                new FunctionResultContent("call-ok", "success result"),
+            ]);
+            ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+
+            viewItem.Response.Messages = new List<ChatMessage> { assistantRound1, observationRound1 };
+
+            viewItem.EliminateFailedHistoryCommand.Execute(null);
+
+            var remaining = viewItem.Response.Messages.ToList();
+            Assert.Equal(2, remaining.Count);
+            Assert.Contains(assistantRound1, remaining);
+            Assert.Contains(observationRound1, remaining);
+        });
+    }
+
+    private sealed class DummyReactAgent : ReactAgentBase
+    {
+        public DummyReactAgent() : base(new StubLlmClient(), new AgentOption(), new MiniSweAgentConfig())
+        {
+        }
+
+        public override string Name => "DummyReactAgent";
+
+        protected override Task<RequestContext?> BuildRequestContextAsync(ITextDialogSession dialogSession,
+            CancellationToken cancellationToken)
+            => Task.FromResult<RequestContext?>(null);
+    }
+
     private sealed class RetryRecordingChatClient : ILLMChatClient
     {
         private int _callCount;
