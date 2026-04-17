@@ -5,6 +5,7 @@ using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
+using LLMClient.Agent.Planner;
 using LLMClient.Component.CustomControl;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
@@ -56,9 +57,11 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
     public bool IsCompactable => Agent is ReactAgentBase;
 
     public IAsyncRelayCommand SmartEliminateHistoryCommand { get; }
-    
+
     public ICommand EliminateFailedHistoryCommand { get; }
-    
+
+    public ICommand EliminateHistoryCommand { get; }
+
     public Guid InteractionId
     {
         get;
@@ -80,6 +83,22 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         Response = response ?? new RawResponseViewItem();
         SmartEliminateHistoryCommand = new AsyncRelayCommand(
             CompactHistoryAsync, () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
+        EliminateHistoryCommand = new RelayCommand((() =>
+            {
+                if (Response.Messages.Count() <= 1)
+                {
+                    return;
+                }
+
+                if (Agent is not PlannerAgent)
+                {
+                    return;
+                }
+
+                //只保留最后一条消息
+                Response.Messages = Response.Messages.SkipLast(Response.Messages.Count() - 1).ToArray();
+            }),
+            () => Agent is PlannerAgent && !IsResponding && Response.Messages.Any());
         EliminateFailedHistoryCommand = new RelayCommand((() =>
         {
             if (Agent is not ReactAgentBase) return;
