@@ -561,7 +561,6 @@
                            Foreground="Gray"
                            TextTrimming="CharacterEllipsis" />
             </StackPanel>
-
             <controls:DiffViewer Grid.Row="1"
                                  OldText="{Binding OriginalContent}"
                                  NewText="{Binding UpdatedContent}"

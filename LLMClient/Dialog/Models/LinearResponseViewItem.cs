@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
@@ -8,6 +9,7 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog.Models;
 
@@ -37,7 +39,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             field = value;
             Response.IsResponding = value;
             OnPropertyChanged();
-            CompactHistoryCommand.NotifyCanExecuteChanged();
+            SmartEliminateHistoryCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -53,8 +55,10 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
     /// </summary>
     public bool IsCompactable => Agent is ReactAgentBase;
 
-    public IAsyncRelayCommand CompactHistoryCommand { get; }
-
+    public IAsyncRelayCommand SmartEliminateHistoryCommand { get; }
+    
+    public ICommand EliminateFailedHistoryCommand { get; }
+    
     public Guid InteractionId
     {
         get;
@@ -74,9 +78,17 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         ParentSession = parentSession;
         Agent = agent;
         Response = response ?? new RawResponseViewItem();
-        CompactHistoryCommand = new AsyncRelayCommand(
-            CompactHistoryAsync,
-            () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
+        SmartEliminateHistoryCommand = new AsyncRelayCommand(
+            CompactHistoryAsync, () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
+        EliminateFailedHistoryCommand = new RelayCommand((() =>
+        {
+            if (Agent is not ReactAgentBase reactAgent) return;
+            if (!Response.Messages.Any())
+            {
+                return;
+            }
+            
+        }), () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
     }
 
     private async Task CompactHistoryAsync(CancellationToken cancellationToken)

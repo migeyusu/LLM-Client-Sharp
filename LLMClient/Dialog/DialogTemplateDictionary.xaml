@@ -1058,9 +1058,9 @@
                                       IsCheckable="True"
                                       IsChecked="{Binding Response.IsManualValid,Mode=TwoWay}"
                                       Visibility="{Binding Response.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
-                            <MenuItem Command="{Binding CompactHistoryCommand}"
-                                      Header="压缩到摘要"
-                                      ToolTip="将Agent执行历史压缩为摘要文本，保留关键结论并清除中间步骤"
+                            <MenuItem Command="{Binding SmartEliminateHistoryCommand}"
+                                      Header="智能剔除"
+                                      ToolTip="利用LLM的能力剔除无关步骤"
                                       Visibility="{Binding IsCompactable,Mode=OneTime,Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <MenuItem Header="查看执行过程"
                                       ToolTip="查看Agent执行的详细过程日志"
