@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Dialog;
@@ -23,6 +23,8 @@ public abstract class ReactAgentBase : ISingleClientAgent
     public AgentOption AgentOption { get; }
 
     public abstract string Name { get; }
+
+    private string? _previousAssistantText;
 
     protected ReactAgentBase(ILLMChatClient chatClient, AgentOption agentOption, MiniSweAgentConfig config)
     {
@@ -66,6 +68,8 @@ public abstract class ReactAgentBase : ISingleClientAgent
         if (requestContext == null)
             yield break;
 
+        _previousAssistantText = null;
+
         while (!cancellationToken.IsCancellationRequested)
         {
             if (Config.StepLimit > 0 && CallCount >= Config.StepLimit)
@@ -85,7 +89,9 @@ public abstract class ReactAgentBase : ISingleClientAgent
             CallCount++;
             if (lastResult?.IsInterrupt == true) break;
 
-            if (IsExitMessage(requestContext.ReadonlyHistory.LastOrDefault()))
+            var lastAssistant = requestContext.ReadonlyHistory
+                .LastOrDefault(m => m.Role == ChatRole.Assistant);
+            if (IsExitMessage(lastAssistant))
                 break;
         }
     }
@@ -93,7 +99,16 @@ public abstract class ReactAgentBase : ISingleClientAgent
     protected bool IsExitMessage(ChatMessage? message)
     {
         var text = message?.Text;
-        if (string.IsNullOrEmpty(text)) return false;
-        return text.Contains(Config.TaskCompleteFlag, StringComparison.Ordinal);
+        if (!string.IsNullOrEmpty(text))
+        {
+            if (text.Contains(Config.TaskCompleteFlag, StringComparison.Ordinal))
+                return true;
+
+            if (text == _previousAssistantText)
+                return true;
+        }
+
+        _previousAssistantText = text;
+        return false;
     }
 }

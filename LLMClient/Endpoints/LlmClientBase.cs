@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
-using Betalgo.Ranul.OpenAI.ObjectModels.ResponseModels;
 using LLMClient.Abstraction;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.Utility;
@@ -15,7 +14,6 @@ using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
-using OpenAI.Chat;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
@@ -222,7 +220,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             if (tempAdditionalProperties != null && requestOptionsAdditionalProperties != null)
             {
                 //由于openai库的实现不使用requestoptions.AdditionalProperties传递额外参数，
-                //所以这里需要把临时属��也添加进去
+                //所以这里需要把临时属性也添加进去
                 foreach (var requestOptionsAdditionalProperty in requestOptionsAdditionalProperties)
                 {
                     tempAdditionalProperties[requestOptionsAdditionalProperty.Key] =

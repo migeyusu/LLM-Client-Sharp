@@ -76,6 +76,38 @@ public class MiniSweRegressionTests
     }
 
     [Fact]
+    public async Task ReactAgentBase_DuplicateAssistantText_BreaksLoop()
+    {
+        var client = new DuplicateTextChatClient();
+        var request = new RequestViewItem("do something");
+        var session = new TestTextDialogSession(request);
+        var agent = new MiniSweAgent(client, new AgentOption
+        {
+            Platform = AgentPlatform.Windows,
+            WorkingDirectory = Environment.CurrentDirectory,
+        });
+        typeof(MiniSweAgent)
+            .GetField("_toolProviders", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(agent, Array.Empty<KernelFunctionGroup>());
+
+        var results = new List<StepResult>();
+        await foreach (var step in agent.Execute(session, cancellationToken: CancellationToken.None))
+        {
+            await foreach (var _ in step)
+            {
+            }
+
+            if (step.Result != null)
+                results.Add(step.Result);
+        }
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal(2, client.CallCount);
+        Assert.All(results, r => Assert.Contains(r.Messages,
+            m => m.Role == ChatRole.Assistant && m.Text == "duplicate output"));
+    }
+
+    [Fact]
     public void InspectAgent_UsesReadOnlyTools_AndCompletes()
     {
         TestFixture.RunInStaThread(() =>
@@ -578,6 +610,59 @@ public class MiniSweRegressionTests
 
             step.Complete(stepResult);
             yield return step;
+        }
+    }
+
+    private sealed class DuplicateTextChatClient : ILLMChatClient
+    {
+        private int _callCount;
+
+        public int CallCount => _callCount;
+
+        public string Name => "DuplicateTextChatClient";
+
+        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+
+        public IEndpointModel Model { get; } = new APIModelInfo
+        {
+            APIId = "fake-duplicate-model",
+            Name = "Fake Duplicate Model",
+            Endpoint = EmptyLLMEndpoint.Instance,
+            SupportFunctionCall = true,
+            SupportStreaming = false,
+            SupportSystemPrompt = true,
+            FunctionCallOnStreaming = true,
+            SupportTextGeneration = true,
+            TopPEnable = true,
+            TopKEnable = true,
+            TemperatureEnable = true,
+            MaxTokensEnable = true,
+            FrequencyPenaltyEnable = true,
+            PresencePenaltyEnable = true,
+            SeedEnable = true,
+            PriceCalculator = new TokenBasedPriceCalculator()
+        };
+
+        public IModelParams Parameters { get; set; } = new DefaultModelParam { Streaming = false };
+
+        public bool IsResponding { get; set; }
+
+        public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            _callCount++;
+            const string text = "duplicate output";
+            var message = new ChatMessage(ChatRole.Assistant, text);
+            var step = new ReactStep();
+            step.EmitText(text);
+            step.Complete(new StepResult
+            {
+                FinishReason = ChatFinishReason.Stop,
+                IsCompleted = true,
+                Messages = [message],
+            });
+            yield return step;
+            await Task.CompletedTask;
         }
     }
 

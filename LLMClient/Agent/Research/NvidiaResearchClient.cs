@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Channels;
 using LLMClient.Abstraction;
 using LLMClient.Configuration;
 using LLMClient.Dialog.Models;
@@ -76,113 +77,185 @@ public class NvidiaResearchClient : ResearchClient
         var topics = await GenerateTopicsAsync(agent, taskPrompt, cancellationToken);
         yield return EmitProgress($"Task analysis completed. Will be researching {topics.Count} topics.");
 
-        var topicRelevantSegments = new Dictionary<string, List<string>>();
-        var searchResultUrls = new List<string>();
-        var allResults = new List<InternalSearchResult>();
-
-        foreach (var topic in topics)
+        var topicRelevantSegments = new ConcurrentDictionary<string, List<string>>();
+        var allResultsByIndex = new ConcurrentDictionary<int, InternalSearchResult>();
+        var processedUrls = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+        var progressChannel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            yield return EmitProgress($"Researching '{topic}'");
+            SingleReader = true,
+            SingleWriter = false
+        });
+        var progressWriter = progressChannel.Writer;
+        using var agentLock = new SemaphoreSlim(1, 1);
+        var sourceIndex = -1;
+        const int maxUrlFetchParallelism = 6;
 
-            var searchPhrases = await ProduceSearchPhrasesAsync(agent, taskPrompt, topic,
-                cancellationToken);
-            yield return EmitProgress($"Will invoke {searchPhrases.Count} search phrases to research '{topic}'.");
+        var researchTask = Parallel.ForEachAsync(topics, cancellationToken, async (topic, topicToken) =>
+        {
+            topicToken.ThrowIfCancellationRequested();
+            await progressWriter.WriteAsync($"Researching '{topic}'", topicToken);
 
-            topicRelevantSegments[topic] = [];
+            List<string> searchPhrases;
+            await agentLock.WaitAsync(topicToken);
+            try
+            {
+                searchPhrases = await ProduceSearchPhrasesAsync(agent, taskPrompt, topic, topicToken);
+            }
+            finally
+            {
+                agentLock.Release();
+            }
+
+            await progressWriter.WriteAsync($"Will invoke {searchPhrases.Count} search phrases to research '{topic}'.",
+                topicToken);
+
+            var topicSegments = new List<string>();
 
             foreach (var searchPhrase in searchPhrases)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                yield return EmitProgress($"Searching for '{searchPhrase}'");
+                topicToken.ThrowIfCancellationRequested();
+                await progressWriter.WriteAsync($"Searching for '{searchPhrase}'", topicToken);
                 var skTextSearchResult = await textSearch.GetTextSearchResultsAsync(searchPhrase,
-                    new TextSearchOptions()
+                    new TextSearchOptions
                     {
                         Skip = 0,
                         Top = 10,
-                    }, cancellationToken);
-                var originalSearchResults = new ConcurrentBag<InternalSearchResult>();
-                var searchResults = await skTextSearchResult.Results.ToArrayAsync(cancellationToken);
-                foreach (var textSearchResult in searchResults)
+                    }, topicToken);
+
+                var originalSearchResults = new ConcurrentBag<(InternalSearchResult Result, int Index)>();
+                var urlFetchOptions = new ParallelOptions
+                {
+                    CancellationToken = topicToken,
+                    MaxDegreeOfParallelism = maxUrlFetchParallelism
+                };
+                await Parallel.ForEachAsync(skTextSearchResult.Results, urlFetchOptions, async (textSearchResult, resultToken) =>
                 {
                     var objLink = textSearchResult.Link;
-                    if (!string.IsNullOrWhiteSpace(objLink) && !string.IsNullOrWhiteSpace(textSearchResult.Value) &&
-                        !searchResultUrls.Contains(objLink))
+                    if (string.IsNullOrWhiteSpace(objLink) || string.IsNullOrWhiteSpace(textSearchResult.Value))
                     {
-                        //重试3次
-                        const int maxRetries = 3;
-                        const int delayMilliseconds = 5000;
-                        var attempt = 0;
-                        Exception? exception = null;
-                        while (attempt < maxRetries)
+                        return;
+                    }
+
+                    if (!processedUrls.TryAdd(objLink, 0))
+                    {
+                        return;
+                    }
+
+                    const int maxRetries = 3;
+#if RELEASE
+                    const int delayMilliseconds = 5000;
+#endif
+                    var attempt = 0;
+                    Exception? exception = null;
+                    var fetchSucceeded = false;
+
+                    while (attempt < maxRetries)
+                    {
+                        attempt++;
+                        try
                         {
-                            attempt++;
-                            try
-                            {
 #if RELEASE
-                                  using (var timeoutTokenSource =
-                                       new CancellationTokenSource(TimeSpan.FromMilliseconds(delayMilliseconds)))
-                                {
-                                    using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
-                                               cancellationToken,
-                                               timeoutTokenSource.Token))
-                                    {
-                                    cancellationToken = linkedTokenSource.Token
+                            using var timeoutTokenSource =
+                                new CancellationTokenSource(TimeSpan.FromMilliseconds(delayMilliseconds));
+                            using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(resultToken,
+                                timeoutTokenSource.Token);
+                            var fetchToken = linkedTokenSource.Token;
+#else
+                            var fetchToken = resultToken;
 #endif
+                            var text = await _urlFetcherPlugin.FetchTextAsync(objLink, cancellationToken: fetchToken);
+                            if (string.IsNullOrWhiteSpace(text))
+                            {
+                                continue;
+                            }
 
-                                var text = await _urlFetcherPlugin.FetchTextAsync(objLink,
-                                    cancellationToken: cancellationToken);
-                                if (!string.IsNullOrWhiteSpace(text))
-                                {
-                                    originalSearchResults.Add(
-                                        new InternalSearchResult(objLink, textSearchResult.Name ?? "",
-                                            text));
-                                    break;
-                                }
-#if RELEASE
-                                    }
-                                }
-#endif
-                            }
-                            catch (Exception e)
-                            {
-                                //do nothing, just retry
-                                exception = e;
-                            }
+                            var index = Interlocked.Increment(ref sourceIndex);
+                            var internalSearchResult = new InternalSearchResult(objLink, textSearchResult.Name ?? "", text);
+                            allResultsByIndex[index] = internalSearchResult;
+                            originalSearchResults.Add((internalSearchResult, index));
+                            fetchSucceeded = true;
+                            break;
                         }
+                        catch (Exception e)
+                        {
+                            exception = e;
+                        }
+                    }
 
+                    if (!fetchSucceeded)
+                    {
+                        processedUrls.TryRemove(objLink, out _);
                         Trace.TraceWarning(
                             $"Failed to fetch content from URL '{objLink}'. {exception?.HierarchicalMessage()}");
                     }
+                });
+
+                if (!originalSearchResults.Any())
+                {
+                    continue;
                 }
 
-                if (!originalSearchResults.Any()) continue;
+                await progressWriter.WriteAsync($"Processing {originalSearchResults.Count} new search results.",
+                    topicToken);
 
-                searchResultUrls.AddRange(originalSearchResults.Select(r => r.Url));
-                allResults.AddRange(originalSearchResults);
-
-                yield return EmitProgress($"Processing {originalSearchResults.Count} new search results.");
-
-                foreach (var searchResult in originalSearchResults)
+                foreach (var (searchResult, searchResultUrlIndex) in originalSearchResults)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var searchResultUrlIndex = searchResultUrls.IndexOf(searchResult.Url);
-                    var relevantSegments = await FindRelevantSegmentsAsync(agent, taskPrompt,
-                        topic,
-                        searchResult.Content,
-                        searchResultUrlIndex,
-                        cancellationToken
-                    );
+                    topicToken.ThrowIfCancellationRequested();
+
+                    List<string> relevantSegments;
+                    await agentLock.WaitAsync(topicToken);
+                    try
+                    {
+                        relevantSegments = await FindRelevantSegmentsAsync(agent, taskPrompt,
+                            topic,
+                            searchResult.Content,
+                            searchResultUrlIndex,
+                            topicToken);
+                    }
+                    finally
+                    {
+                        agentLock.Release();
+                    }
 
                     if (relevantSegments.Any())
                     {
-                        topicRelevantSegments[topic].AddRange(relevantSegments);
+                        topicSegments.AddRange(relevantSegments);
                     }
 
-                    Trace.TraceInformation("Processed search result {0}. Found {1} relevant segments for URL {2}", searchResultUrlIndex, relevantSegments.Count, searchResult.Url);
+                    Trace.TraceInformation(
+                        "Processed search result {0}. Found {1} relevant segments for URL {2}",
+                        searchResultUrlIndex,
+                        relevantSegments.Count,
+                        searchResult.Url);
                 }
             }
+
+            topicRelevantSegments[topic] = topicSegments;
+        });
+
+        _ = researchTask.ContinueWith(task =>
+        {
+            if (task.IsCanceled)
+            {
+                progressWriter.TryComplete(new OperationCanceledException(cancellationToken));
+                return;
+            }
+
+            if (task.IsFaulted)
+            {
+                progressWriter.TryComplete(task.Exception?.GetBaseException());
+                return;
+            }
+
+            progressWriter.TryComplete();
+        }, TaskScheduler.Default);
+
+        await foreach (var progressMessage in progressChannel.Reader.ReadAllAsync(cancellationToken))
+        {
+            yield return EmitProgress(progressMessage);
         }
+
+        await researchTask;
 
         yield return EmitProgress("Research phase completed.");
 
@@ -191,8 +264,9 @@ public class NvidiaResearchClient : ResearchClient
         // ====================================================================
         yield return EmitProgress("Aggregating relevant information and building the report...");
 
+        var reportSegments = topicRelevantSegments.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         var initialReport =
-            await ProduceReportAsync(agent, taskPrompt, formatPrompt, topicRelevantSegments, cancellationToken);
+            await ProduceReportAsync(agent, taskPrompt, formatPrompt, reportSegments, cancellationToken);
         yield return EmitProgress("Initial report generated. Formatting and finalizing...");
 
         var consistentReport =
@@ -201,12 +275,12 @@ public class NvidiaResearchClient : ResearchClient
         var finalReportBuilder = new StringBuilder(consistentReport);
         finalReportBuilder.AppendLine("\n\n---");
 
+        var orderedResults = allResultsByIndex.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+        var searchResultUrls = orderedResults.Select(r => r.Url).ToList();
         for (var i = 0; i < searchResultUrls.Count; i++)
         {
-            var result = allResults.FirstOrDefault(r => r.Url == searchResultUrls[i]);
-            finalReportBuilder.AppendLine(result != null
-                ? $" - [[{i}]] [{result.Title}][{i}]"
-                : $" - [[{i}]] [Source {i}][{i}]");
+            var result = orderedResults[i];
+            finalReportBuilder.AppendLine($" - [[{i}]] [{result.Title}][{i}]");
         }
 
         finalReportBuilder.AppendLine("\n");

@@ -14,7 +14,7 @@ namespace LLMClient.ToolCall.DefaultPlugins;
 /// Provides functions for getting raw HTML, clean text, Markdown, or JSON from a given URL.
 /// Includes security measures to prevent access to private network resources.
 /// </summary>
-public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
+public partial class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 {
     // 遵循最佳实践，使用静态HttpClient实例以避免套接字耗尽。
     // 在实际应用中，更推荐通过依赖注入来管理HttpClient的生命周期。
@@ -87,10 +87,7 @@ public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             : htmlContent;
         
         // 优先提取 body 内容；无 body 时回退全文
-        var bodyMatch = Regex.Match(
-            safeHtml,
-            @"<body\b[^>]*>(?<content>[\s\S]*?)</body>",
-            RegexOptions.IgnoreCase);
+        var bodyMatch = MyRegex().Match(safeHtml);
 
         var bodyHtml = bodyMatch.Success
             ? bodyMatch.Groups["content"].Value
@@ -253,6 +250,9 @@ public class UrlFetcherPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 
         return text.Substring(start, Math.Min(length, text.Length - start));
     }
+
+    [GeneratedRegex(@"<body\b[^>]*>(?<content>[\s\S]*?)</body>", RegexOptions.IgnoreCase, "zh-CN")]
+    private static partial Regex MyRegex();
 
     #endregion
 }
