@@ -22,8 +22,8 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
         : base(agent, agentOption, config)
     {
         _toolProviders = CreateToolProviders(config);
-    }
 
+    }
     protected override async Task<RequestContext?> BuildRequestContextAsync(
         ITextDialogSession dialogSession,
         CancellationToken cancellationToken)

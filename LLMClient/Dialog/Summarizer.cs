@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Windows;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
@@ -73,7 +73,7 @@ public class Summarizer(GlobalOptions options)
 
         try
         {
-            var dialogContext = new DefaultDialogContextBuilder(chatHistoryItems);
+            var dialogContext = new TextOnlyDialogContextBuilder(chatHistoryItems);
             var response = await new PromptBasedAgent(client)
                 {
                     Timeout = duration,
