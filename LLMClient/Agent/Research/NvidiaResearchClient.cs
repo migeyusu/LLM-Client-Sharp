@@ -86,7 +86,6 @@ public class NvidiaResearchClient : ResearchClient
             SingleWriter = false
         });
         var progressWriter = progressChannel.Writer;
-        using var agentLock = new SemaphoreSlim(1, 1);
         var sourceIndex = -1;
         const int maxUrlFetchParallelism = 6;
 
@@ -95,17 +94,7 @@ public class NvidiaResearchClient : ResearchClient
             topicToken.ThrowIfCancellationRequested();
             await progressWriter.WriteAsync($"Researching '{topic}'", topicToken);
 
-            List<string> searchPhrases;
-            await agentLock.WaitAsync(topicToken);
-            try
-            {
-                searchPhrases = await ProduceSearchPhrasesAsync(agent, taskPrompt, topic, topicToken);
-            }
-            finally
-            {
-                agentLock.Release();
-            }
-
+            var searchPhrases = await ProduceSearchPhrasesAsync(agent, taskPrompt, topic, topicToken);
             await progressWriter.WriteAsync($"Will invoke {searchPhrases.Count} search phrases to research '{topic}'.",
                 topicToken);
 
@@ -202,20 +191,11 @@ public class NvidiaResearchClient : ResearchClient
                 {
                     topicToken.ThrowIfCancellationRequested();
 
-                    List<string> relevantSegments;
-                    await agentLock.WaitAsync(topicToken);
-                    try
-                    {
-                        relevantSegments = await FindRelevantSegmentsAsync(agent, taskPrompt,
-                            topic,
-                            searchResult.Content,
-                            searchResultUrlIndex,
-                            topicToken);
-                    }
-                    finally
-                    {
-                        agentLock.Release();
-                    }
+                    var relevantSegments = await FindRelevantSegmentsAsync(agent, taskPrompt,
+                        topic,
+                        searchResult.Content,
+                        searchResultUrlIndex,
+                        topicToken);
 
                     if (relevantSegments.Any())
                     {
