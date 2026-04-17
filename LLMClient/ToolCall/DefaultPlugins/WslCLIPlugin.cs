@@ -55,7 +55,8 @@ public sealed class WslCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         [Description("Optional distro name. Empty means the default WSL distro.")]
         string distribution = "",
         [Description("Optional user name. Empty means the default distro user.")]
-        string user = "")
+        string user = "",
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(command))
         {
@@ -103,7 +104,10 @@ public sealed class WslCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                 StandardErrorEncoding = Encoding.UTF8
             };
 
-            using var process = new Process
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+            var process = new Process
             {
                 StartInfo = processStartInfo
             };
@@ -112,9 +116,40 @@ public sealed class WslCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 
             var outputTask = process.StandardOutput.ReadToEndAsync();
             var errorTask = process.StandardError.ReadToEndAsync();
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutSeconds));
-
-            await Task.WhenAll(outputTask, errorTask, process.WaitForExitAsync(cts.Token));
+            try
+            {
+                await Task.WhenAll(outputTask, errorTask, process.WaitForExitAsync(linkedCts.Token));
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // User-initiated cancellation: kill the process tree
+                try { process.Kill(entireProcessTree: true); } catch { /* ignore if already exited */ }
+                return new ExecutionOutput
+                {
+                    Output = string.Empty,
+                    ReturnCode = -1,
+                    ExceptionInfo = "Command execution was cancelled by user.",
+                    Extra = new Dictionary<string, object>
+                    {
+                        ["platform"] = "wsl"
+                    }
+                };
+            }
+            catch (OperationCanceledException)
+            {
+                // Timeout
+                try { process.Kill(entireProcessTree: true); } catch { /* ignore if already exited */ }
+                return new ExecutionOutput
+                {
+                    Output = string.Empty,
+                    ReturnCode = -1,
+                    ExceptionInfo = $"Command timed out after {TimeoutSeconds} seconds",
+                    Extra = new Dictionary<string, object>
+                    {
+                        ["platform"] = "wsl"
+                    }
+                };
+            }
 
             var output = outputTask.Result;
             var error = errorTask.Result;
@@ -146,19 +181,6 @@ public sealed class WslCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                     ["distribution"] = effectiveDistribution,
                     ["user"] = effectiveUser,
                     ["working_directory"] = normalizedWorkingDirectory ?? string.Empty
-                }
-            };
-        }
-        catch (OperationCanceledException)
-        {
-            return new ExecutionOutput
-            {
-                Output = string.Empty,
-                ReturnCode = -1,
-                ExceptionInfo = $"Command timed out after {TimeoutSeconds} seconds",
-                Extra = new Dictionary<string, object>
-                {
-                    ["platform"] = "wsl"
                 }
             };
         }

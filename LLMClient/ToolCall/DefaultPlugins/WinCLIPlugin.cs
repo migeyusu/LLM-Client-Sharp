@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using LLMClient.Abstraction;
@@ -76,7 +76,8 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         [Description("The full command to execute, for example, 'Get-Process -Name chrome' or 'ipconfig /all'.")]
         string command,
         [Description("The type of shell to use. Can be 'powershell' or 'cmd'. Defaults to 'powershell'.")]
-        string shell = "powershell")
+        string shell = "powershell",
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(command))
         {
@@ -128,15 +129,44 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                         $"错误：不支持的 shell 类型 '{shell}'。请使用 'powershell' 或 'cmd'。");
             }
 
-            using (var process = new Process())
+            var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+            var process = new Process();
+            try
             {
                 process.StartInfo = processStartInfo;
                 process.Start();
 
                 var outputTask = process.StandardOutput.ReadToEndAsync();
                 var errorTask = process.StandardError.ReadToEndAsync();
-                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                await Task.WhenAll(outputTask, errorTask, process.WaitForExitAsync(cts.Token));
+                try
+                {
+                    await Task.WhenAll(outputTask, errorTask, process.WaitForExitAsync(linkedCts.Token));
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    // User-initiated cancellation: kill the process tree
+                    try { process.Kill(entireProcessTree: true); } catch { /* ignore if already exited */ }
+                    return new ExecutionOutput
+                    {
+                        Output = string.Empty,
+                        ReturnCode = -1,
+                        ExceptionInfo = "Command execution was cancelled by user."
+                    };
+                }
+                catch (OperationCanceledException)
+                {
+                    // Timeout
+                    try { process.Kill(entireProcessTree: true); } catch { /* ignore if already exited */ }
+                    return new ExecutionOutput
+                    {
+                        Output = string.Empty,
+                        ReturnCode = -1,
+                        ExceptionInfo = "Command timed out after 30 seconds."
+                    };
+                }
+
                 var output = outputTask.Result;
                 var error = errorTask.Result;
                 var resultBuilder = new StringBuilder();
@@ -158,6 +188,10 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                     ReturnCode = process.ExitCode,
                     ExceptionInfo = process.ExitCode != 0 ? $"Command exited with code {process.ExitCode}" : null
                 };
+            }
+            finally
+            {
+                process.Dispose();
             }
         }
         catch (Exception ex)
