@@ -332,6 +332,7 @@ public static class MiniSweAgentConfigLoader
                 - Avoid unnecessary repetition.
                 - Do not claim a file was changed unless the edit tool was successfully applied.
                 - Do not claim a fix works unless you actually verified it.
+                - Your final response must include COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT.
 
                 When reading code with line numbers:
                 - use the line numbers for inspection and reference
@@ -373,7 +374,7 @@ public static class MiniSweAgentConfigLoader
                 5. Preview edits before applying them
                 6. Verify the fix by running an appropriate build, test, or reproduction command
                 7. Re-check the edited code if necessary
-                8. Finish only when the result has been verified as much as possible
+                8. Finish only when the result has been verified as much as possible then output COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT or 'echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' to indicate completion
 
                 {{{tool_selection_guidance}}}
 
