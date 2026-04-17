@@ -47,15 +47,13 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         }
     }
 
-    private string? _iconUrl;
-
     public string? IconUrl
     {
-        get => _iconUrl;
+        get;
         set
         {
-            if (value == _iconUrl) return;
-            _iconUrl = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             if (!string.IsNullOrEmpty(value) && Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out var uri))
             {
@@ -187,11 +185,21 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
         }
     }
 
-    private readonly UriThemedIcon _defaultIcon =
-        new(null, ImageExtensions.APIIconImageLight, null, ImageExtensions.APIIconImageDark);
+    private UriThemedIcon? _defaultIcon;
 
     [JsonIgnore]
-    public virtual UriThemedIcon Icon => _defaultIcon;
+    public virtual UriThemedIcon Icon
+    {
+        get
+        {
+            if (_defaultIcon == null)
+            {
+                _defaultIcon = new(null, ImageExtensions.APIIconImageLight, null, ImageExtensions.APIIconImageDark);
+            }
+
+            return _defaultIcon;
+        }
+    }
 
     /// <summary>
     /// 验证
@@ -203,13 +211,7 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
             errorMessage = "Display name cannot be empty.";
             return false;
         }
-
-        if (string.IsNullOrEmpty(IconUrl))
-        {
-            errorMessage = "Icon URL cannot be empty.";
-            return false;
-        }
-
+        
         var distinctBy = _models.DistinctBy((info => info.Name));
         var apiModelInfos = _models.Except(distinctBy);
         if (apiModelInfos.Any())

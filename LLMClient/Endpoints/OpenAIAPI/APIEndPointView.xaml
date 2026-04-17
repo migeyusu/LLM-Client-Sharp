@@ -245,29 +245,24 @@
                         Orientation="Horizontal"
                         VerticalAlignment="Bottom"
                         DataContext="{Binding ConfigOption,Mode=OneTime}">
-                <RadioButton IsChecked="{Binding ProxySetting.UseGlobalProxy,Mode=TwoWay}"
-                             Padding="6,0"
-                             Content="使用共享设置" />
-                <RadioButton Margin="10,0,0,0"
-                             Padding="6,0"
-                             IsChecked="{Binding  ProxySetting.UseGlobalProxy,Mode=TwoWay,Converter={StaticResource InvertBooleanConverter}}">
-                    <DockPanel>
-                        <TextBlock Text="独立配置："
-                                   VerticalAlignment="Center"
-                                   Margin="10,0,0,0" />
-                        <materialDesign:PopupBox PopupContent="{Binding ProxySetting.ProxyOption,Mode=OneTime}"
-                                                 PopupContentTemplate="{StaticResource ProxyOptionDataTemplate}"
-                                                 PlacementMode="TopAndAlignLeftEdges"
-                                                 Padding="10"
-                                                 ToggleContent="{materialDesign:PackIcon Kind=ProxyOutline}"
-                                                 PopupElevation="Dp4"
-                                                 PopupUniformCornerRadius="8"
-                                                 ToolTip="代理"
-                                                 StaysOpen="True"
-                                                 VerticalAlignment="Center"
-                                                 Style="{StaticResource MaterialDesignToolPopupBox}" />
-                    </DockPanel>
-                </RadioButton>
+                <ToggleButton Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                              ToolTip="Use Custom configuration as proxy settings"
+                              IsChecked="{Binding  ProxySetting.UseGlobalProxy,Mode=TwoWay,Converter={StaticResource InvertBooleanConverter}}" />
+                <TextBlock Text="独立配置："
+                           VerticalAlignment="Center"
+                           Margin="10,0,0,0" />
+                <materialDesign:PopupBox PopupContent="{Binding ProxySetting.ProxyOption,Mode=OneTime}"
+                                         PopupContentTemplate="{StaticResource ProxyOptionDataTemplate}"
+                                         PlacementMode="TopAndAlignLeftEdges"
+                                         IsEnabled="{Binding  ProxySetting.UseGlobalProxy,Mode=OneWay,Converter={StaticResource InvertBooleanConverter}}"
+                                         Padding="10"
+                                         ToggleContent="{materialDesign:PackIcon Kind=ProxyOutline}"
+                                         PopupElevation="Dp4"
+                                         PopupUniformCornerRadius="8"
+                                         ToolTip="代理"
+                                         StaysOpen="True"
+                                         VerticalAlignment="Center"
+                                         Style="{StaticResource MaterialDesignToolPopupBox}" />
             </StackPanel>
             <StackPanel Grid.Row="3" Grid.Column="2"
                         Grid.ColumnSpan="2"
@@ -288,6 +283,7 @@
             <TextBlock Grid.Row="4" Grid.Column="0" Text="Http Headers:" />
             <TextBox Grid.Row="4" Grid.Column="1"
                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                     Margin="0,6,0,0"
                      Padding="6,2"
                      VerticalContentAlignment="Center"
                      HorizontalContentAlignment="Left"

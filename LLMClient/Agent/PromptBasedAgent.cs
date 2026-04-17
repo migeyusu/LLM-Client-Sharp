@@ -1,4 +1,5 @@
-﻿using System.Text;
+using System.Text;
+using System.Threading;
 using System.Windows;
 using LLMClient.Abstraction;
 using LLMClient.Dialog.Models;
@@ -10,7 +11,8 @@ namespace LLMClient.Agent;
 public class PromptBasedAgent
 {
     private readonly ILLMChatClient _chatClient;
-    
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+
     public UsageDetails Usage { get; set; } = new();
 
     public double? Price { get; set; } = 0;
@@ -27,78 +29,86 @@ public class PromptBasedAgent
     public async Task<AgentTaskResult> SendRequestAsync(DefaultDialogContextBuilder contextBuilder,
         CancellationToken cancellationToken = default)
     {
-        AgentTaskResult? completedResult = null;
-        var tryCount = 0;
-        var requestContext = await contextBuilder.BuildAsync(_chatClient.Model, cancellationToken);
-        while (tryCount < RetryCount && !cancellationToken.IsCancellationRequested)
+        await _semaphore.WaitAsync(cancellationToken);
+        try
         {
-            if (Timeout.HasTimeSpan)
+            AgentTaskResult? completedResult = null;
+            var tryCount = 0;
+            var requestContext = await contextBuilder.BuildAsync(_chatClient.Model, cancellationToken);
+            while (tryCount < RetryCount && !cancellationToken.IsCancellationRequested)
             {
-                using (var timeoutTokenSource = new CancellationTokenSource(Timeout.TimeSpan))
+                if (Timeout.HasTimeSpan)
                 {
-                    using (var linkedTokenSource =
-                           CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token, cancellationToken))
+                    using (var timeoutTokenSource = new CancellationTokenSource(Timeout.TimeSpan))
                     {
-                        try
+                        using (var linkedTokenSource =
+                               CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token, cancellationToken))
                         {
-                            completedResult = await _chatClient
-                                .SendRequestCompatAsync(requestContext, linkedTokenSource.Token)
-                                .ConfigureAwait(false);
-                            if (completedResult.IsInvalidRequest || completedResult.IsCanceled)
+                            try
                             {
-                                throw completedResult.Exception;
+                                completedResult = await _chatClient
+                                    .SendRequestCompatAsync(requestContext, linkedTokenSource.Token)
+                                    .ConfigureAwait(false);
+                                if (completedResult.IsInvalidRequest || completedResult.IsCanceled)
+                                {
+                                    throw completedResult.Exception;
+                                }
                             }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            continue;
+                            catch (OperationCanceledException)
+                            {
+                                continue;
+                            }
                         }
                     }
                 }
-            }
-            else
-            {
-                completedResult = await _chatClient.SendRequestCompatAsync(requestContext, cancellationToken)
-                    .ConfigureAwait(false);
+                else
+                {
+                    completedResult = await _chatClient.SendRequestCompatAsync(requestContext, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
+                tryCount++;
+                if (completedResult.IsInterrupt)
+                {
+                    // Diagnostic logging is now handled via LoopEvent stream
+                }
+
+                if (completedResult.Usage != null)
+                {
+                    Usage.Add(completedResult.Usage);
+                }
+
+                if (completedResult.Price != null)
+                {
+                    Price += completedResult.Price;
+                }
+
+                if (completedResult.IsInterrupt || string.IsNullOrEmpty(completedResult.GetContentAsString()))
+                {
+                    // retry
+                }
+                else
+                {
+                    return completedResult;
+                }
             }
 
-            tryCount++;
-            if (completedResult.IsInterrupt)
+            var stringBuilder =
+                new StringBuilder($"Error:Failed to get a valid response from the LLM after {RetryCount} attempts.");
+            if (completedResult?.ErrorMessage != null)
             {
-                // Diagnostic logging is now handled via LoopEvent stream
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine("Error Message:");
+                stringBuilder.AppendLine(completedResult.ErrorMessage);
             }
 
-            if (completedResult.Usage != null)
-            {
-                Usage.Add(completedResult.Usage);
-            }
-
-            if (completedResult.Price != null)
-            {
-                Price += completedResult.Price;
-            }
-
-            if (completedResult.IsInterrupt || string.IsNullOrEmpty(completedResult.GetContentAsString()))
-            {
-                // retry
-            }
-            else
-            {
-                return completedResult;
-            }
+            var s = stringBuilder.ToString();
+            throw new Exception(s);
         }
-
-        var stringBuilder =
-            new StringBuilder($"Error:Failed to get a valid response from the LLM after {RetryCount} attempts.");
-        if (completedResult?.ErrorMessage != null)
+        finally
         {
-            stringBuilder.AppendLine();
-            stringBuilder.AppendLine("Error Message:");
-            stringBuilder.AppendLine(completedResult.ErrorMessage);
+            _semaphore.Release();
         }
-
-        var s = stringBuilder.ToString();
-        throw new Exception(s);
     }
 
     public async Task<string> GetMessageAsync(string prompt, string? systemPrompt = null,

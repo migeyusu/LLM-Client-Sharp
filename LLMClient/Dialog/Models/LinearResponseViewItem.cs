@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
@@ -8,6 +9,7 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog.Models;
 
@@ -37,7 +39,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             field = value;
             Response.IsResponding = value;
             OnPropertyChanged();
-            CompactHistoryCommand.NotifyCanExecuteChanged();
+            SmartEliminateHistoryCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -53,8 +55,10 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
     /// </summary>
     public bool IsCompactable => Agent is ReactAgentBase;
 
-    public IAsyncRelayCommand CompactHistoryCommand { get; }
-
+    public IAsyncRelayCommand SmartEliminateHistoryCommand { get; }
+    
+    public ICommand EliminateFailedHistoryCommand { get; }
+    
     public Guid InteractionId
     {
         get;
@@ -74,9 +78,57 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         ParentSession = parentSession;
         Agent = agent;
         Response = response ?? new RawResponseViewItem();
-        CompactHistoryCommand = new AsyncRelayCommand(
-            CompactHistoryAsync,
-            () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
+        SmartEliminateHistoryCommand = new AsyncRelayCommand(
+            CompactHistoryAsync, () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
+        EliminateFailedHistoryCommand = new RelayCommand((() =>
+        {
+            if (Agent is not ReactAgentBase) return;
+            if (!Response.Messages.Any())
+            {
+                return;
+            }
+
+            try
+            {
+                var messages = Response.Messages.ToList();
+                var segmentation = ReactHistorySegmenter.Segment(messages);
+                var keptMessages = new List<ChatMessage>(segmentation.PreambleMessages);
+
+                foreach (var round in segmentation.Rounds)
+                {
+                    var functionCalls = round.AssistantMessages
+                        .SelectMany(m => m.Contents.OfType<FunctionCallContent>())
+                        .ToList();
+
+                    if (functionCalls.Count == 0)
+                    {
+                        keptMessages.AddRange(round.Messages);
+                        continue;
+                    }
+
+                    var resultDict = round.ObservationMessages
+                        .SelectMany(m => m.Contents.OfType<FunctionResultContent>())
+                        .ToDictionary(r => r.CallId);
+
+                    var allFailed = functionCalls.All(call =>
+                        resultDict.TryGetValue(call.CallId, out var result) && result.Exception != null);
+
+                    if (!allFailed)
+                    {
+                        keptMessages.AddRange(round.Messages);
+                    }
+                }
+
+                Response.Messages = keptMessages;
+                Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+                SmartEliminateHistoryCommand.NotifyCanExecuteChanged();
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"[EliminateFailedHistory Error]: {ex.Message}");
+                MessageBoxes.Error(ex.Message, "清除失败历史失败");
+            }
+        }), () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
     }
 
     private async Task CompactHistoryAsync(CancellationToken cancellationToken)
