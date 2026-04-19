@@ -36,7 +36,7 @@ public enum ProjectType : int
     [Description("C++")] Cpp
 }
 
-public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectViewModel>, IPromptableSession
+public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSession<ProjectViewModel>, IPromptableSession
 {
     public const string SaveDir = "Projects";
 

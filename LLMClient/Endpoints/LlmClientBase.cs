@@ -441,7 +441,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
                 else if (finishReason == ChatFinishReason.Length)
                 {
-                    exception = new OutOfContextWindowException { ChatResponse = preResponse };
+                    exception = new OutOfContextWindowException(preResponse);
                     stepResult.IsCompleted = false;
                     return;
                 }

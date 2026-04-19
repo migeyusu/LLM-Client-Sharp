@@ -33,19 +33,20 @@ public class LlmInvalidRequestException : ChatCriticalException
 /// </summary>
 public class OutOfContextWindowException : LlmInvalidRequestException
 {
-    public ChatResponse? ChatResponse { get; set; }
+    public ChatResponse? ChatResponse { get; }
 
-    public OutOfContextWindowException() : base("Exceeded maximum response length.")
+    public OutOfContextWindowException(ChatResponse chatResponse)
+        : base("Exceeded maximum response length." + chatResponse.RawRepresentation)
     {
+        this.ChatResponse = chatResponse;
     }
 
-    public OutOfContextWindowException(Exception innerException) : base("Exceeded maximum response length.",
-        innerException)
+    public OutOfContextWindowException(Exception innerException)
+        : base("Exceeded maximum response length.", innerException)
     {
     }
 }
 
 public class ResultFilteredException : LlmInvalidRequestException
 {
-    
 }

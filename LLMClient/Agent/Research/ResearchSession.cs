@@ -4,7 +4,7 @@ using LLMClient.Component.ViewModel;
 
 namespace LLMClient.Agent.Research;
 
-public class ResearchSession : FileBasedSessionBase, ILLMSessionLoader<ResearchSession>
+public class ResearchSession : FileBasedSessionBase, ILoadableLLMSession<ResearchSession>
 {
     public ResearchClient ResearchClient { get; set; }
 

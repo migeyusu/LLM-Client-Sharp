@@ -4,21 +4,23 @@ namespace LLMClient.Abstraction
 {
     public interface ILLMSession : ICloneable
     {
-        DateTime EditTime { get; }
-
         bool IsBusy { get; }
+        ILLMSession CloneHeader();
 
+        IEnumerable<Type> SupportedAgents { get; }
+    }
+
+    public interface ILLMSessionFile : ILLMSession
+    {
         Task SaveAs(string? fileName = null);
 
         void Delete();
 
-        ILLMSession CloneHeader();
+        DateTime EditTime { get; }
+    }
 
-        IEnumerable<Type> SupportedAgents { get; }
-}
-
-    public interface ILLMSessionLoader<T>
-        where T : class, ILLMSession
+    public interface ILoadableLLMSession<T>
+        where T : class, ILLMSessionFile
     {
         static abstract Task<T?> LoadFromStream(Stream stream, IMapper mapper);
     }

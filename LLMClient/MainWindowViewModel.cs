@@ -237,15 +237,13 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public ObservableCollection<FileBasedSessionBase> SessionViewModels { get; set; } = new();
 
-    private ILLMSession? _preSession;
-
-    public ILLMSession? PreSession
+    public ILLMSessionFile? PreSession
     {
-        get => _preSession;
+        get;
         set
         {
-            if (Equals(value, _preSession)) return;
-            _preSession = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -363,7 +361,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         var session = ((FileBasedSessionBase?)sender)!;
         switch (e.PropertyName)
         {
-            case nameof(ILLMSession.EditTime):
+            case nameof(ILLMSessionFile.EditTime):
                 var indexOf = this.SessionViewModels.IndexOf(session);
                 if (indexOf != 0)
                 {

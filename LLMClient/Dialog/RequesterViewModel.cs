@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Windows.Input;
 using LLMClient.Abstraction;
@@ -17,10 +16,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using LLMClient.Agent;
-using LLMClient.Agent.Code;
-using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
-using LLMClient.Agent.Planner;
 using LLMClient.Agent.Research;
 
 namespace LLMClient.Dialog;

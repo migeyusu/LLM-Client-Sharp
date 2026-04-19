@@ -12,7 +12,7 @@ using LLMClient.Persistence;
 
 namespace LLMClient.Dialog;
 
-public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<DialogFileViewModel>
+public class DialogFileViewModel : FileBasedSessionBase, ILoadableLLMSession<DialogFileViewModel>
 {
     private readonly IViewModelFactory _factory;
     public DialogViewModel Dialog { get; }
