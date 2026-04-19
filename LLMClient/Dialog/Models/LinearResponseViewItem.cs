@@ -115,6 +115,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
                 //只保留最后一条消息
                 Response.Messages = [Response.Messages.Last()];
+                Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
             }),
             () => Agent is PlannerAgent && !IsResponding && Response.Messages.Any());
         EliminateFailedHistoryCommand = new RelayCommand((() =>

@@ -207,7 +207,7 @@ public class UnitTest1
     [Fact]
     public void FunctionCallGeneratorSerialize()
     {
-        var projectPersistModel = new GeneralProjectPersistModel()
+        var projectPersistModel = new CppProjectPersistModel()
         {
             Sessions =
             [
@@ -274,7 +274,7 @@ public class UnitTest1
         };
         var options = FileBasedSessionBase.SerializerOption;
         var serialize = JsonSerializer.Serialize(projectPersistModel, options);
-        var callContent = JsonSerializer.Deserialize<ProjectPersistModel>(serialize, options);
+        var callContent = JsonSerializer.Deserialize<CppProjectPersistModel>(serialize, options);
         Assert.NotNull(callContent);
     }
 

@@ -517,6 +517,7 @@
 	
 	
 	
+	
 	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;&#xD;
   &lt;PhysicalFolder Path="F:\Cache\.nuget\packages\markdig.signed\0.18.3" Loaded="False" /&gt;&#xD;
   &lt;PhysicalFolder Path="F:\Cache\.nuget\packages\markdig.signed\0.31.0" Loaded="False" /&gt;&#xD;

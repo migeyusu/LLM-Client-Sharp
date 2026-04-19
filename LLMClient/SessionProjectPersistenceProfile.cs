@@ -27,7 +27,6 @@ public class SessionProjectPersistenceProfile : Profile
         CreateMap<ProjectOption, ProjectOptionsPersistModel>();
 
         CreateMap<ProjectPersistModel, ProjectViewModel>()
-            .Include<GeneralProjectPersistModel, GeneralProjectViewModel>()
             .Include<CSharpProjectPersistModel, CSharpProjectViewModel>()
             .Include<CppProjectPersistModel, CppProjectViewModel>()
             .ForMember(dest => dest.Session, opt => opt.Ignore())
@@ -39,9 +38,6 @@ public class SessionProjectPersistenceProfile : Profile
                 })
             .AfterMap(AfterMapProjectViewModel);
 
-        CreateMap<GeneralProjectPersistModel, GeneralProjectViewModel>()
-            .IncludeBase<ProjectPersistModel, ProjectViewModel>()
-            .ConstructUsing(CreateViewModel<GeneralProjectViewModel>);
         CreateMap<CSharpProjectPersistModel, CSharpProjectViewModel>()
             .IncludeBase<ProjectPersistModel, ProjectViewModel>()
             .ConstructUsing(CreateViewModel<CSharpProjectViewModel>)
@@ -51,7 +47,6 @@ public class SessionProjectPersistenceProfile : Profile
             .ConstructUsing(CreateViewModel<CppProjectViewModel>);
 
         CreateMap<ProjectViewModel, ProjectPersistModel>()
-            .Include<GeneralProjectViewModel, GeneralProjectPersistModel>()
             .Include<CSharpProjectViewModel, CSharpProjectPersistModel>()
             .Include<CppProjectViewModel, CppProjectPersistModel>()
             .ForMember(dest => dest.Client, opt => opt.MapFrom(src => src.Requester.DefaultClient))
@@ -66,8 +61,6 @@ public class SessionProjectPersistenceProfile : Profile
                     });
                 })
             .ForMember(dest => dest.UserPrompt, opt => opt.MapFrom(src => src.Requester.PromptEditViewModel.FinalText));
-        CreateMap<GeneralProjectViewModel, GeneralProjectPersistModel>()
-            .IncludeBase<ProjectViewModel, ProjectPersistModel>();
         CreateMap<CSharpProjectViewModel, CSharpProjectPersistModel>()
             .IncludeBase<ProjectViewModel, ProjectPersistModel>()
             .ForMember(dest => dest.SolutionFilePath, opt => opt.MapFrom(src => src.SolutionFilePath));

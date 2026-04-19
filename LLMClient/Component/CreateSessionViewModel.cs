@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Agent.Research;
@@ -92,17 +92,12 @@ public class CreateSessionViewModel : BaseViewModel
                                 session = factory.CreateViewModel<CSharpProjectViewModel>(projectOption, string.Empty,
                                     client);
                                 break;
-                            case ProjectType.Default:
-                                session = factory.CreateViewModel<GeneralProjectViewModel>(projectOption, string.Empty,
-                                    client);
-                                break;
                             case ProjectType.Cpp:
                                 session = factory.CreateViewModel<CppProjectViewModel>(projectOption, string.Empty,
                                     client);
                                 break;
                             default:
                                 throw new NotSupportedException();
-                            // _mainWindowViewModel.NewProjectViewModel(client, projectOption);
                         }
 
                         break;
