@@ -31,9 +31,8 @@ namespace LLMClient.Project;
 [TypeConverter(typeof(EnumDescriptionTypeConverter))]
 public enum ProjectType : int
 {
-    [Description("代码")] Default,
-    [Description("C#")] CSharp,
-    [Description("C++")] Cpp
+    [Description("C#")] CSharp = 1,
+    [Description("C++")] Cpp = 2
 }
 
 public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader<ProjectViewModel>, IPromptableSession
@@ -96,8 +95,8 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
                 throw new Exception($"Project version mismatch: {version} != {ProjectPersistModel.CurrentVersion}");
             }
 
-            var typeInt = root["ProjectOptions"]?[nameof(ProjectOptionsPersistModel.Type)]?.GetValue<int>() ?? 0;
-            var type = Enum.IsDefined(typeof(ProjectType), typeInt) ? (ProjectType)typeInt : ProjectType.Default;
+            var typeInt = root["ProjectOptions"]?[nameof(ProjectOptionsPersistModel.Type)]?.GetValue<int>() ?? 1;
+            var type = Enum.IsDefined(typeof(ProjectType), typeInt) ? (ProjectType)typeInt : ProjectType.CSharp;
             var (poType, viewmodelType) = ResolveTypePair(type);
             var persistModel = (ProjectPersistModel?)root.Deserialize(poType, SerializerOption);
             if (persistModel == null)
@@ -124,14 +123,12 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
     {
         switch (projectType)
         {
-            case ProjectType.Default:
-                return new Tuple<Type, Type>(typeof(ProjectPersistModel), typeof(ProjectViewModel));
             case ProjectType.CSharp:
                 return new Tuple<Type, Type>(typeof(CSharpProjectPersistModel), typeof(CSharpProjectViewModel));
             case ProjectType.Cpp:
                 return new Tuple<Type, Type>(typeof(CppProjectPersistModel), typeof(CppProjectViewModel));
             default:
-                throw new ArgumentOutOfRangeException($"Unknown project type: {projectType.ToString()}");
+                return new Tuple<Type, Type>(typeof(CSharpProjectPersistModel), typeof(CSharpProjectViewModel));
         }
     }
 
@@ -164,12 +161,10 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILLMSessionLoader
         {
             case ProjectType.CSharp:
                 return _factory.CreateViewModel<CSharpProjectViewModel>(projectOption, client);
-            case ProjectType.Default:
-                return _factory.CreateViewModel<GeneralProjectViewModel>(projectOption, client);
             case ProjectType.Cpp:
                 return _factory.CreateViewModel<CppProjectViewModel>(projectOption, client);
             default:
-                throw new NotSupportedException();
+                return _factory.CreateViewModel<CSharpProjectViewModel>(projectOption, client);
         }
     }
 

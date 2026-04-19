@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -128,7 +128,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
 
     public bool TypeEditable { get; set; } = false;
 
-    private ProjectType _type;
+    private ProjectType _type = ProjectType.CSharp;
 
     private bool _includeAgentsMd = true;
 
@@ -159,15 +159,13 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
 
     private static ThemedIcon CppIcon => LocalThemedIcon.FromPackIcon(PackIconKind.LanguageCpp);
 
-    private static ThemedIcon DefaultIcon => LocalThemedIcon.FromPackIcon(PackIconKind.CodeTags);
-
     public ThemedIcon Icon
     {
         get => _type switch
         {
             ProjectType.CSharp => CSharpIcon,
             ProjectType.Cpp => CppIcon,
-            _ => DefaultIcon,
+            _ => CSharpIcon,
         };
     }
 

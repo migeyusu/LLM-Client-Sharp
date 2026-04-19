@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace LLMClient.Persistence;
 
@@ -29,10 +29,6 @@ public abstract class ProjectPersistModel
     public double TotalPrice { get; set; }
 
     [JsonPropertyName("Tasks")] public ProjectSessionPersistModel[]? Sessions { get; set; }
-}
-
-public class GeneralProjectPersistModel : ProjectPersistModel
-{
 }
 
 public class CSharpProjectPersistModel : ProjectPersistModel
