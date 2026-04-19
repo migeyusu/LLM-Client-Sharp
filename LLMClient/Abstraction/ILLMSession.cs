@@ -13,7 +13,9 @@ namespace LLMClient.Abstraction
         void Delete();
 
         ILLMSession CloneHeader();
-    }
+
+        IEnumerable<Type> SupportedAgents { get; }
+}
 
     public interface ILLMSessionLoader<T>
         where T : class, ILLMSession

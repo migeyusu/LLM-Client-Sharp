@@ -13,7 +13,7 @@ namespace LLMClient.Agent.MiniSWE;
 /// Mini-SWE-Agent — full-access ReAct loop with filesystem and CLI tools.
 /// </summary>
 [Description("MiniSWE Agent")]
-public class MiniSweAgent : ReactAgentBase
+public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
 {
     private readonly IReadOnlyList<KernelFunctionGroup> _toolProviders;
 

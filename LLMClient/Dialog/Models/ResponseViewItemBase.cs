@@ -104,6 +104,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             if (value == field) return;
             field = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAvailableInContext));
         }
     }
 

@@ -20,28 +20,24 @@ namespace LLMClient.Component.ViewModel;
 
 public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, ILLMSession
 {
-    private DateTime _editTime = DateTime.Now;
-
     public DateTime EditTime
     {
-        get => _editTime;
+        get;
         set
         {
-            if (value.Equals(_editTime)) return;
-            _editTime = value;
+            if (value.Equals(field)) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
-
-    private string? _fileFullPath;
+    } = DateTime.Now;
 
     /// <summary>
     /// 用于跟踪对话文件
     /// </summary>
     public string FileFullPath
     {
-        get { return _fileFullPath ??= Path.GetFullPath($"{Guid.NewGuid()}.json", DefaultSaveFolderPath); }
-        set => _fileFullPath = value;
+        get { return field ??= Path.GetFullPath($"{Guid.NewGuid()}.json", DefaultSaveFolderPath); }
+        set;
     }
 
     /// <summary>
@@ -120,6 +116,8 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     }
 
     public abstract ILLMSession CloneHeader();
+    
+    public abstract IEnumerable<Type> SupportedAgents { get; }
 
     protected FileInfo GetAssociateFile()
     {

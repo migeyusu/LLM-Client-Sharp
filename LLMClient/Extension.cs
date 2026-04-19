@@ -101,15 +101,17 @@ public static class Extension
             _ => JsonSerializer.Serialize(payload, DefaultJsonSerializerOptions)
         };
     }
-    
-    public static async Task<CheckableFunctionGroupTree> ToCheckableFunctionGroupTree(this IAIFunctionGroup functionGroup,CancellationToken token)
+
+    public static async Task<CheckableFunctionGroupTree> ToCheckableFunctionGroupTree(
+        this IAIFunctionGroup functionGroup, CancellationToken token)
     {
-        var checkableFunctionGroupTree = new CheckableFunctionGroupTree(functionGroup){IsSelected = true};
+        var checkableFunctionGroupTree = new CheckableFunctionGroupTree(functionGroup) { IsSelected = true };
         await checkableFunctionGroupTree.EnsureAsync(token);
         foreach (var virtualFunctionViewModel in checkableFunctionGroupTree.Functions)
         {
             virtualFunctionViewModel.IsSelected = true;
         }
+
         return checkableFunctionGroupTree;
     }
 
@@ -783,5 +785,12 @@ public static class Extension
         }
 
         return (float)(response.Tokens / duration);
+    }
+
+    public static IEnumerable<Type> ImplementsTypes(this Type interfaceType)
+    {
+        return Assembly.GetExecutingAssembly()
+            .GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false } && interfaceType.IsAssignableFrom(t));
     }
 }

@@ -3,11 +3,11 @@ using System.Diagnostics;
 using System.Text.Json;
 using AutoMapper;
 using LLMClient.Abstraction;
+using LLMClient.Agent.MiniSWE;
+using LLMClient.Agent.Research;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
-
 using LLMClient.Dialog.Models;
-
 using LLMClient.Persistence;
 
 namespace LLMClient.Dialog;
@@ -54,8 +54,12 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
     public override ILLMSession CloneHeader()
     {
         var chatClient = this.Dialog.Requester.DefaultClient.CloneClient();
-        return _factory.CreateViewModel<DialogFileViewModel>(this.Dialog.Topic, chatClient);
+        return _factory.CreateViewModel<DialogFileViewModel>(this.Dialog.Topic ?? "新建会话", chatClient);
     }
+
+    private Type[] _supportedAgents = [typeof(MiniSweAgent), typeof(NvidiaResearchClient)];
+    
+    public override IEnumerable<Type> SupportedAgents => _supportedAgents;
 
     public static async Task<DialogFileViewModel?> LoadFromStream(Stream fileStream, IMapper mapper)
     {

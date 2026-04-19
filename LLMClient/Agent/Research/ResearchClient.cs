@@ -4,10 +4,10 @@ using LLMClient.Dialog.Models;
 
 namespace LLMClient.Agent.Research;
 
-public abstract class ResearchClient : BaseViewModel, IAgent
+public abstract class ResearchClient : BaseViewModel, IAgent, IInbuiltAgent
 {
     public abstract string Name { get; }
-
+    
     public bool IsResponding
     {
         get;

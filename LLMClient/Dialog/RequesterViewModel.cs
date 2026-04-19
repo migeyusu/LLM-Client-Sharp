@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Windows.Input;
 using LLMClient.Abstraction;
@@ -240,8 +241,6 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
 
     public ICommand OpenExpandedEditorCommand { get; }
 
-    private bool _isDebugMode = true;
-
     #region ichatrequest
 
     public string? UserPrompt
@@ -298,14 +297,14 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
 
     public bool IsDebugMode
     {
-        get => _isDebugMode;
+        get;
         set
         {
-            if (value == _isDebugMode) return;
-            _isDebugMode = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = true;
 
     public bool AutoApproveAllInvocations
     {
@@ -318,36 +317,32 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         }
     }
 
-    private bool _isNewResponding;
-
     public bool IsNewResponding
     {
-        get => _isNewResponding;
+        get;
         private set
         {
-            if (value == _isNewResponding) return;
-            _isNewResponding = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public IFunctionGroupSource? FunctionGroupSource { get; set; }
 
-    private bool _isAgentMode;
-
     public bool IsAgentMode
     {
-        get => _isAgentMode;
+        get;
         set
         {
-            if (value == _isAgentMode) return;
+            if (value == field) return;
 
             if (value && SelectedAgent == null)
             {
                 SelectedAgent = AvailableAgents.FirstOrDefault();
             }
 
-            _isAgentMode = value;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(RequestModeDisplayName));
         }
@@ -355,15 +350,13 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
 
     public List<AgentDescriptor> AvailableAgents { get; } = [];
 
-    private AgentDescriptor? _selectedAgent;
-
     public AgentDescriptor? SelectedAgent
     {
-        get => _selectedAgent;
+        get;
         set
         {
-            if (Equals(value, _selectedAgent)) return;
-            _selectedAgent = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(RequestModeDisplayName));
         }
@@ -402,12 +395,9 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         this.BindClient(modelClient);
 
         // Initialize agents
-        List<Type> agentTypes = new List<Type>
+        var agentTypes = new List<Type>
         {
             typeof(MiniSweAgent),
-            typeof(CoderAgent),
-            typeof(InspectAgent),
-            typeof(PlannerAgent),
             typeof(NvidiaResearchClient)
         };
 #if DEBUG

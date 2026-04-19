@@ -75,6 +75,19 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     public DialogSessionViewModel ParentSession { get; }
 
+    public bool CanEliminate
+    {
+        get
+        {
+            if (!IsResponding && Response.IsInterrupt)
+            {
+                return false;
+            }
+
+            return true;
+        }
+    }
+
     public LinearResponseViewItem(DialogSessionViewModel parentSession, IAgent? agent,
         RawResponseViewItem? response = null)
     {
@@ -95,14 +108,24 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
                     return;
                 }
 
+                if (!CanEliminate)
+                {
+                    return;
+                }
+
                 //只保留最后一条消息
-                Response.Messages = Response.Messages.SkipLast(Response.Messages.Count() - 1).ToArray();
+                Response.Messages = [Response.Messages.Last()];
             }),
             () => Agent is PlannerAgent && !IsResponding && Response.Messages.Any());
         EliminateFailedHistoryCommand = new RelayCommand((() =>
         {
             if (Agent is not ReactAgentBase) return;
             if (!Response.Messages.Any())
+            {
+                return;
+            }
+
+            if (!CanEliminate)
             {
                 return;
             }
@@ -154,6 +177,11 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
     {
         if (Agent is not ReactAgentBase reactAgent) return;
         if (!Response.Messages.Any())
+        {
+            return;
+        }
+
+        if (!CanEliminate)
         {
             return;
         }

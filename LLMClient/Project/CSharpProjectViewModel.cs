@@ -2,15 +2,17 @@
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Agent;
+using LLMClient.Agent.Code;
+using LLMClient.Agent.Inspector;
+using LLMClient.Agent.MiniSWE;
+using LLMClient.Agent.Planner;
+using LLMClient.Agent.Research;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
-using LLMClient.Agent.Inspector;
-using LLMClient.Agent.Planner;
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.ContextEngineering.Tools;
-
-
 using LLMClient.Persistence;
 using LLMClient.ToolCall;
 using Microsoft.Extensions.Logging;
@@ -19,15 +21,13 @@ namespace LLMClient.Project;
 
 public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 {
-    private string? _solutionFilePath;
-
     public string? SolutionFilePath
     {
-        get => _solutionFilePath;
+        get;
         set
         {
-            if (value == _solutionFilePath) return;
-            _solutionFilePath = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -93,14 +93,12 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         }
 
         var usesProjectFunctions = this.SelectedSession?.SelectedFunctionGroups?.Any(group =>
-            {
-                return _projectFunctions.Any(function => function == group.Data);
-            }) == true;
-        var usesInspectAgent = Requester.IsAgentMode
-            && Requester.SelectedAgent?.Type == typeof(InspectAgent);
-        var usesPlannerAgent = Requester.IsAgentMode
-            && Requester.SelectedAgent?.Type == typeof(PlannerAgent);
-        if (usesProjectFunctions || usesInspectAgent || usesPlannerAgent)
+        {
+            return _projectFunctions.Any(function => function == group.Data);
+        }) == true;
+        var agentType = Requester.SelectedAgent?.Type;
+        if (usesProjectFunctions || (Requester.IsAgentMode && agentType != null &&
+                                     _projectAgents.Contains(agentType)))
         {
             if (_solutionContext.IsLoaded)
             {
@@ -137,5 +135,16 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
     public void Dispose()
     {
         _projectContextPrompt.Dispose();
+    }
+
+    private readonly List<Type> _projectAgents =
+    [
+        typeof(MiniSweAgent), typeof(NvidiaResearchClient),
+        typeof(PlannerAgent), typeof(InspectAgent), typeof(CoderAgent)
+    ];
+
+    public override IEnumerable<Type> SupportedAgents
+    {
+        get { return _projectAgents.Concat(IInbuiltAgent.ChildTypes); }
     }
 }
