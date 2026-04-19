@@ -454,8 +454,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase,
         _factory = factory;
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
-        Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
-            new Func<ITextDialogSession?>(() => this.SelectedSession));
+        Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient);
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
         Requester.RequestCompleted += response =>

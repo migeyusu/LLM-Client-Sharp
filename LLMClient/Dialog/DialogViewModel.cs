@@ -124,8 +124,7 @@ public class DialogViewModel : DialogSessionViewModel, IPromptableSession
         : base(options, summarizer, rootNode, currentLeaf)
     {
         this.Topic = topic;
-        Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
-            new Func<ITextDialogSession?>(() => this));
+        Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient);
         Requester.ConnectedSession = this;
         var functionTreeSelector = Requester.FunctionTreeSelector;
         functionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
