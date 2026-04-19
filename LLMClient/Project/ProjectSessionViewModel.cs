@@ -8,6 +8,7 @@ using LLMClient.Configuration;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.ToolCall;
+using SQLitePCL;
 
 namespace LLMClient.Project;
 
@@ -26,7 +27,7 @@ namespace LLMClient.Project;
  * 1. 如何构建工程级别的上下文
  * 2. 如何构建任务级别的上下文
  */
-public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSource
+public class ProjectSessionViewModel : DialogSessionViewModel
 {
     public string? WorkingDirectory
     {
@@ -39,6 +40,11 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
     public override string? SystemPrompt
     {
         get { return ParentProject.Context; }
+    }
+
+    public override IEnumerable<Type> SupportedAgents
+    {
+        get { return base.SupportedAgents.Concat(ParentProject.ProjectAgents); }
     }
 
     /// <summary>
@@ -119,20 +125,8 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IFunctionGroupSou
         IsDataChanged = true;
     }
 
-    public virtual IEnumerable<IAIFunctionGroup> GetFunctionGroups()
+    public override IEnumerable<IAIFunctionGroup> GetFunctionGroups()
     {
-        if (SelectedFunctionGroups == null)
-        {
-            yield break;
-        }
-
-        foreach (var checkableFunctionGroupTree in SelectedFunctionGroups)
-        {
-            checkableFunctionGroupTree.RefreshCheckState();
-            if (checkableFunctionGroupTree.IsSelected != false)
-            {
-                yield return checkableFunctionGroupTree;
-            }
-        }
+        return base.GetFunctionGroups().Concat(ParentProject.ProjectTools);
     }
 }

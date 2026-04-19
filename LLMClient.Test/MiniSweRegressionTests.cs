@@ -473,7 +473,6 @@ public class MiniSweRegressionTests
             OutputTokenCount = firstUsage.OutputTokenCount + secondUsage.OutputTokenCount,
             TotalTokenCount = firstUsage.TotalTokenCount + secondUsage.TotalTokenCount,
         });
-        
     }
 
     [Theory]
@@ -569,7 +568,8 @@ public class MiniSweRegressionTests
 
             var observationRound1 = new ChatMessage(ChatRole.Tool,
             [
-                new FunctionResultContent("call-fail", "error message") { Exception = new InvalidOperationException("fail") },
+                new FunctionResultContent("call-fail", "error message")
+                    { Exception = new InvalidOperationException("fail") },
             ]);
             ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
 
@@ -624,7 +624,8 @@ public class MiniSweRegressionTests
             var observationRound1 = new ChatMessage(ChatRole.Tool,
             [
                 new FunctionResultContent("call-ok", "success result"),
-                new FunctionResultContent("call-fail", "error message") { Exception = new InvalidOperationException("fail") },
+                new FunctionResultContent("call-fail", "error message")
+                    { Exception = new InvalidOperationException("fail") },
             ]);
             ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
 
@@ -871,7 +872,8 @@ public class MiniSweRegressionTests
             {
                 LastCompactPrompt = lastPrompt;
                 var compactStep = new ReactStep();
-                var compactJson = """{ "removeIndexes": [0], "summary": "Compact inspection summary\nINSPECTION_COMPLETE" }""";
+                var compactJson =
+                    """{ "removeIndexes": [0], "summary": "Compact inspection summary\nINSPECTION_COMPLETE" }""";
                 compactStep.EmitText(compactJson);
                 compactStep.Complete(new StepResult
                 {
@@ -1138,7 +1140,10 @@ public class MiniSweRegressionTests
             {
                 FinishReason = ChatFinishReason.Stop,
                 IsCompleted = true,
-                Messages = [new ChatMessage(ChatRole.Assistant, "Phased plan for FooService.BarMethod\nPLANNING_COMPLETE")],
+                Messages =
+                [
+                    new ChatMessage(ChatRole.Assistant, "Phased plan for FooService.BarMethod\nPLANNING_COMPLETE")
+                ],
             });
             yield return firstStep;
 
@@ -1451,6 +1456,16 @@ public class MiniSweRegressionTests
         }
 
         public string? SystemPrompt => null;
+
+        public IEnumerable<Type> SupportedAgents { get; } = [];
+
+        public IFunctionGroupSource? ToolsSource { get; } = null;
+
+        public Task<IResponse> NewResponse(RequestOption option, IRequestItem? insertBefore = null,
+            CancellationToken token = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     private sealed class TestChatHistoryItem : IChatHistoryItem
@@ -1478,6 +1493,16 @@ public class MiniSweRegressionTests
         }
 
         public string? SystemPrompt => null;
+
+        public IEnumerable<Type> SupportedAgents { get; } = [];
+
+        public IFunctionGroupSource? ToolsSource { get; } = null;
+
+        public Task<IResponse> NewResponse(RequestOption option, IRequestItem? insertBefore = null,
+            CancellationToken token = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     private sealed class TestDialogSessionViewModel : DialogSessionViewModel
@@ -1487,5 +1512,7 @@ public class MiniSweRegressionTests
         }
 
         public override string? SystemPrompt => null;
+
+        public override IFunctionGroupSource? ToolsSource { get; } = null;
     }
 }

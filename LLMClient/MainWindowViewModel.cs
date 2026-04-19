@@ -369,7 +369,7 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
                 }
 
                 break;
-            case nameof(ILLMSession.IsBusy):
+            case nameof(ILLMSessionFile.IsBusy):
                 OnPropertyChanged(nameof(IsBusy));
                 if (!IsBusy)
                 {

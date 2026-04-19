@@ -16,10 +16,8 @@ using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering.PromptGeneration;
-
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
-
 using LLMClient.Persistence;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
@@ -35,7 +33,8 @@ public enum ProjectType : int
     [Description("C++")] Cpp = 2
 }
 
-public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSession<ProjectViewModel>, IPromptableSession
+public abstract class ProjectViewModel : FileBasedSessionBase,
+    ILoadableSessionFile<ProjectViewModel>, IPromptableSession
 {
     public const string SaveDir = "Projects";
 
@@ -76,6 +75,8 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSessi
     }
 
     public RequesterViewModel Requester { get; }
+
+    public abstract IEnumerable<Type> ProjectAgents { get; }
 
     #region file
 
@@ -153,7 +154,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSessi
         }
     }
 
-    public override ILLMSession CloneHeader()
+    public override ILLMSessionFile CloneHeader()
     {
         var projectOption = (ProjectOption)this.Option.Clone();
         var client = this.Requester.DefaultClient.CloneClient();
@@ -176,11 +177,11 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSessi
 
     public string? UserSystemPrompt
     {
-        get => _userSystemPrompt;
+        get;
         set
         {
-            if (value == _userSystemPrompt) return;
-            _userSystemPrompt = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(Context));
         }
@@ -249,7 +250,8 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSessi
             using var ms = new MemoryStream();
             using (var writer = new StreamWriter(ms, Encoding.UTF8, leaveOpen: true))
             {
-                using var xmlWriter = XmlWriter.Create(writer, new XmlWriterSettings { Indent = true, IndentChars = "    ", OmitXmlDeclaration = true });
+                using var xmlWriter = XmlWriter.Create(writer,
+                    new XmlWriterSettings { Indent = true, IndentChars = "    ", OmitXmlDeclaration = true });
                 _projectInfoSerializer.Serialize(xmlWriter, projectInfo, _emptyNamespaces);
             }
 
@@ -424,18 +426,15 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSessi
 
     public ObservableCollection<ProjectSessionViewModel> Session { get; set; }
 
-    private ProjectSessionViewModel? _selectedSession;
-
     public ProjectSessionViewModel? SelectedSession
     {
-        get => _selectedSession;
+        get;
         set
         {
-            if (Equals(value, _selectedSession)) return;
-            _selectedSession = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
-            Requester.FunctionGroupSource = value;
-            Requester.FunctionTreeSelector.Reset();
+            Requester.ConnectedSession = value;
         }
     }
 
@@ -447,8 +446,6 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSessi
         nameof(SelectedSession)
     ];
 
-    private string? _userSystemPrompt;
-
     protected ProjectViewModel(ProjectOption projectOption, string initialPrompt, ILLMChatClient modelClient,
         IMapper mapper, GlobalOptions options, IViewModelFactory factory,
         IEnumerable<ProjectSessionViewModel>? sessions = null)
@@ -458,11 +455,8 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSessi
         this.Option = projectOption;
         projectOption.PropertyChanged += ProjectOptionOnPropertyChanged;
         Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
-            (GetResponseHandler)GetResponse,
             new Func<ITextDialogSession?>(() => this.SelectedSession));
         var functionTreeSelector = Requester.FunctionTreeSelector;
-        functionTreeSelector.ConnectDefault()
-            .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedSession?.SelectedFunctionGroups));
         functionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
         Requester.RequestCompleted += response =>
         {
@@ -538,7 +532,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSessi
             throw new NotSupportedException("未选择任务");
         }
 
-        return await SelectedSession.NewDefaultResponse(requestOption, insertViewItem, token);
+        return await SelectedSession.NewResponse(requestOption, insertViewItem, token);
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -556,6 +550,8 @@ public abstract class ProjectViewModel : FileBasedSessionBase, ILoadableLLMSessi
             OnPropertyChanged();
         }
     }
+
+    public abstract IAIFunctionGroup[] ProjectTools { get; }
 
     public virtual async Task PreviewProcessing(CancellationToken token = default)
     {

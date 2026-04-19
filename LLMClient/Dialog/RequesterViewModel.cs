@@ -21,22 +21,6 @@ using LLMClient.Agent.Research;
 
 namespace LLMClient.Dialog;
 
-public class RequestOption
-{
-    public required ILLMChatClient DefaultClient { get; init; }
-
-    public required IRequestItem RequestItem { get; init; }
-
-    public AgentDescriptor? Agent { get; set; }
-
-    public bool UseAgent { get; set; }
-
-    public required AgentOption AgentOption { get; init; }
-}
-
-public delegate Task<IResponse> GetResponseHandler(RequestOption request,
-    IRequestItem? insertBefore, CancellationToken token);
-
 public record AgentDescriptor(string Name, Type Type);
 
 public class RequesterViewModel : BaseViewModel, IChatRequest
@@ -86,6 +70,22 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
             IsNewResponding = false;
         }
     });
+
+    public ITextDialogSession? ConnectedSession
+    {
+        get;
+        set
+        {
+            field = value;
+            if (value != null)
+            {
+                FunctionTreeSelector.ClearSource();
+                FunctionTreeSelector.ConnectDefault()
+                    .ConnectSource(value.ToolsSource);
+                FunctionTreeSelector.Reset();
+            }
+        }
+    }
 
     public bool RawEditMode
     {
@@ -255,9 +255,8 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         {
             if (this.FunctionTreeSelector.IsFunctionEnabled)
             {
-                return this.FunctionGroupSource?
-                    .GetFunctionGroups()
-                    .OfType<CheckableFunctionGroupTree>()
+                return this.FunctionTreeSelector
+                    .FunctionGroups
                     .ToList();
             }
 
@@ -324,8 +323,6 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         }
     }
 
-    public IFunctionGroupSource? FunctionGroupSource { get; set; }
-
     public bool IsAgentMode
     {
         get;
@@ -364,25 +361,20 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
 
     #endregion
 
-    private readonly GetResponseHandler _getResponse;
-
     private readonly GlobalOptions _options;
     private readonly Summarizer _summarizer;
 
     private readonly ITokensCounter _tokensCounter;
 
     public RequesterViewModel(string initialPrompt, ILLMChatClient modelClient,
-        GetResponseHandler getResponse,
         GlobalOptions options, Summarizer summarizer, IRagSourceCollection ragSourceCollection,
-        ITokensCounter tokensCounter,
-        Func<ITextDialogSession?>? currentSessionProvider = null)
+        ITokensCounter tokensCounter)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
         _promptEditViewModel = new TextContentCodeEditViewModel(new TextContent(initialPrompt), null);
         QueryViewModel = new FileQueryViewModel(this);
         this._defaultClient = modelClient;
-        this._getResponse = getResponse;
         _options = options;
         _summarizer = summarizer;
         _ragSourceCollection = ragSourceCollection;
@@ -598,23 +590,26 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         };
     }
 
-    private async Task<IResponse> ExecuteRequestAsync(RequestOption option,
+    private async Task ExecuteRequestAsync(RequestOption option,
         IRequestItem? insertBefore = null,
         bool clearRequestOnSuccess = false)
     {
+        if (this.ConnectedSession == null)
+        {
+            return;
+        }
+
         IsNewResponding = true;
         try
         {
             using (_tokenSource = new CancellationTokenSource())
             {
-                var completedResult = await _getResponse.Invoke(option, insertBefore, _tokenSource.Token);
+                var completedResult = await ConnectedSession.NewResponse(option, insertBefore, _tokenSource.Token);
                 OnRequestCompleted(completedResult);
                 if (clearRequestOnSuccess && !completedResult.IsInterrupt)
                 {
                     ClearRequest();
                 }
-
-                return completedResult;
             }
         }
         finally
