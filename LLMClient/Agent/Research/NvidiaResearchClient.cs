@@ -1,10 +1,11 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Channels;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Configuration;
 using LLMClient.Dialog.Models;
@@ -27,14 +28,33 @@ public class NvidiaResearchClient : ResearchClient
 
     private readonly UrlFetcherPlugin _urlFetcherPlugin = new();
 
-    private readonly ILLMChatClient _chatClient;
+    private readonly IParameterizedLLMModel _model;
 
-    public NvidiaResearchClient(
-        GlobalOptions options, ILLMChatClient chatClient)
+    private readonly ConcurrentBag<ILLMChatClient> _pool = new();
+
+    public NvidiaResearchClient(GlobalOptions options, IParameterizedLLMModel model)
     {
         _options = options;
-        _chatClient = chatClient;
+        _model = model;
     }
+
+    private ILLMChatClient RentClient()
+    {
+        if (!_pool.TryTake(out var client))
+        {
+            client = _model.CreateChatClient()
+                ?? throw new InvalidOperationException("Failed to create chat client.");
+        }
+        else
+        {
+            Extension.GetModelParamsMapper().Map(_model.Parameters, client.Parameters);
+        }
+
+        client.Parameters.Streaming = false;
+        return client;
+    }
+
+    private void ReturnClient(ILLMChatClient client) => _pool.Add(client);
 
     [Experimental("SKEXP0110")]
     public override async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
@@ -55,15 +75,37 @@ public class NvidiaResearchClient : ResearchClient
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        _chatClient.Parameters.Streaming = false;
-        var agent = new PromptBasedAgent(_chatClient);
+
+        var totalUsage = new UsageDetails();
+        var totalPrice = 0.0;
+        var usageLock = new object();
+
+        async Task<T> WithAgentAsync<T>(Func<PromptBasedAgent, CancellationToken, Task<T>> action, CancellationToken token)
+        {
+            var client = RentClient();
+            var agent = new PromptBasedAgent(client);
+            try
+            {
+                var result = await action(agent, token);
+                lock (usageLock)
+                {
+                    totalUsage.Add(agent.Usage);
+                    totalPrice += agent.Price ?? 0;
+                }
+                return result;
+            }
+            finally
+            {
+                ReturnClient(client);
+            }
+        }
 
         // ====================================================================
         // 阶段 1: 研究
         // ====================================================================
         yield return EmitProgress($"Received research request: '{prompt}'");
 
-        var isPromptValid = await CheckIfPromptIsValidAsync(agent, prompt, cancellationToken);
+        var isPromptValid = await WithAgentAsync((agent, token) => CheckIfPromptIsValidAsync(agent, prompt, token), cancellationToken);
         if (!isPromptValid)
         {
             throw new Exception("The prompt is not a valid document research prompt. Please try again.");
@@ -71,10 +113,10 @@ public class NvidiaResearchClient : ResearchClient
 
         yield return EmitProgress("Analyzing the research request...");
         var (taskPrompt, formatPrompt) =
-            await PerformPromptDecompositionAsync(agent, prompt, cancellationToken);
+            await WithAgentAsync((agent, token) => PerformPromptDecompositionAsync(agent, prompt, token), cancellationToken);
         yield return EmitProgress($"Prompt analysis completed. Task: '{taskPrompt}'");
 
-        var topics = await GenerateTopicsAsync(agent, taskPrompt, cancellationToken);
+        var topics = await WithAgentAsync((agent, token) => GenerateTopicsAsync(agent, taskPrompt, token), cancellationToken);
         yield return EmitProgress($"Task analysis completed. Will be researching {topics.Count} topics.");
 
         var topicRelevantSegments = new ConcurrentDictionary<string, List<string>>();
@@ -94,7 +136,7 @@ public class NvidiaResearchClient : ResearchClient
             topicToken.ThrowIfCancellationRequested();
             await progressWriter.WriteAsync($"Researching '{topic}'", topicToken);
 
-            var searchPhrases = await ProduceSearchPhrasesAsync(agent, taskPrompt, topic, topicToken);
+            var searchPhrases = await WithAgentAsync((agent, token) => ProduceSearchPhrasesAsync(agent, taskPrompt, topic, token), topicToken);
             await progressWriter.WriteAsync($"Will invoke {searchPhrases.Count} search phrases to research '{topic}'.",
                 topicToken);
 
@@ -191,11 +233,11 @@ public class NvidiaResearchClient : ResearchClient
                 {
                     topicToken.ThrowIfCancellationRequested();
 
-                    var relevantSegments = await FindRelevantSegmentsAsync(agent, taskPrompt,
+                    var relevantSegments = await WithAgentAsync((agent, token) => FindRelevantSegmentsAsync(agent, taskPrompt,
                         topic,
                         searchResult.Content,
                         searchResultUrlIndex,
-                        topicToken);
+                        token), topicToken);
 
                     if (relevantSegments.Any())
                     {
@@ -246,11 +288,11 @@ public class NvidiaResearchClient : ResearchClient
 
         var reportSegments = topicRelevantSegments.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         var initialReport =
-            await ProduceReportAsync(agent, taskPrompt, formatPrompt, reportSegments, cancellationToken);
+            await WithAgentAsync((agent, token) => ProduceReportAsync(agent, taskPrompt, formatPrompt, reportSegments, token), cancellationToken);
         yield return EmitProgress("Initial report generated. Formatting and finalizing...");
 
         var consistentReport =
-            await EnsureFormatIsRespectedAsync(agent, formatPrompt, initialReport, cancellationToken);
+            await WithAgentAsync((agent, token) => EnsureFormatIsRespectedAsync(agent, formatPrompt, initialReport, token), cancellationToken);
 
         var finalReportBuilder = new StringBuilder(consistentReport);
         finalReportBuilder.AppendLine("\n\n---");
@@ -276,7 +318,7 @@ public class NvidiaResearchClient : ResearchClient
         finalStep.Complete(new StepResult
         {
             Messages = [new ChatMessage(ChatRole.Assistant, finalReport)],
-            Usage = agent.Usage,
+            Usage = totalUsage,
             IsCompleted = true
         });
         yield return finalStep;
