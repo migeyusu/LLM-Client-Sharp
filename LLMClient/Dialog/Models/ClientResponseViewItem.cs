@@ -144,12 +144,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         return RawTextContent ?? string.Empty;
     }
 
-    protected override void OnUsagePropertiesChanged()
-    {
-        base.OnUsagePropertiesChanged();
-        OnPropertyChanged(nameof(LastContextUsage));
-    }
-
     internal void AcquireRespondingState()
     {
         if (Interlocked.Increment(ref _respondingStateRefCount) != 1)

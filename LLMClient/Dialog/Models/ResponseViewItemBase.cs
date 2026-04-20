@@ -33,7 +33,16 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     /// <summary>
     /// 上下文占比信息（无模型信息时返回空 ViewModel）
     /// </summary>
-    public ContextUsageViewModel? LastContextUsage { get; set; }
+    public ContextUsageViewModel? LastContextUsage
+    {
+        get;
+        set
+        {
+            if (Equals(value, field)) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
 
     public int Latency
     {
@@ -89,7 +98,6 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(Tokens));
-            OnUsagePropertiesChanged();
         }
     }
 
@@ -530,11 +538,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             _ => kind.ToString(),
         };
     }
-
-    protected virtual void OnUsagePropertiesChanged()
-    {
-    }
-
+    
     /// <summary>
     /// 切换在上下文中的可用性
     /// </summary>

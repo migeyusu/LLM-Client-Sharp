@@ -1,12 +1,11 @@
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
-
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
-
 using LLMClient.Persistence;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient;
 
@@ -119,7 +118,13 @@ public class DialogItemPersistenceProfile : Profile
             .Include<RawResponseViewItem, RawResponsePersistItem>()
             .ForMember(
                 dest => dest.LastSuccessfulUsage,
-                opt => opt.MapFrom(src => src.LastContextUsage != null ? src.LastContextUsage.UsageDetails : null));
+                opt => opt.MapFrom(src => src.LastContextUsage != null
+                    ? new ContextUsagePO()
+                    {
+                        MaxContextLength = src.LastContextUsage.MaxContextTokens ?? 0,
+                        UsageDetails = src.LastContextUsage.UsageDetails ?? new UsageDetails(),
+                    }
+                    : null));
         CreateMap<ClientResponseViewItem, ClientResponsePersistItem>()
             .IncludeBase<ResponseViewItemBase, ResponsePersistItemBase>()
             .PreserveReferences();
@@ -134,7 +139,8 @@ public class DialogItemPersistenceProfile : Profile
                 dest => dest.LastContextUsage,
                 opt => opt.MapFrom(src =>
                     src.LastSuccessfulUsage != null
-                        ? new ContextUsageViewModel(src.LastSuccessfulUsage)
+                        ? new ContextUsageViewModel(src.LastSuccessfulUsage.UsageDetails,
+                            src.LastSuccessfulUsage.MaxContextLength)
                         : null));
         CreateMap<ClientResponsePersistItem, ClientResponseViewItem>()
             .IncludeBase<ResponsePersistItemBase, ResponseViewItemBase>()
@@ -154,4 +160,3 @@ public class DialogItemPersistenceProfile : Profile
             .PreserveReferences();
     }
 }
-
