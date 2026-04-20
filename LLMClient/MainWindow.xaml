@@ -69,6 +69,10 @@
                                                              MaxWidth="1000" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
+                                <DataTemplate DataType="{x:Type toolCall:FileEditRequestViewModel}">
+                                    <ContentPresenter ContentTemplate="{StaticResource FileEditRequestTemplate}"
+                                                      Content="{Binding}" />
+                                </DataTemplate>
                                 <DataTemplate DataType="{x:Type userControls:ModelSelectionPopupViewModel}">
                                     <userControls:ModelSelectionView Width="800"
                                                                      Height="600" />

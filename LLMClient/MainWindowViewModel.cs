@@ -35,14 +35,14 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public bool IsLeftDrawerOpen
     {
-        get => _isLeftDrawerOpen;
+        get;
         set
         {
-            if (value == _isLeftDrawerOpen) return;
-            _isLeftDrawerOpen = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = true;
 
     public GlobalOptions GlobalOptions { get; }
 
@@ -56,34 +56,30 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public bool IsInitialized { get; private set; }
 
-    private bool _isProcessing;
-
     public bool IsProcessing
     {
-        get => _isProcessing;
+        get;
         set
         {
-            if (value == _isProcessing) return;
-            _isProcessing = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
     public bool IsBusy => SessionViewModels.Any(session => session.IsBusy);
 
-    private bool _isDarkTheme;
-
     public bool IsDarkTheme
     {
-        get => _isDarkTheme;
+        get;
         set
         {
-            if (_isDarkTheme == value)
+            if (field == value)
             {
                 return;
             }
 
-            _isDarkTheme = value;
+            field = value;
             PostOnPropertyChanged();
             ModifyTheme(theme => theme.SetBaseTheme(value ? BaseTheme.Dark : BaseTheme.Light));
             UITheme.IsDarkMode = value;
@@ -107,14 +103,14 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
 
     public string LoadingMessage
     {
-        get => _loadingMessage;
+        get;
         set
         {
-            if (value == _loadingMessage) return;
-            _loadingMessage = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = "Loading...";
 
     public IMcpServiceCollection McpServiceCollection { get; }
 
@@ -248,9 +244,6 @@ public class MainWindowViewModel : BaseViewModel, IDisposable
         }
     }
 
-
-    private string _loadingMessage = "Loading...";
-    private bool _isLeftDrawerOpen = true;
 
     private readonly UISettings _uiSettings;
 
