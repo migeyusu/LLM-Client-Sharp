@@ -1077,6 +1077,11 @@
                                       Command="{x:Static models:ResponseViewItemBase.SaveProtocolLogCommand}"
                                       CommandParameter="{Binding Response,Mode=OneWay}"
                                       Icon="{materialDesign:PackIcon Kind=FileDocumentArrowRightOutline}" />
+                            <MenuItem Header="查看原文"
+                                      ToolTip="查看未渲染的原始Markdown"
+                                      Command="{Binding Response.ShowRawResponseCommand}"
+                                      CommandParameter="{Binding Response}"
+                                      Icon="{materialDesign:PackIcon Kind=History}" />
                         </MenuItem>
                     </Menu>
                     <materialDesign:PopupBox Padding="4,0"

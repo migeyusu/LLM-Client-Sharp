@@ -167,6 +167,43 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         o?.SwitchAvailableInContext();
     });
 
+    public static ICommand ShowRawResponseCommand { get; } = new RelayCommand<ResponseViewItemBase>(o =>
+    {
+        if (o == null)
+        {
+            return;
+        }
+
+        var window = new System.Windows.Window
+        {
+            Title = "原始文本",
+            Width = 900,
+            Height = 700,
+            WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
+        };
+
+        var scrollViewer = new System.Windows.Controls.ScrollViewer
+        {
+            VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+        };
+
+        var textBox = new System.Windows.Controls.TextBox
+        {
+            Text = o?.RawTextContent?.ToString() ?? string.Empty,
+            IsReadOnly = true,
+            TextWrapping = System.Windows.TextWrapping.NoWrap,
+            FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+            FontSize = 12,
+            VerticalContentAlignment = System.Windows.VerticalAlignment.Top,
+            HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left,
+        };
+
+        scrollViewer.Content = textBox;
+        window.Content = scrollViewer;
+        window.Show();
+    });
+
     /// <summary>
     /// 显示请求/响应的原始协议日志（HTTP headers、request body、response body 等）。
     /// </summary>
@@ -538,7 +575,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             _ => kind.ToString(),
         };
     }
-    
+
     /// <summary>
     /// 切换在上下文中的可用性
     /// </summary>
