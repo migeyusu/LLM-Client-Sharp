@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.AI;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;
 
@@ -14,6 +14,11 @@ public interface IRequestContext
     AdditionalPropertiesDictionary? TempAdditionalProperties { get; }
     bool AutoApproveAllInvocations { get; }
     bool ShowRequestJson { get; }
+
+    /// <summary>
+    /// 可选的 Agent 标识。用于多 Agent 场景下对 ReAct 轮次进行隔离。
+    /// </summary>
+    string? AgentId { get; }
 }
 
 public sealed class RequestContext : IRequestContext
@@ -34,4 +39,6 @@ public sealed class RequestContext : IRequestContext
     public bool AutoApproveAllInvocations { get; init; }
 
     public bool ShowRequestJson { get; set; }
+
+    public string? AgentId { get; set; }
 }

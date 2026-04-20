@@ -580,6 +580,7 @@
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=fd31379c_002D0715_002D4af8_002D9d72_002D7e53e5971a7f/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="TestBuild" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.HistoryCompressionStrategyTests.ObservationMasking_ReplacesOnlyOlderObservationMessages&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.AgentHistoryIsolationTests&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
 	

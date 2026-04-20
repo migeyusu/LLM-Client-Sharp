@@ -14,13 +14,14 @@ internal static class ReactErrorRoundSummarizer
         ReactHistoryRound round,
         Summarizer? summarizer,
         ILLMChatClient currentClient,
+        string? agentId,
         CancellationToken cancellationToken = default)
     {
         var summaryText = await TryBuildLlmSummaryAsync(round, summarizer, currentClient, cancellationToken)
                           ?? BuildFallbackSummary(round);
         var summaryMessage = new ChatMessage(ChatRole.System,
             $"[Round {round.RoundNumber} error summary] {summaryText}");
-        ReactHistorySegmenter.TagMessage(summaryMessage, round.RoundNumber, ReactHistoryMessageKind.Observation);
+        ReactHistorySegmenter.TagMessage(summaryMessage, round.RoundNumber, ReactHistoryMessageKind.Observation, agentId);
         return summaryMessage;
     }
 

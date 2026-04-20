@@ -1,4 +1,4 @@
-﻿using LLMClient.Abstraction;
+using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Proc;
@@ -7,7 +7,7 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
 {
     public async Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
     {
-        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
+        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory, context.AgentId);
         var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
         var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
 
@@ -34,7 +34,7 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
             foreach (var observationMessage in round.ObservationMessages)
             {
                 replacement.Add(CreateObservationPlaceholder(observationMessage, round.RoundNumber,
-                    context.Options.ObservationPlaceholder));
+                    context.Options.ObservationPlaceholder, context.AgentId));
             }
 
             if (round.ObservationMessages.Count > 0)
@@ -53,7 +53,7 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
         context.CompressionApplied = true;
     }
 
-    private static ChatMessage CreateObservationPlaceholder(ChatMessage originalMessage, int roundNumber, string placeholder)
+    private static ChatMessage CreateObservationPlaceholder(ChatMessage originalMessage, int roundNumber, string placeholder, string? agentId)
     {
         ChatMessage placeholderMessage;
         var contents = originalMessage.Contents;
@@ -73,7 +73,7 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
             placeholderMessage = new ChatMessage(originalMessage.Role, placeholder);
         }
 
-        ReactHistorySegmenter.TagMessage(placeholderMessage, roundNumber, ReactHistoryMessageKind.Observation);
+        ReactHistorySegmenter.TagMessage(placeholderMessage, roundNumber, ReactHistoryMessageKind.Observation, agentId);
         return placeholderMessage;
     }
 }

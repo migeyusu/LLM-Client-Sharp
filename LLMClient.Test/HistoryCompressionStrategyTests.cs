@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
+using LLMClient.Agent;
+using LLMClient.Agent.MiniSWE;
 using LLMClient.Component;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Component.ViewModel;
@@ -10,6 +12,7 @@ using LLMClient.Dialog.Models;
 using LLMClient.Dialog.Proc;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
@@ -452,11 +455,376 @@ public class HistoryCompressionStrategyTests
             content => content.CallId == "call-err-1");
     }
 
+    #region Agent Isolation Tests
+
+    [Fact]
+    public async Task InfoCleaning_WithAgentId_OnlyCompressesMatchingAgentRounds()
+    {
+        var chatHistory = CreateMultiAgentHistoryWithTwoRoundsEach();
+        var summaryClient = new SummaryOnlyLlmClient("compressed agent-a round 1");
+        var summarizer = new Summarizer(new GlobalOptions());
+        var strategy = new InfoCleaningChatHistoryCompressionStrategy(summarizer);
+
+        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        {
+            ChatHistory = chatHistory,
+            Options = new ReactHistoryCompressionOptions
+            {
+                Mode = ReactHistoryCompressionMode.InfoCleaning,
+                PreserveRecentRounds = 1,
+            },
+            CurrentRound = 2,
+            CurrentClient = summaryClient,
+            AgentId = "Agent-A",
+        });
+
+        // Agent-A's round 1 should be summarized
+        Assert.Contains(chatHistory, message =>
+            message.Role == ChatRole.Assistant &&
+            message.Text.Contains("[Round 1 summary]") &&
+            message.AdditionalProperties?["llmclient.react.agent"]?.ToString() == "Agent-A");
+
+        // Agent-B's round 1 should NOT be touched (it's treated as preamble due to agent filter)
+        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
+            content => content.CallId == "call-b1");
+
+        // Agent-B's round 2 should also remain untouched
+        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
+            content => content.CallId == "call-b2");
+    }
+
+    [Fact]
+    public async Task ObservationMasking_WithAgentId_OnlyMasksMatchingAgentObservations()
+    {
+        var chatHistory = CreateMultiAgentHistoryWithTwoRoundsEach();
+        var strategy = new ObservationMaskingChatHistoryCompressionStrategy();
+
+        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        {
+            ChatHistory = chatHistory,
+            Options = new ReactHistoryCompressionOptions
+            {
+                Mode = ReactHistoryCompressionMode.ObservationMasking,
+                PreserveRecentRounds = 1,
+                ObservationPlaceholder = "[masked]",
+            },
+            CurrentRound = 2,
+            CurrentClient = new SummaryOnlyLlmClient("unused"),
+            AgentId = "Agent-A",
+        });
+
+        // Agent-A's old observation should be masked
+        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
+            content => content.CallId == "call-a1" && Equals(content.Result, "[masked]"));
+
+        // Agent-A's recent observation should NOT be masked
+        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
+            content => content.CallId == "call-a2" && Equals(content.Result, "agent-a result 2"));
+
+        // Agent-B's observations should NOT be masked (they are preamble when filtered by Agent-A)
+        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
+            content => content.CallId == "call-b1" && Equals(content.Result, "agent-b result 1"));
+    }
+
+    [Fact]
+    public async Task TaskSummary_WithAgentId_OnlySummarizesMatchingAgentRounds()
+    {
+        var chatHistory = CreateMultiAgentHistoryWithTwoRoundsEach();
+        var summaryClient = new SummaryOnlyLlmClient("agent-a task summary");
+        var summarizer = new Summarizer(new GlobalOptions());
+        var strategy = new TaskSummaryChatHistoryCompressionStrategy(summarizer);
+
+        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        {
+            ChatHistory = chatHistory,
+            Options = new ReactHistoryCompressionOptions
+            {
+                Mode = ReactHistoryCompressionMode.TaskSummary,
+                PreserveRecentRounds = 1,
+            },
+            CurrentRound = 2,
+            CurrentClient = summaryClient,
+            AgentId = "Agent-A",
+        });
+
+        // Should contain the summary with Agent-A's tag
+        var summaryMessage = Assert.Single(chatHistory.Where(message =>
+            message.Text.Contains("[Compressed history summary]")));
+        Assert.Equal("Agent-A", summaryMessage.AdditionalProperties?["llmclient.react.agent"]?.ToString());
+
+        // Agent-B's round 1 should still be present (treated as preamble)
+        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
+            content => content.CallId == "call-b1");
+    }
+
+    [Fact]
+    public async Task PreambleSummary_WithAgentId_TreatsOtherAgentMessagesAsPreamble()
+    {
+        var chatHistory = CreateMultiAgentHistoryWithPreamble();
+        var summaryClient = new SummaryOnlyLlmClient("previous task summary");
+        var summarizer = new Summarizer(new GlobalOptions());
+        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
+
+        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        {
+            ChatHistory = chatHistory,
+            Options = new ReactHistoryCompressionOptions
+            {
+                PreambleCompression = true,
+                PreambleTokenThresholdPercent = 0.0001,
+            },
+            CurrentRound = 0,
+            CurrentClient = summaryClient,
+            AgentId = "Current-Agent",
+        });
+
+        // Other agent's messages should be part of preamble and potentially summarized
+        // Current agent's system message should be preserved
+        Assert.Contains(chatHistory, message =>
+            message.Role == ChatRole.System && message.Text == "You are helpful.");
+
+        // Previous agent's messages should be in preamble (not treated as rounds)
+        var previousAgentMessages = chatHistory.Where(m =>
+            m.AdditionalProperties?["llmclient.react.agent"]?.ToString() == "Previous-Agent").ToList();
+        Assert.All(previousAgentMessages, msg =>
+        {
+            // These should NOT be in the "rounds' part of any segmentation result
+            // since they belong to a different agent
+            Assert.True(
+                msg.Text.Contains("[Previous task context summary]") || // summarized away
+                !msg.Text.StartsWith("[Round"), // or remains as preamble
+                $"Message should not be treated as a round: {msg.Text}");
+        });
+    }
+
+    [Fact]
+    public async Task LlmClientBase_AgentId_InitializesRoundNumberFromAgentSpecificHistory()
+    {
+        // Create history where Agent-A already has round 3 completed
+        var chatHistory = new List<ChatMessage>
+        {
+            new(ChatRole.User, "do work"),
+        };
+
+        // Agent-A Round 1, 2, 3 (already executed)
+        for (int i = 1; i <= 3; i++)
+        {
+            var assistant = CreateToolCallResponse($"call-a{i}", $"result-a{i}").Messages[0];
+            ReactHistorySegmenter.TagMessage(assistant, i, ReactHistoryMessageKind.Assistant, "Agent-A");
+            chatHistory.Add(assistant);
+
+            var obs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent($"call-a{i}", $"result-a{i}")]);
+            ReactHistorySegmenter.TagMessage(obs, i, ReactHistoryMessageKind.Observation, "Agent-A");
+            chatHistory.Add(obs);
+        }
+
+        // Agent-B Round 1 (also in history - should be ignored for Agent-A)
+        var bAssistant = CreateToolCallResponse("call-b1", "result-b1").Messages[0];
+        ReactHistorySegmenter.TagMessage(bAssistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B");
+        chatHistory.Add(bAssistant);
+
+        var bObs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-b1", "result-b1")]);
+        ReactHistorySegmenter.TagMessage(bObs, 1, ReactHistoryMessageKind.Observation, "Agent-B");
+        chatHistory.Add(bObs);
+
+        var chatClient = new RecordingSequentialChatClient(
+            CreateTextResponse("done"));
+        var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.None);
+
+        var requestContext = new RequestContext
+        {
+            ChatMessages = chatHistory,
+            FunctionCallEngine = new LoopingToolCallEngine(),
+            RequestOptions = new ChatOptions(),
+            AgentId = "Agent-A",
+        };
+
+#pragma warning disable SKEXP0001
+        var result = await client.SendRequestCompatAsync(requestContext, CancellationToken.None);
+#pragma warning restore SKEXP0001
+
+        Assert.Null(result.Exception);
+        // The request should start from round 4 (3 existing + 1 new)
+        // Verify by checking the tagged messages in the result
+        var agentATaggedMessages = result.Messages.Where(m =>
+            m.AdditionalProperties?["llmclient.react.agent"]?.ToString() == "Agent-A").ToList();
+        Assert.NotEmpty(agentATaggedMessages);
+
+        // The new assistant message should have round number 4
+        var newAssistantMessage = agentATaggedMessages.FirstOrDefault(m => m.Role == ChatRole.Assistant);
+        Assert.NotNull(newAssistantMessage);
+        Assert.Equal(4, newAssistantMessage.AdditionalProperties?["llmclient.react.round"]);
+    }
+
+    [Fact]
+    public async Task ReactAgentBase_Execute_SetsAgentIdOnRequestContext()
+    {
+        var chatClient = new SummaryOnlyLlmClient("done");
+        var agent = new TestableReactAgent(chatClient, "MyTestAgent");
+
+        var session = new MockDialogSession();
+        await foreach (var step in agent.Execute(session))
+        {
+            // Just consume
+        }
+
+        Assert.Equal("MyTestAgent", agent.LastRequestContext?.AgentId);
+    }
+
+    [Fact]
+    public void ReactAgentBase_AgentId_DefaultsToName()
+    {
+        var chatClient = new SummaryOnlyLlmClient("done");
+        var agent = new TestableReactAgent(chatClient, "DefaultNameAgent");
+
+        Assert.Equal("DefaultNameAgent", agent.ExposedAgentId);
+    }
+
+    private static List<ChatMessage> CreateMultiAgentHistoryWithTwoRoundsEach()
+    {
+        var history = new List<ChatMessage>
+        {
+            new(ChatRole.System, "You are helpful."),
+            new(ChatRole.User, "Start task"),
+        };
+
+        // Agent-A Round 1
+        var aAssistant1 = new ChatMessage(ChatRole.Assistant, [
+            new TextContent("Agent-A reasoning 1"),
+            new FunctionCallContent("call-a1", "noop", new Dictionary<string, object?>())
+        ]);
+        ReactHistorySegmenter.TagMessage(aAssistant1, 1, ReactHistoryMessageKind.Assistant, "Agent-A");
+        history.Add(aAssistant1);
+
+        var aObs1 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-a1", "agent-a result 1")]);
+        ReactHistorySegmenter.TagMessage(aObs1, 1, ReactHistoryMessageKind.Observation, "Agent-A");
+        history.Add(aObs1);
+
+        // Agent-B Round 1
+        var bAssistant1 = new ChatMessage(ChatRole.Assistant, [
+            new TextContent("Agent-B reasoning 1"),
+            new FunctionCallContent("call-b1", "noop", new Dictionary<string, object?>())
+        ]);
+        ReactHistorySegmenter.TagMessage(bAssistant1, 1, ReactHistoryMessageKind.Assistant, "Agent-B");
+        history.Add(bAssistant1);
+
+        var bObs1 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-b1", "agent-b result 1")]);
+        ReactHistorySegmenter.TagMessage(bObs1, 1, ReactHistoryMessageKind.Observation, "Agent-B");
+        history.Add(bObs1);
+
+        // Agent-A Round 2
+        var aAssistant2 = new ChatMessage(ChatRole.Assistant, [
+            new TextContent("Agent-A reasoning 2"),
+            new FunctionCallContent("call-a2", "noop", new Dictionary<string, object?>())
+        ]);
+        ReactHistorySegmenter.TagMessage(aAssistant2, 2, ReactHistoryMessageKind.Assistant, "Agent-A");
+        history.Add(aAssistant2);
+
+        var aObs2 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-a2", "agent-a result 2")]);
+        ReactHistorySegmenter.TagMessage(aObs2, 2, ReactHistoryMessageKind.Observation, "Agent-A");
+        history.Add(aObs2);
+
+        // Agent-B Round 2
+        var bAssistant2 = new ChatMessage(ChatRole.Assistant, [
+            new TextContent("Agent-B reasoning 2"),
+            new FunctionCallContent("call-b2", "noop", new Dictionary<string, object?>())
+        ]);
+        ReactHistorySegmenter.TagMessage(bAssistant2, 2, ReactHistoryMessageKind.Assistant, "Agent-B");
+        history.Add(bAssistant2);
+
+        var bObs2 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-b2", "agent-b result 2")]);
+        ReactHistorySegmenter.TagMessage(bObs2, 2, ReactHistoryMessageKind.Observation, "Agent-B");
+        history.Add(bObs2);
+
+        return history;
+    }
+
+    private static List<ChatMessage> CreateMultiAgentHistoryWithPreamble()
+    {
+        var history = new List<ChatMessage>
+        {
+            new(ChatRole.System, "You are helpful."),
+            // Previous agent's task (untagged, simulating old history)
+            new(ChatRole.User, "Previous task"),
+            new(ChatRole.Assistant, "Previous agent response"),
+        };
+
+        // Previous-Agent Round 1
+        var prevAssistant = new ChatMessage(ChatRole.Assistant, [
+            new FunctionCallContent("call-prev", "noop", new Dictionary<string, object?>())
+        ]);
+        ReactHistorySegmenter.TagMessage(prevAssistant, 1, ReactHistoryMessageKind.Assistant, "Previous-Agent");
+        history.Add(prevAssistant);
+
+        var prevObs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-prev", "prev result")]);
+        ReactHistorySegmenter.TagMessage(prevObs, 1, ReactHistoryMessageKind.Observation, "Previous-Agent");
+        history.Add(prevObs);
+
+        // Current task user message
+        history.Add(new ChatMessage(ChatRole.User, "Current task"));
+
+        // Current-Agent Round 1
+        var currAssistant = new ChatMessage(ChatRole.Assistant, [
+            new FunctionCallContent("call-curr", "noop", new Dictionary<string, object?>())
+        ]);
+        ReactHistorySegmenter.TagMessage(currAssistant, 1, ReactHistoryMessageKind.Assistant, "Current-Agent");
+        history.Add(currAssistant);
+
+        var currObs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-curr", "curr result")]);
+        ReactHistorySegmenter.TagMessage(currObs, 1, ReactHistoryMessageKind.Observation, "Current-Agent");
+        history.Add(currObs);
+
+        return history;
+    }
+
+    private sealed class TestableReactAgent : ReactAgentBase
+    {
+        private readonly string _name;
+
+        public TestableReactAgent(ILLMChatClient chatClient, string name)
+            : base(chatClient, new AgentOption(), MiniSweAgentConfigLoader.LoadDefaultWindowsConfig())
+        {
+            _name = name;
+        }
+
+        public override string Name => _name;
+        public string ExposedAgentId => AgentId;
+        public RequestContext? LastRequestContext { get; private set; }
+
+        protected override Task<RequestContext?> BuildRequestContextAsync(
+            ITextDialogSession dialogSession,
+            CancellationToken cancellationToken)
+        {
+            var context = new RequestContext
+            {
+                ChatMessages = new List<ChatMessage> { new(ChatRole.User, "test") },
+                FunctionCallEngine = new LoopingToolCallEngine(),
+                RequestOptions = new ChatOptions(),
+            };
+            LastRequestContext = context;
+            return Task.FromResult<RequestContext?>(context);
+        }
+    }
+
+    private sealed class MockDialogSession : ITextDialogSession
+    {
+        public IReadOnlyList<IDialogItem> DialogItems { get; } = new List<IDialogItem>();
+        public List<IChatHistoryItem> GetHistory() => [];
+        public Task CutContextAsync(IRequestItem? requestItem = null) => Task.CompletedTask;
+        public string? SystemPrompt { get; } = null;
+        public IEnumerable<Type> SupportedAgents { get; } = Array.Empty<Type>();
+        public IFunctionGroupSource? ToolsSource { get; } = null;
+        public Task<IResponse> NewResponse(RequestOption option, IRequestItem? insertBefore = null, CancellationToken token = default)
+            => Task.FromResult<IResponse>(new RawResponseViewItem());
+    }
+
+    #endregion
+
     [Fact]
     public async Task ObservationMasking_MasksOlderRoundObservation_AndPreservesRecentRoundObservation()
     {
         // Round 1: old success round (should be masked).
-        // Round 2: recent error round (should be preserved as-is ¡ª strategy does not process errors).
+        // Round 2: recent error round (should be preserved as-is ï¿½ï¿½ strategy does not process errors).
         var chatHistory = CreateHistoryWithRecentErrorRound();
         var strategy = new ObservationMaskingChatHistoryCompressionStrategy();
 
@@ -657,7 +1025,7 @@ public class HistoryCompressionStrategyTests
 
         if (!shortPreamble)
         {
-            // Previous task messages (no round tags ¡ª simulating persisted history from prior task)
+            // Previous task messages (no round tags ï¿½ï¿½ simulating persisted history from prior task)
             history.Add(new ChatMessage(ChatRole.User, "Fix the authentication bug."));
             history.Add(new ChatMessage(ChatRole.Assistant,
                 "I found the issue in AuthService.cs and applied a fix. The token refresh logic was incorrectly handling expired tokens."));

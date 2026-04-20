@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 
@@ -19,7 +19,7 @@ public sealed class TaskSummaryChatHistoryCompressionStrategy : IChatHistoryComp
         CancellationToken cancellationToken = default)
     {
 
-        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
+        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory, context.AgentId);
         var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
         if (segmentation.Rounds.Count <= roundsToKeep)
         {
@@ -44,7 +44,7 @@ public sealed class TaskSummaryChatHistoryCompressionStrategy : IChatHistoryComp
 
         var replacement = new List<ChatMessage>(segmentation.PreambleMessages)
         {
-            CreateSummaryMessage(summary)
+            CreateSummaryMessage(summary, context.AgentId)
         };
         replacement.AddRange(segmentation.Rounds.Skip(keepFromIndex).SelectMany(round => round.Messages));
 
@@ -53,11 +53,11 @@ public sealed class TaskSummaryChatHistoryCompressionStrategy : IChatHistoryComp
         context.CompressionApplied = true;
     }
 
-    private static ChatMessage CreateSummaryMessage(string summary)
+    private static ChatMessage CreateSummaryMessage(string summary, string? agentId)
     {
         var message = new ChatMessage(ChatRole.Assistant, "[Compressed history summary]\n" + summary.Trim());
         ReactHistorySegmenter.TagMessage(message, ReactHistorySegmenter.CompressedSummaryRoundNumber,
-            ReactHistoryMessageKind.Assistant);
+            ReactHistoryMessageKind.Assistant, agentId);
         return message;
     }
 }

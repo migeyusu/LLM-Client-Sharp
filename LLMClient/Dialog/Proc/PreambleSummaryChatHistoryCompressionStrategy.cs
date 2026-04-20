@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 
@@ -31,7 +31,7 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
             return false;
         }
 
-        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
+        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory, context.AgentId);
         var preamble = segmentation.PreambleMessages;
 
         // Need at least: system + some historical messages + current user message
@@ -68,7 +68,7 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
     public async Task CompressAsync(ChatHistoryCompressionContext context,
         CancellationToken cancellationToken = default)
     {
-        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
+        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory, context.AgentId);
         var preamble = segmentation.PreambleMessages;
 
         // Partition preamble into: leading system messages | historical messages | trailing user message

@@ -55,7 +55,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
 
     public ICommand CancelRefreshCommand { get; }
 
-    public IEnumerable<CheckableFunctionGroupTree>? SelectedFunctionGroups
+    public IEnumerable<CheckableFunctionGroupTree> SelectedFunctionGroups
     {
         get { return FunctionGroups.Where(tree => tree.IsSelected != false); }
     }

@@ -272,7 +272,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
             if (this.FunctionTreeSelector.IsFunctionEnabled)
             {
                 return this.FunctionTreeSelector
-                    .FunctionGroups
+                    .SelectedFunctionGroups
                     .ToList();
             }
 
