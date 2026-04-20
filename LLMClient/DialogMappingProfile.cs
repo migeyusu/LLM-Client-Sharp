@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
@@ -147,8 +147,32 @@ public class DialogMappingProfile : Profile
     
     private static Dictionary<string, object?>? ExtractTokensCounterToPo(AdditionalPropertiesDictionary? props)
     {
-        //do nothing
-        return new Dictionary<string, object?>();
+        if (props == null || props.Count == 0)
+        {
+            return null;
+        }
+
+        // Copy all entries from AdditionalPropertiesDictionary to a serializable Dictionary
+        var result = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, value) in props)
+        {
+            // Only persist primitive types that are JSON-serializable
+            result[key] = value switch
+            {
+                null => null,
+                string s => s,
+                long l => l,
+                int i => i,
+                bool b => b,
+                double d => d,
+                float f => f,
+                decimal dec => dec,
+                JsonElement jsonElement => jsonElement,
+                _ => value?.ToString() // Fallback to string for other types
+            };
+        }
+
+        return result;
     }
 
     /// <summary>

@@ -10,6 +10,7 @@ using LLMClient.Agent;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
@@ -216,6 +217,22 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     public static ICommand ShowProtocolLogCommand { get; } = new RelayCommand<ResponseViewItemBase>(ShowProtocolLog);
 
     public static ICommand SaveProtocolLogCommand { get; } = new RelayCommand<ResponseViewItemBase>(SaveProtocolLog);
+    
+    private readonly Lazy<SearchableDocument> _lazyDocument = new(() => new SearchableDocument(new FlowDocument()));
+
+    public SearchableDocument? SearchableDocument
+    {
+        get
+        {
+            return GetAsyncProperty(async () =>
+            {
+                var document = _lazyDocument.Value;
+                await PopulateDocumentAsync(document.Document, Messages, Annotations);
+                document.OnDocumentRefresh();
+                return document;
+            });
+        }
+    }
 
     private static void SaveProtocolLog(ResponseViewItemBase? item)
     {
@@ -420,7 +437,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
                 //只保留最后一条消息
                 Messages = [Messages.Last()];
-                InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+                InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
             }),
             () => !IsResponding && Messages.Any());
         EliminateFailedHistoryCommand = new RelayCommand((() =>
@@ -467,7 +484,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                 }
 
                 Messages = keptMessages;
-                InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+                InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
             }
             catch (Exception ex)
             {

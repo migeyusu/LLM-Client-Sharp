@@ -119,7 +119,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
                     Response.Messages = compacted;
                 }
 
-                Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+                Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
             }
         }
         catch (OperationCanceledException)
@@ -187,7 +187,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         {
             IsResponding = false;
             ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(agentTaskResult, Response);
-            Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+            Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
             ParentSession.RespondingCount--;
         }
 

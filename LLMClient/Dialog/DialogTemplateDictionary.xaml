@@ -859,11 +859,9 @@
                                           IsChecked="{Binding AcceptedResponse.IsManualValid,Mode=TwoWay}"
                                           Visibility="{Binding AcceptedResponse.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
                                 <MenuItem Command="{Binding AcceptedResponse.EliminateFailedHistoryCommand}"
-                                          CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                           Header="剔除错误历史"
                                           ToolTip="剔除错误的工具调用" />
                                 <MenuItem Command="{Binding AcceptedResponse.EliminateHistoryCommand}"
-                                          CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                           Header="剔除交互历史"
                                           ToolTip="只保留最终消息" />
                             </MenuItem>
@@ -1146,7 +1144,7 @@
                     </materialDesign:Card>
                     <customControl:FlowDocumentScrollViewerEx FontFamily="Segoe UI Emoji"
                                                               BorderThickness="0"
-                                                              SafeDocument="{Binding Response.FullDocument,Mode=OneWay}"
+                                                              SafeDocument="{Binding Response.SearchableDocument.Document,Mode=OneWay}"
                                                               Style="{StaticResource ExFlowDocumentScrollViewerStyle}" />
                     <TextBlock Text="{Binding Response.ErrorMessage,Mode=OneWay}"
                                TextWrapping="Wrap"

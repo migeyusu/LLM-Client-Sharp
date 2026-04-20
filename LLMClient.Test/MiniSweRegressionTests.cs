@@ -645,7 +645,6 @@ public class MiniSweRegressionTests
     {
         TestFixture.RunInStaThread(() =>
         {
-            var application = Application.Current ?? new Application();
             var parentSession = new TestDialogSessionViewModel();
             var agent = new DummyReactAgent();
             var viewItem = new LinearResponseViewItem(parentSession, agent);

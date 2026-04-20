@@ -99,6 +99,49 @@ public class UnitTest1
         var chatMessagePo = mapper!.Map<ChatMessage, ChatMessagePO>(chatMessage);
         Assert.NotNull(chatMessagePo);
     }
+    [Fact]
+    public void ChatMapping_AdditionalProperties_RoundTrip()
+    {
+        var chatMessage = new ChatMessage(ChatRole.Assistant, "Hello World!");
+        chatMessage.AdditionalProperties["llmclient.react.round"] = 3;
+        chatMessage.AdditionalProperties["llmclient.react.kind"] = "Observation";
+        chatMessage.AdditionalProperties["custom.bool"] = true;
+        chatMessage.AdditionalProperties["custom.long"] = 42L;
+        chatMessage.AdditionalProperties["custom.double"] = 3.14;
+
+        var mapper = serviceProvider.GetService<IMapper>();
+
+        // 1. Map ChatMessage -> ChatMessagePO
+        var chatMessagePo = mapper!.Map<ChatMessage, ChatMessagePO>(chatMessage);
+        Assert.NotNull(chatMessagePo);
+        Assert.NotNull(chatMessagePo.AdditionalProperties);
+        Assert.Equal(5, chatMessagePo.AdditionalProperties!.Count);
+        Assert.Equal(3, chatMessagePo.AdditionalProperties["llmclient.react.round"]);
+        Assert.Equal("Observation", chatMessagePo.AdditionalProperties["llmclient.react.kind"]);
+        Assert.Equal(true, chatMessagePo.AdditionalProperties["custom.bool"]);
+        Assert.Equal(42L, chatMessagePo.AdditionalProperties["custom.long"]);
+        Assert.Equal(3.14, chatMessagePo.AdditionalProperties["custom.double"]);
+
+        // 2. Serialize ChatMessagePO to JSON using source-generated context
+        var json = JsonSerializer.Serialize(chatMessagePo, LLM_DataSerializeContext.Default.ChatMessagePO);
+        Assert.NotNull(json);
+        output.WriteLine(json);
+
+        // 3. Deserialize JSON back to ChatMessagePO
+        var deserializedPo = JsonSerializer.Deserialize(json, LLM_DataSerializeContext.Default.ChatMessagePO);
+        Assert.NotNull(deserializedPo);
+        Assert.NotNull(deserializedPo.AdditionalProperties);
+
+        // 4. Map ChatMessagePO -> ChatMessage
+        var restoredMessage = mapper.Map<ChatMessagePO, ChatMessage>(deserializedPo);
+        Assert.NotNull(restoredMessage.AdditionalProperties);
+        Assert.Equal(5, restoredMessage.AdditionalProperties!.Count);
+        Assert.Equal(3L, restoredMessage.AdditionalProperties["llmclient.react.round"]);
+        Assert.Equal("Observation", restoredMessage.AdditionalProperties["llmclient.react.kind"]);
+        Assert.Equal(true, restoredMessage.AdditionalProperties["custom.bool"]);
+        Assert.Equal(42L, restoredMessage.AdditionalProperties["custom.long"]);
+        Assert.Equal(3.14, restoredMessage.AdditionalProperties["custom.double"]);
+    }
 
     [Fact]
     public void ResponseDe()

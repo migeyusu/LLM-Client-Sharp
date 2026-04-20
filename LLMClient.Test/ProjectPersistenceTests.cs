@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.ObjectModel;
+using System.Text.Json;
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
@@ -23,6 +24,35 @@ namespace LLMClient.Test;
 
 public class ProjectPersistenceTests
 {
+    [Fact]
+    public void ResponsePersistence_Deserializes_ContextUsage_WithPreservedReferenceMetadata()
+    {
+        var sharedUsage = new Microsoft.Extensions.AI.UsageDetails
+        {
+            InputTokenCount = 120,
+            OutputTokenCount = 64,
+            TotalTokenCount = 184,
+        };
+
+        var persistItem = new RawResponsePersistItem
+        {
+            Usage = sharedUsage,
+            LastSuccessfulUsage = new ContextUsagePO
+            {
+                MaxContextLength = 4096,
+                UsageDetails = sharedUsage,
+            },
+        };
+
+        var json = JsonSerializer.Serialize(persistItem, FileBasedSessionBase.SerializerOption);
+        var restored = JsonSerializer.Deserialize<RawResponsePersistItem>(json, FileBasedSessionBase.SerializerOption);
+
+        Assert.NotNull(restored);
+        Assert.NotNull(restored!.LastSuccessfulUsage);
+        Assert.NotNull(restored.LastSuccessfulUsage!.UsageDetails);
+        Assert.Equal(120, restored.LastSuccessfulUsage.UsageDetails.InputTokenCount);
+    }
+
     [Fact]
     public void ProjectPersistence_RoundTrips_ProjectSessions()
     {

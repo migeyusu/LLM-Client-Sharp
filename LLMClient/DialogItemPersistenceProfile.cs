@@ -122,7 +122,8 @@ public class DialogItemPersistenceProfile : Profile
                     ? new ContextUsagePO()
                     {
                         MaxContextLength = src.LastContextUsage.MaxContextTokens ?? 0,
-                        UsageDetails = src.LastContextUsage.UsageDetails ?? new UsageDetails(),
+                        // Clone to avoid $ref metadata pointing to Usage when ReferenceHandler.Preserve is enabled.
+                        UsageDetails = CloneUsageDetails(src.LastContextUsage.UsageDetails),
                     }
                     : null));
         CreateMap<ClientResponseViewItem, ClientResponsePersistItem>()
@@ -139,7 +140,7 @@ public class DialogItemPersistenceProfile : Profile
                 dest => dest.LastContextUsage,
                 opt => opt.MapFrom(src =>
                     src.LastSuccessfulUsage != null
-                        ? new ContextUsageViewModel(src.LastSuccessfulUsage.UsageDetails,
+                        ? new ContextUsageViewModel(src.LastSuccessfulUsage.UsageDetails ?? new UsageDetails(),
                             src.LastSuccessfulUsage.MaxContextLength)
                         : null));
         CreateMap<ClientResponsePersistItem, ClientResponseViewItem>()
@@ -159,4 +160,20 @@ public class DialogItemPersistenceProfile : Profile
             .IncludeBase<ResponsePersistItemBase, ResponseViewItemBase>()
             .PreserveReferences();
     }
+
+    private static UsageDetails CloneUsageDetails(UsageDetails? source)
+    {
+        if (source == null)
+        {
+            return new UsageDetails();
+        }
+
+        return new UsageDetails
+        {
+            InputTokenCount = source.InputTokenCount,
+            OutputTokenCount = source.OutputTokenCount,
+            TotalTokenCount = source.TotalTokenCount,
+        };
+    }
 }
+

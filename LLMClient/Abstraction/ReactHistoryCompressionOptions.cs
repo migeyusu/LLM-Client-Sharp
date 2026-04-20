@@ -3,7 +3,7 @@ using LLMClient.Component.ViewModel.Base;
 
 namespace LLMClient.Abstraction;
 
-public class ReactHistoryCompressionOptions: BaseViewModel
+public class ReactHistoryCompressionOptions : BaseViewModel
 {
     [JsonPropertyName("Mode")]
     public ReactHistoryCompressionMode Mode
@@ -47,7 +47,7 @@ public class ReactHistoryCompressionOptions: BaseViewModel
             field = value;
             OnPropertyChanged();
         }
-    } = 10;
+    } = 6;
 
     [JsonPropertyName("ObservationPlaceholder")]
     public string ObservationPlaceholder

@@ -31,9 +31,9 @@ public class ResponsePersistItemBase
 
 public class ContextUsagePO
 {
-    public required int MaxContextLength { get; init; }
+    public int MaxContextLength { get; set; }
 
-    public required UsageDetails UsageDetails { get; init; }
+    public UsageDetails? UsageDetails { get; set; }
 }
 
 public class RawResponsePersistItem : ResponsePersistItemBase
