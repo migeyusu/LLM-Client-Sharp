@@ -56,12 +56,6 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
     /// </summary>
     public bool IsCompactable => Agent is ReactAgentBase;
 
-    public IAsyncRelayCommand SmartEliminateHistoryCommand { get; }
-
-    public ICommand EliminateFailedHistoryCommand { get; }
-
-    public ICommand EliminateHistoryCommand { get; }
-
     public Guid InteractionId
     {
         get;
@@ -75,18 +69,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     public DialogSessionViewModel ParentSession { get; }
 
-    public bool CanEliminate
-    {
-        get
-        {
-            if (!IsResponding && Response.IsInterrupt)
-            {
-                return false;
-            }
-
-            return true;
-        }
-    }
+    public IAsyncRelayCommand SmartEliminateHistoryCommand { get; }
 
     public LinearResponseViewItem(DialogSessionViewModel parentSession, IAgent? agent,
         RawResponseViewItem? response = null)
@@ -95,83 +78,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         Agent = agent;
         Response = response ?? new RawResponseViewItem();
         SmartEliminateHistoryCommand = new AsyncRelayCommand(
-            CompactHistoryAsync, () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
-        EliminateHistoryCommand = new RelayCommand((() =>
-            {
-                if (Response.Messages.Count() <= 1)
-                {
-                    return;
-                }
-
-                if (Agent is not PlannerAgent)
-                {
-                    return;
-                }
-
-                if (!CanEliminate)
-                {
-                    return;
-                }
-
-                //只保留最后一条消息
-                Response.Messages = [Response.Messages.Last()];
-                Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
-            }),
-            () => Agent is PlannerAgent && !IsResponding && Response.Messages.Any());
-        EliminateFailedHistoryCommand = new RelayCommand((() =>
-        {
-            if (Agent is not ReactAgentBase) return;
-            if (!Response.Messages.Any())
-            {
-                return;
-            }
-
-            if (!CanEliminate)
-            {
-                return;
-            }
-
-            try
-            {
-                var messages = Response.Messages.ToList();
-                var segmentation = ReactHistorySegmenter.Segment(messages);
-                var keptMessages = new List<ChatMessage>(segmentation.PreambleMessages);
-
-                foreach (var round in segmentation.Rounds)
-                {
-                    var functionCalls = round.AssistantMessages
-                        .SelectMany(m => m.Contents.OfType<FunctionCallContent>())
-                        .ToList();
-
-                    if (functionCalls.Count == 0)
-                    {
-                        keptMessages.AddRange(round.Messages);
-                        continue;
-                    }
-
-                    var resultDict = round.ObservationMessages
-                        .SelectMany(m => m.Contents.OfType<FunctionResultContent>())
-                        .ToDictionary(r => r.CallId);
-
-                    var allFailed = functionCalls.All(call =>
-                        resultDict.TryGetValue(call.CallId, out var result) && result.Exception != null);
-
-                    if (!allFailed)
-                    {
-                        keptMessages.AddRange(round.Messages);
-                    }
-                }
-
-                Response.Messages = keptMessages;
-                Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
-                SmartEliminateHistoryCommand.NotifyCanExecuteChanged();
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine($"[EliminateFailedHistory Error]: {ex.Message}");
-                MessageBoxes.Error(ex.Message, "清除失败历史失败");
-            }
-        }), () => Agent is ReactAgentBase && !IsResponding && Response.Messages.Any());
+            CompactHistoryAsync, () => !IsResponding && Messages.Any());
     }
 
     private async Task CompactHistoryAsync(CancellationToken cancellationToken)
@@ -182,7 +89,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             return;
         }
 
-        if (!CanEliminate)
+        if (!Response.CanEliminate)
         {
             return;
         }
@@ -212,7 +119,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
                     Response.Messages = compacted;
                 }
 
-                Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+                Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
             }
         }
         catch (OperationCanceledException)
@@ -280,7 +187,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         {
             IsResponding = false;
             ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(agentTaskResult, Response);
-            Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+            Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
             ParentSession.RespondingCount--;
         }
 

@@ -730,8 +730,19 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         string diffText,
         IEnumerable<EditOperation> edits)
     {
-        var step = AsyncContextStore<ChatContext>.Current?.CurrentStep;
+        var current = AsyncContextStore<ChatContext>.Current;
+        if (current == null)
+        {
+            return true;
+        }
+
+        var step = current.CurrentStep;
         if (step == null)
+        {
+            return true;
+        }
+
+        if (current.AutoApproveAllInvocations)
         {
             return true;
         }

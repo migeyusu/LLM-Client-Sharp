@@ -39,7 +39,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
     private readonly SymbolSemanticPlugin _symbolSemanticPlugin;
     private readonly CodeSearchPlugin _codeSearchPlugin;
     private readonly CodeReadingPlugin _codeReadingPlugin;
-    private readonly IAIFunctionGroup[] _projectFunctions;
+    private readonly IAIFunctionGroup[] _projectTools;
 
     public override ContextPromptViewModel ProjectContext => _projectContextPrompt;
 
@@ -48,7 +48,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
     public CSharpProjectViewModel(ProjectOption option, string initialPrompt, ILLMChatClient modelClient,
         IMapper mapper,
         ILoggerFactory loggerFactory,
-        GlobalOptions options, ITokensCounter tokensCounter, RoslynProjectAnalyzer projectAnalyzer,
+        GlobalOptions options, RoslynProjectAnalyzer projectAnalyzer,
         IViewModelFactory factory,
         IEnumerable<ProjectSessionViewModel>? tasks = null)
         : base(option, initialPrompt, modelClient, mapper, options, factory, tasks)
@@ -61,14 +61,13 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
             loggerFactory.CreateLogger<CodeSearchService>()));
         _codeReadingPlugin = new CodeReadingPlugin(new CodeReadingService(_solutionContext, mapper,
             loggerFactory.CreateLogger<CodeReadingService>()));
-        _projectFunctions =
+        _projectTools =
         [
             _projectAwarenessPlugin,
             _symbolSemanticPlugin,
             _codeSearchPlugin,
             _codeReadingPlugin
         ];
-        Requester.FunctionTreeSelector.ConnectSource(new ProxyFunctionGroupSource(() => _projectFunctions));
         _projectContextPrompt = new CSharpContextPromptViewModel(_solutionContext, this);
         SelectPathCommand = new RelayCommand(() =>
         {
@@ -85,6 +84,11 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
         });
     }
 
+    public override IAIFunctionGroup[] ProjectTools
+    {
+        get { return _projectTools; }
+    }
+
     public override async Task PreviewProcessing(CancellationToken token = default)
     {
         if (string.IsNullOrEmpty(SolutionFilePath))
@@ -94,7 +98,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
         var usesProjectFunctions = this.SelectedSession?.SelectedFunctionGroups?.Any(group =>
         {
-            return _projectFunctions.Any(function => function == group.Data);
+            return _projectTools.Any(function => function == group.Data);
         }) == true;
         var agentType = Requester.SelectedAgent?.Type;
         if (usesProjectFunctions || (Requester.IsAgentMode && agentType != null &&
@@ -115,7 +119,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     public override IEnumerable<IAIFunctionGroup> GetInspectorFunctionGroups()
     {
-        return _projectFunctions;
+        return _projectTools;
     }
 
     public override bool TryResolvePersistedFunctionGroup(AIFunctionGroupDefinitionPersistModel persistModel,
@@ -139,12 +143,8 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     private readonly List<Type> _projectAgents =
     [
-        typeof(MiniSweAgent), typeof(NvidiaResearchClient),
         typeof(PlannerAgent), typeof(InspectAgent), typeof(CoderAgent)
     ];
 
-    public override IEnumerable<Type> SupportedAgents
-    {
-        get { return _projectAgents.Concat(IInbuiltAgent.ChildTypes); }
-    }
+    public override IEnumerable<Type> ProjectAgents => _projectAgents;
 }

@@ -250,7 +250,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions) ??
                                              new NoOpChatHistoryCompressionStrategy();
 
-            var reactRoundNumber = 0;
+            var agentId = requestContext.AgentId;
+            // 基于历史中已有的该 agent 最大 round number 初始化，避免同一 Agent 多次调用时编号冲突
+            var reactRoundNumber = ReactHistorySegmenter.GetMaxRoundNumber(chatMessages, agentId);
             var loopState = new ReactLoopState();
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
@@ -266,7 +268,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         step, chatContext, chatClient, chatMessages, requestOptions,
                         functionCallEngine, streaming, softFunctionCall,
                         preUpdates, ++reactRoundNumber, historyCompressionOptions,
-                        historyCompressionStrategy, loopState, cancellationToken);
+                        historyCompressionStrategy, loopState, agentId, cancellationToken);
 
                     // 立即 yield —— 消费者可以马上开始 await foreach (var evt in step)
                     yield return step;
@@ -317,6 +319,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         ReactHistoryCompressionOptions historyCompressionOptions,
         IChatHistoryCompressionStrategy historyCompressionStrategy,
         ReactLoopState loopState,
+        string? agentId,
         CancellationToken cancellationToken)
     {
         var reasoningStart = false;
@@ -332,8 +335,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         {
             if (reactRoundNumber == 1)
             {
-                await CompressPreambleIfNeededAsync(step, chatMessages, historyCompressionOptions, cancellationToken);
+                await CompressPreambleIfNeededAsync(step, chatMessages, historyCompressionOptions, agentId, cancellationToken);
             }
+#if DEBUG
+
+            var estimateTokens = await _tokensCounter.CountTokens(chatMessages);
+            Debug.Write($"request tokens:{estimateTokens}");
+
+#endif
 
             _durationStopwatch.Restart();
             ChatResponse? preResponse;
@@ -367,7 +376,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                 await chatContext.CompleteResponse(preResponse, stepResult);
             }
-            
+
             _durationStopwatch.Stop();
             loopUsageDetails = preResponse.Usage;
             var preResponseMessages = preResponse.Messages;
@@ -376,7 +385,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 DeduplicateRepeatedThinking(preResponseMessages, chatMessages);
             }
 
-            ReactHistorySegmenter.TagMessages(preResponseMessages, reactRoundNumber, ReactHistoryMessageKind.Assistant);
+            ReactHistorySegmenter.TagMessages(preResponseMessages, reactRoundNumber, ReactHistoryMessageKind.Assistant, agentId);
             foreach (var preResponseMessage in preResponseMessages)
             {
                 foreach (var content in preResponseMessage.Contents)
@@ -410,15 +419,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             chatMessages.AddRange(preResponseMessages);
             responseMessages.AddRange(preResponseMessages);
             loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
-            // 利用本轮 InputTokenCount 与上一轮合计的差值，为上一轮工具结果消息打 token 标记
-            TryTagPendingObservationMessage(loopState, loopUsageDetails);
             finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();
-            var completionToken = loopUsageDetails?.OutputTokenCount;
-            if (completionToken > 0)
-            {
-                preResponseMessages.TagTokensCounter(completionToken.Value);
-            }
-
             var finishReasonValue = finishReason?.Value;
             if (finishReasonValue == null)
             {
@@ -441,7 +442,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
                 else if (finishReason == ChatFinishReason.Length)
                 {
-                    exception = new OutOfContextWindowException { ChatResponse = preResponse };
+                    exception = new OutOfContextWindowException(preResponse);
                     stepResult.IsCompleted = false;
                     return;
                 }
@@ -486,7 +487,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             step.EmitDiagnostic(DiagLevel.Info, "Processing function calls...");
             functionResultMessage = new ChatMessage();
             ReactHistorySegmenter.TagMessage(functionResultMessage, reactRoundNumber,
-                ReactHistoryMessageKind.Observation);
+                ReactHistoryMessageKind.Observation, agentId);
             chatMessages.Add(functionResultMessage);
             responseMessages.Add(functionResultMessage);
             await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
@@ -495,13 +496,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             // 1. Token-based in-task compression trigger
             var compressionApplied = false;
             var compressionKind = GetHistoryCompressionKind(historyCompressionOptions.Mode);
-            if (compressionKind.HasValue && await ShouldRunInTaskCompression(chatMessages, historyCompressionOptions))
+            if (compressionKind.HasValue &&
+                await ShouldRunInTaskCompression(loopUsageDetails, historyCompressionOptions))
             {
                 compressionApplied = true;
                 // 2. Pre-process: uniformly replace error rounds outside the preserve window with summaries
                 if (historyCompressionOptions.SummaryErrorLoop)
                 {
-                    await PreprocessErrorRoundsAsync(chatMessages, historyCompressionOptions, cancellationToken);
+                    await PreprocessErrorRoundsAsync(chatMessages, historyCompressionOptions, agentId, cancellationToken);
                 }
 
                 var compressionContext = new ChatHistoryCompressionContext
@@ -511,6 +513,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     CurrentClient = this,
                     Options = historyCompressionOptions,
                     Step = step,
+                    AgentId = agentId,
                 };
 
                 step.EmitHistoryCompressionStarted(compressionKind.Value);
@@ -665,6 +668,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         ReactStep step,
         List<ChatMessage> chatMessages,
         ReactHistoryCompressionOptions historyCompressionOptions,
+        string? agentId,
         CancellationToken cancellationToken)
     {
         if (!historyCompressionOptions.PreambleCompression || PreambleCompressionActive.Value)
@@ -685,6 +689,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             CurrentRound = 0,
             CurrentClient = this,
             Step = step,
+            AgentId = agentId,
         };
 
         var preambleStrategy = viewModelFactory.Create<PreambleSummaryChatHistoryCompressionStrategy>();
@@ -707,23 +712,29 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
     }
 
-    private async Task<bool> ShouldRunInTaskCompression(List<ChatMessage> chatMessages,
+    private async Task<bool> ShouldRunInTaskCompression(UsageDetails? usageDetails,
         ReactHistoryCompressionOptions options)
     {
+        if (usageDetails?.TotalTokenCount == null)
+        {
+            return false;
+        }
+
         var threshold = options.ReactTokenThresholdPercent;
         if (threshold <= 0) return false;
         var maxContext = Model.MaxContextSize;
         if (maxContext <= 0) return false;
-        var estimateTokens = await _tokensCounter.EstimateTokens(chatMessages);
-        return estimateTokens > threshold * maxContext;
+
+        return usageDetails?.TotalTokenCount.Value > threshold * maxContext;
     }
 
     private async Task PreprocessErrorRoundsAsync(
         List<ChatMessage> chatMessages,
         ReactHistoryCompressionOptions options,
+        string? agentId,
         CancellationToken cancellationToken)
     {
-        var segmentation = ReactHistorySegmenter.Segment(chatMessages);
+        var segmentation = ReactHistorySegmenter.Segment(chatMessages, agentId);
         var roundsToKeep = Math.Max(0, options.PreserveRecentRounds);
         var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
 
@@ -741,7 +752,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             if (i < keepFromIndex && round.HasError)
             {
                 replacement.Add(await ReactErrorRoundSummarizer.BuildErrorSummaryMessageAsync(
-                    round, summarizer, this, cancellationToken));
+                    round, summarizer, this, agentId, cancellationToken));
                 continue;
             }
 
@@ -856,33 +867,5 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
         /// <summary>上一轮是否触发了历史压缩（压缩会改变消息列表，差值不再可靠）。</summary>
         public bool PrevRoundCompressed { get; set; }
-    }
-
-    /// <summary>
-    /// 利用当前轮次的 InputTokenCount 与上一轮合计的差值，为上一轮的工具结果消息打 token 标记。
-    /// 仅在上一轮未触发压缩时执行，以确保差值语义正确。
-    /// </summary>
-    private static void TryTagPendingObservationMessage(ReactLoopState loopState, UsageDetails? currentUsageDetails)
-    {
-        var pending = loopState.PendingObservationMessage;
-        loopState.PendingObservationMessage = null;
-
-        if (pending == null || loopState.PrevRoundCompressed)
-        {
-            return;
-        }
-
-        var inputCount = currentUsageDetails?.InputTokenCount ?? 0;
-        var prevTotal = loopState.PrevRoundTotalTokens;
-        if (inputCount <= 0 || prevTotal <= 0)
-        {
-            return;
-        }
-
-        var delta = inputCount - prevTotal;
-        if (delta > 0)
-        {
-            pending.TagTokensCounter(delta);
-        }
     }
 }

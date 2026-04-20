@@ -1,12 +1,11 @@
 using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
-
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
-
 using LLMClient.Persistence;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient;
 
@@ -119,7 +118,14 @@ public class DialogItemPersistenceProfile : Profile
             .Include<RawResponseViewItem, RawResponsePersistItem>()
             .ForMember(
                 dest => dest.LastSuccessfulUsage,
-                opt => opt.MapFrom(src => src.LastContextUsage != null ? src.LastContextUsage.UsageDetails : null));
+                opt => opt.MapFrom(src => src.LastContextUsage != null
+                    ? new ContextUsagePO()
+                    {
+                        MaxContextLength = src.LastContextUsage.MaxContextTokens ?? 0,
+                        // Clone to avoid $ref metadata pointing to Usage when ReferenceHandler.Preserve is enabled.
+                        UsageDetails = CloneUsageDetails(src.LastContextUsage.UsageDetails),
+                    }
+                    : null));
         CreateMap<ClientResponseViewItem, ClientResponsePersistItem>()
             .IncludeBase<ResponseViewItemBase, ResponsePersistItemBase>()
             .PreserveReferences();
@@ -134,7 +140,8 @@ public class DialogItemPersistenceProfile : Profile
                 dest => dest.LastContextUsage,
                 opt => opt.MapFrom(src =>
                     src.LastSuccessfulUsage != null
-                        ? new ContextUsageViewModel(src.LastSuccessfulUsage)
+                        ? new ContextUsageViewModel(src.LastSuccessfulUsage.UsageDetails ?? new UsageDetails(),
+                            src.LastSuccessfulUsage.MaxContextLength)
                         : null));
         CreateMap<ClientResponsePersistItem, ClientResponseViewItem>()
             .IncludeBase<ResponsePersistItemBase, ResponseViewItemBase>()
@@ -152,6 +159,21 @@ public class DialogItemPersistenceProfile : Profile
         CreateMap<RawResponsePersistItem, RawResponseViewItem>()
             .IncludeBase<ResponsePersistItemBase, ResponseViewItemBase>()
             .PreserveReferences();
+    }
+
+    private static UsageDetails CloneUsageDetails(UsageDetails? source)
+    {
+        if (source == null)
+        {
+            return new UsageDetails();
+        }
+
+        return new UsageDetails
+        {
+            InputTokenCount = source.InputTokenCount,
+            OutputTokenCount = source.OutputTokenCount,
+            TotalTokenCount = source.TotalTokenCount,
+        };
     }
 }
 

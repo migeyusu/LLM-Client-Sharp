@@ -4,6 +4,7 @@ using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
+using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Test;
@@ -73,6 +74,8 @@ public class ClientResponseViewItemTests
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public override string? SystemPrompt => null;
+
+        public override IFunctionGroupSource? ToolsSource { get; } = null;
 
         public override async Task OnPreviewRequest(CancellationToken token)
         {

@@ -10,7 +10,6 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 
-using LLMClient.Dialog;
 
 using LLMClient.Persistence;
 using Microsoft.Win32;
@@ -18,7 +17,7 @@ using LLM_DataSerializeContext = LLMClient.Persistence.LLM_DataSerializeContext;
 
 namespace LLMClient.Component.ViewModel;
 
-public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, ILLMSession
+public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, ILLMSessionFile
 {
     public DateTime EditTime
     {
@@ -115,17 +114,15 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
         }
     }
 
-    public abstract ILLMSession CloneHeader();
+    public abstract ILLMSessionFile CloneHeader();
     
-    public abstract IEnumerable<Type> SupportedAgents { get; }
-
     protected FileInfo GetAssociateFile()
     {
         return new FileInfo(FileFullPath);
     }
 
     public static async Task<T?> LoadFromFile<T>(string filePath, IMapper mapper)
-        where T : FileBasedSessionBase, ILLMSessionLoader<T>
+        where T : FileBasedSessionBase, ILoadableSessionFile<T>
     {
         var info = new FileInfo(filePath);
         if (!info.Exists) return null;
@@ -146,7 +143,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     }
 
     public static async Task<IEnumerable<T>> LoadFromLocal<T>(IMapper mapper, string folderPath)
-        where T : FileBasedSessionBase, ILLMSessionLoader<T>
+        where T : FileBasedSessionBase, ILoadableSessionFile<T>
     {
         var directoryInfo = new DirectoryInfo(folderPath);
         if (!directoryInfo.Exists)
@@ -171,7 +168,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
 
     public static async IAsyncEnumerable<T> ImportFiles<T>(string targetFolderPath,
         IEnumerable<FileInfo> fileInfos, IMapper mapper)
-        where T : FileBasedSessionBase, ILLMSessionLoader<T>
+        where T : FileBasedSessionBase, ILoadableSessionFile<T>
     {
         var targetDirectoryInfo = new DirectoryInfo(targetFolderPath);
         if (!targetDirectoryInfo.Exists)

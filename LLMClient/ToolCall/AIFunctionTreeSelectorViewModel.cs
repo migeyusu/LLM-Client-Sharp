@@ -27,22 +27,22 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
 
     public IList<FunctionCallEngineType> SelectableCallEngineTypes
     {
-        get => _selectableCallEngineTypes;
+        get;
         set
         {
-            if (Equals(value, _selectableCallEngineTypes)) return;
-            _selectableCallEngineTypes = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = [];
 
     public FunctionCallEngineType? EngineType
     {
-        get => _engineType;
+        get;
         set
         {
-            if (value == _engineType) return;
-            _engineType = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -55,7 +55,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
 
     public ICommand CancelRefreshCommand { get; }
 
-    public IEnumerable<CheckableFunctionGroupTree>? SelectedFunctionGroups
+    public IEnumerable<CheckableFunctionGroupTree> SelectedFunctionGroups
     {
         get { return FunctionGroups.Where(tree => tree.IsSelected != false); }
     }
@@ -69,7 +69,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
         CancelRefreshCommand = new ActionCommand((o) => { _refreshSource?.Cancel(); });
     }
 
-    private readonly List<IFunctionGroupSource> _sources = new List<IFunctionGroupSource>();
+    private readonly List<IFunctionGroupSource> _sources = [];
 
     public AIFunctionTreeSelectorViewModel ConnectSource(IFunctionGroupSource? source)
     {
@@ -82,63 +82,30 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
         return this;
     }
 
+    public void ClearSource()
+    {
+        _sources.Clear();
+    }
+
     public AIFunctionTreeSelectorViewModel ConnectDefault()
     {
         return ConnectSource(ServiceLocator.GetService<IMcpServiceCollection>() as McpServiceCollection)
             .ConnectSource(ServiceLocator.GetService<BuiltInFunctionsCollection>());
     }
 
-    /*/// <summary>
-    /// 可以使用<see cref="AIFunctionTreeSelectorViewModel"/>或普通的<see cref="IAIFunctionGroup"/>作为参数
-    /// </summary>
-    /// <param name="functionGroups"></param>
-    /// <param name="select"></param>
-    private void UpdateCandidateFunctions(IEnumerable<IAIFunctionGroup> functionGroups, bool select)
-    {
-        foreach (var functionGroup in functionGroups)
-        {
-            var oldTree = FunctionGroups.FirstOrDefault(model =>
-                AIFunctionGroupComparer.Instance.Equals(functionGroup, model.Data));
-            if (functionGroup is CheckableFunctionGroupTree newTree)
-            {
-                if (oldTree != null)
-                {
-                    FunctionGroups.Remove(oldTree);
-                }
 
-                FunctionGroups.Add(newTree);
-            }
-            else
-            {
-                if (oldTree == null)
-                {
-                    FunctionGroups.Add(new CheckableFunctionGroupTree(functionGroup)
-                    {
-                        IsSelected = select
-                    });
-                }
-                else
-                {
-                    oldTree.IsSelected = select;
-                }
-            }
-        }
-    }*/
     public bool IsEnsuring
     {
-        get => _isEnsuring;
+        get;
         private set
         {
-            if (value == _isEnsuring) return;
-            _isEnsuring = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = false;
 
     private bool _isInitialized = false;
-    private bool _isEnsuring = false;
-    private FunctionCallEngineType? _engineType;
-    private IList<FunctionCallEngineType> _selectableCallEngineTypes = [];
 
     /// <summary>
     /// 重置状态，表示需要重新初始化
@@ -233,7 +200,7 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
             {
                 FunctionGroups.Remove(functionGroup);
             }
-            
+
             try
             {
                 using (_refreshSource = new CancellationTokenSource())

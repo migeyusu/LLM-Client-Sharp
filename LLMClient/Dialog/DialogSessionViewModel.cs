@@ -25,7 +25,7 @@ using MaterialDesignThemes.Wpf;
 namespace LLMClient.Dialog;
 
 public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
-    IDialogGraphViewModel, ITextDialogSession
+    IDialogGraphViewModel, ITextDialogSession, IFunctionGroupSource
 {
     /// <summary>
     /// indicate whether data is changed after loading.
@@ -97,6 +97,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             OnPropertyChanged();
         }
     }
+
+    public virtual IFunctionGroupSource? ToolsSource => this;
 
     #region scroll
 
@@ -304,6 +306,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     /// 用于子项路由选择
     /// </summary>
     public DialogGraphViewModel SharedGraphViewModel { get; }
+
+    private readonly Type[] _supportedAgents = [typeof(MiniSweAgent), typeof(NvidiaResearchClient)];
+
+    public virtual IEnumerable<Type> SupportedAgents => _supportedAgents;
 
     /// <summary>
     /// 通过插入擦除标记来切断上下文
@@ -553,8 +559,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
     }
 
-
-    public async Task<IResponse> NewDefaultResponse(RequestOption option,
+    public async Task<IResponse> NewResponse(RequestOption option,
         IRequestItem? insertBefore = null, CancellationToken token = default)
     {
         var client = option.DefaultClient;
@@ -621,7 +626,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         }
         else if (agentType == typeof(NvidiaResearchClient))
         {
-            agent = new NvidiaResearchClient(_options,client);
+            agent = new NvidiaResearchClient(_options, client);
         }
         else
         {
@@ -861,5 +866,22 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         this.IsDataChanged = true;
         PostOnPropertyChanged(nameof(Shortcut));
         OnPropertyChanged(nameof(CurrentContextTokens));
+    }
+
+    public virtual IEnumerable<IAIFunctionGroup> GetFunctionGroups()
+    {
+        if (SelectedFunctionGroups == null)
+        {
+            yield break;
+        }
+
+        foreach (var functionGroupTree in SelectedFunctionGroups)
+        {
+            functionGroupTree.RefreshCheckState();
+            if (functionGroupTree.IsSelected != false)
+            {
+                yield return functionGroupTree;
+            }
+        }
     }
 }

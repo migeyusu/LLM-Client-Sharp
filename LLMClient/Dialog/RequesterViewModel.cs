@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Windows.Input;
 using LLMClient.Abstraction;
@@ -17,29 +16,10 @@ using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using LLMClient.Agent;
-using LLMClient.Agent.Code;
-using LLMClient.Agent.Inspector;
 using LLMClient.Agent.MiniSWE;
-using LLMClient.Agent.Planner;
 using LLMClient.Agent.Research;
 
 namespace LLMClient.Dialog;
-
-public class RequestOption
-{
-    public required ILLMChatClient DefaultClient { get; init; }
-
-    public required IRequestItem RequestItem { get; init; }
-
-    public AgentDescriptor? Agent { get; set; }
-
-    public bool UseAgent { get; set; }
-
-    public required AgentOption AgentOption { get; init; }
-}
-
-public delegate Task<IResponse> GetResponseHandler(RequestOption request,
-    IRequestItem? insertBefore, CancellationToken token);
 
 public record AgentDescriptor(string Name, Type Type);
 
@@ -90,6 +70,38 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
             IsNewResponding = false;
         }
     });
+
+    public ITextDialogSession? ConnectedSession
+    {
+        get;
+        set
+        {
+            field = value;
+            if (value != null)
+            {
+                FunctionTreeSelector.ClearSource();
+                FunctionTreeSelector.ConnectDefault()
+                    .ConnectSource(value.ToolsSource);
+                FunctionTreeSelector.Reset();
+                AvailableAgents.Clear();
+                // Initialize agents
+                var agentTypes = new List<Type>();
+                agentTypes.AddRange(value.SupportedAgents);
+#if DEBUG
+                agentTypes.Add(typeof(TestSuccessAgent));
+                agentTypes.Add(typeof(TestFailedAgent));
+#endif
+
+                foreach (var type in agentTypes)
+                {
+                    var description = type.GetCustomAttribute<DescriptionAttribute>()?.Description ?? type.Name;
+                    AvailableAgents.Add(new AgentDescriptor(description, type));
+                }
+
+                SelectedAgent = AvailableAgents.FirstOrDefault();
+            }
+        }
+    }
 
     public bool RawEditMode
     {
@@ -259,9 +271,8 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         {
             if (this.FunctionTreeSelector.IsFunctionEnabled)
             {
-                return this.FunctionGroupSource?
-                    .GetFunctionGroups()
-                    .OfType<CheckableFunctionGroupTree>()
+                return this.FunctionTreeSelector
+                    .SelectedFunctionGroups
                     .ToList();
             }
 
@@ -328,8 +339,6 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         }
     }
 
-    public IFunctionGroupSource? FunctionGroupSource { get; set; }
-
     public bool IsAgentMode
     {
         get;
@@ -368,51 +377,26 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
 
     #endregion
 
-    private readonly GetResponseHandler _getResponse;
-
     private readonly GlobalOptions _options;
     private readonly Summarizer _summarizer;
 
     private readonly ITokensCounter _tokensCounter;
 
     public RequesterViewModel(string initialPrompt, ILLMChatClient modelClient,
-        GetResponseHandler getResponse,
         GlobalOptions options, Summarizer summarizer, IRagSourceCollection ragSourceCollection,
-        ITokensCounter tokensCounter,
-        Func<ITextDialogSession?>? currentSessionProvider = null)
+        ITokensCounter tokensCounter)
     {
         FunctionTreeSelector = new AIFunctionTreeSelectorViewModel();
         SearchConfig = new SearchConfigViewModel();
         _promptEditViewModel = new TextContentCodeEditViewModel(new TextContent(initialPrompt), null);
         QueryViewModel = new FileQueryViewModel(this);
         this._defaultClient = modelClient;
-        this._getResponse = getResponse;
         _options = options;
         _summarizer = summarizer;
         _ragSourceCollection = ragSourceCollection;
         _tokensCounter = tokensCounter;
         _agentOption.PropertyChanged += TagDataChanged;
         this.BindClient(modelClient);
-
-        // Initialize agents
-        var agentTypes = new List<Type>
-        {
-            typeof(MiniSweAgent),
-            typeof(NvidiaResearchClient)
-        };
-#if DEBUG
-        agentTypes.Add(typeof(TestSuccessAgent));
-        agentTypes.Add(typeof(TestFailedAgent));
-#endif
-
-        foreach (var type in agentTypes)
-        {
-            var description = type.GetCustomAttribute<DescriptionAttribute>()?.Description ?? type.Name;
-            AvailableAgents.Add(new AgentDescriptor(description, type));
-        }
-
-        SelectedAgent = AvailableAgents.FirstOrDefault();
-
         CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
         OpenExpandedEditorCommand = new ActionCommand(async o =>
         {
@@ -602,23 +586,26 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         };
     }
 
-    private async Task<IResponse> ExecuteRequestAsync(RequestOption option,
+    private async Task ExecuteRequestAsync(RequestOption option,
         IRequestItem? insertBefore = null,
         bool clearRequestOnSuccess = false)
     {
+        if (this.ConnectedSession == null)
+        {
+            return;
+        }
+
         IsNewResponding = true;
         try
         {
             using (_tokenSource = new CancellationTokenSource())
             {
-                var completedResult = await _getResponse.Invoke(option, insertBefore, _tokenSource.Token);
+                var completedResult = await ConnectedSession.NewResponse(option, insertBefore, _tokenSource.Token);
                 OnRequestCompleted(completedResult);
                 if (clearRequestOnSuccess && !completedResult.IsInterrupt)
                 {
                     ClearRequest();
                 }
-
-                return completedResult;
             }
         }
         finally

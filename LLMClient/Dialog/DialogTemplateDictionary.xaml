@@ -858,6 +858,12 @@
                                           IsCheckable="True"
                                           IsChecked="{Binding AcceptedResponse.IsManualValid,Mode=TwoWay}"
                                           Visibility="{Binding AcceptedResponse.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                                <MenuItem Command="{Binding AcceptedResponse.EliminateFailedHistoryCommand}"
+                                          Header="剔除错误历史"
+                                          ToolTip="剔除错误的工具调用" />
+                                <MenuItem Command="{Binding AcceptedResponse.EliminateHistoryCommand}"
+                                          Header="剔除交互历史"
+                                          ToolTip="只保留最终消息" />
                             </MenuItem>
                         </Menu>
                         <materialDesign:PopupBox Padding="4,0"
@@ -1061,12 +1067,12 @@
                             <MenuItem Command="{Binding SmartEliminateHistoryCommand}"
                                       Header="智能剔除"
                                       ToolTip="利用LLM的能力剔除无关步骤" />
-                            <MenuItem Command="{Binding EliminateFailedHistoryCommand}"
+                            <MenuItem Command="{Binding Response.EliminateFailedHistoryCommand}"
                                       Header="剔除错误历史"
                                       ToolTip="剔除错误的工具调用" />
-                            <MenuItem Command="{Binding EliminateHistoryCommand}"
-                                      Header="剔除历史"
-                                      ToolTip="只保留Planning结论" />
+                            <MenuItem Command="{Binding Response.EliminateHistoryCommand}"
+                                      Header="剔除交互历史"
+                                      ToolTip="只保留最终消息" />
                             <MenuItem Header="查看执行过程"
                                       ToolTip="查看Agent执行的详细过程日志"
                                       Command="{Binding Response.ShowProtocolLogCommand}"
@@ -1077,6 +1083,11 @@
                                       Command="{x:Static models:ResponseViewItemBase.SaveProtocolLogCommand}"
                                       CommandParameter="{Binding Response,Mode=OneWay}"
                                       Icon="{materialDesign:PackIcon Kind=FileDocumentArrowRightOutline}" />
+                            <MenuItem Header="查看原文"
+                                      ToolTip="查看未渲染的原始Markdown"
+                                      Command="{Binding Response.ShowRawResponseCommand}"
+                                      CommandParameter="{Binding Response}"
+                                      Icon="{materialDesign:PackIcon Kind=History}" />
                         </MenuItem>
                     </Menu>
                     <materialDesign:PopupBox Padding="4,0"
@@ -1133,7 +1144,7 @@
                     </materialDesign:Card>
                     <customControl:FlowDocumentScrollViewerEx FontFamily="Segoe UI Emoji"
                                                               BorderThickness="0"
-                                                              SafeDocument="{Binding Response.FullDocument,Mode=OneWay}"
+                                                              SafeDocument="{Binding Response.SearchableDocument.Document,Mode=OneWay}"
                                                               Style="{StaticResource ExFlowDocumentScrollViewerStyle}" />
                     <TextBlock Text="{Binding Response.ErrorMessage,Mode=OneWay}"
                                TextWrapping="Wrap"

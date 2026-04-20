@@ -1,4 +1,7 @@
-﻿namespace LLMClient.Dialog.Models;
+﻿using LLMClient.Abstraction;
+using LLMClient.ToolCall;
+
+namespace LLMClient.Dialog.Models;
 
 public interface ITextDialogSession
 {
@@ -9,4 +12,11 @@ public interface ITextDialogSession
     Task CutContextAsync(IRequestItem? requestItem = null);
     
     string? SystemPrompt { get; }
+    
+    IEnumerable<Type> SupportedAgents { get; }
+
+    IFunctionGroupSource? ToolsSource { get; }
+
+    Task<IResponse> NewResponse(RequestOption option,
+        IRequestItem? insertBefore = null, CancellationToken token = default);
 }

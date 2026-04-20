@@ -13,6 +13,7 @@ namespace LLMClient.Endpoints.OpenAIAPI;
 /// <summary>
 /// 原版的OpenAI ChatClient严格遵守OpenAI的API规范，无法支持许多网站
 /// </summary>
+[Obsolete]
 public class OpenAIChatClientEx : ChatClient
 {
     private readonly bool _treatNullChoicesAsEmptyResponse;

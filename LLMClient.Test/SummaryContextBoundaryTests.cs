@@ -1,6 +1,9 @@
-﻿using LLMClient.Agent;
+﻿using LLMClient.Abstraction;
+using LLMClient.Agent;
+using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
+using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Test;
@@ -87,6 +90,16 @@ public class SummaryContextBoundaryTests
         }
 
         public string? SystemPrompt => null;
+        
+        public IEnumerable<Type> SupportedAgents { get; } = Array.Empty<Type>();
+        
+        public IFunctionGroupSource? ToolsSource { get; } = null;
+
+        public Task<IResponse> NewResponse(RequestOption option, IRequestItem? insertBefore = null,
+            CancellationToken token = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     private sealed class TestResponseItem(Guid interactionId, string content) : BaseDialogItem, IResponseItem
@@ -97,10 +110,7 @@ public class SummaryContextBoundaryTests
 
         public override IEnumerable<ChatMessage> Messages
         {
-            get
-            {
-                yield return new ChatMessage(ChatRole.Assistant, content);
-            }
+            get { yield return new ChatMessage(ChatRole.Assistant, content); }
         }
 
         public override bool IsAvailableInContext { get; } = true;
@@ -110,4 +120,3 @@ public class SummaryContextBoundaryTests
         public Guid InteractionId { get; set; } = interactionId;
     }
 }
-

@@ -350,6 +350,9 @@
                               Style="{StaticResource MaterialDesignFlatPrimaryToggleButton}">
                     <materialDesign:PackIcon Kind="ListBox" />
                 </ToggleButton>
+                <!--<Button Click="ButtonBase_OnClick"
+                        Content="sadfasdf"
+                        WindowChrome.IsHitTestVisibleInChrome="True"/>-->
                 <Button VerticalAlignment="Center"
                         Width="32"
                         Height="32"

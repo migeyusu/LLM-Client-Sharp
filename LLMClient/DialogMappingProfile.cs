@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
@@ -144,24 +144,35 @@ public class DialogMappingProfile : Profile
         CreateMap<DialogFileViewModel, DialogFilePersistModel>()
             .ConvertUsing<AutoMapModelTypeConverter>();
     }
-
-    /// <summary>
-    /// 从 ChatMessage.AdditionalProperties 中只提取 TokensCounter 键，
-    /// 以 Dictionary&lt;string, object?&gt; 写入 ChatMessagePO，防止不可序列化对象污染。
-    /// </summary>
+    
     private static Dictionary<string, object?>? ExtractTokensCounterToPo(AdditionalPropertiesDictionary? props)
     {
-        if (props == null ||
-            !props.TryGetValue(CoreExtension.TokensCounterKey, out var tokenValue) ||
-            tokenValue == null)
+        if (props == null || props.Count == 0)
         {
             return null;
         }
 
-        return new Dictionary<string, object?>
+        // Copy all entries from AdditionalPropertiesDictionary to a serializable Dictionary
+        var result = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, value) in props)
         {
-            [CoreExtension.TokensCounterKey] = Convert.ToInt64(tokenValue)
-        };
+            // Only persist primitive types that are JSON-serializable
+            result[key] = value switch
+            {
+                null => null,
+                string s => s,
+                long l => l,
+                int i => i,
+                bool b => b,
+                double d => d,
+                float f => f,
+                decimal dec => dec,
+                JsonElement jsonElement => jsonElement,
+                _ => value?.ToString() // Fallback to string for other types
+            };
+        }
+
+        return result;
     }
 
     /// <summary>

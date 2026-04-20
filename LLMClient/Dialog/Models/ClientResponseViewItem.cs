@@ -65,22 +65,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     
     private int _respondingStateRefCount;
 
-    private readonly Lazy<SearchableDocument> _lazyDocument = new(() => new SearchableDocument(new FlowDocument()));
-
-    public SearchableDocument? SearchableDocument
-    {
-        get
-        {
-            return GetAsyncProperty(async () =>
-            {
-                var document = _lazyDocument.Value;
-                await PopulateDocumentAsync(document.Document, Messages, Annotations);
-                document.OnDocumentRefresh();
-                return document;
-            });
-        }
-    }
-
     #region responding
 
     public virtual async Task<AgentTaskResult> Process(DefaultDialogContextBuilder contextBuilder,
@@ -134,7 +118,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public void TriggerTextContentUpdate()
     {
-        Messages.ClearTokensCounterTag();
         InvalidateAsyncProperty(nameof(SearchableDocument));
         RawTextContent = null;
         OnPropertyChanged(nameof(RawTextContent));
@@ -143,12 +126,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     public string GetCopyText()
     {
         return RawTextContent ?? string.Empty;
-    }
-
-    protected override void OnUsagePropertiesChanged()
-    {
-        base.OnUsagePropertiesChanged();
-        OnPropertyChanged(nameof(LastContextUsage));
     }
 
     internal void AcquireRespondingState()

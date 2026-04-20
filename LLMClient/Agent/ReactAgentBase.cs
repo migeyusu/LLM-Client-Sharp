@@ -24,6 +24,11 @@ public abstract class ReactAgentBase : ISingleClientAgent
 
     public abstract string Name { get; }
 
+    /// <summary>
+    /// 用于 ReAct 历史轮次隔离的 Agent 标识。默认使用 <see cref="Name">。
+    /// </summary>
+    protected virtual string AgentId => Name;
+
     private string? _previousAssistantText;
 
     protected ReactAgentBase(ILLMChatClient chatClient, AgentOption agentOption, MiniSweAgentConfig config)
@@ -67,6 +72,12 @@ public abstract class ReactAgentBase : ISingleClientAgent
 
         if (requestContext == null)
             yield break;
+
+        // 注入 AgentId，确保该 Agent 的 ReAct 轮次与其他 Agent 隔离
+        if (requestContext is RequestContext rc)
+        {
+            rc.AgentId = AgentId;
+        }
 
         _previousAssistantText = null;
 

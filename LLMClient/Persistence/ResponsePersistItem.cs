@@ -17,22 +17,27 @@ public class ResponsePersistItemBase
 
     public UsageDetails? Usage { get; set; }
 
-    public UsageDetails? LastSuccessfulUsage { get; set; }
+    [JsonPropertyName("lastContextUsage")]
+    public ContextUsagePO? LastSuccessfulUsage { get; set; }
 
     public bool IsInterrupt { get; set; }
-    
-    [JsonPropertyName("ResponseMessages")]
-    public IList<ChatMessagePO>? Messages { get; set; }
+
+    [JsonPropertyName("ResponseMessages")] public IList<ChatMessagePO>? Messages { get; set; }
 
     public IList<ChatAnnotation>? Annotations { get; set; }
 
     public ChatFinishReason? FinishReason { get; set; }
 }
 
+public class ContextUsagePO
+{
+    public int MaxContextLength { get; set; }
+
+    public UsageDetails? UsageDetails { get; set; }
+}
 
 public class RawResponsePersistItem : ResponsePersistItemBase
 {
-    
 }
 
 public class ClientResponsePersistItem : ResponsePersistItemBase

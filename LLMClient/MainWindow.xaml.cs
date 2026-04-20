@@ -274,6 +274,7 @@ public partial class MainWindow : ExtendedWindow, IDisposable
                     MessageBoxes.Warning("请停止当前响应后再备份会话");
                     return;
                 }
+
                 var fullPath = Path.GetFullPath(BackupFolderName);
                 string specificArchive = "";
                 if (sessionBase is DialogFileViewModel)

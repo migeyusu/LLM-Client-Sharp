@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using LLMClient.Abstraction;
-using LLMClient.Agent;
 using LLMClient.Component.ViewModel;
 using LLMClient.Configuration;
 
@@ -15,5 +14,6 @@ public class CppProjectViewModel : ProjectViewModel
     {
     }
 
-    public override IEnumerable<Type> SupportedAgents => IInbuiltAgent.ChildTypes;
+    public override IEnumerable<Type> ProjectAgents { get; } = [];
+    public override IAIFunctionGroup[] ProjectTools { get; } = [];
 }

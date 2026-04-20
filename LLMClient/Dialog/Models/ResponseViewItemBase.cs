@@ -6,8 +6,11 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Agent;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
+using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
@@ -33,7 +36,16 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     /// <summary>
     /// 上下文占比信息（无模型信息时返回空 ViewModel）
     /// </summary>
-    public ContextUsageViewModel? LastContextUsage { get; set; }
+    public ContextUsageViewModel? LastContextUsage
+    {
+        get;
+        set
+        {
+            if (Equals(value, field)) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    }
 
     public int Latency
     {
@@ -89,7 +101,6 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(Tokens));
-            OnUsagePropertiesChanged();
         }
     }
 
@@ -159,12 +170,69 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         o?.SwitchAvailableInContext();
     });
 
+    public static ICommand ShowRawResponseCommand { get; } = new RelayCommand<ResponseViewItemBase>(o =>
+    {
+        if (o == null)
+        {
+            return;
+        }
+
+        var window = new System.Windows.Window
+        {
+            Title = "原始文本",
+            Width = 900,
+            Height = 700,
+            WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
+        };
+
+        var scrollViewer = new System.Windows.Controls.ScrollViewer
+        {
+            VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto,
+        };
+
+        var textBox = new System.Windows.Controls.TextBox
+        {
+            Text = o?.RawTextContent?.ToString() ?? string.Empty,
+            IsReadOnly = true,
+            TextWrapping = System.Windows.TextWrapping.NoWrap,
+            FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+            FontSize = 12,
+            VerticalContentAlignment = System.Windows.VerticalAlignment.Top,
+            HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left,
+        };
+
+        scrollViewer.Content = textBox;
+        window.Content = scrollViewer;
+        window.Show();
+    });
+    
+    public ICommand EliminateFailedHistoryCommand { get; }
+
+    public ICommand EliminateHistoryCommand { get; }
+
     /// <summary>
     /// 显示请求/响应的原始协议日志（HTTP headers、request body、response body 等）。
     /// </summary>
     public static ICommand ShowProtocolLogCommand { get; } = new RelayCommand<ResponseViewItemBase>(ShowProtocolLog);
 
     public static ICommand SaveProtocolLogCommand { get; } = new RelayCommand<ResponseViewItemBase>(SaveProtocolLog);
+    
+    private readonly Lazy<SearchableDocument> _lazyDocument = new(() => new SearchableDocument(new FlowDocument()));
+
+    public SearchableDocument? SearchableDocument
+    {
+        get
+        {
+            return GetAsyncProperty(async () =>
+            {
+                var document = _lazyDocument.Value;
+                await PopulateDocumentAsync(document.Document, Messages, Annotations);
+                document.OnDocumentRefresh();
+                return document;
+            });
+        }
+    }
 
     private static void SaveProtocolLog(ResponseViewItemBase? item)
     {
@@ -337,11 +405,93 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             field = value;
         }
     } = null;
+    
+    public bool CanEliminate
+    {
+        get
+        {
+            if (!IsResponding && IsInterrupt)
+            {
+                return false;
+            }
+
+            return true;
+        }
+    }
 
 
     protected ResponseViewItemBase()
     {
         CancelCommand = new ActionCommand(_ => CancelRequest(RequestTokenSource));
+        EliminateHistoryCommand = new RelayCommand((() =>
+            {
+                if (Messages.Count() <= 1)
+                {
+                    return;
+                }
+
+                if (!CanEliminate)
+                {
+                    return;
+                }
+
+                //只保留最后一条消息
+                Messages = [Messages.Last()];
+                InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
+            }),
+            () => !IsResponding && Messages.Any());
+        EliminateFailedHistoryCommand = new RelayCommand((() =>
+        {
+            if (!Messages.Any())
+            {
+                return;
+            }
+
+            if (!CanEliminate)
+            {
+                return;
+            }
+
+            try
+            {
+                var messages = Messages.ToList();
+                var segmentation = ReactHistorySegmenter.Segment(messages);
+                var keptMessages = new List<ChatMessage>(segmentation.PreambleMessages);
+
+                foreach (var round in segmentation.Rounds)
+                {
+                    var functionCalls = round.AssistantMessages
+                        .SelectMany(m => m.Contents.OfType<FunctionCallContent>())
+                        .ToList();
+
+                    if (functionCalls.Count == 0)
+                    {
+                        keptMessages.AddRange(round.Messages);
+                        continue;
+                    }
+
+                    var resultDict = round.ObservationMessages
+                        .SelectMany(m => m.Contents.OfType<FunctionResultContent>())
+                        .ToDictionary(r => r.CallId);
+
+                    var allFailed = functionCalls.All(call =>
+                        resultDict.TryGetValue(call.CallId, out var result) && result.Exception != null);
+
+                    if (!allFailed)
+                    {
+                        keptMessages.AddRange(round.Messages);
+                    }
+                }
+
+                Messages = keptMessages;
+                InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"[EliminateFailedHistory Error]: {ex.Message}");
+                MessageBoxes.Error(ex.Message, "清除失败历史失败");
+            }
+        }), () => !IsResponding && Messages.Any());
     }
 
     protected static async Task PopulateDocumentAsync(FlowDocument flowDocument,
@@ -531,10 +681,6 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         };
     }
 
-    protected virtual void OnUsagePropertiesChanged()
-    {
-    }
-
     /// <summary>
     /// 切换在上下文中的可用性
     /// </summary>
@@ -573,4 +719,5 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             // Request already completed and CTS already disposed.
         }
     }
+    
 }

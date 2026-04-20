@@ -145,7 +145,6 @@ public class LoggingHandler : DelegatingHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        // ★★★ 这里就是你想要的：打印实际发出的请求头 ★★★
         _logger.LogInformation("🚀 [Outgoing Request] {Method} {Uri}",
             request.Method, request.RequestUri);
 

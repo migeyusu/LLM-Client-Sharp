@@ -12,7 +12,7 @@ using LLMClient.Persistence;
 
 namespace LLMClient.Dialog;
 
-public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<DialogFileViewModel>
+public class DialogFileViewModel : FileBasedSessionBase, ILoadableSessionFile<DialogFileViewModel>
 {
     private readonly IViewModelFactory _factory;
     public DialogViewModel Dialog { get; }
@@ -51,15 +51,11 @@ public class DialogFileViewModel : FileBasedSessionBase, ILLMSessionLoader<Dialo
         return cloneSession;
     }
 
-    public override ILLMSession CloneHeader()
+    public override ILLMSessionFile CloneHeader()
     {
         var chatClient = this.Dialog.Requester.DefaultClient.CloneClient();
         return _factory.CreateViewModel<DialogFileViewModel>(this.Dialog.Topic ?? "新建会话", chatClient);
     }
-
-    private Type[] _supportedAgents = [typeof(MiniSweAgent), typeof(NvidiaResearchClient)];
-    
-    public override IEnumerable<Type> SupportedAgents => _supportedAgents;
 
     public static async Task<DialogFileViewModel?> LoadFromStream(Stream fileStream, IMapper mapper)
     {

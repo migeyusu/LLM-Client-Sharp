@@ -17,7 +17,7 @@ using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Dialog;
 
-public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPromptableSession
+public class DialogViewModel : DialogSessionViewModel, IPromptableSession
 {
 #if DATACHANGE_TRACE
     public bool Log { get; set; }
@@ -55,7 +55,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
 #endif
         }
     }
-    
+
     private string? _userSystemPrompt;
 
     public string? UserSystemPrompt
@@ -107,6 +107,7 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
     }
 
 
+
     private readonly string[] _notTrackingProperties =
     [
         nameof(ScrollViewItem),
@@ -123,14 +124,9 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         : base(options, summarizer, rootNode, currentLeaf)
     {
         this.Topic = topic;
-        Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient,
-            (GetResponseHandler)NewDefaultResponse,
-            new Func<ITextDialogSession?>(() => this));
-        Requester.FunctionGroupSource = this;
-        Requester.FunctionTreeSelector.Reset();
+        Requester = factory.CreateViewModel<RequesterViewModel>(initialPrompt, modelClient);
+        Requester.ConnectedSession = this;
         var functionTreeSelector = Requester.FunctionTreeSelector;
-        functionTreeSelector.ConnectDefault()
-            .ConnectSource(new ProxyFunctionGroupSource(() => this.SelectedFunctionGroups));
         functionTreeSelector.AfterSelect += FunctionTreeSelectorOnAfterSelect;
         PropertyChanged += (_, e) =>
         {
@@ -161,22 +157,5 @@ public class DialogViewModel : DialogSessionViewModel, IFunctionGroupSource, IPr
         this.SelectedFunctionGroups =
             this.Requester.FunctionTreeSelector.FunctionGroups.Where(tree => tree.IsSelected != false).ToArray();
         PopupBox.ClosePopupCommand.Execute(null, null);
-    }
-
-    public IEnumerable<IAIFunctionGroup> GetFunctionGroups()
-    {
-        if (SelectedFunctionGroups == null)
-        {
-            yield break;
-        }
-
-        foreach (var functionGroupTree in SelectedFunctionGroups)
-        {
-            functionGroupTree.RefreshCheckState();
-            if (functionGroupTree.IsSelected != false)
-            {
-                yield return functionGroupTree;
-            }
-        }
     }
 }

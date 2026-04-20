@@ -7,5 +7,5 @@ namespace LLMClient.Dialog.Models;
 /// </summary>
 public class RawResponseViewItem : ResponseViewItemBase
 {
-    public FlowDocument? FullDocument => GetAsyncProperty(CreateFullResponseDocumentAsync);
+    
 }

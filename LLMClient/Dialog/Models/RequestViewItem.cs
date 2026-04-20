@@ -268,7 +268,6 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
 
     public void TriggerTextContentUpdate()
     {
-        this.Messages.ClearTokensCounterTag();
         ParentSession?.IsDataChanged = true;
         OnPropertyChanged(nameof(RawTextMessage));
         InvalidateAsyncProperty(nameof(Tokens));
