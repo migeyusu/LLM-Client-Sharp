@@ -27,7 +27,7 @@ using Microsoft.Xaml.Behaviors.Core;
 namespace LLMClient.Project;
 
 [TypeConverter(typeof(EnumDescriptionTypeConverter))]
-public enum ProjectType : int
+public enum ProjectType
 {
     [Description("C#")] CSharp = 1,
     [Description("C++")] Cpp = 2
@@ -136,7 +136,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase,
 
     protected override async Task SaveToStream(Stream stream)
     {
-        var (po, vmo) = ResolveTypePair(this.Option.Type);
+        var (po, _) = ResolveTypePair(this.Option.Type);
         var dialogModel =
             _mapper.Map<ProjectViewModel, ProjectPersistModel>(this, _ => { });
         await JsonSerializer.SerializeAsync(stream, dialogModel, po, SerializerOption);
@@ -205,8 +205,8 @@ public abstract class ProjectViewModel : FileBasedSessionBase,
 
     private readonly StringBuilder _systemPromptBuilder = new(1024);
 
-    private static readonly XmlSerializer _projectInfoSerializer = new(typeof(ProjectInformation));
-    private static readonly XmlSerializerNamespaces _emptyNamespaces = CreateEmptyNamespaces();
+    private static readonly XmlSerializer ProjectInfoSerializer = new(typeof(ProjectInformation));
+    private static readonly XmlSerializerNamespaces EmptyNamespaces = CreateEmptyNamespaces();
 
     private static XmlSerializerNamespaces CreateEmptyNamespaces()
     {
@@ -252,7 +252,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase,
             {
                 using var xmlWriter = XmlWriter.Create(writer,
                     new XmlWriterSettings { Indent = true, IndentChars = "    ", OmitXmlDeclaration = true });
-                _projectInfoSerializer.Serialize(xmlWriter, projectInfo, _emptyNamespaces);
+                ProjectInfoSerializer.Serialize(xmlWriter, projectInfo, EmptyNamespaces);
             }
 
             return Encoding.UTF8.GetString(ms.ToArray());
@@ -262,7 +262,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase,
     /// <summary>
     /// 项目级别的上下文，在Item间共享
     /// </summary>
-    public virtual string? Context
+    public virtual string Context
     {
         get
         {

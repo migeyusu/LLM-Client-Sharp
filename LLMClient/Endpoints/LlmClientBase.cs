@@ -334,6 +334,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             {
                 await CompressPreambleIfNeededAsync(step, chatMessages, historyCompressionOptions, cancellationToken);
             }
+#if DEBUG
+
+            var estimateTokens = await _tokensCounter.CountTokens(chatMessages);
+            Debug.Write($"request tokens:{estimateTokens}");
+
+#endif
 
             _durationStopwatch.Restart();
             ChatResponse? preResponse;
@@ -367,7 +373,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                 await chatContext.CompleteResponse(preResponse, stepResult);
             }
-            
+
             _durationStopwatch.Stop();
             loopUsageDetails = preResponse.Usage;
             var preResponseMessages = preResponse.Messages;
@@ -410,15 +416,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             chatMessages.AddRange(preResponseMessages);
             responseMessages.AddRange(preResponseMessages);
             loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
-            // 利用本轮 InputTokenCount 与上一轮合计的差值，为上一轮工具结果消息打 token 标记
-            TryTagPendingObservationMessage(loopState, loopUsageDetails);
             finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();
-            var completionToken = loopUsageDetails?.OutputTokenCount;
-            if (completionToken > 0)
-            {
-                preResponseMessages.TagTokensCounter(completionToken.Value);
-            }
-
             var finishReasonValue = finishReason?.Value;
             if (finishReasonValue == null)
             {
@@ -495,7 +493,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             // 1. Token-based in-task compression trigger
             var compressionApplied = false;
             var compressionKind = GetHistoryCompressionKind(historyCompressionOptions.Mode);
-            if (compressionKind.HasValue && await ShouldRunInTaskCompression(chatMessages, historyCompressionOptions))
+            if (compressionKind.HasValue &&
+                await ShouldRunInTaskCompression(loopUsageDetails, historyCompressionOptions))
             {
                 compressionApplied = true;
                 // 2. Pre-process: uniformly replace error rounds outside the preserve window with summaries
@@ -707,15 +706,20 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
     }
 
-    private async Task<bool> ShouldRunInTaskCompression(List<ChatMessage> chatMessages,
+    private async Task<bool> ShouldRunInTaskCompression(UsageDetails? usageDetails,
         ReactHistoryCompressionOptions options)
     {
+        if (usageDetails?.TotalTokenCount == null)
+        {
+            return false;
+        }
+
         var threshold = options.ReactTokenThresholdPercent;
         if (threshold <= 0) return false;
         var maxContext = Model.MaxContextSize;
         if (maxContext <= 0) return false;
-        var estimateTokens = await _tokensCounter.EstimateTokens(chatMessages);
-        return estimateTokens > threshold * maxContext;
+
+        return usageDetails?.TotalTokenCount.Value > threshold * maxContext;
     }
 
     private async Task PreprocessErrorRoundsAsync(
@@ -856,33 +860,5 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
         /// <summary>上一轮是否触发了历史压缩（压缩会改变消息列表，差值不再可靠）。</summary>
         public bool PrevRoundCompressed { get; set; }
-    }
-
-    /// <summary>
-    /// 利用当前轮次的 InputTokenCount 与上一轮合计的差值，为上一轮的工具结果消息打 token 标记。
-    /// 仅在上一轮未触发压缩时执行，以确保差值语义正确。
-    /// </summary>
-    private static void TryTagPendingObservationMessage(ReactLoopState loopState, UsageDetails? currentUsageDetails)
-    {
-        var pending = loopState.PendingObservationMessage;
-        loopState.PendingObservationMessage = null;
-
-        if (pending == null || loopState.PrevRoundCompressed)
-        {
-            return;
-        }
-
-        var inputCount = currentUsageDetails?.InputTokenCount ?? 0;
-        var prevTotal = loopState.PrevRoundTotalTokens;
-        if (inputCount <= 0 || prevTotal <= 0)
-        {
-            return;
-        }
-
-        var delta = inputCount - prevTotal;
-        if (delta > 0)
-        {
-            pending.TagTokensCounter(delta);
-        }
     }
 }

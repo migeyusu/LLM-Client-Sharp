@@ -61,7 +61,7 @@ public class CheckableFunctionGroupTree : BaseViewModel, IAIFunctionGroup
                 .Where(function =>
                 {
                     var functionName = function.Name;
-                    return this.Functions.Any(model => model.FunctionName == functionName);
+                    return this.Functions.Any(model => model.FunctionName == functionName && model.IsSelected);
                 })
                 .ToArray();
         }

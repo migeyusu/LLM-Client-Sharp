@@ -59,7 +59,7 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
         }
 
         var historicalMessages = preamble.Skip(startIndex).Take(historicalCount).ToArray();
-        var estimatedTokens = await _tokensCounter.EstimateTokens(historicalMessages);
+        var estimatedTokens = await _tokensCounter.CountTokens(historicalMessages);
         var modelMaxContextSize = context.CurrentClient.Model.MaxContextSize;
         var threshold = options.PreambleTokenThresholdPercent * modelMaxContextSize;
         return estimatedTokens > threshold;
@@ -68,21 +68,8 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
     public async Task CompressAsync(ChatHistoryCompressionContext context,
         CancellationToken cancellationToken = default)
     {
-        if (!await ShouldCompress(context))
-        {
-            return;
-        }
-
-        var options = context.Options;
-
         var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory);
         var preamble = segmentation.PreambleMessages;
-
-        // Need at least: system + some historical messages + current user message
-        if (preamble.Count <= 2)
-        {
-            return;
-        }
 
         // Partition preamble into: leading system messages | historical messages | trailing user message
         var systemMessages = new List<ChatMessage>();
@@ -114,24 +101,17 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
             return;
         }
 
-        // Check if compression is needed based on token threshold
-        var estimatedTokens = await _tokensCounter.EstimateTokens(historicalMessages);
-        var modelMaxContextSize = context.CurrentClient.Model.MaxContextSize;
-        var threshold = options.PreambleTokenThresholdPercent * modelMaxContextSize;
-        if (estimatedTokens <= threshold)
-        {
-            return;
-        }
-
         // Summarize historical messages
-        context.Step?.EmitDiagnostic(DiagLevel.Info, $"Summarizing preamble context ({historicalMessages.Count} messages)...");
+        context.Step?.EmitDiagnostic(DiagLevel.Info,
+            $"Summarizing preamble context ({historicalMessages.Count} messages)...");
         var summary = await _summarizer.SummarizeChatMessagesAsync(
             historicalMessages, _summarizer.ConversationHistorySummaryPrompt, CompressionTimeout,
             context.CurrentClient, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(summary))
         {
-            context.Step?.EmitDiagnostic(DiagLevel.Warning, "Preamble summarization returned empty result, skipping compression.");
+            context.Step?.EmitDiagnostic(DiagLevel.Warning,
+                "Preamble summarization returned empty result, skipping compression.");
             return;
         }
 

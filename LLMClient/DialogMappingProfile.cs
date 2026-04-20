@@ -144,24 +144,11 @@ public class DialogMappingProfile : Profile
         CreateMap<DialogFileViewModel, DialogFilePersistModel>()
             .ConvertUsing<AutoMapModelTypeConverter>();
     }
-
-    /// <summary>
-    /// 从 ChatMessage.AdditionalProperties 中只提取 TokensCounter 键，
-    /// 以 Dictionary&lt;string, object?&gt; 写入 ChatMessagePO，防止不可序列化对象污染。
-    /// </summary>
+    
     private static Dictionary<string, object?>? ExtractTokensCounterToPo(AdditionalPropertiesDictionary? props)
     {
-        if (props == null ||
-            !props.TryGetValue(CoreExtension.TokensCounterKey, out var tokenValue) ||
-            tokenValue == null)
-        {
-            return null;
-        }
-
-        return new Dictionary<string, object?>
-        {
-            [CoreExtension.TokensCounterKey] = Convert.ToInt64(tokenValue)
-        };
+        //do nothing
+        return new Dictionary<string, object?>();
     }
 
     /// <summary>

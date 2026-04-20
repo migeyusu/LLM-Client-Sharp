@@ -134,7 +134,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     public void TriggerTextContentUpdate()
     {
-        Messages.ClearTokensCounterTag();
         InvalidateAsyncProperty(nameof(SearchableDocument));
         RawTextContent = null;
         OnPropertyChanged(nameof(RawTextContent));
