@@ -83,6 +83,22 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
                 FunctionTreeSelector.ConnectDefault()
                     .ConnectSource(value.ToolsSource);
                 FunctionTreeSelector.Reset();
+                AvailableAgents.Clear();
+                // Initialize agents
+                var agentTypes = new List<Type>();
+                agentTypes.AddRange(value.SupportedAgents);
+#if DEBUG
+                agentTypes.Add(typeof(TestSuccessAgent));
+                agentTypes.Add(typeof(TestFailedAgent));
+#endif
+
+                foreach (var type in agentTypes)
+                {
+                    var description = type.GetCustomAttribute<DescriptionAttribute>()?.Description ?? type.Name;
+                    AvailableAgents.Add(new AgentDescriptor(description, type));
+                }
+
+                SelectedAgent = AvailableAgents.FirstOrDefault();
             }
         }
     }
@@ -381,26 +397,6 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         _tokensCounter = tokensCounter;
         _agentOption.PropertyChanged += TagDataChanged;
         this.BindClient(modelClient);
-
-        // Initialize agents
-        var agentTypes = new List<Type>
-        {
-            typeof(MiniSweAgent),
-            typeof(NvidiaResearchClient)
-        };
-#if DEBUG
-        agentTypes.Add(typeof(TestSuccessAgent));
-        agentTypes.Add(typeof(TestFailedAgent));
-#endif
-
-        foreach (var type in agentTypes)
-        {
-            var description = type.GetCustomAttribute<DescriptionAttribute>()?.Description ?? type.Name;
-            AvailableAgents.Add(new AgentDescriptor(description, type));
-        }
-
-        SelectedAgent = AvailableAgents.FirstOrDefault();
-
         CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
         OpenExpandedEditorCommand = new ActionCommand(async o =>
         {

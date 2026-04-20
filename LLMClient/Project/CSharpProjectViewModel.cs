@@ -143,9 +143,8 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     private readonly List<Type> _projectAgents =
     [
-        typeof(MiniSweAgent), typeof(NvidiaResearchClient),
         typeof(PlannerAgent), typeof(InspectAgent), typeof(CoderAgent)
     ];
 
-    public override IEnumerable<Type> ProjectAgents => _projectAgents.Concat(IInbuiltAgent.ChildTypes);
+    public override IEnumerable<Type> ProjectAgents => _projectAgents;
 }

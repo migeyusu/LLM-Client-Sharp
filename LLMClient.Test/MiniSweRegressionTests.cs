@@ -591,7 +591,7 @@ public class MiniSweRegressionTests
                 systemMessage, assistantRound1, observationRound1, assistantRound2, observationRound2
             };
 
-            viewItem.EliminateFailedHistoryCommand.Execute(null);
+            viewItem.Response.EliminateFailedHistoryCommand.Execute(null);
 
             var remaining = viewItem.Response.Messages.ToList();
             Assert.Equal(3, remaining.Count);
@@ -631,7 +631,7 @@ public class MiniSweRegressionTests
 
             viewItem.Response.Messages = new List<ChatMessage> { assistantRound1, observationRound1 };
 
-            viewItem.EliminateFailedHistoryCommand.Execute(null);
+            viewItem.Response.EliminateFailedHistoryCommand.Execute(null);
 
             var remaining = viewItem.Response.Messages.ToList();
             Assert.Equal(2, remaining.Count);
@@ -658,7 +658,7 @@ public class MiniSweRegressionTests
 
             viewItem.Response.Messages = new List<ChatMessage> { finalAnswer };
 
-            viewItem.EliminateFailedHistoryCommand.Execute(null);
+            viewItem.Response.EliminateFailedHistoryCommand.Execute(null);
 
             var remaining = viewItem.Response.Messages.ToList();
             Assert.Single(remaining);
@@ -690,7 +690,7 @@ public class MiniSweRegressionTests
 
             viewItem.Response.Messages = new List<ChatMessage> { assistantRound1, observationRound1 };
 
-            viewItem.EliminateFailedHistoryCommand.Execute(null);
+            viewItem.Response.EliminateFailedHistoryCommand.Execute(null);
 
             var remaining = viewItem.Response.Messages.ToList();
             Assert.Equal(2, remaining.Count);

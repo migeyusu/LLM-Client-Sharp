@@ -6,6 +6,8 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Agent;
+using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
@@ -203,6 +205,10 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         window.Content = scrollViewer;
         window.Show();
     });
+    
+    public ICommand EliminateFailedHistoryCommand { get; }
+
+    public ICommand EliminateHistoryCommand { get; }
 
     /// <summary>
     /// 显示请求/响应的原始协议日志（HTTP headers、request body、response body 等）。
@@ -382,11 +388,93 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             field = value;
         }
     } = null;
+    
+    public bool CanEliminate
+    {
+        get
+        {
+            if (!IsResponding && IsInterrupt)
+            {
+                return false;
+            }
+
+            return true;
+        }
+    }
 
 
     protected ResponseViewItemBase()
     {
         CancelCommand = new ActionCommand(_ => CancelRequest(RequestTokenSource));
+        EliminateHistoryCommand = new RelayCommand((() =>
+            {
+                if (Messages.Count() <= 1)
+                {
+                    return;
+                }
+
+                if (!CanEliminate)
+                {
+                    return;
+                }
+
+                //只保留最后一条消息
+                Messages = [Messages.Last()];
+                InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+            }),
+            () => !IsResponding && Messages.Any());
+        EliminateFailedHistoryCommand = new RelayCommand((() =>
+        {
+            if (!Messages.Any())
+            {
+                return;
+            }
+
+            if (!CanEliminate)
+            {
+                return;
+            }
+
+            try
+            {
+                var messages = Messages.ToList();
+                var segmentation = ReactHistorySegmenter.Segment(messages);
+                var keptMessages = new List<ChatMessage>(segmentation.PreambleMessages);
+
+                foreach (var round in segmentation.Rounds)
+                {
+                    var functionCalls = round.AssistantMessages
+                        .SelectMany(m => m.Contents.OfType<FunctionCallContent>())
+                        .ToList();
+
+                    if (functionCalls.Count == 0)
+                    {
+                        keptMessages.AddRange(round.Messages);
+                        continue;
+                    }
+
+                    var resultDict = round.ObservationMessages
+                        .SelectMany(m => m.Contents.OfType<FunctionResultContent>())
+                        .ToDictionary(r => r.CallId);
+
+                    var allFailed = functionCalls.All(call =>
+                        resultDict.TryGetValue(call.CallId, out var result) && result.Exception != null);
+
+                    if (!allFailed)
+                    {
+                        keptMessages.AddRange(round.Messages);
+                    }
+                }
+
+                Messages = keptMessages;
+                InvalidateAsyncProperty(nameof(RawResponseViewItem.FullDocument));
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"[EliminateFailedHistory Error]: {ex.Message}");
+                MessageBoxes.Error(ex.Message, "清除失败历史失败");
+            }
+        }), () => !IsResponding && Messages.Any());
     }
 
     protected static async Task PopulateDocumentAsync(FlowDocument flowDocument,
@@ -614,4 +702,5 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             // Request already completed and CTS already disposed.
         }
     }
+    
 }
