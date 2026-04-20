@@ -9,11 +9,9 @@ using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
-
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
-
 using LLMClient.Persistence;
 using LLMClient.Rag;
 using LLMClient.ToolCall;
@@ -323,7 +321,7 @@ public class UnitTest1
         var client = new EmptyLlmModelClient();
         var viewModelFactory = serviceProvider.GetService<IViewModelFactory>()!;
         var dialogViewModel =
-            new DialogViewModel("test", string.Empty, client, mapper, 
+            new DialogViewModel("test", string.Empty, client, mapper,
                 new Summarizer(new GlobalOptions()),
                 new GlobalOptions(), viewModelFactory);
         var multiResponseViewItem = new ParallelResponseViewItem(dialogViewModel);
@@ -372,8 +370,8 @@ public class UnitTest1
         var persisted = mapper.Map<ClientResponsePersistItem>(responseViewItem);
 
         Assert.NotNull(persisted.LastSuccessfulUsage);
-        Assert.Equal(12_000, persisted.LastSuccessfulUsage!.InputTokenCount);
-        Assert.Equal(13_000, persisted.LastSuccessfulUsage.TotalTokenCount);
+        Assert.Equal(12_000, persisted.LastSuccessfulUsage!.UsageDetails.InputTokenCount);
+        Assert.Equal(13_000, persisted.LastSuccessfulUsage.UsageDetails.TotalTokenCount);
     }
 
     [Fact]
@@ -381,11 +379,15 @@ public class UnitTest1
     {
         var persisted = new ClientResponsePersistItem
         {
-            LastSuccessfulUsage = new UsageDetails
+            LastSuccessfulUsage = new ContextUsagePO()
             {
-                InputTokenCount = 12_000,
-                OutputTokenCount = 1_000,
-                TotalTokenCount = 13_000,
+                MaxContextLength = 0,
+                UsageDetails = new UsageDetails
+                {
+                    InputTokenCount = 12_000,
+                    OutputTokenCount = 1_000,
+                    TotalTokenCount = 13_000,
+                }
             }
         };
 
@@ -394,8 +396,8 @@ public class UnitTest1
 
         Assert.NotNull(restored);
         Assert.NotNull(restored.LastSuccessfulUsage);
-        Assert.Equal(12_000, restored.LastSuccessfulUsage!.InputTokenCount);
-        Assert.Equal(13_000, restored.LastSuccessfulUsage.TotalTokenCount);
+        Assert.Equal(12_000, restored.LastSuccessfulUsage!.UsageDetails.InputTokenCount);
+        Assert.Equal(13_000, restored.LastSuccessfulUsage.UsageDetails.TotalTokenCount);
     }
 
     [Fact]

@@ -69,16 +69,4 @@ public class AgentTaskResult : CallResult
         ProtocolLog ??= new StringBuilder();
         ProtocolLog.Append(right.ProtocolLog);
     }
-
-    private static UsageDetails? CloneUsageDetails(UsageDetails? usage)
-    {
-        return usage == null
-            ? null
-            : new UsageDetails
-            {
-                InputTokenCount = usage.InputTokenCount,
-                OutputTokenCount = usage.OutputTokenCount,
-                TotalTokenCount = usage.TotalTokenCount,
-            };
-    }
 }
