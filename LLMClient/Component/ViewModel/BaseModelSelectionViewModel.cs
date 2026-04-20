@@ -27,7 +27,7 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
             OnPropertyChanged();
             if (value != null)
             {
-                Mapper.Map(value, Parameters);
+                LLMClient.Extension.ParamMapper.Map(value, Parameters);
             }
             else
             {
@@ -37,10 +37,6 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
             OnPropertyChanged(nameof(Model));
         }
     }
-
-    private IMapper Mapper => MapperLazy.Value;
-
-    private Lazy<IMapper> MapperLazy => new(() => ServiceLocator.GetService<IMapper>()!);
 
     public bool ShowModelParams
     {
@@ -75,13 +71,11 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
         }
     }
 
-    private ICommand? _createByModelCommand;
-
     public ICommand CreateByModelCommand
     {
         get
         {
-            return _createByModelCommand ??= new RelayCommand<IEndpointModel>(o =>
+            return field ??= new RelayCommand<IEndpointModel>(o =>
             {
                 try
                 {
@@ -109,7 +103,7 @@ public abstract class BaseModelSelectionViewModel : BaseViewModel, IParameterize
             throw new Exception("Please select model.");
         }
 
-        var chatClient = this.CreateChatClient(Mapper);
+        var chatClient = this.CreateChatClient();
         if (chatClient == null)
         {
             throw new Exception("Create chat client failed.");

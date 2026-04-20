@@ -43,11 +43,11 @@ public class NvidiaResearchClient : ResearchClient
         if (!_pool.TryTake(out var client))
         {
             client = _model.CreateChatClient()
-                ?? throw new InvalidOperationException("Failed to create chat client.");
+                     ?? throw new InvalidOperationException("Failed to create chat client.");
         }
         else
         {
-            Extension.GetModelParamsMapper().Map(_model.Parameters, client.Parameters);
+            Extension.ParamMapper.Map(_model.Parameters, client.Parameters);
         }
 
         client.Parameters.Streaming = false;
@@ -80,7 +80,8 @@ public class NvidiaResearchClient : ResearchClient
         var totalPrice = 0.0;
         var usageLock = new object();
 
-        async Task<T> WithAgentAsync<T>(Func<PromptBasedAgent, CancellationToken, Task<T>> action, CancellationToken token)
+        async Task<T> WithAgentAsync<T>(Func<PromptBasedAgent, CancellationToken, Task<T>> action,
+            CancellationToken token)
         {
             var client = RentClient();
             var agent = new PromptBasedAgent(client);
@@ -92,6 +93,7 @@ public class NvidiaResearchClient : ResearchClient
                     totalUsage.Add(agent.Usage);
                     totalPrice += agent.Price ?? 0;
                 }
+
                 return result;
             }
             finally
@@ -105,7 +107,8 @@ public class NvidiaResearchClient : ResearchClient
         // ====================================================================
         yield return EmitProgress($"Received research request: '{prompt}'");
 
-        var isPromptValid = await WithAgentAsync((agent, token) => CheckIfPromptIsValidAsync(agent, prompt, token), cancellationToken);
+        var isPromptValid = await WithAgentAsync((agent, token) => CheckIfPromptIsValidAsync(agent, prompt, token),
+            cancellationToken);
         if (!isPromptValid)
         {
             throw new Exception("The prompt is not a valid document research prompt. Please try again.");
@@ -113,10 +116,12 @@ public class NvidiaResearchClient : ResearchClient
 
         yield return EmitProgress("Analyzing the research request...");
         var (taskPrompt, formatPrompt) =
-            await WithAgentAsync((agent, token) => PerformPromptDecompositionAsync(agent, prompt, token), cancellationToken);
+            await WithAgentAsync((agent, token) => PerformPromptDecompositionAsync(agent, prompt, token),
+                cancellationToken);
         yield return EmitProgress($"Prompt analysis completed. Task: '{taskPrompt}'");
 
-        var topics = await WithAgentAsync((agent, token) => GenerateTopicsAsync(agent, taskPrompt, token), cancellationToken);
+        var topics = await WithAgentAsync((agent, token) => GenerateTopicsAsync(agent, taskPrompt, token),
+            cancellationToken);
         yield return EmitProgress($"Task analysis completed. Will be researching {topics.Count} topics.");
 
         var topicRelevantSegments = new ConcurrentDictionary<string, List<string>>();
@@ -136,7 +141,9 @@ public class NvidiaResearchClient : ResearchClient
             topicToken.ThrowIfCancellationRequested();
             await progressWriter.WriteAsync($"Researching '{topic}'", topicToken);
 
-            var searchPhrases = await WithAgentAsync((agent, token) => ProduceSearchPhrasesAsync(agent, taskPrompt, topic, token), topicToken);
+            var searchPhrases =
+                await WithAgentAsync((agent, token) => ProduceSearchPhrasesAsync(agent, taskPrompt, topic, token),
+                    topicToken);
             await progressWriter.WriteAsync($"Will invoke {searchPhrases.Count} search phrases to research '{topic}'.",
                 topicToken);
 
@@ -159,32 +166,33 @@ public class NvidiaResearchClient : ResearchClient
                     CancellationToken = topicToken,
                     MaxDegreeOfParallelism = maxUrlFetchParallelism
                 };
-                await Parallel.ForEachAsync(skTextSearchResult.Results, urlFetchOptions, async (textSearchResult, resultToken) =>
-                {
-                    var objLink = textSearchResult.Link;
-                    if (string.IsNullOrWhiteSpace(objLink) || string.IsNullOrWhiteSpace(textSearchResult.Value))
+                await Parallel.ForEachAsync(skTextSearchResult.Results, urlFetchOptions,
+                    async (textSearchResult, resultToken) =>
                     {
-                        return;
-                    }
+                        var objLink = textSearchResult.Link;
+                        if (string.IsNullOrWhiteSpace(objLink) || string.IsNullOrWhiteSpace(textSearchResult.Value))
+                        {
+                            return;
+                        }
 
-                    if (!processedUrls.TryAdd(objLink, 0))
-                    {
-                        return;
-                    }
+                        if (!processedUrls.TryAdd(objLink, 0))
+                        {
+                            return;
+                        }
 
-                    const int maxRetries = 3;
+                        const int maxRetries = 3;
 #if RELEASE
                     const int delayMilliseconds = 5000;
 #endif
-                    var attempt = 0;
-                    Exception? exception = null;
-                    var fetchSucceeded = false;
+                        var attempt = 0;
+                        Exception? exception = null;
+                        var fetchSucceeded = false;
 
-                    while (attempt < maxRetries)
-                    {
-                        attempt++;
-                        try
+                        while (attempt < maxRetries)
                         {
+                            attempt++;
+                            try
+                            {
 #if RELEASE
                             using var timeoutTokenSource =
                                 new CancellationTokenSource(TimeSpan.FromMilliseconds(delayMilliseconds));
@@ -192,34 +200,36 @@ public class NvidiaResearchClient : ResearchClient
                                 timeoutTokenSource.Token);
                             var fetchToken = linkedTokenSource.Token;
 #else
-                            var fetchToken = resultToken;
+                                var fetchToken = resultToken;
 #endif
-                            var text = await _urlFetcherPlugin.FetchTextAsync(objLink, cancellationToken: fetchToken);
-                            if (string.IsNullOrWhiteSpace(text))
-                            {
-                                continue;
+                                var text = await _urlFetcherPlugin.FetchTextAsync(objLink,
+                                    cancellationToken: fetchToken);
+                                if (string.IsNullOrWhiteSpace(text))
+                                {
+                                    continue;
+                                }
+
+                                var index = Interlocked.Increment(ref sourceIndex);
+                                var internalSearchResult =
+                                    new InternalSearchResult(objLink, textSearchResult.Name ?? "", text);
+                                allResultsByIndex[index] = internalSearchResult;
+                                originalSearchResults.Add((internalSearchResult, index));
+                                fetchSucceeded = true;
+                                break;
                             }
-
-                            var index = Interlocked.Increment(ref sourceIndex);
-                            var internalSearchResult = new InternalSearchResult(objLink, textSearchResult.Name ?? "", text);
-                            allResultsByIndex[index] = internalSearchResult;
-                            originalSearchResults.Add((internalSearchResult, index));
-                            fetchSucceeded = true;
-                            break;
+                            catch (Exception e)
+                            {
+                                exception = e;
+                            }
                         }
-                        catch (Exception e)
+
+                        if (!fetchSucceeded)
                         {
-                            exception = e;
+                            processedUrls.TryRemove(objLink, out _);
+                            Trace.TraceWarning(
+                                $"Failed to fetch content from URL '{objLink}'. {exception?.HierarchicalMessage()}");
                         }
-                    }
-
-                    if (!fetchSucceeded)
-                    {
-                        processedUrls.TryRemove(objLink, out _);
-                        Trace.TraceWarning(
-                            $"Failed to fetch content from URL '{objLink}'. {exception?.HierarchicalMessage()}");
-                    }
-                });
+                    });
 
                 if (!originalSearchResults.Any())
                 {
@@ -233,7 +243,8 @@ public class NvidiaResearchClient : ResearchClient
                 {
                     topicToken.ThrowIfCancellationRequested();
 
-                    var relevantSegments = await WithAgentAsync((agent, token) => FindRelevantSegmentsAsync(agent, taskPrompt,
+                    var relevantSegments = await WithAgentAsync((agent, token) => FindRelevantSegmentsAsync(agent,
+                        taskPrompt,
                         topic,
                         searchResult.Content,
                         searchResultUrlIndex,
@@ -288,11 +299,15 @@ public class NvidiaResearchClient : ResearchClient
 
         var reportSegments = topicRelevantSegments.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         var initialReport =
-            await WithAgentAsync((agent, token) => ProduceReportAsync(agent, taskPrompt, formatPrompt, reportSegments, token), cancellationToken);
+            await WithAgentAsync(
+                (agent, token) => ProduceReportAsync(agent, taskPrompt, formatPrompt, reportSegments, token),
+                cancellationToken);
         yield return EmitProgress("Initial report generated. Formatting and finalizing...");
 
         var consistentReport =
-            await WithAgentAsync((agent, token) => EnsureFormatIsRespectedAsync(agent, formatPrompt, initialReport, token), cancellationToken);
+            await WithAgentAsync(
+                (agent, token) => EnsureFormatIsRespectedAsync(agent, formatPrompt, initialReport, token),
+                cancellationToken);
 
         var finalReportBuilder = new StringBuilder(consistentReport);
         finalReportBuilder.AppendLine("\n\n---");

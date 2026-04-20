@@ -23,6 +23,8 @@ using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LLMClient;
 
@@ -485,8 +487,13 @@ public static class Extension
 
     #endregion
 
-    public static ILLMChatClient? CreateChatClient(this IParameterizedLLMModel parameterizedLlmModel,
-        IMapper mapper)
+    public static IMapper ParamMapper => ParameterMapperLazy.Value;
+
+    private static readonly Lazy<IMapper> ParameterMapperLazy = new(() =>
+        new MapperConfiguration(expression => expression.CreateMap<IModelParams, IModelParams>(),
+            NullLoggerFactory.Instance).CreateMapper());
+
+    public static ILLMChatClient? CreateChatClient(this IParameterizedLLMModel parameterizedLlmModel)
     {
         var client = parameterizedLlmModel.Model.CreateChatClient();
         if (client == null)
@@ -494,7 +501,7 @@ public static class Extension
             return null;
         }
 
-        mapper.Map(parameterizedLlmModel.Parameters, client.Parameters);
+        ParameterMapperLazy.Value.Map(parameterizedLlmModel.Parameters, client.Parameters);
         return client;
     }
 
