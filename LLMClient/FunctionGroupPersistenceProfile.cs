@@ -31,7 +31,8 @@ public class FunctionGroupPersistenceProfile : Profile
             .Include<ProjectAwarenessPlugin, ProjectAwarenessPluginPersistModel>()
             .Include<SymbolSemanticPlugin, SymbolSemanticPluginPersistModel>()
             .Include<CodeSearchPlugin, CodeSearchPluginPersistModel>()
-            .Include<CodeReadingPlugin, CodeReadingPluginPersistModel>();
+            .Include<CodeReadingPlugin, CodeReadingPluginPersistModel>()
+            .Include<CodeMutationPlugin, CodeMutationPluginPersistModel>();
 
         CreateMap<AIFunctionGroupDefinitionPersistModel, IAIFunctionGroup>()
             .Include<StdIOServerItemPersistModel, IAIFunctionGroup>()
@@ -44,7 +45,8 @@ public class FunctionGroupPersistenceProfile : Profile
             .Include<ProjectAwarenessPluginPersistModel, IAIFunctionGroup>()
             .Include<SymbolSemanticPluginPersistModel, IAIFunctionGroup>()
             .Include<CodeSearchPluginPersistModel, IAIFunctionGroup>()
-            .Include<CodeReadingPluginPersistModel, IAIFunctionGroup>();
+            .Include<CodeReadingPluginPersistModel, IAIFunctionGroup>()
+            .Include<CodeMutationPluginPersistModel, IAIFunctionGroup>();
 
         CreateMap<McpServerItem, McpServerItemPersistModel>()
             .Include<StdIOServerItem, StdIOServerItemPersistModel>()
@@ -124,6 +126,10 @@ public class FunctionGroupPersistenceProfile : Profile
             .ConstructUsing((src, ctx) => ResolveProjectScopedFunctionGroup(src, ctx));
         CreateMap<CodeReadingPlugin, CodeReadingPluginPersistModel>();
         CreateMap<CodeReadingPluginPersistModel, IAIFunctionGroup>()
+            .ConstructUsing((src, ctx) => ResolveProjectScopedFunctionGroup(src, ctx));
+
+        CreateMap<CodeMutationPlugin, CodeMutationPluginPersistModel>();
+        CreateMap<CodeMutationPluginPersistModel, IAIFunctionGroup>()
             .ConstructUsing((src, ctx) => ResolveProjectScopedFunctionGroup(src, ctx));
 
         CreateMap<CheckableFunctionGroupTree, AIFunctionGroupPersistObject>()

@@ -16,6 +16,7 @@ namespace LLMClient.Persistence;
 [JsonDerivedType(typeof(SymbolSemanticPluginPersistModel), "symbolsemanticplugin")]
 [JsonDerivedType(typeof(CodeSearchPluginPersistModel), "codesearchplugin")]
 [JsonDerivedType(typeof(CodeReadingPluginPersistModel), "codereadingplugin")]
+[JsonDerivedType(typeof(CodeMutationPluginPersistModel), "codemutationplugin")]
 public abstract class AIFunctionGroupDefinitionPersistModel;
 
 public abstract class McpServerItemPersistModel : AIFunctionGroupDefinitionPersistModel
@@ -89,4 +90,6 @@ public sealed class SymbolSemanticPluginPersistModel : AIFunctionGroupDefinition
 public sealed class CodeSearchPluginPersistModel : AIFunctionGroupDefinitionPersistModel;
 
 public sealed class CodeReadingPluginPersistModel : AIFunctionGroupDefinitionPersistModel;
+
+public sealed class CodeMutationPluginPersistModel : AIFunctionGroupDefinitionPersistModel;
 
