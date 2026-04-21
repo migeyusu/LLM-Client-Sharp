@@ -11,7 +11,6 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Proc;
 using LLMClient.Endpoints.OpenAIAPI;
-using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
@@ -283,7 +282,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     cancellationToken.ThrowIfCancellationRequested();
 
                     chatContext.CurrentStep = step;
-
+                    compressionContext.Step = step;
                     // 启动后台生产任务
                     var producerTask = ProduceStepAsync(
                         step, chatContext, chatClient, chatMessages, requestOptions,
@@ -316,6 +315,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
                     if (result.IsCompleted || result.Exception != null)
                         break;
+                    step = new ReactStep();
                 }
             }
         }
@@ -428,6 +428,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
             loopMessages.AddRange(preResponseMessages);
             loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
+            if (loopUsageDetails != null)
+            {
+                if (loopUsageDetails.AdditionalCounts?.TryGetValue("PromptTokensDetails.CachedTokens",
+                        out var cachedTokens) == true)
+                {
+                    loopUsageDetails.InputTokenCount += cachedTokens;
+                }
+            }
+
             finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();
             var finishReasonValue = finishReason?.Value;
             if (finishReasonValue == null)
@@ -505,7 +514,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             {
                 context.CurrentTokens = loopUsageDetails?.TotalTokenCount;
                 context.ChatHistory = chatMessages;
-                context.Step = step;
                 context.CurrentRound = reactRoundNumber;
                 await InTaskCompressIfNeedAsync(strategy, context, cancellationToken);
             }
