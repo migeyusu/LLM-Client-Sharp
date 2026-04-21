@@ -24,7 +24,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 {
     public Guid Id = Guid.NewGuid();
 
-    private ObservableCollection<string> _byPassPaths = new ObservableCollection<string>();
+    private ObservableCollection<string> _byPassPaths = new();
 
     /// <summary>
     /// indicates the list of directories that do not require special permissions to access.
