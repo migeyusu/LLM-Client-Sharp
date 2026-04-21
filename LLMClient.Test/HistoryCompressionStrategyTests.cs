@@ -309,8 +309,8 @@ public class HistoryCompressionStrategyTests
             CreateTextResponse("investigated auth module, fixed token refresh bug"),
             CreateTextResponse("done"));
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.None);
-        client.ModelInfo.HistoryCompression.PreambleCompression = true;
-        client.ModelInfo.HistoryCompression.PreambleTokenThresholdPercent = 0.0001;
+        client.ModelInfo.HistoryCompression?.PreambleCompression = true;
+        client.ModelInfo.HistoryCompression?.PreambleTokenThresholdPercent = 0.0001;
 
         // Build history: system + previous task messages + current user message
         var chatHistory = new List<ChatMessage>
@@ -400,8 +400,8 @@ public class HistoryCompressionStrategyTests
             CreateTextResponse("all done"));
 
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.ObservationMasking);
-        client.ModelInfo.HistoryCompression.SummaryErrorLoop = true;
-        client.ModelInfo.HistoryCompression.PreserveRecentRounds = 1;
+        client.ModelInfo.HistoryCompression?.SummaryErrorLoop = true;
+        client.ModelInfo.HistoryCompression?.PreserveRecentRounds = 1;
 
         var requestContext = new RequestContext
         {
@@ -830,8 +830,8 @@ public class HistoryCompressionStrategyTests
             CreateToolCallResponse("call-ok", "good value"),
             CreateTextResponse("all done"));
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.None);
-        client.ModelInfo.HistoryCompression.SummaryErrorLoop = true;
-        client.ModelInfo.HistoryCompression.PreserveRecentRounds = 1;
+        client.ModelInfo.HistoryCompression?.SummaryErrorLoop = true;
+        client.ModelInfo.HistoryCompression?.PreserveRecentRounds = 1;
 
         var requestContext = new RequestContext
         {

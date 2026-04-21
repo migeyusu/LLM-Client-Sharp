@@ -10,8 +10,6 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using Windows.Services.Maps.LocalSearch;
 using CommunityToolkit.Mvvm.Input;
-
-
 using LLMClient.Persistence;
 using Microsoft.SemanticKernel;
 using Microsoft.Xaml.Behaviors.Core;
@@ -98,7 +96,7 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
                 var renderer = CustomMarkdownRenderer.EditRenderer(Document);
                 await renderer.RenderMarkdown(textContentText);
                 return Document;
-            }, Document);
+            }, Document) ?? Document;
         }
     }
 
@@ -132,6 +130,7 @@ public class TextContentCodeEditViewModel : TextContentEditViewModel
                 {
                     richTextBox.Paste();
                 }
+
                 args.Handled = true;
             }
             else if (Clipboard.ContainsFileDropList())

@@ -11,14 +11,14 @@ namespace LLMClient.Test;
 
 public class ThreadedDocumentHost : HwndHost
 {
-    private Thread _uiThread;
-    private HwndSource _hwndSource;
+    private Thread? _uiThread;
+    private HwndSource? _hwndSource;
     private readonly ManualResetEvent _hwndCreated = new ManualResetEvent(false);
     private IntPtr _childHandle = IntPtr.Zero;
     private readonly string _xamlContent;
 
     // 用于在子线程上延迟加载文档
-    private FlowDocumentScrollViewer _viewer;
+    private FlowDocumentScrollViewer? _viewer;
 
     public ThreadedDocumentHost(string xamlContent)
     {
@@ -89,7 +89,7 @@ public class ThreadedDocumentHost : HwndHost
                 doc.IsHyphenationEnabled = false;
                 doc.PagePadding = new Thickness(20);
 
-                _viewer.Document = doc;
+                _viewer?.Document = doc;
             }
         }
         catch (Exception ex)
@@ -99,7 +99,7 @@ public class ThreadedDocumentHost : HwndHost
             {
                 Foreground = Brushes.Red
             }));
-            _viewer.Document = errorDoc;
+            _viewer?.Document = errorDoc;
         }
     }
 

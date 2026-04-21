@@ -41,7 +41,7 @@ public sealed class CodeSearchTestFixture : IDisposable
         CreateTestFiles();
 
         // ✅ 配置 Mock Analyzer 返回真实的 IndexService
-        var mockAnalyzer = new Mock<RoslynProjectAnalyzer>(null, null, null);
+        var mockAnalyzer = new Mock<RoslynProjectAnalyzer>();//todo:
         mockAnalyzer.SetupGet(a => a.IndexService).Returns(IndexService);
 
         Context = new SolutionContext(mockAnalyzer.Object);

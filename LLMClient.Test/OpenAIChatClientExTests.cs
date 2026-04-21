@@ -13,6 +13,7 @@ using OpenAI;
 
 namespace LLMClient.Test;
 
+[Obsolete]
 [Experimental("SCME0001")]
 public class OpenAiChatClientExTests
 {

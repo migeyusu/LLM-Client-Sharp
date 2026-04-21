@@ -12,36 +12,45 @@ namespace LLMClient.Project;
 
 public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
 {
-    private string? _name;
-
     public string? Name
     {
-        get => _name;
+        get;
         set
         {
-            if (value == _name) return;
-            _name = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
 
-
-    private string? _description = string.Empty;
 
     /// <summary>
     /// sample:this is a *** project
     /// </summary>
     public string? Description
     {
-        get => _description;
+        get;
         set
         {
-            if (value == _description) return;
-            _description = value;
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    } = string.Empty;
+
+    /// <summary>
+    /// 会自动搜索skills
+    /// </summary>
+    public bool EnableSkills
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
-
 
     public ICommand SelectProjectFolderCommand => new RelayCommand(() =>
     {
@@ -89,17 +98,15 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
 
     public ObservableCollection<string> AllowedFolderPaths { get; set; } = new();
 
-    private string? _rootPath;
-
     /// <summary>
     /// 项目路径，项目所在文件夹路径
     /// </summary>
     public string? RootPath
     {
-        get => _rootPath;
+        get;
         set
         {
-            if (value == _rootPath) return;
+            if (value == field) return;
             this.ClearError();
             if (string.IsNullOrEmpty(value))
             {
@@ -112,12 +119,12 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
                 this.AddError("FolderPath does not exist.");
             }
 
-            if (!string.IsNullOrEmpty(_rootPath))
+            if (!string.IsNullOrEmpty(field))
             {
-                AllowedFolderPaths.Remove(_rootPath);
+                AllowedFolderPaths.Remove(field);
             }
 
-            _rootPath = value;
+            field = value;
             OnPropertyChanged();
             if (!AllowedFolderPaths.Contains(value))
             {
@@ -130,18 +137,16 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
 
     private ProjectType _type = ProjectType.CSharp;
 
-    private bool _includeAgentsMd = true;
-
     public bool IncludeAgentsMd
     {
-        get => _includeAgentsMd;
+        get;
         set
         {
-            if (value == _includeAgentsMd) return;
-            _includeAgentsMd = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = true;
 
     public ProjectType Type
     {
@@ -159,13 +164,15 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
 
     private static ThemedIcon CppIcon => LocalThemedIcon.FromPackIcon(PackIconKind.LanguageCpp);
 
+    private static ThemedIcon DefaultIcon => LocalThemedIcon.FromPackIcon(PackIconKind.CodeTags);
+
     public ThemedIcon Icon
     {
         get => _type switch
         {
             ProjectType.CSharp => CSharpIcon,
             ProjectType.Cpp => CppIcon,
-            _ => CSharpIcon,
+            _ => DefaultIcon,
         };
     }
 
@@ -180,11 +187,13 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         if (string.IsNullOrEmpty(Name))
         {
             this.AddError("Name cannot be null or empty.", nameof(Name));
+            return false;
         }
 
         if (string.IsNullOrEmpty(RootPath))
         {
             this.AddError("FolderPath cannot be null or empty.", nameof(RootPath));
+            return false;
         }
 
         if (!AllowedFolderPaths.Any())

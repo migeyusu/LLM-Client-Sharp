@@ -29,9 +29,9 @@ public class BaseViewModel : INotifyPropertyChanged
     /// <summary>
     /// 获取异步属性值。如果之前通过Set赋值但未提供工厂，此处会自动附加工厂方法。
     /// </summary>
-    protected T GetAsyncProperty<T>(
+    protected T? GetAsyncProperty<T>(
         Func<Task<T>> calculateAsync,
-        T defaultValue = default(T),
+        T? defaultValue = default(T),
         [CallerMemberName] string? propertyName = null)
     {
         if (string.IsNullOrEmpty(propertyName))
@@ -53,7 +53,7 @@ public class BaseViewModel : INotifyPropertyChanged
     /// 设置异步属性值。支持在没有工厂方法的情况下初始化值（如DTO映射）。
     /// </summary>
     protected bool SetAsyncProperty<T>(
-        T value, T defaultValue = default(T),
+        T value, T? defaultValue = default,
         [CallerMemberName] string? propertyName = null)
     {
         if (string.IsNullOrEmpty(propertyName))
@@ -129,8 +129,8 @@ public class BaseViewModel : INotifyPropertyChanged
 
     private class AsyncPropertyState<T> : IAsyncPropertyState
     {
-        private T _value;
-        private readonly T _defaultValue;
+        private T? _value;
+        private readonly T? _defaultValue;
         private readonly BaseViewModel _viewModel;
         private readonly string _propertyName;
         
@@ -148,7 +148,7 @@ public class BaseViewModel : INotifyPropertyChanged
 
         public AsyncPropertyState(
             Func<Task<T>>? calculateAsync,
-            T defaultValue,
+            T? defaultValue,
             BaseViewModel viewModel,
             string propertyName)
         {
@@ -171,7 +171,7 @@ public class BaseViewModel : INotifyPropertyChanged
 
         public bool IsGenerated => _isLoaded;
 
-        public T GetValue()
+        public T? GetValue()
         {
             // 1. 如果已加载，直接返回
             if (_isLoaded) return _value;

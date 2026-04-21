@@ -102,12 +102,17 @@ public class UnitTest1
     [Fact]
     public void ChatMapping_AdditionalProperties_RoundTrip()
     {
-        var chatMessage = new ChatMessage(ChatRole.Assistant, "Hello World!");
-        chatMessage.AdditionalProperties["llmclient.react.round"] = 3;
-        chatMessage.AdditionalProperties["llmclient.react.kind"] = "Observation";
-        chatMessage.AdditionalProperties["custom.bool"] = true;
-        chatMessage.AdditionalProperties["custom.long"] = 42L;
-        chatMessage.AdditionalProperties["custom.double"] = 3.14;
+        var chatMessage = new ChatMessage(ChatRole.Assistant, "Hello World!")
+        {
+            AdditionalProperties = new AdditionalPropertiesDictionary
+            {
+                ["llmclient.react.round"] = 3,
+                ["llmclient.react.kind"] = "Observation",
+                ["custom.bool"] = true,
+                ["custom.long"] = 42L,
+                ["custom.double"] = 3.14
+            }
+        };
 
         var mapper = serviceProvider.GetService<IMapper>();
 
@@ -248,7 +253,7 @@ public class UnitTest1
     [Fact]
     public void FunctionCallGeneratorSerialize()
     {
-        var projectPersistModel = new CppProjectPersistModel()
+        var projectPersistModel = new GeneralProjectPersistModel()
         {
             Sessions =
             [
@@ -315,7 +320,7 @@ public class UnitTest1
         };
         var options = FileBasedSessionBase.SerializerOption;
         var serialize = JsonSerializer.Serialize(projectPersistModel, options);
-        var callContent = JsonSerializer.Deserialize<CppProjectPersistModel>(serialize, options);
+        var callContent = JsonSerializer.Deserialize<ProjectPersistModel>(serialize, options);
         Assert.NotNull(callContent);
     }
 
@@ -413,8 +418,8 @@ public class UnitTest1
         var persisted = mapper.Map<ClientResponsePersistItem>(responseViewItem);
 
         Assert.NotNull(persisted.LastSuccessfulUsage);
-        Assert.Equal(12_000, persisted.LastSuccessfulUsage!.UsageDetails.InputTokenCount);
-        Assert.Equal(13_000, persisted.LastSuccessfulUsage.UsageDetails.TotalTokenCount);
+        Assert.Equal(12_000, persisted.LastSuccessfulUsage?.UsageDetails?.InputTokenCount);
+        Assert.Equal(13_000, persisted.LastSuccessfulUsage?.UsageDetails?.TotalTokenCount);
     }
 
     [Fact]
@@ -439,8 +444,8 @@ public class UnitTest1
 
         Assert.NotNull(restored);
         Assert.NotNull(restored.LastSuccessfulUsage);
-        Assert.Equal(12_000, restored.LastSuccessfulUsage!.UsageDetails.InputTokenCount);
-        Assert.Equal(13_000, restored.LastSuccessfulUsage.UsageDetails.TotalTokenCount);
+        Assert.Equal(12_000, restored.LastSuccessfulUsage?.UsageDetails?.InputTokenCount);
+        Assert.Equal(13_000, restored.LastSuccessfulUsage?.UsageDetails?.TotalTokenCount);
     }
 
     [Fact]

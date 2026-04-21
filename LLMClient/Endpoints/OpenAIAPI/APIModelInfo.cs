@@ -427,13 +427,13 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
         }
     } = false;
 
-    public ReactHistoryCompressionOptions? HistoryCompression
+    public ReactHistoryCompressionOptions HistoryCompression
     {
         get;
         set
         {
             if (ReferenceEquals(value, field)) return;
-            field = value ?? new ReactHistoryCompressionOptions();
+            field = value;
             OnPropertyChanged();
         }
     } = new();

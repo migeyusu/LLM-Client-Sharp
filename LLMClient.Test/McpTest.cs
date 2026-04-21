@@ -73,6 +73,11 @@ public class McpTest
         };
 
         using var process = Process.Start(startInfo);
+        if (process == null)
+        {
+            return;
+        }
+
         process.WaitForExit();
 
         var output = process.StandardOutput.ReadToEnd();

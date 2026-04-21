@@ -100,7 +100,7 @@ public class SymbolSemanticServiceTests
         var results = svc.SearchSymbols("UserService");
 
         var top = Assert.Single(results.Where(r => r.Name == "UserService" && r.Kind == "Class"));
-        Assert.Equal(1.0, top.Score);
+        Assert.Equal(1.0d, top.Score);
     }
 
     [Fact]

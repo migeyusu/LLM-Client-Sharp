@@ -17,7 +17,7 @@ public class OpenAIClientEx : OpenAIClient
         _options = options;
         _treatNullChoicesAsEmptyResponse = treatNullChoicesAsEmptyResponse;
     }
-
+    
     public override ChatClient GetChatClient(string model)
     {
         return new OpenAIChatClientEx(model, _credential, this._options, _treatNullChoicesAsEmptyResponse);

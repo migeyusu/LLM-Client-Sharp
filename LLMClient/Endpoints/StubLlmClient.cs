@@ -246,7 +246,7 @@ public class StubLlmClient : ILLMChatClient
         }
     }
 
-    public ILLMAPIEndpoint Endpoint { get; }
+    public ILLMAPIEndpoint Endpoint { get; } = new EmptyLLMEndpoint();
 
     // ── 内部模拟数据结构 ──
 

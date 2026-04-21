@@ -66,6 +66,10 @@ public class PromptContext
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             await analyzer.LoadSolutionAsync(SolutionPath);
+            if (!analyzer.IsLoaded)
+            {
+                return;
+            }
             var summary = analyzer.SolutionInfo;
             _output.WriteLine($"First analysis completed in {stopwatch.ElapsedMilliseconds}ms");
             stopwatch.Restart();
@@ -83,6 +87,7 @@ public class PromptContext
             };
 
             var formatter = new MarkdownSummaryFormatter(formatterOptions);
+            
             var output = formatter.Format(summary);
 
             // 输出到文件

@@ -32,8 +32,8 @@ public sealed class CodeSearchServiceTests : IClassFixture<CodeSearchTestFixture
         Assert.Equal(pattern, result.Query);
         Assert.Equal("Text", result.SearchMode);
         Assert.True(result.TotalMatches >= 2); // UserService.cs and AuthService.cs
-        Assert.True(result.Results.Any(r => r.FilePath.Contains("UserService.cs")));
-        Assert.True(result.Results.Any(r => r.FilePath.Contains("AuthService.cs")));
+        Assert.Contains(result.Results, r => r.FilePath.Contains("UserService.cs"));
+        Assert.Contains(result.Results, r => r.FilePath.Contains("AuthService.cs"));
     }
 
     [Fact]
@@ -381,7 +381,7 @@ public sealed class CodeSearchServiceTests : IClassFixture<CodeSearchTestFixture
         Assert.NotNull(result);
         Assert.InRange(result.Results.Count, 0, 50); // MaxSemanticResults = 50
     }
-    
+
     // ── 新增边界测试 ──────────────────────────────────────────────────
 
     [Theory]

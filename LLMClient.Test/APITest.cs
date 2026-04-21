@@ -35,9 +35,8 @@ public class APITest
             httpMessageHandlerStub.ResponseToReturn = httpResponseMessage;
             /*IChatClient chatClient = new OpenAIService(new OpenAIOptions() { ApiKey = "asdf", DefaultModelId = "asdf", },
                 httpClient){};*/
-            
-            
-            
+
+
             var openAiClient = new OpenAIClientEx(new ApiKeyCredential("apiToken"), new OpenAIClientOptions()
             {
                 Endpoint = new Uri("https://api.openai.net/v1/"),
@@ -53,10 +52,14 @@ public class APITest
                 var updates = await chatClient.GetStreamingResponseAsync([]).ToArrayAsync();
                 foreach (var chatResponseUpdate in updates)
                 {
-                    var rawRepresentation = (StreamingChatCompletionUpdate)chatResponseUpdate.RawRepresentation;
+                    var rawRepresentation = (StreamingChatCompletionUpdate?)chatResponseUpdate.RawRepresentation;
+                    if (rawRepresentation == null)
+                    {
+                        return;
+                    }
+
                     using (var jsonDocument = JsonDocument.Parse(rawRepresentation.Patch.ToString("J")))
                     {
-                        
                     }
 
                     Debugger.Break();

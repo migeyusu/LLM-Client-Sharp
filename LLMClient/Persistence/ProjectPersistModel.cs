@@ -31,6 +31,10 @@ public abstract class ProjectPersistModel
     [JsonPropertyName("Tasks")] public ProjectSessionPersistModel[]? Sessions { get; set; }
 }
 
+public class GeneralProjectPersistModel : ProjectPersistModel
+{
+}
+
 public class CSharpProjectPersistModel : ProjectPersistModel
 {
     public string? SolutionFilePath { get; set; }
