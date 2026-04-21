@@ -52,6 +52,7 @@
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
         <PackageReference Include="MaterialDesignThemes" Version="5.3.1-ci1296" />
         <PackageReference Include="Microsoft.Agents.AI" Version="1.1.0" />
+        <PackageReference Include="Microsoft.Agents.AI.Hosting" Version="1.1.0-preview.260410.1" />
         <PackageReference Include="Microsoft.Build" Version="18.4.0" ExcludeAssets="runtime" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Build.Framework" Version="18.4.0" ExcludeAssets="runtime" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Build.Locator" Version="1.11.2" />

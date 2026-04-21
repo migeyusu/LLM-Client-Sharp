@@ -15,6 +15,24 @@ public class AgentTaskResult : CallResult
     /// </summary>
     public override int ValidCallTimes { get; set; } = 0;
 
+    private List<ChatMessage> MessageList { get; set; } = [];
+
+    public override IEnumerable<ChatMessage> Messages
+    {
+        get => MessageList;
+        set
+        {
+            if (value is List<ChatMessage> chatMessages)
+            {
+                MessageList = chatMessages;
+            }
+            else
+            {
+                MessageList = value.ToList();
+            }
+        }
+    }
+
     public string? FirstTextResponse
     {
         get { return Messages?.FirstOrDefault()?.Text; }
@@ -43,13 +61,12 @@ public class AgentTaskResult : CallResult
             this.Usage.Add(right.Usage ?? new UsageDetails());
         }
 
-        Messages = Messages.Concat(right.Messages).ToList();
-
+        MessageList.AddRange(right.Messages);
         if (right.Annotations != null)
         {
             if (Annotations == null)
             {
-                Annotations = new List<ChatAnnotation>(right.Annotations);
+                Annotations = right.Annotations.ToList();
             }
             else
             {

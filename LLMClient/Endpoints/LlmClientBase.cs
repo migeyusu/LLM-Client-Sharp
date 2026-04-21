@@ -11,6 +11,7 @@ using LLMClient.Component.ViewModel;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Proc;
 using LLMClient.Endpoints.OpenAIAPI;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
@@ -346,7 +347,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         UsageDetails? loopUsageDetails = null;
         Exception? exception = null;
         ChatFinishReason? finishReason = null;
-        var responseMessages = new List<ChatMessage>();
+        var loopMessages = new List<ChatMessage>();
         var preUpdates = new List<ChatResponseUpdate>();
         var stepResult = new StepResult() { MaxContextTokens = Model.MaxContextSize };
         int? latency = null;
@@ -370,6 +371,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
 
                 preResponse = preUpdates.MergeResponse();
+                preUpdates.Clear();
             }
             else
             {
@@ -424,8 +426,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            chatMessages.AddRange(preResponseMessages);
-            responseMessages.AddRange(preResponseMessages);
+            loopMessages.AddRange(preResponseMessages);
             loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
             finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();
             var finishReasonValue = finishReason?.Value;
@@ -496,8 +497,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             functionResultMessage = new ChatMessage();
             ReactHistorySegmenter.TagMessage(functionResultMessage, reactRoundNumber,
                 ReactHistoryMessageKind.Observation, agentId);
-            chatMessages.Add(functionResultMessage);
-            responseMessages.Add(functionResultMessage);
+            loopMessages.Add(functionResultMessage);
+            chatMessages.AddRange(loopMessages);
             await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
                 preFunctionCalls, step, cancellationToken);
             if (strategy != null)
@@ -514,21 +515,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
         catch (AgentFlowException agentFlowException)
         {
-            if (preUpdates.Count != 0)
-            {
-                responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
-            }
-
             if (functionResultMessage is { Contents.Count: 0 })
             {
-                chatMessages.Remove(functionResultMessage);
-                responseMessages.Remove(functionResultMessage);
+                loopMessages.Remove(functionResultMessage);
             }
 
             if (agentFlowException.Messages.Count > 0)
             {
-                chatMessages.AddRange(agentFlowException.Messages);
-                responseMessages.AddRange(agentFlowException.Messages);
+                loopMessages.AddRange(agentFlowException.Messages);
             }
 
             stepResult.IsCompleted = true;
@@ -536,16 +530,13 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
         catch (OperationCanceledException operationCanceledException)
         {
-            if (preUpdates.Count != 0)
-            {
-                responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
-            }
-
+            AddLeaveHistory();
             exception = operationCanceledException;
             stepResult.IsCompleted = true;
         }
         catch (HttpOperationException httpOperationException)
         {
+            AddLeaveHistory();
             exception = new Exception($"Response Content: {httpOperationException.ResponseContent}",
                 httpOperationException);
             if (exception.Message.Contains("context_length_exceeded", StringComparison.OrdinalIgnoreCase))
@@ -557,6 +548,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
         catch (ClientResultException clientResultException)
         {
+            AddLeaveHistory();
             var errorMessage = string.Empty;
             var pipelineResponse = clientResultException.GetRawResponse();
             var s = pipelineResponse?.Content.ToString();
@@ -577,32 +569,20 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
         catch (LlmInvalidRequestException llmInvalidRequestException)
         {
-            if (preUpdates.Count != 0)
-            {
-                responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
-            }
-
+            AddLeaveHistory();
             stepResult.IsCompleted = false;
             exception = llmInvalidRequestException;
         }
         catch (InvalidOperationException invalidOperationException)
             when (IsMalformedOpenAiCompatibleResponse(invalidOperationException))
         {
-            if (preUpdates.Count != 0)
-            {
-                responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
-            }
-
+            AddLeaveHistory();
             exception = CreateMalformedOpenAiCompatibleResponseException(chatContext, invalidOperationException);
             stepResult.IsCompleted = false;
         }
         catch (Exception ex)
         {
-            if (preUpdates.Count != 0)
-            {
-                responseMessages.AddRange(preUpdates.ToChatResponse().Messages);
-            }
-
+            AddLeaveHistory();
             exception = new ChatCriticalException(
                 "An unhandled exception occurred during response processing.", ex);
             stepResult.IsCompleted = false;
@@ -614,9 +594,19 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             stepResult.FinishReason = finishReason;
             stepResult.Latency = latency ?? 0;
             stepResult.Duration = (int)_durationStopwatch.Elapsed.TotalSeconds;
-            stepResult.Messages = responseMessages;
+            stepResult.Messages = loopMessages;
             stepResult.ProtocolLog = step.ProtocolLog;
             step.Complete(stepResult);
+        }
+
+        return;
+
+        void AddLeaveHistory()
+        {
+            if (preUpdates.Count != 0)
+            {
+                loopMessages.AddRange(preUpdates.ToChatResponse().Messages);
+            }
         }
     }
 

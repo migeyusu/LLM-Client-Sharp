@@ -9,7 +9,7 @@ namespace LLMClient.Abstraction;
 public class CallResult : IResponse
 {
     public UsageDetails? Usage { get; set; }
-    
+
     public ChatFinishReason? FinishReason { get; set; }
 
     public long Tokens
@@ -37,7 +37,7 @@ public class CallResult : IResponse
         }
     }
 
-    public IEnumerable<ChatMessage> Messages { get; set; } = [];
+    public virtual IEnumerable<ChatMessage> Messages { get; set; } = [];
 
     public StringBuilder? ProtocolLog { get; set; }
 

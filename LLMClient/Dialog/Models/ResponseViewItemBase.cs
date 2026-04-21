@@ -2,11 +2,9 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
 using System.Windows.Documents;
-using System.Windows.Forms;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
-using LLMClient.Agent;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
 using LLMClient.Component.Utility;
@@ -206,7 +204,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         window.Content = scrollViewer;
         window.Show();
     });
-    
+
     public ICommand EliminateFailedHistoryCommand { get; }
 
     public ICommand EliminateHistoryCommand { get; }
@@ -217,7 +215,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     public static ICommand ShowProtocolLogCommand { get; } = new RelayCommand<ResponseViewItemBase>(ShowProtocolLog);
 
     public static ICommand SaveProtocolLogCommand { get; } = new RelayCommand<ResponseViewItemBase>(SaveProtocolLog);
-    
+
     private readonly Lazy<SearchableDocument> _lazyDocument = new(() => new SearchableDocument(new FlowDocument()));
 
     public SearchableDocument? SearchableDocument
@@ -405,7 +403,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             field = value;
         }
     } = null;
-    
+
     public bool CanEliminate
     {
         get
@@ -437,7 +435,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
                 //只保留最后一条消息
                 Messages = [Messages.Last()];
-                InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
+                InvalidateAsyncProperty(nameof(SearchableDocument));
             }),
             () => !IsResponding && Messages.Any());
         EliminateFailedHistoryCommand = new RelayCommand((() =>
@@ -484,7 +482,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                 }
 
                 Messages = keptMessages;
-                InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
+                InvalidateAsyncProperty(nameof(SearchableDocument));
             }
             catch (Exception ex)
             {
@@ -579,15 +577,13 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         IAsyncEnumerable<ReactStep> steps)
     {
         var agentTaskResult = new AgentTaskResult();
-        var loopCount = 0;
         Loops.Clear();
         LoopCount = 0;
         CurrentStatus = null;
         await foreach (var step in steps)
         {
-            loopCount++;
-            LoopCount = loopCount;
-            var loopVm = new ReactLoopViewModel { LoopNumber = loopCount };
+            LoopCount++;
+            var loopVm = new ReactLoopViewModel { LoopNumber = LoopCount };
             Loops.Add(loopVm);
 
             await foreach (var evt in step)
@@ -663,8 +659,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             }
         }
 
-        var lastContextUsage = Loops.LastOrDefault()?.ContextUsage;
-        LastContextUsage = lastContextUsage;
+        LastContextUsage = Loops.LastOrDefault(model => model.ContextUsage != null)?.ContextUsage;
         ProtocolLog = agentTaskResult.ProtocolLog?.ToString();
         return agentTaskResult;
     }
@@ -719,5 +714,4 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             // Request already completed and CTS already disposed.
         }
     }
-    
 }
