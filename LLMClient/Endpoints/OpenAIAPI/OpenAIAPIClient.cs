@@ -1,10 +1,11 @@
-﻿#define REQUEST
+#define REQUEST
 
 using System.Net.Http;
 using AutoMapper;
 using Betalgo.Ranul.OpenAI;
 using Betalgo.Ranul.OpenAI.Managers;
 using LLMClient.Abstraction;
+using LLMClient.Log;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -105,11 +106,14 @@ public class OpenAIAPIClient : LlmClientBase
             var serviceProvider = services.BuildServiceProvider();
             var chatClient = serviceProvider.GetRequiredService<IChatClient>();
 
-            return new ChatClientBuilder(chatClient)
-                .UseLogging(LoggerFactory)
-                .UseOpenTelemetry(LoggerFactory, sourceName: "OpenAIAPI",
+            var protocolLogLoggerFactory = LoggerFactory.CreateLoggerFactoryWithProtocolLog();
+            var builtClient = new ChatClientBuilder(chatClient)
+                .UseLogging(protocolLogLoggerFactory)
+                .UseOpenTelemetry(protocolLogLoggerFactory, sourceName: "OpenAIAPI",
                     config => { config.EnableSensitiveData = true; })
                 .Build();
+
+            return builtClient;
         }
         catch (Exception e)
         {
