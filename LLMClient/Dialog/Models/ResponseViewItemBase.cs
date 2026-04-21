@@ -434,8 +434,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                 }
 
                 //只保留最后一条消息
-                Messages = [Messages.Last()];
-                InvalidateAsyncProperty(nameof(SearchableDocument));
+                ApplyMessages( [Messages.Last()]);
             }),
             () => !IsResponding && Messages.Any());
         EliminateFailedHistoryCommand = new RelayCommand((() =>
@@ -481,8 +480,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                     }
                 }
 
-                Messages = keptMessages;
-                InvalidateAsyncProperty(nameof(SearchableDocument));
+                ApplyMessages(keptMessages);
             }
             catch (Exception ex)
             {
@@ -567,6 +565,12 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         var flowDocument = new FlowDocument();
         await PopulateDocumentAsync(flowDocument, Messages, Annotations);
         return flowDocument;
+    }
+
+    public void ApplyMessages(IEnumerable<ChatMessage> messages)
+    {
+        this.Messages = messages;
+        InvalidateAsyncProperty(nameof(SearchableDocument));
     }
 
     /// <summary>

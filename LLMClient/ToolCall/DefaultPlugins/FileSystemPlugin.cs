@@ -217,7 +217,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         List<EditOperation> edits)
     {
         var fullPath = await ValidateAndResolvePathAsync(path);
-        var originalContent = await File.ReadAllTextAsync(fullPath);
+        var originalContent = await FileReader.ReadAllTextAsync(fullPath);
         var updatedContent = ApplyEditsToContent(originalContent, edits);
 
         return BuildDiffReport(path, originalContent, updatedContent, applied: false);
@@ -233,7 +233,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         List<EditOperation> edits)
     {
         var fullPath = await ValidateAndResolvePathAsync(path);
-        var originalContent = await File.ReadAllTextAsync(fullPath);
+        var originalContent = await FileReader.ReadAllTextAsync(fullPath);
 
         // Existing path-level permission check
         var permissionMessage = new StringBuilder();
@@ -646,7 +646,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
     {
         if (lineCount <= 0) return string.Empty;
 
-        var lines = await File.ReadAllLinesAsync(path);
+        var lines = await FileReader.ReadAllLinesAsync(path);
         if (lines.Length == 0) return string.Empty;
 
         int startLine = Math.Max(1, lines.Length - lineCount + 1);

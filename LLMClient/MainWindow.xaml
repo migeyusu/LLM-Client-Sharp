@@ -16,7 +16,6 @@
                               xmlns:abstraction="clr-namespace:LLMClient.Abstraction"
                               xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
                               xmlns:configuration="clr-namespace:LLMClient.Configuration"
-                              xmlns:toolCall="clr-namespace:LLMClient.ToolCall"
                               xmlns:llmClient="clr-namespace:LLMClient"
                               xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
                               xmlns:converters="clr-namespace:LLMClient.Component.Converters"
@@ -29,6 +28,7 @@
                               xmlns:controls1="clr-namespace:LLMClient.Dialog.Controls"
                               xmlns:mcp="clr-namespace:LLMClient.ToolCall.MCP"
                               xmlns:research1="clr-namespace:LLMClient.Agent.Research"
+                              xmlns:dialogModels="clr-namespace:LLMClient.Dialog.Models"
                               mc:Ignorable="d"
                               FontFamily="Microsoft YaHei UI"
                               Title="LLM Client"
@@ -95,6 +95,18 @@
                                                             Style="{StaticResource DialogContentControlStyle}">
                                         <dialog:AgentOptionView MaxWidth="800"
                                                                 MaxHeight="200" />
+                                    </HeaderedContentControl>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type dialogModels:LoopsPrunerViewModel}">
+                                    <HeaderedContentControl Header="修改消息列表"
+                                                            Style="{StaticResource DialogContentControlStyle}">
+                                        <ItemsControl>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type dialogModels:ReactLoopViewModel}">
+                                                    
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
                                     </HeaderedContentControl>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type viewModel:ArchiveManagerViewModel}">
