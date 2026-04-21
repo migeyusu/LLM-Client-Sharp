@@ -1,21 +1,29 @@
 namespace LLMClient.ContextEngineering.Tools.Models;
 
 /// <summary>
-/// Result of a code mutation operation.
+/// Result of a successful code mutation operation.
 /// All file paths are returned as solution-relative strings.
 /// </summary>
 public record MutationResult
 {
-    public bool Success { get; init; }
-    public string? Error { get; init; }
+    public bool Success { get; init; } = true;
     public List<string> AffectedFiles { get; init; } = [];
     public string? Message { get; init; }
 
     public static MutationResult Ok(List<string> affectedFiles, string? message = null)
-        => new() { Success = true, AffectedFiles = affectedFiles, Message = message };
+        => new() { AffectedFiles = affectedFiles, Message = message };
+}
 
-    public static MutationResult Fail(string error)
-        => new() { Success = false, Error = error };
+/// <summary>
+/// Preview of a single file change before it is written to disk.
+/// Passed to the diff approval callback in <see cref="CodeMutationService"/>.
+/// </summary>
+public record CodeMutationFilePreview
+{
+    public required string RelativePath { get; init; }
+    public required string AbsolutePath { get; init; }
+    public required string OriginalContent { get; init; }
+    public required string UpdatedContent { get; init; }
 }
 
 /// <summary>

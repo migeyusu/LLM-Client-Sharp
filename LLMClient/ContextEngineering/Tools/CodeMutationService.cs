@@ -14,11 +14,28 @@ namespace LLMClient.ContextEngineering.Tools;
 /// via <see cref="RoslynProjectAnalyzer.ApplySolutionChanges"/>.
 /// Symbol IDs consumed by this service follow the same convention as SymbolSemanticService:
 /// <see cref="SymbolInfo.SymbolId"/> = UniqueId (Documentation Comment ID) or Signature fallback.
+/// 
+/// Error handling follows the same pattern as CodeSearchService and SymbolSemanticService:
+/// all failure paths throw exceptions; FunctionCallEngine captures and formats them.
+/// 
+/// Before any change is written, a diff preview is built and passed to
+/// <see cref="RequestDiffApprovalCallback"/> for user confirmation.
 /// </summary>
 public sealed class CodeMutationService
 {
     private readonly SolutionContext _context;
     private readonly ILogger<CodeMutationService>? _logger;
+
+    /// <summary>
+    /// Optional callback invoked with a diff preview of every affected file.
+    /// Return true to proceed and write changes; false to abort with UnauthorizedAccessException.
+    /// </summary>
+    public Func<List<CodeMutationFilePreview>, Task<bool>>? RequestDiffApprovalCallback { get; set; }
+
+    /// <summary>
+    /// Fallback callback used when diff preview cannot be built (e.g. old solution is unavailable).
+    /// </summary>
+    public Func<string, Task<bool>>? RequestPermissionCallback { get; set; }
 
     public CodeMutationService(SolutionContext context, ILogger<CodeMutationService>? logger = null)
     {
@@ -35,22 +52,19 @@ public sealed class CodeMutationService
     {
         var sym = ResolveSymbolOrThrow(symbolId);
         var solution = _context.RequireRoslynSolutionOrThrow();
-        var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct);
-        if (roslynSym == null)
-            return MutationResult.Fail($"Could not resolve Roslyn symbol for '{symbolId}'.");
+        var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct)
+                        ?? throw new InvalidOperationException(
+                            $"Could not resolve Roslyn symbol for '{symbolId}'.");
 
 #pragma warning disable CS0618 // Renamer.RenameSymbolAsync overload with OptionSet is obsolete
         var newSolution = await Renamer.RenameSymbolAsync(solution, roslynSym, newName, null, ct);
 #pragma warning restore CS0618
-        var success = _context.Analyzer.ApplySolutionChanges(newSolution);
-        if (success)
-        {
-            await ReanalyzeAsync(ct);
-        }
 
-        return success
-            ? MutationResult.Ok([_context.ToSolutionRelative(sym.FilesPath.First())])
-            : MutationResult.Fail("Workspace refused to apply rename changes. The symbol may be referenced in metadata or locked files.");
+        await ApplyChangesOrThrowAsync(newSolution, "rename",
+            [_context.ToSolutionRelative(sym.FilesPath.First())], ct);
+        await ReanalyzeAsync(ct);
+
+        return MutationResult.Ok([_context.ToSolutionRelative(sym.FilesPath.First())]);
     }
 
     // ── add_using ─────────────────────────────────────────────────────────
@@ -62,14 +76,15 @@ public sealed class CodeMutationService
     {
         var absPath = _context.ResolveToAbsolute(filePath);
         var solution = _context.RequireRoslynSolutionOrThrow();
-        var docId = solution.GetDocumentIdsWithFilePath(absPath).FirstOrDefault();
-        if (docId == null)
-            return MutationResult.Fail($"File '{filePath}' not found in the loaded solution.");
+        var docId = solution.GetDocumentIdsWithFilePath(absPath).FirstOrDefault()
+                    ?? throw new FileNotFoundException(
+                        $"File '{filePath}' not found in the loaded solution.", absPath);
 
         var document = solution.GetDocument(docId)!;
         var root = await document.GetSyntaxRootAsync(ct);
         if (root is not CompilationUnitSyntax compilationUnit)
-            return MutationResult.Fail("File is not a compilation unit (e.g. top-level statements without a compilation root).");
+            throw new InvalidOperationException(
+                "File is not a compilation unit (e.g. top-level statements without a compilation root).");
 
         var normalizedNs = namespaceName.Trim();
         var existing = compilationUnit.Usings.Any(u => u.Name?.ToString() == normalizedNs);
@@ -81,12 +96,11 @@ public sealed class CodeMutationService
         var newDoc = document.WithSyntaxRoot(newRoot);
         var newSolution = newDoc.Project.Solution;
 
-        var success = _context.Analyzer.ApplySolutionChanges(newSolution);
-        if (success) await ReanalyzeAsync(ct);
+        await ApplyChangesOrThrowAsync(newSolution, "add using",
+            [_context.ToSolutionRelative(absPath)], ct);
+        await ReanalyzeAsync(ct);
 
-        return success
-            ? MutationResult.Ok([_context.ToSolutionRelative(absPath)])
-            : MutationResult.Fail("Workspace refused to apply using changes.");
+        return MutationResult.Ok([_context.ToSolutionRelative(absPath)]);
     }
 
     // ── delete_symbol ─────────────────────────────────────────────────────
@@ -97,45 +111,43 @@ public sealed class CodeMutationService
     {
         var sym = ResolveSymbolOrThrow(symbolId);
         var solution = _context.RequireRoslynSolutionOrThrow();
-        var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct);
-        if (roslynSym == null)
-            return MutationResult.Fail($"Could not resolve Roslyn symbol for '{symbolId}'.");
+        var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct)
+                        ?? throw new InvalidOperationException(
+                            $"Could not resolve Roslyn symbol for '{symbolId}'.");
 
-        var sourceLoc = roslynSym.Locations.FirstOrDefault(l => l.IsInSource);
-        if (sourceLoc == null)
-            return MutationResult.Fail("Symbol has no source location.");
+        var sourceLoc = roslynSym.Locations.FirstOrDefault(l => l.IsInSource)
+                        ?? throw new InvalidOperationException(
+                            "Symbol has no source location.");
 
-        var doc = solution.GetDocument(sourceLoc.SourceTree);
-        if (doc == null)
-            return MutationResult.Fail("Could not locate document for the symbol.");
+        var doc = solution.GetDocument(sourceLoc.SourceTree)
+                  ?? throw new InvalidOperationException(
+                      "Could not locate document for the symbol.");
 
         var root = await doc.GetSyntaxRootAsync(ct);
-        var node = root?.FindNode(sourceLoc.SourceSpan);
-        if (node == null)
-            return MutationResult.Fail("Could not locate syntax node for the symbol.");
+        var node = root?.FindNode(sourceLoc.SourceSpan)
+                   ?? throw new InvalidOperationException(
+                       "Could not locate syntax node for the symbol.");
 
         var declNode = node.AncestorsAndSelf().FirstOrDefault(static n =>
             n is MemberDeclarationSyntax or
             BaseTypeDeclarationSyntax or
             DelegateDeclarationSyntax or
-            EnumDeclarationSyntax);
+            EnumDeclarationSyntax)
+            ?? throw new InvalidOperationException(
+                "Could not locate a deletable declaration node.");
 
-        if (declNode == null)
-            return MutationResult.Fail("Could not locate a deletable declaration node.");
-
-        var newRoot = root!.RemoveNode(declNode, SyntaxRemoveOptions.KeepNoTrivia);
-        if (newRoot == null)
-            return MutationResult.Fail("Removing the node would produce an invalid syntax tree.");
+        var newRoot = root!.RemoveNode(declNode, SyntaxRemoveOptions.KeepNoTrivia)
+                      ?? throw new InvalidOperationException(
+                          "Removing the node would produce an invalid syntax tree.");
 
         var newDoc = doc.WithSyntaxRoot(newRoot);
         var newSolution = newDoc.Project.Solution;
 
-        var success = _context.Analyzer.ApplySolutionChanges(newSolution);
-        if (success) await ReanalyzeAsync(ct);
+        await ApplyChangesOrThrowAsync(newSolution, "delete",
+            [_context.ToSolutionRelative(doc.FilePath!)], ct);
+        await ReanalyzeAsync(ct);
 
-        return success
-            ? MutationResult.Ok([_context.ToSolutionRelative(doc.FilePath!)])
-            : MutationResult.Fail("Workspace refused to apply deletion.");
+        return MutationResult.Ok([_context.ToSolutionRelative(doc.FilePath!)]);
     }
 
     // ── replace_symbol_body ───────────────────────────────────────────────
@@ -147,31 +159,30 @@ public sealed class CodeMutationService
     {
         var sym = ResolveSymbolOrThrow(symbolId);
         var solution = _context.RequireRoslynSolutionOrThrow();
-        var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct);
-        if (roslynSym == null)
-            return MutationResult.Fail($"Could not resolve Roslyn symbol for '{symbolId}'.");
+        var roslynSym = await ResolveRoslynSymbolAsync(sym, solution, ct)
+                        ?? throw new InvalidOperationException(
+                            $"Could not resolve Roslyn symbol for '{symbolId}'.");
 
-        var sourceLoc = roslynSym.Locations.FirstOrDefault(l => l.IsInSource);
-        if (sourceLoc == null)
-            return MutationResult.Fail("Symbol has no source location.");
+        var sourceLoc = roslynSym.Locations.FirstOrDefault(l => l.IsInSource)
+                        ?? throw new InvalidOperationException(
+                            "Symbol has no source location.");
 
-        var doc = solution.GetDocument(sourceLoc.SourceTree);
-        if (doc == null)
-            return MutationResult.Fail("Could not locate document for the symbol.");
+        var doc = solution.GetDocument(sourceLoc.SourceTree)
+                  ?? throw new InvalidOperationException(
+                      "Could not locate document for the symbol.");
 
         var root = await doc.GetSyntaxRootAsync(ct);
-        var node = root?.FindNode(sourceLoc.SourceSpan);
-        if (node == null)
-            return MutationResult.Fail("Could not locate syntax node for the symbol.");
+        var node = root?.FindNode(sourceLoc.SourceSpan)
+                   ?? throw new InvalidOperationException(
+                       "Could not locate syntax node for the symbol.");
 
         var declNode = node.AncestorsAndSelf().FirstOrDefault(static n =>
             n is MemberDeclarationSyntax or
             BaseTypeDeclarationSyntax or
             DelegateDeclarationSyntax or
-            EnumDeclarationSyntax);
-
-        if (declNode == null)
-            return MutationResult.Fail("Could not locate a replaceable declaration node.");
+            EnumDeclarationSyntax)
+            ?? throw new InvalidOperationException(
+                "Could not locate a replaceable declaration node.");
 
         // Parse the new body into a standalone compilation unit so we can extract the declaration
         var newTree = CSharpSyntaxTree.ParseText(newBody, cancellationToken: ct);
@@ -189,7 +200,7 @@ public sealed class CodeMutationService
         }
 
         if (newDecl == null)
-            return MutationResult.Fail(
+            throw new ArgumentException(
                 "Provided newBody does not contain a valid member or type declaration. " +
                 "Ensure the text includes the full declaration including modifiers and signature.");
 
@@ -197,12 +208,11 @@ public sealed class CodeMutationService
         var newDoc = doc.WithSyntaxRoot(newDocRoot);
         var newSolution = newDoc.Project.Solution;
 
-        var success = _context.Analyzer.ApplySolutionChanges(newSolution);
-        if (success) await ReanalyzeAsync(ct);
+        await ApplyChangesOrThrowAsync(newSolution, "replace",
+            [_context.ToSolutionRelative(doc.FilePath!)], ct);
+        await ReanalyzeAsync(ct);
 
-        return success
-            ? MutationResult.Ok([_context.ToSolutionRelative(doc.FilePath!)])
-            : MutationResult.Fail("Workspace refused to apply replacement.");
+        return MutationResult.Ok([_context.ToSolutionRelative(doc.FilePath!)]);
     }
 
     // ── apply_semantic_edit ───────────────────────────────────────────────
@@ -217,14 +227,14 @@ public sealed class CodeMutationService
 
         var absPath = _context.ResolveToAbsolute(filePath);
         var solution = _context.RequireRoslynSolutionOrThrow();
-        var docId = solution.GetDocumentIdsWithFilePath(absPath).FirstOrDefault();
-        if (docId == null)
-            return MutationResult.Fail($"File '{filePath}' not found in the loaded solution.");
+        var docId = solution.GetDocumentIdsWithFilePath(absPath).FirstOrDefault()
+                    ?? throw new FileNotFoundException(
+                        $"File '{filePath}' not found in the loaded solution.", absPath);
 
         var document = solution.GetDocument(docId)!;
-        var root = await document.GetSyntaxRootAsync(ct);
-        if (root == null)
-            return MutationResult.Fail("Could not get syntax root for the file.");
+        var root = await document.GetSyntaxRootAsync(ct)
+                   ?? throw new InvalidOperationException(
+                       "Could not get syntax root for the file.");
 
         var currentRoot = root;
 
@@ -236,12 +246,12 @@ public sealed class CodeMutationService
                 case "Replace":
                 {
                     if (string.IsNullOrEmpty(edit.OldText) || edit.NewText == null)
-                        return MutationResult.Fail("Replace edit requires both oldText and newText.");
+                        throw new ArgumentException(
+                            "Replace edit requires both oldText and newText.");
 
-                    var matchNode = FindNodeByText(currentRoot, edit.OldText);
-                    if (matchNode == null)
-                        return MutationResult.Fail(
-                            $"Could not find node matching oldText: {Summarize(edit.OldText)}");
+                    var matchNode = FindNodeByText(currentRoot, edit.OldText)
+                                    ?? throw new InvalidOperationException(
+                                        $"Could not find node matching oldText: {Summarize(edit.OldText)}");
 
                     var newTree = CSharpSyntaxTree.ParseText(edit.NewText, cancellationToken: ct);
                     var newParsed = await newTree.GetRootAsync(ct);
@@ -253,16 +263,16 @@ public sealed class CodeMutationService
                 case "Delete":
                 {
                     if (string.IsNullOrEmpty(edit.OldText))
-                        return MutationResult.Fail("Delete edit requires oldText.");
+                        throw new ArgumentException(
+                            "Delete edit requires oldText.");
 
-                    var matchNode = FindNodeByText(currentRoot, edit.OldText);
-                    if (matchNode == null)
-                        return MutationResult.Fail(
-                            $"Could not find node matching oldText: {Summarize(edit.OldText)}");
+                    var matchNode = FindNodeByText(currentRoot, edit.OldText)
+                                    ?? throw new InvalidOperationException(
+                                        $"Could not find node matching oldText: {Summarize(edit.OldText)}");
 
-                    var removed = currentRoot.RemoveNode(matchNode, SyntaxRemoveOptions.KeepNoTrivia);
-                    if (removed == null)
-                        return MutationResult.Fail("Deleting the node would produce an invalid syntax tree.");
+                    var removed = currentRoot.RemoveNode(matchNode, SyntaxRemoveOptions.KeepNoTrivia)
+                                  ?? throw new InvalidOperationException(
+                                      "Deleting the node would produce an invalid syntax tree.");
                     currentRoot = removed;
                     break;
                 }
@@ -271,17 +281,16 @@ public sealed class CodeMutationService
                 case "InsertAfter":
                 {
                     if (string.IsNullOrEmpty(edit.OldText) || edit.NewText == null)
-                        return MutationResult.Fail(
+                        throw new ArgumentException(
                             "Insert edit requires both oldText (anchor) and newText.");
 
-                    var anchorNode = FindNodeByText(currentRoot, edit.OldText);
-                    if (anchorNode == null)
-                        return MutationResult.Fail(
-                            $"Could not find anchor node: {Summarize(edit.OldText)}");
+                    var anchorNode = FindNodeByText(currentRoot, edit.OldText)
+                                     ?? throw new InvalidOperationException(
+                                         $"Could not find anchor node: {Summarize(edit.OldText)}");
 
-                    var parent = anchorNode.Parent;
-                    if (parent == null)
-                        return MutationResult.Fail("Anchor node has no parent.");
+                    var parent = anchorNode.Parent
+                                 ?? throw new InvalidOperationException(
+                                     "Anchor node has no parent.");
 
                     var newTree = CSharpSyntaxTree.ParseText(edit.NewText, cancellationToken: ct);
                     var newParsed = await newTree.GetRootAsync(ct);
@@ -296,19 +305,19 @@ public sealed class CodeMutationService
                 }
 
                 default:
-                    return MutationResult.Fail($"Unknown edit kind: {kind}. Accepted: Replace, Delete, InsertBefore, InsertAfter.");
+                    throw new ArgumentException(
+                        $"Unknown edit kind: {kind}. Accepted: Replace, Delete, InsertBefore, InsertAfter.");
             }
         }
 
         var newDoc = document.WithSyntaxRoot(currentRoot);
         var newSolution = newDoc.Project.Solution;
 
-        var success = _context.Analyzer.ApplySolutionChanges(newSolution);
-        if (success) await ReanalyzeAsync(ct);
+        await ApplyChangesOrThrowAsync(newSolution, "apply semantic edits",
+            [_context.ToSolutionRelative(absPath)], ct);
+        await ReanalyzeAsync(ct);
 
-        return success
-            ? MutationResult.Ok([_context.ToSolutionRelative(absPath)])
-            : MutationResult.Fail("Workspace refused to apply semantic edits.");
+        return MutationResult.Ok([_context.ToSolutionRelative(absPath)]);
     }
 
     // ── helpers ───────────────────────────────────────────────────────────
@@ -338,6 +347,88 @@ public sealed class CodeMutationService
         }
 
         return null;
+    }
+
+    private async Task ApplyChangesOrThrowAsync(
+        Solution newSolution,
+        string operationName,
+        List<string> affectedFiles,
+        CancellationToken ct)
+    {
+        var oldSolution = _context.Analyzer.CurrentRawSolution;
+
+        // 1) Try diff-aware confirmation first
+        if (RequestDiffApprovalCallback != null && oldSolution != null)
+        {
+            var previews = await BuildFilePreviewsAsync(oldSolution, newSolution, ct);
+            if (previews.Count > 0)
+            {
+                var approved = await RequestDiffApprovalCallback(previews);
+                if (!approved)
+                    throw new UnauthorizedAccessException(
+                        $"Permission denied for {operationName}. User rejected the mutation.");
+            }
+        }
+        // 2) Fallback to simple permission message
+        else if (RequestPermissionCallback != null)
+        {
+            var permissionMsg = $"CodeMutation ({operationName}) on: {string.Join(", ", affectedFiles)}";
+            var approved = await RequestPermissionCallback(permissionMsg);
+            if (!approved)
+                throw new UnauthorizedAccessException(
+                    $"Permission denied for {operationName}. User rejected the mutation.");
+        }
+
+        var success = _context.Analyzer.ApplySolutionChanges(newSolution);
+        if (!success)
+            throw new InvalidOperationException(
+                $"Workspace refused to apply {operationName} changes. " +
+                "The target may be referenced in metadata, locked by another process, or the syntax tree became invalid.");
+    }
+
+    private async Task<List<CodeMutationFilePreview>> BuildFilePreviewsAsync(
+        Solution oldSolution,
+        Solution newSolution,
+        CancellationToken ct)
+    {
+        var previews = new List<CodeMutationFilePreview>();
+
+        try
+        {
+            var changes = newSolution.GetChanges(oldSolution);
+
+            foreach (var projectChange in changes.GetProjectChanges())
+            {
+                foreach (var docId in projectChange.GetChangedDocuments())
+                {
+                    var oldDoc = oldSolution.GetDocument(docId);
+                    var newDoc = newSolution.GetDocument(docId);
+                    if (oldDoc == null || newDoc == null)
+                        continue;
+
+                    var oldText = await oldDoc.GetTextAsync(ct);
+                    var newText = await newDoc.GetTextAsync(ct);
+                    if (oldText.ContentEquals(newText))
+                        continue;
+
+                    var absPath = oldDoc.FilePath ?? newDoc.FilePath ?? string.Empty;
+                    previews.Add(new CodeMutationFilePreview
+                    {
+                        RelativePath = _context.ToSolutionRelative(absPath),
+                        AbsolutePath = absPath,
+                        OriginalContent = oldText.ToString(),
+                        UpdatedContent = newText.ToString()
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(
+                "Failed to build diff preview, falling back to simple permission: {Msg}", ex.Message);
+        }
+
+        return previews;
     }
 
     private static SyntaxNode? FindNodeByText(SyntaxNode root, string text)

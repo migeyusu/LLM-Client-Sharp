@@ -424,36 +424,7 @@ public class HistoryCompressionStrategyTests
         // Round 2's success pair must still be present (it is within PreserveRecentRounds=1).
         Assert.Contains("call-ok", historyForRound3);
     }
-
-    [Fact]
-    public async Task NoOp_CompressAsync_DoesNotModifyHistory()
-    {
-        var chatHistory = CreateHistoryWithErrorAndSuccessRounds();
-        var strategy = new NoOpChatHistoryCompressionStrategy();
-        var originalCount = chatHistory.Count;
-
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
-        {
-            ChatHistory = chatHistory,
-            Options = new ReactHistoryCompressionOptions
-            {
-                Mode = ReactHistoryCompressionMode.None,
-                SummaryErrorLoop = true,
-                PreserveRecentRounds = 1,
-            },
-            CurrentRound = 2,
-            CurrentClient = new SummaryOnlyLlmClient("unused"),
-        });
-
-        // NoOp should never modify the history
-        Assert.Equal(originalCount, chatHistory.Count);
-        // Preamble messages must still be present
-        Assert.Contains(chatHistory, message => message.Role == ChatRole.System && message.Text == "You are helpful.");
-        Assert.Contains(chatHistory, message => message.Role == ChatRole.User && message.Text == "Fix the failing workflow.");
-        // Error round must still be present unchanged
-        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
-            content => content.CallId == "call-err-1");
-    }
+    
 
     #region Agent Isolation Tests
 

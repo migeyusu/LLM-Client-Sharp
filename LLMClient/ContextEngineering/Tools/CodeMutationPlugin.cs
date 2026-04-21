@@ -1,7 +1,10 @@
 using System.ComponentModel;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using LLMClient.Component.Utility;
 using LLMClient.ContextEngineering.Tools.Models;
+using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using Microsoft.SemanticKernel;
 
@@ -27,6 +30,83 @@ public sealed class CodeMutationPlugin : KernelFunctionGroup
     public CodeMutationPlugin(CodeMutationService service) : base("CodeMutation")
     {
         _service = service;
+        _service.RequestDiffApprovalCallback = RequestDiffApprovalAsync;
+        _service.RequestPermissionCallback = RequestPermissionAsync;
+    }
+
+    private async Task<bool> RequestDiffApprovalAsync(List<CodeMutationFilePreview> previews)
+    {
+        var current = AsyncContextStore<ChatContext>.Current;
+        if (current?.AutoApproveAllInvocations == true)
+            return true;
+
+        var step = current?.CurrentStep;
+        if (step == null)
+            return true;
+
+        if (previews.Count == 0)
+            return true;
+
+        if (previews.Count == 1)
+        {
+            var p = previews[0];
+            var vm = new FileEditRequestViewModel
+            {
+                Title = $"Confirm mutation – {p.RelativePath}",
+                Description = "Review the proposed code changes before applying them.",
+                Path = p.RelativePath,
+                AbsolutePath = p.AbsolutePath,
+                OriginalContent = p.OriginalContent,
+                UpdatedContent = p.UpdatedContent,
+                IsReadOnly = true
+            };
+            return await step.RequestPermissionAsync(vm);
+        }
+
+        // Multi-file mutation: aggregate into a single FileEditRequestViewModel
+        var sbOriginal = new StringBuilder();
+        var sbUpdated = new StringBuilder();
+        foreach (var p in previews)
+        {
+            sbOriginal.AppendLine($"// ===== {p.RelativePath} =====");
+            sbOriginal.AppendLine(p.OriginalContent);
+            sbOriginal.AppendLine();
+
+            sbUpdated.AppendLine($"// ===== {p.RelativePath} =====");
+            sbUpdated.AppendLine(p.UpdatedContent);
+            sbUpdated.AppendLine();
+        }
+
+        var multiVm = new FileEditRequestViewModel
+        {
+            Title = $"Confirm mutation – {previews.Count} files",
+            Description = $"Review proposed changes across {previews.Count} files.",
+            Path = string.Join(", ", previews.Select(p => p.RelativePath)),
+            AbsolutePath = previews[0].AbsolutePath,
+            OriginalContent = sbOriginal.ToString(),
+            UpdatedContent = sbUpdated.ToString(),
+            IsReadOnly = true
+        };
+        return await step.RequestPermissionAsync(multiVm);
+    }
+
+    private async Task<bool> RequestPermissionAsync(string message)
+    {
+        var current = AsyncContextStore<ChatContext>.Current;
+        if (current?.AutoApproveAllInvocations == true)
+            return true;
+
+        var step = current?.CurrentStep;
+        if (step == null)
+            return true;
+
+        var vm = new ToolCallRequestViewModel
+        {
+            CallerClassName = nameof(CodeMutationPlugin),
+            CallerMethodName = "ApplyChanges",
+            Message = message
+        };
+        return await step.RequestPermissionAsync(vm);
     }
 
     // ── rename_symbol ─────────────────────────────────────────────────────
@@ -118,7 +198,7 @@ public sealed class CodeMutationPlugin : KernelFunctionGroup
         CancellationToken cancellationToken = default)
         => Serialize(await _service.ApplySemanticEditAsync(filePath, edits, cancellationToken));
 
-    // ── internals ─────────────────────────────────────────────────────────
+    // ── internals ───────────────────────────────────────────────────────────
 
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value, JsonOpts);
 
