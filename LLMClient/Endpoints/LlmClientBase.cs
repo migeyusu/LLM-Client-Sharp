@@ -229,7 +229,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             var chatClient = GetChatClient();
-            var preUpdates = new List<ChatResponseUpdate>();
             var streaming = Model.SupportStreaming && this.Parameters.Streaming;
             var softFunctionCall = false;
             if (functionCallEngine.HasFunctions)
@@ -247,28 +246,49 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var chatContext = ChatContext.CreateForRequest(requestContext, tempAdditionalProperties,
                 streaming, parentContext);
             var historyCompressionOptions = Model.HistoryCompression;
-            var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions) ??
-                                             new NoOpChatHistoryCompressionStrategy();
-
+            var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions);
             var agentId = requestContext.AgentId;
             // 基于历史中已有的该 agent 最大 round number 初始化，避免同一 Agent 多次调用时编号冲突
             var reactRoundNumber = ReactHistorySegmenter.GetMaxRoundNumber(chatMessages, agentId);
-            var loopState = new ReactLoopState();
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
+                var step = new ReactStep();
+                var compressionContext = new ChatHistoryCompressionContext
+                {
+                    ChatHistory = chatMessages,
+                    Options = historyCompressionOptions,
+                    CurrentRound = 0,
+                    CurrentClient = this,
+                    Step = step,
+                    AgentId = agentId,
+                };
+
+                await CompressPreambleIfNeededAsync(compressionContext, cancellationToken);
+                if (reactRoundNumber > 1 && historyCompressionStrategy != null)
+                {
+                    //上一次发生中断情况下
+                    compressionContext.CurrentRound = reactRoundNumber;
+                    await InTaskCompressIfNeedAsync(historyCompressionStrategy,
+                        compressionContext, cancellationToken);
+                }
+#if DEBUG
+
+                var estimateTokens = await _tokensCounter.CountTokens(chatMessages);
+                Debug.Write($"request tokens:{estimateTokens}");
+
+#endif
                 while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    var step = new ReactStep();
                     chatContext.CurrentStep = step;
 
                     // 启动后台生产任务
                     var producerTask = ProduceStepAsync(
                         step, chatContext, chatClient, chatMessages, requestOptions,
-                        functionCallEngine, streaming, softFunctionCall,
-                        preUpdates, ++reactRoundNumber, historyCompressionOptions,
-                        historyCompressionStrategy, loopState, agentId, cancellationToken);
+                        functionCallEngine, streaming, softFunctionCall, ++reactRoundNumber, historyCompressionStrategy,
+                        compressionContext, agentId,
+                        cancellationToken);
 
                     // 立即 yield —— 消费者可以马上开始 await foreach (var evt in step)
                     yield return step;
@@ -314,11 +334,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         FunctionCallEngine functionCallEngine,
         bool streaming,
         bool softFunctionCall,
-        List<ChatResponseUpdate> preUpdates,
         int reactRoundNumber,
-        ReactHistoryCompressionOptions historyCompressionOptions,
-        IChatHistoryCompressionStrategy historyCompressionStrategy,
-        ReactLoopState loopState,
+        IChatHistoryCompressionStrategy? strategy,
+        ChatHistoryCompressionContext context,
         string? agentId,
         CancellationToken cancellationToken)
     {
@@ -329,21 +347,11 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         Exception? exception = null;
         ChatFinishReason? finishReason = null;
         var responseMessages = new List<ChatMessage>();
+        var preUpdates = new List<ChatResponseUpdate>();
         var stepResult = new StepResult() { MaxContextTokens = Model.MaxContextSize };
         int? latency = null;
         try
         {
-            if (reactRoundNumber == 1)
-            {
-                await CompressPreambleIfNeededAsync(step, chatMessages, historyCompressionOptions, agentId, cancellationToken);
-            }
-#if DEBUG
-
-            var estimateTokens = await _tokensCounter.CountTokens(chatMessages);
-            Debug.Write($"request tokens:{estimateTokens}");
-
-#endif
-
             _durationStopwatch.Restart();
             ChatResponse? preResponse;
             if (streaming)
@@ -362,7 +370,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
 
                 preResponse = preUpdates.MergeResponse();
-                preUpdates.Clear();
             }
             else
             {
@@ -385,7 +392,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 DeduplicateRepeatedThinking(preResponseMessages, chatMessages);
             }
 
-            ReactHistorySegmenter.TagMessages(preResponseMessages, reactRoundNumber, ReactHistoryMessageKind.Assistant, agentId);
+            ReactHistorySegmenter.TagMessages(preResponseMessages, reactRoundNumber, ReactHistoryMessageKind.Assistant,
+                agentId);
             foreach (var preResponseMessage in preResponseMessages)
             {
                 foreach (var content in preResponseMessage.Contents)
@@ -492,40 +500,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             responseMessages.Add(functionResultMessage);
             await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
                 preFunctionCalls, step, cancellationToken);
-
-            // 1. Token-based in-task compression trigger
-            var compressionApplied = false;
-            var compressionKind = GetHistoryCompressionKind(historyCompressionOptions.Mode);
-            if (compressionKind.HasValue &&
-                await ShouldRunInTaskCompression(loopUsageDetails, historyCompressionOptions))
+            if (strategy != null)
             {
-                compressionApplied = true;
-                // 2. Pre-process: uniformly replace error rounds outside the preserve window with summaries
-                if (historyCompressionOptions.SummaryErrorLoop)
-                {
-                    await PreprocessErrorRoundsAsync(chatMessages, historyCompressionOptions, agentId, cancellationToken);
-                }
-
-                var compressionContext = new ChatHistoryCompressionContext
-                {
-                    ChatHistory = chatMessages,
-                    CurrentRound = reactRoundNumber,
-                    CurrentClient = this,
-                    Options = historyCompressionOptions,
-                    Step = step,
-                    AgentId = agentId,
-                };
-
-                step.EmitHistoryCompressionStarted(compressionKind.Value);
-                await historyCompressionStrategy.CompressAsync(compressionContext, cancellationToken);
-                step.EmitHistoryCompressionCompleted(compressionKind.Value, compressionContext.CompressionApplied);
+                context.CurrentTokens = loopUsageDetails?.TotalTokenCount;
+                context.ChatHistory = chatMessages;
+                context.Step = step;
+                context.CurrentRound = reactRoundNumber;
+                await InTaskCompressIfNeedAsync(strategy, context, cancellationToken);
             }
-
-            // 更新下一轮的循环状态，供 TryTagPendingObservationMessage 使用
-            loopState.PendingObservationMessage = functionResultMessage;
-            loopState.PrevRoundTotalTokens = (loopUsageDetails?.InputTokenCount ?? 0) +
-                                             (loopUsageDetails?.OutputTokenCount ?? 0);
-            loopState.PrevRoundCompressed = compressionApplied;
 
             // 该轮未完成（有 function call），继续下一轮
             stepResult.IsCompleted = false;
@@ -664,14 +646,39 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
     }
 
-    private async Task CompressPreambleIfNeededAsync(
-        ReactStep step,
-        List<ChatMessage> chatMessages,
-        ReactHistoryCompressionOptions historyCompressionOptions,
-        string? agentId,
+    private async Task InTaskCompressIfNeedAsync(
+        IChatHistoryCompressionStrategy historyCompressionStrategy, ChatHistoryCompressionContext context,
         CancellationToken cancellationToken)
     {
-        if (!historyCompressionOptions.PreambleCompression || PreambleCompressionActive.Value)
+        if (context.CurrentTokens == null)
+        {
+            context.CurrentTokens = await _tokensCounter.CountTokens(context.ChatHistory);
+        }
+
+        var historyCompressionOptions = context.Options;
+        // 1. Token-based in-task compression trigger
+        var compressionKind = GetHistoryCompressionKind(historyCompressionOptions.Mode);
+        if (compressionKind.HasValue &&
+            await ShouldRunInTaskCompression(context.CurrentTokens.Value, historyCompressionOptions))
+        {
+            // 2. Pre-process: uniformly replace error rounds outside the preserve window with summaries
+            if (historyCompressionOptions.SummaryErrorLoop)
+            {
+                await PreprocessErrorRoundsAsync(context.ChatHistory, historyCompressionOptions, context.AgentId,
+                    cancellationToken);
+            }
+
+            context.Step?.EmitHistoryCompressionStarted(compressionKind.Value);
+            await historyCompressionStrategy.CompressAsync(context, cancellationToken);
+            context.Step?.EmitHistoryCompressionCompleted(compressionKind.Value, context.CompressionApplied);
+        }
+    }
+
+    private static async Task CompressPreambleIfNeededAsync(
+        ChatHistoryCompressionContext compressionContext,
+        CancellationToken cancellationToken)
+    {
+        if (!compressionContext.Options.PreambleCompression || PreambleCompressionActive.Value)
         {
             return;
         }
@@ -682,28 +689,18 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             return;
         }
 
-        var compressionContext = new ChatHistoryCompressionContext
-        {
-            ChatHistory = chatMessages,
-            Options = historyCompressionOptions,
-            CurrentRound = 0,
-            CurrentClient = this,
-            Step = step,
-            AgentId = agentId,
-        };
-
         var preambleStrategy = viewModelFactory.Create<PreambleSummaryChatHistoryCompressionStrategy>();
         if (!await preambleStrategy.ShouldCompress(compressionContext))
         {
             return;
         }
 
-        step.EmitHistoryCompressionStarted(HistoryCompressionKind.PreambleSummary);
+        compressionContext.Step?.EmitHistoryCompressionStarted(HistoryCompressionKind.PreambleSummary);
         PreambleCompressionActive.Value = true;
         try
         {
             await preambleStrategy.CompressAsync(compressionContext, cancellationToken);
-            step.EmitHistoryCompressionCompleted(HistoryCompressionKind.PreambleSummary,
+            compressionContext.Step?.EmitHistoryCompressionCompleted(HistoryCompressionKind.PreambleSummary,
                 compressionContext.CompressionApplied);
         }
         finally
@@ -712,20 +709,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
     }
 
-    private async Task<bool> ShouldRunInTaskCompression(UsageDetails? usageDetails,
+    private Task<bool> ShouldRunInTaskCompression(long totalTokensCount,
         ReactHistoryCompressionOptions options)
     {
-        if (usageDetails?.TotalTokenCount == null)
-        {
-            return false;
-        }
-
         var threshold = options.ReactTokenThresholdPercent;
-        if (threshold <= 0) return false;
+        if (threshold <= 0) return Task.FromResult(false);
         var maxContext = Model.MaxContextSize;
-        if (maxContext <= 0) return false;
+        if (maxContext <= 0) return Task.FromResult(false);
 
-        return usageDetails?.TotalTokenCount.Value > threshold * maxContext;
+        return Task.FromResult(totalTokensCount > threshold * maxContext);
     }
 
     private async Task PreprocessErrorRoundsAsync(
@@ -852,20 +844,5 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             .Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace('\r', '\n')
             .Trim();
-    }
-
-    /// <summary>
-    /// 跨轮次传递的循环状态，用于根据相邻轮次 input token 差值推算工具调用结果消息的 token 数。
-    /// </summary>
-    private sealed class ReactLoopState
-    {
-        /// <summary>上一轮产生的、尚未打 token 标记的工具结果消息。</summary>
-        public ChatMessage? PendingObservationMessage { get; set; }
-
-        /// <summary>上一轮的 InputTokens + OutputTokens 合计，作为差值计算的基准。</summary>
-        public long PrevRoundTotalTokens { get; set; }
-
-        /// <summary>上一轮是否触发了历史压缩（压缩会改变消息列表，差值不再可靠）。</summary>
-        public bool PrevRoundCompressed { get; set; }
     }
 }

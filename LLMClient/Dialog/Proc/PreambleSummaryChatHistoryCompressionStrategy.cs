@@ -59,10 +59,10 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
         }
 
         var historicalMessages = preamble.Skip(startIndex).Take(historicalCount).ToArray();
-        var estimatedTokens = await _tokensCounter.CountTokens(historicalMessages);
+        context.CurrentTokens ??= await _tokensCounter.CountTokens(historicalMessages);
         var modelMaxContextSize = context.CurrentClient.Model.MaxContextSize;
         var threshold = options.PreambleTokenThresholdPercent * modelMaxContextSize;
-        return estimatedTokens > threshold;
+        return context.CurrentTokens.Value > threshold;
     }
 
     public async Task CompressAsync(ChatHistoryCompressionContext context,

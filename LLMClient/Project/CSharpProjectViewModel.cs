@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
@@ -39,6 +39,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
     private readonly SymbolSemanticPlugin _symbolSemanticPlugin;
     private readonly CodeSearchPlugin _codeSearchPlugin;
     private readonly CodeReadingPlugin _codeReadingPlugin;
+    private readonly CodeMutationPlugin _codeMutationPlugin;
     private readonly IAIFunctionGroup[] _projectTools;
 
     public override ContextPromptViewModel ProjectContext => _projectContextPrompt;
@@ -61,12 +62,15 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
             loggerFactory.CreateLogger<CodeSearchService>()));
         _codeReadingPlugin = new CodeReadingPlugin(new CodeReadingService(_solutionContext, mapper,
             loggerFactory.CreateLogger<CodeReadingService>()));
+        _codeMutationPlugin = new CodeMutationPlugin(new CodeMutationService(_solutionContext,
+            loggerFactory.CreateLogger<CodeMutationService>()));
         _projectTools =
         [
             _projectAwarenessPlugin,
             _symbolSemanticPlugin,
             _codeSearchPlugin,
-            _codeReadingPlugin
+            _codeReadingPlugin,
+            _codeMutationPlugin
         ];
         _projectContextPrompt = new CSharpContextPromptViewModel(_solutionContext, this);
         SelectPathCommand = new RelayCommand(() =>
@@ -131,6 +135,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
             SymbolSemanticPluginPersistModel => _symbolSemanticPlugin,
             CodeSearchPluginPersistModel => _codeSearchPlugin,
             CodeReadingPluginPersistModel => _codeReadingPlugin,
+            CodeMutationPluginPersistModel => _codeMutationPlugin,
             _ => null
         };
         return functionGroup != null;

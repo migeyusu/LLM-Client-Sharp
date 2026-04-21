@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using AutoMapper;
@@ -786,6 +786,38 @@ public partial class RoslynProjectAnalyzer : IDisposable
             .SelectMany(ns => ns.Types)
             .GroupBy(t => t.Kind)
             .ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    /// <summary>
+    /// Applies Roslyn solution changes to disk via MSBuildWorkspace.TryApplyChanges,
+    /// then refreshes the live <see cref="CurrentRawSolution"/> reference.
+    /// </summary>
+    /// <returns>True if changes were written; false if the workspace refused.</returns>
+    public bool ApplySolutionChanges(Solution newSolution)
+    {
+        if (!IsLoaded)
+            throw new InvalidOperationException("Solution is not loaded.");
+
+        try
+        {
+            var success = _workspace.TryApplyChanges(newSolution);
+            if (success)
+            {
+                CurrentRawSolution = newSolution;
+                _logger?.LogInformation("Roslyn solution changes applied successfully.");
+            }
+            else
+            {
+                _logger?.LogWarning("MSBuildWorkspace.TryApplyChanges returned false; changes were not written.");
+            }
+
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError($"Failed to apply solution changes: {ex.Message}");
+            throw;
+        }
     }
 
     public void CloseCurrentSolution()

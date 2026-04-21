@@ -228,7 +228,8 @@ public static class ModelRegister
                         "Grok 4.1",
                         "Grok 4.1 Fast",
                         "Grok Code Fast 1",
-                        "Grok 4.2"
+                        "Grok 4.2",
+                        "Grok 4.3"
                     ]
                 },
 
@@ -251,6 +252,7 @@ public static class ModelRegister
                         "Claude Sonnet 4.5",
                         "Claude Opus 4.6",
                         "Claude Sonnet 4.6",
+                        "Claude Opus 4.7"
                     ]
                 },
 
@@ -270,7 +272,9 @@ public static class ModelRegister
                         "Qwen3.5 397B A17B",
                         "Qwen3.5-122B-A10B",
                         "Qwen3.5-35B-A3B",
-                        "Qwen3.5-27B"
+                        "Qwen3.5-27B",
+                        "Qwen3.6 Plus",
+                        "Qwen3.6 35B-A3B",
                     ]
                 },
 
@@ -297,7 +301,8 @@ public static class ModelRegister
                         "GLM-4.6",
                         "GLM-4.7",
                         "GLM 4.7 Flash",
-                        "GLM 5"
+                        "GLM 5",
+                        "GLM 5.1",
                     ]
                 },
 
@@ -308,7 +313,9 @@ public static class ModelRegister
                     [
                         "Kimi K1",
                         "Kimi K2",
-                        "Kimi K2.5"
+                        "Kimi K2.5",
+                        "Kimi K2.6 Code",
+                        "Kimi K3"
                     ]
                 },
 
@@ -321,7 +328,8 @@ public static class ModelRegister
                         "MiniMax M2",
                         "MiniMax M2.1",
                         "MiniMax M2.5",
-                        "MiniMax M2.7"
+                        "MiniMax M2.7",
+                        "MiniMax M3",
                     ]
                 },
                 new()

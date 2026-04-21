@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using LLMClient.Configuration;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
@@ -44,6 +44,7 @@ namespace LLMClient.Persistence;
 [JsonSerializable(typeof(SymbolSemanticPluginPersistModel))]
 [JsonSerializable(typeof(CodeSearchPluginPersistModel))]
 [JsonSerializable(typeof(CodeReadingPluginPersistModel))]
+[JsonSerializable(typeof(CodeMutationPluginPersistModel))]
 [JsonSerializable(typeof(InspectAgentPersistModel))]
 [JsonSerializable(typeof(PlannerAgentPersistModel))]
 [JsonSerializable(typeof(SummaryAgentPersistModel))]
