@@ -26,7 +26,7 @@ public abstract class SearchAgent : ISearchOption
         return true;
     }
 
-    public abstract Task ApplySearch(DefaultDialogContextBuilder context);
+    public abstract Task ApplySearch(DefaultRequestContextBuilder context);
 
     public abstract object Clone();
 }

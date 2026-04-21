@@ -17,7 +17,7 @@ public class InvokePermissionContextTests
             AutoApproveAllInvocations = true,
             IsDebugMode = true,
         };
-        var builder = new DefaultDialogContextBuilder([request]);
+        var builder = new DefaultRequestContextBuilder([request]);
 
         builder.MapFromRequest(request);
 

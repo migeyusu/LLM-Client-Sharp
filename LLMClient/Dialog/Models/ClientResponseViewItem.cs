@@ -67,7 +67,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     #region responding
 
-    public virtual async Task<AgentTaskResult> Process(DefaultDialogContextBuilder contextBuilder,
+    public virtual async Task<AgentTaskResult> Process(DefaultRequestContextBuilder contextBuilder,
         CancellationToken token = default)
     {
         var completedResult = AgentTaskResult.Empty;

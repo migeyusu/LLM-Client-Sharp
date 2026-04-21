@@ -9,19 +9,20 @@ using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel;
+using AIContextProvider = Microsoft.Agents.AI.AIContextProvider;
 
 namespace LLMClient.Abstraction;
 
 /// <summary>
-/// 用于隔离chatrequest和context
+/// 用于隔离chatRequest和context
 /// </summary>
-public class DefaultDialogContextBuilder : IChatRequest
+public class DefaultRequestContextBuilder : IChatRequest
 {
     private static readonly Lazy<IMapper> MapperLazy = new(() =>
     {
         var config = new MapperConfiguration(cfg =>
             {
-                cfg.CreateMap<IChatRequest, DefaultDialogContextBuilder>();
+                cfg.CreateMap<IChatRequest, DefaultRequestContextBuilder>();
                 cfg.CreateMap<IChatRequest, RequestViewItem>();
             },
             NullLoggerFactory.Instance);
@@ -30,30 +31,24 @@ public class DefaultDialogContextBuilder : IChatRequest
 
     public static IMapper IChatRequestMapper => MapperLazy.Value;
 
-    public DefaultDialogContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems)
+    public DefaultRequestContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems)
     {
         ChatHistoryItems = dialogItems;
     }
 
-    public static DefaultDialogContextBuilder CreateFromResponse(IResponseItem response, string? systemPrompt = null)
-    {
-        var history = response.GetChatHistory().ToArray();
-        return CreateFromHistory(history, systemPrompt);
-    }
-
-    public static DefaultDialogContextBuilder CreateFromSession(ITextDialogSession session)
+    public static DefaultRequestContextBuilder CreateFromSession(ITextDialogSession session)
     {
         var historyItems = session.GetHistory();
         var systemPrompt = session.SystemPrompt;
         return CreateFromHistory(historyItems, systemPrompt);
     }
 
-    public static DefaultDialogContextBuilder CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
+    public static DefaultRequestContextBuilder CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
         string? systemPrompt = null)
     {
         var requestViewItem = history.LastOrDefault() as IRequestItem ??
                               throw new InvalidOperationException("RequestViewItem is null");
-        var dialogContext = new DefaultDialogContextBuilder(history)
+        var dialogContext = new DefaultRequestContextBuilder(history)
         {
             SystemPrompt = systemPrompt
         };
@@ -95,6 +90,8 @@ public class DefaultDialogContextBuilder : IChatRequest
     public string? SystemPrompt { get; set; }
 
     public ISearchOption? SearchOption { get; set; }
+    
+    public AIContextProvider[]? ContextProviders { get; }
 
     public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
 

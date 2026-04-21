@@ -7,7 +7,7 @@ namespace LLMClient.Abstraction;
 /// 构建仅包含文本内容的对话上下文，用于向不支持 tool call 的模型发送摘要请求。
 /// 会过滤掉 FunctionCallContent、FunctionResultContent、ReasoningContent 等非文本内容。
 /// </summary>
-public class TextOnlyDialogContextBuilder : DefaultDialogContextBuilder
+public class TextOnlyDialogContextBuilder : DefaultRequestContextBuilder
 {
     public TextOnlyDialogContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems) : base(dialogItems)
     {

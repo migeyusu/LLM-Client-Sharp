@@ -408,7 +408,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     {
         get
         {
-            if (!IsResponding && IsInterrupt)
+            if (!IsResponding && !IsAvailableInContext)
             {
                 return false;
             }

@@ -16,8 +16,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using LLMClient.Agent;
-using LLMClient.Agent.MiniSWE;
-using LLMClient.Agent.Research;
+using Microsoft.Agents.AI;
 
 namespace LLMClient.Dialog;
 
@@ -264,6 +263,8 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
     {
         get { return SearchConfig.GetUserSearchOption(); }
     }
+
+    public AIContextProvider[]? ContextProviders { get; set; }
 
     public List<CheckableFunctionGroupTree>? FunctionGroups
     {
@@ -564,7 +565,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         {
             Attachments = Attachments.Count == 0 ? null : Attachments.ToList(),
         };
-        DefaultDialogContextBuilder.IChatRequestMapper.Map<IChatRequest, RequestViewItem>(this, requestViewItem);
+        DefaultRequestContextBuilder.IChatRequestMapper.Map<IChatRequest, RequestViewItem>(this, requestViewItem);
         return requestViewItem;
     }
 

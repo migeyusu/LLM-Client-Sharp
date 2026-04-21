@@ -26,7 +26,7 @@ public class SummaryAgent : ISingleClientAgent
             yield break;
         }
 
-        var contextBuilder = DefaultDialogContextBuilder.CreateFromHistory(chatHistory, dialogSession.SystemPrompt);
+        var contextBuilder = DefaultRequestContextBuilder.CreateFromHistory(chatHistory, dialogSession.SystemPrompt);
         var requestContext = await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
         StepResult? lastResult = null;
         await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))

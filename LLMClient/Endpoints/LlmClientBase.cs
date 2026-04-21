@@ -14,6 +14,7 @@ using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
+using AIContextProvider = Microsoft.Agents.AI.AIContextProvider;
 using ChatFinishReason = Microsoft.Extensions.AI.ChatFinishReason;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using ChatRole = Microsoft.Extensions.AI.ChatRole;
@@ -219,7 +220,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var requestOptionsAdditionalProperties = requestOptions.AdditionalProperties;
             if (tempAdditionalProperties != null && requestOptionsAdditionalProperties != null)
             {
-                //由于openai库的实现不使用requestoptions.AdditionalProperties传递额外参数，
+                //由于openai库的实现不使用requestOptions.AdditionalProperties传递额外参数，
                 //所以这里需要把临时属性也添加进去
                 foreach (var requestOptionsAdditionalProperty in requestOptionsAdditionalProperties)
                 {
@@ -248,6 +249,10 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var historyCompressionOptions = Model.HistoryCompression;
             var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions);
             var agentId = requestContext.AgentId;
+            if (requestContext.ContextProvider != null)
+            {
+                chatClient = chatClient.UseContextProvider(requestContext.ContextProvider);
+            }
             // 基于历史中已有的该 agent 最大 round number 初始化，避免同一 Agent 多次调用时编号冲突
             var reactRoundNumber = ReactHistorySegmenter.GetMaxRoundNumber(chatMessages, agentId);
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))

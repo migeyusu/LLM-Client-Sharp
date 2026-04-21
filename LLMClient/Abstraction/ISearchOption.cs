@@ -23,5 +23,5 @@ public interface ISearchOption : ICloneable
 
     bool CheckCompatible(ILLMChatClient client);
 
-    Task ApplySearch(DefaultDialogContextBuilder context);
+    Task ApplySearch(DefaultRequestContextBuilder context);
 }

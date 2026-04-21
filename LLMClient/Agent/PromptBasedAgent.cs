@@ -26,7 +26,7 @@ public class PromptBasedAgent
 
     public Duration Timeout { get; set; } = Duration.Forever;
 
-    public async Task<AgentTaskResult> SendRequestAsync(DefaultDialogContextBuilder contextBuilder,
+    public async Task<AgentTaskResult> SendRequestAsync(DefaultRequestContextBuilder contextBuilder,
         CancellationToken cancellationToken = default)
     {
         await _semaphore.WaitAsync(cancellationToken);
@@ -114,7 +114,7 @@ public class PromptBasedAgent
     public async Task<string> GetMessageAsync(string prompt, string? systemPrompt = null,
         CancellationToken cancellationToken = default)
     {
-        var context = DefaultDialogContextBuilder.CreateFromHistory([
+        var context = DefaultRequestContextBuilder.CreateFromHistory([
             new RequestViewItem(prompt)
         ], systemPrompt);
         var sendRequestAsync = await SendRequestAsync(context, cancellationToken);

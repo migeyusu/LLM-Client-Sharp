@@ -27,6 +27,12 @@ public class ResponsePersistItemBase
     public IList<ChatAnnotation>? Annotations { get; set; }
 
     public ChatFinishReason? FinishReason { get; set; }
+    
+    public bool IsManualValid { get; set; } = false;
+
+    public bool IsAvailableInContextSwitch { get; set; } = true;
+
+    [JsonPropertyName("IsEnable")] public bool IsAvailableInContext { get; set; }
 }
 
 public class ContextUsagePO
@@ -43,10 +49,4 @@ public class RawResponsePersistItem : ResponsePersistItemBase
 public class ClientResponsePersistItem : ResponsePersistItemBase
 {
     public ParameterizedLLMModelPO? Client { get; set; }
-
-    public bool IsManualValid { get; set; } = false;
-
-    public bool IsAvailableInContextSwitch { get; set; } = true;
-
-    [JsonPropertyName("IsEnable")] public bool IsAvailableInContext { get; set; }
 }

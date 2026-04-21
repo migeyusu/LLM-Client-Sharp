@@ -32,7 +32,7 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
         if (chatHistory.Count == 0 || chatHistory[^1] is not IRequestItem request)
             return null;
 
-        var contextBuilder = new AgentDialogContextBuilder(chatHistory)
+        var contextBuilder = new AgentRequestContextBuilder(chatHistory)
         {
             PlatformId = Config.PlatformId,
             IncludeHistoryMessages = true,
@@ -118,7 +118,7 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
     }
 
     private static async Task AddToolProvidersAsync(
-        AgentDialogContextBuilder contextBuilder,
+        AgentRequestContextBuilder contextBuilder,
         IEnumerable<IAIFunctionGroup> toolProviders,
         CancellationToken cancellationToken)
     {

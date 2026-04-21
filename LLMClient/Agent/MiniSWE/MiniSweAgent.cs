@@ -33,7 +33,7 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
         if (chatHistory.Count == 0 || chatHistory[^1] is not IRequestItem request)
             return null;
 
-        var contextBuilder = new AgentDialogContextBuilder(chatHistory)
+        var contextBuilder = new AgentRequestContextBuilder(chatHistory)
         {
             PlatformId = Config.PlatformId,
             IncludeHistoryMessages = true,

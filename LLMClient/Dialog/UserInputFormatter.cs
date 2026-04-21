@@ -97,7 +97,7 @@ public class UserInputFormatter
 
             // 4. 配置 OpenAI JSON Mode
             var completedResult =
-                    await promptAgent.SendRequestAsync(DefaultDialogContextBuilder.CreateFromHistory([new RequestViewItem(message)],
+                    await promptAgent.SendRequestAsync(DefaultRequestContextBuilder.CreateFromHistory([new RequestViewItem(message)],
                         systemPrompt), token);
             var jsonResponse = completedResult.FirstTextResponse;
             if (string.IsNullOrEmpty(jsonResponse))

@@ -199,7 +199,7 @@ public class GoogleSearchPlugin : BaseViewModel, IRagSource, ISearchOption,IBuil
         return client.Model.SupportFunctionCall;
     }
 
-    public async Task ApplySearch(DefaultDialogContextBuilder context)
+    public async Task ApplySearch(DefaultRequestContextBuilder context)
     {
         context.FunctionGroups ??= [];
         if (context.FunctionGroups.Any(func =>

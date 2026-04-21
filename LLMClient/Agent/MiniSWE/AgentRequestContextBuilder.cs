@@ -14,9 +14,9 @@ namespace LLMClient.Agent.MiniSWE;
 /// agent system template and instance template, and treats tools/RAG/platform
 /// information as prompt materials rather than directly appending them in chat style.
 /// </summary>
-public class AgentDialogContextBuilder : DefaultDialogContextBuilder
+public class AgentRequestContextBuilder : DefaultRequestContextBuilder
 {
-    public AgentDialogContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems) : base(dialogItems)
+    public AgentRequestContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems) : base(dialogItems)
     {
     }
 
