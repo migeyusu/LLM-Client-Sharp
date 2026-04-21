@@ -751,8 +751,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 continue;
             }
 
-            replacement.AddRange(round.AssistantMessages);
-            replacement.AddRange(round.ObservationMessages);
+            if (round.AssistantMessage != null)
+            {
+                replacement.Add(round.AssistantMessage);
+            }
+
+            if (round.ObservationMessage != null)
+            {
+                replacement.Add(round.ObservationMessage);
+            }
         }
 
         chatMessages.Clear();

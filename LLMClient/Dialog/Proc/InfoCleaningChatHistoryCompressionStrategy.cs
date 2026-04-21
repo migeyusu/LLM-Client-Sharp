@@ -34,8 +34,16 @@ public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCom
             var round = segmentation.Rounds[index];
             if (index >= keepFromIndex)
             {
-                replacement.AddRange(round.AssistantMessages);
-                replacement.AddRange(round.ObservationMessages);
+                if (round.AssistantMessage != null)
+                {
+                    replacement.Add(round.AssistantMessage);
+                }
+
+                if (round.ObservationMessage != null)
+                {
+                    replacement.Add(round.ObservationMessage);
+                }
+
                 continue;
             }
 
@@ -85,14 +93,13 @@ public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCom
 
     private static string BuildFallbackRoundSummary(ReactHistoryRound round)
     {
-        var reasoning = GetMergedContent<TextReasoningContent>(round.AssistantMessages, content => content.Text);
-        var text = GetMergedContent<TextContent>(round.AssistantMessages, content => content.Text);
-        var toolNames = round.AssistantMessages
-            .SelectMany(message => message.Contents.OfType<FunctionCallContent>())
+        var reasoning = GetContent<TextReasoningContent>(round.AssistantMessage, content => content.Text);
+        var text = GetContent<TextContent>(round.AssistantMessage, content => content.Text);
+        var toolNames = round.AssistantMessage?.Contents.OfType<FunctionCallContent>()
             .Select(content => content.Name)
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+            .ToArray() ?? [];
         var observations = GetObservationSummary(round);
 
         var builder = new StringBuilder();
@@ -130,13 +137,17 @@ public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCom
 
     private static string? GetObservationSummary(ReactHistoryRound round)
     {
-        var functionResults = round.ObservationMessages
-            .SelectMany(message => message.Contents.OfType<FunctionResultContent>())
+        if (round.ObservationMessage == null)
+        {
+            return null;
+        }
+
+        var functionResults = round.ObservationMessage.Contents.OfType<FunctionResultContent>()
             .Select(result => result.Result switch
             {
                 null => null,
-                string text => text,
-                _ => result.Result.ToString(),
+                string textVal => textVal,
+                _ => result.Result?.ToString(),
             })
             .Where(text => !string.IsNullOrWhiteSpace(text))
             .Select(text => text!.Trim())
@@ -146,16 +157,20 @@ public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCom
             return string.Join("; ", functionResults);
         }
 
-        return GetMergedContent<TextContent>(round.ObservationMessages, content => content.Text);
+        return GetContent<TextContent>(round.ObservationMessage, content => content.Text);
     }
 
-    private static string? GetMergedContent<TContent>(
-        IEnumerable<ChatMessage> messages,
+    private static string? GetContent<TContent>(
+        ChatMessage? message,
         Func<TContent, string?> selector)
         where TContent : AIContent
     {
-        var values = messages
-            .SelectMany(message => message.Contents.OfType<TContent>())
+        if (message == null)
+        {
+            return null;
+        }
+
+        var values = message.Contents.OfType<TContent>()
             .Select(selector)
             .Where(text => !string.IsNullOrWhiteSpace(text))
             .Select(text => text!.Trim())

@@ -65,11 +65,11 @@ public static class ReactHistorySegmenter
             var kind = GetMessageKind(message);
             if (kind == ReactHistoryMessageKind.Observation)
             {
-                round.ObservationMessages.Add(message);
+                round.ObservationMessage = message;
             }
             else
             {
-                round.AssistantMessages.Add(message);
+                round.AssistantMessage = message;
             }
         }
 

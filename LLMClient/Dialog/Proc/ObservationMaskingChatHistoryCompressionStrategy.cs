@@ -11,7 +11,7 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
         var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
         var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
 
-        var hasObservationsToMask = segmentation.Rounds.Take(keepFromIndex).Any(round => round.ObservationMessages.Count > 0);
+        var hasObservationsToMask = segmentation.Rounds.Take(keepFromIndex).Any(round => round.ObservationMessage != null);
         if (!hasObservationsToMask)
         {
             return;
@@ -24,21 +24,25 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
         {
             var round = segmentation.Rounds[index];
 
-            replacement.AddRange(round.AssistantMessages);
+            if (round.AssistantMessage != null)
+            {
+                replacement.Add(round.AssistantMessage);
+            }
+
             if (index >= keepFromIndex)
             {
-                replacement.AddRange(round.ObservationMessages);
+                if (round.ObservationMessage != null)
+                {
+                    replacement.Add(round.ObservationMessage);
+                }
+
                 continue;
             }
 
-            foreach (var observationMessage in round.ObservationMessages)
+            if (round.ObservationMessage != null)
             {
-                replacement.Add(CreateObservationPlaceholder(observationMessage, round.RoundNumber,
+                replacement.Add(CreateObservationPlaceholder(round.ObservationMessage, round.RoundNumber,
                     context.Options.ObservationPlaceholder, context.AgentId));
-            }
-
-            if (round.ObservationMessages.Count > 0)
-            {
                 changed = true;
             }
         }
