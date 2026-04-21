@@ -70,19 +70,22 @@ internal static class ReactErrorRoundSummarizer
 
     private static string GetActionSummary(ReactHistoryRound round)
     {
-        var toolCalls = round.AssistantMessages
-            .SelectMany(message => message.Contents.OfType<FunctionCallContent>())
+        if (round.AssistantMessage == null)
+        {
+            return "attempted an action";
+        }
+
+        var toolCalls = round.AssistantMessage.Contents.OfType<FunctionCallContent>()
             .Select(content => content.Name)
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
         if (toolCalls.Length > 0)
         {
-            return Trim($"called tool(s): {string.Join(", ", toolCalls)}", 80);
+            return $"called tool(s): {string.Join(", ", toolCalls)}";
         }
 
-        var assistantText = string.Join(" ", round.AssistantMessages
-            .SelectMany(message => message.Contents.OfType<TextContent>())
+        var assistantText = string.Join(" ", round.AssistantMessage.Contents.OfType<TextContent>()
             .Select(content => content.Text)
             .Where(text => !string.IsNullOrWhiteSpace(text))
             .Select(text => text!.Trim()));
@@ -93,8 +96,12 @@ internal static class ReactErrorRoundSummarizer
 
     private static string GetResultSummary(ReactHistoryRound round)
     {
-        var errorResults = round.ObservationMessages
-            .SelectMany(message => message.Contents.OfType<FunctionResultContent>())
+        if (round.ObservationMessage == null)
+        {
+            return "received an error output";
+        }
+
+        var errorResults = round.ObservationMessage.Contents.OfType<FunctionResultContent>()
             .Where(content => content.Exception != null)
             .Select(content =>
             {
@@ -114,8 +121,7 @@ internal static class ReactErrorRoundSummarizer
             return Trim(string.Join("; ", errorResults), 120);
         }
 
-        var observationText = string.Join(" ", round.ObservationMessages
-            .SelectMany(message => message.Contents.OfType<TextContent>())
+        var observationText = string.Join(" ", round.ObservationMessage.Contents.OfType<TextContent>()
             .Select(content => content.Text)
             .Where(text => !string.IsNullOrWhiteSpace(text))
             .Select(text => text!.Trim()));

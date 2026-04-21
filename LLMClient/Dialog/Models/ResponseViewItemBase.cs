@@ -457,9 +457,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
                 foreach (var round in segmentation.Rounds)
                 {
-                    var functionCalls = round.AssistantMessages
-                        .SelectMany(m => m.Contents.OfType<FunctionCallContent>())
-                        .ToList();
+                    var functionCalls = round.AssistantMessage?.Contents.OfType<FunctionCallContent>().ToList() ?? [];
 
                     if (functionCalls.Count == 0)
                     {
@@ -467,9 +465,8 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                         continue;
                     }
 
-                    var resultDict = round.ObservationMessages
-                        .SelectMany(m => m.Contents.OfType<FunctionResultContent>())
-                        .ToDictionary(r => r.CallId);
+                    var resultDict = round.ObservationMessage?.Contents.OfType<FunctionResultContent>()
+                        .ToDictionary(r => r.CallId) ?? new Dictionary<string, FunctionResultContent>();
 
                     var allFailed = functionCalls.All(call =>
                         resultDict.TryGetValue(call.CallId, out var result) && result.Exception != null);
