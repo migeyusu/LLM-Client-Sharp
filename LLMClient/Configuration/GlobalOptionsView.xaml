@@ -225,6 +225,9 @@
                                 </materialDesign:PopupBox.ToggleContent>
                             </materialDesign:PopupBox>
                         </StackPanel>
+                        <CheckBox IsChecked="{Binding  IsFileEncryptReading,Mode=TwoWay}"
+                                  Content="File Encrypt Reading"
+                                  ToolTip="慎用该功能" />
                     </WrapPanel>
                 </Grid>
 

@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Input;
@@ -8,11 +8,10 @@ using LLMClient.Component.CustomControl;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
-
 using LLMClient.Dialog;
-
 using LLMClient.Persistence;
 using LLMClient.Rag;
+using LLMClient.ToolCall.DefaultPlugins;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel.Data;
@@ -46,6 +45,16 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
 
     public const string DEFAULT_GLOBAL_CONFIG_FILE = "globalconfig.json";
 
+    public bool IsFileEncryptReading
+    {
+        get => FileSystemPlugin.UseEncryptedReading;
+        set
+        {
+            FileSystemPlugin.UseEncryptedReading = value;
+            OnPropertyChanged();
+        }
+    }
+
     private static IMapper Mapper => _mapperLazy.Value;
 
     private static Lazy<IMapper> _mapperLazy = new(() => ServiceLocator.GetService<IMapper>()!);
@@ -66,25 +75,23 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
         get { return string.Format(ContextSummarizePromptString, ContextSummarizeWordsCount); }
     }
 
-    private int _contextSummarizeWordsCount = 1000;
-
     [JsonPropertyName("SummarizeWordsCount")]
     public int ContextSummarizeWordsCount
     {
-        get => _contextSummarizeWordsCount;
+        get;
         set
         {
             this.ClearError();
-            if (value == _contextSummarizeWordsCount) return;
+            if (value == field) return;
             if (value < 100)
             {
                 this.AddError("Summarize words count must be greater than 100.");
             }
 
-            _contextSummarizeWordsCount = value;
+            field = value;
             OnPropertyChanged();
         }
-    }
+    } = 1000;
 
     public ILLMChatClient? CreateContextSummarizeClient()
     {
@@ -109,16 +116,14 @@ public class GlobalOptions : NotifyDataErrorInfoViewModelBase
             .Map<IParameterizedLLMModel, ParameterizedLLMModelPO>(value, (options => { }));
     }
 
-    private ParameterizedLLMModelPO? _summarizeModelPersistModel;
-
     [JsonPropertyName("SummarizeModelPersistModel")]
     public ParameterizedLLMModelPO? ContextSummarizeClientPersist
     {
-        get => _summarizeModelPersistModel;
+        get;
         set
         {
-            if (Equals(value, _summarizeModelPersistModel)) return;
-            _summarizeModelPersistModel = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -232,8 +237,7 @@ This summary should serve as a comprehensive handoff document that enables seaml
     [JsonPropertyName("ConversationHistorySummaryPrompt")]
     public string ConversationHistorySummaryPromptString { get; set; } = DefaultConversationHistorySummaryPrompt;
 
-    [JsonIgnore]
-    public string ConversationHistorySummaryPrompt => ConversationHistorySummaryPromptString;
+    [JsonIgnore] public string ConversationHistorySummaryPrompt => ConversationHistorySummaryPromptString;
 
     #endregion
 
@@ -283,16 +287,14 @@ This summary should serve as a comprehensive handoff document that enables seaml
             .Map<IParameterizedLLMModel, ParameterizedLLMModelPO>(value, (options => { }));
     }
 
-    private ParameterizedLLMModelPO? _subjectSummarizeClientPersist;
-
     [JsonPropertyName("SubjectSummarizeClient")]
     public ParameterizedLLMModelPO? SubjectSummarizeClientPersist
     {
-        get => _subjectSummarizeClientPersist;
+        get;
         set
         {
-            if (Equals(value, _subjectSummarizeClientPersist)) return;
-            _subjectSummarizeClientPersist = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }
@@ -326,16 +328,14 @@ This summary should serve as a comprehensive handoff document that enables seaml
             .Map<IParameterizedLLMModel, ParameterizedLLMModelPO>(value, (options => { }));
     }
 
-    private ParameterizedLLMModelPO? _textFormatterClientPersist;
-
     [JsonPropertyName("TextFormatterClientPersist")]
     public ParameterizedLLMModelPO? TextFormatterClientPersist
     {
-        get => _textFormatterClientPersist;
+        get;
         set
         {
-            if (Equals(value, _textFormatterClientPersist)) return;
-            _textFormatterClientPersist = value;
+            if (Equals(value, field)) return;
+            field = value;
             OnPropertyChanged();
         }
     }

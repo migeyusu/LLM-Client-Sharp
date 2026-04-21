@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -25,6 +25,15 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
     public Guid Id = Guid.NewGuid();
 
     private ObservableCollection<string> _byPassPaths = new();
+
+    private static readonly EncryptedFileReader EncryptedFileReader = new();
+
+    private static readonly DefaultFileReader DefaultFileReader = new();
+
+    private static IFileReader FileReader =>
+        UseEncryptedReading ? EncryptedFileReader : DefaultFileReader;
+
+    public static bool UseEncryptedReading { get; set; }
 
     /// <summary>
     /// indicates the list of directories that do not require special permissions to access.
@@ -106,10 +115,10 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 
         if (!includeLineNumbers)
         {
-            return await File.ReadAllTextAsync(fullPath);
+            return await FileReader.ReadAllTextAsync(fullPath);
         }
 
-        var lines = await File.ReadAllLinesAsync(fullPath);
+        var lines = await FileReader.ReadAllLinesAsync(fullPath);
         return FormatLinesWithNumbers(lines, 1);
     }
 
@@ -134,7 +143,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                 "endLine must be greater than or equal to startLine.");
 
         var fullPath = await ValidateAndResolvePathAsync(path);
-        var lines = await File.ReadAllLinesAsync(fullPath);
+        var lines = await FileReader.ReadAllLinesAsync(fullPath);
 
         if (lines.Length == 0)
             return string.Empty;
@@ -171,7 +180,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             throw new ArgumentOutOfRangeException(nameof(contextLines), "contextLines must be >= 0.");
 
         var fullPath = await ValidateAndResolvePathAsync(path);
-        var lines = await File.ReadAllLinesAsync(fullPath);
+        var lines = await FileReader.ReadAllLinesAsync(fullPath);
 
         var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
         var sb = new StringBuilder();
@@ -285,11 +294,11 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 
                 if (!includeLineNumbers)
                 {
-                    content = await File.ReadAllTextAsync(fullPath);
+                    content = await FileReader.ReadAllTextAsync(fullPath);
                 }
                 else
                 {
-                    var lines = await File.ReadAllLinesAsync(fullPath);
+                    var lines = await FileReader.ReadAllLinesAsync(fullPath);
                     content = FormatLinesWithNumbers(lines, 1);
                 }
 
