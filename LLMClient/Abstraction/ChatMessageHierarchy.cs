@@ -69,16 +69,16 @@ public static class ChatMessageHierarchy
         chatMessage.AdditionalProperties[AgentKey] = agent.Name;
     }
     
-    public static void TagLoopLevel(IEnumerable<ChatMessage> messages, int roundNumber, ReactHistoryMessageKind kind,
+    public static void TagLoopLevel(this IEnumerable<ChatMessage> messages, int roundNumber, ReactHistoryMessageKind kind,
         string? agentId = null)
     {
         foreach (var message in messages)
         {
-            TagLoopLevel(message, roundNumber, kind, agentId);
+            message.TagLoopLevel(roundNumber, kind, agentId);
         }
     }
 
-    public static void TagLoopLevel(ChatMessage message, int roundNumber, ReactHistoryMessageKind kind,
+    public static void TagLoopLevel(this ChatMessage message, int roundNumber, ReactHistoryMessageKind kind,
         string? agentId = null)
     {
         message.AdditionalProperties ??= new AdditionalPropertiesDictionary();
@@ -90,7 +90,7 @@ public static class ChatMessageHierarchy
         }
     }
 
-    public static ReactHistorySegmentation SegmentReactLevel(IReadOnlyList<ChatMessage> chatHistory, string? agentIdFilter = null)
+    public static ReactHistorySegmentation SegmentReactLevel(this IReadOnlyList<ChatMessage> chatHistory, string? agentIdFilter = null)
     {
         var segmentation = new ReactHistorySegmentation();
         var rounds = new Dictionary<int, ReactHistoryRound>();

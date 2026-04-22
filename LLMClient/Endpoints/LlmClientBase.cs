@@ -399,7 +399,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 DeduplicateRepeatedThinking(preResponseMessages, chatMessages);
             }
 
-            ChatMessageHierarchy.TagLoopLevel(preResponseMessages, reactRoundNumber, ReactHistoryMessageKind.Assistant,
+            preResponseMessages.TagLoopLevel(reactRoundNumber, ReactHistoryMessageKind.Assistant,
                 agentId);
             foreach (var preResponseMessage in preResponseMessages)
             {
@@ -509,7 +509,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
             step.EmitDiagnostic(DiagLevel.Info, "Processing function calls...");
             functionResultMessage = new ChatMessage();
-            ChatMessageHierarchy.TagLoopLevel(functionResultMessage, reactRoundNumber,
+            functionResultMessage.TagLoopLevel(reactRoundNumber,
                 ReactHistoryMessageKind.Observation, agentId);
             loopMessages.Add(functionResultMessage);
             chatMessages.AddRange(loopMessages);
