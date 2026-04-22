@@ -55,7 +55,18 @@ public class APIDefaultOption : BaseViewModel<APIDefaultOption>
             OnPropertyChanged();
         }
     }
-    
+
+    public string APIVersion
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    } = "v1";
+
     public Dictionary<string, string>? AdditionalHeaders
     {
         get;
@@ -66,7 +77,7 @@ public class APIDefaultOption : BaseViewModel<APIDefaultOption>
             OnPropertyChanged();
         }
     }
-    
+
     public ICommand ConfigHeadersCommand => new RelayCommand(() =>
     {
         var envWindow = new KeyValueConfigWindow()

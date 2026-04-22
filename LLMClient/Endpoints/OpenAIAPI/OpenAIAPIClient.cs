@@ -101,6 +101,7 @@ public class OpenAIAPIClient : LlmClientBase
             {
                 ApiKey = apiToken,
                 BaseDomain = Option.URL,
+                ApiVersion = Option.APIVersion,
             }, httpClient);
             services.AddSingleton<IChatClient>(openAiService);
             var serviceProvider = services.BuildServiceProvider();
