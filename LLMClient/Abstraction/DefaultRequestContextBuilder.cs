@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using LLMClient.Dialog;
@@ -30,6 +30,7 @@ public class DefaultRequestContextBuilder
         var dialogContext = new DefaultRequestContextBuilder(history)
         {
             SystemPrompt = systemPrompt,
+            SessionId = sessionId
         };
         dialogContext.MapFromRequest(requestViewItem);
         return dialogContext;
@@ -41,15 +42,36 @@ public class DefaultRequestContextBuilder
     public virtual async Task<List<ChatMessage>> GetMessagesAsync(CancellationToken cancellationToken = default)
     {
         var chatMessages = new List<ChatMessage>();
-        foreach (var dialogItem in ChatHistoryItems)
+        foreach (var chatHistoryItem in ChatHistoryItems)
         {
-            if (dialogItem is RequestViewItem requestViewItem)
+            if (chatHistoryItem is RequestViewItem requestViewItem)
             {
                 await requestViewItem.EnsureDataAsync(cancellationToken);
             }
 
-            var messages = dialogItem.Messages;
-            chatMessages.AddRange(messages);
+            var messages = chatHistoryItem.Messages;
+            foreach (var message in messages)
+            {
+                // Level 3: DialogItem tag
+                if (chatHistoryItem is IDialogItem dialogItem)
+                {
+                    message.TagDialogLevel(dialogItem);
+                }
+
+                // Level 2: Interaction tag
+                if (chatHistoryItem is IInteractionItem interactionItem)
+                {
+                    message.TagInteractionLevel(interactionItem);
+                }
+
+                // Level 1: Session tag
+                if (SessionId.HasValue)
+                {
+                    message.TagSessionLevel(SessionId.Value);
+                }
+
+                chatMessages.Add(message);
+            }
         }
 
         return chatMessages;
@@ -68,6 +90,12 @@ public class DefaultRequestContextBuilder
     public string? WorkingDirectory { get; set; }
 
     public string? SystemPrompt { get; set; }
+
+    /// <summary>
+    /// Session ID for Level 1 session tagging. Set by <see cref="CreateFromSession"/>;
+    /// null when the builder is created via <see cref="CreateFromHistory"/> without a session.
+    /// </summary>
+    public Guid? SessionId { get; set; }
 
     public ISearchOption? SearchOption { get; set; }
 
@@ -212,16 +240,25 @@ public class DefaultRequestContextBuilder
 
         if (!string.IsNullOrWhiteSpace(systemPrompt))
         {
+            ChatMessage systemMessage;
             if (model.SupportSystemPrompt)
             {
-                chatHistory.Add(new ChatMessage(ChatRole.System, systemPrompt));
+                systemMessage = new ChatMessage(ChatRole.System, systemPrompt);
             }
             else
             {
                 Trace.TraceWarning(
                     "System prompt is not supported by this model, but system prompt or additional prompt is provided. The prompt will be added as the first message in the chat history.");
-                chatHistory.Add(new ChatMessage(ChatRole.User, systemPrompt));
+                systemMessage = new ChatMessage(ChatRole.User, systemPrompt);
             }
+
+            // System message gets session tag but not dialog/interaction tags
+            if (SessionId.HasValue)
+            {
+                systemMessage.TagSessionLevel(SessionId.Value);
+            }
+
+            chatHistory.Add(systemMessage);
         }
 
         chatHistory.AddRange(chatMessages);
