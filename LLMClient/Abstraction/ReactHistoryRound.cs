@@ -5,7 +5,7 @@ namespace LLMClient.Abstraction;
 public sealed class ReactHistoryRound
 {
     public required int RoundNumber { get; init; }
-
+    
     public ChatMessage? AssistantMessage { get; set; }
 
     public ChatMessage? ObservationMessage { get; set; }

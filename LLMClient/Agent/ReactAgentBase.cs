@@ -74,11 +74,7 @@ public abstract class ReactAgentBase : ISingleClientAgent
             yield break;
 
         // 注入 AgentId，确保该 Agent 的 ReAct 轮次与其他 Agent 隔离
-        if (requestContext is RequestContext rc)
-        {
-            rc.AgentId = AgentId;
-        }
-
+        requestContext.AgentId = AgentId;
         _previousAssistantText = null;
 
         while (!cancellationToken.IsCancellationRequested)

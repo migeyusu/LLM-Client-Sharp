@@ -913,6 +913,13 @@
                                 ToolTip="编辑当前回复"
                                 Content="{materialDesign:PackIcon Kind=PencilOutline,Size=20}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
+                                Command="{x:Static models:LoopsPrunerViewModel.CreatePruner}"
+                                CommandParameter="{Binding AcceptedResponse,Mode=OneTime}"
+                                VerticalAlignment="Center"
+                                Margin="6,0,0,0"
+                                ToolTip="管理消息列表"
+                                Content="{materialDesign:PackIcon Kind=PlaylistEdit,Size=20}" />
+                        <Button Style="{StaticResource SmallIconButtonStyle}"
                                 Command="{x:Static utility:CommonCommands.CopyCommand}"
                                 CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                 VerticalAlignment="Center"
@@ -1118,11 +1125,11 @@
                             Style="{StaticResource SmallIconButtonStyle}" />
                     <Button Style="{StaticResource SmallIconButtonStyle}"
                             Command="{x:Static models:LoopsPrunerViewModel.CreatePruner}"
-                            CommandParameter="{Binding  Mode=OneTime}"
+                            CommandParameter="{Binding Response,  Mode=OneTime}"
                             VerticalAlignment="Center"
                             Margin="6,0,0,0"
                             ToolTip="管理消息列表"
-                            Content="{materialDesign:PackIcon Kind=PencilOutline,Size=20}" />
+                            Content="{materialDesign:PackIcon Kind=PlaylistEdit,Size=20}" />
                 </StackPanel>
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"

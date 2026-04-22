@@ -29,6 +29,7 @@
                               xmlns:mcp="clr-namespace:LLMClient.ToolCall.MCP"
                               xmlns:research1="clr-namespace:LLMClient.Agent.Research"
                               xmlns:dialogModels="clr-namespace:LLMClient.Dialog.Models"
+                              xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
                               mc:Ignorable="d"
                               FontFamily="Microsoft YaHei UI"
                               Title="LLM Client"
@@ -100,85 +101,91 @@
                                 <DataTemplate DataType="{x:Type dialogModels:LoopsPrunerViewModel}">
                                     <HeaderedContentControl Header="修改消息列表"
                                                             Style="{StaticResource DialogContentControlStyle}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <ListBox ItemsSource="{Binding Rounds}"
-                                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                                <ListBox.ItemTemplate>
-                                                    <DataTemplate DataType="{x:Type abstraction:ReactHistoryRound}">
-                                                        <materialDesign:Card Padding="8"
-                                                                             Margin="4"
-                                                                             materialDesign:ElevationAssist.Elevation="Dp2"
-                                                                             UniformCornerRadius="8"
-                                                                             MinWidth="400">
-                                                            <materialDesign:Card.ContextMenu>
-                                                                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                                                                    <MenuItem Header="移除本回合"
-                                                                              Command="{Binding DataContext.RemoveMessageCommand}"
-                                                                              CommandParameter="{Binding}" />
-                                                                </ContextMenu>
-                                                            </materialDesign:Card.ContextMenu>
-                                                            <StackPanel Orientation="Vertical">
-                                                                <StackPanel Orientation="Horizontal"
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <ScrollViewer>
+                                                <ItemsControl ItemsSource="{Binding Rounds}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type abstraction:ReactHistoryRound}">
+                                                            <materialDesign:Card Padding="8"
+                                                                    Margin="4"
+                                                                    materialDesign:ElevationAssist.Elevation="Dp2"
+                                                                    UniformCornerRadius="8"
+                                                                    MinWidth="400">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto" />
+                                                                        <ColumnDefinition />
+                                                                        <ColumnDefinition Width="Auto" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <StackPanel Orientation="Horizontal"
                                                                             HorizontalAlignment="Stretch">
-                                                                    <TextBlock Text="{Binding RoundNumber, StringFormat=Round {0}}"
-                                                                               FontWeight="Bold"
-                                                                               Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                                                               VerticalAlignment="Center" />
-                                                                    <TextBlock Text="[ERROR]"
-                                                                               Foreground="Red"
-                                                                               FontWeight="Bold"
-                                                                               Margin="8,0,0,0"
-                                                                               Visibility="{Binding HasError, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                               VerticalAlignment="Center" />
-                                                                    <TextBlock Text="[INVALID]"
-                                                                               Foreground="Orange"
-                                                                               FontWeight="Bold"
-                                                                               Margin="8,0,0,0"
-                                                                               Visibility="{Binding IsValid, Mode=OneWay, Converter={StaticResource InvertBooleanConverter}}"
-                                                                               VerticalAlignment="Center" />
-                                                                </StackPanel>
-
-                                                                <Separator Margin="0,4" />
-
-                                                                <TextBlock Text="Assistant:"
-                                                                           FontWeight="Bold"
-                                                                           Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary.Light}" />
-                                                                <Border Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
-                                                                        Padding="4"
-                                                                        Margin="0,2"
-                                                                        CornerRadius="4">
-                                                                    <TextBlock TextWrapping="Wrap"
-                                                                               Foreground="{DynamicResource MaterialDesign.Brush.Body.Medium}"
-                                                                               Text="{Binding AssistantMessage}" />
-                                                                </Border>
-
-                                                                <TextBlock Text="Observation:"
-                                                                           FontWeight="Bold"
-                                                                           Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                                                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary.Light}"
-                                                                           Margin="0,4,0,0" />
-                                                                <Border Background="{DynamicResource MaterialDesign.Brush.TextFieldBox.Background}"
-                                                                        Padding="4"
-                                                                        Margin="0,2"
-                                                                        CornerRadius="4">
-                                                                    <TextBlock TextWrapping="Wrap"
-                                                                               Foreground="{DynamicResource MaterialDesign.Brush.Body.Medium}"
-                                                                               Text="{Binding ObservationMessage}" />
-                                                                </Border>
-                                                            </StackPanel>
-                                                        </materialDesign:Card>
-                                                    </DataTemplate>
-                                                </ListBox.ItemTemplate>
-                                            </ListBox>
-                                            <StackPanel Orientation="Vertical"
+                                                                        <TextBlock
+                                                                            Text="{Binding RoundNumber, StringFormat=Round {0}}"
+                                                                            FontWeight="Bold"
+                                                                            Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                                            VerticalAlignment="Center" />
+                                                                        <TextBlock Text="[ERROR]"
+                                                                                Foreground="Red"
+                                                                                FontWeight="Bold"
+                                                                                Margin="8,0,0,0"
+                                                                                Visibility="{Binding HasError, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                                VerticalAlignment="Center" />
+                                                                        <TextBlock Text="[INVALID]"
+                                                                                Foreground="Orange"
+                                                                                FontWeight="Bold"
+                                                                                Margin="8,0,0,0"
+                                                                                Visibility="{Binding IsValid, Mode=OneWay, Converter={StaticResource InvertBooleanConverter}}"
+                                                                                VerticalAlignment="Center" />
+                                                                    </StackPanel>
+                                                                    <ItemsControl Grid.Column="1"
+                                                                            ItemsSource="{Binding AssistantMessage.Contents,Mode=OneTime}"
+                                                                            ItemsPanel="{StaticResource HorizontalItemsPanelTemplate}">
+                                                                        <ItemsControl.ItemTemplateSelector>
+                                                                            <component:TypeBasedDataTemplateSelector>
+                                                                                <component:DataTemplateTypePair>
+                                                                                    <DataTemplate
+                                                                                        DataType="{x:Type ai:TextContent}">
+                                                                                        <TextBlock
+                                                                                            Text="{Binding Text,Mode=OneTime}" />
+                                                                                    </DataTemplate>
+                                                                                </component:DataTemplateTypePair>
+                                                                                <component:DataTemplateTypePair>
+                                                                                    <DataTemplate
+                                                                                        DataType="{x:Type ai:TextReasoningContent}">
+                                                                                        <TextBlock
+                                                                                            Text="{Binding Text,Mode=OneTime}" />
+                                                                                    </DataTemplate>
+                                                                                </component:DataTemplateTypePair>
+                                                                                <component:DataTemplateTypePair>
+                                                                                    <DataTemplate
+                                                                                        DataType="{x:Type ai:FunctionCallContent}">
+                                                                                        <TextBlock
+                                                                                            Text="{Binding  Name,Mode=OneTime}" />
+                                                                                    </DataTemplate>
+                                                                                </component:DataTemplateTypePair>
+                                                                            </component:TypeBasedDataTemplateSelector>
+                                                                        </ItemsControl.ItemTemplateSelector>
+                                                                    </ItemsControl>
+                                                                </Grid>
+                                                            </materialDesign:Card>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+                                            <StackPanel Grid.Row="1"
+                                                        Orientation="Vertical"
+                                                        HorizontalAlignment="Right"
                                                         VerticalAlignment="Center"
                                                         Margin="16,0,0,0">
                                                 <Button Command="{Binding ApplyEditCommand}"
-                                                        Style="{StaticResource MaterialDesignRaisedPrimaryButton}"
+                                                        IsEnabled="{Binding CanApply,Mode=OneTime}"
                                                         Content="应用更改" />
                                             </StackPanel>
-                                        </StackPanel>
+                                        </Grid>
                                     </HeaderedContentControl>
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type viewModel:ArchiveManagerViewModel}">

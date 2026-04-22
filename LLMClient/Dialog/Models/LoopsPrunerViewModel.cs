@@ -29,6 +29,8 @@ public partial class LoopsPrunerViewModel : BaseViewModel
 
     public ObservableCollection<ReactHistoryRound> Rounds { get; set; }
 
+    public bool CanApply { get; set; }
+
     private readonly ResponseViewItemBase _response;
 
     public LoopsPrunerViewModel(ResponseViewItemBase response)
@@ -37,6 +39,7 @@ public partial class LoopsPrunerViewModel : BaseViewModel
         Rounds =
             new ObservableCollection<ReactHistoryRound>(ReactHistorySegmenter.Segment(response.Messages.ToArray())
                 .Rounds);
+        CanApply = Rounds.Count > 0;
     }
 
     [RelayCommand]

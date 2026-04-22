@@ -41,8 +41,8 @@ public class AgentHistoryIsolationTests
         Assert.Equal(2, segmentation.Rounds.Count);
         Assert.All(segmentation.Rounds, round =>
         {
-            Assert.All(round.AssistantMessages, msg =>
-                Assert.Equal("Agent-A", msg.AdditionalProperties?["llmclient.react.agent"]?.ToString()));
+            Assert.Equal("Agent-A",
+                round.AssistantMessage?.AdditionalProperties?["llmclient.react.agent"]?.ToString());
         });
 
         // Non-matching messages should be in preamble
@@ -191,11 +191,13 @@ public class AgentHistoryIsolationTests
         var history = new List<ChatMessage>();
 
         // Agent-A Round 1
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-A", "A-thinking-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-A",
+            "A-thinking-1"));
         history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-A", "A-obs-1"));
 
         // Agent-B Round 1
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B", "B-thinking-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B",
+            "B-thinking-1"));
         history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-B", "B-obs-1"));
 
         // Without agent filter - both rounds with number 1 should exist as separate rounds
@@ -358,25 +360,34 @@ public class AgentHistoryIsolationTests
         };
 
         // Agent-A Round 1
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-A", "A-reasoning-1"));
-        history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-A", "A-result-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-A",
+            "A-reasoning-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-A",
+            "A-result-1"));
 
         // Agent-B Round 1
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B", "B-reasoning-1"));
-        history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-B", "B-result-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B",
+            "B-reasoning-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-B",
+            "B-result-1"));
 
         // Agent-A Round 2
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 2, ReactHistoryMessageKind.Assistant, "Agent-A", "A-reasoning-2"));
-        history.Add(CreateTaggedMessage(ChatRole.Tool, 2, ReactHistoryMessageKind.Observation, "Agent-A", "A-result-2"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 2, ReactHistoryMessageKind.Assistant, "Agent-A",
+            "A-reasoning-2"));
+        history.Add(CreateTaggedMessage(ChatRole.Tool, 2, ReactHistoryMessageKind.Observation, "Agent-A",
+            "A-result-2"));
 
         // Agent-B Round 2
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 2, ReactHistoryMessageKind.Assistant, "Agent-B", "B-reasoning-2"));
-        history.Add(CreateTaggedMessage(ChatRole.Tool, 2, ReactHistoryMessageKind.Observation, "Agent-B", "B-result-2"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 2, ReactHistoryMessageKind.Assistant, "Agent-B",
+            "B-reasoning-2"));
+        history.Add(CreateTaggedMessage(ChatRole.Tool, 2, ReactHistoryMessageKind.Observation, "Agent-B",
+            "B-result-2"));
 
         return history;
     }
 
-    private static ChatMessage CreateTaggedMessage(ChatRole role, int roundNumber, ReactHistoryMessageKind kind, string? agentId = null, string text = "")
+    private static ChatMessage CreateTaggedMessage(ChatRole role, int roundNumber, ReactHistoryMessageKind kind,
+        string? agentId = null, string text = "")
     {
         var message = new ChatMessage(role, text);
         ReactHistorySegmenter.TagMessage(message, roundNumber, kind, agentId);
@@ -394,6 +405,7 @@ public class AgentHistoryIsolationTests
 
         public string Name => "SummaryOnlyLlmClient";
         public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+
         public IEndpointModel Model { get; } = new APIModelInfo
         {
             APIId = "summary-model",
@@ -404,11 +416,13 @@ public class AgentHistoryIsolationTests
             SupportSystemPrompt = true,
             SupportTextGeneration = true,
         };
+
         public IModelParams Parameters { get; set; } = new DefaultModelParam { Streaming = false };
         public bool IsResponding { get; set; }
 
         public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext requestContext,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+            [System.Runtime.CompilerServices.EnumeratorCancellation]
+            CancellationToken cancellationToken = default)
         {
             var step = new ReactStep();
             step.EmitText(_summaryText);

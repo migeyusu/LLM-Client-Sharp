@@ -1,16 +1,8 @@
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Input;
 using AutoMapper;
-using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
-using LLMClient.Component.ViewModel;
 using LLMClient.Endpoints;
-
 using LLMClient.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -62,8 +54,10 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     {
         get { return this.CalculateTps(); }
     }
-    
+
     private int _respondingStateRefCount;
+
+    public const string DIALOGAGENT = "Dialog";
 
     #region responding
 
@@ -86,9 +80,10 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             AcquireRespondingState();
             ErrorMessage = null;
             Messages = [];
-            using (CreateRequestTokenSource(token,out var liveToken))
+            using (CreateRequestTokenSource(token, out var liveToken))
             {
                 var requestContext = await contextBuilder.BuildAsync(Client.Model, liveToken);
+                requestContext.AgentId = DIALOGAGENT;
                 completedResult = await ConsumeReactStepsAsync(
                     Client.SendRequestAsync(requestContext, liveToken));
             }

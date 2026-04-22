@@ -15,7 +15,7 @@ public sealed class PreambleSummaryChatHistoryCompressionStrategy : IChatHistory
 
     private readonly Summarizer _summarizer;
 
-    private ITokensCounter _tokensCounter;
+    private readonly ITokensCounter _tokensCounter;
 
     public PreambleSummaryChatHistoryCompressionStrategy(Summarizer summarizer, ITokensCounter tokensCounter)
     {
