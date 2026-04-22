@@ -66,7 +66,7 @@ public class AgentHistoryIsolationTests
 
         // All Agent-A messages (including tagged ones) should be in preamble
         var agentAMessagesInPreamble = segmentation.PreambleMessages
-            .Where(m => m.AdditionalProperties?["llmclient.react.agent"]?.ToString() == "Agent-A")
+            .Where(m => m.AdditionalProperties?["llmclient.agent"]?.ToString() == "Agent-A")
             .ToList();
         Assert.Equal(4, agentAMessagesInPreamble.Count); // 2 assistant + 2 observation
 
@@ -153,7 +153,7 @@ public class AgentHistoryIsolationTests
 
         Assert.Equal(1, message.AdditionalProperties?["llmclient.react.round"]);
         Assert.Equal("Assistant", message.AdditionalProperties?["llmclient.react.kind"]?.ToString());
-        Assert.Equal("Test-Agent", message.AdditionalProperties?["llmclient.react.agent"]?.ToString());
+        Assert.Equal("Test-Agent", message.AdditionalProperties?["llmclient.agent"]?.ToString());
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class AgentHistoryIsolationTests
         ChatMessageHierarchy.TagLoopLevel(message, 1, ReactHistoryMessageKind.Assistant);
 
         // The agent key should not be stored when agentId is null
-        Assert.False(message.AdditionalProperties?.ContainsKey("llmclient.react.agent") ?? false);
+        Assert.False(message.AdditionalProperties?.ContainsKey("llmclient.agent") ?? false);
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public class AgentHistoryIsolationTests
         ChatMessageHierarchy.TagLoopLevel(messages, 1, ReactHistoryMessageKind.Assistant, "Batch-Agent");
 
         Assert.All(messages, msg =>
-            Assert.Equal("Batch-Agent", msg.AdditionalProperties?["llmclient.react.agent"]?.ToString()));
+            Assert.Equal("Batch-Agent", msg.AdditionalProperties?["llmclient.agent"]?.ToString()));
     }
 
     #endregion
@@ -212,14 +212,14 @@ public class AgentHistoryIsolationTests
         Assert.Single(segmentationA.Rounds);
         Assert.Equal(1, segmentationA.Rounds[0].RoundNumber);
         Assert.All(segmentationA.Rounds[0].Messages, m =>
-            Assert.Equal("Agent-A", m.AdditionalProperties?["llmclient.react.agent"]?.ToString()));
+            Assert.Equal("Agent-A", m.AdditionalProperties?["llmclient.agent"]?.ToString()));
 
         // With Agent-B filter
         var segmentationB = ChatMessageHierarchy.SegmentReactLevel(history, "Agent-B");
         Assert.Single(segmentationB.Rounds);
         Assert.Equal(1, segmentationB.Rounds[0].RoundNumber);
         Assert.All(segmentationB.Rounds[0].Messages, m =>
-            Assert.Equal("Agent-B", m.AdditionalProperties?["llmclient.react.agent"]?.ToString()));
+            Assert.Equal("Agent-B", m.AdditionalProperties?["llmclient.agent"]?.ToString()));
     }
 
     [Fact]

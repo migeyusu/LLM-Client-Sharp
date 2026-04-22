@@ -5,20 +5,28 @@ using Microsoft.Extensions.AI;
 namespace LLMClient.Abstraction;
 
 /// <summary>
-/// 
+/// 对话消息的层次标签系统，提供 5 个级别的消息追踪能力。
+/// <para>
+/// 层次结构由高到低：
+/// <list type="bullet">
+///   <item>1. Session level — 同一个 session 的消息具有相同的 session id 标签</item>
+///   <item>2. Interaction key — 一次 interaction 包括 request + response，具有相同的 interaction id 标签</item>
+///   <item>3. DialogItem level — 一个 dialog item 为 request 或 response 内的所有消息</item>
+///   <item>3.5. Agent level — 单个 agent 目前限制在 response 内</item>
+///   <item>4. React loop level — 表示一个轮次的请求，包括 assistant + observation，具有相同的 round number 标签</item>
+///   <item>5. Message level — 最低级别，单条消息（无专用标签）</item>
+/// </list>
+/// </para>
+/// <para>
+/// 标签职责分配：
+/// <list type="bullet">
+///   <item>Level 1–3 (Session / Interaction / DialogItem): 由 <see cref="DefaultRequestContextBuilder"/> 在 GetMessagesAsync 中打标签</item>
+///   <item>Level 3.5 (Agent) + Level 4 (React Loop): 由 LlmClientBase 在 ProduceStepAsync 中打标签</item>
+/// </list>
+/// </para>
 /// </summary>
 public static class ChatMessageHierarchy
 {
-    /*
-     * 对话的层次结构为5个级别：
-     * 1. session level，最高级别，同一个 session 的消息具有相同的 session id 标签
-     * 2. interaction key, 一次interaction包括 requestviewitem + responseviewitem，具有相同的 interaction id 标签
-     * 3. dialogitem level，一个dialog item为requestviewitem或responseviewitem内的所有消息
-     * 3.5 agent level，单个agent目前限制在responseviewitem
-     * 4. react loop level，表示一个轮次的请求，包括 assistant message 和 observation message，具有相同的 round number 标签
-     * 5. message level，最低级别，单条消息
-     */
-
     /// <summary>
     /// react loop level
     /// </summary>
@@ -44,7 +52,7 @@ public static class ChatMessageHierarchy
     private const string SessionKey = "llmclient.session";
 
     public const int CompressedSummaryRoundNumber = 0;
-    
+
     public static void TagDialogLevel(this ChatMessage chatMessage, IDialogItem item)
     {
         chatMessage.AdditionalProperties ??= new AdditionalPropertiesDictionary();
@@ -56,11 +64,19 @@ public static class ChatMessageHierarchy
         chatMessage.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         chatMessage.AdditionalProperties[InteractionKey] = interaction.InteractionId;
     }
-    
+
     public static void TagSessionLevel(this ChatMessage chatMessage, ITextDialogSession session)
     {
+        TagSessionLevel(chatMessage, session.ID);
+    }
+
+    /// <summary>
+    /// 标记消息的 session level，无需完整 session 对象，仅提供 sessionId 即可。
+    /// </summary>
+    public static void TagSessionLevel(this ChatMessage chatMessage, Guid sessionId)
+    {
         chatMessage.AdditionalProperties ??= new AdditionalPropertiesDictionary();
-        chatMessage.AdditionalProperties[SessionKey] = session.ID;
+        chatMessage.AdditionalProperties[SessionKey] = sessionId;
     }
 
     public static void TagAgentLevel(this ChatMessage chatMessage, IAgent agent)
@@ -68,7 +84,7 @@ public static class ChatMessageHierarchy
         chatMessage.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         chatMessage.AdditionalProperties[AgentKey] = agent.Name;
     }
-    
+
     public static void TagLoopLevel(IEnumerable<ChatMessage> messages, int roundNumber, ReactHistoryMessageKind kind,
         string? agentId = null)
     {
@@ -104,7 +120,6 @@ public static class ChatMessageHierarchy
                 continue;
             }
 
-            // 如果指定了 agentIdFilter，且消息的 agentId 不匹配，则视为 Preamble
             if (agentIdFilter != null && TryGetAgentId(message) != agentIdFilter)
             {
                 segmentation.PreambleMessages.Add(message);
@@ -162,7 +177,7 @@ public static class ChatMessageHierarchy
     }
 
     /// <summary>
-    /// 通过线性读取方式对历史消息进行 ReAct Loop 分段。
+    /// 通过线性读取方式对历史消息进行 ReAct Loop 分割。
     /// 不依赖 AdditionalProperties 中的标签，而是根据消息内容判断：
     /// role 为 Assistant 且包含 FunctionCall 的消息，
     /// 与随后出现的 role 为 Tool 且包含对应 FunctionCall 结果的消息，
