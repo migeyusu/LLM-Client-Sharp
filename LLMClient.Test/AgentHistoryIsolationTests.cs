@@ -39,10 +39,12 @@ public class AgentHistoryIsolationTests
 
         // Should only have Agent-A's 2 rounds
         Assert.Equal(2, segmentation.Rounds.Count);
-        Assert.All(segmentation.Rounds, round =>
-        {
-            Assert.Equal("Agent-A", round.AssistantMessage?.AdditionalProperties?["llmclient.react.agent"]?.ToString());
-        });
+        Assert.All(segmentation.Rounds,
+            round =>
+            {
+                Assert.Equal("Agent-A",
+                    round.AssistantMessage?.AdditionalProperties?["llmclient.react.agent"]?.ToString());
+            });
 
         // Non-matching messages should be in preamble
         var preambleRoundNumbers = segmentation.PreambleMessages
@@ -190,11 +192,13 @@ public class AgentHistoryIsolationTests
         var history = new List<ChatMessage>();
 
         // Agent-A Round 1
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-A", "A-thinking-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-A",
+            "A-thinking-1"));
         history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-A", "A-obs-1"));
 
         // Agent-B Round 1
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B", "B-thinking-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B",
+            "B-thinking-1"));
         history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-B", "B-obs-1"));
 
         // Without agent filter - both rounds with number 1 should exist as separate rounds
@@ -517,30 +521,40 @@ public class AgentHistoryIsolationTests
         };
 
         // Agent-A Round 1
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-A", "A-reasoning-1"));
-        history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-A", "A-result-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-A",
+            "A-reasoning-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-A",
+            "A-result-1"));
 
         // Agent-B Round 1
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B", "B-reasoning-1"));
-        history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-B", "B-result-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B",
+            "B-reasoning-1"));
+        history.Add(CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-B",
+            "B-result-1"));
 
         // Agent-A Round 2
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 2, ReactHistoryMessageKind.Assistant, "Agent-A", "A-reasoning-2"));
-        history.Add(CreateTaggedMessage(ChatRole.Tool, 2, ReactHistoryMessageKind.Observation, "Agent-A", "A-result-2"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 2, ReactHistoryMessageKind.Assistant, "Agent-A",
+            "A-reasoning-2"));
+        history.Add(CreateTaggedMessage(ChatRole.Tool, 2, ReactHistoryMessageKind.Observation, "Agent-A",
+            "A-result-2"));
 
         // Agent-B Round 2
-        history.Add(CreateTaggedMessage(ChatRole.Assistant, 2, ReactHistoryMessageKind.Assistant, "Agent-B", "B-reasoning-2"));
-        history.Add(CreateTaggedMessage(ChatRole.Tool, 2, ReactHistoryMessageKind.Observation, "Agent-B", "B-result-2"));
+        history.Add(CreateTaggedMessage(ChatRole.Assistant, 2, ReactHistoryMessageKind.Assistant, "Agent-B",
+            "B-reasoning-2"));
+        history.Add(CreateTaggedMessage(ChatRole.Tool, 2, ReactHistoryMessageKind.Observation, "Agent-B",
+            "B-result-2"));
 
         return history;
     }
 
-    private static ChatMessage CreateTaggedMessage(ChatRole role, int roundNumber, ReactHistoryMessageKind kind, string? agentId = null, string text = "")
+    private static ChatMessage CreateTaggedMessage(ChatRole role, int roundNumber, ReactHistoryMessageKind kind,
+        string? agentId = null, string text = "")
     {
         var message = new ChatMessage(role, text);
         ChatMessageHierarchy.TagLoopLevel(message, roundNumber, kind, agentId);
         return message;
     }
+
     private static ChatMessage CreateFunctionCallMessage(string callId, string functionName)
     {
         var message = new ChatMessage();
@@ -559,14 +573,14 @@ public class AgentHistoryIsolationTests
 
     private sealed class TestDialogItem : IDialogItem
     {
-        public TestDialogItem(IEnumerable<ChatMessage> messages, ChatRole role = default)
+        public TestDialogItem(IEnumerable<ChatMessage> messages)
         {
             Messages = messages.ToArray();
-            Role = role;
+            Role = DialogRole.None;
         }
 
         public Guid Id { get; set; } = Guid.NewGuid();
-        public ChatRole Role { get; }
+        public DialogRole Role { get; }
         public IDialogItem? PreviousItem { get; set; }
         public IReadOnlyCollection<IDialogItem> Children => Array.Empty<IDialogItem>();
         public bool HasFork => false;
@@ -590,6 +604,7 @@ public class AgentHistoryIsolationTests
 
         public string Name => "SummaryOnlyLlmClient";
         public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+
         public IEndpointModel Model { get; } = new APIModelInfo
         {
             APIId = "summary-model",
@@ -600,11 +615,13 @@ public class AgentHistoryIsolationTests
             SupportSystemPrompt = true,
             SupportTextGeneration = true,
         };
+
         public IModelParams Parameters { get; set; } = new DefaultModelParam { Streaming = false };
         public bool IsResponding { get; set; }
 
         public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext requestContext,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+            [System.Runtime.CompilerServices.EnumeratorCancellation]
+            CancellationToken cancellationToken = default)
         {
             var step = new ReactStep();
             step.EmitText(_summaryText);

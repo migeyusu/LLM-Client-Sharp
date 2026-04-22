@@ -10,7 +10,8 @@ public class RootDialogItem : BaseDialogItem
 {
     private static readonly ChatRole EmptyRole = new ChatRole("Empty");
     public override long Tokens { get; } = 0;
-    public override ChatRole Role { get; } = EmptyRole;
+    
+    public override DialogRole Role { get; } = DialogRole.None;
 
     public override IEnumerable<ChatMessage> Messages
     {

@@ -114,7 +114,7 @@ public class HistoryCompressionStrategyTests
         });
 
         Assert.Contains(chatHistory, message => message.Role == ChatRole.Assistant &&
-                                             message.Text == "[Compressed history summary]\ncondensed task summary");
+                                                message.Text == "[Compressed history summary]\ncondensed task summary");
         Assert.DoesNotContain(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
             content => content.CallId == "call-1");
         Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
@@ -205,7 +205,8 @@ public class HistoryCompressionStrategyTests
     public async Task PreambleSummary_CompressesPreviousTaskContext()
     {
         var chatHistory = CreateHistoryWithPreambleAndRounds(shortPreamble: false);
-        var summaryClient = new SummaryOnlyLlmClient("investigated auth module, fixed token refresh bug in AuthService.cs");
+        var summaryClient =
+            new SummaryOnlyLlmClient("investigated auth module, fixed token refresh bug in AuthService.cs");
         var summarizer = new Summarizer(new GlobalOptions());
         var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
 
@@ -317,7 +318,8 @@ public class HistoryCompressionStrategyTests
         {
             new(ChatRole.System, "You are helpful."),
             new(ChatRole.User, "Previous task: fix authentication"),
-            new(ChatRole.Assistant, "I analyzed the auth module and found a token refresh bug in AuthService.cs. I applied the fix and verified it works."),
+            new(ChatRole.Assistant,
+                "I analyzed the auth module and found a token refresh bug in AuthService.cs. I applied the fix and verified it works."),
             new(ChatRole.User, "Now fix the CI pipeline."),
         };
 
@@ -424,7 +426,7 @@ public class HistoryCompressionStrategyTests
         // Round 2's success pair must still be present (it is within PreserveRecentRounds=1).
         Assert.Contains("call-ok", historyForRound3);
     }
-    
+
 
     #region Agent Isolation Tests
 
@@ -779,13 +781,16 @@ public class HistoryCompressionStrategyTests
 
     private sealed class MockDialogSession : ITextDialogSession
     {
+        public Guid ID { get; } = Guid.NewGuid();
         public IReadOnlyList<IDialogItem> DialogItems { get; } = new List<IDialogItem>();
         public List<IChatHistoryItem> GetHistory() => [];
         public Task CutContextAsync(IRequestItem? requestItem = null) => Task.CompletedTask;
         public string? SystemPrompt { get; } = null;
         public IEnumerable<Type> SupportedAgents { get; } = Array.Empty<Type>();
         public IFunctionGroupSource? ToolsSource { get; } = null;
-        public Task<IResponse> NewResponse(RequestOption option, IRequestItem? insertBefore = null, CancellationToken token = default)
+
+        public Task<IResponse> NewResponse(RequestOption option, IRequestItem? insertBefore = null,
+            CancellationToken token = default)
             => Task.FromResult<IResponse>(new RawResponseViewItem());
     }
 
@@ -962,7 +967,8 @@ public class HistoryCompressionStrategyTests
 
         Assert.Equal(3, stepEvents.Count);
         Assert.DoesNotContain(stepEvents[0], evt => evt is HistoryCompressionStarted or HistoryCompressionCompleted);
-        Assert.Contains(stepEvents[1], evt => evt is HistoryCompressionStarted { Kind: HistoryCompressionKind.ObservationMasking });
+        Assert.Contains(stepEvents[1],
+            evt => evt is HistoryCompressionStarted { Kind: HistoryCompressionKind.ObservationMasking });
         Assert.Contains(stepEvents[1],
             evt => evt is HistoryCompressionCompleted
             {
@@ -1079,9 +1085,9 @@ public class HistoryCompressionStrategyTests
         }
 
         contents.Add(new FunctionCallContent(callId, "noop", new Dictionary<string, object?>
-            {
-                ["value"] = observation,
-            }));
+        {
+            ["value"] = observation,
+        }));
 
         var message = new ChatMessage(ChatRole.Assistant, contents);
 
@@ -1296,7 +1302,8 @@ public class HistoryCompressionStrategyTests
                             parts.Add($"{message.Role}:call:{functionCallContent.Name}:{functionCallContent.CallId}");
                             break;
                         case FunctionResultContent functionResultContent:
-                            parts.Add($"{message.Role}:result:{functionResultContent.CallId}:{functionResultContent.Result}");
+                            parts.Add(
+                                $"{message.Role}:result:{functionResultContent.CallId}:{functionResultContent.Result}");
                             break;
                     }
                 }
@@ -1381,4 +1388,3 @@ public class HistoryCompressionStrategyTests
         }
     }
 }
-

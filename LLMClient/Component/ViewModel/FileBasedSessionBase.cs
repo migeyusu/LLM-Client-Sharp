@@ -36,7 +36,7 @@ public abstract class FileBasedSessionBase : NotifyDataErrorInfoViewModelBase, I
     public string FileFullPath
     {
         get { return field ??= Path.GetFullPath($"{Guid.NewGuid()}.json", DefaultSaveFolderPath); }
-        set;
+        private set;
     }
 
     /// <summary>

@@ -167,7 +167,7 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
         get { return GetAsyncProperty(async () => await TokensCounter.CountTokens(this.RawTextMessage), 0); }
     }
 
-    public override ChatRole Role { get; } = ChatRole.User;
+    public override DialogRole Role { get; } = DialogRole.Request;
 
     public DialogSessionViewModel? ParentSession { get; set; }
 

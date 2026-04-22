@@ -7,7 +7,7 @@ public interface IDialogItem : IChatHistoryItem, ITokenizable
 {
     Guid Id { get; set; }
 
-    ChatRole Role { get; }
+    DialogRole Role { get; }
 
     IDialogItem? PreviousItem { get; }
 
@@ -24,4 +24,12 @@ public interface IDialogItem : IChatHistoryItem, ITokenizable
     IDialogItem RemoveChild(IDialogItem child);
 
     void ClearChildren();
+}
+
+public enum DialogRole
+{
+    Request,
+    Response,
+    Erase,
+    None,
 }

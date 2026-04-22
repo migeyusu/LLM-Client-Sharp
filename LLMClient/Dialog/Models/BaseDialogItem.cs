@@ -10,7 +10,7 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
 
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    public abstract ChatRole Role { get; }
+    public abstract DialogRole Role { get; }
 
     public IDialogItem? PreviousItem
     {

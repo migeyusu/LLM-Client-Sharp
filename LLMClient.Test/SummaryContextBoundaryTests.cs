@@ -74,6 +74,7 @@ public class SummaryContextBoundaryTests
 
     private sealed class SummaryTestSession(IRequestItem requestItem) : ITextDialogSession
     {
+        public Guid ID { get; } = Guid.NewGuid();
         public IReadOnlyList<IDialogItem> DialogItems { get; } = [requestItem];
 
         public IRequestItem? CutContextRequest { get; private set; }
@@ -106,7 +107,7 @@ public class SummaryContextBoundaryTests
     {
         public override long Tokens => content.Length;
 
-        public override ChatRole Role { get; } = ChatRole.Assistant;
+        public override DialogRole Role { get; } = DialogRole.Response;
 
         public override IEnumerable<ChatMessage> Messages
         {

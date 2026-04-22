@@ -1,3 +1,4 @@
+using LLMClient.Agent;
 using LLMClient.Dialog.Models;
 using Microsoft.Extensions.AI;
 
@@ -13,6 +14,7 @@ public static class ChatMessageHierarchy
      * 1. session level，最高级别，同一个 session 的消息具有相同的 session id 标签
      * 2. interaction key, 一次interaction包括 requestviewitem + responseviewitem，具有相同的 interaction id 标签
      * 3. dialogitem level，一个dialog item为requestviewitem或responseviewitem内的所有消息
+     * 3.5 agent level，单个agent目前限制在responseviewitem
      * 4. react loop level，表示一个轮次的请求，包括 assistant message 和 observation message，具有相同的 round number 标签
      * 5. message level，最低级别，单条消息
      */
@@ -42,6 +44,30 @@ public static class ChatMessageHierarchy
     private const string SessionKey = "llmclient.session";
 
     public const int CompressedSummaryRoundNumber = 0;
+    
+    public static void TagDialogLevel(this ChatMessage chatMessage, IDialogItem item)
+    {
+        chatMessage.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        chatMessage.AdditionalProperties[DialogItemKey] = item.Role + "_" + item.Id;
+    }
+
+    public static void TagInteractionLevel(this ChatMessage chatMessage, IInteractionItem interaction)
+    {
+        chatMessage.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        chatMessage.AdditionalProperties[InteractionKey] = interaction.InteractionId;
+    }
+    
+    public static void TagSessionLevel(this ChatMessage chatMessage, ITextDialogSession session)
+    {
+        chatMessage.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        chatMessage.AdditionalProperties[SessionKey] = session.ID;
+    }
+
+    public static void TagAgentLevel(this ChatMessage chatMessage, IAgent agent)
+    {
+        chatMessage.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        chatMessage.AdditionalProperties[AgentKey] = agent.Name;
+    }
     
     public static void TagLoopLevel(IEnumerable<ChatMessage> messages, int roundNumber, ReactHistoryMessageKind kind,
         string? agentId = null)

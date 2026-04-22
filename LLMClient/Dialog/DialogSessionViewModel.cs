@@ -293,6 +293,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         return item is IResponseItem;
     }
 
+    public Guid ID { get; set; } = Guid.NewGuid();
+
     public IReadOnlyList<IDialogItem> DialogItems
     {
         get { return _readOnlyDialogItems; }

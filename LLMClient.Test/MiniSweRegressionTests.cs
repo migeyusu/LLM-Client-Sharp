@@ -1442,6 +1442,7 @@ public class MiniSweRegressionTests
             DialogItems = [];
         }
 
+        public Guid ID { get; } = Guid.NewGuid();
         public IReadOnlyList<IDialogItem> DialogItems { get; }
 
         public List<IChatHistoryItem> GetHistory()
@@ -1479,6 +1480,7 @@ public class MiniSweRegressionTests
 
     private sealed class PassiveTextDialogSession : ITextDialogSession
     {
+        public Guid ID { get; } = Guid.NewGuid();
         public IReadOnlyList<IDialogItem> DialogItems { get; } = [];
 
         public List<IChatHistoryItem> GetHistory()
