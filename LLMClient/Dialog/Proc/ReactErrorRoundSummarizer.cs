@@ -21,7 +21,7 @@ internal static class ReactErrorRoundSummarizer
                           ?? BuildFallbackSummary(round);
         var summaryMessage = new ChatMessage(ChatRole.System,
             $"[Round {round.RoundNumber} error summary] {summaryText}");
-        ReactHistorySegmenter.TagMessage(summaryMessage, round.RoundNumber, ReactHistoryMessageKind.Observation, agentId);
+        ChatMessageHierarchy.TagLoopLevel(summaryMessage, round.RoundNumber, ReactHistoryMessageKind.Observation, agentId);
         return summaryMessage;
     }
 

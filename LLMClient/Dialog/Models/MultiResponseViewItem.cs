@@ -23,7 +23,7 @@ public abstract class MultiResponseViewItem<T> : BaseDialogItem, IResponseItem
 
     public abstract bool IsResponding { get; protected set; }
 
-    public override ChatRole Role => ChatRole.System;
+    public override DialogRole Role => DialogRole.Response;
 
     public MultiResponseViewItem(IEnumerable<T> items, DialogSessionViewModel parentSession)
     {

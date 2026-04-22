@@ -19,7 +19,7 @@ public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCom
     public async Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
     {
 
-        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory, context.AgentId);
+        var segmentation = ChatMessageHierarchy.SegmentReactLevel(context.ChatHistory, context.AgentId);
         var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
         if (segmentation.Rounds.Count <= roundsToKeep)
         {
@@ -51,7 +51,7 @@ public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCom
             if (!string.IsNullOrWhiteSpace(summaryText))
             {
                 var summaryMessage = new ChatMessage(ChatRole.Assistant, summaryText);
-                ReactHistorySegmenter.TagMessage(summaryMessage, round.RoundNumber, ReactHistoryMessageKind.Assistant, context.AgentId);
+                ChatMessageHierarchy.TagLoopLevel(summaryMessage, round.RoundNumber, ReactHistoryMessageKind.Assistant, context.AgentId);
                 replacement.Add(summaryMessage);
             }
         }

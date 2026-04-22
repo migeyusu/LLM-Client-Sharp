@@ -44,7 +44,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         }
     }
 
-    public override ChatRole Role => ChatRole.Assistant;
+    public override DialogRole Role => DialogRole.Response;
 
     public override IEnumerable<ChatMessage> Messages => Response.Messages;
 

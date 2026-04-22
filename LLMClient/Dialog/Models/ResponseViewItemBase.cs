@@ -452,7 +452,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             try
             {
                 var messages = Messages.ToList();
-                var segmentation = ReactHistorySegmenter.Segment(messages);
+                var segmentation = ChatMessageHierarchy.SegmentReactLevel(messages);
                 var keptMessages = new List<ChatMessage>(segmentation.PreambleMessages);
 
                 foreach (var round in segmentation.Rounds)

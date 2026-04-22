@@ -564,27 +564,27 @@ public class MiniSweRegressionTests
                 new TextContent("Let me check."),
                 new FunctionCallContent("call-fail", "broken_tool", new Dictionary<string, object?>()),
             ]);
-            ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+            ChatMessageHierarchy.TagLoopLevel(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
 
             var observationRound1 = new ChatMessage(ChatRole.Tool,
             [
                 new FunctionResultContent("call-fail", "error message")
                     { Exception = new InvalidOperationException("fail") },
             ]);
-            ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+            ChatMessageHierarchy.TagLoopLevel(observationRound1, 1, ReactHistoryMessageKind.Observation);
 
             var assistantRound2 = new ChatMessage(ChatRole.Assistant,
             [
                 new TextContent("Let me try another."),
                 new FunctionCallContent("call-ok", "working_tool", new Dictionary<string, object?>()),
             ]);
-            ReactHistorySegmenter.TagMessage(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
+            ChatMessageHierarchy.TagLoopLevel(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
 
             var observationRound2 = new ChatMessage(ChatRole.Tool,
             [
                 new FunctionResultContent("call-ok", "success result"),
             ]);
-            ReactHistorySegmenter.TagMessage(observationRound2, 2, ReactHistoryMessageKind.Observation);
+            ChatMessageHierarchy.TagLoopLevel(observationRound2, 2, ReactHistoryMessageKind.Observation);
 
             viewItem.Response.Messages = new List<ChatMessage>
             {
@@ -619,7 +619,7 @@ public class MiniSweRegressionTests
                 new FunctionCallContent("call-ok", "working_tool", new Dictionary<string, object?>()),
                 new FunctionCallContent("call-fail", "broken_tool", new Dictionary<string, object?>()),
             ]);
-            ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+            ChatMessageHierarchy.TagLoopLevel(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
 
             var observationRound1 = new ChatMessage(ChatRole.Tool,
             [
@@ -627,7 +627,7 @@ public class MiniSweRegressionTests
                 new FunctionResultContent("call-fail", "error message")
                     { Exception = new InvalidOperationException("fail") },
             ]);
-            ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+            ChatMessageHierarchy.TagLoopLevel(observationRound1, 1, ReactHistoryMessageKind.Observation);
 
             viewItem.Response.Messages = new List<ChatMessage> { assistantRound1, observationRound1 };
 
@@ -653,7 +653,7 @@ public class MiniSweRegressionTests
             [
                 new TextContent("The task is complete."),
             ]);
-            ReactHistorySegmenter.TagMessage(finalAnswer, 1, ReactHistoryMessageKind.Assistant);
+            ChatMessageHierarchy.TagLoopLevel(finalAnswer, 1, ReactHistoryMessageKind.Assistant);
 
             viewItem.Response.Messages = new List<ChatMessage> { finalAnswer };
 
@@ -679,13 +679,13 @@ public class MiniSweRegressionTests
             [
                 new FunctionCallContent("call-ok", "working_tool", new Dictionary<string, object?>()),
             ]);
-            ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+            ChatMessageHierarchy.TagLoopLevel(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
 
             var observationRound1 = new ChatMessage(ChatRole.Tool,
             [
                 new FunctionResultContent("call-ok", "success result"),
             ]);
-            ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+            ChatMessageHierarchy.TagLoopLevel(observationRound1, 1, ReactHistoryMessageKind.Observation);
 
             viewItem.Response.Messages = new List<ChatMessage> { assistantRound1, observationRound1 };
 
@@ -1442,6 +1442,7 @@ public class MiniSweRegressionTests
             DialogItems = [];
         }
 
+        public Guid ID { get; } = Guid.NewGuid();
         public IReadOnlyList<IDialogItem> DialogItems { get; }
 
         public List<IChatHistoryItem> GetHistory()
@@ -1479,6 +1480,7 @@ public class MiniSweRegressionTests
 
     private sealed class PassiveTextDialogSession : ITextDialogSession
     {
+        public Guid ID { get; } = Guid.NewGuid();
         public IReadOnlyList<IDialogItem> DialogItems { get; } = [];
 
         public List<IChatHistoryItem> GetHistory()

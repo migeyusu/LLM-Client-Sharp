@@ -55,7 +55,7 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
         get { return AcceptedResponse?.Tokens ?? 0; }
     }
 
-    public override ChatRole Role { get; } = ChatRole.Assistant;
+    public override DialogRole Role { get; } = DialogRole.Response;
 
     public bool IsMultiResponse
     {

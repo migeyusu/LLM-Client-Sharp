@@ -2,6 +2,8 @@
 
 public class DialogSessionPersistModel
 {
+    public Guid? ID { get; set; }
+    
     public IDialogPersistItem[]? DialogItems { get; set; }
 
     public IDialogPersistItem? RootNode { get; set; }

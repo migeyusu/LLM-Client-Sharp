@@ -1,6 +1,7 @@
 ﻿using System.Windows.Data;
 using System.Windows.Media;
 using LambdaConverters;
+using LLMClient.Dialog.Models;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog;
@@ -27,39 +28,30 @@ internal static class NavigationConverters
         return Brushes.White;
     });
 
-    public static readonly IValueConverter RoleToBorderBrush = ValueConverter.Create<ChatRole, Brush>(e =>
+    public static readonly IValueConverter RoleToBorderBrush = ValueConverter.Create<DialogRole, Brush>(e =>
     {
-        if (e.Value == ChatRole.User)
+        if (e.Value == DialogRole.Request)
         {
             return new SolidColorBrush(Color.FromRgb(100, 160, 220));
         }
-        else if (e.Value == ChatRole.Assistant)
+        else if (e.Value == DialogRole.Response)
         {
             return new SolidColorBrush(Color.FromRgb(100, 180, 100));
-        }
-        else if (e.Value == ChatRole.System)
-        {
-            return new SolidColorBrush(Color.FromRgb(200, 180, 100));
         }
 
         return Brushes.Gray;
     });
 
-    public static readonly IValueConverter RoleToForeground = ValueConverter.Create<ChatRole, Brush>(e =>
+    public static readonly IValueConverter RoleToForeground = ValueConverter.Create<DialogRole, Brush>(e =>
     {
-        if (e.Value == ChatRole.User)
+        if (e.Value == DialogRole.Request)
         {
             return new SolidColorBrush(Color.FromRgb(30, 80, 140));
         }
-        else if (e.Value == ChatRole.Assistant)
+        else if (e.Value == DialogRole.Response)
         {
             return new SolidColorBrush(Color.FromRgb(30, 120, 50));
         }
-        else if (e.Value == ChatRole.System)
-        {
-            return new SolidColorBrush(Color.FromRgb(140, 120, 40));
-        }
-
         return Brushes.Black;
     });
 

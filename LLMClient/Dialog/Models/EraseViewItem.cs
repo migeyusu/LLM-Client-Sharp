@@ -10,9 +10,7 @@ public class EraseViewItem : BaseDialogItem, IContextBoundaryItem
 
     public override long Tokens => 0;
 
-    public override ChatRole Role { get; } = EraseRole;
-
-    static ChatRole EraseRole = new ChatRole("erase");
+    public override DialogRole Role { get; } = DialogRole.Erase;
 
     public ContextBoundaryEvaluation EvaluateHistoryBoundary(Guid? interactionId)
     {

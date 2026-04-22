@@ -254,7 +254,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 chatClient = chatClient.UseContextProvider(requestContext.ContextProvider);
             }
             // 基于历史中已有的该 agent 最大 round number 初始化，避免同一 Agent 多次调用时编号冲突
-            var reactRoundNumber = ReactHistorySegmenter.GetMaxRoundNumber(chatMessages, agentId);
+            var reactRoundNumber = ChatMessageHierarchy.GetMaxRoundNumber(chatMessages, agentId);
             using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
             {
                 var step = new ReactStep();
@@ -399,7 +399,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 DeduplicateRepeatedThinking(preResponseMessages, chatMessages);
             }
 
-            ReactHistorySegmenter.TagMessages(preResponseMessages, reactRoundNumber, ReactHistoryMessageKind.Assistant,
+            ChatMessageHierarchy.TagLoopLevel(preResponseMessages, reactRoundNumber, ReactHistoryMessageKind.Assistant,
                 agentId);
             foreach (var preResponseMessage in preResponseMessages)
             {
@@ -509,7 +509,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
             step.EmitDiagnostic(DiagLevel.Info, "Processing function calls...");
             functionResultMessage = new ChatMessage();
-            ReactHistorySegmenter.TagMessage(functionResultMessage, reactRoundNumber,
+            ChatMessageHierarchy.TagLoopLevel(functionResultMessage, reactRoundNumber,
                 ReactHistoryMessageKind.Observation, agentId);
             loopMessages.Add(functionResultMessage);
             chatMessages.AddRange(loopMessages);
@@ -729,7 +729,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         string? agentId,
         CancellationToken cancellationToken)
     {
-        var segmentation = ReactHistorySegmenter.Segment(chatMessages, agentId);
+        var segmentation = ChatMessageHierarchy.SegmentReactLevel(chatMessages, agentId);
         var roundsToKeep = Math.Max(0, options.PreserveRecentRounds);
         var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
 
