@@ -14,15 +14,13 @@ public class APIEndPointOption : NotifyDataErrorInfoViewModelBase
 {
     public string Name { get; set; } = Guid.NewGuid().ToString();
 
-    private bool _isDisabled;
-
     public bool IsDisabled
     {
-        get => _isDisabled;
+        get;
         set
         {
-            if (value == _isDisabled) return;
-            _isDisabled = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }
