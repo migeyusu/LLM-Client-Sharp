@@ -1,4 +1,4 @@
-# AGENTS.md – LLM-Client-Sharp Contributor Guide
+# AGENTS.md 鈥?LLM-Client-Sharp Contributor Guide
 
 ## Project Overview
 
@@ -108,6 +108,17 @@ IChatEndpoint.SendRequest(RequestContext, IInvokeInteractor?, CancellationToken)
 Multi-modal (image) input is supported: users can paste images directly into the chat input box, which are automatically added as content parts to the user's ChatMessage in the request history.
 
 `DefaultDialogContextBuilder` is in `Abstraction/`; extend or override it for agent-specific context building (e.g., `AgentDialogContextBuilder` in `Agent/MiniSWE/`).
+
+### Chat Message Hierarchy
+
+系统为所有对话消息设计了分层标签体系，共包含5个核心层级+1个中间扩展层级，用于唯一标识不同粒度的会话元素，支持上下文管理、历史回溯、日志关联和Agent执行状态跟踪（层级从高到低排列）：
+
+1. **Session Level（最高级别）**：同一个会话（Session）下的所有消息共享相同的`sid`（session id）标签，覆盖用户从创建会话到删除会话的完整交互历史。
+2. **Interaction Key Level**：一次完整交互包含一个用户请求（RequestViewItem）+ 对应的AI响应（ResponseViewItem），同一次交互的所有消息共享相同的`iid`（interaction id）标签。
+3. **Dialog Item Level**：单个对话项，对应RequestViewItem或ResponseViewItem内的所有关联消息，是交互级之下的逻辑分组单位。
+3.5 **Agent Level（中间扩展层级）**：单个Agent的执行上下文边界，目前限定在ResponseViewItem范围内，用于隔离多Agent协作场景下不同Agent的执行序列。
+4. **React Loop Level**：单轮工具调用/思考循环，包含一条Assistant消息（思考/工具调用请求）和对应的Observation消息（工具调用结果），同轮次消息共享相同的`rno`（round number）标签。
+5. **Message Level（最低级别）**：单条独立消息，是对话内容的最小存储/展示单位，对应一条用户输入、AI回复、工具调用消息或系统提示消息。
 
 ### Function Call Engine
 
