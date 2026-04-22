@@ -22,7 +22,7 @@ public class AgentHistoryIsolationTests
     {
         var history = CreateMultiAgentHistory();
 
-        var segmentation = ReactHistorySegmenter.Segment(history);
+        var segmentation = ChatMessageHierarchy.SegmentReactLevel(history);
 
         // Without agent filter, rounds are grouped by round number, so Agent-A and Agent-B
         // rounds with the same number merge: round 1 (A+B) + round 2 (A+B) = 2 rounds
@@ -35,7 +35,7 @@ public class AgentHistoryIsolationTests
     {
         var history = CreateMultiAgentHistory();
 
-        var segmentation = ReactHistorySegmenter.Segment(history, "Agent-A");
+        var segmentation = ChatMessageHierarchy.SegmentReactLevel(history, "Agent-A");
 
         // Should only have Agent-A's 2 rounds
         Assert.Equal(2, segmentation.Rounds.Count);
@@ -57,7 +57,7 @@ public class AgentHistoryIsolationTests
     {
         var history = CreateMultiAgentHistory();
 
-        var segmentation = ReactHistorySegmenter.Segment(history, "Agent-B");
+        var segmentation = ChatMessageHierarchy.SegmentReactLevel(history, "Agent-B");
 
         // Agent-B has 2 rounds
         Assert.Equal(2, segmentation.Rounds.Count);
@@ -78,7 +78,7 @@ public class AgentHistoryIsolationTests
     {
         var history = CreateMultiAgentHistory();
 
-        var segmentation = ReactHistorySegmenter.Segment(history, "NonExistent-Agent");
+        var segmentation = ChatMessageHierarchy.SegmentReactLevel(history, "NonExistent-Agent");
 
         Assert.Empty(segmentation.Rounds);
         // All tagged messages go to preamble: 2 system/user + 8 agent messages = 10
@@ -94,7 +94,7 @@ public class AgentHistoryIsolationTests
     {
         var history = CreateMultiAgentHistory();
 
-        var maxRound = ReactHistorySegmenter.GetMaxRoundNumber(history);
+        var maxRound = ChatMessageHierarchy.GetMaxRoundNumber(history);
 
         Assert.Equal(2, maxRound); // Both agents have max round 2
     }
@@ -104,8 +104,8 @@ public class AgentHistoryIsolationTests
     {
         var history = CreateMultiAgentHistory();
 
-        var maxRoundA = ReactHistorySegmenter.GetMaxRoundNumber(history, "Agent-A");
-        var maxRoundB = ReactHistorySegmenter.GetMaxRoundNumber(history, "Agent-B");
+        var maxRoundA = ChatMessageHierarchy.GetMaxRoundNumber(history, "Agent-A");
+        var maxRoundB = ChatMessageHierarchy.GetMaxRoundNumber(history, "Agent-B");
 
         Assert.Equal(2, maxRoundA);
         Assert.Equal(2, maxRoundB);
@@ -116,7 +116,7 @@ public class AgentHistoryIsolationTests
     {
         var history = CreateMultiAgentHistory();
 
-        var maxRound = ReactHistorySegmenter.GetMaxRoundNumber(history, "NonExistent");
+        var maxRound = ChatMessageHierarchy.GetMaxRoundNumber(history, "NonExistent");
 
         Assert.Equal(0, maxRound);
     }
@@ -133,7 +133,7 @@ public class AgentHistoryIsolationTests
             // Missing round 2
         };
 
-        var maxRound = ReactHistorySegmenter.GetMaxRoundNumber(history, "Agent-X");
+        var maxRound = ChatMessageHierarchy.GetMaxRoundNumber(history, "Agent-X");
 
         Assert.Equal(3, maxRound);
     }
@@ -147,7 +147,7 @@ public class AgentHistoryIsolationTests
     {
         var message = new ChatMessage(ChatRole.Assistant, "test");
 
-        ReactHistorySegmenter.TagMessage(message, 1, ReactHistoryMessageKind.Assistant, "Test-Agent");
+        ChatMessageHierarchy.TagLoopLevel(message, 1, ReactHistoryMessageKind.Assistant, "Test-Agent");
 
         Assert.Equal(1, message.AdditionalProperties?["llmclient.react.round"]);
         Assert.Equal("Assistant", message.AdditionalProperties?["llmclient.react.kind"]?.ToString());
@@ -159,7 +159,7 @@ public class AgentHistoryIsolationTests
     {
         var message = new ChatMessage(ChatRole.Assistant, "test");
 
-        ReactHistorySegmenter.TagMessage(message, 1, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(message, 1, ReactHistoryMessageKind.Assistant);
 
         // The agent key should not be stored when agentId is null
         Assert.False(message.AdditionalProperties?.ContainsKey("llmclient.react.agent") ?? false);
@@ -174,7 +174,7 @@ public class AgentHistoryIsolationTests
             new(ChatRole.Assistant, "msg2"),
         };
 
-        ReactHistorySegmenter.TagMessages(messages, 1, ReactHistoryMessageKind.Assistant, "Batch-Agent");
+        ChatMessageHierarchy.TagLoopLevel(messages, 1, ReactHistoryMessageKind.Assistant, "Batch-Agent");
 
         Assert.All(messages, msg =>
             Assert.Equal("Batch-Agent", msg.AdditionalProperties?["llmclient.react.agent"]?.ToString()));
@@ -200,18 +200,18 @@ public class AgentHistoryIsolationTests
         // Without agent filter - both rounds with number 1 should exist as separate rounds
         // But wait - they have the same round number, so they would be merged in the old code!
         // With our changes, without filter they still merge (backward compat)
-        var segmentationNoFilter = ReactHistorySegmenter.Segment(history);
+        var segmentationNoFilter = ChatMessageHierarchy.SegmentReactLevel(history);
         Assert.Single(segmentationNoFilter.Rounds); // Still merges without filter
 
         // With Agent-A filter
-        var segmentationA = ReactHistorySegmenter.Segment(history, "Agent-A");
+        var segmentationA = ChatMessageHierarchy.SegmentReactLevel(history, "Agent-A");
         Assert.Single(segmentationA.Rounds);
         Assert.Equal(1, segmentationA.Rounds[0].RoundNumber);
         Assert.All(segmentationA.Rounds[0].Messages, m =>
             Assert.Equal("Agent-A", m.AdditionalProperties?["llmclient.react.agent"]?.ToString()));
 
         // With Agent-B filter
-        var segmentationB = ReactHistorySegmenter.Segment(history, "Agent-B");
+        var segmentationB = ChatMessageHierarchy.SegmentReactLevel(history, "Agent-B");
         Assert.Single(segmentationB.Rounds);
         Assert.Equal(1, segmentationB.Rounds[0].RoundNumber);
         Assert.All(segmentationB.Rounds[0].Messages, m =>
@@ -239,7 +239,7 @@ public class AgentHistoryIsolationTests
         var b1obs = CreateTaggedMessage(ChatRole.Tool, 1, ReactHistoryMessageKind.Observation, "Agent-B");
         history.Add(b1obs);
 
-        var segA = ReactHistorySegmenter.Segment(history, "Agent-A");
+        var segA = ChatMessageHierarchy.SegmentReactLevel(history, "Agent-A");
         Assert.Single(segA.Rounds);
         Assert.Equal(2, segA.Rounds[0].Messages.Count());
         Assert.Contains(a1, segA.Rounds[0].Messages);
@@ -259,19 +259,19 @@ public class AgentHistoryIsolationTests
 
         // Legacy messages (no agent id)
         var legacyAssistant = new ChatMessage(ChatRole.Assistant, "legacy");
-        ReactHistorySegmenter.TagMessage(legacyAssistant, 1, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(legacyAssistant, 1, ReactHistoryMessageKind.Assistant);
         history.Add(legacyAssistant);
 
         var legacyObs = new ChatMessage(ChatRole.Tool, "legacy result");
-        ReactHistorySegmenter.TagMessage(legacyObs, 1, ReactHistoryMessageKind.Observation);
+        ChatMessageHierarchy.TagLoopLevel(legacyObs, 1, ReactHistoryMessageKind.Observation);
         history.Add(legacyObs);
 
         // Should still work without agent filter
-        var segmentation = ReactHistorySegmenter.Segment(history);
+        var segmentation = ChatMessageHierarchy.SegmentReactLevel(history);
         Assert.Single(segmentation.Rounds);
 
         // With agent filter, legacy messages should go to preamble (they have no agent)
-        var filtered = ReactHistorySegmenter.Segment(history, "SomeAgent");
+        var filtered = ChatMessageHierarchy.SegmentReactLevel(history, "SomeAgent");
         Assert.Empty(filtered.Rounds);
         Assert.Contains(legacyAssistant, filtered.PreambleMessages);
         Assert.Contains(legacyObs, filtered.PreambleMessages);
@@ -283,14 +283,14 @@ public class AgentHistoryIsolationTests
         var history = new List<ChatMessage>();
 
         var legacyMsg = new ChatMessage(ChatRole.Assistant, "legacy");
-        ReactHistorySegmenter.TagMessage(legacyMsg, 5, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(legacyMsg, 5, ReactHistoryMessageKind.Assistant);
         history.Add(legacyMsg);
 
-        var maxNoAgent = ReactHistorySegmenter.GetMaxRoundNumber(history);
+        var maxNoAgent = ChatMessageHierarchy.GetMaxRoundNumber(history);
         Assert.Equal(5, maxNoAgent);
 
         // With agent filter, legacy messages are ignored
-        var maxWithAgent = ReactHistorySegmenter.GetMaxRoundNumber(history, "AnyAgent");
+        var maxWithAgent = ChatMessageHierarchy.GetMaxRoundNumber(history, "AnyAgent");
         Assert.Equal(0, maxWithAgent);
     }
 
@@ -358,7 +358,7 @@ public class AgentHistoryIsolationTests
             CreateFunctionResultMessage("call-1", "result-1"),
         };
 
-        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+        var segmentation = ChatMessageHierarchy.SegmentByLinearReading(new TestDialogItem(history));
 
         Assert.Single(segmentation.Rounds);
         Assert.Equal(1, segmentation.Rounds[0].RoundNumber);
@@ -378,7 +378,7 @@ public class AgentHistoryIsolationTests
             CreateFunctionResultMessage("call-2", "result-2"),
         };
 
-        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+        var segmentation = ChatMessageHierarchy.SegmentByLinearReading(new TestDialogItem(history));
 
         Assert.Equal(2, segmentation.Rounds.Count);
         Assert.Equal(1, segmentation.Rounds[0].RoundNumber);
@@ -396,7 +396,7 @@ public class AgentHistoryIsolationTests
             new(ChatRole.User, "What happened?"),
         };
 
-        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+        var segmentation = ChatMessageHierarchy.SegmentByLinearReading(new TestDialogItem(history));
 
         Assert.Empty(segmentation.Rounds);
         Assert.Empty(segmentation.PreambleMessages);
@@ -417,7 +417,7 @@ public class AgentHistoryIsolationTests
 
         var history = new List<ChatMessage> { assistantMsg, toolMsg };
 
-        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+        var segmentation = ChatMessageHierarchy.SegmentByLinearReading(new TestDialogItem(history));
 
         Assert.Single(segmentation.Rounds);
         Assert.Equal(1, segmentation.Rounds[0].RoundNumber);
@@ -433,7 +433,7 @@ public class AgentHistoryIsolationTests
             CreateFunctionResultMessage("call-2", "result-2"),
         };
 
-        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+        var segmentation = ChatMessageHierarchy.SegmentByLinearReading(new TestDialogItem(history));
 
         // Simplified model does not verify CallId matching
         Assert.Single(segmentation.Rounds);
@@ -448,12 +448,12 @@ public class AgentHistoryIsolationTests
         var toolMsg = CreateFunctionResultMessage("call-1", "result-1");
 
         // Tag them with different round numbers - linear reading should ignore these
-        ReactHistorySegmenter.TagMessage(assistantMsg, 99, ReactHistoryMessageKind.Assistant);
-        ReactHistorySegmenter.TagMessage(toolMsg, 99, ReactHistoryMessageKind.Observation);
+        ChatMessageHierarchy.TagLoopLevel(assistantMsg, 99, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(toolMsg, 99, ReactHistoryMessageKind.Observation);
 
         var history = new List<ChatMessage> { assistantMsg, toolMsg };
 
-        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+        var segmentation = ChatMessageHierarchy.SegmentByLinearReading(new TestDialogItem(history));
 
         Assert.Single(segmentation.Rounds);
         // Linear reading assigns sequential round numbers starting from 1
@@ -471,7 +471,7 @@ public class AgentHistoryIsolationTests
             new(ChatRole.User, "Thanks."),
         };
 
-        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+        var segmentation = ChatMessageHierarchy.SegmentByLinearReading(new TestDialogItem(history));
 
         Assert.Empty(segmentation.Rounds);
         Assert.Empty(segmentation.PreambleMessages);
@@ -494,7 +494,7 @@ public class AgentHistoryIsolationTests
 
         var history = new List<ChatMessage> { assistantMsg, toolMsg1, toolMsg2 };
 
-        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+        var segmentation = ChatMessageHierarchy.SegmentByLinearReading(new TestDialogItem(history));
 
         Assert.Single(segmentation.Rounds);
         Assert.Equal(1, segmentation.Rounds[0].RoundNumber);
@@ -538,7 +538,7 @@ public class AgentHistoryIsolationTests
     private static ChatMessage CreateTaggedMessage(ChatRole role, int roundNumber, ReactHistoryMessageKind kind, string? agentId = null, string text = "")
     {
         var message = new ChatMessage(role, text);
-        ReactHistorySegmenter.TagMessage(message, roundNumber, kind, agentId);
+        ChatMessageHierarchy.TagLoopLevel(message, roundNumber, kind, agentId);
         return message;
     }
     private static ChatMessage CreateFunctionCallMessage(string callId, string functionName)

@@ -581,21 +581,21 @@ public class HistoryCompressionStrategyTests
         for (int i = 1; i <= 3; i++)
         {
             var assistant = CreateToolCallResponse($"call-a{i}", $"result-a{i}").Messages[0];
-            ReactHistorySegmenter.TagMessage(assistant, i, ReactHistoryMessageKind.Assistant, "Agent-A");
+            ChatMessageHierarchy.TagLoopLevel(assistant, i, ReactHistoryMessageKind.Assistant, "Agent-A");
             chatHistory.Add(assistant);
 
             var obs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent($"call-a{i}", $"result-a{i}")]);
-            ReactHistorySegmenter.TagMessage(obs, i, ReactHistoryMessageKind.Observation, "Agent-A");
+            ChatMessageHierarchy.TagLoopLevel(obs, i, ReactHistoryMessageKind.Observation, "Agent-A");
             chatHistory.Add(obs);
         }
 
         // Agent-B Round 1 (also in history - should be ignored for Agent-A)
         var bAssistant = CreateToolCallResponse("call-b1", "result-b1").Messages[0];
-        ReactHistorySegmenter.TagMessage(bAssistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bAssistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B");
         chatHistory.Add(bAssistant);
 
         var bObs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-b1", "result-b1")]);
-        ReactHistorySegmenter.TagMessage(bObs, 1, ReactHistoryMessageKind.Observation, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bObs, 1, ReactHistoryMessageKind.Observation, "Agent-B");
         chatHistory.Add(bObs);
 
         var chatClient = new RecordingSequentialChatClient(
@@ -664,11 +664,11 @@ public class HistoryCompressionStrategyTests
             new TextContent("Agent-A reasoning 1"),
             new FunctionCallContent("call-a1", "noop", new Dictionary<string, object?>())
         ]);
-        ReactHistorySegmenter.TagMessage(aAssistant1, 1, ReactHistoryMessageKind.Assistant, "Agent-A");
+        ChatMessageHierarchy.TagLoopLevel(aAssistant1, 1, ReactHistoryMessageKind.Assistant, "Agent-A");
         history.Add(aAssistant1);
 
         var aObs1 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-a1", "agent-a result 1")]);
-        ReactHistorySegmenter.TagMessage(aObs1, 1, ReactHistoryMessageKind.Observation, "Agent-A");
+        ChatMessageHierarchy.TagLoopLevel(aObs1, 1, ReactHistoryMessageKind.Observation, "Agent-A");
         history.Add(aObs1);
 
         // Agent-B Round 1
@@ -676,11 +676,11 @@ public class HistoryCompressionStrategyTests
             new TextContent("Agent-B reasoning 1"),
             new FunctionCallContent("call-b1", "noop", new Dictionary<string, object?>())
         ]);
-        ReactHistorySegmenter.TagMessage(bAssistant1, 1, ReactHistoryMessageKind.Assistant, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bAssistant1, 1, ReactHistoryMessageKind.Assistant, "Agent-B");
         history.Add(bAssistant1);
 
         var bObs1 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-b1", "agent-b result 1")]);
-        ReactHistorySegmenter.TagMessage(bObs1, 1, ReactHistoryMessageKind.Observation, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bObs1, 1, ReactHistoryMessageKind.Observation, "Agent-B");
         history.Add(bObs1);
 
         // Agent-A Round 2
@@ -688,11 +688,11 @@ public class HistoryCompressionStrategyTests
             new TextContent("Agent-A reasoning 2"),
             new FunctionCallContent("call-a2", "noop", new Dictionary<string, object?>())
         ]);
-        ReactHistorySegmenter.TagMessage(aAssistant2, 2, ReactHistoryMessageKind.Assistant, "Agent-A");
+        ChatMessageHierarchy.TagLoopLevel(aAssistant2, 2, ReactHistoryMessageKind.Assistant, "Agent-A");
         history.Add(aAssistant2);
 
         var aObs2 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-a2", "agent-a result 2")]);
-        ReactHistorySegmenter.TagMessage(aObs2, 2, ReactHistoryMessageKind.Observation, "Agent-A");
+        ChatMessageHierarchy.TagLoopLevel(aObs2, 2, ReactHistoryMessageKind.Observation, "Agent-A");
         history.Add(aObs2);
 
         // Agent-B Round 2
@@ -700,11 +700,11 @@ public class HistoryCompressionStrategyTests
             new TextContent("Agent-B reasoning 2"),
             new FunctionCallContent("call-b2", "noop", new Dictionary<string, object?>())
         ]);
-        ReactHistorySegmenter.TagMessage(bAssistant2, 2, ReactHistoryMessageKind.Assistant, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bAssistant2, 2, ReactHistoryMessageKind.Assistant, "Agent-B");
         history.Add(bAssistant2);
 
         var bObs2 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-b2", "agent-b result 2")]);
-        ReactHistorySegmenter.TagMessage(bObs2, 2, ReactHistoryMessageKind.Observation, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bObs2, 2, ReactHistoryMessageKind.Observation, "Agent-B");
         history.Add(bObs2);
 
         return history;
@@ -724,11 +724,11 @@ public class HistoryCompressionStrategyTests
         var prevAssistant = new ChatMessage(ChatRole.Assistant, [
             new FunctionCallContent("call-prev", "noop", new Dictionary<string, object?>())
         ]);
-        ReactHistorySegmenter.TagMessage(prevAssistant, 1, ReactHistoryMessageKind.Assistant, "Previous-Agent");
+        ChatMessageHierarchy.TagLoopLevel(prevAssistant, 1, ReactHistoryMessageKind.Assistant, "Previous-Agent");
         history.Add(prevAssistant);
 
         var prevObs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-prev", "prev result")]);
-        ReactHistorySegmenter.TagMessage(prevObs, 1, ReactHistoryMessageKind.Observation, "Previous-Agent");
+        ChatMessageHierarchy.TagLoopLevel(prevObs, 1, ReactHistoryMessageKind.Observation, "Previous-Agent");
         history.Add(prevObs);
 
         // Current task user message
@@ -738,11 +738,11 @@ public class HistoryCompressionStrategyTests
         var currAssistant = new ChatMessage(ChatRole.Assistant, [
             new FunctionCallContent("call-curr", "noop", new Dictionary<string, object?>())
         ]);
-        ReactHistorySegmenter.TagMessage(currAssistant, 1, ReactHistoryMessageKind.Assistant, "Current-Agent");
+        ChatMessageHierarchy.TagLoopLevel(currAssistant, 1, ReactHistoryMessageKind.Assistant, "Current-Agent");
         history.Add(currAssistant);
 
         var currObs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-curr", "curr result")]);
-        ReactHistorySegmenter.TagMessage(currObs, 1, ReactHistoryMessageKind.Observation, "Current-Agent");
+        ChatMessageHierarchy.TagLoopLevel(currObs, 1, ReactHistoryMessageKind.Observation, "Current-Agent");
         history.Add(currObs);
 
         return history;
@@ -866,7 +866,7 @@ public class HistoryCompressionStrategyTests
             new FunctionCallContent("call-err-1", "broken_tool", new Dictionary<string, object?>()),
             new FunctionCallContent("call-ok-1", "working_tool", new Dictionary<string, object?>()),
         ]);
-        ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
         history.Add(assistantRound1);
 
         var observationRound1 = new ChatMessage(ChatRole.Tool,
@@ -874,7 +874,7 @@ public class HistoryCompressionStrategyTests
             new FunctionResultContent("call-err-1", "error message") { Exception = new Exception("tool error") },
             new FunctionResultContent("call-ok-1", "file content"),
         ]);
-        ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+        ChatMessageHierarchy.TagLoopLevel(observationRound1, 1, ReactHistoryMessageKind.Observation);
         history.Add(observationRound1);
 
         // Round 2 (preserved): normal success call.
@@ -883,14 +883,14 @@ public class HistoryCompressionStrategyTests
             new TextContent("Applying fix."),
             new FunctionCallContent("call-ok-2", "edit_file", new Dictionary<string, object?>()),
         ]);
-        ReactHistorySegmenter.TagMessage(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
         history.Add(assistantRound2);
 
         var observationRound2 = new ChatMessage(ChatRole.Tool,
         [
             new FunctionResultContent("call-ok-2", "edit applied"),
         ]);
-        ReactHistorySegmenter.TagMessage(observationRound2, 2, ReactHistoryMessageKind.Observation);
+        ChatMessageHierarchy.TagLoopLevel(observationRound2, 2, ReactHistoryMessageKind.Observation);
         history.Add(observationRound2);
 
         return history;
@@ -908,21 +908,21 @@ public class HistoryCompressionStrategyTests
         [
             new FunctionCallContent("call-ok-old", "old_tool", new Dictionary<string, object?>()),
         ]);
-        ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
         history.Add(assistantRound1);
 
         var observationRound1 = new ChatMessage(ChatRole.Tool,
         [
             new FunctionResultContent("call-ok-old", "old success payload"),
         ]);
-        ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+        ChatMessageHierarchy.TagLoopLevel(observationRound1, 1, ReactHistoryMessageKind.Observation);
         history.Add(observationRound1);
 
         var assistantRound2 = new ChatMessage(ChatRole.Assistant,
         [
             new FunctionCallContent("call-err-recent", "recent_tool", new Dictionary<string, object?>()),
         ]);
-        ReactHistorySegmenter.TagMessage(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
         history.Add(assistantRound2);
 
         var observationRound2 = new ChatMessage(ChatRole.Tool,
@@ -932,7 +932,7 @@ public class HistoryCompressionStrategyTests
                 Exception = new InvalidOperationException("recent tool failure"),
             },
         ]);
-        ReactHistorySegmenter.TagMessage(observationRound2, 2, ReactHistoryMessageKind.Observation);
+        ChatMessageHierarchy.TagLoopLevel(observationRound2, 2, ReactHistoryMessageKind.Observation);
         history.Add(observationRound2);
 
         return history;
@@ -1014,14 +1014,14 @@ public class HistoryCompressionStrategyTests
             new TextContent("I will read the pipeline config."),
             new FunctionCallContent("call-current-1", "read_file", new Dictionary<string, object?>())
         ]);
-        ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
         history.Add(assistantRound1);
 
         var observationRound1 = new ChatMessage(ChatRole.Tool,
         [
             new FunctionResultContent("call-current-1", "pipeline config file content")
         ]);
-        ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+        ChatMessageHierarchy.TagLoopLevel(observationRound1, 1, ReactHistoryMessageKind.Observation);
         history.Add(observationRound1);
 
         return history;
@@ -1041,14 +1041,14 @@ public class HistoryCompressionStrategyTests
             new TextContent("I will inspect the repository."),
             new FunctionCallContent("call-1", "read_file", new Dictionary<string, object?>())
         ]);
-        ReactHistorySegmenter.TagMessage(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(assistantRound1, 1, ReactHistoryMessageKind.Assistant);
         history.Add(assistantRound1);
 
         var observationRound1 = new ChatMessage(ChatRole.Tool,
         [
             new FunctionResultContent("call-1", "first observation")
         ]);
-        ReactHistorySegmenter.TagMessage(observationRound1, 1, ReactHistoryMessageKind.Observation);
+        ChatMessageHierarchy.TagLoopLevel(observationRound1, 1, ReactHistoryMessageKind.Observation);
         history.Add(observationRound1);
 
         var assistantRound2 = new ChatMessage(ChatRole.Assistant,
@@ -1057,14 +1057,14 @@ public class HistoryCompressionStrategyTests
             new TextContent("I will inspect one more file."),
             new FunctionCallContent("call-2", "read_file", new Dictionary<string, object?>())
         ]);
-        ReactHistorySegmenter.TagMessage(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
+        ChatMessageHierarchy.TagLoopLevel(assistantRound2, 2, ReactHistoryMessageKind.Assistant);
         history.Add(assistantRound2);
 
         var observationRound2 = new ChatMessage(ChatRole.Tool,
         [
             new FunctionResultContent("call-2", "second observation")
         ]);
-        ReactHistorySegmenter.TagMessage(observationRound2, 2, ReactHistoryMessageKind.Observation);
+        ChatMessageHierarchy.TagLoopLevel(observationRound2, 2, ReactHistoryMessageKind.Observation);
         history.Add(observationRound2);
 
         return history;

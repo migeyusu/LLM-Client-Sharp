@@ -3,26 +3,56 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;
 
-public static class ReactHistorySegmenter
+/// <summary>
+/// 
+/// </summary>
+public static class ChatMessageHierarchy
 {
+    /*
+     * 对话的层次结构为5个级别：
+     * 1. session level，最高级别，同一个 session 的消息具有相同的 session id 标签
+     * 2. interaction key, 一次interaction包括 requestviewitem + responseviewitem，具有相同的 interaction id 标签
+     * 3. dialogitem level，一个dialog item为requestviewitem或responseviewitem内的所有消息
+     * 4. react loop level，表示一个轮次的请求，包括 assistant message 和 observation message，具有相同的 round number 标签
+     * 5. message level，最低级别，单条消息
+     */
+
+    /// <summary>
+    /// react loop level
+    /// </summary>
     private const string ReactRoundNumberKey = "llmclient.react.round";
 
+    /// <summary>
+    /// react loop level
+    /// </summary>
     private const string ReactRoundKindKey = "llmclient.react.kind";
 
-    private const string ReactRoundAgentKey = "llmclient.react.agent";
+    /// <summary>
+    /// agent level
+    /// </summary>
+    private const string AgentKey = "llmclient.agent";
+
+    /// <summary>
+    /// interaction level
+    /// </summary>
+    private const string InteractionKey = "llmclient.interaction";
+
+    private const string DialogItemKey = "llmclient.dialogitem";
+
+    private const string SessionKey = "llmclient.session";
 
     public const int CompressedSummaryRoundNumber = 0;
-
-    public static void TagMessages(IEnumerable<ChatMessage> messages, int roundNumber, ReactHistoryMessageKind kind,
+    
+    public static void TagLoopLevel(IEnumerable<ChatMessage> messages, int roundNumber, ReactHistoryMessageKind kind,
         string? agentId = null)
     {
         foreach (var message in messages)
         {
-            TagMessage(message, roundNumber, kind, agentId);
+            TagLoopLevel(message, roundNumber, kind, agentId);
         }
     }
 
-    public static void TagMessage(ChatMessage message, int roundNumber, ReactHistoryMessageKind kind,
+    public static void TagLoopLevel(ChatMessage message, int roundNumber, ReactHistoryMessageKind kind,
         string? agentId = null)
     {
         message.AdditionalProperties ??= new AdditionalPropertiesDictionary();
@@ -30,11 +60,11 @@ public static class ReactHistorySegmenter
         message.AdditionalProperties[ReactRoundKindKey] = kind.ToString();
         if (agentId != null)
         {
-            message.AdditionalProperties[ReactRoundAgentKey] = agentId;
+            message.AdditionalProperties[AgentKey] = agentId;
         }
     }
 
-    public static ReactHistorySegmentation Segment(IReadOnlyList<ChatMessage> chatHistory, string? agentIdFilter = null)
+    public static ReactHistorySegmentation SegmentReactLevel(IReadOnlyList<ChatMessage> chatHistory, string? agentIdFilter = null)
     {
         var segmentation = new ReactHistorySegmentation();
         var rounds = new Dictionary<int, ReactHistoryRound>();
@@ -186,7 +216,7 @@ public static class ReactHistorySegmenter
     {
         var additionalProperties = message.AdditionalProperties;
         if (additionalProperties == null ||
-            !additionalProperties.TryGetValue(ReactRoundAgentKey, out var value))
+            !additionalProperties.TryGetValue(AgentKey, out var value))
         {
             return null;
         }

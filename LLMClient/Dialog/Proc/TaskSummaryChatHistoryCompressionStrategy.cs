@@ -19,7 +19,7 @@ public sealed class TaskSummaryChatHistoryCompressionStrategy : IChatHistoryComp
         CancellationToken cancellationToken = default)
     {
 
-        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory, context.AgentId);
+        var segmentation = ChatMessageHierarchy.SegmentReactLevel(context.ChatHistory, context.AgentId);
         var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
         if (segmentation.Rounds.Count <= roundsToKeep)
         {
@@ -56,7 +56,7 @@ public sealed class TaskSummaryChatHistoryCompressionStrategy : IChatHistoryComp
     private static ChatMessage CreateSummaryMessage(string summary, string? agentId)
     {
         var message = new ChatMessage(ChatRole.Assistant, "[Compressed history summary]\n" + summary.Trim());
-        ReactHistorySegmenter.TagMessage(message, ReactHistorySegmenter.CompressedSummaryRoundNumber,
+        ChatMessageHierarchy.TagLoopLevel(message, ChatMessageHierarchy.CompressedSummaryRoundNumber,
             ReactHistoryMessageKind.Assistant, agentId);
         return message;
     }

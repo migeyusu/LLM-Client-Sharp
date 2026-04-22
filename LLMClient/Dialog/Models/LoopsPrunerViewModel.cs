@@ -35,7 +35,7 @@ public partial class LoopsPrunerViewModel : BaseViewModel
     {
         this._response = response;
         Rounds =
-            new ObservableCollection<ReactHistoryRound>(ReactHistorySegmenter.Segment(response.Messages.ToArray())
+            new ObservableCollection<ReactHistoryRound>(ChatMessageHierarchy.SegmentReactLevel(response.Messages.ToArray())
                 .Rounds);
     }
 

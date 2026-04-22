@@ -7,7 +7,7 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
 {
     public async Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
     {
-        var segmentation = ReactHistorySegmenter.Segment(context.ChatHistory, context.AgentId);
+        var segmentation = ChatMessageHierarchy.SegmentReactLevel(context.ChatHistory, context.AgentId);
         var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
         var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
 
@@ -77,7 +77,7 @@ public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHist
             placeholderMessage = new ChatMessage(originalMessage.Role, placeholder);
         }
 
-        ReactHistorySegmenter.TagMessage(placeholderMessage, roundNumber, ReactHistoryMessageKind.Observation, agentId);
+        ChatMessageHierarchy.TagLoopLevel(placeholderMessage, roundNumber, ReactHistoryMessageKind.Observation, agentId);
         return placeholderMessage;
     }
 }
