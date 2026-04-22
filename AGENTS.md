@@ -1,10 +1,19 @@
-# AGENTS.md — LLM-Client-Sharp Contributor Guide
+# AGENTS.md – LLM-Client-Sharp Contributor Guide
 
 ## Project Overview
 
 **LLM Client for WPF** is a .NET 10 WPF application providing a rich LLM chat client with RAG, MCP, agent workflows, and code-awareness features. The primary project is `LLMClient/LLMClient.csproj`; tests live in `LLMClient.Test/`.
 
-- 所有代码修改前必须严格遵守本文件中的 XAML 风格和 ViewModel 最小化原则。
+- 所有代码修改前必须严格遵守本文档中的 XAML 风格和 ViewModel 最小化原则。
+
+Key dependencies:
+- `MaterialDesignThemes` for modern UI styling
+- `Microsoft.Extensions.AI` for LLM API integration
+- `Markdig.Wpf` for Markdown rendering
+- `Microsoft.SemanticKernel` for core LLM conversation/RAG capabilities
+- `Karl.PdfPig` for PDF document parsing
+- `ModelContextProtocol` for MCP server support
+- `TextMateSharp` for syntax highlighting
 
 ---
 
@@ -49,7 +58,7 @@ dotnet publish .\LLMClient.csproj -p:PublishProfile=FolderProfile
 
 - Target framework: `net10.0-windows10.0.19041.0`
 - Platform: `x64` (Release always targets `win-x64`)
-- `EmitCompilerGeneratedFiles=true` — source-generator output lands in `obj/` and is compiled
+- `EmitCompilerGeneratedFiles=true` – source-generator output lands in `obj/` and is compiled
 
 ---
 
@@ -62,13 +71,13 @@ The project intentionally suppresses two diagnostic codes project-wide (`LLMClie
 | `OPENAI001` | Experimental OpenAI client API |
 | `SCME0001` | Experimental Semantic Kernel API |
 
-Do not add `#pragma warning disable` for these — they are already globally suppressed.
+Do not add `#pragma warning disable` for these – they are already globally suppressed.
 
 ---
 
 ## Architecture & Key Patterns
 
-### MVVM — `BaseViewModel`
+### MVVM – `BaseViewModel`
 
 All view models extend `LLMClient.Component.ViewModel.Base.BaseViewModel` (`INotifyPropertyChanged`).
 
@@ -77,7 +86,7 @@ All view models extend `LLMClient.Component.ViewModel.Base.BaseViewModel` (`INot
 - Use `Dispatch(action)` / `await DispatchAsync(action)` to marshal work back to the UI thread.
 - `BaseViewModel.ServiceLocator` is a static service-locator set in `Program.cs` after DI container build. This is an acknowledged anti-pattern; use constructor DI wherever possible.
 
-### Dependency Injection — `Program.cs`
+### Dependency Injection – `Program.cs`
 
 All singleton and transient registrations are in `Program.cs` → `ServiceCollection`. Add new services there. Example singletons: `IEndpointService`, `IRagSourceCollection`, `IMcpServiceCollection`, `BuiltInFunctionsCollection`, `Summarizer`.
 
@@ -96,6 +105,8 @@ IChatEndpoint.SendRequest(RequestContext, IInvokeInteractor?, CancellationToken)
   → returns ChatCallResult
 ```
 
+Multi-modal (image) input is supported: users can paste images directly into the chat input box, which are automatically added as content parts to the user's ChatMessage in the request history.
+
 `DefaultDialogContextBuilder` is in `Abstraction/`; extend or override it for agent-specific context building (e.g., `AgentDialogContextBuilder` in `Agent/MiniSWE/`).
 
 ### Function Call Engine
@@ -111,7 +122,7 @@ The engine is selected automatically in `DefaultDialogContextBuilder.EnsureCallE
 
 ### Persistence
 
-- JSON files written atomically via `JsonFileHelper.SaveJsonToFileAsync<T>()` (write to `.tmp`, then `File.Move`). Always use this helper — never `File.WriteAllText` directly for session/config data.
+- JSON files written atomically via `JsonFileHelper.SaveJsonToFileAsync<T>()` (write to `.tmp`, then `File.Move`). Always use this helper – never `File.WriteAllText` directly for session/config data.
 - Source-generated JSON context: `LLM_DataSerializeContext` (`Data/LLM_DataSerializeContext.cs`). When adding a new persist model, register its type with `[JsonSerializable(typeof(YourModel))]` in that partial class.
 - Vector store: local SQLite (`identifier.sqlite`) via `Microsoft.SemanticKernel.Connectors.SqliteVec`. Embedding dimension is fixed at **1536** (`SemanticKernelStore.ChunkDimension`).
 
@@ -131,7 +142,7 @@ Logging is configured in `Program.cs`:
 | Interface | Location | Purpose |
 |-----------|----------|---------|
 | `ILLMAPIEndpoint` | `Abstraction/` | Endpoint container (holds models, creates clients) |
-| `IChatEndpoint` | `Abstraction/` | Single model chat client — `SendRequest(RequestContext, ...)` |
+| `IChatEndpoint` | `Abstraction/` | Single model chat client – `SendRequest(RequestContext, ...)` |
 | `ILLMChatClient` | `Abstraction/` | Extended chat client with model/params properties |
 | `IEndpointModel` | `Abstraction/` | Model capability flags (`SupportFunctionCall`, `SupportSystemPrompt`, …) |
 | `IChatRequest` | `Abstraction/` | Chat request descriptor (history, system prompt, function groups, RAG sources) |
@@ -166,6 +177,11 @@ Files supported: PDF (`Karl.PdfPig`), Markdown, Word, Text, Excel.
 
 Flow: `RagFileBase` subclass → parse into `ChunkNode` tree → embed via OpenAI embeddings → store in `SemanticKernelStore` (SQLite). Search algorithms available: `Default` (flat), `TopDown` (hierarchical from bookmark structure), `Recursive`.
 
+Key RAG features:
+- RAG functionality is exposed as function calls (including document structure queries), allowing the LLM to dynamically decide when to retrieve information
+- Documents are parsed into structured hierarchical nodes (chapters, paragraphs) with auto-generated summaries, supporting context-aware hierarchical retrieval
+- Fine-grained import controls are available for PDFs (margin adjustment, bookmark editing) to minimize information loss during processing
+
 RAG sources are exposed as `IAIFunctionGroup` implementations, so they participate in the standard function-call pipeline.
 
 ---
@@ -174,12 +190,15 @@ RAG sources are exposed as `IAIFunctionGroup` implementations, so they participa
 
 MCP servers are managed by `MCPServiceCollection` (`ToolCall/MCP/`). Both `StdIOServerItem` and `SseServerItem` are supported. The JSON config format mirrors Claude Code's `mcp` schema.
 
+- MCP tools support an optional attached prompt that is automatically appended to the system prompt when the tool is enabled for a conversation
+- UI and JSON configuration methods are both supported for adding MCP servers
+
 ---
 
 ## Testing
 
 Test framework: **xUnit** (`LLMClient.Test/`).
-t![img.png](img.png)esting are stored in `StreamingResponse.txt`.
+Test streaming response artifacts are stored in `StreamingResponse.txt`.
 - Moq is available for mocking interfaces.
 - Tests that hit live APIs (e.g., `APITest.cs`) require environment credentials and are not run in CI.
 
@@ -193,7 +212,7 @@ t![img.png](img.png)esting are stored in `StreamingResponse.txt`.
 | `Workflow/Dynamic/` | `DynamicWorkflowEngine`, `WorkflowArchitect`, `WorkflowBlueprint` (LLM-planned execution) |
 | `Workflow/Research/` | `ResearchClient`, `NvidiaResearchClient`, UI |
 | `Workflow/Scheme/` | Shared data types: `TaskContract`, `PlanStep`, `DesignCandidate`, `ChangedFile` |
-| `Agent/MiniSWE/` | `MiniSweAgent` — SWE-bench-style coding agent |
+| `Agent/MiniSWE/` | `MiniSweAgent` – SWE-bench-style coding agent |
 
 `IAgentStep` is the unit of execution in `DynamicWorkflowEngine`. `WorkflowContext` holds shared state across steps (`SharedMemory`).
 
@@ -203,9 +222,9 @@ t![img.png](img.png)esting are stored in `StreamingResponse.txt`.
 
 `ContextEngineering/` provides Roslyn-based code awareness:
 
-- `RoslynProjectAnalyzer` — analyzes MSBuild solutions/projects; call `AnalyzerExtension.RegisterMsBuild()` at startup (already done in `Program.cs`).
-- Plugins in `ContextEngineering/Tools/`: `CodeReadingPlugin`, `CodeSearchPlugin`, `ProjectAwarenessPlugin`, `SymbolSemanticPlugin` — expose Roslyn queries as kernel functions.
-- `ContextEngineering/PromptGeneration/` — formats analysis results into LLM prompts (`MarkdownSummaryFormatter`, `FileTreeFormatter`).
+- `RoslynProjectAnalyzer` – analyzes MSBuild solutions/projects; call `AnalyzerExtension.RegisterMsBuild()` at startup (already done in `Program.cs`).
+- Plugins in `ContextEngineering/Tools/`: `CodeReadingPlugin`, `CodeSearchPlugin`, `ProjectAwarenessPlugin`, `SymbolSemanticPlugin` – expose Roslyn queries as kernel functions.
+- `ContextEngineering/PromptGeneration/` – formats analysis results into LLM prompts (`MarkdownSummaryFormatter`, `FileTreeFormatter`).
 
 ---
 
@@ -227,7 +246,7 @@ t![img.png](img.png)esting are stored in `StreamingResponse.txt`.
     HorizontalAlignment="Right"
     IsEnabled="{Binding IsDirty}"
     Margin="8,0"
-    ToolTip="点击保存当前更改" />
+    ToolTip="点击保存当前修改" />
 ```
 **禁止示例**：所有属性挤在一行、或把多个属性写在同一行。
 
@@ -257,7 +276,7 @@ t![img.png](img.png)esting are stored in `StreamingResponse.txt`.
 
 - Namespace matches directory path: `LLMClient.<SubFolder>` (e.g., `LLMClient.Rag`, `LLMClient.Workflow.Dynamic`).
 - One class per file; XAML views paired with `.xaml.cs` code-behind; view models in separate files.
-- Observable collections use `ObservableCollection<T>`; never replace — mutate in place on the UI thread.
+- Observable collections use `ObservableCollection<T>`; never replace – mutate in place on the UI thread.
 - Async methods returning `void` only for fire-and-forget event handlers; otherwise return `Task`.
 - `CancellationToken` must be threaded through async call chains; do not ignore tokens in loops.
 - Do not add `async/await` wrappers around already-async code without adding value.
