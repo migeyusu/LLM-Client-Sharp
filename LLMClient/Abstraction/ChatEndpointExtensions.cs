@@ -32,21 +32,6 @@ public static class ChatEndpointExtensions
         return totalResult;
     }
 
-    [Experimental("MAAI001")]
-    public static AIContextProvider? GetSkillsProvider(string rootFolderPath)
-    {
-        var skillsDir = Path.GetFullPath("skills", rootFolderPath);
-        var directoryInfo = new DirectoryInfo(skillsDir);
-        if (!directoryInfo.Exists)
-        {
-            return null;
-        }
-
-        var skillPathList = directoryInfo.GetDirectories().Select(info => info.FullName).ToArray();
-        return new AgentSkillsProviderBuilder()
-            .UseFileSkills(skillPathList).Build();
-    }
-
     public static IChatClient UseContextProvider(this IChatClient client,
         IEnumerable<AIContextProvider> contextProviders)
     {

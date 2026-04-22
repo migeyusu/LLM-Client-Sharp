@@ -21,6 +21,7 @@ using Microsoft.SemanticKernel;
 using System.Runtime.CompilerServices;
 using System.Reflection;
 using System.Windows;
+using AIContextProvider = Microsoft.Agents.AI.AIContextProvider;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
 using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
 using TextContent = Microsoft.Extensions.AI.TextContent;
@@ -1455,6 +1456,8 @@ public class MiniSweRegressionTests
             return Task.CompletedTask;
         }
 
+        public Microsoft.Agents.AI.AIContextProvider[]? ContextProviders { get; } = null;
+
         public string? SystemPrompt => null;
 
         public IEnumerable<Type> SupportedAgents { get; } = [];
@@ -1493,6 +1496,8 @@ public class MiniSweRegressionTests
             return Task.CompletedTask;
         }
 
+        public AIContextProvider[]? ContextProviders { get; } = null;
+
         public string? SystemPrompt => null;
 
         public IEnumerable<Type> SupportedAgents { get; } = [];
@@ -1512,6 +1517,7 @@ public class MiniSweRegressionTests
         {
         }
 
+        public override AIContextProvider[]? ContextProviders { get; } = null;
         public override string? SystemPrompt => null;
 
         public override IFunctionGroupSource? ToolsSource { get; } = null;

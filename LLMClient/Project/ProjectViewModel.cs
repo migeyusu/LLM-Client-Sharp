@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -22,6 +23,7 @@ using LLMClient.Persistence;
 using LLMClient.ToolCall;
 using LLMClient.ToolCall.DefaultPlugins;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Agents.AI;
 using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Project;
@@ -512,6 +514,44 @@ public abstract class ProjectViewModel : FileBasedSessionBase,
     {
         this.IsDataChanged = true;
         OnPropertyChanged(nameof(Context));
+    }
+
+    [Experimental("MAAI001")] public AgentSkillsProvider[]? SkillsProviders { get; private set; }
+
+    private static string[] _skillsFolderPath = new[] { ".github\\skills", "skills" };
+
+    [Experimental("MAAI001")]
+    protected virtual async Task LoadSkillsAsync()
+    {
+        if (!Option.EnableSkills)
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(this.Option.RootPath))
+        {
+            return;
+        }
+
+        this.SkillsProviders = _skillsFolderPath.Select((s => Path.GetFullPath(s, this.Option.RootPath)))
+            .Select(GetSkillsProvider)
+            .OfType<AgentSkillsProvider>()
+            .ToArray();
+    }
+
+    [Experimental("MAAI001")]
+    public static AgentSkillsProvider? GetSkillsProvider(string rootFolderPath)
+    {
+        var skillsDir = Path.GetFullPath("skills", rootFolderPath);
+        var directoryInfo = new DirectoryInfo(skillsDir);
+        if (!directoryInfo.Exists)
+        {
+            return null;
+        }
+
+        var skillPathList = directoryInfo.GetDirectories().Select(info => info.FullName).ToArray();
+        return new AgentSkillsProviderBuilder()
+            .UseFileSkills(skillPathList).Build();
     }
 
     private void FunctionTreeSelectorOnAfterSelect()

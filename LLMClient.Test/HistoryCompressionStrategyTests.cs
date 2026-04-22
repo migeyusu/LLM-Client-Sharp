@@ -16,6 +16,7 @@ using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
+using AIContextProvider = Microsoft.Agents.AI.AIContextProvider;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
 using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
 using TextContent = Microsoft.Extensions.AI.TextContent;
@@ -785,6 +786,8 @@ public class HistoryCompressionStrategyTests
         public IReadOnlyList<IDialogItem> DialogItems { get; } = new List<IDialogItem>();
         public List<IChatHistoryItem> GetHistory() => [];
         public Task CutContextAsync(IRequestItem? requestItem = null) => Task.CompletedTask;
+        
+        public AIContextProvider[]? ContextProviders { get; } = null;
         public string? SystemPrompt { get; } = null;
         public IEnumerable<Type> SupportedAgents { get; } = Array.Empty<Type>();
         public IFunctionGroupSource? ToolsSource { get; } = null;

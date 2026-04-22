@@ -105,7 +105,6 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
         }
     }
 
-    public AIContextProvider[]? ContextProviders { get; set; }
     public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
 
     public bool HasFunctions

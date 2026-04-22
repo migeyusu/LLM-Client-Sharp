@@ -135,8 +135,12 @@ public sealed class HistoryCompactor : PromptBasedAgent
                     { "input", indexedInput }
                 });
             var contextBuilder =
-                DefaultRequestContextBuilder.CreateFromHistory([new RequestViewItem(message)], systemPrompt);
-            contextBuilder.ResponseFormat = ChatResponseFormat.ForJsonSchema<RemoveDecision>();
+                DefaultRequestContextBuilder.CreateFromHistory([
+                    new RequestViewItem(message)
+                    {
+                        ResponseFormat = ChatResponseFormat.ForJsonSchema<RemoveDecision>(),
+                    }
+                ], systemPrompt);
             var result = await SendRequestAsync(contextBuilder, cancellationToken);
 
             var jsonResponse = result.FirstTextResponse;

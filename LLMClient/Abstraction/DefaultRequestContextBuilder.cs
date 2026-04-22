@@ -1,13 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using AutoMapper;
+using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Rag;
 using LLMClient.ToolCall;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel;
 using AIContextProvider = Microsoft.Agents.AI.AIContextProvider;
 
@@ -16,52 +15,25 @@ namespace LLMClient.Abstraction;
 /// <summary>
 /// 用于隔离chatRequest和context
 /// </summary>
-public class DefaultRequestContextBuilder : IChatRequest
+public class DefaultRequestContextBuilder
 {
-    private static readonly Lazy<IMapper> MapperLazy = new(() =>
-    {
-        var config = new MapperConfiguration(cfg =>
-            {
-                cfg.CreateMap<IChatRequest, DefaultRequestContextBuilder>();
-                cfg.CreateMap<IChatRequest, RequestViewItem>();
-            },
-            NullLoggerFactory.Instance);
-        return config.CreateMapper();
-    });
-
-    public static IMapper IChatRequestMapper => MapperLazy.Value;
-
-    public DefaultRequestContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems)
+    protected DefaultRequestContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems)
     {
         ChatHistoryItems = dialogItems;
     }
 
-    public static DefaultRequestContextBuilder CreateFromSession(ITextDialogSession session)
-    {
-        var historyItems = session.GetHistory();
-        var systemPrompt = session.SystemPrompt;
-        return CreateFromHistory(historyItems, systemPrompt);
-    }
-
     public static DefaultRequestContextBuilder CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
-        string? systemPrompt = null)
+        string? systemPrompt = null, Guid? sessionId = null)
     {
         var requestViewItem = history.LastOrDefault() as IRequestItem ??
                               throw new InvalidOperationException("RequestViewItem is null");
         var dialogContext = new DefaultRequestContextBuilder(history)
         {
-            SystemPrompt = systemPrompt
+            SystemPrompt = systemPrompt,
         };
         dialogContext.MapFromRequest(requestViewItem);
         return dialogContext;
     }
-
-    public void MapFromRequest(IChatRequest context)
-    {
-        MapperLazy.Value.Map(context, this);
-    }
-
-    public string? UserPrompt { get; set; }
 
     /// <summary>
     /// message don't contains system prompt
@@ -83,6 +55,14 @@ public class DefaultRequestContextBuilder : IChatRequest
         return chatMessages;
     }
 
+    public void MapFromRequest(IRequestConfig config)
+    {
+        RequesterViewModel.IChatRequestMapper.Map<IRequestConfig, DefaultRequestContextBuilder>(config, this);
+        this.FunctionGroups = config.FunctionGroups?.ToList();
+    }
+
+    public string? UserPrompt { get; set; }
+
     public IReadOnlyList<IChatHistoryItem> ChatHistoryItems { get; }
 
     public string? WorkingDirectory { get; set; }
@@ -90,8 +70,8 @@ public class DefaultRequestContextBuilder : IChatRequest
     public string? SystemPrompt { get; set; }
 
     public ISearchOption? SearchOption { get; set; }
-    
-    public AIContextProvider[]? ContextProviders { get; }
+
+    public AIContextProvider[]? ContextProviders { get; init; }
 
     public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
 

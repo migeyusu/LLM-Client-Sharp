@@ -21,6 +21,7 @@ using LLMClient.ToolCall;
 using Microsoft.Win32;
 using Microsoft.Xaml.Behaviors.Core;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Agents.AI;
 
 namespace LLMClient.Dialog;
 
@@ -350,6 +351,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     {
         return DispatchAsync(() => CutContext(requestItem));
     }
+
+    public abstract AIContextProvider[]? ContextProviders { get; }
 
     public ICommand ClearDialogCommand { get; }
 

@@ -2,7 +2,7 @@
 
 namespace LLMClient.Dialog.Models;
 
-public interface IRequestItem : IEditableDialogItem, IInteractionItem, IChatRequest
+public interface IRequestItem : IEditableDialogItem, IInteractionItem, IRequestConfig
 {
     
 }

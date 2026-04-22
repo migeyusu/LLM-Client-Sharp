@@ -8,6 +8,7 @@ using LLMClient.Configuration;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.ToolCall;
+using Microsoft.Agents.AI;
 using SQLitePCL;
 
 namespace LLMClient.Project;
@@ -32,6 +33,13 @@ public class ProjectSessionViewModel : DialogSessionViewModel
     public string? WorkingDirectory
     {
         get { return ParentProject.Option.RootPath; }
+    }
+
+    public override AIContextProvider[]? ContextProviders
+    {
+#pragma warning disable MAAI001
+        get { return ParentProject.SkillsProviders.OfType<AIContextProvider>(); }
+#pragma warning restore MAAI001
     }
 
     /// <summary>

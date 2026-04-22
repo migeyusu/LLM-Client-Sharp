@@ -10,22 +10,6 @@ namespace LLMClient.Test;
 public class InvokePermissionContextTests
 {
     [Fact]
-    public void MapFromRequest_CopiesAutoApprove_FromRequestViewItem()
-    {
-        var request = new RequestViewItem("test")
-        {
-            AutoApproveAllInvocations = true,
-            IsDebugMode = true,
-        };
-        var builder = new DefaultRequestContextBuilder([request]);
-
-        builder.MapFromRequest(request);
-
-        Assert.True(builder.AutoApproveAllInvocations);
-        Assert.True(builder.IsDebugMode);
-    }
-
-    [Fact]
     public void CreateForRequest_MergesRequestAndParentAutoApprove()
     {
         var requestContext = new RequestContext

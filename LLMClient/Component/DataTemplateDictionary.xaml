@@ -622,34 +622,40 @@
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
-                <TextBox Margin="0"
-                         materialDesign:HintAssist.Hint="输入项目名称"
-                         TextWrapping="NoWrap"
-                         MaxWidth="120"
-                         MinWidth="80"
-                         Text="{Binding Name, Mode=TwoWay}" />
-                <ComboBox Grid.Column="1"
-                          Margin="6,0"
-                          IsEnabled="{Binding TypeEditable,Mode=OneTime}"
-                          ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type project:ProjectType}}}"
-                          SelectedItem="{Binding Type,Mode=TwoWay}" />
-                <CheckBox Grid.Column="2"
-                          Content="添加AGENTS.md"
-                          Style="{StaticResource MaterialDesignSecondaryCheckBox}"
-                          IsChecked="{Binding IncludeAgentsMd,Mode=TwoWay}"
-                          ToolTip="在项目根目录发现AGENTS.md时，将其内容加入项目上下文（系统提示词）"
-                          Margin="6,0" />
-                <TextBox Grid.Row="0" Grid.Column="3"
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Margin="0"
+                             materialDesign:HintAssist.Hint="输入项目名称"
+                             TextWrapping="NoWrap"
+                             MaxWidth="120"
+                             MinWidth="80"
+                             Text="{Binding Name, Mode=TwoWay}" />
+                    <ComboBox
+                        Margin="6,0"
+                        IsEnabled="{Binding TypeEditable,Mode=OneTime}"
+                        ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type project:ProjectType}}}"
+                        SelectedItem="{Binding Type,Mode=TwoWay}" />
+                    <CheckBox
+                        Content="启用skills"
+                        Style="{StaticResource MaterialDesignSecondaryCheckBox}"
+                        IsChecked="{Binding IncludeAgentsMd,Mode=TwoWay}"
+                        ToolTip="在项目根目录搜索常见的skills路径（如.github/skills）"
+                        Margin="6,0" />
+                    <CheckBox
+                        Content="附加AGENTS.md"
+                        Style="{StaticResource MaterialDesignSecondaryCheckBox}"
+                        IsChecked="{Binding IncludeAgentsMd,Mode=TwoWay}"
+                        ToolTip="在项目根目录发现AGENTS.md时，将其内容加入项目上下文（系统提示词）"
+                        Margin="6,0" />
+                </StackPanel>
+                <TextBox Grid.Row="0" Grid.Column="1"
                          TextWrapping="NoWrap"
                          Margin="5,0"
                          materialDesign:HintAssist.Hint="选择项目根目录"
                          Text="{Binding RootPath,Mode=TwoWay}"
                          TextAlignment="Left" />
-                <Button Grid.Row="0" Grid.Column="3"
+                <Button Grid.Row="0" Grid.Column="1"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Margin="0,0,5,0"

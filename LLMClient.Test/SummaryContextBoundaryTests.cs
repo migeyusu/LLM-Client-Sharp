@@ -4,6 +4,7 @@ using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Test;
@@ -89,6 +90,8 @@ public class SummaryContextBoundaryTests
             CutContextRequest = targetRequestItem;
             return Task.CompletedTask;
         }
+
+        public AIContextProvider[]? ContextProviders { get; } = null;
 
         public string? SystemPrompt => null;
         

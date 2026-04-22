@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
 using System.Windows.Input;
+using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
@@ -17,12 +18,13 @@ using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using LLMClient.Agent;
 using Microsoft.Agents.AI;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LLMClient.Dialog;
 
 public record AgentDescriptor(string Name, Type Type);
 
-public class RequesterViewModel : BaseViewModel, IChatRequest
+public class RequesterViewModel : BaseViewModel, IRequestConfig
 {
     private static readonly AgentDescriptor SummaryAgentDescriptor = new("Summary", typeof(SummaryAgent));
 
@@ -263,8 +265,6 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
     {
         get { return SearchConfig.GetUserSearchOption(); }
     }
-
-    public AIContextProvider[]? ContextProviders { get; set; }
 
     public List<CheckableFunctionGroupTree>? FunctionGroups
     {
@@ -553,6 +553,19 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         }
     }
 
+    private static readonly Lazy<IMapper> MapperLazy = new(() =>
+    {
+        var config = new MapperConfiguration(cfg =>
+            {
+                cfg.CreateMap<IRequestConfig, RequestViewItem>();
+                cfg.CreateMap<IRequestConfig, DefaultRequestContextBuilder>();
+            },
+            NullLoggerFactory.Instance);
+        return config.CreateMapper();
+    });
+
+    public static IMapper IChatRequestMapper => MapperLazy.Value;
+
     public async Task<RequestViewItem?> CreateRequest()
     {
         if (!await PromptEditViewModel.ApplyAndCheck())
@@ -565,7 +578,7 @@ public class RequesterViewModel : BaseViewModel, IChatRequest
         {
             Attachments = Attachments.Count == 0 ? null : Attachments.ToList(),
         };
-        DefaultRequestContextBuilder.IChatRequestMapper.Map<IChatRequest, RequestViewItem>(this, requestViewItem);
+        IChatRequestMapper.Map<IRequestConfig, RequestViewItem>(this, requestViewItem);
         return requestViewItem;
     }
 
