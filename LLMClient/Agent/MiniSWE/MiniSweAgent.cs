@@ -29,22 +29,7 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
         ITextDialogSession dialogSession,
         CancellationToken cancellationToken)
     {
-        var chatHistory = dialogSession.GetHistory();
-        if (chatHistory.Count == 0 || chatHistory[^1] is not IRequestItem request)
-            return null;
-
-        var contextBuilder = new AgentRequestContextBuilder(chatHistory)
-        {
-            PlatformId = Config.PlatformId,
-            IncludeHistoryMessages = true,
-            IncludeToolInstructions = Config.IncludeToolInstructions,
-            IncludeRagInstructions = Config.IncludeRagInstructions,
-            SystemTemplate = Config.SystemTemplate,
-            SystemPrompt = dialogSession.SystemPrompt,
-            InstanceTemplate = Config.InstanceTemplate,
-        };
-        contextBuilder.MapFromRequest(request);
-
+        var contextBuilder = AgentRequestContextBuilder.CreateFromSession(dialogSession, Config);
         string? workingDirectory;
         if (dialogSession is ProjectSessionViewModel projectSession)
         {

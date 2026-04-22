@@ -14,6 +14,7 @@ using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.ToolCall;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Agents.AI;
 
 namespace LLMClient.Dialog;
 
@@ -85,6 +86,8 @@ public class DialogViewModel : DialogSessionViewModel, IPromptableSession
             OnPropertyChanged(nameof(SystemPrompt));
         }
     }
+
+    public override AIContextProvider[]? ContextProviders { get; } = null;
 
     public override string? SystemPrompt
     {

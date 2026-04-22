@@ -21,6 +21,13 @@ public class DefaultRequestContextBuilder
     {
         ChatHistoryItems = dialogItems;
     }
+    
+    public static DefaultRequestContextBuilder CreateFromSession(ITextDialogSession session)
+    {
+        var historyItems = session.GetHistory().ToArray();
+        var systemPrompt = session.SystemPrompt;
+        return CreateFromHistory(historyItems, systemPrompt, session.ID);
+    }
 
     public static DefaultRequestContextBuilder CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
         string? systemPrompt = null, Guid? sessionId = null)

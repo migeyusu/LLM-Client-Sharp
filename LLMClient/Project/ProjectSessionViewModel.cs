@@ -38,7 +38,15 @@ public class ProjectSessionViewModel : DialogSessionViewModel
     public override AIContextProvider[]? ContextProviders
     {
 #pragma warning disable MAAI001
-        get { return ParentProject.SkillsProviders.OfType<AIContextProvider>(); }
+        get
+        {
+            if (ParentProject.SkillsProviders == null)
+            {
+                return null;
+            }
+
+            return ParentProject.SkillsProviders.OfType<AIContextProvider>().ToArray();
+        }
 #pragma warning restore MAAI001
     }
 

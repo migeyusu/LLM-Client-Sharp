@@ -22,27 +22,13 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
         : base(agent, agentOption, config)
     {
         _toolProviders = CreateToolProviders(config);
-
     }
+
     protected override async Task<RequestContext?> BuildRequestContextAsync(
         ITextDialogSession dialogSession,
         CancellationToken cancellationToken)
     {
-        var chatHistory = dialogSession.GetHistory();
-        if (chatHistory.Count == 0 || chatHistory[^1] is not IRequestItem request)
-            return null;
-
-        var contextBuilder = new AgentRequestContextBuilder(chatHistory)
-        {
-            PlatformId = Config.PlatformId,
-            IncludeHistoryMessages = true,
-            IncludeToolInstructions = Config.IncludeToolInstructions,
-            IncludeRagInstructions = Config.IncludeRagInstructions,
-            SystemTemplate = Config.SystemTemplate,
-            SystemPrompt = dialogSession.SystemPrompt,
-            InstanceTemplate = Config.InstanceTemplate,
-        };
-        contextBuilder.MapFromRequest(request);
+        var contextBuilder = AgentRequestContextBuilder.CreateFromSession(dialogSession, Config);
         contextBuilder.FunctionGroups = FilterReadOnlyFunctionGroups(contextBuilder.FunctionGroups);
 
         string? workingDirectory;
@@ -104,7 +90,8 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
     {
         return config.PlatformId switch
         {
-            AgentPlatform.Wsl or AgentPlatform.Linux => [
+            AgentPlatform.Wsl or AgentPlatform.Linux =>
+            [
                 new WslCLIPlugin
                 {
                     WslDistributionName = config.WslDistributionName,

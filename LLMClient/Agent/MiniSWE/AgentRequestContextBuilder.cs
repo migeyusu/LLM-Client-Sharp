@@ -3,7 +3,6 @@ using System.Text;
 using LLMClient.Abstraction;
 using LLMClient.ContextEngineering.PromptGeneration;
 using LLMClient.Dialog.Models;
-using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Agent.MiniSWE;
@@ -16,8 +15,29 @@ namespace LLMClient.Agent.MiniSWE;
 /// </summary>
 public class AgentRequestContextBuilder : DefaultRequestContextBuilder
 {
-    public AgentRequestContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems) : base(dialogItems)
+    protected AgentRequestContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems) : base(dialogItems)
     {
+    }
+
+    public static AgentRequestContextBuilder CreateFromSession(ITextDialogSession session,MiniSweAgentConfig config)
+    {
+        var history = session.GetHistory().ToArray();
+        var systemPrompt = session.SystemPrompt;
+        var requestViewItem = history.LastOrDefault() as IRequestItem ??
+                              throw new InvalidOperationException("RequestViewItem is null");
+        var dialogContext = new AgentRequestContextBuilder(history)
+        {
+            SystemPrompt = systemPrompt,
+            SessionId = session.ID,
+            PlatformId = config.PlatformId,
+            IncludeHistoryMessages = true,
+            IncludeToolInstructions = config.IncludeToolInstructions,
+            IncludeRagInstructions = config.IncludeRagInstructions,
+            SystemTemplate = config.SystemTemplate,
+            InstanceTemplate = config.InstanceTemplate,
+        };
+        dialogContext.MapFromRequest(requestViewItem);
+        return dialogContext;
     }
 
     public required string SystemTemplate { get; init; }

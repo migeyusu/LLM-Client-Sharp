@@ -5,6 +5,7 @@ using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.ToolCall;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Test;
@@ -73,6 +74,7 @@ public class ClientResponseViewItemTests
         public TaskCompletionSource<bool> PreviewStarted { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        public override AIContextProvider[]? ContextProviders { get; } = null;
         public override string? SystemPrompt => null;
 
         public override IFunctionGroupSource? ToolsSource { get; } = null;
