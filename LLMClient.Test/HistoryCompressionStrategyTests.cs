@@ -456,7 +456,7 @@ public class HistoryCompressionStrategyTests
         Assert.Contains(chatHistory, message =>
             message.Role == ChatRole.Assistant &&
             message.Text.Contains("[Round 1 summary]") &&
-            message.AdditionalProperties?["llmclient.react.agent"]?.ToString() == "Agent-A");
+            message.AdditionalProperties?["llmclient.agent"]?.ToString() == "Agent-A");
 
         // Agent-B's round 1 should NOT be touched (it's treated as preamble due to agent filter)
         Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
@@ -524,7 +524,7 @@ public class HistoryCompressionStrategyTests
         // Should contain the summary with Agent-A's tag
         var summaryMessage = Assert.Single(chatHistory.Where(message =>
             message.Text.Contains("[Compressed history summary]")));
-        Assert.Equal("Agent-A", summaryMessage.AdditionalProperties?["llmclient.react.agent"]?.ToString());
+        Assert.Equal("Agent-A", summaryMessage.AdditionalProperties?["llmclient.agent"]?.ToString());
 
         // Agent-B's round 1 should still be present (treated as preamble)
         Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
@@ -559,7 +559,7 @@ public class HistoryCompressionStrategyTests
 
         // Previous agent's messages should be in preamble (not treated as rounds)
         var previousAgentMessages = chatHistory.Where(m =>
-            m.AdditionalProperties?["llmclient.react.agent"]?.ToString() == "Previous-Agent").ToList();
+            m.AdditionalProperties?["llmclient.agent"]?.ToString() == "Previous-Agent").ToList();
         Assert.All(previousAgentMessages, msg =>
         {
             // These should NOT be in the "rounds' part of any segmentation result
@@ -621,7 +621,7 @@ public class HistoryCompressionStrategyTests
         // The request should start from round 4 (3 existing + 1 new)
         // Verify by checking the tagged messages in the result
         var agentATaggedMessages = result.Messages.Where(m =>
-            m.AdditionalProperties?["llmclient.react.agent"]?.ToString() == "Agent-A").ToList();
+            m.AdditionalProperties?["llmclient.agent"]?.ToString() == "Agent-A").ToList();
         Assert.NotEmpty(agentATaggedMessages);
 
         // The new assistant message should have round number 4
@@ -803,7 +803,7 @@ public class HistoryCompressionStrategyTests
     public async Task ObservationMasking_MasksOlderRoundObservation_AndPreservesRecentRoundObservation()
     {
         // Round 1: old success round (should be masked).
-        // Round 2: recent error round (should be preserved as-is �� strategy does not process errors).
+        // Round 2: recent error round (should be preserved as-is 锟斤拷 strategy does not process errors).
         var chatHistory = CreateHistoryWithRecentErrorRound();
         var strategy = new ObservationMaskingChatHistoryCompressionStrategy();
 
@@ -1005,7 +1005,7 @@ public class HistoryCompressionStrategyTests
 
         if (!shortPreamble)
         {
-            // Previous task messages (no round tags �� simulating persisted history from prior task)
+            // Previous task messages (no round tags 锟斤拷 simulating persisted history from prior task)
             history.Add(new ChatMessage(ChatRole.User, "Fix the authentication bug."));
             history.Add(new ChatMessage(ChatRole.Assistant,
                 "I found the issue in AuthService.cs and applied a fix. The token refresh logic was incorrectly handling expired tokens."));

@@ -43,7 +43,7 @@ public class AgentHistoryIsolationTests
             round =>
             {
                 Assert.Equal("Agent-A",
-                    round.AssistantMessage?.AdditionalProperties?["llmclient.react.agent"]?.ToString());
+                    round.AssistantMessage?.AdditionalProperties?["llmclient.agent"]?.ToString());
             });
 
         // Non-matching messages should be in preamble
