@@ -1,3 +1,4 @@
+using LLMClient.Dialog.Models;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;
@@ -12,7 +13,8 @@ public static class ReactHistorySegmenter
 
     public const int CompressedSummaryRoundNumber = 0;
 
-    public static void TagMessages(IEnumerable<ChatMessage> messages, int roundNumber, ReactHistoryMessageKind kind, string? agentId = null)
+    public static void TagMessages(IEnumerable<ChatMessage> messages, int roundNumber, ReactHistoryMessageKind kind,
+        string? agentId = null)
     {
         foreach (var message in messages)
         {
@@ -20,7 +22,8 @@ public static class ReactHistorySegmenter
         }
     }
 
-    public static void TagMessage(ChatMessage message, int roundNumber, ReactHistoryMessageKind kind, string? agentId = null)
+    public static void TagMessage(ChatMessage message, int roundNumber, ReactHistoryMessageKind kind,
+        string? agentId = null)
     {
         message.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         message.AdditionalProperties[ReactRoundNumberKey] = roundNumber;
@@ -98,7 +101,58 @@ public static class ReactHistorySegmenter
             if (roundNumber > maxRound)
                 maxRound = roundNumber;
         }
+
         return maxRound;
+    }
+
+    /// <summary>
+    /// 通过线性读取方式对历史消息进行 ReAct Loop 分段。
+    /// 不依赖 AdditionalProperties 中的标签，而是根据消息内容判断：
+    /// role 为 Assistant 且包含 FunctionCall 的消息，
+    /// 与随后出现的 role 为 Tool 且包含对应 FunctionCall 结果的消息，
+    /// 组成一个 ReAct Loop。
+    /// </summary>
+    public static ReactHistorySegmentation SegmentByLinearReading(IDialogItem dialogItem)
+    {
+        var chatHistory = dialogItem.Messages.ToArray();
+        var segmentation = new ReactHistorySegmentation();
+        if (chatHistory.Length < 2)
+        {
+            return segmentation;
+        }
+
+        var roundNumber = 1;
+        for (var i = 0; i < chatHistory.Length; i++)
+        {
+            var message = chatHistory[i];
+
+            if (message.Role == ChatRole.Assistant)
+            {
+                if (i + 1 >= chatHistory.Length)
+                {
+                    break;
+                }
+
+                var nextMessage = chatHistory[i + 1];
+                if (nextMessage.Role == ChatRole.Tool)
+                {
+                    segmentation.Rounds.Add(new ReactHistoryRound()
+                    {
+                        RoundNumber = roundNumber,
+                        AssistantMessage = message,
+                        ObservationMessage = nextMessage
+                    });
+                    roundNumber++;
+                    i++; // skip the paired tool message
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        return segmentation;
     }
 
     private static bool TryGetRoundNumber(ChatMessage message, out int roundNumber)
@@ -136,6 +190,7 @@ public static class ReactHistorySegmenter
         {
             return null;
         }
+
         return value?.ToString();
     }
 
@@ -155,4 +210,3 @@ public static class ReactHistorySegmenter
             : ReactHistoryMessageKind.Assistant;
     }
 }
-

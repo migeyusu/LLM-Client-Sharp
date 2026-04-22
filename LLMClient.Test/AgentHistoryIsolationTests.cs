@@ -41,8 +41,7 @@ public class AgentHistoryIsolationTests
         Assert.Equal(2, segmentation.Rounds.Count);
         Assert.All(segmentation.Rounds, round =>
         {
-            Assert.All(round.AssistantMessages, msg =>
-                Assert.Equal("Agent-A", msg.AdditionalProperties?["llmclient.react.agent"]?.ToString()));
+            Assert.Equal("Agent-A", round.AssistantMessage?.AdditionalProperties?["llmclient.react.agent"]?.ToString());
         });
 
         // Non-matching messages should be in preamble
@@ -347,6 +346,166 @@ public class AgentHistoryIsolationTests
 
     #endregion
 
+    #region ReactHistorySegmenter - SegmentByLinearReading
+
+    [Fact]
+    public void SegmentByLinearReading_SingleLoop()
+    {
+        var history = new List<ChatMessage>
+        {
+            new(ChatRole.System, "You are helpful."),
+            CreateFunctionCallMessage("call-1", "testFunc"),
+            CreateFunctionResultMessage("call-1", "result-1"),
+        };
+
+        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+
+        Assert.Single(segmentation.Rounds);
+        Assert.Equal(1, segmentation.Rounds[0].RoundNumber);
+        Assert.NotNull(segmentation.Rounds[0].AssistantMessage);
+        Assert.NotNull(segmentation.Rounds[0].ObservationMessage);
+        Assert.Empty(segmentation.PreambleMessages);
+    }
+
+    [Fact]
+    public void SegmentByLinearReading_MultipleLoops()
+    {
+        var history = new List<ChatMessage>
+        {
+            CreateFunctionCallMessage("call-1", "func1"),
+            CreateFunctionResultMessage("call-1", "result-1"),
+            CreateFunctionCallMessage("call-2", "func2"),
+            CreateFunctionResultMessage("call-2", "result-2"),
+        };
+
+        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+
+        Assert.Equal(2, segmentation.Rounds.Count);
+        Assert.Equal(1, segmentation.Rounds[0].RoundNumber);
+        Assert.Equal(2, segmentation.Rounds[1].RoundNumber);
+        Assert.Empty(segmentation.PreambleMessages);
+    }
+
+    [Fact]
+    public void SegmentByLinearReading_NoMatchingObservation()
+    {
+        var history = new List<ChatMessage>
+        {
+            new(ChatRole.System, "You are helpful."),
+            CreateFunctionCallMessage("call-1", "testFunc"),
+            new(ChatRole.User, "What happened?"),
+        };
+
+        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+
+        Assert.Empty(segmentation.Rounds);
+        Assert.Empty(segmentation.PreambleMessages);
+    }
+
+    [Fact]
+    public void SegmentByLinearReading_MultipleFunctionCallsInOneMessage()
+    {
+        var assistantMsg = new ChatMessage();
+        assistantMsg.Role = ChatRole.Assistant;
+        assistantMsg.Contents.Add(new FunctionCallContent("call-1", "func1"));
+        assistantMsg.Contents.Add(new FunctionCallContent("call-2", "func2"));
+
+        var toolMsg = new ChatMessage();
+        toolMsg.Role = ChatRole.Tool;
+        toolMsg.Contents.Add(new FunctionResultContent("call-1", "result-1"));
+        toolMsg.Contents.Add(new FunctionResultContent("call-2", "result-2"));
+
+        var history = new List<ChatMessage> { assistantMsg, toolMsg };
+
+        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+
+        Assert.Single(segmentation.Rounds);
+        Assert.Equal(1, segmentation.Rounds[0].RoundNumber);
+        Assert.Empty(segmentation.PreambleMessages);
+    }
+
+    [Fact]
+    public void SegmentByLinearReading_MismatchedResult_StillFormsRoundInSimplifiedModel()
+    {
+        var history = new List<ChatMessage>
+        {
+            CreateFunctionCallMessage("call-1", "testFunc"),
+            CreateFunctionResultMessage("call-2", "result-2"),
+        };
+
+        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+
+        // Simplified model does not verify CallId matching
+        Assert.Single(segmentation.Rounds);
+        Assert.Equal(1, segmentation.Rounds[0].RoundNumber);
+        Assert.Empty(segmentation.PreambleMessages);
+    }
+
+    [Fact]
+    public void SegmentByLinearReading_IgnoresTags()
+    {
+        var assistantMsg = CreateFunctionCallMessage("call-1", "testFunc");
+        var toolMsg = CreateFunctionResultMessage("call-1", "result-1");
+
+        // Tag them with different round numbers - linear reading should ignore these
+        ReactHistorySegmenter.TagMessage(assistantMsg, 99, ReactHistoryMessageKind.Assistant);
+        ReactHistorySegmenter.TagMessage(toolMsg, 99, ReactHistoryMessageKind.Observation);
+
+        var history = new List<ChatMessage> { assistantMsg, toolMsg };
+
+        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+
+        Assert.Single(segmentation.Rounds);
+        // Linear reading assigns sequential round numbers starting from 1
+        Assert.Equal(1, segmentation.Rounds[0].RoundNumber);
+        Assert.Empty(segmentation.PreambleMessages);
+    }
+
+    [Fact]
+    public void SegmentByLinearReading_AssistantWithoutFunctionCall_IsPreamble()
+    {
+        var history = new List<ChatMessage>
+        {
+            new(ChatRole.System, "You are helpful."),
+            new(ChatRole.Assistant, "I will help you."),
+            new(ChatRole.User, "Thanks."),
+        };
+
+        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+
+        Assert.Empty(segmentation.Rounds);
+        Assert.Empty(segmentation.PreambleMessages);
+    }
+
+    [Fact]
+    public void SegmentByLinearReading_MultipleObservationMessages()
+    {
+        var assistantMsg = new ChatMessage();
+        assistantMsg.Role = ChatRole.Assistant;
+        assistantMsg.Contents.Add(new FunctionCallContent("call-1", "func1"));
+
+        var toolMsg1 = new ChatMessage();
+        toolMsg1.Role = ChatRole.Tool;
+        toolMsg1.Contents.Add(new FunctionResultContent("call-1", "result-1"));
+
+        var toolMsg2 = new ChatMessage();
+        toolMsg2.Role = ChatRole.Tool;
+        toolMsg2.Contents.Add(new FunctionResultContent("call-1", "result-1-extra"));
+
+        var history = new List<ChatMessage> { assistantMsg, toolMsg1, toolMsg2 };
+
+        var segmentation = ReactHistorySegmenter.SegmentByLinearReading(new TestDialogItem(history));
+
+        Assert.Single(segmentation.Rounds);
+        Assert.Equal(1, segmentation.Rounds[0].RoundNumber);
+        Assert.NotNull(segmentation.Rounds[0].ObservationMessage);
+        // Simplified model pairs Assistant with only the immediate next Tool message
+        Assert.Single(segmentation.Rounds[0].ObservationMessage!.Contents.OfType<FunctionResultContent>());
+        Assert.Empty(segmentation.PreambleMessages);
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static List<ChatMessage> CreateMultiAgentHistory()
@@ -381,6 +540,43 @@ public class AgentHistoryIsolationTests
         var message = new ChatMessage(role, text);
         ReactHistorySegmenter.TagMessage(message, roundNumber, kind, agentId);
         return message;
+    }
+    private static ChatMessage CreateFunctionCallMessage(string callId, string functionName)
+    {
+        var message = new ChatMessage();
+        message.Role = ChatRole.Assistant;
+        message.Contents.Add(new FunctionCallContent(callId, functionName));
+        return message;
+    }
+
+    private static ChatMessage CreateFunctionResultMessage(string callId, object? result)
+    {
+        var message = new ChatMessage();
+        message.Role = ChatRole.Tool;
+        message.Contents.Add(new FunctionResultContent(callId, result));
+        return message;
+    }
+
+    private sealed class TestDialogItem : IDialogItem
+    {
+        public TestDialogItem(IEnumerable<ChatMessage> messages, ChatRole role = default)
+        {
+            Messages = messages.ToArray();
+            Role = role;
+        }
+
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public ChatRole Role { get; }
+        public IDialogItem? PreviousItem { get; set; }
+        public IReadOnlyCollection<IDialogItem> Children => Array.Empty<IDialogItem>();
+        public bool HasFork => false;
+        public bool IsAvailableInContext => true;
+        public IEnumerable<ChatMessage> Messages { get; }
+        public long Tokens => 0;
+
+        public IDialogItem AppendChild(IDialogItem child) => throw new NotSupportedException();
+        public IDialogItem RemoveChild(IDialogItem child) => throw new NotSupportedException();
+        public void ClearChildren() => throw new NotSupportedException();
     }
 
     private sealed class SummaryOnlyLlmClient : ILLMChatClient

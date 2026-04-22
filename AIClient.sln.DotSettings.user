@@ -543,54 +543,13 @@
 	<s:String x:Key="/Default/Environment/Hierarchy/Build/BuildTool/CustomBuildToolPath/@EntryValue">C:\Program Files\dotnet\sdk\9.0.305\MSBuild.dll</s:String>
 	<s:String x:Key="/Default/Environment/Hierarchy/Build/BuildTool/DotNetCliExePath/@EntryValue">C:\Program Files\dotnet\dotnet.exe</s:String>
 	
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=0869af1a_002Df810_002D4529_002Dbde4_002D403cb3f5e0ef/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="FileTreeFormatterTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.FileTreeFormatterTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.ProjectAwarenessPluginTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.ProjectAwarenessServiceTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.SymbolSemanticPluginTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.SymbolSemanticServiceTests&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=1e5efabb_002D9dbd_002D4338_002Db658_002Da617d0538bcb/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="ProjectAwarenessPluginTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.ProjectAwarenessPluginTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.SymbolSemanticPluginTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.CodeReadingServiceTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.CodeSearchServiceTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.CodeSearchPluginTests&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=5633b960_002Dcba7_002D42ae_002Da12a_002D5742baee6b86/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="GitHubCopilotModels" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.UnitTest1.GitHubCopilotModels&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c4b833a6_002Daad2_002D42f5_002Db874_002D1485a150f542/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="ReturnedRenderer_CanBeReusedAcrossMultipleDocuments" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.CustomMarkdownRendererPoolTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.ProjectPersistenceTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.McpTest.STDIO&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=e9774a73_002D239d_002D4dac_002D8f19_002Df3cd4ddaf9c4/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="StreamingMDRun" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.UITest.StreamingMDRun&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=f42fa05b_002Dde54_002D4caf_002Da6b5_002D5a36e2ea7664/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="SymbolSemanticServiceTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.SymbolSemanticServiceTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.Agent.Tools.SymbolSemanticPluginTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net8.0-windows10.0.19041.0::LLMClient.Test.PromptContext.TestBuild&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=fd31379c_002D0715_002D4af8_002D9d72_002D7e53e5971a7f/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="TestBuild" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.HistoryCompressionStrategyTests.ObservationMasking_ReplacesOnlyOlderObservationMessages&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::4DF02A6A-9203-48E7-8C5A-8D3E6CBFDD84::net10.0-windows10.0.19041.0::LLMClient.Test.AgentHistoryIsolationTests&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
