@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using Elsa.Extensions;
 using LLMClient.Abstraction;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.Utility;
@@ -26,12 +27,6 @@ namespace LLMClient.Endpoints;
 
 public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 {
-    /// <summary>
-    /// Re-entrancy guard: prevents recursive preamble compression when the summarizer
-    /// calls SendRequestAsync on the same (or any) LlmClientBase instance.
-    /// </summary>
-    private static readonly AsyncLocal<bool> PreambleCompressionActive = new();
-
     public abstract string Name { get; }
 
     public abstract ILLMAPIEndpoint Endpoint { get; }
@@ -129,7 +124,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     }
 
     private static LlmInvalidRequestException CreateMalformedOpenAiCompatibleResponseException(
-        ChatContext chatContext, InvalidOperationException innerException)
+        ChatStackContext chatContext, InvalidOperationException innerException)
     {
         var message =
             "The LLM endpoint returned an invalid OpenAI-compatible response. Expected 'choices' to be an array.";
@@ -243,36 +238,36 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            var parentContext = AsyncContextStore<ChatContext>.Current;
-            var chatContext = ChatContext.CreateForRequest(requestContext, tempAdditionalProperties,
+            var parentContext = AsyncContextStore<ChatStackContext>.Current;
+            var chatContext = ChatStackContext.CreateForRequest(requestContext, tempAdditionalProperties,
                 streaming, parentContext);
             var historyCompressionOptions = Model.HistoryCompression;
-            var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions);
-            var agentId = requestContext.AgentId;
+            var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions.Mode);
+            var dialogId = requestContext.DialogId;
             if (requestContext.ContextProvider != null)
             {
                 chatClient = chatClient.UseContextProvider(requestContext.ContextProvider);
             }
+
+            var segmentedReactHistory = requestContext.ReadonlyHistory.SegmentReactLevel(dialogId);
             // 基于历史中已有的该 agent 最大 round number 初始化，避免同一 Agent 多次调用时编号冲突
-            var reactRoundNumber = ChatMessageHierarchy.GetMaxRoundNumber(chatMessages, agentId);
-            using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
+            var reactRoundNumber = segmentedReactHistory.MaxRoundNumber;
+            using (AsyncContextStore<ChatStackContext>.CreateInstance(chatContext))
             {
                 var step = new ReactStep();
-                var compressionContext = new ChatHistoryCompressionContext
+                var compressionContext = new ChatHistoryContext
                 {
-                    ChatHistory = chatMessages,
                     Options = historyCompressionOptions,
-                    CurrentRound = 0,
+                    CurrentRoundNumber = 0,
                     CurrentClient = this,
                     Step = step,
-                    AgentId = agentId,
+                    History = segmentedReactHistory
                 };
 
-                await CompressPreambleIfNeededAsync(compressionContext, cancellationToken);
                 if (reactRoundNumber > 1 && historyCompressionStrategy != null)
                 {
                     //上一次发生中断情况下
-                    compressionContext.CurrentRound = reactRoundNumber;
+                    compressionContext.CurrentRoundNumber = reactRoundNumber;
                     await InTaskCompressIfNeedAsync(historyCompressionStrategy,
                         compressionContext, cancellationToken);
                 }
@@ -285,14 +280,13 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-
                     chatContext.CurrentStep = step;
                     compressionContext.Step = step;
                     // 启动后台生产任务
                     var producerTask = ProduceStepAsync(
-                        step, chatContext, chatClient, chatMessages, requestOptions,
+                        step, chatContext, chatClient, requestOptions,
                         functionCallEngine, streaming, softFunctionCall, ++reactRoundNumber, historyCompressionStrategy,
-                        compressionContext, agentId,
+                        compressionContext,
                         cancellationToken);
 
                     // 立即 yield —— 消费者可以马上开始 await foreach (var evt in step)
@@ -333,17 +327,15 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     [Experimental("SKEXP0001")]
     private async Task ProduceStepAsync(
         ReactStep step,
-        ChatContext chatContext,
+        ChatStackContext stackContext,
         IChatClient chatClient,
-        List<ChatMessage> chatMessages,
         ChatOptions requestOptions,
         FunctionCallEngine functionCallEngine,
         bool streaming,
         bool softFunctionCall,
         int reactRoundNumber,
         IChatHistoryCompressionStrategy? strategy,
-        ChatHistoryCompressionContext context,
-        string? agentId,
+        ChatHistoryContext context,
         CancellationToken cancellationToken)
     {
         var reasoningStart = false;
@@ -352,7 +344,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         UsageDetails? loopUsageDetails = null;
         Exception? exception = null;
         ChatFinishReason? finishReason = null;
-        var loopMessages = new List<ChatMessage>();
+        var currentRound = new ReactRound() { RoundNumber = reactRoundNumber };
         var preUpdates = new List<ChatResponseUpdate>();
         var stepResult = new StepResult() { MaxContextTokens = Model.MaxContextSize };
         int? latency = null;
@@ -360,17 +352,18 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         {
             _durationStopwatch.Restart();
             ChatResponse? preResponse;
+            IReadOnlyList<ChatMessage> requestMessages = context.RequestMessages.ToArray();
             if (streaming)
             {
                 _latencyStopwatch.Restart();
                 await foreach (var update in chatClient
-                                   .GetStreamingResponseAsync(chatMessages, requestOptions,
+                                   .GetStreamingResponseAsync(requestMessages, requestOptions,
                                        cancellationToken))
                 {
                     latency ??= (int)_latencyStopwatch.ElapsedMilliseconds;
                     update.TryAddExtendedData();
                     preUpdates.Add(update);
-                    chatContext.CompleteStreamResponse(stepResult, update);
+                    stackContext.CompleteStreamResponse(stepResult, update);
                     // 发射流式事件
                     EmitStreamEvents(step, update, ref reasoningStart, ref reasoningEnd);
                 }
@@ -381,57 +374,54 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             else
             {
                 preResponse =
-                    await chatClient.GetResponseAsync(chatMessages, requestOptions, cancellationToken);
+                    await chatClient.GetResponseAsync(requestMessages, requestOptions, cancellationToken);
                 // 发射文本内容
                 if (!string.IsNullOrEmpty(preResponse.Text))
                 {
                     step.EmitText(preResponse.Text);
                 }
 
-                await chatContext.CompleteResponse(preResponse, stepResult);
+                await stackContext.CompleteResponse(preResponse, stepResult);
             }
 
             _durationStopwatch.Stop();
             loopUsageDetails = preResponse.Usage;
-            var preResponseMessages = preResponse.Messages;
+            var preResponseMessage = preResponse.Messages.ToSingle();
             if (reactRoundNumber > 1 && functionCallEngine.HasFunctions)
             {
-                DeduplicateRepeatedThinking(preResponseMessages, chatMessages);
+                DeduplicateRepeatedThinking(preResponseMessage, requestMessages);
             }
 
-            preResponseMessages.TagLoopLevel(reactRoundNumber, ReactHistoryMessageKind.Assistant,
-                agentId);
-            foreach (var preResponseMessage in preResponseMessages)
+            preResponseMessage.TagLoopLevel(reactRoundNumber, ReactHistoryMessageKind.Assistant);
+            foreach (var content in preResponseMessage.Contents)
             {
-                foreach (var content in preResponseMessage.Contents)
+                switch (content)
                 {
-                    switch (content)
-                    {
-                        case UsageContent usageContent:
-                            (loopUsageDetails ??= new UsageDetails()).Add(usageContent.Details);
-                            break;
-                        case FunctionResultContent:
-                        case TextContent:
-                        case TextReasoningContent:
-                            //do nothing, textContent & reasoningContent is already added to RespondingText
-                            break;
-                        case FunctionCallContent functionCallContent:
-                            step.Emit(new FunctionCallStarted(functionCallContent));
-                            break;
-                        case ErrorContent errorContent:
-                            step.EmitDiagnostic(DiagLevel.Error,
-                                string.Format("Error content received: {0}, {1}, {2}",
-                                    errorContent.Message, errorContent.Details, errorContent.ErrorCode));
-                            break;
-                        default:
-                            step.EmitDiagnostic(DiagLevel.Warning,
-                                "Received content:" + content.GetType().Name);
-                            break;
-                    }
+                    case UsageContent usageContent:
+                        (loopUsageDetails ??= new UsageDetails()).Add(usageContent.Details);
+                        break;
+                    case FunctionResultContent:
+                    case TextContent:
+                    case TextReasoningContent:
+                        //do nothing, textContent & reasoningContent is already added to RespondingText
+                        break;
+                    case FunctionCallContent functionCallContent:
+                        step.Emit(new FunctionCallStarted(functionCallContent));
+                        break;
+                    case ErrorContent errorContent:
+                        step.EmitDiagnostic(DiagLevel.Error,
+                            string.Format("Error content received: {0}, {1}, {2}",
+                                errorContent.Message, errorContent.Details, errorContent.ErrorCode));
+                        break;
+                    default:
+                        step.EmitDiagnostic(DiagLevel.Warning,
+                            "Received content:" + content.GetType().Name);
+                        break;
                 }
             }
 
-            loopMessages.AddRange(preResponseMessages);
+            currentRound.AssistantMessage = preResponseMessage;
+            context.History.Rounds.Add(currentRound);
             loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
             if (loopUsageDetails != null)
             {
@@ -510,16 +500,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             step.EmitDiagnostic(DiagLevel.Info, "Processing function calls...");
             functionResultMessage = new ChatMessage();
             functionResultMessage.TagLoopLevel(reactRoundNumber,
-                ReactHistoryMessageKind.Observation, agentId);
-            loopMessages.Add(functionResultMessage);
-            chatMessages.AddRange(loopMessages);
-            await functionCallEngine.ProcessFunctionCallsAsync(chatContext, functionResultMessage,
+                ReactHistoryMessageKind.Observation);
+            currentRound.ObservationMessage = functionResultMessage;
+            await functionCallEngine.ProcessFunctionCallsAsync(stackContext, functionResultMessage,
                 preFunctionCalls, step, cancellationToken);
             if (strategy != null)
             {
                 context.CurrentTokens = loopUsageDetails?.TotalTokenCount;
-                context.ChatHistory = chatMessages;
-                context.CurrentRound = reactRoundNumber;
+                context.CurrentRoundNumber = reactRoundNumber;
                 await InTaskCompressIfNeedAsync(strategy, context, cancellationToken);
             }
 
@@ -528,14 +516,20 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         }
         catch (AgentFlowException agentFlowException)
         {
-            if (functionResultMessage is { Contents.Count: 0 })
-            {
-                loopMessages.Remove(functionResultMessage);
-            }
-
+            //儘管已經結束，也要收納有效消息
             if (agentFlowException.Messages.Count > 0)
             {
-                loopMessages.AddRange(agentFlowException.Messages);
+                var chatMessage = agentFlowException.Messages.ToSingle();
+                if (functionResultMessage != null)
+                {
+                    functionResultMessage.Contents.AddRange(chatMessage.Contents);
+                }
+                else
+                {
+                    chatMessage.TagLoopLevel(reactRoundNumber,
+                        ReactHistoryMessageKind.Observation);
+                    currentRound.ObservationMessage = chatMessage;
+                }
             }
 
             stepResult.IsCompleted = true;
@@ -590,7 +584,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             when (IsMalformedOpenAiCompatibleResponse(invalidOperationException))
         {
             AddLeaveHistory();
-            exception = CreateMalformedOpenAiCompatibleResponseException(chatContext, invalidOperationException);
+            exception = CreateMalformedOpenAiCompatibleResponseException(stackContext, invalidOperationException);
             stepResult.IsCompleted = false;
         }
         catch (Exception ex)
@@ -607,7 +601,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             stepResult.FinishReason = finishReason;
             stepResult.Latency = latency ?? 0;
             stepResult.Duration = (int)_durationStopwatch.Elapsed.TotalSeconds;
-            stepResult.Messages = loopMessages;
+            stepResult.Messages = currentRound.Messages;
             stepResult.ProtocolLog = step.ProtocolLog;
             step.Complete(stepResult);
         }
@@ -618,7 +612,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         {
             if (preUpdates.Count != 0)
             {
-                loopMessages.AddRange(preUpdates.ToChatResponse().Messages);
+                currentRound.AssistantMessage = preUpdates.ToChatResponse().Messages.ToSingle();
             }
         }
     }
@@ -650,12 +644,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     }
 
     private async Task InTaskCompressIfNeedAsync(
-        IChatHistoryCompressionStrategy historyCompressionStrategy, ChatHistoryCompressionContext context,
+        IChatHistoryCompressionStrategy historyCompressionStrategy, ChatHistoryContext context,
         CancellationToken cancellationToken)
     {
         if (context.CurrentTokens == null)
         {
-            context.CurrentTokens = await _tokensCounter.CountTokens(context.ChatHistory);
+            context.CurrentTokens = await _tokensCounter.CountTokens(context.History.AllMessages);
         }
 
         var historyCompressionOptions = context.Options;
@@ -667,48 +661,14 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             // 2. Pre-process: uniformly replace error rounds outside the preserve window with summaries
             if (historyCompressionOptions.SummaryErrorLoop)
             {
-                await PreprocessErrorRoundsAsync(context.ChatHistory, historyCompressionOptions, context.AgentId,
-                    cancellationToken);
+                var errorSummaryChatHistoryCompressionStrategy =
+                    ServiceLocator.GetService<ErrorSummaryChatHistoryCompressionStrategy>();
+                errorSummaryChatHistoryCompressionStrategy?.CompressAsync(context, cancellationToken);
             }
 
             context.Step?.EmitHistoryCompressionStarted(compressionKind.Value);
             await historyCompressionStrategy.CompressAsync(context, cancellationToken);
             context.Step?.EmitHistoryCompressionCompleted(compressionKind.Value, context.CompressionApplied);
-        }
-    }
-
-    private static async Task CompressPreambleIfNeededAsync(
-        ChatHistoryCompressionContext compressionContext,
-        CancellationToken cancellationToken)
-    {
-        if (!compressionContext.Options.PreambleCompression || PreambleCompressionActive.Value)
-        {
-            return;
-        }
-
-        var viewModelFactory = ServiceLocator.GetService<IViewModelFactory>();
-        if (viewModelFactory == null)
-        {
-            return;
-        }
-
-        var preambleStrategy = viewModelFactory.Create<PreambleSummaryChatHistoryCompressionStrategy>();
-        if (!await preambleStrategy.ShouldCompress(compressionContext))
-        {
-            return;
-        }
-
-        compressionContext.Step?.EmitHistoryCompressionStarted(HistoryCompressionKind.PreambleSummary);
-        PreambleCompressionActive.Value = true;
-        try
-        {
-            await preambleStrategy.CompressAsync(compressionContext, cancellationToken);
-            compressionContext.Step?.EmitHistoryCompressionCompleted(HistoryCompressionKind.PreambleSummary,
-                compressionContext.CompressionApplied);
-        }
-        finally
-        {
-            PreambleCompressionActive.Value = false;
         }
     }
 
@@ -723,62 +683,19 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         return Task.FromResult(totalTokensCount > threshold * maxContext);
     }
 
-    private async Task PreprocessErrorRoundsAsync(
-        List<ChatMessage> chatMessages,
-        ReactHistoryCompressionOptions options,
-        string? agentId,
-        CancellationToken cancellationToken)
-    {
-        var segmentation = ChatMessageHierarchy.SegmentReactLevel(chatMessages, agentId);
-        var roundsToKeep = Math.Max(0, options.PreserveRecentRounds);
-        var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
-
-        var hasErrorsToProcess = segmentation.Rounds.Take(keepFromIndex).Any(round => round.HasError);
-        if (!hasErrorsToProcess)
-        {
-            return;
-        }
-
-        var summarizer = ServiceLocator.GetService<Summarizer>();
-        var replacement = new List<ChatMessage>(segmentation.PreambleMessages);
-        for (var i = 0; i < segmentation.Rounds.Count; i++)
-        {
-            var round = segmentation.Rounds[i];
-            if (i < keepFromIndex && round.HasError)
-            {
-                replacement.Add(await ReactErrorRoundSummarizer.BuildErrorSummaryMessageAsync(
-                    round, summarizer, this, agentId, cancellationToken));
-                continue;
-            }
-
-            if (round.AssistantMessage != null)
-            {
-                replacement.Add(round.AssistantMessage);
-            }
-
-            if (round.ObservationMessage != null)
-            {
-                replacement.Add(round.ObservationMessage);
-            }
-        }
-
-        chatMessages.Clear();
-        chatMessages.AddRange(replacement);
-    }
-
     private static HistoryCompressionKind? GetHistoryCompressionKind(ReactHistoryCompressionMode mode)
     {
         return mode switch
         {
             ReactHistoryCompressionMode.ObservationMasking => HistoryCompressionKind.ObservationMasking,
-            ReactHistoryCompressionMode.InfoCleaning => HistoryCompressionKind.InfoCleaning,
+            ReactHistoryCompressionMode.LoopSummary => HistoryCompressionKind.InfoCleaning,
             ReactHistoryCompressionMode.TaskSummary => HistoryCompressionKind.TaskSummary,
             _ => null,
         };
     }
 
-    private static void DeduplicateRepeatedThinking(IList<ChatMessage> currentMessages,
-        IList<ChatMessage> historyMessages)
+    private static void DeduplicateRepeatedThinking(ChatMessage currentMessages,
+        IReadOnlyList<ChatMessage> historyMessages)
     {
         var previousReasoningSet = GetLastAssistantReasoningSet(historyMessages);
         if (previousReasoningSet.Count == 0)
@@ -786,30 +703,27 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             return;
         }
 
-        foreach (var message in currentMessages)
+        if (currentMessages.Role != ChatRole.Assistant)
         {
-            if (message.Role != ChatRole.Assistant)
+            return;
+        }
+
+        for (int i = currentMessages.Contents.Count - 1; i >= 0; i--)
+        {
+            if (currentMessages.Contents[i] is not TextReasoningContent reasoningContent)
             {
                 continue;
             }
 
-            for (int i = message.Contents.Count - 1; i >= 0; i--)
+            var normalized = NormalizeReasoning(reasoningContent.Text);
+            if (normalized != null && previousReasoningSet.Contains(normalized))
             {
-                if (message.Contents[i] is not TextReasoningContent reasoningContent)
-                {
-                    continue;
-                }
-
-                var normalized = NormalizeReasoning(reasoningContent.Text);
-                if (normalized != null && previousReasoningSet.Contains(normalized))
-                {
-                    message.Contents.RemoveAt(i);
-                }
+                currentMessages.Contents.RemoveAt(i);
             }
         }
     }
 
-    private static HashSet<string> GetLastAssistantReasoningSet(IList<ChatMessage> historyMessages)
+    private static HashSet<string> GetLastAssistantReasoningSet(IReadOnlyList<ChatMessage> historyMessages)
     {
         for (int i = historyMessages.Count - 1; i >= 0; i--)
         {

@@ -14,5 +14,5 @@ public enum ReactHistoryCompressionMode
 
     [Description("Masking Observation")] ObservationMasking,
 
-    [Description("Summary Each Loop")] InfoCleaning,
+    [Description("Summary Each Loop")] LoopSummary,
 }

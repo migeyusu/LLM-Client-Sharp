@@ -13,7 +13,7 @@ public class Summarizer(GlobalOptions options)
 {
     public Task<string?> SummarizeSessionTopicAsync(ITextDialogSession dialog, Duration duration)
     {
-        var dialogItems = new List<IDialogItem>(dialog.DialogItems.Take(3))
+        var dialogItems = new List<IDialogItem>(dialog.VisualDialogItems.Take(3))
         {
             new RequestViewItem(options.SubjectSummarizePrompt)
         };
@@ -27,7 +27,7 @@ public class Summarizer(GlobalOptions options)
 
     public Task<string?> SummarizeSessionConversationHistoryAsync(ITextDialogSession dialog, Duration duration)
     {
-        var dialogItems = new List<IDialogItem>(dialog.DialogItems)
+        var dialogItems = new List<IDialogItem>(dialog.VisualDialogItems)
         {
             new RequestViewItem(options.ConversationHistorySummaryPrompt)
         };
@@ -73,7 +73,11 @@ public class Summarizer(GlobalOptions options)
 
         try
         {
-            var dialogContext = new TextOnlyDialogContextBuilder(chatHistoryItems);
+            var dialogContext = new TextOnlyDialogContextBuilder(chatHistoryItems)
+            {
+                DialogId = Guid.NewGuid(),
+                ContextProviders = null,
+            };
             var response = await new PromptBasedAgent(client)
                 {
                     Timeout = duration,

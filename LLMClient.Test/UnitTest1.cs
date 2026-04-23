@@ -389,7 +389,7 @@ public class UnitTest1
         var filePersistModel = JsonSerializer.Deserialize<DialogFilePersistModel>(serialize, serializerOptions);
         var viewModel =
             mapper.Map<DialogFilePersistModel, DialogFileViewModel>(filePersistModel!, (options => { }));
-        var multiResponseViewItemDe = viewModel.Dialog.DialogItems.First() as ParallelResponseViewItem;
+        var multiResponseViewItemDe = viewModel.Dialog.VisualDialogItems.First() as ParallelResponseViewItem;
         var responseViewItems = multiResponseViewItemDe!.Items.ToArray();
         Assert.Same(responseViewItems[0].Client, responseViewItems[1].Client);
     }

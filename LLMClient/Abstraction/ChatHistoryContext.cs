@@ -2,13 +2,15 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Abstraction;
 
-public sealed class ChatHistoryCompressionContext
+public sealed class ChatHistoryContext
 {
-    public required List<ChatMessage> ChatHistory { get; set; }
+    public required SegmentedHistory History { get; init; }
+
+    public IEnumerable<ChatMessage> RequestMessages => History.AllMessages;
 
     public required ReactHistoryCompressionOptions Options { get; init; }
 
-    public  int CurrentRound { get; set; }
+    public int CurrentRoundNumber { get; set; }
 
     public long? CurrentTokens { get; set; }
 
@@ -20,10 +22,4 @@ public sealed class ChatHistoryCompressionContext
     public ReactStep? Step { get; set; }
 
     public bool CompressionApplied { get; set; }
-
-    /// <summary>
-    /// 可选的 Agent 标识。在多 Agent 场景下，压缩策略会基于该 ID 过滤属于其他 Agent 的 ReAct 轮次。
-    /// </summary>
-    public string? AgentId { get; init; }
 }
-

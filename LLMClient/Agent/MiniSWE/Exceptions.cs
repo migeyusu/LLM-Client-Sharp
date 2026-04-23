@@ -9,12 +9,12 @@ public class AgentFlowException : Exception
 {
     public List<ChatMessage> Messages { get; }
 
-    public AgentFlowException(params ChatMessage[] messages)
+    public AgentFlowException(string message, params ChatMessage[] messages) : base(message)
     {
         Messages = messages.ToList();
     }
 
-    public AgentFlowException(IEnumerable<ChatMessage> messages)
+    public AgentFlowException(string message, IEnumerable<ChatMessage> messages) : base(message)
     {
         Messages = messages.ToList();
     }
@@ -27,7 +27,7 @@ public class SubmittedException : AgentFlowException
 {
     public string Submission { get; }
 
-    public SubmittedException(string submission, ChatMessage exitMessage) : base(exitMessage)
+    public SubmittedException(string submission, ChatMessage exitMessage) : base(submission, exitMessage)
     {
         Submission = submission;
     }
@@ -38,7 +38,14 @@ public class SubmittedException : AgentFlowException
 /// </summary>
 public class FormatErrorException : AgentFlowException
 {
-    public FormatErrorException(ChatMessage feedbackMessage) : base(feedbackMessage)
+    public FormatErrorException(ChatMessage feedbackMessage) : base("format error", feedbackMessage)
+    {
+    }
+}
+
+public class StepOverflowException : AgentFlowException
+{
+    public StepOverflowException() : base("Step limit exceeded")
     {
     }
 }

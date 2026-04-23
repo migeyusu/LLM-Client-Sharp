@@ -107,7 +107,7 @@ public class SessionProjectPersistenceProfile : Profile
         CreateMap<DialogSessionPersistModel, DialogSessionViewModel>()
             .Include<DialogFilePersistModel, DialogViewModel>()
             .Include<ProjectSessionPersistModel, ProjectSessionViewModel>()
-            .ForMember(dest => dest.DialogItems, opt => opt.Ignore())
+            .ForMember(dest => dest.VisualDialogItems, opt => opt.Ignore())
             .ForMember(dest => dest.RootNode, opt => opt.Ignore())
             .ForMember(dest => dest.CurrentLeaf, opt => opt.Ignore())
             .ForMember(dest => dest.SelectedFunctionGroups, opt => opt.MapFrom(src => src.AllowedFunctions))

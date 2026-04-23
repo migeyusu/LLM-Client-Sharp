@@ -163,7 +163,7 @@ public class OpenAiChatClientExTests
             System.ClientModel.BinaryContent.Create(BinaryData.FromString("{" +
                 "\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}],\"model\":\"gpt-4o\"}"));
 
-        using var _ = AsyncContextStore<ChatContext>.CreateInstance(new ChatContext { Streaming = true });
+        using var _ = AsyncContextStore<ChatStackContext>.CreateInstance(new ChatStackContext { Streaming = true });
         var result = await rawClient.CompleteChatAsync(requestJson);
         var payload = await ReadRawResponseAsync(result);
 

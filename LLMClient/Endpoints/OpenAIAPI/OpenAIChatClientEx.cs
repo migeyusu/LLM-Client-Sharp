@@ -26,7 +26,7 @@ public class OpenAIChatClientEx : ChatClient
 
     public override async Task<ClientResult> CompleteChatAsync(BinaryContent content, RequestOptions? options = null)
     {
-        var clientContext = AsyncContextStore<ChatContext>.Current;
+        var clientContext = AsyncContextStore<ChatStackContext>.Current;
         var shouldProcessNonStreamingResponse = clientContext?.Streaming != true;
         var history = clientContext?.CurrentStep?.ProtocolLog;
         if (clientContext != null)
@@ -135,7 +135,7 @@ public class OpenAIChatClientEx : ChatClient
         return result;
     }
 
-    private async Task NormalizeChatCompletionResponseAsync(ClientResult result, ChatContext? clientContext)
+    private async Task NormalizeChatCompletionResponseAsync(ClientResult result, ChatStackContext? clientContext)
     {
         var response = result.GetRawResponse();
         var responseText = await GetResponseTextAsync(response);

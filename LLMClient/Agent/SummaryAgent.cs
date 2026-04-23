@@ -20,13 +20,14 @@ public class SummaryAgent : ISingleClientAgent
     public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var chatHistory = dialogSession.GetHistory();
+        var chatHistory = dialogSession.GetChatHistory().ToList();
         if (chatHistory.Count == 0 || chatHistory[^1] is not IRequestItem request)
         {
             yield break;
         }
 
-        var contextBuilder = DefaultRequestContextBuilder.CreateFromHistory(chatHistory, dialogSession.SystemPrompt);
+        var contextBuilder =
+            DefaultRequestContextBuilder.CreateFromHistory(chatHistory, systemPrompt: dialogSession.SystemPrompt);
         var requestContext = await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
         StepResult? lastResult = null;
         await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))

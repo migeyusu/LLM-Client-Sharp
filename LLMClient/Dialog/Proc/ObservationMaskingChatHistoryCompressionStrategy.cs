@@ -5,79 +5,47 @@ namespace LLMClient.Dialog.Proc;
 
 public sealed class ObservationMaskingChatHistoryCompressionStrategy : IChatHistoryCompressionStrategy
 {
-    public async Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
+    public Task CompressAsync(ChatHistoryContext context,
+        CancellationToken cancellationToken = default)
     {
-        var segmentation = ChatMessageHierarchy.SegmentReactLevel(context.ChatHistory, context.AgentId);
-        var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
-        var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
-
-        var hasObservationsToMask = segmentation.Rounds.Take(keepFromIndex).Any(round => round.ObservationMessage != null);
-        if (!hasObservationsToMask)
+        return context.History.TryApplyCompressItems(context.Options.PreserveRecentRounds, round =>
         {
-            return;
-        }
-
-        var replacement = new List<ChatMessage>(segmentation.PreambleMessages);
-        var changed = false;
-
-        for (var index = 0; index < segmentation.Rounds.Count; index++)
-        {
-            var round = segmentation.Rounds[index];
-
-            if (round.AssistantMessage != null)
-            {
-                replacement.Add(round.AssistantMessage);
-            }
-
-            if (index >= keepFromIndex)
-            {
-                if (round.ObservationMessage != null)
-                {
-                    replacement.Add(round.ObservationMessage);
-                }
-
-                continue;
-            }
-
+            var aiContents = new List<AIContent>();
+            ChatMessage observationMessage;
             if (round.ObservationMessage != null)
             {
-                replacement.Add(CreateObservationPlaceholder(round.ObservationMessage, round.RoundNumber,
-                    context.Options.ObservationPlaceholder, context.AgentId));
-                changed = true;
+                foreach (var aiContent in round.ObservationMessage.Contents)
+                {
+                    if (aiContent is FunctionResultContent functionResultContent)
+                    {
+                        aiContents.Add(new FunctionResultContent(functionResultContent.CallId,
+                            context.Options.ObservationPlaceholder)
+                        {
+                            Exception = functionResultContent.Exception
+                        });
+                    }
+                    else
+                    {
+                        aiContents.Add(aiContent);
+                    }
+                }
+
+                observationMessage = round.ObservationMessage.Clone();
+                observationMessage.Contents = aiContents;
             }
-        }
-
-        if (!changed)
-        {
-            return;
-        }
-
-        context.ChatHistory.Clear();
-        context.ChatHistory.AddRange(replacement);
-        context.CompressionApplied = true;
-    }
-
-    private static ChatMessage CreateObservationPlaceholder(ChatMessage originalMessage, int roundNumber, string placeholder, string? agentId)
-    {
-        ChatMessage placeholderMessage;
-        var contents = originalMessage.Contents;
-        if (contents.OfType<FunctionResultContent>().Any())
-        {
-            placeholderMessage = new ChatMessage
+            else
             {
-                Role = originalMessage.Role,
+                observationMessage = new ChatMessage(ChatRole.Tool, context.Options.ObservationPlaceholder);
+            }
+
+            var reactRound = new ReactRound()
+            {
+                RoundNumber = round.RoundNumber,
+                AssistantMessage = round.AssistantMessage?.Clone(),
+                ObservationMessage = observationMessage
             };
-            foreach (var result in contents.OfType<FunctionResultContent>())
-            {
-                placeholderMessage.Contents.Add(new FunctionResultContent(result.CallId, placeholder));
-            }
-        }
-        else
-        {
-            placeholderMessage = new ChatMessage(originalMessage.Role, placeholder);
-        }
 
-        ChatMessageHierarchy.TagLoopLevel(placeholderMessage, roundNumber, ReactHistoryMessageKind.Observation, agentId);
-        return placeholderMessage;
+            return Task.FromResult(reactRound);
+        });
     }
 }

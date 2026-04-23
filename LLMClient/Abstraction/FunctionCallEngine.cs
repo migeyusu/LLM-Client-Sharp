@@ -75,7 +75,7 @@ public abstract class FunctionCallEngine
         }
     }
 
-    public async Task ProcessFunctionCallsAsync(ChatContext chatContext, ChatMessage replyMessage,
+    public async Task ProcessFunctionCallsAsync(ChatStackContext chatContext, ChatMessage replyMessage,
         IList<FunctionCallContent> functionCalls, ReactStep? step = null,
         CancellationToken token = default)
     {
@@ -113,7 +113,7 @@ public abstract class FunctionCallEngine
                     
                     object? invokeResult;
                     // 显式恢复异步上下文，确保插件内部能通过 AsyncContextStore 访问到 CurrentStep 等信息
-                    using (AsyncContextStore<ChatContext>.CreateInstance(chatContext))
+                    using (AsyncContextStore<ChatStackContext>.CreateInstance(chatContext))
                     {
                         invokeResult = await kernelFunction.InvokeAsync(arguments, token);
                     }

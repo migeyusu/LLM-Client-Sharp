@@ -29,7 +29,7 @@ internal static class InvokePermissionDialog
 
     private static bool IsAutoApproveEnabled()
     {
-        return AsyncContextStore<ChatContext>.Current?.AutoApproveAllInvocations == true;
+        return AsyncContextStore<ChatStackContext>.Current?.AutoApproveAllInvocations == true;
     }
 
     private static string GetTitle(object content)

@@ -277,12 +277,12 @@ public class ProjectPersistenceTests
 
             var dialog = mapper.Map<DialogFilePersistModel, DialogViewModel>(persistModel, _ => { });
 
-            var erase = Assert.IsType<EraseViewItem>(Assert.Single(dialog.DialogItems.OfType<EraseViewItem>()));
-            var request = Assert.IsType<RequestViewItem>(Assert.Single(dialog.DialogItems.OfType<RequestViewItem>()));
+            var erase = Assert.IsType<EraseViewItem>(Assert.Single(dialog.VisualDialogItems.OfType<EraseViewItem>()));
+            var request = Assert.IsType<RequestViewItem>(Assert.Single(dialog.VisualDialogItems.OfType<RequestViewItem>()));
             Assert.Equal("legacy summary", request.RawTextMessage);
             Assert.Same(erase, request.PreviousItem);
-            Assert.Contains(erase, dialog.DialogItems);
-            Assert.Contains(request, dialog.DialogItems);
+            Assert.Contains(erase, dialog.VisualDialogItems);
+            Assert.Contains(request, dialog.VisualDialogItems);
             Assert.Same(request, dialog.CurrentLeaf);
         });
     }

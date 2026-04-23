@@ -6,20 +6,26 @@ namespace LLMClient.Dialog.Models;
 
 public interface ITextDialogSession
 {
+    /// <summary>
+    /// session id
+    /// </summary>
     Guid ID { get; }
-    
-    IReadOnlyList<IDialogItem> DialogItems { get; }
 
-    List<IChatHistoryItem> GetHistory();
-    
-    
+    IReadOnlyList<IDialogItem> VisualDialogItems { get; }
+
+    IResponseItem WorkingResponse { get; }
+
+    IEnumerable<IDialogItem> GetChatHistory()
+    {
+        return WorkingResponse.GetChatHistory();
+    }
 
     Task CutContextAsync(IRequestItem? requestItem = null);
-    
+
     AIContextProvider[]? ContextProviders { get; }
-    
+
     string? SystemPrompt { get; }
-    
+
     IEnumerable<Type> SupportedAgents { get; }
 
     IFunctionGroupSource? ToolsSource { get; }

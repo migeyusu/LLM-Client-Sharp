@@ -23,6 +23,8 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     public override long Tokens => Response.Tokens;
 
+    public override ITextDialogSession? Session => ParentSession;
+
     [Bindable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -98,7 +100,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         ParentSession.RespondingCount++;
         try
         {
-            var compactor = new HistoryCompactor(reactAgent.ChatClient)
+            var compactor = new HistoryPruner(reactAgent.ChatClient)
             {
                 ErrorTag = "HistoryCompact",
             };
@@ -140,7 +142,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     private string? FindPrecedingTask()
     {
-        var items = ParentSession.DialogItems;
+        var items = ParentSession.VisualDialogItems;
         var idx = items.IndexOf(this);
         for (var i = idx - 1; i >= 0; i--)
         {
@@ -151,7 +153,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         return null;
     }
 
-    public async Task<IResponse> ProcessAsync(ITextDialogSession session, CancellationToken token)
+    public async Task<IResponse> ProcessAsync(CancellationToken token)
     {
         var agentTaskResult = AgentTaskResult.Empty;
         if (Agent == null)
@@ -167,8 +169,9 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             using (Response.CreateRequestTokenSource(token, out var liveToken))
             {
                 await ParentSession.OnPreviewRequest(liveToken);
+                var branchDialogTextSession = BranchDialogTextSession.CreateFromResponse(this);
                 agentTaskResult = await Response.ConsumeReactStepsAsync(
-                    Agent.Execute(session, liveToken));
+                    Agent.Execute(branchDialogTextSession, liveToken));
                 ParentSession.OnResponseCompleted(agentTaskResult);
             }
         }

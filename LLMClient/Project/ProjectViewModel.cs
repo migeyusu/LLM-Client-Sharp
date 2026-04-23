@@ -341,7 +341,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase,
         try
         {
             var dialogSessions = availableDialogs
-                .Where(d => d.DialogItems.Count > 0)
+                .Where(d => d.VisualDialogItems.Count > 0)
                 .ToList();
 
             if (!dialogSessions.Any())

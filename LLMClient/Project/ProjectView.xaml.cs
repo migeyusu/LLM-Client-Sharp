@@ -17,7 +17,7 @@ public partial class ProjectView : UserControl
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
-            var indexOf = this.ViewModel.SelectedSession?.DialogItems.IndexOf(requestViewItem);
+            var indexOf = this.ViewModel.SelectedSession?.VisualDialogItems.IndexOf(requestViewItem);
             if (indexOf <= 0)
             {
                 return;

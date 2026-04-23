@@ -14,9 +14,9 @@ namespace LLMClient.Endpoints;
 /// <summary>
 /// 用于在聊天过程中存储额外的上下文信息
 /// </summary>
-public class ChatContext
+public class ChatStackContext
 {
-    public ChatContext(AdditionalPropertiesDictionary? additionalObjects = null)
+    public ChatStackContext(AdditionalPropertiesDictionary? additionalObjects = null)
     {
         AdditionalObjects = additionalObjects ?? new AdditionalPropertiesDictionary();
     }
@@ -44,12 +44,12 @@ public class ChatContext
 
     public ClientResult? ResponseResult { get; set; }
 
-    public static ChatContext CreateForRequest(IRequestContext requestContext,
+    public static ChatStackContext CreateForRequest(IRequestContext requestContext,
         AdditionalPropertiesDictionary? additionalObjects,
         bool streaming,
-        ChatContext? parentContext = null)
+        ChatStackContext? parentContext = null)
     {
-        return new ChatContext(additionalObjects)
+        return new ChatStackContext(additionalObjects)
         {
             Streaming = streaming,
             ShowRequestJson = requestContext.ShowRequestJson,

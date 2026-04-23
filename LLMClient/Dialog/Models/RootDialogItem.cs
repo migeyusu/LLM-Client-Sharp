@@ -8,15 +8,16 @@ namespace LLMClient.Dialog.Models;
 /// </summary>
 public class RootDialogItem : BaseDialogItem
 {
-    private static readonly ChatRole EmptyRole = new ChatRole("Empty");
     public override long Tokens { get; } = 0;
-    
+
     public override DialogRole Role { get; } = DialogRole.None;
 
     public override IEnumerable<ChatMessage> Messages
     {
         get { yield break; }
     }
+
+    public override ITextDialogSession? Session { get; } = null;
 
     public override bool IsAvailableInContext { get; } = false;
 }

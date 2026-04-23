@@ -57,8 +57,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     private int _respondingStateRefCount;
 
-    public const string DIALOGAGENT = "Dialog";
-
     #region responding
 
     public virtual async Task<AgentTaskResult> Process(DefaultRequestContextBuilder contextBuilder,
@@ -83,7 +81,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             using (CreateRequestTokenSource(token, out var liveToken))
             {
                 var requestContext = await contextBuilder.BuildAsync(Client.Model, liveToken);
-                requestContext.AgentId = DIALOGAGENT;
                 completedResult = await ConsumeReactStepsAsync(
                     Client.SendRequestAsync(requestContext, liveToken));
             }

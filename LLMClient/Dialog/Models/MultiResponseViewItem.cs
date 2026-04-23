@@ -25,6 +25,8 @@ public abstract class MultiResponseViewItem<T> : BaseDialogItem, IResponseItem
 
     public override DialogRole Role => DialogRole.Response;
 
+    public override ITextDialogSession? Session => ParentSession;
+
     public MultiResponseViewItem(IEnumerable<T> items, DialogSessionViewModel parentSession)
     {
         ParentSession = parentSession;

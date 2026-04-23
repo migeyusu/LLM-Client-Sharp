@@ -36,7 +36,7 @@ public sealed class CodeMutationPlugin : KernelFunctionGroup
 
     private async Task<bool> RequestDiffApprovalAsync(List<CodeMutationFilePreview> previews)
     {
-        var current = AsyncContextStore<ChatContext>.Current;
+        var current = AsyncContextStore<ChatStackContext>.Current;
         if (current?.AutoApproveAllInvocations == true)
             return true;
 
@@ -92,7 +92,7 @@ public sealed class CodeMutationPlugin : KernelFunctionGroup
 
     private async Task<bool> RequestPermissionAsync(string message)
     {
-        var current = AsyncContextStore<ChatContext>.Current;
+        var current = AsyncContextStore<ChatStackContext>.Current;
         if (current?.AutoApproveAllInvocations == true)
             return true;
 

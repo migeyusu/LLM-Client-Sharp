@@ -75,7 +75,7 @@ public sealed class ProtocolLogLoggerFactory : ILoggerFactory
             _innerLogger.Log(logLevel, eventId, state, exception, formatter);
 
             // 当 ShowRequestJson 为 true 时，捕获 UseLogging 的日志写入 ProtocolLog
-            var context = AsyncContextStore<ChatContext>.Current;
+            var context = AsyncContextStore<ChatStackContext>.Current;
             if (context?.ShowRequestJson != true)
             {
                 return;

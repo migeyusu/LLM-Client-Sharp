@@ -524,11 +524,11 @@ public class MiniSweRegressionTests
         var session = new PassiveTextDialogSession();
         var viewItem = new LinearResponseViewItem(parentSession, agent);
 
-        var processingTask = viewItem.ProcessAsync(session, CancellationToken.None);
-        var observedToken = await agent.TokenCaptured.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var processingTask = viewItem.ProcessAsync(CancellationToken.None);
+        var observedToken = await agent.TokenCaptured.Task.WaitAsync(TimeSpan.FromSeconds(5), observedToken);
 
         viewItem.Response.CancelCommand.Execute(null);
-        var result = await processingTask.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await processingTask.WaitAsync(TimeSpan.FromSeconds(5), observedToken);
 
         Assert.True(observedToken.IsCancellationRequested);
         Assert.False(result.IsInterrupt);
@@ -542,7 +542,7 @@ public class MiniSweRegressionTests
         var session = new PassiveTextDialogSession();
         var viewItem = new LinearResponseViewItem(parentSession, agent);
 
-        await viewItem.ProcessAsync(session, CancellationToken.None);
+        await viewItem.ProcessAsync(CancellationToken.None);
 
         var exception = Record.Exception(() => viewItem.Response.CancelCommand.Execute(null));
         Assert.Null(exception);
@@ -1324,7 +1324,7 @@ public class MiniSweRegressionTests
     private static IDisposable CreatePermissionContext(bool allow)
     {
         var step = new ReactStep();
-        var chatContext = new ChatContext { CurrentStep = step, AutoApproveAllInvocations = allow };
+        var chatContext = new ChatStackContext { CurrentStep = step, AutoApproveAllInvocations = allow };
         // Start a background task to consume permission requests from the step
         _ = Task.Run(async () =>
         {
@@ -1343,7 +1343,7 @@ public class MiniSweRegressionTests
                 // ignored
             }
         });
-        return AsyncContextStore<ChatContext>.CreateInstance(chatContext);
+        return AsyncContextStore<ChatStackContext>.CreateInstance(chatContext);
     }
 
     private static void SetReadOnlyToolProviders(ReadOnlyCompactAgentBase agent,
@@ -1440,11 +1440,12 @@ public class MiniSweRegressionTests
         {
             _history = history?.ToList() ?? [];
             _history.Add(request);
-            DialogItems = [];
+            VisualDialogItems = [];
         }
 
         public Guid ID { get; } = Guid.NewGuid();
-        public IReadOnlyList<IDialogItem> DialogItems { get; }
+        public IReadOnlyList<IDialogItem> VisualDialogItems { get; }
+        public IResponseItem WorkingResponse => throw new NotSupportedException();
 
         public List<IChatHistoryItem> GetHistory()
         {
@@ -1484,7 +1485,8 @@ public class MiniSweRegressionTests
     private sealed class PassiveTextDialogSession : ITextDialogSession
     {
         public Guid ID { get; } = Guid.NewGuid();
-        public IReadOnlyList<IDialogItem> DialogItems { get; } = [];
+        public IReadOnlyList<IDialogItem> VisualDialogItems { get; } = [];
+        public IResponseItem WorkingResponse => throw new NotSupportedException();
 
         public List<IChatHistoryItem> GetHistory()
         {

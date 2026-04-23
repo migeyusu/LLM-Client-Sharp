@@ -12,13 +12,16 @@ public class ChatHistoryCompressionStrategyFactory
         _viewModelFactory = viewModelFactory;
     }
 
-    public IChatHistoryCompressionStrategy? Create(ReactHistoryCompressionOptions? options)
+    public IChatHistoryCompressionStrategy? Create(ReactHistoryCompressionMode mode)
     {
-        return options?.Mode switch
+        return mode switch
         {
-            ReactHistoryCompressionMode.TaskSummary => _viewModelFactory.Create<TaskSummaryChatHistoryCompressionStrategy>(),
-            ReactHistoryCompressionMode.ObservationMasking => _viewModelFactory.Create<ObservationMaskingChatHistoryCompressionStrategy>(),
-            ReactHistoryCompressionMode.InfoCleaning => _viewModelFactory.Create<InfoCleaningChatHistoryCompressionStrategy>(),
+            ReactHistoryCompressionMode.TaskSummary => _viewModelFactory
+                .Create<TaskSummaryChatHistoryCompressionStrategy>(),
+            ReactHistoryCompressionMode.ObservationMasking => _viewModelFactory
+                .Create<ObservationMaskingChatHistoryCompressionStrategy>(),
+            ReactHistoryCompressionMode.LoopSummary => _viewModelFactory
+                .Create<LoopSummaryChatHistoryCompressionStrategy>(),
             _ => null,
         };
     }

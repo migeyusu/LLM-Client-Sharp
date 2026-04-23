@@ -5,64 +5,78 @@ using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Proc;
 
-public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCompressionStrategy
+/// <summary>
+/// only summary error rounds, keep all other rounds. This is the most conservative strategy that can ensure the quality of the summary rounds,
+/// but may not reduce the token count significantly if there are many non-error rounds.
+/// </summary>
+public sealed class ErrorSummaryChatHistoryCompressionStrategy : IChatHistoryCompressionStrategy
+{
+    private readonly Summarizer _summarizer;
+
+    public ErrorSummaryChatHistoryCompressionStrategy(Summarizer summarizer)
+    {
+        _summarizer = summarizer;
+    }
+
+    public Task CompressAsync(ChatHistoryContext context, CancellationToken cancellationToken = default)
+    {
+        return context.History.TryApplyCompressItems(context.Options.PreserveRecentRounds, async round =>
+        {
+            if (round.IsErrorRound)
+            {
+                var errorSummaryMessage = await ReactErrorRoundSummarizer.BuildErrorSummaryMessageAsync(
+                    round, _summarizer, context.CurrentClient, cancellationToken);
+                return new ReactRound()
+                {
+                    RoundNumber = round.RoundNumber,
+                    IsCompressApplied = false,
+                    AssistantMessage = errorSummaryMessage
+                };
+            }
+
+            return round;
+        });
+    }
+}
+
+public sealed class LoopSummaryChatHistoryCompressionStrategy : IChatHistoryCompressionStrategy
 {
     private static readonly Duration CompressionTimeout = new(TimeSpan.FromSeconds(30));
 
     private readonly Summarizer _summarizer;
 
-    public InfoCleaningChatHistoryCompressionStrategy(Summarizer summarizer)
+    public LoopSummaryChatHistoryCompressionStrategy(Summarizer summarizer)
     {
         _summarizer = summarizer;
     }
 
-    public async Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default)
+    public Task CompressAsync(ChatHistoryContext context,
+        CancellationToken cancellationToken = default)
     {
-
-        var segmentation = ChatMessageHierarchy.SegmentReactLevel(context.ChatHistory, context.AgentId);
-        var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
-        if (segmentation.Rounds.Count <= roundsToKeep)
+        return context.History.TryApplyCompressItems(context.Options.PreserveRecentRounds, async round =>
         {
-            return;
-        }
-
-        var replacement = new List<ChatMessage>(segmentation.PreambleMessages);
-        var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
-
-        for (var index = 0; index < segmentation.Rounds.Count; index++)
-        {
-            var round = segmentation.Rounds[index];
-            if (index >= keepFromIndex)
-            {
-                if (round.AssistantMessage != null)
-                {
-                    replacement.Add(round.AssistantMessage);
-                }
-
-                if (round.ObservationMessage != null)
-                {
-                    replacement.Add(round.ObservationMessage);
-                }
-
-                continue;
-            }
-
             var summaryText = await BuildRoundSummaryAsync(round, context.CurrentClient, cancellationToken);
-            if (!string.IsNullOrWhiteSpace(summaryText))
+            var assistantMessage = round.AssistantMessage?.Clone();
+            if (assistantMessage == null)
             {
-                var summaryMessage = new ChatMessage(ChatRole.Assistant, summaryText);
-                ChatMessageHierarchy.TagLoopLevel(summaryMessage, round.RoundNumber, ReactHistoryMessageKind.Assistant, context.AgentId);
-                replacement.Add(summaryMessage);
+                assistantMessage = new ChatMessage(ChatRole.Assistant, summaryText);
             }
-        }
+            else
+            {
+                assistantMessage.Contents = new List<AIContent>() { new TextContent(summaryText) };
+            }
 
-        context.ChatHistory.Clear();
-        context.ChatHistory.AddRange(replacement);
-        context.CompressionApplied = true;
+            return new ReactRound()
+            {
+                RoundNumber = round.RoundNumber,
+                IsCompressApplied = true,
+                AssistantMessage = assistantMessage,
+            };
+        });
     }
 
     private async Task<string> BuildRoundSummaryAsync(
-        ReactHistoryRound round,
+        ReactRound round,
         ILLMChatClient currentClient,
         CancellationToken cancellationToken)
     {
@@ -91,7 +105,7 @@ public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCom
             .Split(["\r", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     }
 
-    private static string BuildFallbackRoundSummary(ReactHistoryRound round)
+    private static string BuildFallbackRoundSummary(ReactRound round)
     {
         var reasoning = GetContent<TextReasoningContent>(round.AssistantMessage, content => content.Text);
         var text = GetContent<TextContent>(round.AssistantMessage, content => content.Text);
@@ -135,7 +149,7 @@ public sealed class InfoCleaningChatHistoryCompressionStrategy : IChatHistoryCom
         return builder.ToString().Trim();
     }
 
-    private static string? GetObservationSummary(ReactHistoryRound round)
+    private static string? GetObservationSummary(ReactRound round)
     {
         if (round.ObservationMessage == null)
         {

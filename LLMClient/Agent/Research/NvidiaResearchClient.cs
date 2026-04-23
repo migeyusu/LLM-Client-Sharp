@@ -60,7 +60,7 @@ public class NvidiaResearchClient : ResearchClient
     public override async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var lastRequest = dialogSession.DialogItems.LastOrDefault(item => item is RequestViewItem) as RequestViewItem;
+        var lastRequest = dialogSession.VisualDialogItems.LastOrDefault(item => item is RequestViewItem) as RequestViewItem;
         var prompt = lastRequest?.UserPrompt;
         if (prompt == null || string.IsNullOrWhiteSpace(prompt))
         {

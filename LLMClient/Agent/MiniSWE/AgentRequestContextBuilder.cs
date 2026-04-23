@@ -19,17 +19,20 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
     {
     }
 
-    public static AgentRequestContextBuilder CreateFromSession(ITextDialogSession session,MiniSweAgentConfig config)
+    public static AgentRequestContextBuilder CreateFromSession(ITextDialogSession session,
+        MiniSweAgentConfig config)
     {
-        var history = session.GetHistory().ToArray();
+        var history = session.GetChatHistory().ToArray();
         var systemPrompt = session.SystemPrompt;
         var requestViewItem = history.LastOrDefault() as IRequestItem ??
                               throw new InvalidOperationException("RequestViewItem is null");
         var dialogContext = new AgentRequestContextBuilder(history)
         {
+            DialogId = session.WorkingResponse.Id,
             SystemPrompt = systemPrompt,
             SessionId = session.ID,
             PlatformId = config.PlatformId,
+            ContextProviders = session.ContextProviders,
             IncludeHistoryMessages = true,
             IncludeToolInstructions = config.IncludeToolInstructions,
             IncludeRagInstructions = config.IncludeRagInstructions,

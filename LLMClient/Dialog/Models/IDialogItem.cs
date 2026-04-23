@@ -15,6 +15,8 @@ public interface IDialogItem : IChatHistoryItem, ITokenizable
 
     IReadOnlyCollection<IDialogItem> Children { get; }
 
+    ITextDialogSession? Session { get; }
+
     bool HasFork { get; }
 
     bool IsAvailableInContext { get; }
