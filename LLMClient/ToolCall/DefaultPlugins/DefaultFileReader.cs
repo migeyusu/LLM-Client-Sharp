@@ -1,13 +1,20 @@
 namespace LLMClient.ToolCall.DefaultPlugins;
 
 /// <summary>
-/// Default file reader using direct .NET file APIs.
+/// Default file reader using direct .NET file APIs with automatic encoding detection.
+/// Detects BOM, validates UTF-8, and falls back to system default encoding (e.g., GBK).
 /// </summary>
 public sealed class DefaultFileReader : IFileReader
 {
-    public Task<string> ReadAllTextAsync(string path, CancellationToken cancellationToken = default)
-        => File.ReadAllTextAsync(path, cancellationToken);
+    public async Task<string> ReadAllTextAsync(string path, CancellationToken cancellationToken = default)
+    {
+        var (content, _) = await FileEncodingHelper.ReadTextWithDetectionAsync(path, cancellationToken);
+        return content;
+    }
 
-    public Task<string[]> ReadAllLinesAsync(string path, CancellationToken cancellationToken = default)
-        => File.ReadAllLinesAsync(path, cancellationToken);
+    public async Task<string[]> ReadAllLinesAsync(string path, CancellationToken cancellationToken = default)
+    {
+        var (lines, _) = await FileEncodingHelper.ReadLinesWithDetectionAsync(path, cancellationToken);
+        return lines;
+    }
 }

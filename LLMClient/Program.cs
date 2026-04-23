@@ -1,38 +1,31 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using System.Windows;
 using AutoMapper;
 using LLMClient.Abstraction;
-using LLMClient.Agent.Research;
 using LLMClient.Component;
 using LLMClient.Component.ViewModel;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
 using LLMClient.ContextEngineering.Analysis;
-
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Log;
-
 using LLMClient.Persistence;
 using LLMClient.Rag;
-using LLMClient.Test;
 using LLMClient.ToolCall.DefaultPlugins;
 using LLMClient.ToolCall.MCP;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using OpenTelemetry;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 
 namespace LLMClient;
 
 public class Program
 {
     private static readonly Mutex Mutex = new Mutex(true, "LLMClient.WPF");
-
+    static IServiceProvider? _serviceProvider = null;
     [STAThread]
     static void Main()
     {
@@ -44,7 +37,7 @@ public class Program
             return;
         }
 
-        IServiceProvider? serviceProvider = null;
+        
         MainWindow? mainWindow = null;
         DailyRollingLogSink? logSink = null;
         DailyRollingTraceListener? traceFileListener = null;
@@ -68,10 +61,9 @@ public class Program
             traceFileListener = new DailyRollingTraceListener(logSink);
             Trace.Listeners.Add(traceFileListener);
             Trace.AutoFlush = true;
-
-            crashGuard = new CrashGuard(logPath, () => serviceProvider?.GetService<ILogger<Program>>());
+            crashGuard = new CrashGuard(logPath, () => _serviceProvider?.GetService<ILogger<Program>>());
             crashGuard.RegisterProcessHandlers();
-
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             var serviceCollection = new ServiceCollection();
             var collection = serviceCollection
                 .AddSingleton<IViewModelFactory, ViewModelFactory>()
@@ -98,12 +90,6 @@ public class Program
                 .AddSingleton<Summarizer>()
                 .AddMap();
 #if DEBUG
-            var resourceBuilder = ResourceBuilder
-                .CreateDefault()
-                .AddService("TelemetryConsoleQuickstart");
-            // Enable model diagnostics with sensitive data.
-            AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
-            
             collection.AddLogging(builder =>
             {
                 builder.AddDebug();
@@ -123,18 +109,14 @@ public class Program
                 builder.SetMinimumLevel(LogLevel.Information);
             });
 #endif
-            serviceProvider = collection.BuildServiceProvider();
-            BaseViewModel.ServiceLocator = serviceProvider;
+            _serviceProvider = collection.BuildServiceProvider();
+            BaseViewModel.ServiceLocator = _serviceProvider;
 #if RELEASE
         // Release 下通过 ILogger 管道统一写文件，避免 Trace 直写和 ILogger 文件 provider 重复落盘。
-        if (traceFileListener is not null)
-        {
-            Trace.Listeners.Remove(traceFileListener);
-            traceFileListener.Dispose();
-            traceFileListener = null;
-        }
-
-        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        Trace.Listeners.Remove(traceFileListener);
+        traceFileListener.Dispose();
+        traceFileListener = null;
+        var loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
         loggerTraceListener = new LoggerTraceListener(loggerFactory);
         Trace.Listeners.Add(loggerTraceListener);
 #endif
@@ -143,14 +125,14 @@ public class Program
             app.InitializeComponent();
             crashGuard.AttachApplication(app);
             // app.Run(new AsyncTestWindow());
-            mainWindow = serviceProvider.GetService<MainWindow>();
+            mainWindow = _serviceProvider.GetService<MainWindow>();
             app.Run(mainWindow);
         }
         catch (Exception e)
         {
             MessageBox.Show("An error occured: " + e + "process will be terminated.", "Error", MessageBoxButton.OK,
                 MessageBoxImage.Error);
-            var logger = serviceProvider?.GetService<ILogger<Program>>();
+            var logger = _serviceProvider?.GetService<ILogger<Program>>();
             logger?.LogCritical(e, "Application terminated unexpectedly");
             try
             {
