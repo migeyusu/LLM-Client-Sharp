@@ -233,7 +233,10 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         List<EditOperation> edits)
     {
         var fullPath = await ValidateAndResolvePathAsync(path);
-        var originalContent = await FileReader.ReadAllTextAsync(fullPath);
+
+        // Read with encoding detection to handle CJK and other non-UTF8 encodings correctly
+        var (originalContent, detectedEncoding) =
+            await FileEncodingHelper.ReadTextWithDetectionAsync(fullPath);
 
         // Existing path-level permission check
         var permissionMessage = new StringBuilder();
@@ -266,8 +269,9 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         {
             throw new UnauthorizedAccessException($"User rejected applying changes to '{path}'.");
         }
-
-        await File.WriteAllTextAsync(fullPath, updatedContent);
+        
+        // Write back with the same encoding to preserve the original file encoding
+        await File.WriteAllTextAsync(fullPath, updatedContent, detectedEncoding);
 
         return BuildDiffReport(path, originalContent, updatedContent, applied: true);
     }
@@ -627,19 +631,16 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
     {
         if (lineCount <= 0) return string.Empty;
 
-        var lines = new List<string>(lineCount);
-        using var reader = new StreamReader(path);
+        var (content, _) = await FileEncodingHelper.ReadTextWithDetectionAsync(path);
+        if (string.IsNullOrEmpty(content))
+            return string.Empty;
 
-        for (int i = 0; i < lineCount; i++)
-        {
-            var line = await reader.ReadLineAsync();
-            if (line == null) break;
-            lines.Add(line);
-        }
+        var allLines = content.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
+        var headLines = allLines.Take(lineCount);
 
         return includeLineNumbers
-            ? FormatLinesWithNumbers(lines, 1)
-            : string.Join("\n", lines);
+            ? FormatLinesWithNumbers(headLines, 1)
+            : string.Join("\n", headLines);
     }
 
     private static async Task<string> TailFileAsync(string path, int lineCount, bool includeLineNumbers = false)
@@ -834,7 +835,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 
     private static string RestoreOriginalDominantLineEnding(string originalContent, string updatedContent)
     {
-        // 如果原文件明显以 CRLF 为主，则恢复为 CRLF
+        // 婵″倹鐏夐崢鐔告瀮娴犺埖妲戦弰鍙ヤ簰 CRLF 娑撹桨瀵岄敍灞藉灟閹垹顦叉稉?CRLF
         if (originalContent.Contains("\r\n"))
         {
             return updatedContent.Replace("\n", "\r\n");

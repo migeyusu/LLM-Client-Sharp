@@ -91,6 +91,7 @@
         <PackageReference Include="System.Text.Json" Version="11.0.0-preview.2.26159.112"/>
         <PackageReference Include="TextMateSharp" Version="2.0.3"/>
         <PackageReference Include="TextMateSharp.Grammars.Karl" Version="1.0.2"/>
+        <PackageReference Include="UTF.Unknown" Version="2.6.0" />
         <PackageReference Include="WpfMath" Version="2.1.0"/>
         <PackageReference Remove="chromiumembeddedframework.runtime.win-arm64" />
         <PackageReference Remove="chromiumembeddedframework.runtime.win-x64" />
