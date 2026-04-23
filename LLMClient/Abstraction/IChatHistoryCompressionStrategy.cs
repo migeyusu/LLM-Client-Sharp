@@ -3,5 +3,7 @@ namespace LLMClient.Abstraction;
 
 public interface IChatHistoryCompressionStrategy
 {
-    Task CompressAsync(ChatHistoryCompressionContext context, CancellationToken cancellationToken = default);
+    Task CompressAsync(ChatHistoryContext context, CancellationToken cancellationToken = default);
+    
 }
+

@@ -434,7 +434,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
                 }
 
                 //只保留最后一条消息
-                ApplyMessages( [Messages.Last()]);
+                ApplyMessages([Messages.Last()]);
             }),
             () => !IsResponding && Messages.Any());
         EliminateFailedHistoryCommand = new RelayCommand((() =>
@@ -451,17 +451,16 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
             try
             {
-                var messages = Messages.ToList();
-                var segmentation = ChatMessageHierarchy.SegmentReactLevel(messages);
-                var keptMessages = new List<ChatMessage>(segmentation.PreambleMessages);
+                var rounds = this.SegmentReactLevel();
+                var messages = new List<ChatMessage>();
 
-                foreach (var round in segmentation.Rounds)
+                foreach (var round in rounds)
                 {
                     var functionCalls = round.AssistantMessage?.Contents.OfType<FunctionCallContent>().ToList() ?? [];
 
                     if (functionCalls.Count == 0)
                     {
-                        keptMessages.AddRange(round.Messages);
+                        messages.AddRange(round.Messages);
                         continue;
                     }
 
@@ -473,11 +472,11 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
 
                     if (!allFailed)
                     {
-                        keptMessages.AddRange(round.Messages);
+                        messages.AddRange(round.Messages);
                     }
                 }
 
-                ApplyMessages(keptMessages);
+                ApplyMessages(messages);
             }
             catch (Exception ex)
             {

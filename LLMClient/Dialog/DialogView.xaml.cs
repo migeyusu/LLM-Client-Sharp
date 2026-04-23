@@ -18,7 +18,7 @@ public partial class DialogView : UserControl
     {
         if (e.Parameter is RequestViewItem requestViewItem)
         {
-            var indexOf = this.ViewModel.DialogItems.IndexOf(requestViewItem);
+            var indexOf = this.ViewModel.VisualDialogItems.IndexOf(requestViewItem);
             if (indexOf <= 0)
             {
                 return;

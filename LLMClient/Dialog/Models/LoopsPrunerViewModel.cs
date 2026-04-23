@@ -4,7 +4,6 @@ using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using MaterialDesignThemes.Wpf;
-using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
 
@@ -27,7 +26,7 @@ public partial class LoopsPrunerViewModel : BaseViewModel
             DialogHost.Show(new LoopsPrunerViewModel(@base));
         });
 
-    public ObservableCollection<ReactHistoryRound> Rounds { get; set; }
+    public ObservableCollection<ReactRound> Rounds { get; set; }
 
     public bool CanApply { get; set; }
 
@@ -37,8 +36,7 @@ public partial class LoopsPrunerViewModel : BaseViewModel
     {
         this._response = response;
         Rounds =
-            new ObservableCollection<ReactHistoryRound>(ChatMessageHierarchy.SegmentReactLevel(response.Messages.ToArray())
-                .Rounds);
+            new ObservableCollection<ReactRound>(response.SegmentReactLevel());
         CanApply = Rounds.Count > 0;
     }
 
@@ -50,7 +48,7 @@ public partial class LoopsPrunerViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    public void RemoveMessage(ReactHistoryRound round)
+    public void RemoveMessage(ReactRound round)
     {
         Rounds.Remove(round);
     }

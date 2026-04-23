@@ -51,8 +51,6 @@ public static class ChatMessageHierarchy
 
     private const string SessionKey = "llmclient.session";
 
-    public const int CompressedSummaryRoundNumber = 0;
-
     public static void TagDialogLevel(this ChatMessage chatMessage, IDialogItem item)
     {
         chatMessage.AdditionalProperties ??= new AdditionalPropertiesDictionary();
@@ -84,51 +82,85 @@ public static class ChatMessageHierarchy
         chatMessage.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         chatMessage.AdditionalProperties[AgentKey] = agent.Name;
     }
-    
-    public static void TagLoopLevel(this IEnumerable<ChatMessage> messages, int roundNumber, ReactHistoryMessageKind kind,
-        string? agentId = null)
+
+    public static void TagLoopLevel(this IEnumerable<ChatMessage> messages, int roundNumber,
+        ReactHistoryMessageKind kind)
     {
         foreach (var message in messages)
         {
-            message.TagLoopLevel(roundNumber, kind, agentId);
+            message.TagLoopLevel(roundNumber, kind);
         }
     }
 
-    public static void TagLoopLevel(this ChatMessage message, int roundNumber, ReactHistoryMessageKind kind,
-        string? agentId = null)
+    public static void TagLoopLevel(this ChatMessage message, int roundNumber, ReactHistoryMessageKind kind)
     {
         message.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         message.AdditionalProperties[ReactRoundNumberKey] = roundNumber;
         message.AdditionalProperties[ReactRoundKindKey] = kind.ToString();
-        if (agentId != null)
-        {
-            message.AdditionalProperties[AgentKey] = agentId;
-        }
     }
 
-    public static ReactHistorySegmentation SegmentReactLevel(this IReadOnlyList<ChatMessage> chatHistory, string? agentIdFilter = null)
-    {
-        var segmentation = new ReactHistorySegmentation();
-        var rounds = new Dictionary<int, ReactHistoryRound>();
-        var roundOrder = new List<int>();
 
+    public static List<ReactRound> SegmentReactLevel(this ResponseViewItemBase response)
+    {
+        var chatMessages = response.Messages.ToArray();
+        if (chatMessages.Any(message => !message.TryGetRoundNumber(out _)))
+        {
+            //转为legacy模式
+            return LegacySegmentByLinearReading(response).Rounds;
+        }
+
+        //默认responseitem内的所有内容都属于同一个agent，且按照react loop的方式组织，因此可以直接对responseitem内的消息进行分割
+        var rounds = new Dictionary<int, ReactRound>();
+        foreach (var message in chatMessages)
+        {
+            message.TryGetRoundNumber(out var roundNumber);
+            if (!rounds.TryGetValue(roundNumber, out var round))
+            {
+                round = new ReactRound
+                {
+                    RoundNumber = roundNumber,
+                };
+                rounds[roundNumber] = round;
+            }
+
+            var kind = GetMessageKind(message);
+            if (kind == ReactHistoryMessageKind.Observation)
+            {
+                round.ObservationMessage = message;
+            }
+            else
+            {
+                round.AssistantMessage = message;
+            }
+        }
+
+        return rounds.OrderBy(kv => kv.Key)
+            .Select(pair => pair.Value).ToList();
+    }
+
+    public static SegmentedHistory SegmentReactLevel(this IReadOnlyList<ChatMessage> chatHistory,
+        string dialogIdFilter)
+    {
+        var rounds = new Dictionary<int, ReactRound>();
+        var roundOrder = new List<int>();
+        var chatMessages = new List<ChatMessage>();
         foreach (var message in chatHistory)
         {
-            if (!TryGetRoundNumber(message, out var roundNumber))
+            if (TryGetDialogId(message) != dialogIdFilter)
             {
-                segmentation.PreambleMessages.Add(message);
+                chatMessages.Add(message);
                 continue;
             }
 
-            if (agentIdFilter != null && TryGetAgentId(message) != agentIdFilter)
+            if (!TryGetRoundNumber(message, out var roundNumber))
             {
-                segmentation.PreambleMessages.Add(message);
+                chatMessages.Add(message);
                 continue;
             }
 
             if (!rounds.TryGetValue(roundNumber, out var round))
             {
-                round = new ReactHistoryRound
+                round = new ReactRound
                 {
                     RoundNumber = roundNumber,
                 };
@@ -147,6 +179,10 @@ public static class ChatMessageHierarchy
             }
         }
 
+        var segmentation = new SegmentedHistory()
+        {
+            PreambleMessages = chatMessages
+        };
         foreach (var roundNumber in roundOrder.OrderBy(number => number))
         {
             segmentation.Rounds.Add(rounds[roundNumber]);
@@ -156,37 +192,16 @@ public static class ChatMessageHierarchy
     }
 
     /// <summary>
-    /// 获取指定 agent 在历史中的最大 round number。如果历史中没有该 agent 的消息，返回 0。
-    /// </summary>
-    public static int GetMaxRoundNumber(IReadOnlyList<ChatMessage> chatHistory, string? agentId = null)
-    {
-        var maxRound = 0;
-        foreach (var message in chatHistory)
-        {
-            if (!TryGetRoundNumber(message, out var roundNumber))
-                continue;
-
-            if (agentId != null && TryGetAgentId(message) != agentId)
-                continue;
-
-            if (roundNumber > maxRound)
-                maxRound = roundNumber;
-        }
-
-        return maxRound;
-    }
-
-    /// <summary>
     /// 通过线性读取方式对历史消息进行 ReAct Loop 分割。
     /// 不依赖 AdditionalProperties 中的标签，而是根据消息内容判断：
     /// role 为 Assistant 且包含 FunctionCall 的消息，
     /// 与随后出现的 role 为 Tool 且包含对应 FunctionCall 结果的消息，
     /// 组成一个 ReAct Loop。
     /// </summary>
-    public static ReactHistorySegmentation SegmentByLinearReading(IDialogItem dialogItem)
+    public static SegmentedHistory LegacySegmentByLinearReading(IResponse dialogItem)
     {
         var chatHistory = dialogItem.Messages.ToArray();
-        var segmentation = new ReactHistorySegmentation();
+        var segmentation = new SegmentedHistory();
         if (chatHistory.Length < 2)
         {
             return segmentation;
@@ -207,7 +222,7 @@ public static class ChatMessageHierarchy
                 var nextMessage = chatHistory[i + 1];
                 if (nextMessage.Role == ChatRole.Tool)
                 {
-                    segmentation.Rounds.Add(new ReactHistoryRound()
+                    segmentation.Rounds.Add(new ReactRound()
                     {
                         RoundNumber = roundNumber,
                         AssistantMessage = message,
@@ -226,9 +241,9 @@ public static class ChatMessageHierarchy
         return segmentation;
     }
 
-    private static bool TryGetRoundNumber(ChatMessage message, out int roundNumber)
+    private static bool TryGetRoundNumber(this ChatMessage message, out int roundNumber)
     {
-        roundNumber = default;
+        roundNumber = 0;
         var additionalProperties = message.AdditionalProperties;
         if (additionalProperties == null ||
             !additionalProperties.TryGetValue(ReactRoundNumberKey, out var value) ||
@@ -253,11 +268,11 @@ public static class ChatMessageHierarchy
         }
     }
 
-    private static string? TryGetAgentId(ChatMessage message)
+    private static string? TryGetDialogId(ChatMessage message)
     {
         var additionalProperties = message.AdditionalProperties;
         if (additionalProperties == null ||
-            !additionalProperties.TryGetValue(AgentKey, out var value))
+            !additionalProperties.TryGetValue(DialogItemKey, out var value))
         {
             return null;
         }

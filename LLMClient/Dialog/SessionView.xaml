@@ -13,7 +13,7 @@
     <Grid>
         <customControl:ListBoxEx Style="{StaticResource DialogListBoxStyle}"
                                  CurrentViewItem="{Binding ScrollViewItem,Mode=TwoWay}"
-                                 ItemsSource="{Binding DialogItems,Mode=OneWay}"
+                                 ItemsSource="{Binding VisualDialogItems,Mode=OneWay}"
                                  x:Name="DialogItemList">
             <!--component:ListBoxHelper.CurrentVisibleItem="{Binding ScrollViewItem,Mode=TwoWay}"-->
             <ListBox.CommandBindings>

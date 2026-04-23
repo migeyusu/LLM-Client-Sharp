@@ -23,6 +23,8 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
         }
     }
 
+    public abstract ITextDialogSession? Session { get; }
+
     public bool HasFork
     {
         get { return ChildItemsObservables.Count > 1; }

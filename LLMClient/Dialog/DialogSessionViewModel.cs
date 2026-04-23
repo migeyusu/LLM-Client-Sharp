@@ -37,7 +37,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     {
         get
         {
-            var textContent = DialogItems.OfType<RequestViewItem>()
+            var textContent = VisualDialogItems.OfType<RequestViewItem>()
                 .FirstOrDefault(item => item.IsAvailableInContext)
                 ?.RawTextMessage;
             return string.IsNullOrEmpty(textContent)
@@ -296,10 +296,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public Guid ID { get; set; } = Guid.NewGuid();
 
-    public IReadOnlyList<IDialogItem> DialogItems
+    public IReadOnlyList<IDialogItem> VisualDialogItems
     {
         get { return _readOnlyDialogItems; }
     }
+
+    public IResponseItem WorkingResponse => CurrentLeaf as IResponseItem ?? throw new InvalidOperationException("当前节点不是回复项");
 
     public ICommand ClearContextCommand { get; }
 
@@ -320,7 +322,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     /// <param name="requestViewItem">if null:last</param>
     public void CutContext(IRequestItem? requestViewItem = null)
     {
-        if (DialogItems.Count == 0)
+        if (VisualDialogItems.Count == 0)
         {
             return;
         }
@@ -328,7 +330,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         var eraseViewItem = new EraseViewItem();
         if (requestViewItem != null)
         {
-            var indexOf = DialogItems.IndexOf(requestViewItem);
+            var indexOf = VisualDialogItems.IndexOf(requestViewItem);
             if (indexOf <= 0)
             {
                 Trace.TraceWarning("请求项不在对话列表中，无法切断上下文");
@@ -415,7 +417,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 break;
         }
 
-        if (this.DialogItems.Contains(item))
+        if (this.VisualDialogItems.Contains(item))
         {
             //检查leaf可达性
             if (!CurrentLeaf.CanReachRoot())
@@ -494,7 +496,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     {
         get
         {
-            if (!DialogItems.Any())
+            if (!VisualDialogItems.Any())
             {
                 return 0;
             }
@@ -579,7 +581,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         var multiResponseViewItem = new ParallelResponseViewItem(this)
             { InteractionId = requestViewItem.InteractionId };
         InsertResponseItem(requestViewItem, insertBefore, multiResponseViewItem);
-
         return await multiResponseViewItem.NewResponse(client, token);
     }
 
@@ -638,13 +639,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             agent = (IAgent)Activator.CreateInstance(agentType)!;
         }
 
-        var wrapper = new LinearResponseViewItem(this, agent)
+        var responseViewItem = new LinearResponseViewItem(this, agent)
         {
             InteractionId = requestViewItem.InteractionId
         };
-        InsertResponseItem(requestViewItem, insertBefore, wrapper);
-
-        return await wrapper.ProcessAsync(this, token);
+        InsertResponseItem(requestViewItem, insertBefore, responseViewItem);
+        return await responseViewItem.ProcessAsync(token);
     }
 
     public void ForkPreTask(IResponseItem dialogViewItem)
@@ -704,7 +704,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
         SearchCommand = new ActionCommand(_ =>
         {
-            foreach (var dialogViewItem in this.DialogItems.OfType<ISearchableDialogItem>())
+            foreach (var dialogViewItem in this.VisualDialogItems.OfType<ISearchableDialogItem>())
             {
                 dialogViewItem.SearchableDocument?.ApplySearch(_searchText);
             }
@@ -730,7 +730,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 SearchCommand.Execute(null);
             }
 
-            var searchableDialogItems = DialogItems.OfType<ISearchableDialogItem>()
+            var searchableDialogItems = VisualDialogItems.OfType<ISearchableDialogItem>()
                 .Where(item => item is { SearchableDocument.HasMatched: true })
                 .ToArray();
             if (searchableDialogItems.Length == 0)
@@ -767,7 +767,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 SearchCommand.Execute(null);
             }
 
-            var searchableDialogItems = DialogItems.OfType<ISearchableDialogItem>()
+            var searchableDialogItems = VisualDialogItems.OfType<ISearchableDialogItem>()
                 .Where(item => item is { SearchableDocument.HasMatched: true })
                 .ToArray();
             if (searchableDialogItems.Length == 0)
@@ -812,7 +812,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
                 var stringBuilder = new StringBuilder(8192);
                 /*stringBuilder.AppendLine($"# {this.Topic}");
             stringBuilder.AppendLine($"### {this.DefaultClient.Name}");*/
-                foreach (var viewItem in DialogItems.Where(item => item.IsAvailableInContext))
+                foreach (var viewItem in VisualDialogItems.Where(item => item.IsAvailableInContext))
                 {
                     if (viewItem is ParallelResponseViewItem { AcceptedResponse: { } responseViewItem })
                     {

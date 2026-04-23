@@ -1,6 +1,4 @@
-﻿using LLMClient.Abstraction;
-
-namespace LLMClient.Dialog.Models;
+﻿namespace LLMClient.Dialog.Models;
 
 public interface IResponseItem : IDialogItem, IInteractionItem
 {

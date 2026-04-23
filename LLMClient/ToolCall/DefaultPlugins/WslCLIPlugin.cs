@@ -66,7 +66,7 @@ public sealed class WslCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         var commandBase = command.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries)[0].ToLowerInvariant();
         if (VerifyRequiredCommands.Contains(commandBase))
         {
-            var step = AsyncContextStore<ChatContext>.Current?.CurrentStep;
+            var step = AsyncContextStore<ChatStackContext>.Current?.CurrentStep;
             if (step == null)
             {
                 throw new NotSupportedException($"错误：命令 '{commandBase}' 被默认禁止执行。");

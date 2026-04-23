@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Elsa.Extensions;
 using LLMClient.Endpoints;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
@@ -41,5 +42,26 @@ public static class ChatEndpointExtensions
             AIContextProviders = contextProviders
         });
         return new AgentFallbackClient(chatClientAgent);
+    }
+
+    public static ChatMessage ToSingle(this IList<ChatMessage> chatMessages)
+    {
+        if (chatMessages.Count == 0)
+        {
+            throw new NotSupportedException("空消息列表!");
+        }
+
+        var single = chatMessages[0];
+        if (chatMessages.Count == 1)
+        {
+            return single;
+        }
+
+        for (var i = 1; i < chatMessages.Count; i++)
+        {
+            single.Contents.AddRange(chatMessages[i].Contents);
+        }
+
+        return single;
     }
 }

@@ -43,7 +43,7 @@ public class HistoryCompressionStrategyTests
         var chatHistory = CreateHistoryWithTwoRounds();
         var strategy = new ObservationMaskingChatHistoryCompressionStrategy();
 
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        await strategy.CompressAsync(new ChatHistoryContext
         {
             ChatHistory = chatHistory,
             Options = new ReactHistoryCompressionOptions
@@ -52,7 +52,7 @@ public class HistoryCompressionStrategyTests
                 PreserveRecentRounds = 1,
                 ObservationPlaceholder = "[details omitted for brevity]",
             },
-            CurrentRound = 2,
+            CurrentRoundNumber = 2,
             CurrentClient = new SummaryOnlyLlmClient("unused"),
         });
 
@@ -70,17 +70,17 @@ public class HistoryCompressionStrategyTests
         var chatHistory = CreateHistoryWithTwoRounds();
         var summaryClient = new SummaryOnlyLlmClient("checked repository state and captured first observation");
         var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new InfoCleaningChatHistoryCompressionStrategy(summarizer);
+        var strategy = new LoopSummaryChatHistoryCompressionStrategy(summarizer);
 
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        await strategy.CompressAsync(new ChatHistoryContext
         {
             ChatHistory = chatHistory,
             Options = new ReactHistoryCompressionOptions
             {
-                Mode = ReactHistoryCompressionMode.InfoCleaning,
+                Mode = ReactHistoryCompressionMode.LoopSummary,
                 PreserveRecentRounds = 1,
             },
-            CurrentRound = 2,
+            CurrentRoundNumber = 2,
             CurrentClient = summaryClient,
         });
 
@@ -102,7 +102,7 @@ public class HistoryCompressionStrategyTests
         var summarizer = new Summarizer(new GlobalOptions());
         var strategy = new TaskSummaryChatHistoryCompressionStrategy(summarizer);
 
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        await strategy.CompressAsync(new ChatHistoryContext
         {
             ChatHistory = chatHistory,
             Options = new ReactHistoryCompressionOptions
@@ -110,7 +110,7 @@ public class HistoryCompressionStrategyTests
                 Mode = ReactHistoryCompressionMode.TaskSummary,
                 PreserveRecentRounds = 1,
             },
-            CurrentRound = 2,
+            CurrentRoundNumber = 2,
             CurrentClient = summaryClient,
         });
 
@@ -177,130 +177,6 @@ public class HistoryCompressionStrategyTests
         Assert.Equal(1, CountOccurrences(chatClient.SeenHistories[2], $"assistant:reasoning:{repeatedThinking}"));
     }
 
-    [Fact]
-    public async Task PreambleSummary_SkipsWhenBelowThreshold()
-    {
-        var chatHistory = CreateHistoryWithPreambleAndRounds(shortPreamble: true);
-        var summaryClient = new SummaryOnlyLlmClient("should not be called");
-        var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
-
-        var originalCount = chatHistory.Count;
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
-        {
-            ChatHistory = chatHistory,
-            Options = new ReactHistoryCompressionOptions
-            {
-                PreambleCompression = true,
-                PreambleTokenThresholdPercent = 100, // very high threshold
-            },
-            CurrentRound = 0,
-            CurrentClient = summaryClient,
-        });
-
-        // Nothing should have changed
-        Assert.Equal(originalCount, chatHistory.Count);
-    }
-
-    [Fact]
-    public async Task PreambleSummary_CompressesPreviousTaskContext()
-    {
-        var chatHistory = CreateHistoryWithPreambleAndRounds(shortPreamble: false);
-        var summaryClient =
-            new SummaryOnlyLlmClient("investigated auth module, fixed token refresh bug in AuthService.cs");
-        var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
-
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
-        {
-            ChatHistory = chatHistory,
-            Options = new ReactHistoryCompressionOptions
-            {
-                PreambleCompression = true,
-                PreambleTokenThresholdPercent = 0.0001, // very low threshold to trigger compression
-            },
-            CurrentRound = 0,
-            CurrentClient = summaryClient,
-        });
-
-        // System prompt should be preserved
-        Assert.Equal(ChatRole.System, chatHistory[0].Role);
-        Assert.Equal("You are helpful.", chatHistory[0].Text);
-
-        // Previous task context should be replaced with summary
-        Assert.Contains(chatHistory, message =>
-            message.Role == ChatRole.Assistant &&
-            message.Text.Contains("[Previous task context summary]") &&
-            message.Text.Contains("investigated auth module"));
-
-        // Current task user message should be preserved
-        Assert.Contains(chatHistory, message =>
-            message.Role == ChatRole.User &&
-            message.Text == "Now fix the CI pipeline.");
-
-        // Current task rounds should be preserved
-        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionCallContent>(),
-            content => content.CallId == "call-current-1");
-
-        // Previous task messages should be removed
-        Assert.DoesNotContain(chatHistory, message =>
-            message.Text == "Fix the authentication bug.");
-        Assert.DoesNotContain(chatHistory, message =>
-            message.Text == "I found the issue in AuthService.cs and applied a fix.");
-    }
-
-    [Fact]
-    public async Task PreambleSummary_PreservesRoundsIntact()
-    {
-        var chatHistory = CreateHistoryWithPreambleAndRounds(shortPreamble: false);
-        var summaryClient = new SummaryOnlyLlmClient("previous task summary");
-        var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
-
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
-        {
-            ChatHistory = chatHistory,
-            Options = new ReactHistoryCompressionOptions
-            {
-                PreambleCompression = true,
-                PreambleTokenThresholdPercent = 0.0001,
-            },
-            CurrentRound = 0,
-            CurrentClient = summaryClient,
-        });
-
-        // Round 1 assistant and observation should still be present
-        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionCallContent>(),
-            content => content.CallId == "call-current-1");
-        Assert.Contains(chatHistory.SelectMany(message => message.Contents).OfType<FunctionResultContent>(),
-            content => content.CallId == "call-current-1" && Equals(content.Result, "pipeline config file content"));
-    }
-
-    [Fact]
-    public async Task PreambleSummary_SkipsWhenNoPreviousTaskMessages()
-    {
-        // History with only system + user + rounds (no previous task context)
-        var chatHistory = CreateHistoryWithTwoRounds();
-        var summaryClient = new SummaryOnlyLlmClient("should not be called");
-        var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
-
-        var originalCount = chatHistory.Count;
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
-        {
-            ChatHistory = chatHistory,
-            Options = new ReactHistoryCompressionOptions
-            {
-                PreambleCompression = true,
-                PreambleTokenThresholdPercent = 0,
-            },
-            CurrentRound = 0,
-            CurrentClient = summaryClient,
-        });
-
-        // Preamble has system + user = 2 messages, no historical messages in between
-        Assert.Equal(originalCount, chatHistory.Count);
-    }
 
     [Fact]
     public async Task LlmClientBase_PreambleSummary_CompressesPreambleBeforeFirstRound()
@@ -437,19 +313,18 @@ public class HistoryCompressionStrategyTests
         var chatHistory = CreateMultiAgentHistoryWithTwoRoundsEach();
         var summaryClient = new SummaryOnlyLlmClient("compressed agent-a round 1");
         var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new InfoCleaningChatHistoryCompressionStrategy(summarizer);
+        var strategy = new LoopSummaryChatHistoryCompressionStrategy(summarizer);
 
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        await strategy.CompressAsync(new ChatHistoryContext
         {
             ChatHistory = chatHistory,
             Options = new ReactHistoryCompressionOptions
             {
-                Mode = ReactHistoryCompressionMode.InfoCleaning,
+                Mode = ReactHistoryCompressionMode.LoopSummary,
                 PreserveRecentRounds = 1,
             },
-            CurrentRound = 2,
+            CurrentRoundNumber = 2,
             CurrentClient = summaryClient,
-            AgentId = "Agent-A",
         });
 
         // Agent-A's round 1 should be summarized
@@ -473,7 +348,7 @@ public class HistoryCompressionStrategyTests
         var chatHistory = CreateMultiAgentHistoryWithTwoRoundsEach();
         var strategy = new ObservationMaskingChatHistoryCompressionStrategy();
 
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        await strategy.CompressAsync(new ChatHistoryContext
         {
             ChatHistory = chatHistory,
             Options = new ReactHistoryCompressionOptions
@@ -482,9 +357,8 @@ public class HistoryCompressionStrategyTests
                 PreserveRecentRounds = 1,
                 ObservationPlaceholder = "[masked]",
             },
-            CurrentRound = 2,
+            CurrentRoundNumber = 2,
             CurrentClient = new SummaryOnlyLlmClient("unused"),
-            AgentId = "Agent-A",
         });
 
         // Agent-A's old observation should be masked
@@ -508,7 +382,7 @@ public class HistoryCompressionStrategyTests
         var summarizer = new Summarizer(new GlobalOptions());
         var strategy = new TaskSummaryChatHistoryCompressionStrategy(summarizer);
 
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        await strategy.CompressAsync(new ChatHistoryContext
         {
             ChatHistory = chatHistory,
             Options = new ReactHistoryCompressionOptions
@@ -516,9 +390,8 @@ public class HistoryCompressionStrategyTests
                 Mode = ReactHistoryCompressionMode.TaskSummary,
                 PreserveRecentRounds = 1,
             },
-            CurrentRound = 2,
+            CurrentRoundNumber = 2,
             CurrentClient = summaryClient,
-            AgentId = "Agent-A",
         });
 
         // Should contain the summary with Agent-A's tag
@@ -531,45 +404,6 @@ public class HistoryCompressionStrategyTests
             content => content.CallId == "call-b1");
     }
 
-    [Fact]
-    public async Task PreambleSummary_WithAgentId_TreatsOtherAgentMessagesAsPreamble()
-    {
-        var chatHistory = CreateMultiAgentHistoryWithPreamble();
-        var summaryClient = new SummaryOnlyLlmClient("previous task summary");
-        var summarizer = new Summarizer(new GlobalOptions());
-        var strategy = new PreambleSummaryChatHistoryCompressionStrategy(summarizer, new DefaultTokensCounter());
-
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
-        {
-            ChatHistory = chatHistory,
-            Options = new ReactHistoryCompressionOptions
-            {
-                PreambleCompression = true,
-                PreambleTokenThresholdPercent = 0.0001,
-            },
-            CurrentRound = 0,
-            CurrentClient = summaryClient,
-            AgentId = "Current-Agent",
-        });
-
-        // Other agent's messages should be part of preamble and potentially summarized
-        // Current agent's system message should be preserved
-        Assert.Contains(chatHistory, message =>
-            message.Role == ChatRole.System && message.Text == "You are helpful.");
-
-        // Previous agent's messages should be in preamble (not treated as rounds)
-        var previousAgentMessages = chatHistory.Where(m =>
-            m.AdditionalProperties?["llmclient.agent"]?.ToString() == "Previous-Agent").ToList();
-        Assert.All(previousAgentMessages, msg =>
-        {
-            // These should NOT be in the "rounds' part of any segmentation result
-            // since they belong to a different agent
-            Assert.True(
-                msg.Text.Contains("[Previous task context summary]") || // summarized away
-                !msg.Text.StartsWith("[Round"), // or remains as preamble
-                $"Message should not be treated as a round: {msg.Text}");
-        });
-    }
 
     [Fact]
     public async Task LlmClientBase_AgentId_InitializesRoundNumberFromAgentSpecificHistory()
@@ -584,21 +418,21 @@ public class HistoryCompressionStrategyTests
         for (int i = 1; i <= 3; i++)
         {
             var assistant = CreateToolCallResponse($"call-a{i}", $"result-a{i}").Messages[0];
-            ChatMessageHierarchy.TagLoopLevel(assistant, i, ReactHistoryMessageKind.Assistant, "Agent-A");
+            ChatMessageHierarchy.TagLoopLevel(assistant, i, ReactHistoryMessageKind.Assistant);
             chatHistory.Add(assistant);
 
             var obs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent($"call-a{i}", $"result-a{i}")]);
-            ChatMessageHierarchy.TagLoopLevel(obs, i, ReactHistoryMessageKind.Observation, "Agent-A");
+            ChatMessageHierarchy.TagLoopLevel(obs, i, ReactHistoryMessageKind.Observation);
             chatHistory.Add(obs);
         }
 
         // Agent-B Round 1 (also in history - should be ignored for Agent-A)
         var bAssistant = CreateToolCallResponse("call-b1", "result-b1").Messages[0];
-        ChatMessageHierarchy.TagLoopLevel(bAssistant, 1, ReactHistoryMessageKind.Assistant, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bAssistant, 1, ReactHistoryMessageKind.Assistant);
         chatHistory.Add(bAssistant);
 
         var bObs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-b1", "result-b1")]);
-        ChatMessageHierarchy.TagLoopLevel(bObs, 1, ReactHistoryMessageKind.Observation, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bObs, 1, ReactHistoryMessageKind.Observation);
         chatHistory.Add(bObs);
 
         var chatClient = new RecordingSequentialChatClient(
@@ -610,7 +444,7 @@ public class HistoryCompressionStrategyTests
             ChatMessages = chatHistory,
             FunctionCallEngine = new LoopingToolCallEngine(),
             RequestOptions = new ChatOptions(),
-            AgentId = "Agent-A",
+            DialogId = "Agent-A",
         };
 
 #pragma warning disable SKEXP0001
@@ -642,7 +476,7 @@ public class HistoryCompressionStrategyTests
             // Just consume
         }
 
-        Assert.Equal("MyTestAgent", agent.LastRequestContext?.AgentId);
+        Assert.Equal("MyTestAgent", agent.LastRequestContext?.DialogId);
     }
 
     [Fact]
@@ -667,11 +501,11 @@ public class HistoryCompressionStrategyTests
             new TextContent("Agent-A reasoning 1"),
             new FunctionCallContent("call-a1", "noop", new Dictionary<string, object?>())
         ]);
-        ChatMessageHierarchy.TagLoopLevel(aAssistant1, 1, ReactHistoryMessageKind.Assistant, "Agent-A");
+        ChatMessageHierarchy.TagLoopLevel(aAssistant1, 1, ReactHistoryMessageKind.Assistant);
         history.Add(aAssistant1);
 
         var aObs1 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-a1", "agent-a result 1")]);
-        ChatMessageHierarchy.TagLoopLevel(aObs1, 1, ReactHistoryMessageKind.Observation, "Agent-A");
+        ChatMessageHierarchy.TagLoopLevel(aObs1, 1, ReactHistoryMessageKind.Observation);
         history.Add(aObs1);
 
         // Agent-B Round 1
@@ -679,11 +513,11 @@ public class HistoryCompressionStrategyTests
             new TextContent("Agent-B reasoning 1"),
             new FunctionCallContent("call-b1", "noop", new Dictionary<string, object?>())
         ]);
-        ChatMessageHierarchy.TagLoopLevel(bAssistant1, 1, ReactHistoryMessageKind.Assistant, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bAssistant1, 1, ReactHistoryMessageKind.Assistant);
         history.Add(bAssistant1);
 
         var bObs1 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-b1", "agent-b result 1")]);
-        ChatMessageHierarchy.TagLoopLevel(bObs1, 1, ReactHistoryMessageKind.Observation, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bObs1, 1, ReactHistoryMessageKind.Observation);
         history.Add(bObs1);
 
         // Agent-A Round 2
@@ -691,11 +525,11 @@ public class HistoryCompressionStrategyTests
             new TextContent("Agent-A reasoning 2"),
             new FunctionCallContent("call-a2", "noop", new Dictionary<string, object?>())
         ]);
-        ChatMessageHierarchy.TagLoopLevel(aAssistant2, 2, ReactHistoryMessageKind.Assistant, "Agent-A");
+        ChatMessageHierarchy.TagLoopLevel(aAssistant2, 2, ReactHistoryMessageKind.Assistant);
         history.Add(aAssistant2);
 
         var aObs2 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-a2", "agent-a result 2")]);
-        ChatMessageHierarchy.TagLoopLevel(aObs2, 2, ReactHistoryMessageKind.Observation, "Agent-A");
+        ChatMessageHierarchy.TagLoopLevel(aObs2, 2, ReactHistoryMessageKind.Observation);
         history.Add(aObs2);
 
         // Agent-B Round 2
@@ -703,11 +537,11 @@ public class HistoryCompressionStrategyTests
             new TextContent("Agent-B reasoning 2"),
             new FunctionCallContent("call-b2", "noop", new Dictionary<string, object?>())
         ]);
-        ChatMessageHierarchy.TagLoopLevel(bAssistant2, 2, ReactHistoryMessageKind.Assistant, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bAssistant2, 2, ReactHistoryMessageKind.Assistant);
         history.Add(bAssistant2);
 
         var bObs2 = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-b2", "agent-b result 2")]);
-        ChatMessageHierarchy.TagLoopLevel(bObs2, 2, ReactHistoryMessageKind.Observation, "Agent-B");
+        ChatMessageHierarchy.TagLoopLevel(bObs2, 2, ReactHistoryMessageKind.Observation);
         history.Add(bObs2);
 
         return history;
@@ -727,11 +561,11 @@ public class HistoryCompressionStrategyTests
         var prevAssistant = new ChatMessage(ChatRole.Assistant, [
             new FunctionCallContent("call-prev", "noop", new Dictionary<string, object?>())
         ]);
-        ChatMessageHierarchy.TagLoopLevel(prevAssistant, 1, ReactHistoryMessageKind.Assistant, "Previous-Agent");
+        ChatMessageHierarchy.TagLoopLevel(prevAssistant, 1, ReactHistoryMessageKind.Assistant);
         history.Add(prevAssistant);
 
         var prevObs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-prev", "prev result")]);
-        ChatMessageHierarchy.TagLoopLevel(prevObs, 1, ReactHistoryMessageKind.Observation, "Previous-Agent");
+        ChatMessageHierarchy.TagLoopLevel(prevObs, 1, ReactHistoryMessageKind.Observation);
         history.Add(prevObs);
 
         // Current task user message
@@ -741,11 +575,11 @@ public class HistoryCompressionStrategyTests
         var currAssistant = new ChatMessage(ChatRole.Assistant, [
             new FunctionCallContent("call-curr", "noop", new Dictionary<string, object?>())
         ]);
-        ChatMessageHierarchy.TagLoopLevel(currAssistant, 1, ReactHistoryMessageKind.Assistant, "Current-Agent");
+        ChatMessageHierarchy.TagLoopLevel(currAssistant, 1, ReactHistoryMessageKind.Assistant);
         history.Add(currAssistant);
 
         var currObs = new ChatMessage(ChatRole.Tool, [new FunctionResultContent("call-curr", "curr result")]);
-        ChatMessageHierarchy.TagLoopLevel(currObs, 1, ReactHistoryMessageKind.Observation, "Current-Agent");
+        ChatMessageHierarchy.TagLoopLevel(currObs, 1, ReactHistoryMessageKind.Observation);
         history.Add(currObs);
 
         return history;
@@ -783,10 +617,14 @@ public class HistoryCompressionStrategyTests
     private sealed class MockDialogSession : ITextDialogSession
     {
         public Guid ID { get; } = Guid.NewGuid();
-        public IReadOnlyList<IDialogItem> DialogItems { get; } = new List<IDialogItem>();
+        public IReadOnlyList<IDialogItem> VisualDialogItems { get; } = new List<IDialogItem>();
+
+        public IResponseItem WorkingResponse => throw new NotSupportedException();
+
         public List<IChatHistoryItem> GetHistory() => [];
+
         public Task CutContextAsync(IRequestItem? requestItem = null) => Task.CompletedTask;
-        
+
         public AIContextProvider[]? ContextProviders { get; } = null;
         public string? SystemPrompt { get; } = null;
         public IEnumerable<Type> SupportedAgents { get; } = Array.Empty<Type>();
@@ -807,7 +645,7 @@ public class HistoryCompressionStrategyTests
         var chatHistory = CreateHistoryWithRecentErrorRound();
         var strategy = new ObservationMaskingChatHistoryCompressionStrategy();
 
-        await strategy.CompressAsync(new ChatHistoryCompressionContext
+        await strategy.CompressAsync(new ChatHistoryContext
         {
             ChatHistory = chatHistory,
             Options = new ReactHistoryCompressionOptions
@@ -816,7 +654,7 @@ public class HistoryCompressionStrategyTests
                 PreserveRecentRounds = 1,
                 ObservationPlaceholder = "[details omitted for brevity]",
             },
-            CurrentRound = 2,
+            CurrentRoundNumber = 2,
             CurrentClient = new SummaryOnlyLlmClient("unused"),
         });
 

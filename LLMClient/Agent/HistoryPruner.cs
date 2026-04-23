@@ -22,7 +22,7 @@ namespace LLMClient.Agent;
 /// The LLM decides which round indexes to remove; the class filters them out and returns the flat message list.
 /// </para>
 /// </summary>
-public sealed class HistoryCompactor : PromptBasedAgent
+public sealed class HistoryPruner : PromptBasedAgent
 {
     /// <summary>Prompt template rendered with {{{task}}}, {{{contextHint}}}, {{{input}}} placeholders (Handlebars triple-brace for raw output).</summary>
     public string PromptTemplate { get; set; } = """
@@ -89,7 +89,7 @@ public sealed class HistoryCompactor : PromptBasedAgent
     /// <summary>Tag used in error trace messages, e.g. "InspectCompact".</summary>
     public required string ErrorTag { get; init; }
 
-    public HistoryCompactor(ILLMChatClient chatClient) : base(chatClient)
+    public HistoryPruner(ILLMChatClient chatClient) : base(chatClient)
     {
         Timeout = new Duration(TimeSpan.FromSeconds(30));
     }
@@ -140,7 +140,7 @@ public sealed class HistoryCompactor : PromptBasedAgent
                     {
                         ResponseFormat = ChatResponseFormat.ForJsonSchema<RemoveDecision>(),
                     }
-                ], systemPrompt);
+                ], systemPrompt: systemPrompt);
             var result = await SendRequestAsync(contextBuilder, cancellationToken);
 
             var jsonResponse = result.FirstTextResponse;

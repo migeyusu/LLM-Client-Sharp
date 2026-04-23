@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Windows.Services.Maps.Guidance;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
@@ -21,23 +22,27 @@ public class DefaultRequestContextBuilder
     {
         ChatHistoryItems = dialogItems;
     }
-    
+
     public static DefaultRequestContextBuilder CreateFromSession(ITextDialogSession session)
     {
-        var historyItems = session.GetHistory().ToArray();
-        var systemPrompt = session.SystemPrompt;
-        return CreateFromHistory(historyItems, systemPrompt, session.ID);
+        var workingResponse = session.WorkingResponse;
+        var historyItems = session.GetChatHistory().ToArray();
+        return CreateFromHistory(historyItems, workingResponse.Id, session.ContextProviders,
+            session.SystemPrompt, session.ID);
     }
 
     public static DefaultRequestContextBuilder CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
-        string? systemPrompt = null, Guid? sessionId = null)
+        Guid? dialogId = null, AIContextProvider[]? contextProviders = null, string? systemPrompt = null,
+        Guid? sessionId = null)
     {
         var requestViewItem = history.LastOrDefault() as IRequestItem ??
                               throw new InvalidOperationException("RequestViewItem is null");
         var dialogContext = new DefaultRequestContextBuilder(history)
         {
             SystemPrompt = systemPrompt,
-            SessionId = sessionId
+            SessionId = sessionId,
+            DialogId = dialogId ?? Guid.NewGuid(),
+            ContextProviders = contextProviders,
         };
         dialogContext.MapFromRequest(requestViewItem);
         return dialogContext;
@@ -98,15 +103,13 @@ public class DefaultRequestContextBuilder
 
     public string? SystemPrompt { get; set; }
 
-    /// <summary>
-    /// Session ID for Level 1 session tagging. Set by <see cref="CreateFromSession"/>;
-    /// null when the builder is created via <see cref="CreateFromHistory"/> without a session.
-    /// </summary>
     public Guid? SessionId { get; set; }
+
+    public required Guid DialogId { get; init; }
 
     public ISearchOption? SearchOption { get; set; }
 
-    public AIContextProvider[]? ContextProviders { get; init; }
+    public required AIContextProvider[]? ContextProviders { get; init; }
 
     public List<CheckableFunctionGroupTree>? FunctionGroups { get; set; }
 
@@ -154,12 +157,14 @@ public class DefaultRequestContextBuilder
 
         return new RequestContext
         {
+            DialogId = this.DialogId.ToString(),
             ChatMessages = chatHistory,
             FunctionCallEngine = functionCallEngine,
             RequestOptions = requestOptions,
             TempAdditionalProperties = TempAdditionalProperties,
             AutoApproveAllInvocations = AutoApproveAllInvocations,
-            ShowRequestJson = this.IsDebugMode
+            ShowRequestJson = this.IsDebugMode,
+            ContextProvider = this.ContextProviders,
         };
     }
 

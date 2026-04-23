@@ -42,7 +42,8 @@ public class PromptBasedAgent
                     using (var timeoutTokenSource = new CancellationTokenSource(Timeout.TimeSpan))
                     {
                         using (var linkedTokenSource =
-                               CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token, cancellationToken))
+                               CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token,
+                                   cancellationToken))
                         {
                             try
                             {
@@ -116,7 +117,7 @@ public class PromptBasedAgent
     {
         var context = DefaultRequestContextBuilder.CreateFromHistory([
             new RequestViewItem(prompt)
-        ], systemPrompt);
+        ], systemPrompt: systemPrompt);
         var sendRequestAsync = await SendRequestAsync(context, cancellationToken);
         return sendRequestAsync.GetContentAsString()!;
     }

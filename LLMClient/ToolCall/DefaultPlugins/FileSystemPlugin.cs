@@ -739,7 +739,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         string diffText,
         IEnumerable<EditOperation> edits)
     {
-        var current = AsyncContextStore<ChatContext>.Current;
+        var current = AsyncContextStore<ChatStackContext>.Current;
         if (current == null)
         {
             return true;
@@ -987,7 +987,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             }
         }
 
-        var step = AsyncContextStore<ChatContext>.Current?.CurrentStep;
+        var step = AsyncContextStore<ChatStackContext>.Current?.CurrentStep;
         if (step == null)
         {
             return Task.FromResult(true);

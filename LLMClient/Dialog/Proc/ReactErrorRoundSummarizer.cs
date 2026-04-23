@@ -11,22 +11,31 @@ internal static class ReactErrorRoundSummarizer
     private static readonly Duration ErrorSummaryTimeout = new(TimeSpan.FromSeconds(20));
 
     public static async Task<ChatMessage> BuildErrorSummaryMessageAsync(
-        ReactHistoryRound round,
+        ReactRound round,
         Summarizer? summarizer,
         ILLMChatClient currentClient,
-        string? agentId,
         CancellationToken cancellationToken = default)
     {
+        var roundAssistantMessage = round.AssistantMessage;
         var summaryText = await TryBuildLlmSummaryAsync(round, summarizer, currentClient, cancellationToken)
                           ?? BuildFallbackSummary(round);
-        var summaryMessage = new ChatMessage(ChatRole.System,
-            $"[Round {round.RoundNumber} error summary] {summaryText}");
-        ChatMessageHierarchy.TagLoopLevel(summaryMessage, round.RoundNumber, ReactHistoryMessageKind.Observation, agentId);
+        var s = $"[Round {round.RoundNumber} error summary] {summaryText}";
+        if (roundAssistantMessage != null)
+        {
+            roundAssistantMessage.Contents =
+            [
+                new TextContent(s)
+            ];
+            return roundAssistantMessage;
+        }
+
+        var summaryMessage = new ChatMessage(ChatRole.Assistant, s);
+        summaryMessage.TagLoopLevel(round.RoundNumber, ReactHistoryMessageKind.Observation);
         return summaryMessage;
     }
 
     private static async Task<string?> TryBuildLlmSummaryAsync(
-        ReactHistoryRound round,
+        ReactRound round,
         Summarizer? summarizer,
         ILLMChatClient currentClient,
         CancellationToken cancellationToken)
@@ -61,14 +70,14 @@ internal static class ReactErrorRoundSummarizer
                "No bullets, no markdown, max 30 words.";
     }
 
-    private static string BuildFallbackSummary(ReactHistoryRound round)
+    private static string BuildFallbackSummary(ReactRound round)
     {
         var action = GetActionSummary(round);
         var result = GetResultSummary(round);
         return $"What was done: {action} - What result: {result}";
     }
 
-    private static string GetActionSummary(ReactHistoryRound round)
+    private static string GetActionSummary(ReactRound round)
     {
         if (round.AssistantMessage == null)
         {
@@ -94,7 +103,7 @@ internal static class ReactErrorRoundSummarizer
             : Trim(assistantText, 80);
     }
 
-    private static string GetResultSummary(ReactHistoryRound round)
+    private static string GetResultSummary(ReactRound round)
     {
         if (round.ObservationMessage == null)
         {
@@ -148,4 +157,3 @@ internal static class ReactErrorRoundSummarizer
         return builder.ToString();
     }
 }
-

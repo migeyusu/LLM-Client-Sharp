@@ -19,9 +19,9 @@ public interface IRequestContext
     AIContextProvider[]? ContextProvider { get; }
 
     /// <summary>
-    /// 可选的 Agent 标识。用于多 Agent 场景下对 ReAct 轮次进行隔离。
+    /// dialogID 标识
     /// </summary>
-    string? AgentId { get; }
+    string DialogId { get; }
 }
 
 public sealed class RequestContext : IRequestContext
@@ -45,5 +45,5 @@ public sealed class RequestContext : IRequestContext
 
     public AIContextProvider[]? ContextProvider { get; init; }
 
-    public string? AgentId { get; set; }
+    public required string DialogId { get; init; }
 }

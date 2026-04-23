@@ -15,49 +15,58 @@ public sealed class TaskSummaryChatHistoryCompressionStrategy : IChatHistoryComp
         _summarizer = summarizer;
     }
 
-    public async Task CompressAsync(ChatHistoryCompressionContext context,
+    public async Task CompressAsync(ChatHistoryContext context,
         CancellationToken cancellationToken = default)
     {
-
-        var segmentation = ChatMessageHierarchy.SegmentReactLevel(context.ChatHistory, context.AgentId);
-        var roundsToKeep = Math.Max(0, context.Options.PreserveRecentRounds);
-        if (segmentation.Rounds.Count <= roundsToKeep)
+        var segmentation = context.History;
+        var roundsToKeep = context.Options.PreserveRecentRounds;
+        var rounds = segmentation.Rounds;
+        if (rounds.Count <= roundsToKeep)
         {
             return;
         }
 
-        var keepFromIndex = Math.Max(0, segmentation.Rounds.Count - roundsToKeep);
-        var roundsToCompress = segmentation.Rounds.Take(keepFromIndex)
-            .SelectMany(round => round.Messages)
-            .ToArray();
-        if (roundsToCompress.Length == 0)
+        //每次總結總是放在最前
+        var keepFromLength = rounds.Count - roundsToKeep;
+        var roundsToCompress = rounds.Take(keepFromLength).ToArray();
+        var rawRounds = roundsToCompress.Where(round => !round.IsCompressApplied).ToArray();
+        if (rawRounds.Length == 0)
         {
             return;
         }
 
-        var summary = await _summarizer.SummarizeChatMessagesAsync(roundsToCompress,
+        //todo:
+        var existSummary =
+            roundsToCompress.LastOrDefault(round => round.IsCompressApplied)?.AssistantMessage?.Text;
+
+        //summary additional message
+        var summary = await _summarizer.SummarizeChatMessagesAsync(
+            rawRounds.SelectMany(round => round.Messages).ToArray(),
             _summarizer.ConversationHistorySummaryPrompt, CompressionTimeout, context.CurrentClient, cancellationToken);
         if (string.IsNullOrWhiteSpace(summary))
         {
             return;
         }
 
-        var replacement = new List<ChatMessage>(segmentation.PreambleMessages)
+        foreach (var roundToCompress in roundsToCompress)
         {
-            CreateSummaryMessage(summary, context.AgentId)
-        };
-        replacement.AddRange(segmentation.Rounds.Skip(keepFromIndex).SelectMany(round => round.Messages));
+            roundToCompress.IsCompressApplied = true;
+        }
 
-        context.ChatHistory.Clear();
-        context.ChatHistory.AddRange(replacement);
-        context.CompressionApplied = true;
+        rounds.RemoveRange(0, keepFromLength);
+        rounds.Insert(0, new ReactRound()
+        {
+            RoundNumber = 0,
+            IsCompressApplied = true,
+            AssistantMessage = CreateSummaryMessage(summary, 0)
+        });
     }
 
-    private static ChatMessage CreateSummaryMessage(string summary, string? agentId)
+    private static ChatMessage CreateSummaryMessage(string summary, int loopNumber)
     {
         var message = new ChatMessage(ChatRole.Assistant, "[Compressed history summary]\n" + summary.Trim());
-        ChatMessageHierarchy.TagLoopLevel(message, ChatMessageHierarchy.CompressedSummaryRoundNumber,
-            ReactHistoryMessageKind.Assistant, agentId);
+        message.TagLoopLevel(loopNumber,
+            ReactHistoryMessageKind.Assistant);
         return message;
     }
 }

@@ -76,7 +76,8 @@ public class SummaryContextBoundaryTests
     private sealed class SummaryTestSession(IRequestItem requestItem) : ITextDialogSession
     {
         public Guid ID { get; } = Guid.NewGuid();
-        public IReadOnlyList<IDialogItem> DialogItems { get; } = [requestItem];
+        public IReadOnlyList<IDialogItem> VisualDialogItems { get; } = [requestItem];
+        public IResponseItem WorkingResponse => throw new NotSupportedException();
 
         public IRequestItem? CutContextRequest { get; private set; }
 
@@ -94,9 +95,9 @@ public class SummaryContextBoundaryTests
         public AIContextProvider[]? ContextProviders { get; } = null;
 
         public string? SystemPrompt => null;
-        
+
         public IEnumerable<Type> SupportedAgents { get; } = Array.Empty<Type>();
-        
+
         public IFunctionGroupSource? ToolsSource { get; } = null;
 
         public Task<IResponse> NewResponse(RequestOption option, IRequestItem? insertBefore = null,
@@ -117,6 +118,7 @@ public class SummaryContextBoundaryTests
             get { yield return new ChatMessage(ChatRole.Assistant, content); }
         }
 
+        public override ITextDialogSession? Session { get; } = null;
         public override bool IsAvailableInContext { get; } = true;
 
         public bool IsResponding { get; } = false;

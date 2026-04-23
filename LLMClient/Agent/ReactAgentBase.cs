@@ -74,13 +74,12 @@ public abstract class ReactAgentBase : ISingleClientAgent
             yield break;
 
         // 注入 AgentId，确保该 Agent 的 ReAct 轮次与其他 Agent 隔离
-        requestContext.AgentId = AgentId;
         _previousAssistantText = null;
 
         while (!cancellationToken.IsCancellationRequested)
         {
             if (Config.StepLimit > 0 && CallCount >= Config.StepLimit)
-                throw new Exception("Step limit exceeded");
+                throw new StepOverflowException();
 
             StepResult? lastResult = null;
             await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))

@@ -7,6 +7,13 @@ namespace LLMClient.Component.Utility;
 
 public static class ObservableCollectionPatcher
 {
+    /// <summary>
+    /// 高級同步
+    /// </summary>
+    /// <param name="target"></param>
+    /// <param name="desired"></param>
+    /// <param name="keySelector"></param>
+    /// <typeparam name="T"></typeparam>
     public static void PatchByLcs<T>(
         ObservableCollection<T> target,
         IReadOnlyList<T> desired,

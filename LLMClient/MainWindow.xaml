@@ -109,7 +109,7 @@
                                             <ScrollViewer>
                                                 <ItemsControl ItemsSource="{Binding Rounds}">
                                                     <ItemsControl.ItemTemplate>
-                                                        <DataTemplate DataType="{x:Type abstraction:ReactHistoryRound}">
+                                                        <DataTemplate DataType="{x:Type abstraction:ReactRound}">
                                                             <materialDesign:Card Padding="8"
                                                                     Margin="4"
                                                                     materialDesign:ElevationAssist.Elevation="Dp2"
@@ -132,7 +132,7 @@
                                                                                 Foreground="Red"
                                                                                 FontWeight="Bold"
                                                                                 Margin="8,0,0,0"
-                                                                                Visibility="{Binding HasError, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                                Visibility="{Binding IsErrorRound, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                                                 VerticalAlignment="Center" />
                                                                         <TextBlock Text="[INVALID]"
                                                                                 Foreground="Orange"

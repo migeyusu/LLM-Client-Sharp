@@ -308,7 +308,7 @@ public static class Extension
         return lastItem.GetChatHistoryInverse().Reverse();
     }
 
-    public static IEnumerable<IDialogItem> GetChatHistoryInverse(this IResponseItem lastItem)
+    private static IEnumerable<IDialogItem> GetChatHistoryInverse(this IResponseItem lastItem)
     {
         Guid? interactionId = lastItem.InteractionId;
         for (var dialogViewItem = lastItem.PreviousItem;
@@ -635,7 +635,7 @@ public static class Extension
 
     public static void TryAddAdditionalFunctionCallResult(this IEnumerable<ChunkNode> nodes)
     {
-        var chatContext = AsyncContextStore<ChatContext>.Current;
+        var chatContext = AsyncContextStore<ChatStackContext>.Current;
         if (chatContext == null)
         {
             return;
