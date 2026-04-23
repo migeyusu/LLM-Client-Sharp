@@ -382,6 +382,7 @@ public class MiniSweRegressionTests
         var engine = new AgentFlowCompletionEngine();
         var requestContext = new RequestContext
         {
+            DialogId = Guid.NewGuid().ToString(),
             ChatMessages = [new ChatMessage(ChatRole.User, "finish the task")],
             FunctionCallEngine = engine,
             RequestOptions = new ChatOptions(),
@@ -408,6 +409,7 @@ public class MiniSweRegressionTests
         var engine = new LoopingToolCallEngine();
         var requestContext = new RequestContext
         {
+            DialogId = Guid.NewGuid().ToString(),
             ChatMessages = [new ChatMessage(ChatRole.User, "run the tool and finish")],
             FunctionCallEngine = engine,
             RequestOptions = new ChatOptions(),
@@ -437,6 +439,7 @@ public class MiniSweRegressionTests
         var engine = new LoopingToolCallEngine();
         var requestContext = new RequestContext
         {
+            DialogId = Guid.NewGuid().ToString(),
             ChatMessages = [new ChatMessage(ChatRole.User, "run the tool and fail later")],
             FunctionCallEngine = engine,
             RequestOptions = new ChatOptions(),
@@ -521,11 +524,9 @@ public class MiniSweRegressionTests
     {
         var agent = new CancelAwareAgent();
         var parentSession = new TestDialogSessionViewModel();
-        var session = new PassiveTextDialogSession();
         var viewItem = new LinearResponseViewItem(parentSession, agent);
-
         var processingTask = viewItem.ProcessAsync(CancellationToken.None);
-        var observedToken = await agent.TokenCaptured.Task.WaitAsync(TimeSpan.FromSeconds(5), observedToken);
+        var observedToken = await agent.TokenCaptured.Task.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
 
         viewItem.Response.CancelCommand.Execute(null);
         var result = await processingTask.WaitAsync(TimeSpan.FromSeconds(5), observedToken);
