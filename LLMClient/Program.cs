@@ -89,12 +89,6 @@ public class Program
                 .AddSingleton<Summarizer>()
                 .AddMap();
 #if DEBUG
-            var resourceBuilder = ResourceBuilder
-                .CreateDefault()
-                .AddService("TelemetryConsoleQuickstart");
-            // Enable model diagnostics with sensitive data.
-            AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnosticsSensitive", true);
-            
             collection.AddLogging(builder =>
             {
                 builder.AddDebug();
