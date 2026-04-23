@@ -1,3 +1,4 @@
+using LLMClient.Dialog.Models;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 

@@ -10,6 +10,7 @@ using LLMClient.Configuration;
 using LLMClient.ContextEngineering.Analysis;
 
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using LLMClient.Log;
 

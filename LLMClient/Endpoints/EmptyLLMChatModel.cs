@@ -1,5 +1,7 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
+using LLMClient.Component.ViewModel;
+using LLMClient.Dialog.Models;
 
 namespace LLMClient.Endpoints;
 

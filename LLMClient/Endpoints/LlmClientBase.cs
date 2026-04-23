@@ -10,6 +10,7 @@ using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Component.ViewModel;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using LLMClient.Dialog.Proc;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;

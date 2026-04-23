@@ -1,6 +1,7 @@
 using System.Text;
 using System.Windows;
 using LLMClient.Abstraction;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
 

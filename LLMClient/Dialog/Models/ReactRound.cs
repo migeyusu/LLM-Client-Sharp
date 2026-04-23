@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Models;
 
 public sealed class ReactRound
 {

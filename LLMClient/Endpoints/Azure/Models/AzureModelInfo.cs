@@ -6,8 +6,8 @@ using System.Windows.Media;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Render;
-
-
+using LLMClient.Component.ViewModel;
+using LLMClient.Dialog.Models;
 using LLMClient.Persistence;
 
 namespace LLMClient.Endpoints.Azure.Models;

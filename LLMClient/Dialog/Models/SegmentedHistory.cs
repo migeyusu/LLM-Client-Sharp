@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.AI;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Models;
 
 /// <summary>
 /// 分段的 ReAct 历史记录，包含一个前置消息列表和多个轮次，每个轮次包含一个 assistant 消息和一个 observation 消息。

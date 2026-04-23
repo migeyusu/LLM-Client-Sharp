@@ -1,5 +1,7 @@
 ﻿using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
+using LLMClient.Component.ViewModel;
+using LLMClient.Dialog.Models;
 using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Endpoints;

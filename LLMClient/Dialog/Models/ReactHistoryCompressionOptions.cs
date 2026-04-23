@@ -1,7 +1,8 @@
 ﻿using System.Text.Json.Serialization;
+using LLMClient.Abstraction;
 using LLMClient.Component.ViewModel.Base;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Models;
 
 public class ReactHistoryCompressionOptions : BaseViewModel
 {

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints.Converters;
 using Microsoft.Extensions.AI;
 

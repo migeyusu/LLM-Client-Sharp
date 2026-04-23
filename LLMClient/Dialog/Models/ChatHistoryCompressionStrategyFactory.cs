@@ -1,7 +1,8 @@
-﻿using LLMClient.Component.ViewModel;
+﻿using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel;
 using LLMClient.Dialog.Proc;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Models;
 
 public class ChatHistoryCompressionStrategyFactory
 {

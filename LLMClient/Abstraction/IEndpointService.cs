@@ -1,4 +1,6 @@
-﻿namespace LLMClient.Abstraction;
+﻿using LLMClient.Component.ViewModel;
+
+namespace LLMClient.Abstraction;
 
 /// <summary>
 /// Telemetry data preserved for a model/endpoint that has been deleted.

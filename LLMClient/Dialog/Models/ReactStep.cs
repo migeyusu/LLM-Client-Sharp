@@ -1,7 +1,8 @@
 ﻿using System.Text;
 using System.Threading.Channels;
+using LLMClient.Abstraction;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Models;
 
 /// <summary>
 /// 一轮 ReAct 循环。实现 IAsyncEnumerable&lt;LoopEvent&gt; 以支持流式消费。

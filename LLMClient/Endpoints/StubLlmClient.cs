@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Component.Render;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 

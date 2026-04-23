@@ -1,4 +1,6 @@
-﻿namespace LLMClient.Abstraction;
+﻿using LLMClient.Dialog.Models;
+
+namespace LLMClient.Abstraction;
 
 public interface IChatEndpoint
 {

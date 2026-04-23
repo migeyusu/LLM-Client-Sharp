@@ -1,5 +1,6 @@
 using System.Windows;
 using LLMClient.Abstraction;
+using LLMClient.Dialog.Models;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Proc;

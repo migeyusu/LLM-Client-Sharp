@@ -1,6 +1,7 @@
+using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Models;
 
 public sealed class ChatHistoryContext
 {

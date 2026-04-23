@@ -1,7 +1,7 @@
-﻿using LLMClient.Component.ViewModel.Base;
-using LLMClient.Endpoints;
+﻿using LLMClient.Abstraction;
+using LLMClient.Component.ViewModel.Base;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Component.ViewModel;
 
 public class UsageCounter : BaseViewModel
 {

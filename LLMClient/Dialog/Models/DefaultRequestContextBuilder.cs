@@ -1,9 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using Windows.Services.Maps.Guidance;
-using LLMClient.Dialog;
-using LLMClient.Dialog.Models;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints;
 using LLMClient.Rag;
 using LLMClient.ToolCall;
@@ -11,7 +9,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 using AIContextProvider = Microsoft.Agents.AI.AIContextProvider;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Models;
 
 /// <summary>
 /// 用于隔离chatRequest和context

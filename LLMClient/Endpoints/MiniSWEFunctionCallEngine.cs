@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using LLMClient.Abstraction;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.ContextEngineering.PromptGeneration;
+using LLMClient.Dialog.Models;
 using LLMClient.ToolCall.DefaultPlugins;
 using Microsoft.Extensions.AI;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;

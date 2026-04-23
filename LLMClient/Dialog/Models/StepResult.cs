@@ -1,6 +1,6 @@
-﻿using System.Text;
+﻿using LLMClient.Abstraction;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Models;
 
 /// <summary>
 /// 单轮 ReAct 循环的结果（在 ReactStep 的 Channel 完成后可用）

@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints.OpenAIAPI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;

@@ -109,7 +109,7 @@
                                             <ScrollViewer>
                                                 <ItemsControl ItemsSource="{Binding Rounds}">
                                                     <ItemsControl.ItemTemplate>
-                                                        <DataTemplate DataType="{x:Type abstraction:ReactRound}">
+                                                        <DataTemplate DataType="{x:Type dialogModels:ReactRound}">
                                                             <materialDesign:Card Padding="8"
                                                                     Margin="4"
                                                                     materialDesign:ElevationAssist.Elevation="Dp2"

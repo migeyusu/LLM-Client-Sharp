@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using LLMClient.Abstraction;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;

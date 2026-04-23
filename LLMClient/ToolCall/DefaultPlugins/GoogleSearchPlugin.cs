@@ -5,6 +5,7 @@ using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Configuration;
+using LLMClient.Dialog.Models;
 using LLMClient.Rag;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.AI;

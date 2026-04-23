@@ -1,4 +1,5 @@
 ﻿using LLMClient.Abstraction;
+using LLMClient.Dialog.Models;
 using Microsoft.Extensions.AI;
 using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
 using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;

@@ -1,7 +1,7 @@
-using LLMClient.Dialog.Models;
+using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Models;
 
 /// <summary>
 /// 构建仅包含文本内容的对话上下文，用于向不支持 tool call 的模型发送摘要请求。

@@ -1,10 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Elsa.Extensions;
-using LLMClient.Endpoints;
+﻿using Elsa.Extensions;
+using LLMClient.Abstraction;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Endpoints;
 
 public static class ChatEndpointExtensions
 {

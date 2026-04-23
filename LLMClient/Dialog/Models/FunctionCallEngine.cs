@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using LLMClient.Abstraction;
 using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
@@ -7,7 +8,7 @@ using FunctionCallContent = Microsoft.Extensions.AI.FunctionCallContent;
 using FunctionResultContent = Microsoft.Extensions.AI.FunctionResultContent;
 using TextContent = Microsoft.Extensions.AI.TextContent;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.Dialog.Models;
 
 public class FunctionCallException : Exception
 {

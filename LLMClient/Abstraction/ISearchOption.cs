@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using LLMClient.Component.CustomControl;
+using LLMClient.Dialog.Models;
 using LLMClient.Endpoints.OpenAIAPI;
 using LLMClient.ToolCall.DefaultPlugins;
 

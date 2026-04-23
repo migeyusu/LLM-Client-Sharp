@@ -1,6 +1,6 @@
-using LLMClient.ToolCall;
+using LLMClient.Abstraction;
 
-namespace LLMClient.Abstraction;
+namespace LLMClient.ToolCall;
 
 public class AIFunctionGroupComparer : IEqualityComparer<IAIFunctionGroup>
 {
