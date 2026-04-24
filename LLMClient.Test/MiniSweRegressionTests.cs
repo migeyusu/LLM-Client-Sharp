@@ -1218,7 +1218,7 @@ public class MiniSweRegressionTests
 
         public override IEndpointModel Model => _model;
 
-        protected override IChatClient GetChatClient()
+        protected override IChatClient GetChatClient(IRequestContext context)
         {
             return _chatClient;
         }

@@ -79,7 +79,7 @@ public class AzureClientBase : LlmClientBase, ILLMChatClient
 
     private IChatClient _chatClient;
 
-    protected override IChatClient GetChatClient()
+    protected override IChatClient GetChatClient(IRequestContext context)
     {
         return _chatClient;
     }

@@ -162,7 +162,7 @@ public class DefaultRequestContextBuilder
             TempAdditionalProperties = TempAdditionalProperties,
             AutoApproveAllInvocations = AutoApproveAllInvocations,
             ShowRequestJson = this.IsDebugMode,
-            ContextProvider = this.ContextProviders,
+            ContextProviders = this.ContextProviders,
         };
     }
 

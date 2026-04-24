@@ -48,8 +48,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     private readonly ITokensCounter _tokensCounter;
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
-
-    protected abstract IChatClient GetChatClient();
+    
+    protected abstract IChatClient GetChatClient(IRequestContext context);
 
     protected virtual void ApplyChatOptions(ChatOptions chatOptions)
     {
@@ -225,7 +225,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 }
             }
 
-            var chatClient = GetChatClient();
+            var chatClient = GetChatClient(requestContext);
             var streaming = Model.SupportStreaming && this.Parameters.Streaming;
             var softFunctionCall = false;
             if (functionCallEngine.HasFunctions)
@@ -245,11 +245,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             var historyCompressionOptions = Model.HistoryCompression;
             var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions.Mode);
             var dialogId = requestContext.DialogId;
-            if (requestContext.ContextProvider != null)
-            {
-                chatClient = chatClient.UseContextProvider(requestContext.ContextProvider);
-            }
-
             var segmentedReactHistory = requestContext.ReadonlyHistory.SegmentReactLevel(dialogId);
             // 基于历史中已有的该 agent 最大 round number 初始化，避免同一 Agent 多次调用时编号冲突
             var reactRoundNumber = segmentedReactHistory.MaxRoundNumber;

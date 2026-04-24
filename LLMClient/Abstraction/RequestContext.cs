@@ -17,7 +17,7 @@ public interface IRequestContext
     bool AutoApproveAllInvocations { get; }
     bool ShowRequestJson { get; }
 
-    AIContextProvider[]? ContextProvider { get; }
+    AIContextProvider[]? ContextProviders { get; }
 
     /// <summary>
     /// dialogID 标识
@@ -44,7 +44,7 @@ public sealed class RequestContext : IRequestContext
 
     public bool ShowRequestJson { get; set; }
 
-    public AIContextProvider[]? ContextProvider { get; init; }
+    public AIContextProvider[]? ContextProviders { get; init; }
 
     public required string DialogId { get; init; }
 }

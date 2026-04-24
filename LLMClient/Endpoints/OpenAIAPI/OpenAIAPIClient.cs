@@ -62,7 +62,7 @@ public class OpenAIAPIClient : LlmClientBase
 
     private const string UserAgentHeaderName = "User-Agent";
 
-    private IChatClient EnsureCreate()
+    private IChatClient EnsureCreate(IRequestContext context)
     {
         if (_chatClient != null)
         {
@@ -106,15 +106,17 @@ public class OpenAIAPIClient : LlmClientBase
             services.AddSingleton<IChatClient>(openAiService);
             var serviceProvider = services.BuildServiceProvider();
             var chatClient = serviceProvider.GetRequiredService<IChatClient>();
-
             var protocolLogLoggerFactory = LoggerFactory.CreateLoggerFactoryWithProtocolLog();
-            var builtClient = new ChatClientBuilder(chatClient)
+            var chatClientBuilder = new ChatClientBuilder(chatClient)
                 .UseLogging(protocolLogLoggerFactory)
                 .UseOpenTelemetry(protocolLogLoggerFactory, sourceName: "OpenAIAPI",
-                    config => { config.EnableSensitiveData = true; })
-                .Build();
+                    config => { config.EnableSensitiveData = true; });
+            if (context.ContextProviders != null)
+            {
+                chatClientBuilder.UseAIContextProviders(context.ContextProviders);
+            }
 
-            return builtClient;
+            return chatClientBuilder.Build();
         }
         catch (Exception e)
         {
@@ -124,11 +126,11 @@ public class OpenAIAPIClient : LlmClientBase
         }
     }
 
-    protected override IChatClient GetChatClient()
+    protected override IChatClient GetChatClient(IRequestContext context)
     {
         if (_chatClient == null || !Option.PublicEquals(_optionCopy))
         {
-            _chatClient = EnsureCreate();
+            _chatClient = EnsureCreate(context);
             _optionCopy = Extension.Clone(_optionCopy);
         }
 

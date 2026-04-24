@@ -719,7 +719,7 @@ public class HistoryCompressionStrategyTests
 
         public override IEndpointModel Model => ModelInfo;
 
-        protected override IChatClient GetChatClient()
+        protected override IChatClient GetChatClient(IRequestContext context)
         {
             return _chatClient;
         }

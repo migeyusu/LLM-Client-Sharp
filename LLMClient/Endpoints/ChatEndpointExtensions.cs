@@ -32,6 +32,7 @@ public static class ChatEndpointExtensions
         return totalResult;
     }
 
+    [Obsolete("use AIContextProviderChatClientBuilderExtensions.UseAIContextProviders")]
     public static IChatClient UseContextProvider(this IChatClient client,
         IEnumerable<AIContextProvider> contextProviders)
     {
