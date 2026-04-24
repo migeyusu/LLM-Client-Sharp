@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using LLMClient.Abstraction;
@@ -164,8 +164,8 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                 process.StartInfo = processStartInfo;
                 process.Start();
 
-                var outputTask = process.StandardOutput.ReadToEndAsync();
-                var errorTask = process.StandardError.ReadToEndAsync();
+                var outputTask = process.StandardOutput.ReadToEndAsync(linkedCts.Token);
+                var errorTask = process.StandardError.ReadToEndAsync(linkedCts.Token);
                 try
                 {
                     await Task.WhenAll(outputTask, errorTask, process.WaitForExitAsync(linkedCts.Token));

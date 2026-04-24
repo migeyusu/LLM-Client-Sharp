@@ -203,7 +203,7 @@ public sealed class CodeMutationPlugin : KernelFunctionGroup
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value, JsonOpts);
 
     public override string? AdditionPrompt { get; } =
-        "CodeMutationPlugin is the ONLY write-capable tool set in the project context. " +
+        "This group is the ONLY write-capable tool set in the project context. " +
         "It performs syntax-aware modifications via Roslyn and automatically refreshes the symbol index after each change. " +
         "Recommended workflow: 1) read_symbol_body to understand current code. " +
         "2) Use replace_symbol_body for single-member overhauls, or apply_semantic_edit for multi-node surgeries. " +

@@ -148,7 +148,7 @@ internal sealed class CodeSearchPlugin : KernelFunctionGroup
 
 
     public override string? AdditionPrompt { get; } =
-        "CodeSearchPlugin provides powerful search capabilities across the codebase: " +
+        "This group provides powerful search capabilities across the codebase: " +
         "text/regex search, semantic search by intent, similarity detection, and attribute-based filtering. " +
         "Use search_text for exact matches, search_semantic for conceptual queries, " +
         "find_similar_code to detect duplication, and find_by_attribute to discover extension points. " +

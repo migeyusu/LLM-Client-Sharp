@@ -83,8 +83,9 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
     [KernelFunction, Description(
          "Read the complete contents of a file from the file system. Handles various text encodings and provides detailed error messages if the file cannot be read. " +
          "Use this tool when you need to examine the contents of a single file. " +
-         "Use the 'head' parameter to read only the first N lines of a file, or the 'tail' parameter to read only the last N lines of a file. " +
+         "Use the 'head' parameter to read only the first N lines of a file, or the 'tail' parameter to read only the last N lines of the file. " +
          "Set includeLineNumbers=true when you want output suitable for precise code review and editing. " +
+         "Use maxOutputLength to cap output size (in characters; ~4 chars per token) and prevent context overflow. " +
          "Only works within allowed directories.")]
     public async Task<string> ReadFileAsync(
         [Description("The path to the file to read.")]
@@ -94,7 +95,10 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         [Description("Optional: If provided, returns only the last N lines of the file.")]
         int? tail = null,
         [Description("If true, prefixes each returned line with its 1-based line number.")]
-        bool includeLineNumbers = false)
+        bool includeLineNumbers = false,
+        [Description(
+            "Optional: Maximum characters to return (approx tokens = length/4). Truncates with note if exceeded. Default = no limit.")]
+        int? maxOutputLength = null)
     {
         if (head.HasValue && tail.HasValue)
         {
@@ -103,29 +107,33 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 
         var fullPath = await ValidateAndResolvePathAsync(path);
 
+        string content;
         if (head.HasValue)
         {
-            return await HeadFileAsync(fullPath, head.Value, includeLineNumbers);
+            content = await HeadFileAsync(fullPath, head.Value, includeLineNumbers);
         }
-
-        if (tail.HasValue)
+        else if (tail.HasValue)
         {
-            return await TailFileAsync(fullPath, tail.Value, includeLineNumbers);
+            content = await TailFileAsync(fullPath, tail.Value, includeLineNumbers);
         }
-
-        if (!includeLineNumbers)
+        else if (!includeLineNumbers)
         {
-            return await FileReader.ReadAllTextAsync(fullPath);
+            content = await FileReader.ReadAllTextAsync(fullPath);
+        }
+        else
+        {
+            var lines = await FileReader.ReadAllLinesAsync(fullPath);
+            content = FormatLinesWithNumbers(lines, 1);
         }
 
-        var lines = await FileReader.ReadAllLinesAsync(fullPath);
-        return FormatLinesWithNumbers(lines, 1);
+        return LimitOutput(content, maxOutputLength);
     }
 
 
     [KernelFunction, Description("Read a specific inclusive line range from a text file. " +
                                  "Returns lines prefixed with 1-based line numbers by default. " +
-                                 "Useful for precise inspection of code regions without reading the whole file.")]
+                                 "Useful for precise inspection of code regions without reading the whole file. " +
+                                 "Use maxOutputLength to cap output for token control.")]
     public async Task<string> ReadFileRangeAsync(
         [Description("The path to the file to read.")]
         string path,
@@ -134,7 +142,9 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         [Description("The ending 1-based line number (inclusive).")]
         int endLine,
         [Description("If true, prefixes each returned line with its 1-based line number. Default is true.")]
-        bool includeLineNumbers = true)
+        bool includeLineNumbers = true,
+        [Description("Optional: Maximum characters to return (~4 chars/token). Truncates with note if exceeded.")]
+        int? maxOutputLength = null)
     {
         if (startLine <= 0)
             throw new ArgumentOutOfRangeException(nameof(startLine), "startLine must be greater than 0.");
@@ -156,14 +166,17 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             .Take(actualEnd - actualStart + 1)
             .ToArray();
 
-        return includeLineNumbers
+        var content = includeLineNumbers
             ? FormatLinesWithNumbers(slice, actualStart)
             : string.Join("\n", slice);
+
+        return LimitOutput(content, maxOutputLength);
     }
 
     [KernelFunction, Description(
          "Find occurrences of text in a file and return matching lines with surrounding context. " +
-         "This is useful before editing, to locate the exact region without reading the whole file.")]
+         "This is useful before editing, to locate the exact region without reading the whole file. " +
+         "Use maxMatches and/or maxOutputLength to control output size and token usage.")]
     public async Task<string> FindTextInFileAsync(
         [Description("The path to the file to search.")]
         string path,
@@ -172,7 +185,11 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         [Description("How many surrounding lines of context to include before and after each match.")]
         int contextLines = 2,
         [Description("Whether the search should be case-sensitive. Default is true.")]
-        bool caseSensitive = true)
+        bool caseSensitive = true,
+        [Description("Optional: Maximum number of matches to return (limits output). Default = no limit.")]
+        int? maxMatches = null,
+        [Description("Optional: Maximum characters in result (~4 chars/token). Truncates with note.")]
+        int? maxOutputLength = null)
     {
         if (string.IsNullOrWhiteSpace(searchText))
             throw new ArgumentException("searchText cannot be null or empty.", nameof(searchText));
@@ -192,6 +209,12 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                 continue;
 
             matchCount++;
+            if (maxMatches.HasValue && matchCount > maxMatches.Value)
+            {
+                sb.AppendLine($"... [stopped after {maxMatches} matches to limit output size]");
+                break;
+            }
+
             int start = Math.Max(0, i - contextLines);
             int end = Math.Min(lines.Length - 1, i + contextLines);
 
@@ -204,7 +227,8 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             sb.AppendLine();
         }
 
-        return matchCount == 0 ? "No matches found." : sb.ToString().TrimEnd();
+        var result = matchCount == 0 ? "No matches found." : sb.ToString().TrimEnd();
+        return LimitOutput(result, maxOutputLength);
     }
 
     [KernelFunction, Description("Preview line-based or context-based edits to a text file without saving changes. " +
@@ -269,7 +293,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         {
             throw new UnauthorizedAccessException($"User rejected applying changes to '{path}'.");
         }
-        
+
         // Write back with the same encoding to preserve the original file encoding
         await File.WriteAllTextAsync(fullPath, updatedContent, detectedEncoding);
 
@@ -281,12 +305,15 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                                  "or compare multiple files. Each file's content is returned with its " +
                                  "path as a reference. Failed reads for individual files won't stop " +
                                  "the entire operation. Set includeLineNumbers=true for code review scenarios. " +
+                                 "Use maxOutputLength to cap total output size for token control. " +
                                  "Only works within allowed directories.")]
     public async Task<string> ReadMultipleFilesAsync(
         [Description("The list of file paths to read.")]
         List<string> paths,
         [Description("If true, prefixes each returned line with its 1-based line number.")]
-        bool includeLineNumbers = false)
+        bool includeLineNumbers = false,
+        [Description("Optional: Maximum total characters to return (~4 chars/token). Truncates with note if exceeded.")]
+        int? maxOutputLength = null)
     {
         var results = new StringBuilder();
         foreach (var path in paths)
@@ -317,7 +344,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             }
         }
 
-        return results.ToString().TrimEnd('-', '\n', '\r');
+        return LimitOutput(results.ToString().TrimEnd('-', '\n', '\r'), maxOutputLength);
     }
 
     [KernelFunction, Description("Create a new file or completely overwrite an existing file with new content. " +
@@ -388,12 +415,17 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
          "Get a detailed listing of all files and directories in a specified path, including sizes. " +
          "Results clearly distinguish between files and directories with [FILE] and [DIR] " +
          "prefixes. This tool is useful for understanding directory structure and " +
-         "finding specific files within a directory. Only works within allowed directories.")]
+         "finding specific files within a directory. Use maxEntries and maxOutputLength for token/output control. " +
+         "Only works within allowed directories.")]
     public async Task<string> ListDirectoryWithSizesAsync(
         [Description("The path of the directory to list.")]
         string path,
         [Description("Sort entries by 'name' or 'size'.")]
-        string sortBy = "name")
+        string sortBy = "name",
+        [Description("Optional: Maximum number of entries to include (to limit output). Default = all.")]
+        int? maxEntries = null,
+        [Description("Optional: Maximum characters to return (~4 chars/token). Truncates with note.")]
+        int? maxOutputLength = null)
     {
         var fullPath = await ValidateAndResolvePathAsync(path);
         var directoryInfo = new DirectoryInfo(fullPath);
@@ -414,6 +446,11 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             _ => detailedEntries.OrderBy(e => e.Name).ToList()
         };
 
+        if (maxEntries.HasValue && sortedEntries.Count > maxEntries.Value)
+        {
+            sortedEntries = sortedEntries.Take(maxEntries.Value).ToList();
+        }
+
         var report = new StringBuilder();
         foreach (var entry in sortedEntries)
         {
@@ -428,23 +465,56 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         var totalSize = detailedEntries.Sum(e => e.Size);
 
         report.AppendLine();
-        report.AppendLine($"Total: {totalFiles} files, {totalDirs} directories");
+        report.AppendLine(
+            $"Total: {totalFiles} files, {totalDirs} directories (showing {sortedEntries.Count} entries)");
         report.AppendLine($"Combined size: {FormatSize(totalSize)}");
 
-        return report.ToString();
+        return LimitOutput(report.ToString(), maxOutputLength);
     }
 
     [KernelFunction, Description("Get a recursive tree view of files and directories as a JSON structure. " +
                                  "Each entry includes 'name', 'type' (file/directory), and 'children' for directories. " +
                                  "Files have no children array, while directories always have a children array (which may be empty). " +
-                                 "The output is formatted with 2-space indentation for readability. Only works within allowed directories.")]
+                                 "The output is formatted with 2-space indentation for readability. " +
+                                 "Use maxDepth (e.g. 2-3), includePattern/excludePatterns, and maxOutputLength to control size and token usage. " +
+                                 "Only works within allowed directories.")]
     public async Task<string> GetDirectoryTreeAsync(
         [Description("The root path to generate the tree from.")]
-        string path)
+        string path,
+        [Description(
+            "Optional: Maximum depth (1=root only, 2=root+children, etc.). Null/0 = unlimited (risk of large output).")]
+        int? maxDepth = null,
+        [Description(
+            "Optional: Glob include pattern (e.g. '**/*.cs', 'src/**' or null for all). Uses Microsoft FileSystemGlobbing.")]
+        string? includePattern = null,
+        [Description("Optional: List of glob exclude patterns (e.g. ['**/bin', '**/node_modules', 'obj/**']).")]
+        List<string>? excludePatterns = null,
+        [Description("Optional: Maximum characters in JSON output (~4 chars/token). Truncates with note if exceeded.")]
+        int? maxOutputLength = null)
     {
         var fullPath = await ValidateAndResolvePathAsync(path);
-        var rootEntry = await BuildTreeAsync(new DirectoryInfo(fullPath));
-        return JsonSerializer.Serialize(rootEntry, Extension.DefaultJsonSerializerOptions);
+        var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
+        bool hasInclude = !string.IsNullOrWhiteSpace(includePattern);
+        bool hasExclude = excludePatterns != null && excludePatterns.Count > 0;
+        if (hasInclude)
+        {
+            matcher.AddIncludePatterns(new[] { includePattern! });
+        }
+
+        if (hasExclude)
+        {
+            if (!hasInclude)
+            {
+                matcher.AddIncludePatterns(new[] { "**/*" }); // include all except the specified excludes
+            }
+
+            matcher.AddExcludePatterns(excludePatterns!);
+        }
+
+        var rootEntry = await BuildTreeAsync(new DirectoryInfo(fullPath), maxDepth ?? 0, 1, matcher,
+            hasInclude || hasExclude);
+        var json = JsonSerializer.Serialize(rootEntry, Extension.DefaultJsonSerializerOptions);
+        return LimitOutput(json, maxOutputLength);
     }
 
     [KernelFunction, Description("Move or rename files and directories. Can move files between directories " +
@@ -484,6 +554,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                                  "Searches through all subdirectories from the starting path. The search " +
                                  "is case-insensitive and matches partial names. Returns full paths to all " +
                                  "matching items. Great for finding files when you don't know their exact location. " +
+                                 "Use maxResults and maxOutputLength to control output size and token usage. " +
                                  "Only searches within allowed directories.")]
     public async Task<string> SearchFilesAsync(
         [Description("The root path to start searching from.")]
@@ -491,7 +562,11 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         [Description("The case-insensitive search pattern to match in file/directory names.")]
         string pattern,
         [Description("Optional list of glob patterns to exclude from the search (e.g., '**/bin', 'obj/**').")]
-        List<string>? excludePatterns = null)
+        List<string>? excludePatterns = null,
+        [Description("Optional: Maximum number of results to return (default 200 to prevent huge lists).")]
+        int? maxResults = 200,
+        [Description("Optional: Maximum characters in output (~4 chars/token). Truncates with note if exceeded.")]
+        int? maxOutputLength = null)
     {
         var fullPath = await ValidateAndResolvePathAsync(path);
 
@@ -516,10 +591,21 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             if (Path.GetFileName(entry).Contains(pattern, StringComparison.OrdinalIgnoreCase))
             {
                 results.Add(entry);
+                if (maxResults.HasValue && results.Count >= maxResults.Value)
+                {
+                    break;
+                }
             }
         }
 
-        return results.Count > 0 ? string.Join("\n", results) : "No matches found.";
+        var output = results.Count > 0 ? string.Join("\n", results) : "No matches found.";
+        if (maxResults.HasValue && results.Count >= maxResults.Value)
+        {
+            output +=
+                $"\n... [stopped at {maxResults} results to limit output; use more specific pattern or excludePatterns]";
+        }
+
+        return LimitOutput(output, maxOutputLength);
     }
 
     [KernelFunction, Description("Retrieve detailed metadata about a file or directory. Returns comprehensive " +
@@ -625,6 +711,21 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         string[] units = { "B", "KB", "MB", "GB", "TB", "PB" };
         int i = (int)Math.Floor(Math.Log(bytes) / Math.Log(1024));
         return $"{bytes / Math.Pow(1024, i):F2} {units[i]}";
+    }
+
+    /// <summary>
+    /// Limits the output string to prevent excessive token usage in LLM context.
+    /// Appends a truncation note when limit is hit.
+    /// </summary>
+    private static string LimitOutput(string output, int? maxLength = null, string? truncationNote = null)
+    {
+        if (!maxLength.HasValue || string.IsNullOrEmpty(output) || output.Length <= maxLength.Value)
+            return output;
+
+        var note = truncationNote ??
+                   $"\n\n[OUTPUT TRUNCATED: Exceeded maxOutputLength of {maxLength} characters (approx {maxLength / 4} tokens). " +
+                   "Use head/tail, maxDepth, maxResults, filters, or more specific queries to get focused results.]";
+        return output.Substring(0, maxLength.Value) + note;
     }
 
     private static async Task<string> HeadFileAsync(string path, int lineCount, bool includeLineNumbers = false)
@@ -884,11 +985,23 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         return sb.ToString();
     }
 
-    private async Task<List<TreeEntry>> BuildTreeAsync(DirectoryInfo dirInfo)
+    private async Task<List<TreeEntry>> BuildTreeAsync(DirectoryInfo dirInfo, int maxDepth, int currentDepth,
+        Matcher matcher, bool hasFilter)
     {
         var treeEntries = new List<TreeEntry>();
         foreach (var fileSystemInfo in dirInfo.EnumerateFileSystemInfos())
         {
+            // Use matcher for include/exclude. If no patterns, hasFilter=false so include all by default.
+            bool shouldInclude = true;
+            if (hasFilter)
+            {
+                var matchResult = matcher.Match(fileSystemInfo.Name);
+                shouldInclude = matchResult.HasMatches;
+            }
+
+            if (!shouldInclude)
+                continue;
+
             var treeEntry = new TreeEntry()
             {
                 Name = fileSystemInfo.Name,
@@ -896,14 +1009,22 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             if (fileSystemInfo is DirectoryInfo directoryInfo)
             {
                 treeEntry.Type = "directory";
-                treeEntry.Children = await BuildTreeAsync(directoryInfo);
+                if (maxDepth <= 0 || currentDepth < maxDepth)
+                {
+                    treeEntry.Children =
+                        await BuildTreeAsync(directoryInfo, maxDepth, currentDepth + 1, matcher, hasFilter);
+                }
+                else
+                {
+                    treeEntry.Children = new List<TreeEntry>(); // empty children to signal depth limit reached
+                }
             }
-            else if (fileSystemInfo is FileInfo fileInfo)
+            else if (fileSystemInfo is FileInfo)
             {
                 treeEntry.Type = "file";
             }
 
-            // Security check for each subdirectory before recursing
+            // Security check for each entry
             await ValidateAndResolvePathAsync(fileSystemInfo.FullName);
             treeEntries.Add(treeEntry);
         }
@@ -930,6 +1051,8 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         3. Before editing, first inspect the relevant region with ReadFileRangeAsync or FindTextInFileAsync.
         4. Before writing changes, use PreviewEditAsync to generate a preview diff.
         5. Use ApplyEditAsync only after the intended change is clear.
+        6. To control output size and prevent token overflow: Use maxOutputLength (chars, ~4 chars/token) on Read*/List*/Find*/Search*/GetDirectoryTree* methods.
+           For trees use maxDepth + include/excludePatterns; for searches use maxResults/maxMatches.
 
         Editing rules:
         - In each edit operation, oldText must contain enough surrounding context to uniquely match exactly one location in the file.

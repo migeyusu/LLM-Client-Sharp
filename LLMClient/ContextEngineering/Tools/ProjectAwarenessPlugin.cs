@@ -137,7 +137,7 @@ public sealed class ProjectAwarenessPlugin : KernelFunctionGroup
             .ToList();
 
     public override string? AdditionPrompt { get; } =
-        "ProjectAwarenessPlugin provides structured information about the loaded solution, projects, and files. " +
+        "This group provides structured information about the loaded solution, projects, and files. " +
         "Use it to explore the codebase and understand its structure and conventions before generating or modifying code. " +
         "All methods return JSON strings with the requested information.";
 

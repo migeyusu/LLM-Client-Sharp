@@ -313,16 +313,17 @@ public class DefaultRequestContextBuilder
             return;
         }
 
-        builder.AppendLine("For the following functions, you can call them by name with the required parameters:");
+        builder.AppendLine(
+            "For the following tool groups, you can call them by name with the required parameters:");
         foreach (var functionGroup in availableGroups)
         {
             if (string.IsNullOrWhiteSpace(functionGroup.AdditionPrompt))
             {
-                builder.AppendLine(functionGroup.Name);
+                builder.AppendLine("Tools start with " + functionGroup.Name);
             }
             else
             {
-                builder.AppendLine($"{functionGroup.Name}:{functionGroup.AdditionPrompt}");
+                builder.AppendLine($"Tools start with {functionGroup.Name}:{functionGroup.AdditionPrompt}");
             }
         }
     }

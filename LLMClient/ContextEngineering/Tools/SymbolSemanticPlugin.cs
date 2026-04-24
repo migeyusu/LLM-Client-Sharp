@@ -206,7 +206,7 @@ public sealed class SymbolSemanticPlugin : KernelFunctionGroup
 
 
     public override string? AdditionPrompt { get; } =
-        "SymbolSemanticPlugin provides deep code intelligence for the loaded solution. " +
+        "This group provides deep code intelligence for the loaded solution. " +
         "Workflow: 1) Use search_symbols to get a symbolId. " +
         "2) Use get_symbol_detail / get_type_members for structure inspection. " +
         "3) Use get_callers / get_callees / get_usages for impact analysis. " +

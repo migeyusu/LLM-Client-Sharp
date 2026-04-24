@@ -124,7 +124,7 @@ public sealed class CodeReadingPlugin : KernelFunctionGroup
 
 
     public override string? AdditionPrompt { get; } =
-        "CodeReadingPlugin provides read-only access to source file contents and structural outlines. " +
+        "This group provides read-only access to source file contents and structural outlines. " +
         "Recommended workflow: list_files → get_file_outline → read_symbol_body. " +
         "Fall back to read_file only when you need content not captured by the symbol index " +
         "(e.g. top-level statements, config files, or auto-generated code).";
