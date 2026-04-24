@@ -31,10 +31,19 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
     {
         var contextBuilder = AgentRequestContextBuilder.CreateFromSession(dialogSession, Config);
         string? workingDirectory;
+
         if (dialogSession is ProjectSessionViewModel projectSession)
         {
             workingDirectory = projectSession.WorkingDirectory;
             contextBuilder.ProjectInformation = projectSession.ParentProject.ProjectInformationPrompt;
+        }
+        else if (dialogSession is BranchDialogTextSession
+                 {
+                     ParentSession: ProjectSessionViewModel projectSessionViewModel
+                 })
+        {
+            workingDirectory = projectSessionViewModel.WorkingDirectory;
+            contextBuilder.ProjectInformation = projectSessionViewModel.ParentProject.ProjectInformationPrompt;
         }
         else
         {

@@ -38,6 +38,7 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
             IncludeRagInstructions = config.IncludeRagInstructions,
             SystemTemplate = config.SystemTemplate,
             InstanceTemplate = config.InstanceTemplate,
+            WorkingDirectory = session.WorkingDirectory,
         };
         dialogContext.MapFromRequest(requestViewItem);
         return dialogContext;

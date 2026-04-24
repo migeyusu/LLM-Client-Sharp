@@ -17,4 +17,6 @@ public class ProjectOptionsPersistModel
     public string[]? AllowedFolderPaths { get; set; }
 
     public bool IncludeAgentsMd { get; set; } = true;
+    
+    public bool IncludeCopilotPrompt {get; set; } = true;
 }
