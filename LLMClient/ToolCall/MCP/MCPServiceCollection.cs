@@ -189,7 +189,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
                 }
             }
         });
-        CopySelectedItemCommand = new ActionCommand((o =>
+        CopySelectedItemCommand = new ActionCommand(o =>
         {
             if (o is McpServerItem item && item.AvailableTools != null)
             {
@@ -207,7 +207,7 @@ public class McpServiceCollection : BaseViewModel, IMcpServiceCollection, IFunct
 
                 CommonCommands.CopyCommand.Execute(item);
             }
-        }));
+        });
         AddNewCommand = new ActionCommand((o =>
         {
             if (o is string type)

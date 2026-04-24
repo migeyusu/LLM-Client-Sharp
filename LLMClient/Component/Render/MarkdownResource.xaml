@@ -339,18 +339,18 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <materialDesign:PackIcon Kind="Function"
                                                  Width="20"
-                                                 Height="20" 
+                                                 Height="20"
                                                  VerticalAlignment="Center" />
-                        <TextBlock VerticalAlignment="Center" Margin="6,0,0,0" 
+                        <TextBlock VerticalAlignment="Center" Margin="6,0,0,0"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
                             <Run Text="{Binding Call.Name, Mode=OneTime}" />
                         </TextBlock>
 
-                        <materialDesign:PackIcon Kind="CheckCircle" Width="16" 
-                                                 Height="16" 
+                        <materialDesign:PackIcon Kind="CheckCircle" Width="16"
+                                                 Height="16"
                                                  Margin="6,0,0,0"
-                                                 Foreground="LimeGreen" 
+                                                 Foreground="LimeGreen"
                                                  VerticalAlignment="Center">
                             <materialDesign:PackIcon.Style>
                                 <Style TargetType="materialDesign:PackIcon">

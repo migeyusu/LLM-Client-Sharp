@@ -95,6 +95,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
 
     public override async Task PreviewProcessing(CancellationToken token = default)
     {
+        await base.PreviewProcessing(token);
         if (string.IsNullOrEmpty(SolutionFilePath))
         {
             throw new InvalidOperationException("Please select a solution file before sending the request.");
@@ -117,8 +118,6 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
                 await _solutionContext.LoadSolutionAsync(SolutionFilePath, token);
             }
         }
-
-        await base.PreviewProcessing(token);
     }
 
     public override IEnumerable<IAIFunctionGroup> GetInspectorFunctionGroups()

@@ -639,7 +639,7 @@
                     <CheckBox
                         Content="启用skills"
                         Style="{StaticResource MaterialDesignSecondaryCheckBox}"
-                        IsChecked="{Binding IncludeAgentsMd,Mode=TwoWay}"
+                        IsChecked="{Binding  EnableSkills,Mode=TwoWay}"
                         ToolTip="在项目根目录搜索常见的skills路径（如.github/skills）"
                         Margin="6,0" />
                     <CheckBox

@@ -9,11 +9,11 @@ namespace LLMClient.Dialog.Models;
 /// </summary>
 public class BranchDialogTextSession : ITextDialogSession
 {
-    private readonly ITextDialogSession _parentSession;
+    public ITextDialogSession ParentSession { get; }
 
     public BranchDialogTextSession(ITextDialogSession parentSession, IResponseItem responseItem)
     {
-        this._parentSession = parentSession;
+        this.ParentSession = parentSession;
         this.VisualDialogItems = responseItem.GetChatHistory().ToArray();
         WorkingResponse = responseItem;
     }
@@ -26,11 +26,13 @@ public class BranchDialogTextSession : ITextDialogSession
             responseItem);
     }
 
-    public Guid ID => _parentSession.ID;
+    public Guid ID => ParentSession.ID;
 
-    public IReadOnlyList<IDialogItem> VisualDialogItems { get; private set; }
+    public IReadOnlyList<IDialogItem> VisualDialogItems { get; }
 
-    public IResponseItem WorkingResponse { get; private set; }
+    public IResponseItem WorkingResponse { get; }
+
+    public string? WorkingDirectory => ParentSession.WorkingDirectory;
 
     public Task CutContextAsync(IRequestItem? requestItem = null)
     {
@@ -38,13 +40,15 @@ public class BranchDialogTextSession : ITextDialogSession
             "BranchDialogTextSession does not support cutting context. Please cut context in the parent session.");
     }
 
-    public AIContextProvider[]? ContextProviders => null;
+    public AIContextProvider[]? ContextProviders => ParentSession.ContextProviders;
+
+    public IPromptCommandAggregate? PromptCommand => ParentSession.PromptCommand;
 
     public string? SystemPrompt => null;
 
-    public IEnumerable<Type> SupportedAgents => _parentSession.SupportedAgents;
+    public IEnumerable<Type> SupportedAgents => ParentSession.SupportedAgents;
 
-    public IFunctionGroupSource? ToolsSource => _parentSession.ToolsSource;
+    public IFunctionGroupSource? ToolsSource => ParentSession.ToolsSource;
 
     public Task<IResponse> NewResponse(RequestOption option, IRequestItem? insertBefore = null,
         CancellationToken token = default)

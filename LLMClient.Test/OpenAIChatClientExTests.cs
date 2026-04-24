@@ -37,7 +37,7 @@ public class OpenAiChatClientExTests
                                                 """);
 
         var exception = await Assert.ThrowsAsync<LlmInvalidRequestException>(() =>
-            chatClient.GetResponseAsync([new ChatMessage(ChatRole.User, "Hello")])) ;
+            chatClient.GetResponseAsync([new ChatMessage(ChatRole.User, "Hello")]));
 
         Assert.Contains("invalid OpenAI-compatible response", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("choices", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -62,7 +62,7 @@ public class OpenAiChatClientExTests
                                                 """);
 
         var exception = await Assert.ThrowsAsync<LlmInvalidRequestException>(() =>
-            chatClient.GetResponseAsync([new ChatMessage(ChatRole.User, "Hello")])) ;
+            chatClient.GetResponseAsync([new ChatMessage(ChatRole.User, "Hello")]));
 
         Assert.Contains("Missing required 'choices' field", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -161,9 +161,13 @@ public class OpenAiChatClientExTests
 
         System.ClientModel.BinaryContent requestJson =
             System.ClientModel.BinaryContent.Create(BinaryData.FromString("{" +
-                "\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}],\"model\":\"gpt-4o\"}"));
+                                                                          "\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}],\"model\":\"gpt-4o\"}"));
 
-        using var _ = AsyncContextStore<ChatStackContext>.CreateInstance(new ChatStackContext { Streaming = true });
+        using var _ = AsyncContextStore<ChatStackContext>.CreateInstance(new ChatStackContext
+        {
+            Streaming = true,
+            WorkingDirectory = "."
+        });
         var result = await rawClient.CompleteChatAsync(requestJson);
         var payload = await ReadRawResponseAsync(result);
 
@@ -243,5 +247,3 @@ public class OpenAiChatClientExTests
         return text;
     }
 }
-
-

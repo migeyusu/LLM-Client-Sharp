@@ -111,10 +111,10 @@ public class OpenAIAPIClient : LlmClientBase
                 .UseLogging(protocolLogLoggerFactory)
                 .UseOpenTelemetry(protocolLogLoggerFactory, sourceName: "OpenAIAPI",
                     config => { config.EnableSensitiveData = true; });
-            if (context.ContextProviders != null)
+            /*if (context.ContextProviders != null)
             {
                 chatClientBuilder.UseAIContextProviders(context.ContextProviders);
-            }
+            }*/
 
             return chatClientBuilder.Build();
         }

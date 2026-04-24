@@ -30,9 +30,11 @@ public class ChatStackContext
 
     public AdditionalPropertiesDictionary AdditionalObjects { get; }
 
-    public List<AIContent> AdditionalFunctionCallResult { get; } = new();
+    public List<AIContent> AdditionalFunctionCallResult { get; } = [];
 
     public StringBuilder AdditionalUserMessage { get; } = new();
+
+    public required string WorkingDirectory { get; init; }
 
     /// <summary>
     /// 当前 ReAct 步骤的事件写入器（用于插件请求权限等场景）
@@ -41,24 +43,11 @@ public class ChatStackContext
 
     public bool EnableSchemaCleaning { get; set; } = true;
 
-    public Dictionary<string, string>? AdditionalHttpHeader { get; set; }
-
+    /// <summary>
+    /// only used for openai chatclient backend
+    /// </summary>
     public ClientResult? ResponseResult { get; set; }
-
-    public static ChatStackContext CreateForRequest(IRequestContext requestContext,
-        AdditionalPropertiesDictionary? additionalObjects,
-        bool streaming,
-        ChatStackContext? parentContext = null)
-    {
-        return new ChatStackContext(additionalObjects)
-        {
-            Streaming = streaming,
-            ShowRequestJson = requestContext.ShowRequestJson,
-            AutoApproveAllInvocations = requestContext.AutoApproveAllInvocations ||
-                                        parentContext?.AutoApproveAllInvocations == true
-        };
-    }
-
+    
     private static readonly PropertyInfo InternalChoicePropertyInfo =
         typeof(StreamingChatCompletionUpdate).GetProperty("InternalChoiceDelta",
             BindingFlags.NonPublic | BindingFlags.Instance)!;

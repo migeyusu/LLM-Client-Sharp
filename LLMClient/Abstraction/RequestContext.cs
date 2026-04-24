@@ -23,6 +23,8 @@ public interface IRequestContext
     /// dialogID 标识
     /// </summary>
     string DialogId { get; }
+
+    string? WorkingDirectory { get; }
 }
 
 public sealed class RequestContext : IRequestContext
@@ -47,4 +49,6 @@ public sealed class RequestContext : IRequestContext
     public AIContextProvider[]? ContextProviders { get; init; }
 
     public required string DialogId { get; init; }
+
+    public string? WorkingDirectory { get; init; }
 }

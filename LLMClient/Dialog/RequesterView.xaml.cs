@@ -70,4 +70,12 @@ public partial class RequesterView : UserControl
             this.ViewModel.InvalidateAsyncProperty(nameof(RequesterViewModel.EstimatedTokens));
         }
     }
+
+    private async void SkillsPopupBox_OnOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is PopupBox { PopupContent: SkillsListViewModel skillsList })
+        {
+            await skillsList.InitializeAsync();
+        }
+    }
 }

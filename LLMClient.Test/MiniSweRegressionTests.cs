@@ -1325,7 +1325,11 @@ public class MiniSweRegressionTests
     private static IDisposable CreatePermissionContext(bool allow)
     {
         var step = new ReactStep();
-        var chatContext = new ChatStackContext { CurrentStep = step, AutoApproveAllInvocations = allow };
+        var chatContext = new ChatStackContext
+        {
+            CurrentStep = step, AutoApproveAllInvocations = allow,
+            WorkingDirectory = Directory.GetCurrentDirectory()
+        };
         // Start a background task to consume permission requests from the step
         _ = Task.Run(async () =>
         {
@@ -1448,6 +1452,8 @@ public class MiniSweRegressionTests
         public IReadOnlyList<IDialogItem> VisualDialogItems { get; }
         public IResponseItem WorkingResponse => throw new NotSupportedException();
 
+        public string? WorkingDirectory { get; } = null;
+
         public List<IChatHistoryItem> GetHistory()
         {
             return _history;
@@ -1459,6 +1465,7 @@ public class MiniSweRegressionTests
         }
 
         public Microsoft.Agents.AI.AIContextProvider[]? ContextProviders { get; } = null;
+        public IPromptCommandAggregate? PromptCommand { get; set; }
 
         public string? SystemPrompt => null;
 
@@ -1489,6 +1496,8 @@ public class MiniSweRegressionTests
         public IReadOnlyList<IDialogItem> VisualDialogItems { get; } = [];
         public IResponseItem WorkingResponse => throw new NotSupportedException();
 
+        public string? WorkingDirectory { get; } = null;
+
         public List<IChatHistoryItem> GetHistory()
         {
             return [];
@@ -1500,6 +1509,7 @@ public class MiniSweRegressionTests
         }
 
         public AIContextProvider[]? ContextProviders { get; } = null;
+        public IPromptCommandAggregate? PromptCommand { get; set; }
 
         public string? SystemPrompt => null;
 
@@ -1521,6 +1531,7 @@ public class MiniSweRegressionTests
         }
 
         public override AIContextProvider[]? ContextProviders { get; } = null;
+        public override IPromptCommandAggregate? PromptCommand { get; }
         public override string? SystemPrompt => null;
 
         public override IFunctionGroupSource? ToolsSource { get; } = null;

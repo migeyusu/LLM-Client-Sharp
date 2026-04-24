@@ -84,13 +84,35 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             throw new ArgumentNullException(nameof(command), "错误：命令不能为空。");
         }
 
+        var stackContext = AsyncContextStore<ChatStackContext>.Current;
+        var workingDirectory = stackContext?.WorkingDirectory;
+        if (!string.IsNullOrWhiteSpace(workingDirectory))
+        {
+            // 支持相对路径（相对于当前进程目录）
+            string fullPath = Path.IsPathRooted(workingDirectory)
+                ? workingDirectory
+                : Path.GetFullPath(workingDirectory);
+
+            if (!Directory.Exists(fullPath))
+            {
+                return new ExecutionOutput
+                {
+                    Output = string.Empty,
+                    ReturnCode = -1,
+                    ExceptionInfo = $"错误：指定的工作目录不存在：{fullPath}"
+                };
+            }
+
+            workingDirectory = fullPath; // 统一使用绝对路径
+        }
+
         // 安全性检查：提取命令的第一个词（即程序名），并检查它是否在黑名单中
         // 注意：这种检查方式相对基础，聪明的用户可能通过复杂方式绕过。
         // 例如 'cmd /c "del C:\\file.txt"'，这里的检查只会看到 'cmd'。
         var commandBase = command.Trim().Split(' ')[0].ToLowerInvariant();
         if (VerifyRequiredCommands.Contains(commandBase))
         {
-            var step = AsyncContextStore<ChatStackContext>.Current?.CurrentStep;
+            var step = stackContext?.CurrentStep;
             if (step == null)
             {
                 throw new NotSupportedException($"错误：命令 '{commandBase}' 被默认禁止执行。");
@@ -111,8 +133,12 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8
+                StandardErrorEncoding = Encoding.UTF8,
             };
+            if (!string.IsNullOrWhiteSpace(workingDirectory))
+            {
+                processStartInfo.WorkingDirectory = workingDirectory;
+            }
 
             switch (shell.ToLowerInvariant())
             {
@@ -147,7 +173,15 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     // User-initiated cancellation: kill the process tree
-                    try { process.Kill(entireProcessTree: true); } catch { /* ignore if already exited */ }
+                    try
+                    {
+                        process.Kill(entireProcessTree: true);
+                    }
+                    catch
+                    {
+                        /* ignore if already exited */
+                    }
+
                     return new ExecutionOutput
                     {
                         Output = string.Empty,
@@ -158,7 +192,15 @@ public sealed class WinCLIPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
                 catch (OperationCanceledException)
                 {
                     // Timeout
-                    try { process.Kill(entireProcessTree: true); } catch { /* ignore if already exited */ }
+                    try
+                    {
+                        process.Kill(entireProcessTree: true);
+                    }
+                    catch
+                    {
+                        /* ignore if already exited */
+                    }
+
                     return new ExecutionOutput
                     {
                         Output = string.Empty,

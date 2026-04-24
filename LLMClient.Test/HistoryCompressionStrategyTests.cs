@@ -664,6 +664,8 @@ public class HistoryCompressionStrategyTests
         public IReadOnlyList<IDialogItem> VisualDialogItems { get; } = new List<IDialogItem>();
 
         public IResponseItem WorkingResponse => throw new NotSupportedException();
+        
+        public string? WorkingDirectory { get; } = null;
 
         public List<IChatHistoryItem> GetHistory() => [];
 
@@ -671,6 +673,7 @@ public class HistoryCompressionStrategyTests
 
 #pragma warning disable SKEXP0130
         public AIContextProvider[]? ContextProviders { get; } = null;
+        public IPromptCommandAggregate? PromptCommand { get; set; }
 #pragma warning restore SKEXP0130
         public string? SystemPrompt { get; } = null;
         public IEnumerable<Type> SupportedAgents { get; } = Array.Empty<Type>();

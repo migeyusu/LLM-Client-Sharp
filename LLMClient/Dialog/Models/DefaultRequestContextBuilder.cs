@@ -26,12 +26,12 @@ public class DefaultRequestContextBuilder
         var workingResponse = session.WorkingResponse;
         var historyItems = session.GetChatHistory().ToArray();
         return CreateFromHistory(historyItems, workingResponse.Id, session.ContextProviders,
-            session.SystemPrompt, session.ID);
+            session.SystemPrompt, session.ID, session.WorkingDirectory);
     }
 
     public static DefaultRequestContextBuilder CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
         Guid? dialogId = null, AIContextProvider[]? contextProviders = null, string? systemPrompt = null,
-        Guid? sessionId = null)
+        Guid? sessionId = null, string? workingDirectory = null)
     {
         var requestViewItem = history.LastOrDefault() as IRequestItem ??
                               throw new InvalidOperationException("RequestViewItem is null");
@@ -41,6 +41,7 @@ public class DefaultRequestContextBuilder
             SessionId = sessionId,
             DialogId = dialogId ?? Guid.NewGuid(),
             ContextProviders = contextProviders,
+            WorkingDirectory = workingDirectory,
         };
         dialogContext.MapFromRequest(requestViewItem);
         return dialogContext;
@@ -163,6 +164,7 @@ public class DefaultRequestContextBuilder
             AutoApproveAllInvocations = AutoApproveAllInvocations,
             ShowRequestJson = this.IsDebugMode,
             ContextProviders = this.ContextProviders,
+            WorkingDirectory = WorkingDirectory,
         };
     }
 

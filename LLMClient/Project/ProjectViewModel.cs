@@ -516,34 +516,45 @@ public abstract class ProjectViewModel : FileBasedSessionBase,
         OnPropertyChanged(nameof(Context));
     }
 
-    [Experimental("MAAI001")] public AgentSkillsProvider[]? SkillsProviders { get; private set; }
-
-    private static string[] _skillsFolderPath = new[] { ".github\\skills", "skills" };
-
     [Experimental("MAAI001")]
-    protected virtual async Task LoadSkillsAsync()
+    [field: Experimental("MAAI001")]
+    public AgentSkillsProvider[]? SkillsProviders
     {
-        if (!Option.EnableSkills)
+        get
         {
-            return;
-        }
+            if (!Option.EnableSkills)
+            {
+                return null;
+            }
 
-        if (string.IsNullOrEmpty(this.Option.RootPath))
-        {
-            return;
-        }
+            if (string.IsNullOrEmpty(this.Option.RootPath))
+            {
+                _lastRootPath = null;
+                return null;
+            }
 
-        this.SkillsProviders = _skillsFolderPath.Select((s => Path.GetFullPath(s, this.Option.RootPath)))
-            .Select(GetSkillsProvider)
-            .OfType<AgentSkillsProvider>()
-            .ToArray();
+            if (_lastRootPath == this.Option.RootPath)
+            {
+                return field;
+            }
+
+            _lastRootPath = this.Option.RootPath;
+            var agentSkillsProvider = new AgentSkillsProviderBuilder()
+                .UseFileSkills(_skillsFolderPath.Select(s => Path.GetFullPath(s, _lastRootPath)),
+                    scriptRunner: SubprocessScriptRunner.RunAsync).Build();
+            field = [agentSkillsProvider];
+            return field;
+        }
     }
+
+    private static string[] _skillsFolderPath = [".github\\skills", ".claude\\skills", "skills"];
+
+    private string? _lastRootPath;
 
     [Experimental("MAAI001")]
     public static AgentSkillsProvider? GetSkillsProvider(string rootFolderPath)
     {
-        var skillsDir = Path.GetFullPath("skills", rootFolderPath);
-        var directoryInfo = new DirectoryInfo(skillsDir);
+        var directoryInfo = new DirectoryInfo(rootFolderPath);
         if (!directoryInfo.Exists)
         {
             return null;
@@ -551,7 +562,7 @@ public abstract class ProjectViewModel : FileBasedSessionBase,
 
         var skillPathList = directoryInfo.GetDirectories().Select(info => info.FullName).ToArray();
         return new AgentSkillsProviderBuilder()
-            .UseFileSkills(skillPathList).Build();
+            .UseFileSkills(skillPathList, scriptRunner: SubprocessScriptRunner.RunAsync).Build();
     }
 
     private void FunctionTreeSelectorOnAfterSelect()

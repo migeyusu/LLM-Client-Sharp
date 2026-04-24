@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
+using LLMClient.Dialog;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Xaml.Behaviors.Core;
 
@@ -50,7 +51,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
             field = value;
             OnPropertyChanged();
         }
-    }
+    } = true;
 
     public ICommand SelectProjectFolderCommand => new RelayCommand(() =>
     {
@@ -130,6 +131,8 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
             {
                 AllowedFolderPaths.Add(value);
             }
+
+            OnPropertyChanged(nameof(PromptInjector));
         }
     }
 
@@ -159,6 +162,36 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         }
     }
 
+    public bool IncludeCopilotPrompt
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            OnPropertyChanged();
+            field = value;
+            OnPropertyChanged(nameof(PromptInjector));
+        }
+    } = true;
+
+
+    public OpenSpecPromptInjector? PromptInjector
+    {
+        get
+        {
+            if (!IncludeCopilotPrompt || string.IsNullOrEmpty(RootPath))
+            {
+                return null;
+            }
+
+            if (field?.ProjectRoot != RootPath)
+            {
+                field = new OpenSpecPromptInjector(RootPath);
+            }
+
+            return field;
+        }
+    }
 
     private static ThemedIcon CSharpIcon => LocalThemedIcon.FromPackIcon(PackIconKind.LanguageCsharp);
 

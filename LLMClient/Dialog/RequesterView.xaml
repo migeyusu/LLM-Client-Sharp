@@ -12,6 +12,7 @@
              xmlns:component="clr-namespace:LLMClient.Component"
              xmlns:customControl="clr-namespace:LLMClient.Component.CustomControl"
              xmlns:models="clr-namespace:LLMClient.Dialog.Models"
+             xmlns:ai="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
              mc:Ignorable="d"
              ClipToBounds="False"
              d:DataContext="{d:DesignInstance local:RequesterViewModel}"
@@ -229,6 +230,168 @@
                                     </materialDesign:PopupBox>
                                 </StackPanel>
                             </materialDesign:Card>
+                            <materialDesign:Card Padding="4,0"
+                                                 Margin="6,0,0,0"
+                                                 UniformCornerRadius="12"
+                                                 Height="32"
+                                                 Visibility="{Binding DefaultClient.Model.SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp3">
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="10,0,0,0">
+                                    <Ellipse Width="5"
+                                             Height="5"
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,8,0">
+                                        <Ellipse.Style>
+                                            <Style TargetType="{x:Type Ellipse}">
+                                                <Setter Property="Fill"
+                                                        Value="Gray" />
+                                                <Style.Triggers>
+                                                    <DataTrigger
+                                                        Binding="{Binding SkillsList.SkillsDetected,Mode=OneWay}"
+                                                        Value="True">
+                                                        <Setter Property="Fill"
+                                                                Value="ForestGreen" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="Skills"
+                                               VerticalAlignment="Center" />
+                                    <materialDesign:PopupBox Margin="6,0"
+                                                             StaysOpen="True"
+                                                             PopupMode="Click"
+                                                             PlacementMode="TopAndAlignLeftEdges"
+                                                             Opened="SkillsPopupBox_OnOpened"
+                                                             ToggleContent="{materialDesign:PackIcon Kind=FileStarOutline,Size=16}"
+                                                             ToggleCheckedContent="{materialDesign:PackIcon Kind=Add,Size=16}"
+                                                             VerticalAlignment="Center"
+                                                             PopupUniformCornerRadius="8"
+                                                             ToolTip="Skills As Tools"
+                                                             PopupContent="{Binding SkillsList,Mode=OneWay}"
+                                                             Style="{StaticResource MaterialDesignToolPopupBox}">
+                                        <materialDesign:PopupBox.PopupContentTemplate>
+                                            <DataTemplate DataType="{x:Type local:SkillsListViewModel}">
+                                                <Grid>
+                                                    <ScrollViewer MaxWidth="600"
+                                                                  MaxHeight="800">
+                                                        <TextBox IsReadOnly="True"
+                                                                 materialDesign:TextFieldAssist.DecorationVisibility="Collapsed"
+                                                                 BorderThickness="0"
+                                                                 TextWrapping="Wrap"
+                                                                 Text="{Binding Instructions,Mode=OneWay}" />
+                                                        <!--<ItemsControl Margin="10,10,10,0"
+                                                                      ItemsSource="{Binding Skills,Mode=TwoWay}"
+                                                                      IsEnabled="{Binding IsEnsuring,Mode=OneWay,Converter={x:Static materialDesign:InvertBooleanConverter.Instance}, TargetNullValue=False}">
+                                                            <ItemsControl.ContextMenu>
+                                                                <ContextMenu>
+                                                                    <MenuItem
+                                                                        Icon="{materialDesign:PackIcon Kind=ContentCopy}"
+                                                                        Header="Copy"
+                                                                        Command="{Binding CopySelectedItemCommand}" />
+                                                                </ContextMenu>
+                                                            </ItemsControl.ContextMenu>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate DataType="{x:Type ai:AITool}">
+                                                                    <StackPanel>
+                                                                        <TextBlock
+                                                                            Text="{Binding Name,Mode=OneTime}"
+                                                                            FontWeight="Black"
+                                                                            Style="{StaticResource MaterialDesignSubtitle2TextBlock}" />
+                                                                        <TextBlock
+                                                                            Text="{Binding Description,Mode=OneWay}"
+                                                                            TextWrapping="Wrap"
+                                                                            Margin="16,0,0,0"
+                                                                            Style="{StaticResource MaterialDesignCaptionTextBlock}" />
+                                                                    </StackPanel>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>-->
+                                                    </ScrollViewer>
+                                                    <Button ToolTip="刷新"
+                                                            VerticalAlignment="Bottom"
+                                                            HorizontalAlignment="Right"
+                                                            Content="{materialDesign:PackIcon Kind=Refresh}"
+                                                            Command="{Binding RefreshSourceCommand}"
+                                                            Style="{StaticResource MaterialDesignIconButton}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </materialDesign:PopupBox.PopupContentTemplate>
+                                    </materialDesign:PopupBox>
+                                </StackPanel>
+                            </materialDesign:Card>
+                            <materialDesign:Card Padding="4,0"
+                                                 Margin="6,0,0,0"
+                                                 UniformCornerRadius="12"
+                                                 Height="32"
+                                                 Visibility="{Binding DefaultClient.Model.SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                 materialDesign:ElevationAssist.Elevation="Dp3">
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="10,0,0,0">
+                                    <Ellipse Width="5"
+                                             Height="5"
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,8,0">
+                                        <Ellipse.Style>
+                                            <Style TargetType="{x:Type Ellipse}">
+                                                <Setter Property="Fill"
+                                                        Value="Gray" />
+                                                <Style.Triggers>
+                                                    <DataTrigger
+                                                        Binding="{Binding ConnectedSession.PromptCommand,Converter={x:Static converters:SnapConverters.NullToBooleanConverter},Mode=OneWay}"
+                                                        Value="True">
+                                                        <Setter Property="Fill"
+                                                                Value="ForestGreen" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="Commands"
+                                               VerticalAlignment="Center" />
+                                    <materialDesign:PopupBox Margin="6,0"
+                                                             StaysOpen="True"
+                                                             PopupMode="Click"
+                                                             PlacementMode="TopAndAlignLeftEdges"
+                                                             ToggleContent="{materialDesign:PackIcon Kind=KeyboardOutline,Size=16}"
+                                                             ToggleCheckedContent="{materialDesign:PackIcon Kind=Add,Size=16}"
+                                                             VerticalAlignment="Center"
+                                                             PopupUniformCornerRadius="8"
+                                                             ToolTip="Prompt Command"
+                                                             PopupContent="{Binding ConnectedSession ,Mode=OneTime}"
+                                                             Style="{StaticResource MaterialDesignToolPopupBox}">
+                                        <materialDesign:PopupBox.PopupContentTemplate>
+                                            <DataTemplate DataType="{x:Type models:ITextDialogSession}">
+                                                <ContentPresenter Content="{Binding  PromptCommand,Mode=OneWay}">
+                                                    <ContentPresenter.ContentTemplateSelector>
+                                                        <component:TypeBasedDataTemplateSelector>
+                                                            <component:DataTemplateTypePair>
+                                                                <DataTemplate
+                                                                    DataType="{x:Type local:OpenSpecPromptInjector}">
+                                                                    <Grid>
+                                                                        <ScrollViewer MaxWidth="600"
+                                                                                MaxHeight="800">
+                                                                            <ItemsControl
+                                                                                ItemsSource="{Binding AvailableCommands,Mode=OneWay}" />
+                                                                        </ScrollViewer>
+                                                                        <Button ToolTip="刷新"
+                                                                                VerticalAlignment="Bottom"
+                                                                                HorizontalAlignment="Right"
+                                                                                Content="{materialDesign:PackIcon Kind=Refresh}"
+                                                                                Command="{Binding ReloadCommandsCommand}"
+                                                                                Style="{StaticResource MaterialDesignIconButton}" />
+                                                                    </Grid>
+                                                                </DataTemplate>
+                                                            </component:DataTemplateTypePair>
+                                                        </component:TypeBasedDataTemplateSelector>
+                                                    </ContentPresenter.ContentTemplateSelector>
+                                                </ContentPresenter>
+                                            </DataTemplate>
+                                        </materialDesign:PopupBox.PopupContentTemplate>
+                                    </materialDesign:PopupBox>
+                                </StackPanel>
+                            </materialDesign:Card>
                             <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                     Command="{Binding AddImageCommand}"
                                     VerticalAlignment="Center" Margin="10,0,0,0"
@@ -350,7 +513,9 @@
                                                         <Style TargetType="{x:Type materialDesign:PackIcon}">
                                                             <Setter Property="Kind" Value="MessageTextOutline" />
                                                             <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsAgentMode, Mode=OneWay}" Value="True">
+                                                                <DataTrigger
+                                                                    Binding="{Binding IsAgentMode, Mode=OneWay}"
+                                                                    Value="True">
                                                                     <Setter Property="Kind" Value="RobotOutline" />
                                                                 </DataTrigger>
                                                             </Style.Triggers>
@@ -372,18 +537,24 @@
                                                     <materialDesign:PackIcon.Style>
                                                         <Style TargetType="{x:Type materialDesign:PackIcon}">
                                                             <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                                                                <DataTrigger
+                                                                    Binding="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}"
+                                                                    Value="True">
                                                                     <DataTrigger.EnterActions>
                                                                         <BeginStoryboard>
                                                                             <Storyboard>
-                                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="180" Duration="0:0:0.2" />
+                                                                                <DoubleAnimation
+                                                                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                                    To="180" Duration="0:0:0.2" />
                                                                             </Storyboard>
                                                                         </BeginStoryboard>
                                                                     </DataTrigger.EnterActions>
                                                                     <DataTrigger.ExitActions>
                                                                         <BeginStoryboard>
                                                                             <Storyboard>
-                                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="0" Duration="0:0:0.2" />
+                                                                                <DoubleAnimation
+                                                                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                                    To="0" Duration="0:0:0.2" />
                                                                             </Storyboard>
                                                                         </BeginStoryboard>
                                                                     </DataTrigger.ExitActions>
@@ -396,12 +567,14 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="ToggleBorder" Property="Background" Value="{DynamicResource MaterialDesign.Brush.Primary.Light}" />
+                                                <Setter TargetName="ToggleBorder" Property="Background"
+                                                        Value="{DynamicResource MaterialDesign.Brush.Primary.Light}" />
                                             </Trigger>
                                             <Trigger Property="IsChecked" Value="True">
                                                 <Setter TargetName="ToggleBorder" Property="Effect">
                                                     <Setter.Value>
-                                                        <DropShadowEffect BlurRadius="3" ShadowDepth="1" Direction="270" Opacity="0.15" Color="Black" />
+                                                        <DropShadowEffect BlurRadius="3" ShadowDepth="1"
+                                                                          Direction="270" Opacity="0.15" Color="Black" />
                                                     </Setter.Value>
                                                 </Setter>
                                             </Trigger>

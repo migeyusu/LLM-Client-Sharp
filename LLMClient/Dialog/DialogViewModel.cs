@@ -89,6 +89,8 @@ public class DialogViewModel : DialogSessionViewModel, IPromptableSession
 
     public override AIContextProvider[]? ContextProviders { get; } = null;
 
+    public override IPromptCommandAggregate? PromptCommand { get; } = null;
+
     public override string? SystemPrompt
     {
         get
@@ -108,7 +110,6 @@ public class DialogViewModel : DialogSessionViewModel, IPromptableSession
             return stringBuilder.ToString();
         }
     }
-
 
 
     private readonly string[] _notTrackingProperties =

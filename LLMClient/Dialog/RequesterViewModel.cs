@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
+using System.Security;
 using System.Windows.Input;
 using AutoMapper;
 using LLMClient.Abstraction;
@@ -17,7 +18,6 @@ using Microsoft.Extensions.AI;
 using Microsoft.Xaml.Behaviors.Core;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using LLMClient.Agent;
-using Microsoft.Agents.AI;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LLMClient.Dialog;
@@ -54,7 +54,7 @@ public class RequesterViewModel : BaseViewModel, IRequestConfig
     {
         try
         {
-            var request = await this.CreateRequest();
+            var request = await this.NewRequest();
             if (request == null)
             {
                 return;
@@ -78,9 +78,9 @@ public class RequesterViewModel : BaseViewModel, IRequestConfig
         set
         {
             field = value;
+            FunctionTreeSelector.ClearSource();
             if (value != null)
             {
-                FunctionTreeSelector.ClearSource();
                 FunctionTreeSelector.ConnectDefault()
                     .ConnectSource(value.ToolsSource);
                 FunctionTreeSelector.Reset();
@@ -100,6 +100,11 @@ public class RequesterViewModel : BaseViewModel, IRequestConfig
                 }
 
                 SelectedAgent = AvailableAgents.FirstOrDefault();
+                SkillsList = new SkillsListViewModel(value);
+            }
+            else
+            {
+                SkillsList = null;
             }
         }
     }
@@ -113,6 +118,17 @@ public class RequesterViewModel : BaseViewModel, IRequestConfig
             field = value;
             OnPropertyChanged();
             RefreshEditor(value);
+        }
+    }
+
+    public SkillsListViewModel? SkillsList
+    {
+        get;
+        set
+        {
+            if (Equals(value, field)) return;
+            field = value;
+            OnPropertyChanged();
         }
     }
 
@@ -175,6 +191,7 @@ public class RequesterViewModel : BaseViewModel, IRequestConfig
     {
         OnPropertyChanged(nameof(IsRagEnabled));
     }
+
 
     public bool IsRagEnabled => SelectableRagSources.Any(model => model.IsSelected && model.Data.IsAvailable);
 
@@ -566,15 +583,22 @@ public class RequesterViewModel : BaseViewModel, IRequestConfig
 
     public static IMapper IChatRequestMapper => MapperLazy.Value;
 
-    public async Task<RequestViewItem?> CreateRequest()
+    private async Task<RequestViewItem?> NewRequest()
     {
         if (!await PromptEditViewModel.ApplyAndCheck())
         {
             return null;
         }
 
+        var message = PromptEditViewModel.FinalText;
+        var promptCommand = this.ConnectedSession?.PromptCommand;
+        if (promptCommand != null)
+        {
+            message = await promptCommand.TryGetInjectedPromptAsync(message);
+        }
+
         //每次搜索的条件可能不同，所以传递的是副本
-        var requestViewItem = new RequestViewItem(PromptEditViewModel.FinalText)
+        var requestViewItem = new RequestViewItem(message)
         {
             Attachments = Attachments.Count == 0 ? null : Attachments.ToList(),
         };

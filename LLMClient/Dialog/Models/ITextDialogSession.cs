@@ -15,6 +15,8 @@ public interface ITextDialogSession
 
     IResponseItem WorkingResponse { get; }
 
+    string? WorkingDirectory { get; }
+
     IEnumerable<IDialogItem> GetChatHistory()
     {
         return WorkingResponse.GetChatHistory();
@@ -23,6 +25,8 @@ public interface ITextDialogSession
     Task CutContextAsync(IRequestItem? requestItem = null);
 
     AIContextProvider[]? ContextProviders { get; }
+
+    IPromptCommandAggregate? PromptCommand { get; }
 
     string? SystemPrompt { get; }
 

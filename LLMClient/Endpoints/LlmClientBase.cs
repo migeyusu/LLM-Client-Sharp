@@ -48,7 +48,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
     private readonly ITokensCounter _tokensCounter;
 
     public IModelParams Parameters { get; set; } = new DefaultModelParam();
-    
+
     protected abstract IChatClient GetChatClient(IRequestContext context);
 
     protected virtual void ApplyChatOptions(ChatOptions chatOptions)
@@ -240,11 +240,22 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             var parentContext = AsyncContextStore<ChatStackContext>.Current;
-            var chatContext = ChatStackContext.CreateForRequest(requestContext, tempAdditionalProperties,
-                streaming, parentContext);
+            var chatContext = new ChatStackContext(tempAdditionalProperties)
+            {
+                WorkingDirectory = requestContext.WorkingDirectory ?? Directory.GetCurrentDirectory(),
+                Streaming = streaming,
+                ShowRequestJson = requestContext.ShowRequestJson,
+                AutoApproveAllInvocations = requestContext.AutoApproveAllInvocations ||
+                                            parentContext?.AutoApproveAllInvocations == true
+            };
             var historyCompressionOptions = Model.HistoryCompression;
             var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions.Mode);
             var dialogId = requestContext.DialogId;
+            if (requestContext.ContextProviders != null)
+            {
+                chatClient = chatClient.UseContextProvider(requestContext.ContextProviders);
+            }
+
             var segmentedReactHistory = requestContext.ReadonlyHistory.SegmentReactLevel(dialogId);
             // 基于历史中已有的该 agent 最大 round number 初始化，避免同一 Agent 多次调用时编号冲突
             var reactRoundNumber = segmentedReactHistory.MaxRoundNumber;
@@ -267,12 +278,12 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                     await InTaskCompressIfNeedAsync(historyCompressionStrategy,
                         compressionContext, cancellationToken);
                 }
-#if DEBUG
+/*#if DEBUG
 
                 var estimateTokens = await _tokensCounter.CountTokens(chatMessages);
                 Debug.Write($"request tokens:{estimateTokens}");
+#endif*/
 
-#endif
                 while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -502,7 +513,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 preFunctionCalls, step, cancellationToken);
             if (strategy != null)
             {
-                context.CurrentTokens = loopUsageDetails?.TotalTokenCount;
+                context.CurrentTokens = loopUsageDetails?.InputTokenCount + loopUsageDetails?.OutputTokenCount;
                 context.CurrentRoundNumber = reactRoundNumber;
                 await InTaskCompressIfNeedAsync(strategy, context, cancellationToken);
             }

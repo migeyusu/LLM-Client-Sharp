@@ -301,7 +301,10 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         get { return _readOnlyDialogItems; }
     }
 
-    public IResponseItem WorkingResponse => CurrentLeaf as IResponseItem ?? throw new InvalidOperationException("当前节点不是回复项");
+    public IResponseItem WorkingResponse =>
+        CurrentLeaf as IResponseItem ?? throw new InvalidOperationException("当前节点不是回复项");
+
+    public virtual string? WorkingDirectory { get; } = null;
 
     public ICommand ClearContextCommand { get; }
 
@@ -355,6 +358,8 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     }
 
     public abstract AIContextProvider[]? ContextProviders { get; }
+
+    public abstract IPromptCommandAggregate? PromptCommand { get; }
 
     public ICommand ClearDialogCommand { get; }
 

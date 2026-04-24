@@ -93,7 +93,6 @@ public class AIFunctionTreeSelectorViewModel : BaseViewModel
             .ConnectSource(ServiceLocator.GetService<BuiltInFunctionsCollection>());
     }
 
-
     public bool IsEnsuring
     {
         get;

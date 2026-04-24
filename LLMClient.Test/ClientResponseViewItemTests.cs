@@ -75,6 +75,7 @@ public class ClientResponseViewItemTests
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public override AIContextProvider[]? ContextProviders { get; } = null;
+        public override IPromptCommandAggregate? PromptCommand { get; }
         public override string? SystemPrompt => null;
 
         public override IFunctionGroupSource? ToolsSource { get; } = null;

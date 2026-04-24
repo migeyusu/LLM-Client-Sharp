@@ -79,6 +79,8 @@ public class SummaryContextBoundaryTests
         public IReadOnlyList<IDialogItem> VisualDialogItems { get; } = [requestItem];
         public IResponseItem WorkingResponse => throw new NotSupportedException();
 
+        public string? WorkingDirectory { get; } = null;
+
         public IRequestItem? CutContextRequest { get; private set; }
 
         public List<IChatHistoryItem> GetHistory()
@@ -93,6 +95,8 @@ public class SummaryContextBoundaryTests
         }
 
         public AIContextProvider[]? ContextProviders { get; } = null;
+        
+        public IPromptCommandAggregate? PromptCommand { get; set; }
 
         public string? SystemPrompt => null;
 
