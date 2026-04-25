@@ -79,11 +79,11 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
     private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentOption agentOption) =>
         agentOption.Platform switch
         {
-            AgentPlatform.Windows => MiniSweAgentConfigLoader.LoadDefaultWindowsConfig(),
-            AgentPlatform.Linux => agent.Model.SupportFunctionCall
+            RunPlatform.Windows => MiniSweAgentConfigLoader.LoadDefaultWindowsConfig(),
+            RunPlatform.Linux => agent.Model.SupportFunctionCall
                 ? MiniSweAgentConfigLoader.LoadDefaultLinuxToolCallConfig()
                 : MiniSweAgentConfigLoader.LoadDefaultLinuxTextBasedConfig(),
-            AgentPlatform.Wsl => MiniSweAgentConfigLoader.LoadDefaultWslConfig(),
+            RunPlatform.Wsl => MiniSweAgentConfigLoader.LoadDefaultWslConfig(),
             _ => throw new ArgumentOutOfRangeException(nameof(agentOption.Platform)),
         };
 
@@ -92,8 +92,8 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
         var providers = new List<KernelFunctionGroup>();
         switch (config.PlatformId)
         {
-            case AgentPlatform.Wsl:
-            case AgentPlatform.Linux:
+            case RunPlatform.Wsl:
+            case RunPlatform.Linux:
                 providers.Add(new WslCLIPlugin
                 {
                     WslDistributionName = config.WslDistributionName,
@@ -102,7 +102,7 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
                     MapWorkingDirectoryToWsl = config.MapWorkingDirectoryToWsl,
                 });
                 break;
-            case AgentPlatform.Windows:
+            case RunPlatform.Windows:
             default:
                 providers.Add(new WinCLIPlugin());
                 break;

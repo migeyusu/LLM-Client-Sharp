@@ -25,7 +25,7 @@
             <ComboBox Grid.Column="0"
                       Margin="0,0,10,0"
                       materialDesign:HintAssist.Hint="Platform"
-                      ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type miniSwe:AgentPlatform}}}"
+                      ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type miniSwe:RunPlatform}}}"
                       SelectedItem="{Binding Platform,Mode=TwoWay}"
                       MinWidth="120"/>
 

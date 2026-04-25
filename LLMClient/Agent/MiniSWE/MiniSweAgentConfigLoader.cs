@@ -42,7 +42,7 @@ public static class MiniSweAgentConfigLoader
 
             if (agentDict.TryGetValue("platform_id", out var platformId))
             {
-                if (Enum.TryParse<AgentPlatform>(platformId?.ToString(), true, out var pid))
+                if (Enum.TryParse<RunPlatform>(platformId?.ToString(), true, out var pid))
                 {
                     config.PlatformId = pid;
                 }
@@ -97,7 +97,7 @@ public static class MiniSweAgentConfigLoader
     {
         return new MiniSweAgentConfig
         {
-            PlatformId = AgentPlatform.Linux,
+            PlatformId = RunPlatform.Linux,
             IncludeToolInstructions = false,
             IncludeRagInstructions = false,
             UseToolCall = true,
@@ -192,7 +192,7 @@ public static class MiniSweAgentConfigLoader
     {
         return new MiniSweAgentConfig
         {
-            PlatformId = AgentPlatform.Linux,
+            PlatformId = RunPlatform.Linux,
             IncludeToolInstructions = false,
             IncludeRagInstructions = false,
             UseToolCall = false,
@@ -301,7 +301,7 @@ public static class MiniSweAgentConfigLoader
     {
         return new MiniSweAgentConfig
         {
-            PlatformId = AgentPlatform.Windows,
+            PlatformId = RunPlatform.Windows,
             IncludeToolInstructions = true,
             IncludeRagInstructions = true,
             UseToolCall = true,
@@ -455,7 +455,7 @@ public static class MiniSweAgentConfigLoader
     public static MiniSweAgentConfig LoadDefaultWslConfig()
     {
         var config = LoadDefaultLinuxToolCallConfig();
-        config.PlatformId = AgentPlatform.Wsl;
+        config.PlatformId = RunPlatform.Wsl;
         config.SystemTemplate = """
             You are a helpful assistant that can interact with a computer via WSL (Windows Subsystem for Linux).
             

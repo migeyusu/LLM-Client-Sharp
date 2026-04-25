@@ -1,6 +1,6 @@
 namespace LLMClient.Agent.MiniSWE;
 
-public enum AgentPlatform
+public enum RunPlatform
 {
     Windows,
 
@@ -17,7 +17,7 @@ public class MiniSweAgentConfig
     /// <summary>
     /// Platform identifier, e.g. linux / windows / wsl
     /// </summary>
-    public AgentPlatform PlatformId { get; set; } = AgentPlatform.Windows;
+    public RunPlatform PlatformId { get; set; } = RunPlatform.Windows;
 
     /// <summary>
     /// System message template

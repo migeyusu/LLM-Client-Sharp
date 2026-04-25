@@ -55,7 +55,7 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
     /// </summary>
     public string? ProjectInformation { get; set; }
 
-    public AgentPlatform PlatformId { get; init; } = AgentPlatform.Windows;
+    public RunPlatform PlatformId { get; init; } = RunPlatform.Windows;
 
     public bool IncludeToolInstructions { get; init; } = true;
 
@@ -169,16 +169,16 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
 
     protected virtual bool UseStructuredToolInstructionsForPlatform()
     {
-        return PlatformId is AgentPlatform.Windows or AgentPlatform.Wsl;
+        return PlatformId is RunPlatform.Windows or RunPlatform.Wsl;
     }
 
     protected virtual string BuildPlatformInstructions()
     {
         return PlatformId switch
         {
-            AgentPlatform.Windows => BuildWindowsPlatformInstructions(),
-            AgentPlatform.Wsl => BuildWslPlatformInstructions(),
-            AgentPlatform.Linux => BuildLinuxPlatformInstructions(),
+            RunPlatform.Windows => BuildWindowsPlatformInstructions(),
+            RunPlatform.Wsl => BuildWslPlatformInstructions(),
+            RunPlatform.Linux => BuildLinuxPlatformInstructions(),
             _ => BuildGenericPlatformInstructions()
         };
     }
@@ -285,8 +285,8 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
     {
         return PlatformId switch
         {
-            AgentPlatform.Windows => BuildWindowsToolSelectionGuidance(),
-            AgentPlatform.Wsl => BuildWslToolSelectionGuidance(),
+            RunPlatform.Windows => BuildWindowsToolSelectionGuidance(),
+            RunPlatform.Wsl => BuildWslToolSelectionGuidance(),
             _ => string.Empty
         };
     }

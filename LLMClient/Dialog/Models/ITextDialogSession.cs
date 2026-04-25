@@ -16,6 +16,8 @@ public interface ITextDialogSession
     IResponseItem WorkingResponse { get; }
 
     string? WorkingDirectory { get; }
+    
+    
 
     IEnumerable<IDialogItem> GetChatHistory()
     {

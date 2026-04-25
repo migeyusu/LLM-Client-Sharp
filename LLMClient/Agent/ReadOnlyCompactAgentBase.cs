@@ -37,7 +37,7 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
             workingDirectory = projectSession.WorkingDirectory;
             contextBuilder.ProjectInformation = projectSession.ParentProject.ProjectInformationPrompt;
             await AddToolProvidersAsync(contextBuilder,
-                projectSession.ParentProject.GetInspectorFunctionGroups(),
+                projectSession.ParentProject.ProjectTools,
                 cancellationToken);
         }
         else
@@ -56,11 +56,11 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
     {
         return agentOption.Platform switch
         {
-            AgentPlatform.Windows => MiniSweAgentConfigLoader.LoadDefaultWindowsConfig(),
-            AgentPlatform.Linux => agent.Model.SupportFunctionCall
+            RunPlatform.Windows => MiniSweAgentConfigLoader.LoadDefaultWindowsConfig(),
+            RunPlatform.Linux => agent.Model.SupportFunctionCall
                 ? MiniSweAgentConfigLoader.LoadDefaultLinuxToolCallConfig()
                 : MiniSweAgentConfigLoader.LoadDefaultLinuxTextBasedConfig(),
-            AgentPlatform.Wsl => MiniSweAgentConfigLoader.LoadDefaultWslConfig(),
+            RunPlatform.Wsl => MiniSweAgentConfigLoader.LoadDefaultWslConfig(),
             _ => throw new ArgumentOutOfRangeException(nameof(agentOption.Platform)),
         };
     }
@@ -90,7 +90,7 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
     {
         return config.PlatformId switch
         {
-            AgentPlatform.Wsl or AgentPlatform.Linux =>
+            RunPlatform.Wsl or RunPlatform.Linux =>
             [
                 new WslCLIPlugin
                 {

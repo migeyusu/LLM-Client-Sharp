@@ -52,7 +52,7 @@ public class MiniSweRegressionTests
         var session = new TestTextDialogSession(request);
         var agent = new MiniSweAgent(client, new AgentOption
         {
-            Platform = AgentPlatform.Windows,
+            Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
         });
         typeof(MiniSweAgent)
@@ -84,7 +84,7 @@ public class MiniSweRegressionTests
         var session = new TestTextDialogSession(request);
         var agent = new MiniSweAgent(client, new AgentOption
         {
-            Platform = AgentPlatform.Windows,
+            Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
         });
         typeof(MiniSweAgent)
@@ -131,7 +131,7 @@ public class MiniSweRegressionTests
                     var session = new TestTextDialogSession(request);
                     var agent = new InspectAgent(client, new AgentOption
                     {
-                        Platform = AgentPlatform.Windows,
+                        Platform = RunPlatform.Windows,
                         WorkingDirectory = Environment.CurrentDirectory,
                     });
 
@@ -171,7 +171,7 @@ public class MiniSweRegressionTests
         var session = new TestTextDialogSession(request);
         var agent = new InspectAgent(client, new AgentOption
         {
-            Platform = AgentPlatform.Windows,
+            Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
         });
 
@@ -207,7 +207,7 @@ public class MiniSweRegressionTests
         var session = new TestTextDialogSession(request);
         var agent = new InspectAgent(client, new AgentOption
         {
-            Platform = AgentPlatform.Windows,
+            Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
         });
 
@@ -238,7 +238,7 @@ public class MiniSweRegressionTests
         var session = new TestTextDialogSession(request);
         var agent = new PlannerAgent(client, new AgentOption
         {
-            Platform = AgentPlatform.Windows,
+            Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
         });
 
@@ -274,7 +274,7 @@ public class MiniSweRegressionTests
         var session = new TestTextDialogSession(request);
         var agent = new PlannerAgent(client, new AgentOption
         {
-            Platform = AgentPlatform.Windows,
+            Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
         });
 
@@ -312,7 +312,7 @@ public class MiniSweRegressionTests
         var session = new TestTextDialogSession(request, history);
         var agent = new PlannerAgent(client, new AgentOption
         {
-            Platform = AgentPlatform.Windows,
+            Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
         });
 
@@ -350,7 +350,7 @@ public class MiniSweRegressionTests
         var session = new TestTextDialogSession(request, history);
         var agent = new PlannerAgent(client, new AgentOption
         {
-            Platform = AgentPlatform.Windows,
+            Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
         });
 

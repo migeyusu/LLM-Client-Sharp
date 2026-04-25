@@ -295,20 +295,13 @@ public abstract class ProjectViewModel : FileBasedSessionBase,
     /// </summary>
     public virtual ContextPromptViewModel? ProjectContext { get; }
 
-    public virtual IEnumerable<IAIFunctionGroup> GetInspectorFunctionGroups()
-    {
-        yield break;
-    }
-
-    private long _tokensConsumption;
-
     public long TokensConsumption
     {
-        get => _tokensConsumption;
+        get;
         set
         {
-            if (value == _tokensConsumption) return;
-            _tokensConsumption = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
         }
     }

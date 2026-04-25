@@ -119,12 +119,7 @@ public class CSharpProjectViewModel : ProjectViewModel, IDisposable
             }
         }
     }
-
-    public override IEnumerable<IAIFunctionGroup> GetInspectorFunctionGroups()
-    {
-        return _projectTools;
-    }
-
+    
     public override bool TryResolvePersistedFunctionGroup(AIFunctionGroupDefinitionPersistModel persistModel,
         out IAIFunctionGroup? functionGroup)
     {

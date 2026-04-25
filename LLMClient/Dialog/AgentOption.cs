@@ -16,7 +16,7 @@ public class AgentOption : BaseViewModel
         }
     }
 
-    public AgentPlatform Platform
+    public RunPlatform Platform
     {
         get;
         set
