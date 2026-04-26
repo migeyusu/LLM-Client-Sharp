@@ -1,4 +1,4 @@
-﻿using LLMClient.Abstraction;
+﻿﻿using LLMClient.Abstraction;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
@@ -33,5 +33,6 @@ public enum DialogRole
     Request,
     Response,
     Erase,
+    Summary,
     None,
 }

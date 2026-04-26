@@ -18,6 +18,7 @@ public class DialogItemPersistenceProfile : Profile
         CreateMap<IDialogItem, IDialogPersistItem>()
             .Include<RequestViewItem, RequestPersistItem>()
             .Include<EraseViewItem, ErasePersistItem>()
+            .Include<SummaryRequestViewItem, SummaryRequestPersistItem>()
             .Include<ParallelResponseViewItem, ParallelResponsePersisItem>()
             .Include<LinearResponseViewItem, LinearHistoryResponsePersistItem>();
 
@@ -34,10 +35,17 @@ public class DialogItemPersistenceProfile : Profile
             .IncludeBase<IDialogItem, IDialogPersistItem>()
             .ForMember(dest => dest.Response, opt => opt.MapFrom(src => src.Response))
             .ForMember(dest => dest.Items, opt => opt.Ignore());
+        CreateMap<SummaryRequestViewItem, SummaryRequestPersistItem>()
+            .IncludeBase<IDialogItem, IDialogPersistItem>()
+            .ForMember(dest => dest.SummaryPrompt, opt => opt.MapFrom(src => src.Messages.FirstOrDefault()!.Text))
+            .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State))
+            .ForMember(dest => dest.InteractionId, opt => opt.MapFrom(src => src.InteractionId))
+            .ForMember(dest => dest.OutputLength, opt => opt.Ignore());
 
         CreateMap<IDialogPersistItem, IDialogItem>()
             .Include<RequestPersistItem, RequestViewItem>()
             .Include<ErasePersistItem, EraseViewItem>()
+            .Include<SummaryRequestPersistItem, SummaryRequestViewItem>()
             .Include<ParallelResponsePersisItem, ParallelResponseViewItem>()
             .Include<LinearHistoryResponsePersistItem, LinearResponseViewItem>();
 
@@ -99,6 +107,21 @@ public class DialogItemPersistenceProfile : Profile
                     : new RawResponseViewItem();
                 return new LinearResponseViewItem(parentViewModel, agent, response);
             });
+        CreateMap<SummaryRequestPersistItem, SummaryRequestViewItem>()
+            .IncludeBase<IDialogPersistItem, IDialogItem>()
+            .ConstructUsing((item, context) =>
+            {
+                var contextItems = context.Items;
+                if (!contextItems.TryGetValue(parentDialogViewModelKey, out var parentDialogViewModel)
+                    || parentDialogViewModel is not DialogSessionViewModel parentViewModel)
+                {
+                    throw new InvalidOperationException("Parent DialogViewModel is not set in context.");
+                }
+
+                return new SummaryRequestViewItem(item.SummaryPrompt ?? string.Empty, parentViewModel);
+            })
+            .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State))
+            .ForMember(dest => dest.InteractionId, opt => opt.MapFrom(src => src.InteractionId));
 
         CreateMap<IResponse, ResponseViewItemBase>()
             .Include<IResponse, ClientResponseViewItem>();

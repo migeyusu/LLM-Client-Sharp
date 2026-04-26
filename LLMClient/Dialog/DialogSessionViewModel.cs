@@ -418,6 +418,21 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             case EraseViewItem eraseViewItem:
                 eraseViewItem.Delete();
                 break;
+            case SummaryRequestViewItem summaryRequestViewItem:
+            {
+                var previousItem = summaryRequestViewItem.PreviousItem;
+                if (previousItem != null)
+                {
+                    previousItem.RemoveChild(summaryRequestViewItem);
+                    var successor = summaryRequestViewItem.Children.FirstOrDefault();
+                    if (successor != null)
+                    {
+                        previousItem.AppendChild(successor);
+                    }
+                }
+
+                break;
+            }
         }
 
         if (this.VisualDialogItems.Contains(item))
@@ -587,7 +602,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         return await multiResponseViewItem.NewResponse(client, token);
     }
 
-    private void InsertResponseItem(IRequestItem requestViewItem, IRequestItem? insertBefore, IDialogItem responseItem)
+    private void InsertResponseItem(IDialogItem requestViewItem, IRequestItem? insertBefore, IDialogItem responseItem)
     {
         if (insertBefore == null)
         {
@@ -642,12 +657,31 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             agent = (IAgent)Activator.CreateInstance(agentType)!;
         }
 
+        // For SummaryAgent, use SummaryRequestViewItem instead of the original request
+        SummaryRequestViewItem? summaryRequest = null;
+        IDialogItem requestItemToInsert = requestViewItem;
+        if (agentType == typeof(SummaryAgent))
+        {
+            summaryRequest = new SummaryRequestViewItem(requestViewItem);
+            requestItemToInsert = summaryRequest;
+        }
+
         var responseViewItem = new LinearResponseViewItem(this, agent)
         {
             InteractionId = requestViewItem.InteractionId
         };
-        InsertResponseItem(requestViewItem, insertBefore, responseViewItem);
-        return await responseViewItem.ProcessAsync(token);
+        InsertResponseItem(requestItemToInsert, insertBefore, responseViewItem);
+        var result = await responseViewItem.ProcessAsync(token);
+
+        // Update SummaryRequestViewItem state based on result
+        if (summaryRequest != null)
+        {
+            summaryRequest.State = result is { IsInterrupt: false, ErrorMessage: null }
+                ? SummaryRequestState.Completed
+                : SummaryRequestState.Failed;
+        }
+
+        return result;
     }
 
     public void ForkPreTask(IResponseItem dialogViewItem)

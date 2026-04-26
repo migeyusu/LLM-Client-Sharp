@@ -1,4 +1,6 @@
-﻿namespace LLMClient.Persistence;
+﻿﻿using LLMClient.Dialog.Models;
+
+namespace LLMClient.Persistence;
 
 public class SummaryRequestPersistItem : BaseDialogPersistItem
 {
@@ -7,4 +9,6 @@ public class SummaryRequestPersistItem : BaseDialogPersistItem
     public string? SummaryPrompt { get; set; }
 
     public Guid InteractionId { get; set; }
+
+    public SummaryRequestState State { get; set; } = SummaryRequestState.Summarizing;
 }

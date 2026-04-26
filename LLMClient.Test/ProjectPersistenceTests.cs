@@ -287,6 +287,88 @@ public class ProjectPersistenceTests
         });
     }
 
+    [Fact]
+    public void SummaryRequestViewItem_MapsTo_PersistItem_Correctly()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var serviceProvider = CreateServiceProvider();
+            BaseViewModel.ServiceLocator = serviceProvider;
+            var mapper = serviceProvider.GetRequiredService<IMapper>();
+
+            var interactionId = Guid.NewGuid();
+            var viewItem = new SummaryRequestViewItem("summarize this")
+            {
+                State = SummaryRequestState.Completed,
+                InteractionId = interactionId,
+            };
+
+            var persistItem = mapper.Map<SummaryRequestViewItem, SummaryRequestPersistItem>(viewItem);
+
+            Assert.Equal(SummaryRequestState.Completed, persistItem.State);
+            Assert.Equal("summarize this", persistItem.SummaryPrompt);
+            Assert.Equal(interactionId, persistItem.InteractionId);
+        });
+    }
+
+    [Fact]
+    public void SummaryRequestPersistItem_MapsTo_ViewItem_Correctly()
+    {
+        TestFixture.RunInStaThread(() =>
+        {
+            var serviceProvider = CreateServiceProvider();
+            BaseViewModel.ServiceLocator = serviceProvider;
+            var mapper = serviceProvider.GetRequiredService<IMapper>();
+            var options = serviceProvider.GetRequiredService<GlobalOptions>();
+            var summarizer = serviceProvider.GetRequiredService<Summarizer>();
+            var factory = serviceProvider.GetRequiredService<IViewModelFactory>();
+
+            var dialog = new DialogViewModel("test", "", EmptyLlmModelClient.Instance, mapper, summarizer, options, factory);
+
+            var interactionId = Guid.NewGuid();
+            var persistItem = new SummaryRequestPersistItem
+            {
+                SummaryPrompt = "summarize this",
+                State = SummaryRequestState.Failed,
+                InteractionId = interactionId,
+            };
+
+            var viewItem = mapper.Map<SummaryRequestPersistItem, SummaryRequestViewItem>(persistItem, opts =>
+            {
+                opts.Items[AutoMapModelTypeConverter.ParentDialogViewModelKey] = dialog;
+            });
+
+            Assert.IsType<SummaryRequestViewItem>(viewItem);
+            Assert.Equal(SummaryRequestState.Failed, viewItem.State);
+            Assert.Equal(interactionId, viewItem.InteractionId);
+            var message = Assert.Single(viewItem.Messages);
+            Assert.Equal("summarize this", message.Text);
+        });
+    }
+
+    [Fact]
+    public void SummaryRequestPersistItem_RoundTrips_ThroughJson()
+    {
+        var interactionId = Guid.NewGuid();
+        var persistItem = new SummaryRequestPersistItem
+        {
+            Id = Guid.NewGuid(),
+            SummaryPrompt = "summarize this",
+            State = SummaryRequestState.Completed,
+            InteractionId = interactionId,
+            OutputLength = 1024,
+        };
+
+        var json = JsonSerializer.Serialize(persistItem, FileBasedSessionBase.SerializerOption);
+        var restored = JsonSerializer.Deserialize<SummaryRequestPersistItem>(json, FileBasedSessionBase.SerializerOption);
+
+        Assert.NotNull(restored);
+        Assert.Equal(SummaryRequestState.Completed, restored!.State);
+        Assert.Equal("summarize this", restored.SummaryPrompt);
+        Assert.Equal(interactionId, restored.InteractionId);
+        Assert.Equal(1024, restored.OutputLength);
+    }
+
     private static ServiceProvider CreateServiceProvider()
     {
         return new ServiceCollection()

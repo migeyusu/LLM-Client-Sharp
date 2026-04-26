@@ -1,4 +1,4 @@
-﻿using LLMClient.Abstraction;
+﻿﻿﻿﻿using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
@@ -12,42 +12,92 @@ namespace LLMClient.Test;
 public class SummaryContextBoundaryTests
 {
     [Fact]
-    public async Task SummaryAgent_CutsContextAfterSuccessfulCompletion()
+    public async Task SummaryAgent_DoesNotCallCutContext()
     {
+        var interactionId = Guid.NewGuid();
+        var root = new RootDialogItem();
         var request = new RequestViewItem("summarize")
         {
-            InteractionId = Guid.NewGuid(),
+            InteractionId = interactionId,
         };
-        var session = new SummaryTestSession(request);
+        var workingResponse = new TestResponseItem(interactionId, "test");
+        root.AppendChild(request).AppendChild(workingResponse);
+        var session = new SummaryTestSession(request, workingResponse);
         var agent = new SummaryAgent(EmptyLlmModelClient.Instance);
 
-        await foreach (var step in agent.Execute(session))
+        try
         {
-            await foreach (var _ in step)
+            await foreach (var step in agent.Execute(session))
             {
+                await foreach (var _ in step)
+                {
+                }
             }
         }
+        catch (NotSupportedException)
+        {
+            // EmptyLlmModelClient 抛出 NotSupportedException，这是预期的
+        }
 
-        Assert.Same(request, session.CutContextRequest);
+        // Agent 不应再调用 CutContextAsync
+        Assert.Null(session.CutContextRequest);
     }
 
     [Fact]
-    public void GetChatHistory_KeepsSummaryInteractionButCutsOffEarlierHistoryAtEraseMarker()
+    public void SummaryRequestViewItem_DuringSummarizing_ActAsNormalRequest()
     {
         var root = new RootDialogItem();
-        var firstInteractionId = Guid.NewGuid();
+        var interactionId = Guid.NewGuid();
+        var summaryInteractionId = Guid.NewGuid();
+
+        var firstRequest = new RequestViewItem("first")
+        {
+            InteractionId = interactionId,
+        };
+        var firstResponse = new TestResponseItem(interactionId, "first-response");
+        var summaryRequest = new SummaryRequestViewItem(new RequestViewItem("summarize")
+        {
+            InteractionId = summaryInteractionId,
+        })
+        {
+            InteractionId = summaryInteractionId,
+            State = SummaryRequestState.Summarizing,
+        };
+        var summaryResponse = new TestResponseItem(summaryInteractionId, "summary-response");
+
+        root.AppendChild(firstRequest)
+            .AppendChild(firstResponse)
+            .AppendChild(summaryRequest)
+            .AppendChild(summaryResponse);
+
+        // 正在总结时，SummaryRequestViewItem 被视为普通请求
+        var history = summaryResponse.GetChatHistory().ToArray();
+
+        Assert.Contains(firstRequest, history);
+        Assert.Contains(firstResponse, history);
+        Assert.Contains(summaryRequest, history);
+    }
+
+    [Fact]
+    public void SummaryRequestViewItem_AfterCompleted_ActAsTruncationBoundary()
+    {
+        var root = new RootDialogItem();
+        var interactionId = Guid.NewGuid();
         var summaryInteractionId = Guid.NewGuid();
         var followUpInteractionId = Guid.NewGuid();
 
         var firstRequest = new RequestViewItem("first")
         {
-            InteractionId = firstInteractionId,
+            InteractionId = interactionId,
         };
-        var firstResponse = new TestResponseItem(firstInteractionId, "first-response");
-        var eraseMarker = new EraseViewItem();
-        var summaryRequest = new RequestViewItem("summarize")
+        var firstResponse = new TestResponseItem(interactionId, "first-response");
+        var summaryRequest = new SummaryRequestViewItem(new RequestViewItem("summarize")
         {
             InteractionId = summaryInteractionId,
+        })
+        {
+            InteractionId = summaryInteractionId,
+            State = SummaryRequestState.Completed,
         };
         var summaryResponse = new TestResponseItem(summaryInteractionId, "summary-response");
         var followUpRequest = new RequestViewItem("follow-up")
@@ -58,7 +108,6 @@ public class SummaryContextBoundaryTests
 
         root.AppendChild(firstRequest)
             .AppendChild(firstResponse)
-            .AppendChild(eraseMarker)
             .AppendChild(summaryRequest)
             .AppendChild(summaryResponse)
             .AppendChild(followUpRequest)
@@ -66,18 +115,68 @@ public class SummaryContextBoundaryTests
 
         var history = followUpResponse.GetChatHistory().ToArray();
 
+        // 总结完成后，SummaryRequestViewItem 充当截断边界
         Assert.DoesNotContain(firstRequest, history);
         Assert.DoesNotContain(firstResponse, history);
-        Assert.Contains(summaryRequest, history);
+        // SummaryRequestViewItem 本身作为边界不被包含
+        Assert.DoesNotContain(summaryRequest, history);
+        // 但总结回复（包含总结内容）仍然在历史中
         Assert.Contains(summaryResponse, history);
         Assert.Contains(followUpRequest, history);
     }
 
-    private sealed class SummaryTestSession(IRequestItem requestItem) : IDialogSession
+    [Fact]
+    public void SummaryRequestViewItem_OnFailed_SkipsAndContinues()
     {
+        var root = new RootDialogItem();
+        var interactionId = Guid.NewGuid();
+        var failedInteractionId = Guid.NewGuid();
+        var followUpInteractionId = Guid.NewGuid();
+
+        var firstRequest = new RequestViewItem("first")
+        {
+            InteractionId = interactionId,
+        };
+        var firstResponse = new TestResponseItem(interactionId, "first-response");
+        var failedRequest = new SummaryRequestViewItem(new RequestViewItem("summarize")
+        {
+            InteractionId = failedInteractionId,
+        })
+        {
+            InteractionId = failedInteractionId,
+            State = SummaryRequestState.Failed,
+        };
+        var failedResponse = new TestResponseItem(failedInteractionId, "failed-response");
+        var followUpRequest = new RequestViewItem("follow-up")
+        {
+            InteractionId = followUpInteractionId,
+        };
+        var followUpResponse = new TestResponseItem(followUpInteractionId, "follow-up-response");
+
+        root.AppendChild(firstRequest)
+            .AppendChild(firstResponse)
+            .AppendChild(failedRequest)
+            .AppendChild(failedResponse)
+            .AppendChild(followUpRequest)
+            .AppendChild(followUpResponse);
+
+        var history = followUpResponse.GetChatHistory().ToArray();
+
+        // 失败时跳过 SummaryRequestViewItem，继续向前遍历
+        Assert.Contains(firstRequest, history);
+        Assert.Contains(firstResponse, history);
+        Assert.DoesNotContain(failedRequest, history);
+        Assert.Contains(failedResponse, history);
+        Assert.Contains(followUpRequest, history);
+    }
+
+    private sealed class SummaryTestSession(IRequestItem requestItem, TestResponseItem? workingResponse = null) : IDialogSession
+    {
+        private readonly TestResponseItem _workingResponse = workingResponse ?? new TestResponseItem(requestItem.InteractionId, "test");
+        
         public Guid ID { get; } = Guid.NewGuid();
         public IReadOnlyList<IDialogItem> VisualDialogItems { get; } = [requestItem];
-        public IResponseItem WorkingResponse => throw new NotSupportedException();
+        public IResponseItem WorkingResponse => _workingResponse;
 
         public string? WorkingDirectory { get; } = null;
 
@@ -111,7 +210,7 @@ public class SummaryContextBoundaryTests
         }
     }
 
-    private sealed class TestResponseItem(Guid interactionId, string content) : BaseDialogItem, IResponseItem
+    private sealed class TestResponseItem(Guid interactionId, string content, IDialogItem? parent = null) : BaseDialogItem, IResponseItem
     {
         public override long Tokens => content.Length;
 
