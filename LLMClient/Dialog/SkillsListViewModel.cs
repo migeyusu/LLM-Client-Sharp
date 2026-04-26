@@ -11,7 +11,7 @@ namespace LLMClient.Dialog;
 
 public class SkillsListViewModel : BaseViewModel
 {
-    private readonly ITextDialogSession _session;
+    private readonly IDialogSession _session;
 
     public bool SkillsDetected
     {
@@ -65,7 +65,7 @@ public class SkillsListViewModel : BaseViewModel
 
     public ICommand CopySelectedItemCommand { get; }
 
-    public SkillsListViewModel(ITextDialogSession session)
+    public SkillsListViewModel(IDialogSession session)
     {
         _session = session;
         RefreshSourceCommand = new ActionCommand(async (o) => { await RefreshSkills(); });

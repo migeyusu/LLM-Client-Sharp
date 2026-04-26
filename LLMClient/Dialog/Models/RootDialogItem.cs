@@ -17,7 +17,7 @@ public class RootDialogItem : BaseDialogItem
         get { yield break; }
     }
 
-    public override ITextDialogSession? Session { get; } = null;
+    public override IDialogSession? Session { get; } = null;
 
     public override bool IsAvailableInContext { get; } = false;
 }

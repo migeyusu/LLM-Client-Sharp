@@ -43,11 +43,11 @@ public abstract class ReactAgentBase : ISingleClientAgent
     /// Return <c>null</c> when there is no actionable request.
     /// </summary>
     protected abstract Task<RequestContext?> BuildRequestContextAsync(
-        ITextDialogSession dialogSession,
+        IDialogSession dialogSession,
         CancellationToken cancellationToken);
 
     public async IAsyncEnumerable<ReactStep> Execute(
-        ITextDialogSession dialogSession,
+        IDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // yield return is not allowed inside try/catch; capture the exception first.

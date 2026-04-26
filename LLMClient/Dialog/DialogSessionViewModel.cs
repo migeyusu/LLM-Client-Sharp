@@ -26,7 +26,7 @@ using Microsoft.Agents.AI;
 namespace LLMClient.Dialog;
 
 public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
-    IDialogGraphViewModel, ITextDialogSession, IFunctionGroupSource
+    IDialogGraphViewModel, IDialogSession, IFunctionGroupSource
 {
     /// <summary>
     /// indicate whether data is changed after loading.

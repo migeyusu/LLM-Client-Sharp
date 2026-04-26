@@ -11,7 +11,7 @@ namespace LLMClient.Dialog;
 
 public class Summarizer(GlobalOptions options)
 {
-    public Task<string?> SummarizeSessionTopicAsync(ITextDialogSession dialog, Duration duration)
+    public Task<string?> SummarizeSessionTopicAsync(IDialogSession dialog, Duration duration)
     {
         var dialogItems = new List<IDialogItem>(dialog.VisualDialogItems.Take(3))
         {
@@ -25,7 +25,7 @@ public class Summarizer(GlobalOptions options)
             "生成话题摘要失败");
     }
 
-    public Task<string?> SummarizeSessionConversationHistoryAsync(ITextDialogSession dialog, Duration duration)
+    public Task<string?> SummarizeSessionConversationHistoryAsync(IDialogSession dialog, Duration duration)
     {
         var dialogItems = new List<IDialogItem>(dialog.VisualDialogItems)
         {

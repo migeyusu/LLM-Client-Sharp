@@ -23,7 +23,7 @@ public abstract class BaseDialogItem : BaseViewModel, IDialogItem
         }
     }
 
-    public abstract ITextDialogSession? Session { get; }
+    public abstract IDialogSession? Session { get; }
 
     public bool HasFork
     {

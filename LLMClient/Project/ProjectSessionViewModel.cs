@@ -13,7 +13,7 @@ using Microsoft.Agents.AI;
 
 namespace LLMClient.Project;
 
-public class ProjectSessionViewModel : DialogSessionViewModel, IProjectSession
+public class ProjectSessionViewModel : DialogSessionViewModel, IProject
 {
     public string? WorkingDirectory
     {

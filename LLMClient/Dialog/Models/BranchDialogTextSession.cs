@@ -7,11 +7,11 @@ namespace LLMClient.Dialog.Models;
 /// <summary>
 /// 為父對話項產生的分支
 /// </summary>
-public class BranchDialogTextSession : ITextDialogSession
+public class BranchDialogTextSession : IDialogSession
 {
-    public ITextDialogSession ParentSession { get; }
+    public IDialogSession ParentSession { get; }
 
-    public BranchDialogTextSession(ITextDialogSession parentSession, IResponseItem responseItem)
+    public BranchDialogTextSession(IDialogSession parentSession, IResponseItem responseItem)
     {
         this.ParentSession = parentSession;
         this.VisualDialogItems = responseItem.GetChatHistory().ToArray();

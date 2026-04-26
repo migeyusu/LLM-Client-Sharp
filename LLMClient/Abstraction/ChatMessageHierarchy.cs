@@ -63,7 +63,7 @@ public static class ChatMessageHierarchy
         chatMessage.AdditionalProperties[InteractionKey] = interaction.InteractionId;
     }
 
-    public static void TagSessionLevel(this ChatMessage chatMessage, ITextDialogSession session)
+    public static void TagSessionLevel(this ChatMessage chatMessage, IDialogSession session)
     {
         TagSessionLevel(chatMessage, session.ID);
     }

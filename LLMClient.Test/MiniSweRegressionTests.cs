@@ -708,7 +708,7 @@ public class MiniSweRegressionTests
 
         public override string Name => "DummyReactAgent";
 
-        protected override Task<RequestContext?> BuildRequestContextAsync(ITextDialogSession dialogSession,
+        protected override Task<RequestContext?> BuildRequestContextAsync(IDialogSession dialogSession,
             CancellationToken cancellationToken)
             => Task.FromResult<RequestContext?>(null);
     }
@@ -1366,7 +1366,7 @@ public class MiniSweRegressionTests
 
         public string Name => "CancelAwareAgent";
 
-        public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
+        public async IAsyncEnumerable<ReactStep> Execute(IDialogSession dialogSession,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             TokenCaptured.TrySetResult(cancellationToken);
@@ -1383,7 +1383,7 @@ public class MiniSweRegressionTests
     {
         public string Name => "CompletedAgent";
 
-        public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
+        public async IAsyncEnumerable<ReactStep> Execute(IDialogSession dialogSession,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.CompletedTask;
@@ -1437,7 +1437,7 @@ public class MiniSweRegressionTests
         Assert.Equal(expected.TotalTokenCount, usage.TotalTokenCount);
     }
 
-    private sealed class TestTextDialogSession : ITextDialogSession
+    private sealed class TestTextDialogSession : IDialogSession
     {
         private readonly List<IChatHistoryItem> _history;
 
@@ -1490,7 +1490,7 @@ public class MiniSweRegressionTests
         public IEnumerable<ChatMessage> Messages { get; }
     }
 
-    private sealed class PassiveTextDialogSession : ITextDialogSession
+    private sealed class PassiveTextDialogSession : IDialogSession
     {
         public Guid ID { get; } = Guid.NewGuid();
         public IReadOnlyList<IDialogItem> VisualDialogItems { get; } = [];

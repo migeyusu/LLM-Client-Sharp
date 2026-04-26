@@ -131,7 +131,7 @@ public class RequestViewItem : BaseDialogItem, IRequestItem, ISearchableDialogIt
     /// </summary>
     public AdditionalPropertiesDictionary? TempAdditionalProperties { get; set; }
 
-    public override ITextDialogSession? Session => ParentSession;
+    public override IDialogSession? Session => ParentSession;
     public override bool IsAvailableInContext { get; } = true;
 
     public List<Attachment>? Attachments { get; set; }

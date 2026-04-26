@@ -91,7 +91,7 @@ public static class CommonCommands
         }
     }
 
-    public static ICommand CreatePromptEditViewModel = new RelayCommand<IPromptableSession>(((o) =>
+    public static ICommand CreatePromptEditViewModel = new RelayCommand<IPromptable>(((o) =>
     {
         if (o != null)
         {

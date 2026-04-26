@@ -21,11 +21,11 @@ public class DefaultRequestContextBuilder
         ChatHistoryItems = dialogItems;
     }
 
-    public static DefaultRequestContextBuilder CreateFromSession(ITextDialogSession session)
+    public static DefaultRequestContextBuilder CreateFromSession(IDialogSession session)
     {
         var workingResponse = session.WorkingResponse;
         var historyItems = session.GetChatHistory().ToArray();
-        var workingDirectory = session is IProjectSession projectSession
+        var workingDirectory = session is IProject projectSession
             ? projectSession.WorkingDirectory
             : null;
         return CreateFromHistory(historyItems, workingResponse.Id, session.ContextProviders,

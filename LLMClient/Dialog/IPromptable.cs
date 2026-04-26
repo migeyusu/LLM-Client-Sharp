@@ -3,7 +3,7 @@ using LLMClient.Configuration;
 
 namespace LLMClient.Dialog;
 
-public interface IPromptableSession
+public interface IPromptable
 {
     string? UserSystemPrompt { get; set; }
 

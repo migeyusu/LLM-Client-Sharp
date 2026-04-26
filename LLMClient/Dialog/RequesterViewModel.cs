@@ -72,7 +72,7 @@ public class RequesterViewModel : BaseViewModel, IRequestConfig
         }
     });
 
-    public ITextDialogSession? ConnectedSession
+    public IDialogSession? ConnectedSession
     {
         get;
         set

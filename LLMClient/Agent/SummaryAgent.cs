@@ -17,7 +17,7 @@ public class SummaryAgent : ISingleClientAgent
 
     public ILLMChatClient ChatClient { get; }
 
-    public async IAsyncEnumerable<ReactStep> Execute(ITextDialogSession dialogSession,
+    public async IAsyncEnumerable<ReactStep> Execute(IDialogSession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var chatHistory = dialogSession.GetChatHistory().ToList();

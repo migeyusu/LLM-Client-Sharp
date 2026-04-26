@@ -12,7 +12,7 @@ namespace LLMClient.Component.ViewModel;
 
 public class PromptEditorViewModel : BaseViewModel
 {
-    public PromptEditorViewModel(IPromptableSession session)
+    public PromptEditorViewModel(IPromptable session)
     {
         Session = session;
         SelectablePrompts = ServiceLocator.GetService<IPromptsResource>()?
@@ -54,7 +54,7 @@ public class PromptEditorViewModel : BaseViewModel
 
     public List<SelectableViewModel<PromptEntry>> SelectablePrompts { get; }
 
-    public IPromptableSession Session { get; }
+    public IPromptable Session { get; }
 
     public ICommand AddCommand { get; }
 

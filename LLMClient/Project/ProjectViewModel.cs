@@ -37,7 +37,7 @@ public enum ProjectType
 }
 
 public abstract class ProjectViewModel : FileBasedSessionBase,
-    ILoadableSessionFile<ProjectViewModel>, IPromptableSession
+    ILoadableSessionFile<ProjectViewModel>, IPromptable
 {
     public const string SaveDir = "Projects";
 

@@ -23,7 +23,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     public override long Tokens => Response.Tokens;
 
-    public override ITextDialogSession? Session => ParentSession;
+    public override IDialogSession? Session => ParentSession;
 
     [Bindable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

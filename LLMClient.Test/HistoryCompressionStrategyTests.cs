@@ -643,7 +643,7 @@ public class HistoryCompressionStrategyTests
         public RequestContext? LastRequestContext { get; private set; }
 
         protected override Task<RequestContext?> BuildRequestContextAsync(
-            ITextDialogSession dialogSession,
+            IDialogSession dialogSession,
             CancellationToken cancellationToken)
         {
             var context = new RequestContext
@@ -658,7 +658,7 @@ public class HistoryCompressionStrategyTests
         }
     }
 
-    private sealed class MockDialogSession : ITextDialogSession
+    private sealed class MockDialogSession : IDialogSession
     {
         public Guid ID { get; } = Guid.NewGuid();
         public IReadOnlyList<IDialogItem> VisualDialogItems { get; } = new List<IDialogItem>();

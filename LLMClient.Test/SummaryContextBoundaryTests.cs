@@ -73,7 +73,7 @@ public class SummaryContextBoundaryTests
         Assert.Contains(followUpRequest, history);
     }
 
-    private sealed class SummaryTestSession(IRequestItem requestItem) : ITextDialogSession
+    private sealed class SummaryTestSession(IRequestItem requestItem) : IDialogSession
     {
         public Guid ID { get; } = Guid.NewGuid();
         public IReadOnlyList<IDialogItem> VisualDialogItems { get; } = [requestItem];
@@ -122,7 +122,7 @@ public class SummaryContextBoundaryTests
             get { yield return new ChatMessage(ChatRole.Assistant, content); }
         }
 
-        public override ITextDialogSession? Session { get; } = null;
+        public override IDialogSession? Session { get; } = null;
         public override bool IsAvailableInContext { get; } = true;
 
         public bool IsResponding { get; } = false;

@@ -6,7 +6,7 @@ public class EraseViewItem : BaseDialogItem, IContextBoundaryItem
 {
     public override IEnumerable<ChatMessage> Messages => throw new NotSupportedException();
 
-    public override ITextDialogSession? Session { get; } = null;
+    public override IDialogSession? Session { get; } = null;
     public override bool IsAvailableInContext => false;
 
     public override long Tokens => 0;

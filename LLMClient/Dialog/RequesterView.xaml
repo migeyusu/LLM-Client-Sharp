@@ -362,7 +362,7 @@
                                                              PopupContent="{Binding ConnectedSession ,Mode=OneTime}"
                                                              Style="{StaticResource MaterialDesignToolPopupBox}">
                                         <materialDesign:PopupBox.PopupContentTemplate>
-                                            <DataTemplate DataType="{x:Type models:ITextDialogSession}">
+                                            <DataTemplate DataType="{x:Type models:IDialogSession}">
                                                 <ContentPresenter Content="{Binding  PromptCommand,Mode=OneWay}">
                                                     <ContentPresenter.ContentTemplateSelector>
                                                         <component:TypeBasedDataTemplateSelector>

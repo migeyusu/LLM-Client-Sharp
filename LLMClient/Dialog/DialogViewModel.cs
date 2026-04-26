@@ -18,7 +18,7 @@ using Microsoft.Agents.AI;
 
 namespace LLMClient.Dialog;
 
-public class DialogViewModel : DialogSessionViewModel, IPromptableSession
+public class DialogViewModel : DialogSessionViewModel, IPromptable
 {
 #if DATACHANGE_TRACE
     public bool Log { get; set; }
@@ -57,15 +57,13 @@ public class DialogViewModel : DialogSessionViewModel, IPromptableSession
         }
     }
 
-    private string? _userSystemPrompt;
-
     public string? UserSystemPrompt
     {
-        get => _userSystemPrompt;
+        get;
         set
         {
-            if (value == _userSystemPrompt) return;
-            _userSystemPrompt = value;
+            if (value == field) return;
+            field = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(SystemPrompt));
         }
