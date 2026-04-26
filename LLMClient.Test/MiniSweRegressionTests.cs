@@ -39,6 +39,7 @@ public class MiniSweRegressionTests
             .AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance)
             .AddSingleton(typeof(ILogger<>), typeof(NullLogger<>))
             .AddSingleton<Profile, DialogItemPersistenceProfile>()
+            .AddSingleton<Profile, ResponseProfile>()
             .AddMap()
             .BuildServiceProvider();
         BaseViewModel.ServiceLocator = services;

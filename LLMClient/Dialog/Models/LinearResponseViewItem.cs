@@ -1,16 +1,11 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
-using System.Windows.Input;
-using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
-using LLMClient.Agent.Planner;
 using LLMClient.Component.CustomControl;
 using LLMClient.Endpoints;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Dialog.Models;
 
@@ -42,7 +37,10 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             field = value;
             Response.IsResponding = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CanContinue));
             SmartEliminateHistoryCommand.NotifyCanExecuteChanged();
+            ContinueCommand.NotifyCanExecuteChanged();
+            RetryCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -73,6 +71,20 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     public IAsyncRelayCommand SmartEliminateHistoryCommand { get; }
 
+    public IAsyncRelayCommand ContinueCommand { get; }
+
+    public IAsyncRelayCommand RetryCommand { get; }
+
+    /// <summary>
+    /// 是否可以继续运行（Agent 不为空、未在响应中、响应已中断）
+    /// </summary>
+    public bool CanContinue => Agent != null && !IsResponding && Response.IsInterrupt;
+
+    /// <summary>
+    /// 是否可以重试（Agent 不为空、未在响应中）
+    /// </summary>
+    public bool CanRetry => Agent != null && !IsResponding;
+
     public LinearResponseViewItem(DialogSessionViewModel parentSession, IAgent? agent,
         RawResponseViewItem? response = null)
     {
@@ -81,6 +93,10 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         Response = response ?? new RawResponseViewItem();
         SmartEliminateHistoryCommand = new AsyncRelayCommand(
             CompactHistoryAsync, () => !IsResponding && Messages.Any());
+        ContinueCommand = new AsyncRelayCommand(
+            ContinueAsync, () => CanContinue);
+        RetryCommand = new AsyncRelayCommand(
+            RetryAsync, () => CanRetry);
     }
 
     private async Task CompactHistoryAsync(CancellationToken cancellationToken)
@@ -153,15 +169,15 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         return null;
     }
 
-    public async Task<IResponse> ProcessAsync(CancellationToken token)
+    private async Task ExecuteAgentAsync(CancellationToken token, ResponseViewItemBase.ReactStepConsumeMode mode)
     {
-        var agentTaskResult = AgentTaskResult.Empty;
         if (Agent == null)
         {
             MessageBoxes.Error("No agent configured.");
-            return agentTaskResult;
+            return;
         }
 
+        var agentTaskResult = AgentTaskResult.Empty;
         IsResponding = true;
         ParentSession.RespondingCount++;
         try
@@ -171,29 +187,48 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
                 await ParentSession.OnPreviewRequest(liveToken);
                 var branchDialogTextSession = BranchDialogTextSession.CreateFromResponse(this);
                 agentTaskResult = await Response.ConsumeReactStepsAsync(
-                    Agent.Execute(branchDialogTextSession, liveToken));
+                    Agent.Execute(branchDialogTextSession, liveToken), mode);
                 ParentSession.OnResponseCompleted(agentTaskResult);
             }
         }
         catch (OperationCanceledException)
         {
-            return AgentTaskResult.Empty;
+            if (mode == ResponseViewItemBase.ReactStepConsumeMode.Reset) agentTaskResult = AgentTaskResult.Empty;
         }
         catch (Exception e)
         {
-            MessageBoxes.Error(e.Message, "响应失败");
+            var errorMsg = mode == ResponseViewItemBase.ReactStepConsumeMode.Append ? "继续运行失败" : "响应失败";
+            MessageBoxes.Error(e.Message, errorMsg);
             Response.ErrorMessage = e.Message;
             Response.IsInterrupt = true;
-            return agentTaskResult;
         }
         finally
         {
             IsResponding = false;
-            ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(agentTaskResult, Response);
+            if (mode == ResponseViewItemBase.ReactStepConsumeMode.Reset)
+            {
+                ResponseViewItemBase.Mapper.Map<IResponse, ResponseViewItemBase>(agentTaskResult, Response);
+            }
+            else
+            {
+                // Append 模式：手动合并增量结果到现有 Response
+                Response.MergeFrom(agentTaskResult);
+            }
+
             Response.InvalidateAsyncProperty(nameof(RawResponseViewItem.SearchableDocument));
             ParentSession.RespondingCount--;
         }
-
-        return agentTaskResult;
     }
+
+    public async Task<IResponse> ProcessAsync(CancellationToken token)
+    {
+        await ExecuteAgentAsync(token, ResponseViewItemBase.ReactStepConsumeMode.Reset);
+        return Response;
+    }
+
+    private Task ContinueAsync(CancellationToken cancellationToken) =>
+        ExecuteAgentAsync(cancellationToken, ResponseViewItemBase.ReactStepConsumeMode.Append);
+
+    private Task RetryAsync(CancellationToken cancellationToken) =>
+        ExecuteAgentAsync(cancellationToken, ResponseViewItemBase.ReactStepConsumeMode.Reset);
 }

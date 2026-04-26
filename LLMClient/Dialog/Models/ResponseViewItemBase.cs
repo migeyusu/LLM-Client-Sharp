@@ -1,8 +1,9 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
 using System.Windows.Documents;
 using System.Windows.Input;
+using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
@@ -14,6 +15,7 @@ using LLMClient.Endpoints;
 using LLMClient.Endpoints.Messages;
 using Markdig;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Xaml.Behaviors.Core;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
@@ -21,6 +23,14 @@ namespace LLMClient.Dialog.Models;
 
 public class ResponseViewItemBase : BaseViewModel, IResponse
 {
+    private static readonly Lazy<IMapper> LazyMapper = new(() =>
+    {
+        var config = new MapperConfiguration(cfg => { cfg.AddProfile<ResponseProfile>(); }, NullLoggerFactory.Instance);
+        return config.CreateMapper();
+    });
+
+    public static IMapper Mapper => LazyMapper.Value;
+
     public virtual long Tokens
     {
         get => Usage?.OutputTokenCount ?? 0;
@@ -570,16 +580,34 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     }
 
     /// <summary>
-    /// 消费 IAsyncEnumerable&lt;ReactStep&gt; 流，将每轮循环写入 <paramref name="loops"/>
-    /// 并累积为 <see cref="AgentTaskResult"/>。供 ClientResponseViewItem / LinearResponseViewItem 共用。
+    /// 消费模式：重试时清除已有循环，继续时追加到已有循环之后。
+    /// </summary>
+    internal enum ReactStepConsumeMode
+    {
+        /// <summary>重试：消费前清除 Loops、LoopCount、CurrentStatus</summary>
+        Reset,
+
+        /// <summary>继续：不清除已有状态，循环追加到现有列表</summary>
+        Append,
+    }
+
+    /// <summary>
+    /// 消费 IAsyncEnumerable&lt;ReactStep&gt; 流，将每轮循环写入 <see cref="Loops"/>
+    /// 并累积为 <see cref="AgentTaskResult"/>。
+    /// 供 ClientResponseViewItem / LinearResponseViewItem 共用。
     /// </summary>
     internal async Task<AgentTaskResult> ConsumeReactStepsAsync(
-        IAsyncEnumerable<ReactStep> steps)
+        IAsyncEnumerable<ReactStep> steps,
+        ReactStepConsumeMode mode = ReactStepConsumeMode.Reset)
     {
+        if (mode == ReactStepConsumeMode.Reset)
+        {
+            Loops.Clear();
+            LoopCount = 0;
+            CurrentStatus = null;
+        }
+
         var agentTaskResult = new AgentTaskResult();
-        Loops.Clear();
-        LoopCount = 0;
-        CurrentStatus = null;
         await foreach (var step in steps)
         {
             LoopCount++;
@@ -660,7 +688,15 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
         }
 
         LastContextUsage = Loops.LastOrDefault(model => model.ContextUsage != null)?.ContextUsage;
-        ProtocolLog = agentTaskResult.ProtocolLog?.ToString();
+        if (mode == ReactStepConsumeMode.Append && agentTaskResult.ProtocolLog != null)
+        {
+            ProtocolLog = (ProtocolLog ?? string.Empty) + agentTaskResult.ProtocolLog;
+        }
+        else
+        {
+            ProtocolLog = agentTaskResult.ProtocolLog?.ToString();
+        }
+
         return agentTaskResult;
     }
 
@@ -674,6 +710,17 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             HistoryCompressionKind.TaskSummary => "task summary",
             _ => kind.ToString(),
         };
+    }
+
+    /// <summary>
+    /// 将增量 <see cref="AgentTaskResult"/> 合并到当前 Response 状态（用于 Append 模式）。
+    /// Messages 追加、Usage/Duration/Price 累加，其余取最新值。
+    /// </summary>
+    internal void MergeFrom(AgentTaskResult incremental)
+    {
+        var exist = Mapper.Map<IResponse, AgentTaskResult>(this);
+        exist.Add(incremental);
+        Mapper.Map(exist, this);
     }
 
     /// <summary>

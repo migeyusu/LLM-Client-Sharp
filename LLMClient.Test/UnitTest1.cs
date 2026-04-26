@@ -54,6 +54,7 @@ public class UnitTest1
             .AddSingleton<Profile, FunctionGroupPersistenceProfile>()
             .AddSingleton<Profile, DialogItemPersistenceProfile>()
             .AddSingleton<Profile, DialogMappingProfile>()
+            .AddSingleton<Profile, ResponseProfile>()
             .AddSingleton<Profile, SessionProjectPersistenceProfile>()
             .AddMap().BuildServiceProvider();
         BaseViewModel.ServiceLocator = serviceProvider;

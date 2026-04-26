@@ -1,10 +1,8 @@
-using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
 using LLMClient.Persistence;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace LLMClient.Dialog.Models;
 
@@ -59,8 +57,13 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
 
     #region responding
 
-    public virtual async Task<AgentTaskResult> Process(DefaultRequestContextBuilder contextBuilder,
-        CancellationToken token = default)
+    /// <summary>
+    /// 核心 LLM Client 执行方法，支持重试（Reset）和继续（Append）两种模式。
+    /// </summary>
+    private async Task<AgentTaskResult> ExecuteWithClientAsync(
+        DefaultRequestContextBuilder contextBuilder,
+        CancellationToken token,
+        ReactStepConsumeMode mode)
     {
         var completedResult = AgentTaskResult.Empty;
         try
@@ -76,29 +79,58 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             }
 
             AcquireRespondingState();
-            ErrorMessage = null;
-            Messages = [];
+            if (mode == ReactStepConsumeMode.Reset)
+            {
+                ErrorMessage = null;
+                Messages = [];
+            }
             using (CreateRequestTokenSource(token, out var liveToken))
             {
                 var requestContext = await contextBuilder.BuildAsync(Client.Model, liveToken);
                 completedResult = await ConsumeReactStepsAsync(
-                    Client.SendRequestAsync(requestContext, liveToken));
+                    Client.SendRequestAsync(requestContext, liveToken), mode);
             }
         }
         catch (Exception exception)
         {
-            MessageBoxes.Error(exception.Message, "响应中止");
+            var errorMsg = mode == ReactStepConsumeMode.Append ? "继续失败" : "响应失败";
+            MessageBoxes.Error(exception.Message, errorMsg);
             completedResult.Exception = exception;
         }
         finally
         {
-            ServiceLocator.GetService<IMapper>()!.Map<IResponse, ResponseViewItemBase>(completedResult, this);
+            if (mode == ReactStepConsumeMode.Reset)
+            {
+                Mapper.Map<IResponse, ResponseViewItemBase>(completedResult, this);
+            }
+            else
+            {
+                MergeFrom(completedResult);
+            }
             PostOnPropertyChanged(nameof(TpS));
             InvalidateAsyncProperty(nameof(SearchableDocument));
             ReleaseRespondingState();
         }
 
         return completedResult;
+    }
+
+    public virtual Task<AgentTaskResult> Process(DefaultRequestContextBuilder contextBuilder,
+        CancellationToken token = default)
+    {
+        return ExecuteWithClientAsync(contextBuilder, token, ReactStepConsumeMode.Reset);
+    }
+
+    public Task<AgentTaskResult> Continue(DefaultRequestContextBuilder contextBuilder,
+        CancellationToken token = default)
+    {
+        return ExecuteWithClientAsync(contextBuilder, token, ReactStepConsumeMode.Append);
+    }
+
+    public Task<AgentTaskResult> Retry(DefaultRequestContextBuilder contextBuilder,
+        CancellationToken token = default)
+    {
+        return ExecuteWithClientAsync(contextBuilder, token, ReactStepConsumeMode.Reset);
     }
 
     #endregion

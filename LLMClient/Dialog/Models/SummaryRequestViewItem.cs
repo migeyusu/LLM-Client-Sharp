@@ -26,6 +26,7 @@ public class SummaryRequestViewItem : BaseDialogItem, IContextBoundaryItem
         _chatMessage = new ChatMessage(ChatRole.User, rawTextMessage);
         InteractionId = Guid.NewGuid();
         State = SummaryRequestState.Summarizing;
+        Session = parentSession;
     }
 
     /// <summary>

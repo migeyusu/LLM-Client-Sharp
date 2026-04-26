@@ -389,6 +389,7 @@ public class ProjectPersistenceTests
             .AddSingleton<Profile, FunctionGroupPersistenceProfile>()
             .AddSingleton<Profile, DialogItemPersistenceProfile>()
             .AddSingleton<Profile, DialogMappingProfile>()
+            .AddSingleton<Profile, ResponseProfile>()
             .AddSingleton<Profile, SessionProjectPersistenceProfile>()
             .AddMap()
             .BuildServiceProvider();

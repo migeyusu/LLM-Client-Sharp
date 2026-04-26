@@ -1,6 +1,4 @@
-﻿using System.Windows.Documents;
-
-namespace LLMClient.Dialog.Models;
+﻿namespace LLMClient.Dialog.Models;
 
 /// <summary>
 /// 只支持简单原始文本，用于agent任务

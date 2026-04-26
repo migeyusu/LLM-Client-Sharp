@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using LLMClient.Abstraction;
 using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;

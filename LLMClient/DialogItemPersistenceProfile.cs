@@ -123,18 +123,6 @@ public class DialogItemPersistenceProfile : Profile
             .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State))
             .ForMember(dest => dest.InteractionId, opt => opt.MapFrom(src => src.InteractionId));
 
-        CreateMap<IResponse, ResponseViewItemBase>()
-            .Include<IResponse, ClientResponseViewItem>();
-        CreateMap<IResponse, RawResponseViewItem>()
-            .IncludeBase<IResponse, ResponseViewItemBase>();
-        CreateMap<IResponse, ClientResponseViewItem>()
-            .IncludeBase<IResponse, ResponseViewItemBase>();
-        CreateMap<AgentTaskResult, ResponseViewItemBase>()
-            .IncludeBase<IResponse, ResponseViewItemBase>();
-        CreateMap<AgentTaskResult, RawResponseViewItem>()
-            .IncludeBase<IResponse, RawResponseViewItem>();
-        CreateMap<AgentTaskResult, ClientResponseViewItem>()
-            .IncludeBase<IResponse, ClientResponseViewItem>();
 
         CreateMap<ResponseViewItemBase, ResponsePersistItemBase>()
             .Include<ClientResponseViewItem, ClientResponsePersistItem>()
@@ -200,3 +188,23 @@ public class DialogItemPersistenceProfile : Profile
     }
 }
 
+public class ResponseProfile : Profile
+{
+    public ResponseProfile()
+    {
+        CreateMap<IResponse, ResponseViewItemBase>()
+            .Include<IResponse, ClientResponseViewItem>()
+            .Include<IResponse, RawResponseViewItem>();
+        CreateMap<IResponse, RawResponseViewItem>()
+            .IncludeBase<IResponse, ResponseViewItemBase>();
+        CreateMap<IResponse, ClientResponseViewItem>()
+            .IncludeBase<IResponse, ResponseViewItemBase>();
+
+        CreateMap<AgentTaskResult, ResponseViewItemBase>()
+            .IncludeBase<IResponse, ResponseViewItemBase>();
+        CreateMap<AgentTaskResult, RawResponseViewItem>()
+            .IncludeBase<IResponse, RawResponseViewItem>();
+        CreateMap<AgentTaskResult, ClientResponseViewItem>()
+            .IncludeBase<IResponse, ClientResponseViewItem>();
+    }
+}

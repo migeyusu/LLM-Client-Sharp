@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using Elsa.Extensions;
 using LLMClient.Abstraction;
-using LLMClient.Endpoints.Messages;
 using Microsoft.Extensions.AI;
 
 namespace LLMClient.Endpoints;

@@ -82,6 +82,7 @@ public class Program
                 .AddSingleton<ChatHistoryCompressionStrategyFactory>()
                 .AddSingleton<Profile, FunctionGroupPersistenceProfile>()
                 .AddSingleton<Profile, DialogItemPersistenceProfile>()
+                .AddSingleton<Profile, ResponseProfile>()
                 .AddSingleton<Profile, DialogMappingProfile>()
                 .AddSingleton<Profile, SessionProjectPersistenceProfile>()
                 .AddSingleton<Profile, RoslynMappingProfile>()
