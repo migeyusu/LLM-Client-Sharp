@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 using LLMClient.Abstraction;
 using LLMClient.ContextEngineering.PromptGeneration;
@@ -31,14 +31,18 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
             DialogId = session.WorkingResponse.Id,
             SystemPrompt = systemPrompt,
             SessionId = session.ID,
-            PlatformId = config.PlatformId,
+            PlatformId = session is IProjectSession projectSession
+                ? projectSession.Platform
+                : RunPlatform.Windows,
             ContextProviders = session.ContextProviders,
             IncludeHistoryMessages = true,
             IncludeToolInstructions = config.IncludeToolInstructions,
             IncludeRagInstructions = config.IncludeRagInstructions,
             SystemTemplate = config.SystemTemplate,
             InstanceTemplate = config.InstanceTemplate,
-            WorkingDirectory = session.WorkingDirectory,
+            WorkingDirectory = session is IProjectSession ps
+                ? ps.WorkingDirectory
+                : null,
         };
         dialogContext.MapFromRequest(requestViewItem);
         return dialogContext;

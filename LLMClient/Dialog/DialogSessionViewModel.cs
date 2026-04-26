@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+﻿﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Text;
@@ -303,8 +303,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
     public IResponseItem WorkingResponse =>
         CurrentLeaf as IResponseItem ?? throw new InvalidOperationException("当前节点不是回复项");
-
-    public virtual string? WorkingDirectory { get; } = null;
 
     public ICommand ClearContextCommand { get; }
 

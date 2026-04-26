@@ -1,4 +1,5 @@
-﻿using LLMClient.Abstraction;
+﻿﻿﻿﻿using LLMClient.Abstraction;
+using LLMClient.Agent.MiniSWE;
 using LLMClient.ToolCall;
 using Microsoft.Agents.AI;
 
@@ -14,10 +15,6 @@ public interface ITextDialogSession
     IReadOnlyList<IDialogItem> VisualDialogItems { get; }
 
     IResponseItem WorkingResponse { get; }
-
-    string? WorkingDirectory { get; }
-    
-    
 
     IEnumerable<IDialogItem> GetChatHistory()
     {
@@ -38,4 +35,15 @@ public interface ITextDialogSession
 
     Task<IResponse> NewResponse(RequestOption option,
         IRequestItem? insertBefore = null, CancellationToken token = default);
+}
+
+/// <summary>
+/// Project-specific session interface extending ITextDialogSession
+/// with working directory and platform information.
+/// </summary>
+public interface IProjectSession : ITextDialogSession
+{
+    string? WorkingDirectory { get; }
+
+    RunPlatform Platform { get; }
 }

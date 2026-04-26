@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using LLMClient.Abstraction;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
@@ -36,14 +36,6 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
         {
             workingDirectory = projectSession.WorkingDirectory;
             contextBuilder.ProjectInformation = projectSession.ParentProject.ProjectInformationPrompt;
-        }
-        else if (dialogSession is BranchDialogTextSession
-                 {
-                     ParentSession: ProjectSessionViewModel projectSessionViewModel
-                 })
-        {
-            workingDirectory = projectSessionViewModel.WorkingDirectory;
-            contextBuilder.ProjectInformation = projectSessionViewModel.ParentProject.ProjectInformationPrompt;
         }
         else
         {

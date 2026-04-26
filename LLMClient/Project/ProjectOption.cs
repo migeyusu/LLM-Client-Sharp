@@ -1,7 +1,8 @@
-using System.Collections.ObjectModel;
+﻿﻿﻿using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
@@ -162,6 +163,22 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
         }
     }
 
+    private RunPlatform _platform = RunPlatform.Windows;
+
+    /// <summary>
+    /// 运行平台，用于确定命令执行环境
+    /// </summary>
+    public RunPlatform Platform
+    {
+        get => _platform;
+        set
+        {
+            if (value == _platform) return;
+            _platform = value;
+            OnPropertyChanged();
+        }
+    }
+
     public bool IncludeCopilotPrompt
     {
         get;
@@ -248,6 +265,7 @@ public class ProjectOption : NotifyDataErrorInfoViewModelBase, ICloneable
             Name = this.Name,
             Type = this.Type,
             IncludeAgentsMd = this.IncludeAgentsMd,
+            Platform = this.Platform,
         };
     }
 }

@@ -1,8 +1,9 @@
-using System.ComponentModel;
+﻿﻿using System.ComponentModel;
 using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
 using LLMClient.Abstraction;
+using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.CustomControl;
 using LLMClient.Configuration;
 using LLMClient.Dialog;
@@ -12,11 +13,16 @@ using Microsoft.Agents.AI;
 
 namespace LLMClient.Project;
 
-public class ProjectSessionViewModel : DialogSessionViewModel
+public class ProjectSessionViewModel : DialogSessionViewModel, IProjectSession
 {
-    public override string? WorkingDirectory
+    public string? WorkingDirectory
     {
         get { return ParentProject.Option.RootPath; }
+    }
+
+    public RunPlatform Platform
+    {
+        get { return ParentProject.Option.Platform; }
     }
 
     public override AIContextProvider[]? ContextProviders

@@ -1,4 +1,4 @@
-using LLMClient.Abstraction;
+﻿using LLMClient.Abstraction;
 using LLMClient.ToolCall;
 using Microsoft.Agents.AI;
 
@@ -32,12 +32,9 @@ public class BranchDialogTextSession : ITextDialogSession
 
     public IResponseItem WorkingResponse { get; }
 
-    public string? WorkingDirectory => ParentSession.WorkingDirectory;
-
     public Task CutContextAsync(IRequestItem? requestItem = null)
     {
-        throw new NotSupportedException(
-            "BranchDialogTextSession does not support cutting context. Please cut context in the parent session.");
+        return ParentSession.CutContextAsync(requestItem);
     }
 
     public AIContextProvider[]? ContextProviders => ParentSession.ContextProviders;

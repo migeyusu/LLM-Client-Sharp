@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using LLMClient.Abstraction;
@@ -25,8 +25,11 @@ public class DefaultRequestContextBuilder
     {
         var workingResponse = session.WorkingResponse;
         var historyItems = session.GetChatHistory().ToArray();
+        var workingDirectory = session is IProjectSession projectSession
+            ? projectSession.WorkingDirectory
+            : null;
         return CreateFromHistory(historyItems, workingResponse.Id, session.ContextProviders,
-            session.SystemPrompt, session.ID, session.WorkingDirectory);
+            session.SystemPrompt, session.ID, workingDirectory);
     }
 
     public static DefaultRequestContextBuilder CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,

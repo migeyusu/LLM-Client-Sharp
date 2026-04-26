@@ -16,6 +16,7 @@
                     xmlns:models="clr-namespace:LLMClient.Endpoints.Azure.Models"
                     xmlns:project="clr-namespace:LLMClient.Project"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:agent="clr-namespace:LLMClient.Agent.MiniSWE"
                     xmlns:utility="clr-namespace:LLMClient.Component.Utility">
     <ItemsPanelTemplate x:Key="HorizontalItemsPanelTemplate">
         <StackPanel Orientation="Horizontal"
@@ -648,6 +649,11 @@
                         IsChecked="{Binding IncludeAgentsMd,Mode=TwoWay}"
                         ToolTip="在项目根目录发现AGENTS.md时，将其内容加入项目上下文（系统提示词）"
                         Margin="6,0" />
+                    <ComboBox
+                        Margin="6,0"
+                        ToolTip="运行平台"
+                        ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type agent:RunPlatform}}}"
+                        SelectedItem="{Binding Platform,Mode=TwoWay}" />
                 </StackPanel>
                 <TextBox Grid.Row="0" Grid.Column="1"
                          TextWrapping="NoWrap"

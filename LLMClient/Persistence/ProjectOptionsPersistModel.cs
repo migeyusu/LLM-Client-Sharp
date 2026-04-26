@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿﻿﻿using System.Text.Json.Serialization;
+using LLMClient.Agent.MiniSWE;
 using LLMClient.Project;
 
 namespace LLMClient.Persistence;
@@ -19,4 +20,6 @@ public class ProjectOptionsPersistModel
     public bool IncludeAgentsMd { get; set; } = true;
     
     public bool IncludeCopilotPrompt {get; set; } = true;
+
+    public RunPlatform Platform { get; set; } = RunPlatform.Windows;
 }
