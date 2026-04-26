@@ -642,8 +642,7 @@ public class HistoryCompressionStrategyTests
         public string ExposedAgentId => AgentId;
         public RequestContext? LastRequestContext { get; private set; }
 
-        protected override Task<RequestContext?> BuildRequestContextAsync(
-            IDialogSession dialogSession,
+        protected override Task<RequestContext?> BuildRequestContextAsync(ISession dialogSession,
             CancellationToken cancellationToken)
         {
             var context = new RequestContext

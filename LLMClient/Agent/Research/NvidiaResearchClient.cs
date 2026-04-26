@@ -57,10 +57,10 @@ public class NvidiaResearchClient : ResearchClient
     private void ReturnClient(ILLMChatClient client) => _pool.Add(client);
 
     [Experimental("SKEXP0110")]
-    public override async IAsyncEnumerable<ReactStep> Execute(IDialogSession dialogSession,
+    public override async IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var lastRequest = dialogSession.VisualDialogItems.LastOrDefault(item => item is RequestViewItem) as RequestViewItem;
+        var lastRequest = dialogSession.GetChatHistory().LastOrDefault(item => item is RequestViewItem) as RequestViewItem;
         var prompt = lastRequest?.UserPrompt;
         if (prompt == null || string.IsNullOrWhiteSpace(prompt))
         {

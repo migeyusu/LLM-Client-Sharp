@@ -1,4 +1,4 @@
-﻿﻿using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows.Input;
 using AutoMapper;
 using CommunityToolkit.Mvvm.Input;
@@ -13,7 +13,7 @@ using Microsoft.Agents.AI;
 
 namespace LLMClient.Project;
 
-public class ProjectSessionViewModel : DialogSessionViewModel, IProject
+public class ProjectSessionViewModel : DialogSessionViewModel, IProjectSession, IDialogSession
 {
     public string? WorkingDirectory
     {
@@ -23,6 +23,16 @@ public class ProjectSessionViewModel : DialogSessionViewModel, IProject
     public RunPlatform Platform
     {
         get { return ParentProject.Option.Platform; }
+    }
+
+    public string ProjectInformationPrompt
+    {
+        get { return ParentProject.ProjectInformationPrompt; }
+    }
+
+    public IAIFunctionGroup[] ProjectTools
+    {
+        get { return ParentProject.ProjectTools; }
     }
 
     public override AIContextProvider[]? ContextProviders

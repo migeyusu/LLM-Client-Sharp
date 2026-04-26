@@ -25,17 +25,16 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
         _toolProviders = CreateToolProviders(Config);
     }
 
-    protected override async Task<RequestContext?> BuildRequestContextAsync(
-        IDialogSession dialogSession,
+    protected override async Task<RequestContext?> BuildRequestContextAsync(ISession dialogSession,
         CancellationToken cancellationToken)
     {
         var contextBuilder = AgentRequestContextBuilder.CreateFromSession(dialogSession, Config);
         string? workingDirectory;
 
-        if (dialogSession is ProjectSessionViewModel projectSession)
+        if (dialogSession is IProjectSession projectSession)
         {
             workingDirectory = projectSession.WorkingDirectory;
-            contextBuilder.ProjectInformation = projectSession.ParentProject.ProjectInformationPrompt;
+            contextBuilder.ProjectInformation = projectSession.ProjectInformationPrompt;
         }
         else
         {

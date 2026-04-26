@@ -24,21 +24,18 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
         _toolProviders = CreateToolProviders(config);
     }
 
-    protected override async Task<RequestContext?> BuildRequestContextAsync(
-        IDialogSession dialogSession,
+    protected override async Task<RequestContext?> BuildRequestContextAsync(ISession dialogSession,
         CancellationToken cancellationToken)
     {
         var contextBuilder = AgentRequestContextBuilder.CreateFromSession(dialogSession, Config);
         contextBuilder.FunctionGroups = FilterReadOnlyFunctionGroups(contextBuilder.FunctionGroups);
 
         string? workingDirectory;
-        if (dialogSession is ProjectSessionViewModel projectSession)
+        if (dialogSession is IProjectSession projectSession)
         {
             workingDirectory = projectSession.WorkingDirectory;
-            contextBuilder.ProjectInformation = projectSession.ParentProject.ProjectInformationPrompt;
-            await AddToolProvidersAsync(contextBuilder,
-                projectSession.ParentProject.ProjectTools,
-                cancellationToken);
+            contextBuilder.ProjectInformation = projectSession.ProjectInformationPrompt;
+            await AddToolProvidersAsync(contextBuilder, projectSession.ProjectTools, cancellationToken);
         }
         else
         {

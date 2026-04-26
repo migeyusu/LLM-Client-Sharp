@@ -10,7 +10,7 @@ public interface IAgent
     /// <summary>
     /// 以 ReAct 循环流的形式执行 Agent。每个 ReactStep 代表一轮 Reasoning + Acting。
     /// </summary>
-    IAsyncEnumerable<ReactStep> Execute(IDialogSession dialogSession,
+    IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
         CancellationToken cancellationToken = default);
 }
 

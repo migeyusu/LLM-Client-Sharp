@@ -185,7 +185,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
             using (Response.CreateRequestTokenSource(token, out var liveToken))
             {
                 await ParentSession.OnPreviewRequest(liveToken);
-                var branchDialogTextSession = BranchDialogTextSession.CreateFromResponse(this);
+                var branchDialogTextSession = BranchSession.CreateFromResponse(this);
                 agentTaskResult = await Response.ConsumeReactStepsAsync(
                     Agent.Execute(branchDialogTextSession, liveToken), mode);
                 ParentSession.OnResponseCompleted(agentTaskResult);

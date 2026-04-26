@@ -2,7 +2,8 @@
 
 namespace LLMClient.Dialog.Models;
 
-public interface IDialogSession: IDialog
+
+public interface ISession
 {
     /// <summary>
     /// session id
@@ -16,9 +17,7 @@ public interface IDialogSession: IDialog
         return WorkingResponse.GetChatHistory();
     }
 
-    Task CutContextAsync(IRequestItem? requestItem = null);
-
     AIContextProvider[]? ContextProviders { get; }
-    
+
     string? SystemPrompt { get; }
 }

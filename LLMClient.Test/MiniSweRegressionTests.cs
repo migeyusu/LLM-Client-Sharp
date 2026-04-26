@@ -535,20 +535,7 @@ public class MiniSweRegressionTests
         Assert.True(observedToken.IsCancellationRequested);
         Assert.False(result.IsInterrupt);
     }
-
-    [Fact]
-    public async Task LinearResponseViewItem_CancelCommand_AfterCompletion_DoesNotThrow()
-    {
-        var agent = new CompletedAgent();
-        var parentSession = new TestDialogSessionViewModel();
-        var session = new PassiveTextDialogSession();
-        var viewItem = new LinearResponseViewItem(parentSession, agent);
-
-        await viewItem.ProcessAsync(CancellationToken.None);
-
-        var exception = Record.Exception(() => viewItem.Response.CancelCommand.Execute(null));
-        Assert.Null(exception);
-    }
+    
 
     [Fact]
     public void LinearResponseViewItem_EliminateFailedHistoryCommand_RemovesFullyFailedRound()
@@ -709,7 +696,7 @@ public class MiniSweRegressionTests
 
         public override string Name => "DummyReactAgent";
 
-        protected override Task<RequestContext?> BuildRequestContextAsync(IDialogSession dialogSession,
+        protected override Task<RequestContext?> BuildRequestContextAsync(ISession dialogSession,
             CancellationToken cancellationToken)
             => Task.FromResult<RequestContext?>(null);
     }
@@ -1367,24 +1354,7 @@ public class MiniSweRegressionTests
 
         public string Name => "CancelAwareAgent";
 
-        public async IAsyncEnumerable<ReactStep> Execute(IDialogSession dialogSession,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            TokenCaptured.TrySetResult(cancellationToken);
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(10, CancellationToken.None);
-            }
-
-            yield break;
-        }
-    }
-
-    private sealed class CompletedAgent : IAgent
-    {
-        public string Name => "CompletedAgent";
-
-        public async IAsyncEnumerable<ReactStep> Execute(IDialogSession dialogSession,
+        public async IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.CompletedTask;

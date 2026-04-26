@@ -391,7 +391,7 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
         try
         {
             await ParentSession.OnPreviewRequest(token);
-            var dialogTextSession = BranchDialogTextSession.CreateFromResponse(this);
+            var dialogTextSession = BranchSession.CreateFromResponse(this);
             var dialogContext = DefaultRequestContextBuilder.CreateFromSession(dialogTextSession);
             var completedResult = await responseViewItem.Process(dialogContext, token);
             ParentSession.OnResponseCompleted(completedResult);

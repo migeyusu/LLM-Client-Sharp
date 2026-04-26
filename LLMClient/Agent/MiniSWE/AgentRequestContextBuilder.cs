@@ -19,7 +19,7 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
     {
     }
 
-    public static AgentRequestContextBuilder CreateFromSession(IDialogSession session,
+    public static AgentRequestContextBuilder CreateFromSession(ISession session,
         MiniSweAgentConfig config)
     {
         var history = session.GetChatHistory().ToArray();
@@ -31,7 +31,7 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
             DialogId = session.WorkingResponse.Id,
             SystemPrompt = systemPrompt,
             SessionId = session.ID,
-            PlatformId = session is IProject projectSession
+            PlatformId = session is IProjectSession projectSession
                 ? projectSession.Platform
                 : RunPlatform.Windows,
             ContextProviders = session.ContextProviders,
@@ -40,7 +40,7 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
             IncludeRagInstructions = config.IncludeRagInstructions,
             SystemTemplate = config.SystemTemplate,
             InstanceTemplate = config.InstanceTemplate,
-            WorkingDirectory = session is IProject ps
+            WorkingDirectory = session is IProjectSession ps
                 ? ps.WorkingDirectory
                 : null,
         };

@@ -19,6 +19,6 @@ public abstract class ResearchClient : BaseViewModel, IAgent, IInbuiltAgent
         }
     }
 
-    public abstract IAsyncEnumerable<ReactStep> Execute(IDialogSession dialogSession,
+    public abstract IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
         CancellationToken cancellationToken = default);
 }
