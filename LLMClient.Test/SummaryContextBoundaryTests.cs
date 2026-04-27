@@ -71,7 +71,7 @@ public class SummaryContextBoundaryTests
             .AppendChild(summaryResponse);
 
         // 正在总结时，SummaryRequestViewItem 被视为普通请求
-        var history = summaryResponse.GetChatHistory().ToArray();
+        var history = summaryResponse.GetDialogHistory().ToArray();
 
         Assert.Contains(firstRequest, history);
         Assert.Contains(firstResponse, history);
@@ -113,7 +113,7 @@ public class SummaryContextBoundaryTests
             .AppendChild(followUpRequest)
             .AppendChild(followUpResponse);
 
-        var history = followUpResponse.GetChatHistory().ToArray();
+        var history = followUpResponse.GetDialogHistory().ToArray();
 
         // 总结完成后，SummaryRequestViewItem 充当截断边界
         Assert.DoesNotContain(firstRequest, history);
@@ -160,7 +160,7 @@ public class SummaryContextBoundaryTests
             .AppendChild(followUpRequest)
             .AppendChild(followUpResponse);
 
-        var history = followUpResponse.GetChatHistory().ToArray();
+        var history = followUpResponse.GetDialogHistory().ToArray();
 
         // 失败时跳过 SummaryRequestViewItem，继续向前遍历
         Assert.Contains(firstRequest, history);

@@ -246,7 +246,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     {
         if (this.CurrentLeaf is IResponseItem responseItem)
         {
-            return responseItem.GetChatHistory()
+            return responseItem.GetDialogHistory()
                 .OfType<IChatHistoryItem>()
                 .ToList();
         }
@@ -523,7 +523,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
             {
                 if (CurrentLeaf is IResponseItem responseViewItem)
                 {
-                    return responseViewItem.GetChatHistory().Append(CurrentLeaf).Sum(item => item.Tokens);
+                    return responseViewItem.GetDialogHistory().Append(CurrentLeaf).Sum(item => item.Tokens);
                 }
 
                 return 0;

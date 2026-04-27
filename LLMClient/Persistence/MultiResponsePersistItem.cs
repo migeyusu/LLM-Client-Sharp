@@ -28,4 +28,6 @@ public class LinearHistoryResponsePersistItem : BaseDialogPersistItem
     public bool IsManualValid { get; set; } = false;
 
     public bool IsAvailableInContextSwitch { get; set; } = true;
+    
+    public bool HideLoopHistory { get; set; } = true;
 }

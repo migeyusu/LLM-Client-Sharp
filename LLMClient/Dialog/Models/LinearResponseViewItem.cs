@@ -20,7 +20,20 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     public override IDialogSession? Session => ParentSession;
 
-    
+    /// <summary>
+    /// indicate whether to hide history
+    /// </summary>
+    public bool HideLoopHistory
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+        }
+    } = true;
+
     [Bindable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -48,6 +61,21 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
     public override DialogRole Role => DialogRole.Response;
 
     public override IEnumerable<ChatMessage> Messages => Response.Messages;
+
+    public IEnumerable<ChatMessage> GetMessagesForContext()
+    {
+        if (HideLoopHistory && !Response.IsInterrupt)
+        {
+            yield return Messages.Last();
+        }
+        else
+        {
+            foreach (var responseMessage in Response.Messages)
+            {
+                yield return responseMessage;
+            }
+        }
+    }
 
     public IAgent? Agent { get; }
 

@@ -303,12 +303,12 @@ public static class Extension
         return eraseViewItem;
     }
 
-    public static IEnumerable<IDialogItem> GetChatHistory(this IResponseItem lastItem)
+    public static IEnumerable<IDialogItem> GetDialogHistory(this IResponseItem lastItem)
     {
-        return lastItem.GetChatHistoryInverse().Reverse();
+        return lastItem.GetDialogHistoryInverse().Reverse();
     }
 
-    private static IEnumerable<IDialogItem> GetChatHistoryInverse(this IResponseItem lastItem)
+    private static IEnumerable<IDialogItem> GetDialogHistoryInverse(this IResponseItem lastItem)
     {
         Guid? interactionId = lastItem.InteractionId;
         for (var dialogViewItem = lastItem.PreviousItem;

@@ -115,7 +115,7 @@ public class PromptBasedAgent
     public async Task<string> GetMessageAsync(string prompt, string? systemPrompt = null,
         CancellationToken cancellationToken = default)
     {
-        var context = DefaultRequestContextBuilder.CreateFromHistory([
+        var context = DefaultRequestContextBuilder.CreateFromDialogItems([
             new RequestViewItem(prompt)
         ], systemPrompt: systemPrompt);
         var sendRequestAsync = await SendRequestAsync(context, cancellationToken);

@@ -1,7 +1,6 @@
-﻿﻿using LLMClient.Abstraction;
-using Microsoft.Extensions.AI;
+﻿using LLMClient.Abstraction;
 
-namespace LLMClient.Dialog.Models;
+ namespace LLMClient.Dialog.Models;
 
 public interface IDialogItem : IChatHistoryItem, ITokenizable
 {

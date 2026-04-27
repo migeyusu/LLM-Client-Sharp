@@ -426,8 +426,7 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
             return true;
         }
     }
-
-
+    
     protected ResponseViewItemBase()
     {
         CancelCommand = new ActionCommand(_ => CancelRequest(RequestTokenSource));

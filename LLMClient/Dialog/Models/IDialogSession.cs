@@ -14,7 +14,7 @@ public interface ISession
 
     IEnumerable<IDialogItem> GetChatHistory()
     {
-        return WorkingResponse.GetChatHistory();
+        return WorkingResponse.GetDialogHistory();
     }
 
     AIContextProvider[]? ContextProviders { get; }

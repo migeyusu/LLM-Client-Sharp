@@ -28,7 +28,7 @@ public class SummaryAgent : ISingleClientAgent
         }
 
         var contextBuilder =
-            DefaultRequestContextBuilder.CreateFromHistory(chatHistory, systemPrompt: dialogSession.SystemPrompt);
+            DefaultRequestContextBuilder.CreateFromDialogItems(chatHistory, systemPrompt: dialogSession.SystemPrompt);
         var requestContext = await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
         await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))
         {

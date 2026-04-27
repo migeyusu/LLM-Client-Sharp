@@ -135,7 +135,7 @@ public sealed class HistoryPruner : PromptBasedAgent
                     { "input", indexedInput }
                 });
             var contextBuilder =
-                DefaultRequestContextBuilder.CreateFromHistory([
+                DefaultRequestContextBuilder.CreateFromDialogItems([
                     new RequestViewItem(message)
                     {
                         ResponseFormat = ChatResponseFormat.ForJsonSchema<RemoveDecision>(),

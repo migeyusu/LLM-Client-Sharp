@@ -34,7 +34,7 @@ public class DefaultRequestContextBuilder
         var workingDirectory = session is IProjectSession projectSession
             ? projectSession.WorkingDirectory
             : null;
-        var contextBuilder = CreateFromHistory(historyItems, workingResponse.Id, session.ContextProviders,
+        var contextBuilder = CreateFromDialogItems(historyItems, workingResponse.Id, session.ContextProviders,
             session.SystemPrompt, session.ID, workingDirectory);
         if (includeWorkingResponse)
         {
@@ -44,7 +44,7 @@ public class DefaultRequestContextBuilder
         return contextBuilder;
     }
 
-    public static DefaultRequestContextBuilder CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
+    public static DefaultRequestContextBuilder CreateFromDialogItems(IReadOnlyList<IChatHistoryItem> history,
         Guid? dialogId = null, AIContextProvider[]? contextProviders = null, string? systemPrompt = null,
         Guid? sessionId = null, string? workingDirectory = null)
     {
@@ -370,7 +370,7 @@ public class DefaultRequestContextBuilder
             await requestViewItem.EnsureDataAsync(token);
         }
 
-        var messages = chatHistoryItem.Messages;
+        var messages = chatHistoryItem.GetMessagesForContext();
         foreach (var message in messages)
         {
             // Level 3: DialogItem tag
