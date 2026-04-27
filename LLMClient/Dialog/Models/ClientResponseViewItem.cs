@@ -1,4 +1,5 @@
-﻿using LLMClient.Abstraction;
+﻿using CommunityToolkit.Mvvm.Input;
+using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
@@ -58,6 +59,11 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
     #region responding
 
     /// <summary>
+    /// 是否可以继续运行（未在响应中、响应已中断）
+    /// </summary>
+    public bool CanContinue => !IsResponding && this.IsInterrupt;
+
+    /// <summary>
     /// 核心 LLM Client 执行方法，支持重试（Reset）和继续（Append）两种模式。
     /// </summary>
     private async Task<AgentTaskResult> ExecuteWithClientAsync(
@@ -84,6 +90,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
                 ErrorMessage = null;
                 Messages = [];
             }
+
             using (CreateRequestTokenSource(token, out var liveToken))
             {
                 var requestContext = await contextBuilder.BuildAsync(Client.Model, liveToken);
@@ -107,6 +114,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             {
                 MergeFrom(completedResult);
             }
+
             PostOnPropertyChanged(nameof(TpS));
             InvalidateAsyncProperty(nameof(SearchableDocument));
             ReleaseRespondingState();

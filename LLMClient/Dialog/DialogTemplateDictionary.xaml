@@ -1010,6 +1010,14 @@
                                 CommandParameter="{Binding AcceptedResponse,Mode=OneWay}"
                                 Content="{materialDesign:PackIcon Kind=Refresh,Size=20}" />
                         <Button Style="{StaticResource SmallIconButtonStyle}"
+                                VerticalAlignment="Center"
+                                Margin="6,0,0,0"
+                                ToolTip="继续"
+                                Command="{Binding ContinueCommand}"
+                                Visibility="{Binding AcceptedResponse.CanContinue, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Content="{materialDesign:PackIcon Kind=Play,Size=20}"
+                                CommandParameter="{Binding AcceptedResponse,Mode=OneWay}" />
+                        <Button Style="{StaticResource SmallIconButtonStyle}"
                                 Command="{x:Static utility:CommonCommands.EditDialogItemCommand}"
                                 CommandParameter="{Binding  Mode=OneTime}"
                                 VerticalAlignment="Center"
@@ -1173,7 +1181,7 @@
                                   Padding="0">
                             <MenuItem Header="隐藏交互历史"
                                       IsCheckable="True"
-                                      IsChecked="{Binding HideLoopHistory,Mode=TwoWay}"/>
+                                      IsChecked="{Binding HideLoopHistory,Mode=TwoWay}" />
                             <MenuItem Header="标记为有效回复"
                                       IsCheckable="True"
                                       IsChecked="{Binding Response.IsManualValid,Mode=TwoWay}"

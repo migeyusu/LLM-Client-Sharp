@@ -21,6 +21,12 @@ internal static class FileEncodingHelper
             return (string.Empty, new UTF8Encoding(false));
 
         var encoding = DetectEncoding(bytes);
+        var content = DecodeBytes(bytes, encoding);
+        return (content, encoding);
+    }
+
+    public static string DecodeBytes(byte[] bytes, Encoding encoding)
+    {
         var content = encoding.GetString(bytes);
 
         // Strip the BOM character (U+FEFF) if present in the decoded string.
@@ -34,7 +40,7 @@ internal static class FileEncodingHelper
             content = content.Substring(1);
         }
 
-        return (content, encoding);
+        return content;
     }
 
     /// <summary>
@@ -83,6 +89,15 @@ internal static class FileEncodingHelper
             && bytes[2] == 0xFE && bytes[3] == 0xFF)
             return new UTF32Encoding(true, true); // UTF-32 BE
 
+        // === 1.5 UTF-16 无 BOM 启发式检测 ===
+        // 对于纯 ASCII 文本的 UTF-16（无 BOM），字节通常呈现“隔位为 0”的模式：
+        // LE: [非0,0,非0,0,...]，BE: [0,非0,0,非0,...]
+        // 该启发式用于补充 UTF.Unknown 在无 BOM 场景下可能返回空结果的情况。
+        if (TryDetectUtf16WithoutBom(bytes, out var utf16NoBomEncoding))
+        {
+            return utf16NoBomEncoding;
+        }
+
         // === 2. 使用 UTF.Unknown 进行精确检测（核心）===
         try
         {
@@ -92,7 +107,8 @@ internal static class FileEncodingHelper
             if (best != null && best.Encoding != null)
             {
                 // best.EncodingName 可能是 "utf-8", "gb18030", "big5" 等
-                return best.Encoding;
+                // 关键：根据原始字节是否带 BOM，规范化为“可回写保持一致”的编码实例。
+                return NormalizeEncodingForRoundTrip(best.Encoding, bytes);
             }
         }
         catch
@@ -102,5 +118,89 @@ internal static class FileEncodingHelper
 
         // === 3. 最终兜底 ===
         return Encoding.Default;
+    }
+
+    private static Encoding NormalizeEncodingForRoundTrip(Encoding detectedEncoding, byte[] bytes)
+    {
+        var hasBom = HasPreamble(bytes, detectedEncoding.GetPreamble());
+
+        return detectedEncoding.CodePage switch
+        {
+            // UTF-8
+            65001 => new UTF8Encoding(hasBom),
+
+            // UTF-16 LE / BE
+            1200 => new UnicodeEncoding(bigEndian: false, byteOrderMark: hasBom),
+            1201 => new UnicodeEncoding(bigEndian: true, byteOrderMark: hasBom),
+
+            // UTF-32 LE / BE
+            12000 => new UTF32Encoding(bigEndian: false, byteOrderMark: hasBom),
+            12001 => new UTF32Encoding(bigEndian: true, byteOrderMark: hasBom),
+
+            _ => detectedEncoding,
+        };
+    }
+
+    private static bool HasPreamble(byte[] bytes, byte[] preamble)
+    {
+        if (preamble == null || preamble.Length == 0 || bytes.Length < preamble.Length)
+            return false;
+
+        for (var i = 0; i < preamble.Length; i++)
+        {
+            if (bytes[i] != preamble[i])
+                return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryDetectUtf16WithoutBom(byte[] bytes, out Encoding encoding)
+    {
+        encoding = null!;
+
+        if (bytes.Length < 4 || bytes.Length % 2 != 0)
+            return false;
+
+        var evenCount = 0;
+        var oddCount = 0;
+        var evenNullCount = 0;
+        var oddNullCount = 0;
+
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            if ((i & 1) == 0)
+            {
+                evenCount++;
+                if (bytes[i] == 0)
+                    evenNullCount++;
+            }
+            else
+            {
+                oddCount++;
+                if (bytes[i] == 0)
+                    oddNullCount++;
+            }
+        }
+
+        var evenNullRatio = evenCount == 0 ? 0d : (double)evenNullCount / evenCount;
+        var oddNullRatio = oddCount == 0 ? 0d : (double)oddNullCount / oddCount;
+
+        const double highNullThreshold = 0.30;
+        const double lowNullThreshold = 0.10;
+
+        if (oddNullRatio > highNullThreshold && evenNullRatio < lowNullThreshold)
+        {
+            encoding = new UnicodeEncoding(bigEndian: false, byteOrderMark: false);
+            return true;
+        }
+
+        if (evenNullRatio > highNullThreshold && oddNullRatio < lowNullThreshold)
+        {
+            encoding = new UnicodeEncoding(bigEndian: true, byteOrderMark: false);
+            return true;
+        }
+
+        return false;
     }
 }

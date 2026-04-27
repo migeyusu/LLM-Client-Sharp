@@ -187,6 +187,9 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
 
     public ICommand RemoveResponseCommand { get; }
 
+
+    public IAsyncRelayCommand ContinueCommand { get; }
+
     public ParallelResponseViewItem(IEnumerable<ClientResponseViewItem> items, DialogSessionViewModel parentSession)
         : base(items, parentSession)
     {
@@ -200,6 +203,8 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
         {
             SuccessRoutedCommand = PopupBox.ClosePopupCommand
         };
+        ContinueCommand = new AsyncRelayCommand(
+            ContinueAsync);
         RetryCommand = new RelayCommand<ClientResponseViewItem>(async void (responseViewItem) =>
         {
             try
@@ -311,12 +316,7 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
 
     private void OnResponseItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(ClientResponseViewItem.IsResponding))
-        {
-            return;
-        }
 
-        OnPropertyChanged(nameof(IsResponding));
     }
 
     public ParallelResponseViewItem(DialogSessionViewModel parentSession) : this([], parentSession)
@@ -402,6 +402,36 @@ public class ParallelResponseViewItem : MultiResponseViewItem<ClientResponseView
             responseViewItem.ErrorMessage = exception.Message;
             responseViewItem.IsInterrupt = true;
             return responseViewItem;
+        }
+        finally
+        {
+            responseViewItem.ReleaseRespondingState();
+            ParentSession.RespondingCount--;
+        }
+    }
+
+    private async Task ContinueAsync(CancellationToken cancellationToken)
+    {
+        var responseViewItem = AcceptedResponse;
+        if (responseViewItem == null || !responseViewItem.CanContinue)
+        {
+            return;
+        }
+
+        responseViewItem.AcquireRespondingState();
+        ParentSession.RespondingCount++;
+        try
+        {
+            await ParentSession.OnPreviewRequest(cancellationToken);
+            var dialogTextSession = BranchSession.CreateFromResponse(this);
+            var dialogContext = DefaultRequestContextBuilder.CreateFromSession(dialogTextSession);
+            var completedResult = await responseViewItem.Continue(dialogContext, cancellationToken);
+            ParentSession.OnResponseCompleted(completedResult);
+        }
+        catch (Exception exception)
+        {
+            responseViewItem.ErrorMessage = exception.Message;
+            responseViewItem.IsInterrupt = true;
         }
         finally
         {
