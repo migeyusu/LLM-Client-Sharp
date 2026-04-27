@@ -22,8 +22,8 @@ public partial class DialogView : UserControl
             if (indexOf <= 0)
             {
                 return;
-            }
 
+            }
             ViewModel.Requester.Summarize(requestViewItem);
         }
     }

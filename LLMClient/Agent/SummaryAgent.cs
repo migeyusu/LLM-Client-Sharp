@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+﻿﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Dialog.Models;
@@ -20,7 +20,11 @@ public class SummaryAgent : ISingleClientAgent
     public async IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var chatHistory = dialogSession.GetChatHistory().ToList();
+        // Filter out IContextBoundaryItem (e.g. SummaryRequestViewItem) from history,
+        // because the summary request prompt itself should not be part of the history to summarize.
+        var chatHistory = dialogSession.GetChatHistory()
+            .Where(item => item is not IContextBoundaryItem)
+            .ToList();
         if (chatHistory.Count == 0)
         {
             yield break;
