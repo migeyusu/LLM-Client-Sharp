@@ -79,6 +79,9 @@ public class DispatcherRegressionTests
                     GC.WaitForPendingFinalizers();
                     GC.Collect();
                     DrainDispatcher(dispatcher);
+                    // InvokeObservedAsync ? ContinueWith ?? TaskScheduler.Default??????
+                    // ???????????????????
+                    SpinWait.SpinUntil(() => trace.Messages.Count > 0, TimeSpan.FromSeconds(2));
                 }
                 finally
                 {

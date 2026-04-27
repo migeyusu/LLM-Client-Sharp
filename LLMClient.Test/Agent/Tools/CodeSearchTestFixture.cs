@@ -1,8 +1,11 @@
 ﻿// File: LLMClient.Test/Agent/Tools/CodeSearchTestFixture.cs
 
+using AutoMapper;
 using LLMClient.ContextEngineering.Analysis;
 using LLMClient.ContextEngineering.Tools;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace LLMClient.Test.Agent.Tools;
@@ -41,7 +44,8 @@ public sealed class CodeSearchTestFixture : IDisposable
         CreateTestFiles();
 
         // ✅ 配置 Mock Analyzer 返回真实的 IndexService
-        var mockAnalyzer = new Mock<RoslynProjectAnalyzer>();//todo:
+        var mapper = new MapperConfiguration(cfg => cfg.AddProfile<RoslynMappingProfile>(), NullLoggerFactory.Instance).CreateMapper();
+        var mockAnalyzer = new Mock<RoslynProjectAnalyzer>(null, mapper);
         mockAnalyzer.SetupGet(a => a.IndexService).Returns(IndexService);
 
         Context = new SolutionContext(mockAnalyzer.Object);

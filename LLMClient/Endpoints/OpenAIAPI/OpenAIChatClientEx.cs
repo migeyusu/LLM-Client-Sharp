@@ -101,9 +101,9 @@ public class OpenAIChatClientEx : ChatClient
 
 #if DEBUG
 
-        if (clientContext != null)
+        if (clientContext != null && history != null)
         {
-            history!.AppendLine("<response>");
+            history.AppendLine("<response>");
             if (shouldProcessNonStreamingResponse)
             {
                 var response = await GetResponseTextAsync(result.GetRawResponse());

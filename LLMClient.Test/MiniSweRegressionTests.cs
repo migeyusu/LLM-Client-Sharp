@@ -740,31 +740,37 @@ public class MiniSweRegressionTests
             Predicate<ReactStep>? exit = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            ChatHistoryCounts.Add(context.ReadonlyHistory.Count);
-            _callCount++;
-            var text = _callCount == 1 ? "retry required" : "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT";
-            var message = new ChatMessage(ChatRole.Assistant, text);
-            var step = new ReactStep();
-            step.EmitText(text);
-            var stepResult = new StepResult
+            while (true)
             {
-                FinishReason = ChatFinishReason.Stop,
-                IsCompleted = true,
-                Messages = [message],
-            };
-            if (_callCount == 1)
-            {
-                stepResult = new StepResult
+                ChatHistoryCounts.Add(context.ReadonlyHistory.Count);
+                _callCount++;
+                var text = _callCount == 1 ? "retry required" : "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT";
+                var message = new ChatMessage(ChatRole.Assistant, text);
+                var step = new ReactStep();
+                step.EmitText(text);
+                var stepResult = new StepResult
                 {
                     FinishReason = ChatFinishReason.Stop,
                     IsCompleted = true,
                     Messages = [message],
-                    Exception = new Exception("retry"),
                 };
-            }
+                if (_callCount == 1)
+                {
+                    stepResult = new StepResult
+                    {
+                        FinishReason = ChatFinishReason.Stop,
+                        IsCompleted = true,
+                        Messages = [message],
+                        Exception = new Exception("retry"),
+                    };
+                }
 
-            step.Complete(stepResult);
-            yield return step;
+                step.Complete(stepResult);
+                yield return step;
+                ((RequestContext)context).ChatMessages.AddRange([message]);
+                if (exit != null && exit(step))
+                    yield break;
+            }
         }
     }
 
@@ -806,18 +812,24 @@ public class MiniSweRegressionTests
             Predicate<ReactStep>? exit = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            _callCount++;
-            const string text = "duplicate output";
-            var message = new ChatMessage(ChatRole.Assistant, text);
-            var step = new ReactStep();
-            step.EmitText(text);
-            step.Complete(new StepResult
+            while (true)
             {
-                FinishReason = ChatFinishReason.Stop,
-                IsCompleted = true,
-                Messages = [message],
-            });
-            yield return step;
+                _callCount++;
+                const string text = "duplicate output";
+                var message = new ChatMessage(ChatRole.Assistant, text);
+                var step = new ReactStep();
+                step.EmitText(text);
+                step.Complete(new StepResult
+                {
+                    FinishReason = ChatFinishReason.Stop,
+                    IsCompleted = true,
+                    Messages = [message],
+                });
+                yield return step;
+                ((RequestContext)context).ChatMessages.AddRange([message]);
+                if (exit != null && exit(step))
+                    yield break;
+            }
             await Task.CompletedTask;
         }
     }
@@ -967,6 +979,9 @@ public class MiniSweRegressionTests
                 Messages = [new ChatMessage(ChatRole.Assistant, "Irrelevant tool chatter\n")],
             });
             yield return firstStep;
+            ((RequestContext)context).ChatMessages.AddRange(firstStep.Result?.Messages ?? []);
+            if (exit != null && exit(firstStep))
+                yield break;
 
             var secondStep = new ReactStep();
             var finalText = "Relevant inspection summary\nINSPECTION_COMPLETE";
@@ -1054,6 +1069,9 @@ public class MiniSweRegressionTests
                 Messages = [new ChatMessage(ChatRole.Assistant, "irrelevant planner chatter\n")],
             });
             yield return firstStep;
+            ((RequestContext)context).ChatMessages.AddRange(firstStep.Result?.Messages ?? []);
+            if (exit != null && exit(firstStep))
+                yield break;
 
             var secondStep = new ReactStep();
             var finalText = "Actionable plan draft\nPLANNING_COMPLETE";

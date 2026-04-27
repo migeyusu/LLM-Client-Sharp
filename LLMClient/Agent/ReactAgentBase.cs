@@ -78,13 +78,12 @@ public abstract class ReactAgentBase : ISingleClientAgent
 
         // 通过 exit 回调将 IsExitMessage 逻辑下推到 IReactClient 的 ReAct 循环中，
         // 避免外部循环调用 SendRequestAsync 导致上下文异常
+        // 注意：不检查 IsCompleted / Exception，这些由 IReactClient 内部的 DefaultExit 处理。
+        // 如果 Agent 遇到异常（如 HTTP 错误），ReactClientBase 的 ProduceStepAsync 会设置
+        // stepResult.IsCompleted = false，exit 回调会继续循环触发重试。
         Predicate<ReactStep> exit = step =>
         {
             var result = step.Result;
-
-            // 默认退出条件：IsCompleted || Exception != null
-            if (result != null && (result.IsCompleted || result.Exception != null))
-                return true;
 
             // Agent 级自定义退出条件：IsExitMessage 检测任务完成标志
             var lastAssistant = result?.Messages
@@ -103,6 +102,9 @@ public abstract class ReactAgentBase : ISingleClientAgent
         await foreach (var step in ChatClient.SendRequestAsync(requestContext, exit, cancellationToken))
         {
             yield return step;
+            // 累积消息到请求上下文，确保后续 SendRequestAsync 调用能看到历史消息
+            if (step.Result != null)
+                requestContext.ChatMessages.AddRange(step.Result.Messages);
         }
     }
 

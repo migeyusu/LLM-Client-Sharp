@@ -54,8 +54,10 @@ public class ClientResponseViewItemTests
 
         cancellationTokenSource.Cancel();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-            await processingTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        // ProcessResponseItem catches all exceptions and sets IsInterrupt
+        var result = await processingTask.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(result.IsInterrupt);
+        Assert.NotNull(result.ErrorMessage);
 
         Assert.False(responseViewItem.IsResponding);
         Assert.Equal(0, session.RespondingCount);

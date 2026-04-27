@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using UtfUnknown;
 
 namespace LLMClient.ToolCall.DefaultPlugins;
@@ -22,6 +22,18 @@ internal static class FileEncodingHelper
 
         var encoding = DetectEncoding(bytes);
         var content = encoding.GetString(bytes);
+
+        // Strip the BOM character (U+FEFF) if present in the decoded string.
+        // encoding.GetString() converts BOM bytes into U+FEFF in the text,
+        // which causes a spurious ZWNBSP character when the content is later
+        // written back with a BOM-emitting encoding (e.g., UTF8Encoding(true)).
+        // The encoding object itself already carries the "emit BOM" flag,
+        // so File.WriteAllTextAsync will re-emit the BOM bytes automatically.
+        if (content.Length > 0 && content[0] == '\uFEFF')
+        {
+            content = content.Substring(1);
+        }
+
         return (content, encoding);
     }
 
