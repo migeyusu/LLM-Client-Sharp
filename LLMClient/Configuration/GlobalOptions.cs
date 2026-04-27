@@ -9,6 +9,7 @@ using LLMClient.Component.UserControls;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Dialog;
+using LLMClient.Dialog.Models;
 using LLMClient.Persistence;
 using LLMClient.Rag;
 using LLMClient.ToolCall.DefaultPlugins;
@@ -359,6 +360,8 @@ This summary should serve as a comprehensive handoff document that enables seaml
     #endregion
 
     public RagOption RagOption { get; set; } = new RagOption();
+
+    public ReactHistoryCompressionOptions HistoryCompression { get; set; } = new();
 
     /*public ObservableCollection<ILLMChatModel> SuggestedModels { get; } =
         new ObservableCollection<ILLMChatModel>();*/

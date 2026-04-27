@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Documents;
@@ -222,7 +222,7 @@ public class AzureModelInfo : IEndpointModel
 /*Tags?.Contains("agents") == true;*/
     public bool FunctionCallOnStreaming { get; } = false;
 
-    [JsonIgnore] public ReactHistoryCompressionOptions HistoryCompression { get; } = new();
+    [JsonIgnore] public ReactHistoryCompressionOptions? HistoryCompression { get; } = null;
 
     public bool SupportAudioInput { get; } = false;
 

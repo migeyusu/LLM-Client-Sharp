@@ -201,7 +201,7 @@ public class HistoryCompressionStrategyTests
             CreateToolCallResponse("call-2", "second observation"),
             CreateTextResponse("done"));
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.ObservationMasking);
-        client.ModelInfo.HistoryCompression.PreserveRecentRounds = 1;
+        client.ModelInfo.HistoryCompression!.PreserveRecentRounds = 1;
         client.ModelInfo.HistoryCompression.ObservationPlaceholder = "[details omitted for brevity]";
         client.ModelInfo.HistoryCompression.ReactTokenThresholdPercent = 0.0001; // very low to always trigger
         var requestContext = new RequestContext
@@ -258,7 +258,7 @@ public class HistoryCompressionStrategyTests
             CreateToolCallResponse("call-2", "second observation"),
             CreateTextResponse("done"));
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.ObservationMasking);
-        client.ModelInfo.HistoryCompression.PreserveRecentRounds = 1;
+        client.ModelInfo.HistoryCompression!.PreserveRecentRounds = 1;
         client.ModelInfo.HistoryCompression.ReactTokenThresholdPercent = 0.0001; // very low to always trigger
 
         var requestContext = new RequestContext
@@ -295,7 +295,7 @@ public class HistoryCompressionStrategyTests
             CreateTextResponse("all done"));
 
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.ObservationMasking);
-        client.ModelInfo.HistoryCompression.SummaryErrorLoop = true;
+        client.ModelInfo.HistoryCompression!.SummaryErrorLoop = true;
         client.ModelInfo.HistoryCompression.PreserveRecentRounds = 1;
         client.ModelInfo.HistoryCompression.ReactTokenThresholdPercent = 0.0001;
 
@@ -330,7 +330,7 @@ public class HistoryCompressionStrategyTests
             CreateToolCallResponse("call-ok", "good value"),
             CreateTextResponse("all done"));
         var client = new CompressionAwareLlmClient(chatClient, ReactHistoryCompressionMode.ObservationMasking);
-        client.ModelInfo.HistoryCompression.SummaryErrorLoop = true;
+        client.ModelInfo.HistoryCompression!.SummaryErrorLoop = true;
         client.ModelInfo.HistoryCompression.PreserveRecentRounds = 1;
         client.ModelInfo.HistoryCompression.ReactTokenThresholdPercent = 0.0001;
 

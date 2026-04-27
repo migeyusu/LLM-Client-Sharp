@@ -1,4 +1,4 @@
-﻿using LLMClient.Component.CustomControl;
+﻿﻿using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel;
 using LLMClient.Dialog.Models;
 
@@ -30,7 +30,7 @@ public interface IEndpointModel : IModel
     /// </summary>
     ThinkingIncludeMode ThinkingIncludeMode { get; }
     
-    ReactHistoryCompressionOptions HistoryCompression { get; }
+    ReactHistoryCompressionOptions? HistoryCompression { get; }
 
     #region feature
 

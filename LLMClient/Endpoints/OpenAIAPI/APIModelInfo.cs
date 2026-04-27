@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+﻿﻿﻿using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using LLMClient.Abstraction;
@@ -428,16 +428,46 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
         }
     } = false;
 
-    public ReactHistoryCompressionOptions HistoryCompression
+    [JsonPropertyName("HistoryCompressionConfig")]
+    public ReactHistoryCompressionOptions HistoryCompressionConfig
     {
-        get;
+        get => field ??= new ReactHistoryCompressionOptions();
         set
         {
             if (ReferenceEquals(value, field)) return;
             field = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(HistoryCompression));
         }
-    } = new();
+    }
+
+    [JsonPropertyName("HistoryCompressionEnabled")]
+    public bool HistoryCompressionEnabled
+    {
+        get;
+        set
+        {
+            if (value == field) return;
+            field = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HistoryCompression));
+        }
+    } = false;
+
+    [JsonIgnore]
+    public ReactHistoryCompressionOptions? HistoryCompression
+    {
+        get => HistoryCompressionEnabled ? HistoryCompressionConfig : null;
+        set
+        {
+            HistoryCompressionEnabled = value != null;
+            if (value != null)
+            {
+                HistoryCompressionConfig = value;
+            }
+            OnPropertyChanged();
+        }
+    }
 
     public bool SupportStreaming
     {

@@ -1,4 +1,4 @@
-﻿using LLMClient.Abstraction;
+﻿﻿using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel;
 using LLMClient.Dialog.Models;
@@ -52,7 +52,7 @@ public class EmptyLLMChatModel : IEndpointModel
     public bool SupportSearch { get; set; }
     public bool SupportFunctionCall { get; set; }
     public bool FunctionCallOnStreaming { get; set; }
-    public ReactHistoryCompressionOptions HistoryCompression { get; } = new();
+    public ReactHistoryCompressionOptions? HistoryCompression { get; } = null;
     public IPriceCalculator? PriceCalculator { get; init; }
 
     public UsageCounter? Telemetry { get; set; }

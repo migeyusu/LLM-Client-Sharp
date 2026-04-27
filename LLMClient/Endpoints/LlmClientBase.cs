@@ -1,4 +1,4 @@
-using System.ClientModel;
+﻿using System.ClientModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -9,6 +9,7 @@ using LLMClient.Agent.MiniSWE;
 using LLMClient.Component.Utility;
 using LLMClient.Component.ViewModel.Base;
 using LLMClient.Component.ViewModel;
+using LLMClient.Configuration;
 using LLMClient.Dialog;
 using LLMClient.Dialog.Models;
 using LLMClient.Dialog.Proc;
@@ -248,7 +249,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 AutoApproveAllInvocations = requestContext.AutoApproveAllInvocations ||
                                             parentContext?.AutoApproveAllInvocations == true
             };
-            var historyCompressionOptions = Model.HistoryCompression;
+            var historyCompressionOptions = Model.HistoryCompression ?? ServiceLocator.GetService<GlobalOptions>()?.HistoryCompression ?? new ReactHistoryCompressionOptions();
             var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions.Mode);
             var dialogId = requestContext.DialogId;
             if (requestContext.ContextProviders != null)

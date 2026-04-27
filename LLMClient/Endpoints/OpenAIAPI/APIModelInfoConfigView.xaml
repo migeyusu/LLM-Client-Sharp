@@ -163,10 +163,13 @@
                       Visibility="{Binding SupportFunctionCall,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                       ToolTip="Support Function Call when Streaming (Many Endpoints don't support)" />
         </StackPanel>
+        <CheckBox IsChecked="{Binding HistoryCompressionEnabled,Mode=TwoWay}"
+                  Content="Override History Compression"
+                  Margin="0,10,0,0" />
         <GroupBox Margin="0,10,0,0"
                   Header="ReAct History Compression"
-                  DataContext="{Binding HistoryCompression}">
-            <StackPanel>
+                  IsEnabled="{Binding HistoryCompressionEnabled,Mode=OneWay}">
+            <StackPanel DataContext="{Binding HistoryCompressionConfig}">
                 <StackPanel Orientation="Horizontal">
                     <CheckBox VerticalAlignment="Center"
                               Margin="0,0,0,0"

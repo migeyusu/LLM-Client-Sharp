@@ -1,4 +1,4 @@
-﻿using LLMClient.Abstraction;
+﻿﻿using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.ViewModel;
 using LLMClient.Dialog.Models;
@@ -64,7 +64,7 @@ public class StubLLMChatModel : IEndpointModel
     public bool SupportSearch { get; set; } = true;
     public bool SupportFunctionCall { get; set; } = true;
     public bool FunctionCallOnStreaming { get; set; } = true;
-    public ReactHistoryCompressionOptions HistoryCompression { get; } = new();
+    public ReactHistoryCompressionOptions? HistoryCompression { get; } = null;
     public IPriceCalculator? PriceCalculator { get; init; }
 
     public UsageCounter? Telemetry { get; set; }
