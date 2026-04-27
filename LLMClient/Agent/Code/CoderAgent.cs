@@ -15,16 +15,16 @@ public class CoderAgent : ReadOnlyCompactAgentBase
 {
     private const string CodeCompleteFlag = "CODE_COMPLETE";
 
-    public CoderAgent(ILLMChatClient agent, AgentOption agentOption)
-        : base(agent, agentOption, CreateConfig(agent, agentOption))
+    public CoderAgent(ILLMChatClient agent, AgentConfig agentConfig)
+        : base(agent, agentConfig, CreateConfig(agent, agentConfig))
     {
     }
 
     public override string Name { get; } = "Code Agent";
 
-    private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentOption agentOption)
+    private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentConfig agentConfig)
     {
-        var config = CreateBaseConfig(agent, agentOption);
+        var config = CreateBaseConfig(agent, agentConfig);
 
         // Override for Code Agent specific behavior
         config.TaskCompleteFlag = CodeCompleteFlag;

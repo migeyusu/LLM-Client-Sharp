@@ -13,5 +13,5 @@ public class RequestOption
 
     public bool UseAgent { get; set; }
 
-    public required AgentOption AgentOption { get; init; }
+    public required AgentConfig AgentConfig { get; init; }
 }

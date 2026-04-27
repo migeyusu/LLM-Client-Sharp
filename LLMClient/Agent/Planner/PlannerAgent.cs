@@ -14,17 +14,17 @@ public class PlannerAgent : ReadOnlyCompactAgentBase
 {
     private const string PlanningCompleteFlag = "PLANNING_COMPLETE";
 
-    public PlannerAgent(ILLMChatClient agent, AgentOption agentOption)
-        : base(agent, agentOption, CreateConfig(agent, agentOption))
+    public PlannerAgent(ILLMChatClient agent, AgentConfig agentConfig)
+        : base(agent, agentConfig, CreateConfig(agent, agentConfig))
     {
     }
 
     public override string Name { get; } = "Planner Agent";
 
 
-    private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentOption agentOption)
+    private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentConfig agentConfig)
     {
-        var config = CreateBaseConfig(agent, agentOption);
+        var config = CreateBaseConfig(agent, agentConfig);
 
         config.TaskCompleteFlag = PlanningCompleteFlag;
         config.IncludeToolInstructions = true;

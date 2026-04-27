@@ -65,7 +65,7 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
 
     public bool IncludeRagInstructions { get; init; } = true;
 
-    private readonly Dictionary<string, object?> _templateVariables = new();
+    public readonly Dictionary<string, object?> TemplateVariables = new();
 
     protected override string? BuildSystemPrompt()
     {
@@ -85,9 +85,8 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
         CancellationToken cancellationToken)
     {
         var chatHistory = new List<ChatMessage>();
-
         var historyMessages = IncludeHistoryMessages
-            ? (await GetMessagesAsync(cancellationToken)).SkipLast(1).ToList()
+            ? (await GetHistoryMessagesAsync(cancellationToken)).SkipLast(1).ToList()
             : new List<ChatMessage>();
 
         var templateVariables = BuildTemplateVariablesAsync();
@@ -124,6 +123,13 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
             chatHistory.Add(new ChatMessage(ChatRole.User, renderedInstancePrompt));
         }
 
+        if (ContinuesHistory != null)
+        {
+            var source = await TagAndEnumerateItems(ContinuesHistory, cancellationToken)
+                .ToArrayAsync(cancellationToken);
+            chatHistory.AddRange(source);
+        }
+
         return chatHistory;
     }
 
@@ -149,7 +155,7 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
             ["machine"] = Environment.MachineName,
         };
 
-        foreach (var pair in _templateVariables)
+        foreach (var pair in TemplateVariables)
         {
             variables[pair.Key] = pair.Value;
         }

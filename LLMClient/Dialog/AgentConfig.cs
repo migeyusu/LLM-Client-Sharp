@@ -3,7 +3,7 @@ using LLMClient.Component.ViewModel.Base;
 
 namespace LLMClient.Dialog;
 
-public class AgentOption : BaseViewModel
+public class AgentConfig : BaseViewModel
 {
     public string? WorkingDirectory
     {

@@ -364,7 +364,7 @@ public class HistoryCompressionStrategyTests
         var agent = new TestableReactAgent(chatClient, "MyTestAgent");
 
         var session = new MockDialogSession();
-        await foreach (var step in agent.Execute(session))
+        await foreach (var step in agent.Execute(session, AgentRunOption.Default))
         {
             // Just consume
         }
@@ -633,7 +633,7 @@ public class HistoryCompressionStrategyTests
         private readonly string _name;
 
         public TestableReactAgent(ILLMChatClient chatClient, string name)
-            : base(chatClient, new AgentOption(), MiniSweAgentConfigLoader.LoadDefaultWindowsConfig())
+            : base(chatClient, new AgentConfig(), MiniSweAgentConfigLoader.LoadDefaultWindowsConfig())
         {
             _name = name;
         }

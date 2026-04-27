@@ -19,8 +19,8 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
 
     public override string Name { get; } = "MiniSWE Agent";
 
-    public MiniSweAgent(ILLMChatClient agent, AgentOption agentOption)
-        : base(agent, agentOption, CreateConfig(agent, agentOption))
+    public MiniSweAgent(ILLMChatClient agent, AgentConfig agentConfig)
+        : base(agent, agentConfig, CreateConfig(agent, agentConfig))
     {
         _toolProviders = CreateToolProviders(Config);
     }
@@ -38,7 +38,7 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
         }
         else
         {
-            workingDirectory = AgentOption.WorkingDirectory;
+            workingDirectory = AgentConfig.WorkingDirectory;
         }
 
         contextBuilder.WorkingDirectory = workingDirectory;
@@ -67,15 +67,15 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
         return await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
     }
 
-    private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentOption agentOption) =>
-        agentOption.Platform switch
+    private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentConfig agentConfig) =>
+        agentConfig.Platform switch
         {
             RunPlatform.Windows => MiniSweAgentConfigLoader.LoadDefaultWindowsConfig(),
             RunPlatform.Linux => agent.Model.SupportFunctionCall
                 ? MiniSweAgentConfigLoader.LoadDefaultLinuxToolCallConfig()
                 : MiniSweAgentConfigLoader.LoadDefaultLinuxTextBasedConfig(),
             RunPlatform.Wsl => MiniSweAgentConfigLoader.LoadDefaultWslConfig(),
-            _ => throw new ArgumentOutOfRangeException(nameof(agentOption.Platform)),
+            _ => throw new ArgumentOutOfRangeException(nameof(agentConfig.Platform)),
         };
 
     private static IReadOnlyList<KernelFunctionGroup> CreateToolProviders(MiniSweAgentConfig config)

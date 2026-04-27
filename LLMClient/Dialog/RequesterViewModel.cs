@@ -33,17 +33,17 @@ public class RequesterViewModel : BaseViewModel, IRequestConfig
     /// </summary>
     public bool IsDataChanged { get; set; } = true;
 
-    private AgentOption _agentOption = new();
+    private AgentConfig _agentConfig = new();
 
-    public AgentOption AgentOption
+    public AgentConfig AgentConfig
     {
-        get => _agentOption;
+        get => _agentConfig;
         set
         {
-            if (ReferenceEquals(value, _agentOption)) return;
-            _agentOption.PropertyChanged -= TagDataChanged;
-            _agentOption = value;
-            _agentOption.PropertyChanged += TagDataChanged;
+            if (ReferenceEquals(value, _agentConfig)) return;
+            _agentConfig.PropertyChanged -= TagDataChanged;
+            _agentConfig = value;
+            _agentConfig.PropertyChanged += TagDataChanged;
             OnPropertyChanged();
         }
     }
@@ -413,7 +413,7 @@ public class RequesterViewModel : BaseViewModel, IRequestConfig
         _summarizer = summarizer;
         _ragSourceCollection = ragSourceCollection;
         _tokensCounter = tokensCounter;
-        _agentOption.PropertyChanged += TagDataChanged;
+        _agentConfig.PropertyChanged += TagDataChanged;
         this.BindClient(modelClient);
         CancelLastCommand = new ActionCommand(_ => { _tokenSource?.Cancel(); });
         OpenExpandedEditorCommand = new ActionCommand(async o =>
@@ -620,7 +620,7 @@ public class RequesterViewModel : BaseViewModel, IRequestConfig
             DefaultClient = client ?? DefaultClient,
             RequestItem = requestItem,
             UseAgent = this.IsAgentMode,
-            AgentOption = this.AgentOption
+            AgentConfig = this.AgentConfig
         };
     }
 

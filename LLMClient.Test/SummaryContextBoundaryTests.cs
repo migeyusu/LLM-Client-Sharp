@@ -27,7 +27,7 @@ public class SummaryContextBoundaryTests
 
         try
         {
-            await foreach (var step in agent.Execute(session))
+            await foreach (var step in agent.Execute(session, AgentRunOption.Default))
             {
                 await foreach (var _ in step)
                 {

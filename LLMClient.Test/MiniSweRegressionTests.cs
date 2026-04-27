@@ -51,7 +51,7 @@ public class MiniSweRegressionTests
         var client = new RetryRecordingChatClient();
         var request = new RequestViewItem("fix the issue");
         var session = new TestTextDialogSession(request);
-        var agent = new MiniSweAgent(client, new AgentOption
+        var agent = new MiniSweAgent(client, new AgentConfig
         {
             Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
@@ -61,7 +61,7 @@ public class MiniSweRegressionTests
             .SetValue(agent, Array.Empty<KernelFunctionGroup>());
 
         var results = new List<StepResult>();
-        await foreach (var step in agent.Execute(session, cancellationToken: CancellationToken.None))
+        await foreach (var step in agent.Execute(session, AgentRunOption.Default, cancellationToken: CancellationToken.None))
         {
             // Consume all events so step.Result becomes available
             await foreach (var _ in step)
@@ -83,7 +83,7 @@ public class MiniSweRegressionTests
         var client = new DuplicateTextChatClient();
         var request = new RequestViewItem("do something");
         var session = new TestTextDialogSession(request);
-        var agent = new MiniSweAgent(client, new AgentOption
+        var agent = new MiniSweAgent(client, new AgentConfig
         {
             Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
@@ -93,7 +93,7 @@ public class MiniSweRegressionTests
             .SetValue(agent, Array.Empty<KernelFunctionGroup>());
 
         var results = new List<StepResult>();
-        await foreach (var step in agent.Execute(session, cancellationToken: CancellationToken.None))
+        await foreach (var step in agent.Execute(session, AgentRunOption.Default, cancellationToken: CancellationToken.None))
         {
             await foreach (var _ in step)
             {
@@ -130,14 +130,14 @@ public class MiniSweRegressionTests
                         ]
                     };
                     var session = new TestTextDialogSession(request);
-                    var agent = new InspectAgent(client, new AgentOption
+                    var agent = new InspectAgent(client, new AgentConfig
                     {
                         Platform = RunPlatform.Windows,
                         WorkingDirectory = Environment.CurrentDirectory,
                     });
 
                     var results = new List<StepResult>();
-                    await foreach (var step in agent.Execute(session, CancellationToken.None))
+                    await foreach (var step in agent.Execute(session, AgentRunOption.Default, CancellationToken.None))
                     {
                         await foreach (var _ in step)
                         {
@@ -170,7 +170,7 @@ public class MiniSweRegressionTests
         var client = new CompactingInspectChatClient(returnInvalidCompactJson: false);
         var request = new RequestViewItem("inspect the agent flow");
         var session = new TestTextDialogSession(request);
-        var agent = new InspectAgent(client, new AgentOption
+        var agent = new InspectAgent(client, new AgentConfig
         {
             Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
@@ -180,7 +180,7 @@ public class MiniSweRegressionTests
 
         var result = new AgentTaskResult();
         var stepCount = 0;
-        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        await foreach (var step in agent.Execute(session, AgentRunOption.Default, CancellationToken.None))
         {
             stepCount++;
             await foreach (var _ in step)
@@ -206,7 +206,7 @@ public class MiniSweRegressionTests
         var client = new CompactingInspectChatClient(returnInvalidCompactJson: true);
         var request = new RequestViewItem("inspect the agent flow");
         var session = new TestTextDialogSession(request);
-        var agent = new InspectAgent(client, new AgentOption
+        var agent = new InspectAgent(client, new AgentConfig
         {
             Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
@@ -216,7 +216,7 @@ public class MiniSweRegressionTests
 
         var result = new AgentTaskResult();
         var stepCount = 0;
-        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        await foreach (var step in agent.Execute(session, AgentRunOption.Default, CancellationToken.None))
         {
             stepCount++;
             await foreach (var _ in step)
@@ -237,7 +237,7 @@ public class MiniSweRegressionTests
         var client = new CompactingPlannerChatClient(returnInvalidCompactJson: false);
         var request = new RequestViewItem("plan the implementation");
         var session = new TestTextDialogSession(request);
-        var agent = new PlannerAgent(client, new AgentOption
+        var agent = new PlannerAgent(client, new AgentConfig
         {
             Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
@@ -247,7 +247,7 @@ public class MiniSweRegressionTests
 
         var result = new AgentTaskResult();
         var stepCount = 0;
-        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        await foreach (var step in agent.Execute(session, AgentRunOption.Default, CancellationToken.None))
         {
             stepCount++;
             await foreach (var _ in step)
@@ -273,7 +273,7 @@ public class MiniSweRegressionTests
         var client = new CompactingPlannerChatClient(returnInvalidCompactJson: true);
         var request = new RequestViewItem("plan the implementation");
         var session = new TestTextDialogSession(request);
-        var agent = new PlannerAgent(client, new AgentOption
+        var agent = new PlannerAgent(client, new AgentConfig
         {
             Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
@@ -283,7 +283,7 @@ public class MiniSweRegressionTests
 
         var result = new AgentTaskResult();
         var stepCount = 0;
-        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        await foreach (var step in agent.Execute(session, AgentRunOption.Default, CancellationToken.None))
         {
             stepCount++;
             await foreach (var _ in step)
@@ -311,7 +311,7 @@ public class MiniSweRegressionTests
                 $"Inspector notes: focus FooService.BarMethod\n{handoffMarker}"))
         };
         var session = new TestTextDialogSession(request, history);
-        var agent = new PlannerAgent(client, new AgentOption
+        var agent = new PlannerAgent(client, new AgentConfig
         {
             Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
@@ -321,7 +321,7 @@ public class MiniSweRegressionTests
 
         var result = new AgentTaskResult();
         var stepCount = 0;
-        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        await foreach (var step in agent.Execute(session, AgentRunOption.Default, CancellationToken.None))
         {
             stepCount++;
             await foreach (var _ in step)
@@ -349,7 +349,7 @@ public class MiniSweRegressionTests
                 "Legacy context only: inspect artifacts not available yet"))
         };
         var session = new TestTextDialogSession(request, history);
-        var agent = new PlannerAgent(client, new AgentOption
+        var agent = new PlannerAgent(client, new AgentConfig
         {
             Platform = RunPlatform.Windows,
             WorkingDirectory = Environment.CurrentDirectory,
@@ -359,7 +359,7 @@ public class MiniSweRegressionTests
 
         var result = new AgentTaskResult();
         var stepCount = 0;
-        await foreach (var step in agent.Execute(session, CancellationToken.None))
+        await foreach (var step in agent.Execute(session, AgentRunOption.Default, CancellationToken.None))
         {
             stepCount++;
             await foreach (var _ in step)
@@ -690,7 +690,7 @@ public class MiniSweRegressionTests
 
     private sealed class DummyReactAgent : ReactAgentBase
     {
-        public DummyReactAgent() : base(new StubLlmClient(), new AgentOption(), new MiniSweAgentConfig())
+        public DummyReactAgent() : base(new StubLlmClient(), new AgentConfig(), new MiniSweAgentConfig())
         {
         }
 
@@ -1355,6 +1355,7 @@ public class MiniSweRegressionTests
         public string Name => "CancelAwareAgent";
 
         public async IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
+            AgentRunOption option,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.CompletedTask;

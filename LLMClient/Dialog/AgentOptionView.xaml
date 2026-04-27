@@ -8,7 +8,7 @@
              xmlns:extension="clr-namespace:LLMClient.Component.Extension"
              xmlns:miniSwe="clr-namespace:LLMClient.Agent.MiniSWE"
              mc:Ignorable="d" 
-             d:DataContext="{d:DesignInstance local:AgentOption}"
+             d:DataContext="{d:DesignInstance local:AgentConfig}"
              d:DesignHeight="300" d:DesignWidth="600">
     <Grid Margin="10">
         <Grid.RowDefinitions>

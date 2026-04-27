@@ -98,7 +98,7 @@ public class SessionProjectPersistenceProfile : Profile
             .ForMember(model => model.PromptString,
                 opt => opt.MapFrom(src => src.Requester.PromptEditViewModel.FinalText))
             .ForMember(model => model.Client, opt => opt.MapFrom(src => src.Requester.DefaultClient))
-            .ForMember(model => model.AgentOption, opt => opt.MapFrom(src => src.Requester.AgentOption));
+            .ForMember(model => model.AgentConfig, opt => opt.MapFrom(src => src.Requester.AgentConfig));
 
         CreateMap<ProjectSessionViewModel, ProjectSessionPersistModel>()
             .IncludeBase<DialogSessionViewModel, DialogSessionPersistModel>()
@@ -141,8 +141,8 @@ public class SessionProjectPersistenceProfile : Profile
                     opt.PreCondition(src => src.ExtendedPrompts != null);
                     opt.MapFrom(src => MapPrompts(src.ExtendedPrompts, promptsResource));
                 })
-            .ForPath(model => model.Requester.AgentOption,
-                opt => { opt.MapFrom(src => src.AgentOption ?? new AgentOption()); });
+            .ForPath(model => model.Requester.AgentConfig,
+                opt => { opt.MapFrom(src => src.AgentConfig ?? new AgentConfig()); });
 
         CreateMap<ProjectSessionPersistModel, ProjectSessionViewModel>()
             .IncludeBase<DialogSessionPersistModel, DialogSessionViewModel>()

@@ -673,7 +673,7 @@
                                     Style="{StaticResource MaterialDesignIconButton}"
                                     Visibility="{Binding IsAgentMode,Mode=OneWay,Converter={StaticResource BooleanToVisibilityConverter}}"
                                     Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
-                                    CommandParameter="{Binding AgentOption,Mode=OneWay}" />
+                                    CommandParameter="{Binding AgentConfig,Mode=OneWay}" />
 
                             <Menu VerticalAlignment="Center"
                                   Margin="6,0,0,0">

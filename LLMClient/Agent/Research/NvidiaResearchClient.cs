@@ -58,6 +58,7 @@ public class NvidiaResearchClient : ResearchClient
 
     [Experimental("SKEXP0110")]
     public override async IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
+        AgentRunOption option,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var lastRequest = dialogSession.GetChatHistory().LastOrDefault(item => item is RequestViewItem) as RequestViewItem;

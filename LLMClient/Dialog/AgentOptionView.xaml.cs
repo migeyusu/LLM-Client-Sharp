@@ -12,19 +12,19 @@ public partial class AgentOptionView : UserControl
 
     public void SelectFolder_OnClick(object sender, RoutedEventArgs e)
     {
-        if (DataContext is not AgentOption option) return;
+        if (DataContext is not AgentConfig agentConfig) return;
 
         using var dialog = new System.Windows.Forms.FolderBrowserDialog
         {
             Description = "Select Working Directory",
-            SelectedPath = string.IsNullOrEmpty(option.WorkingDirectory)
+            SelectedPath = string.IsNullOrEmpty(agentConfig.WorkingDirectory)
                 ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                : option.WorkingDirectory
+                : agentConfig.WorkingDirectory
         };
 
         if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
         {
-            option.WorkingDirectory = dialog.SelectedPath;
+            agentConfig.WorkingDirectory = dialog.SelectedPath;
         }
     }
 }

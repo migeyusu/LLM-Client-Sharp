@@ -16,7 +16,7 @@ public class MiniSweAgentPersistModel : AgentPersistModel
 {
     public int CallCount { get; set; }
     
-    public AgentOption? AgentOption { get; set; }
+    public AgentConfig? AgentConfig { get; set; }
     public ParameterizedLLMModelPO? ChatClient { get; set; }
     public Dictionary<string, object?> ExtraTemplateVars { get; set; } = [];
 }
@@ -25,7 +25,7 @@ public class InspectAgentPersistModel : AgentPersistModel
 {
     public int CallCount { get; set; }
 
-    public AgentOption? AgentOption { get; set; }
+    public AgentConfig? AgentConfig { get; set; }
 
     public ParameterizedLLMModelPO? ChatClient { get; set; }
 }
@@ -34,7 +34,7 @@ public class PlannerAgentPersistModel : AgentPersistModel
 {
     public int CallCount { get; set; }
 
-    public AgentOption? AgentOption { get; set; }
+    public AgentConfig? AgentConfig { get; set; }
 
     public ParameterizedLLMModelPO? ChatClient { get; set; }
 }

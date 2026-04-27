@@ -169,7 +169,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         return null;
     }
 
-    private async Task ExecuteAgentAsync(CancellationToken token, ResponseViewItemBase.ReactStepConsumeMode mode)
+    private async Task ExecuteAgentAsync(CancellationToken token, ReactStepConsumeMode mode)
     {
         if (Agent == null)
         {
@@ -180,6 +180,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         var agentTaskResult = AgentTaskResult.Empty;
         IsResponding = true;
         ParentSession.RespondingCount++;
+        var isRest = mode == ReactStepConsumeMode.Reset;
         try
         {
             using (Response.CreateRequestTokenSource(token, out var liveToken))
@@ -187,17 +188,18 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
                 await ParentSession.OnPreviewRequest(liveToken);
                 var branchDialogTextSession = BranchSession.CreateFromResponse(this);
                 agentTaskResult = await Response.ConsumeReactStepsAsync(
-                    Agent.Execute(branchDialogTextSession, liveToken), mode);
+                    Agent.Execute(branchDialogTextSession, new AgentRunOption() { ReactStepConsumeMode = mode },
+                        liveToken), mode);
                 ParentSession.OnResponseCompleted(agentTaskResult);
             }
         }
         catch (OperationCanceledException)
         {
-            if (mode == ResponseViewItemBase.ReactStepConsumeMode.Reset) agentTaskResult = AgentTaskResult.Empty;
+            if (isRest) agentTaskResult = AgentTaskResult.Empty;
         }
         catch (Exception e)
         {
-            var errorMsg = mode == ResponseViewItemBase.ReactStepConsumeMode.Append ? "继续运行失败" : "响应失败";
+            var errorMsg = mode == ReactStepConsumeMode.Append ? "继续运行失败" : "响应失败";
             MessageBoxes.Error(e.Message, errorMsg);
             Response.ErrorMessage = e.Message;
             Response.IsInterrupt = true;
@@ -205,7 +207,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
         finally
         {
             IsResponding = false;
-            if (mode == ResponseViewItemBase.ReactStepConsumeMode.Reset)
+            if (isRest)
             {
                 ResponseViewItemBase.Mapper.Map<IResponse, ResponseViewItemBase>(agentTaskResult, Response);
             }
@@ -222,13 +224,13 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     public async Task<IResponse> ProcessAsync(CancellationToken token)
     {
-        await ExecuteAgentAsync(token, ResponseViewItemBase.ReactStepConsumeMode.Reset);
+        await ExecuteAgentAsync(token, ReactStepConsumeMode.Reset);
         return Response;
     }
 
     private Task ContinueAsync(CancellationToken cancellationToken) =>
-        ExecuteAgentAsync(cancellationToken, ResponseViewItemBase.ReactStepConsumeMode.Append);
+        ExecuteAgentAsync(cancellationToken, ReactStepConsumeMode.Append);
 
     private Task RetryAsync(CancellationToken cancellationToken) =>
-        ExecuteAgentAsync(cancellationToken, ResponseViewItemBase.ReactStepConsumeMode.Reset);
+        ExecuteAgentAsync(cancellationToken, ReactStepConsumeMode.Reset);
 }

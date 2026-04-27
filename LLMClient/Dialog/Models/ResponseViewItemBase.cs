@@ -580,18 +580,6 @@ public class ResponseViewItemBase : BaseViewModel, IResponse
     }
 
     /// <summary>
-    /// 消费模式：重试时清除已有循环，继续时追加到已有循环之后。
-    /// </summary>
-    internal enum ReactStepConsumeMode
-    {
-        /// <summary>重试：消费前清除 Loops、LoopCount、CurrentStatus</summary>
-        Reset,
-
-        /// <summary>继续：不清除已有状态，循环追加到现有列表</summary>
-        Append,
-    }
-
-    /// <summary>
     /// 消费 IAsyncEnumerable&lt;ReactStep&gt; 流，将每轮循环写入 <see cref="Loops"/>
     /// 并累积为 <see cref="AgentTaskResult"/>。
     /// 供 ClientResponseViewItem / LinearResponseViewItem 共用。

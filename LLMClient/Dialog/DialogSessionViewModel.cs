@@ -593,7 +593,7 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         {
             var agentType = option.Agent?.Type ?? throw new InvalidOperationException("未指定Agent类型");
             return await ExecuteAgentAsync(client, requestViewItem,
-                agentType, option.AgentOption, insertBefore, token);
+                agentType, option.AgentConfig, insertBefore, token);
         }
 
         var multiResponseViewItem = new ParallelResponseViewItem(this)
@@ -629,20 +629,20 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
     }
 
     private async Task<IResponse> ExecuteAgentAsync(ILLMChatClient client, IRequestItem requestViewItem, Type agentType,
-        AgentOption agentOption, IRequestItem? insertBefore, CancellationToken token)
+        AgentConfig agentConfig, IRequestItem? insertBefore, CancellationToken token)
     {
         IAgent agent;
         if (agentType == typeof(MiniSweAgent))
         {
-            agent = new MiniSweAgent(client, agentOption);
+            agent = new MiniSweAgent(client, agentConfig);
         }
         else if (agentType == typeof(InspectAgent))
         {
-            agent = new InspectAgent(client, agentOption);
+            agent = new InspectAgent(client, agentConfig);
         }
         else if (agentType == typeof(PlannerAgent))
         {
-            agent = new PlannerAgent(client, agentOption);
+            agent = new PlannerAgent(client, agentConfig);
         }
         else if (agentType == typeof(SummaryAgent))
         {

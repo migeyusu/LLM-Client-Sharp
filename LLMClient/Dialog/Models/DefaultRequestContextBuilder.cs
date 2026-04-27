@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 using LLMClient.Abstraction;
 using LLMClient.Endpoints;
@@ -16,20 +17,31 @@ namespace LLMClient.Dialog.Models;
 /// </summary>
 public class DefaultRequestContextBuilder
 {
+    /// <summary>
+    /// 表示上一次未完成的任务历史，为空表示从头开始不需要考虑
+    /// </summary>
+    public IResponseItem? ContinuesHistory { get; set; }
+
     protected DefaultRequestContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems)
     {
         ChatHistoryItems = dialogItems;
     }
 
-    public static DefaultRequestContextBuilder CreateFromSession(ISession session)
+    public static DefaultRequestContextBuilder CreateFromSession(ISession session, bool includeWorkingResponse = false)
     {
         var workingResponse = session.WorkingResponse;
         var historyItems = session.GetChatHistory().ToArray();
         var workingDirectory = session is IProjectSession projectSession
             ? projectSession.WorkingDirectory
             : null;
-        return CreateFromHistory(historyItems, workingResponse.Id, session.ContextProviders,
+        var contextBuilder = CreateFromHistory(historyItems, workingResponse.Id, session.ContextProviders,
             session.SystemPrompt, session.ID, workingDirectory);
+        if (includeWorkingResponse)
+        {
+            contextBuilder.ContinuesHistory = workingResponse;
+        }
+
+        return contextBuilder;
     }
 
     public static DefaultRequestContextBuilder CreateFromHistory(IReadOnlyList<IChatHistoryItem> history,
@@ -48,47 +60,6 @@ public class DefaultRequestContextBuilder
         };
         dialogContext.MapFromRequest(requestViewItem);
         return dialogContext;
-    }
-
-    /// <summary>
-    /// message don't contains system prompt
-    /// </summary>
-    public virtual async Task<List<ChatMessage>> GetMessagesAsync(CancellationToken cancellationToken = default)
-    {
-        var chatMessages = new List<ChatMessage>();
-        foreach (var chatHistoryItem in ChatHistoryItems)
-        {
-            if (chatHistoryItem is RequestViewItem requestViewItem)
-            {
-                await requestViewItem.EnsureDataAsync(cancellationToken);
-            }
-
-            var messages = chatHistoryItem.Messages;
-            foreach (var message in messages)
-            {
-                // Level 3: DialogItem tag
-                if (chatHistoryItem is IDialogItem dialogItem)
-                {
-                    message.TagDialogLevel(dialogItem);
-                }
-
-                // Level 2: Interaction tag
-                if (chatHistoryItem is IInteractionItem interactionItem)
-                {
-                    message.TagInteractionLevel(interactionItem);
-                }
-
-                // Level 1: Session tag
-                if (SessionId.HasValue)
-                {
-                    message.TagSessionLevel(SessionId.Value);
-                }
-
-                chatMessages.Add(message);
-            }
-        }
-
-        return chatMessages;
     }
 
     public void MapFromRequest(IRequestConfig config)
@@ -250,7 +221,7 @@ public class DefaultRequestContextBuilder
         CancellationToken cancellationToken)
     {
         var chatHistory = new List<ChatMessage>();
-        var chatMessages = await GetMessagesAsync(cancellationToken);
+
         var systemPrompt = BuildSystemPrompt();
 
         if (!string.IsNullOrWhiteSpace(systemPrompt))
@@ -276,7 +247,15 @@ public class DefaultRequestContextBuilder
             chatHistory.Add(systemMessage);
         }
 
+        var chatMessages = await GetHistoryMessagesAsync(cancellationToken);
         chatHistory.AddRange(chatMessages);
+        if (ContinuesHistory != null)
+        {
+            var source = await TagAndEnumerateItems(ContinuesHistory, cancellationToken)
+                .ToArrayAsync(cancellationToken);
+            chatHistory.AddRange(source);
+        }
+
         return chatHistory;
     }
 
@@ -363,6 +342,59 @@ public class DefaultRequestContextBuilder
             }
         }
     }
+
+
+    /// <summary>
+    /// message don't contains system prompt
+    /// </summary>
+    protected virtual async Task<List<ChatMessage>> GetHistoryMessagesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var chatMessages = new List<ChatMessage>();
+        foreach (var chatHistoryItem in ChatHistoryItems)
+        {
+            await foreach (var tagAndEnumerateItem in TagAndEnumerateItems(chatHistoryItem, cancellationToken))
+            {
+                chatMessages.Add(tagAndEnumerateItem);
+            }
+        }
+
+        return chatMessages;
+    }
+
+    protected async IAsyncEnumerable<ChatMessage> TagAndEnumerateItems(IChatHistoryItem chatHistoryItem,
+        [EnumeratorCancellation] CancellationToken token)
+    {
+        if (chatHistoryItem is RequestViewItem requestViewItem)
+        {
+            await requestViewItem.EnsureDataAsync(token);
+        }
+
+        var messages = chatHistoryItem.Messages;
+        foreach (var message in messages)
+        {
+            // Level 3: DialogItem tag
+            if (chatHistoryItem is IDialogItem dialogItem)
+            {
+                message.TagDialogLevel(dialogItem);
+            }
+
+            // Level 2: Interaction tag
+            if (chatHistoryItem is IInteractionItem interactionItem)
+            {
+                message.TagInteractionLevel(interactionItem);
+            }
+
+            // Level 1: Session tag
+            if (SessionId.HasValue)
+            {
+                message.TagSessionLevel(SessionId.Value);
+            }
+
+            yield return message;
+        }
+    }
+
 
     protected virtual ChatOptions BuildRequestOptions(
         IEndpointModel model,

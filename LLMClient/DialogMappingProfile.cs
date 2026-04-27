@@ -34,7 +34,7 @@ public class DialogMappingProfile : Profile
                 var client = src.ChatClient != null
                     ? ctx.Mapper.Map<ILLMChatClient>(src.ChatClient)
                     : EmptyLlmModelClient.Instance;
-                return new MiniSweAgent(client, src.AgentOption ?? new AgentOption());
+                return new MiniSweAgent(client, src.AgentConfig ?? new AgentConfig());
             });
 
         CreateMap<InspectAgent, InspectAgentPersistModel>();
@@ -44,7 +44,7 @@ public class DialogMappingProfile : Profile
                 var client = src.ChatClient != null
                     ? ctx.Mapper.Map<ILLMChatClient>(src.ChatClient)
                     : EmptyLlmModelClient.Instance;
-                return new InspectAgent(client, src.AgentOption ?? new AgentOption());
+                return new InspectAgent(client, src.AgentConfig ?? new AgentConfig());
             });
 
         CreateMap<PlannerAgent, PlannerAgentPersistModel>();
@@ -54,7 +54,7 @@ public class DialogMappingProfile : Profile
                 var client = src.ChatClient != null
                     ? ctx.Mapper.Map<ILLMChatClient>(src.ChatClient)
                     : EmptyLlmModelClient.Instance;
-                return new PlannerAgent(client, src.AgentOption ?? new AgentOption());
+                return new PlannerAgent(client, src.AgentConfig ?? new AgentConfig());
             });
 
         CreateMap<SummaryAgent, SummaryAgentPersistModel>();

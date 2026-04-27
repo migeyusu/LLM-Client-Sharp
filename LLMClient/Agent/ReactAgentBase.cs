@@ -20,7 +20,7 @@ public abstract class ReactAgentBase : ISingleClientAgent
 
     public ILLMChatClient ChatClient { get; }
 
-    public AgentOption AgentOption { get; }
+    public AgentConfig AgentConfig { get; }
 
     public abstract string Name { get; }
 
@@ -31,10 +31,10 @@ public abstract class ReactAgentBase : ISingleClientAgent
 
     private string? _previousAssistantText;
 
-    protected ReactAgentBase(ILLMChatClient chatClient, AgentOption agentOption, MiniSweAgentConfig config)
+    protected ReactAgentBase(ILLMChatClient chatClient, AgentConfig agentConfig, MiniSweAgentConfig config)
     {
         ChatClient = chatClient;
-        AgentOption = agentOption;
+        AgentConfig = agentConfig;
         Config = config;
     }
 
@@ -47,6 +47,7 @@ public abstract class ReactAgentBase : ISingleClientAgent
         CancellationToken cancellationToken);
 
     public async IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
+        AgentRunOption option,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // yield return is not allowed inside try/catch; capture the exception first.

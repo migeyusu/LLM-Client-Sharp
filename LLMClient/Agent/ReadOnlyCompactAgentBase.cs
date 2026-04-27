@@ -18,8 +18,8 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
 {
     private readonly IReadOnlyList<IAIFunctionGroup> _toolProviders;
 
-    protected ReadOnlyCompactAgentBase(ILLMChatClient agent, AgentOption agentOption, MiniSweAgentConfig config)
-        : base(agent, agentOption, config)
+    protected ReadOnlyCompactAgentBase(ILLMChatClient agent, AgentConfig agentConfig, MiniSweAgentConfig config)
+        : base(agent, agentConfig, config)
     {
         _toolProviders = CreateToolProviders(config);
     }
@@ -39,7 +39,7 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
         }
         else
         {
-            workingDirectory = AgentOption.WorkingDirectory;
+            workingDirectory = AgentConfig.WorkingDirectory;
         }
 
         contextBuilder.WorkingDirectory = workingDirectory;
@@ -49,16 +49,16 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
         return await contextBuilder.BuildAsync(ChatClient.Model, cancellationToken);
     }
 
-    protected static MiniSweAgentConfig CreateBaseConfig(ILLMChatClient agent, AgentOption agentOption)
+    protected static MiniSweAgentConfig CreateBaseConfig(ILLMChatClient agent, AgentConfig agentConfig)
     {
-        return agentOption.Platform switch
+        return agentConfig.Platform switch
         {
             RunPlatform.Windows => MiniSweAgentConfigLoader.LoadDefaultWindowsConfig(),
             RunPlatform.Linux => agent.Model.SupportFunctionCall
                 ? MiniSweAgentConfigLoader.LoadDefaultLinuxToolCallConfig()
                 : MiniSweAgentConfigLoader.LoadDefaultLinuxTextBasedConfig(),
             RunPlatform.Wsl => MiniSweAgentConfigLoader.LoadDefaultWslConfig(),
-            _ => throw new ArgumentOutOfRangeException(nameof(agentOption.Platform)),
+            _ => throw new ArgumentOutOfRangeException(nameof(agentConfig.Platform)),
         };
     }
 

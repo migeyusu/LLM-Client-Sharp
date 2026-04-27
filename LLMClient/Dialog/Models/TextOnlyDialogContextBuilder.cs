@@ -13,9 +13,9 @@ public class TextOnlyDialogContextBuilder : DefaultRequestContextBuilder
     {
     }
 
-    public override async Task<List<ChatMessage>> GetMessagesAsync(CancellationToken cancellationToken = default)
+    protected override async Task<List<ChatMessage>> GetHistoryMessagesAsync(CancellationToken cancellationToken = default)
     {
-        var messages = await base.GetMessagesAsync(cancellationToken);
+        var messages = await base.GetHistoryMessagesAsync(cancellationToken);
         var textOnlyMessages = new List<ChatMessage>(messages.Count);
 
         foreach (var message in messages)

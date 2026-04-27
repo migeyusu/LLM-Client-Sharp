@@ -14,17 +14,17 @@ public class InspectAgent : ReadOnlyCompactAgentBase
 {
     private const string InspectionCompleteFlag = "INSPECTION_COMPLETE";
 
-    public InspectAgent(ILLMChatClient agent, AgentOption agentOption)
-        : base(agent, agentOption, CreateConfig(agent, agentOption))
+    public InspectAgent(ILLMChatClient agent, AgentConfig agentConfig)
+        : base(agent, agentConfig, CreateConfig(agent, agentConfig))
     {
     }
 
     public override string Name { get; } = "Inspect Agent";
 
 
-    private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentOption agentOption)
+    private static MiniSweAgentConfig CreateConfig(ILLMChatClient agent, AgentConfig agentConfig)
     {
-        var config = CreateBaseConfig(agent, agentOption);
+        var config = CreateBaseConfig(agent, agentConfig);
 
         config.TaskCompleteFlag = InspectionCompleteFlag;
         config.IncludeToolInstructions = true;

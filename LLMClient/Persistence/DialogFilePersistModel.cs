@@ -10,7 +10,7 @@ public class DialogFilePersistModel : DialogSessionPersistModel
 {
     public const int DialogPersistVersion = 3;
 
-    public AgentOption? AgentOption { get; set; }
+    public AgentConfig? AgentConfig { get; set; }
 
     public int Version { get; set; } = DialogPersistVersion;
 

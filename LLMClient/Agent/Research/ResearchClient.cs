@@ -20,5 +20,6 @@ public abstract class ResearchClient : BaseViewModel, IAgent, IInbuiltAgent
     }
 
     public abstract IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
+        AgentRunOption option,
         CancellationToken cancellationToken = default);
 }

@@ -12,6 +12,7 @@ public class TestSuccessAgent : IAgent
     public string Name { get; } = "TestSuccessAgent";
 
     public async IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
+        AgentRunOption option,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         for (int i = 0; i < 5; i++)
@@ -39,6 +40,7 @@ public class TestFailedAgent: IAgent
     public string Name { get; }="TestFailedAgent";
 
     public async IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
+        AgentRunOption option,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await Task.Delay(1000, cancellationToken);

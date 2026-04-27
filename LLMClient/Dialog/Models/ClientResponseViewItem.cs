@@ -127,12 +127,6 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
         return ExecuteWithClientAsync(contextBuilder, token, ReactStepConsumeMode.Append);
     }
 
-    public Task<AgentTaskResult> Retry(DefaultRequestContextBuilder contextBuilder,
-        CancellationToken token = default)
-    {
-        return ExecuteWithClientAsync(contextBuilder, token, ReactStepConsumeMode.Reset);
-    }
-
     #endregion
 
     public ClientResponseViewItem(ILLMChatClient client)

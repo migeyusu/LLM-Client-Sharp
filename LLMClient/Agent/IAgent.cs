@@ -1,5 +1,4 @@
-﻿using LLMClient.Abstraction;
-using LLMClient.Dialog.Models;
+﻿using LLMClient.Dialog.Models;
 
 namespace LLMClient.Agent;
 
@@ -10,16 +9,10 @@ public interface IAgent
     /// <summary>
     /// 以 ReAct 循环流的形式执行 Agent。每个 ReactStep 代表一轮 Reasoning + Acting。
     /// </summary>
-    IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
+    IAsyncEnumerable<ReactStep> Execute(ISession dialogSession, AgentRunOption option,
         CancellationToken cancellationToken = default);
 }
 
-public interface IInbuiltAgent
-{
-    private static readonly Lazy<Type[]> ChildTypesLazy = new(() => typeof(IInbuiltAgent).ImplementsTypes().ToArray());
-
-    static Type[] ChildTypes => ChildTypesLazy.Value;
-}
 
 /*
  * <agent_system>

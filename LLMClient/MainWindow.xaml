@@ -91,7 +91,7 @@
                                             Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
-                                <DataTemplate DataType="{x:Type dialog:AgentOption}">
+                                <DataTemplate DataType="{x:Type dialog:AgentConfig}">
                                     <HeaderedContentControl Header="配置agent选项"
                                                             Style="{StaticResource DialogContentControlStyle}">
                                         <dialog:AgentOptionView MaxWidth="800"
