@@ -108,14 +108,20 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
             }
         }
 
+        var historyBuilder = new StringBuilder("Here's the conversation history so far:\n");
+        if (historyMessages.Count > 0)
+        {
+            historyBuilder.AppendLine();
+            foreach (var historyMessage in historyMessages)
+            {
+                historyBuilder.AppendLine($"- {historyMessage.Role}");
+                historyBuilder.AppendLine(historyMessage.Text);
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(renderedInstancePrompt))
         {
             chatHistory.Add(new ChatMessage(ChatRole.User, renderedInstancePrompt));
-        }
-
-        if (historyMessages.Count > 0)
-        {
-            chatHistory.AddRange(historyMessages);
         }
 
         return chatHistory;
