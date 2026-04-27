@@ -36,3 +36,8 @@ public class SummaryAgent : ISingleClientAgent
         }
     }
 }
+
+public class CompulsoryAgent
+{
+    
+}

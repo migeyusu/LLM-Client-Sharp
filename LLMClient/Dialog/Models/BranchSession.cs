@@ -35,6 +35,7 @@ public class BranchSession : ISession
     public IResponseItem WorkingResponse { get; }
 
     public AIContextProvider[]? ContextProviders => ParentSession.ContextProviders;
+    public IPromptCommandAggregate? PromptCommand => ParentSession.PromptCommand;
 
     public string? SystemPrompt => ParentSession.SystemPrompt;
 }
@@ -60,17 +61,11 @@ public class BranchProject : BranchSession, IProjectSession
 
     public string ProjectInformationPrompt
     {
-        get
-        {
-            return _parentProject.ProjectInformationPrompt;
-        }
+        get { return _parentProject.ProjectInformationPrompt; }
     }
 
     public IAIFunctionGroup[] ProjectTools
     {
-        get
-        {
-            return _parentProject.ProjectTools;
-        }
+        get { return _parentProject.ProjectTools; }
     }
 }

@@ -17,11 +17,6 @@ namespace LLMClient.Dialog.Models;
 /// </summary>
 public class DefaultRequestContextBuilder
 {
-    /// <summary>
-    /// 表示上一次未完成的任务历史，为空表示从头开始不需要考虑
-    /// </summary>
-    public IResponseItem? ContinuesHistory { get; set; }
-
     protected DefaultRequestContextBuilder(IReadOnlyList<IChatHistoryItem> dialogItems)
     {
         ChatHistoryItems = dialogItems;
@@ -68,8 +63,18 @@ public class DefaultRequestContextBuilder
         this.FunctionGroups = config.FunctionGroups?.ToList();
     }
 
-    public string? UserPrompt { get; set; }
+    public string UserPrompt { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 表示上一次未完成的任务历史，为空表示从头开始不需要考虑
+    /// </summary>
+    public IResponseItem? ContinuesHistory { get; set; }
+
+    public IPromptCommandAggregate? PromptCommand { get; set; }
+
+    /// <summary>
+    /// raw history from <see cref="ISession"/>, last is <see cref="RequestViewItem"/>
+    /// </summary>
     public IReadOnlyList<IChatHistoryItem> ChatHistoryItems { get; }
 
     public string? WorkingDirectory { get; set; }
@@ -248,6 +253,16 @@ public class DefaultRequestContextBuilder
         }
 
         var chatMessages = await GetHistoryMessagesAsync(cancellationToken);
+        /*var promptCommand = this.PromptCommand;
+        if (promptCommand != null)
+        {
+            var promptAsync = await promptCommand.TryGetInjectedPromptAsync(this.UserPrompt, cancellationToken);
+            if (promptAsync!=this.UserPrompt)
+            {
+                chatMessages.LastOrDefault()?.Role==ChatRole.
+            }
+        }*/
+
         chatHistory.AddRange(chatMessages);
         if (ContinuesHistory != null)
         {

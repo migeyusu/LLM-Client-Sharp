@@ -121,6 +121,7 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
             }
         }
 
+        chatHistory.Add(new ChatMessage(ChatRole.User, historyBuilder.ToString().TrimEnd()));
         if (!string.IsNullOrWhiteSpace(renderedInstancePrompt))
         {
             chatHistory.Add(new ChatMessage(ChatRole.User, renderedInstancePrompt));

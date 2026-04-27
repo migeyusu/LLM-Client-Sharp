@@ -9,8 +9,6 @@ public interface IDialogSession : ISession
 
     IFunctionGroupSource? ToolsSource { get; }
 
-    IPromptCommandAggregate? PromptCommand { get; }
-
     IEnumerable<Type> SupportedAgents { get; }
 
     Task CutContextAsync(IRequestItem? requestItem = null);

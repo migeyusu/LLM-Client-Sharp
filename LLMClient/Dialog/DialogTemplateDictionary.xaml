@@ -1173,8 +1173,7 @@
                                   Padding="0">
                             <MenuItem Header="隐藏交互历史"
                                       IsCheckable="True"
-                                      IsChecked="{Binding HideLoopHistory,Mode=TwoWay}"
-                                      Visibility="{Binding Response.IsInterrupt,Mode=OneWay,Converter={x:Static materialDesign:BooleanToVisibilityConverter.CollapsedInstance}}" />
+                                      IsChecked="{Binding HideLoopHistory,Mode=TwoWay}"/>
                             <MenuItem Header="标记为有效回复"
                                       IsCheckable="True"
                                       IsChecked="{Binding Response.IsManualValid,Mode=TwoWay}"

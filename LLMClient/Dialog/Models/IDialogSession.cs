@@ -1,4 +1,5 @@
-﻿using Microsoft.Agents.AI;
+﻿using LLMClient.Abstraction;
+using Microsoft.Agents.AI;
 
 namespace LLMClient.Dialog.Models;
 
@@ -18,6 +19,8 @@ public interface ISession
     }
 
     AIContextProvider[]? ContextProviders { get; }
+    
+    IPromptCommandAggregate? PromptCommand { get; }
 
     string? SystemPrompt { get; }
 }
