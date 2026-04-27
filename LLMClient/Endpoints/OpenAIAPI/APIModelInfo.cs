@@ -193,7 +193,7 @@ public class APIModelInfo : NotifyDataErrorInfoViewModelBase, IEndpointModel
         }
     } = 200 * 1000;
 
-    [JsonIgnore] public ILLMAPIEndpoint Endpoint { get; set; } = new EmptyLLMEndpoint();
+    [JsonIgnore] public IAPIEndpoint Endpoint { get; set; } = new EmptyLLMEndpoint();
 
     public ThinkingIncludeMode ThinkingIncludeMode
     {

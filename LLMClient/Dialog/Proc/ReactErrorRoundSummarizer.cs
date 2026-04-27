@@ -46,7 +46,7 @@ internal static class ReactErrorRoundSummarizer
             return null;
         }
 
-        var fallbackClient = currentClient is LlmClientBase
+        var fallbackClient = currentClient is ReactClientBase
             ? null
             : currentClient;
         var llmSummary = await summarizer.SummarizeChatMessagesAsync(

@@ -225,7 +225,7 @@
                                                                     Height="600" />
                                     </HeaderedContentControl>
                                 </DataTemplate>
-                                <DataTemplate DataType="{x:Type endpoints:LlmClientBase}">
+                                <DataTemplate DataType="{x:Type endpoints:ReactClientBase}">
                                     <HeaderedContentControl Header="{Binding Name,Mode=OneTime}"
                                                             Width="600"
                                                             Style="{StaticResource DialogContentControlStyle}">

@@ -1,4 +1,4 @@
-using LLMClient.Abstraction;
+﻿using LLMClient.Abstraction;
 using LLMClient.Component.CustomControl;
 using LLMClient.Component.Utility;
 using LLMClient.Endpoints;
@@ -88,7 +88,7 @@ public class ClientResponseViewItem : ResponseViewItemBase, CommonCommands.ICopy
             {
                 var requestContext = await contextBuilder.BuildAsync(Client.Model, liveToken);
                 completedResult = await ConsumeReactStepsAsync(
-                    Client.SendRequestAsync(requestContext, liveToken), mode);
+                    Client.SendRequestAsync(requestContext, exit: null, liveToken), mode);
             }
         }
         catch (Exception exception)

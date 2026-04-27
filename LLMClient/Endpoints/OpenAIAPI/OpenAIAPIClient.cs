@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
-public class OpenAIAPIClient : LlmClientBase
+public class OpenAIAPIClient : ReactClientBase
 {
     private static readonly Mapper Mapper =
         new(new MapperConfiguration(expression => { expression.CreateMap<APIModelInfo, IModelParams>(); },
@@ -32,7 +32,7 @@ public class OpenAIAPIClient : LlmClientBase
         get { return ModelInfo.Name; }
     }
 
-    public override ILLMAPIEndpoint Endpoint { get; }
+    public override IAPIEndpoint Endpoint { get; }
 
     protected readonly APIDefaultOption Option;
 

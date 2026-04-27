@@ -22,7 +22,7 @@ public sealed class NewApiUsageQueryService
         _httpMessageHandler = httpMessageHandler;
     }
 
-    public bool TryResolve(ILLMAPIEndpoint endpoint, out Uri? queryUri, out string reason)
+    public bool TryResolve(IAPIEndpoint endpoint, out Uri? queryUri, out string reason)
     {
         queryUri = null;
         reason = string.Empty;
@@ -69,7 +69,7 @@ public sealed class NewApiUsageQueryService
         }
     }
 
-    public async Task<NewApiUsageSnapshot> QueryAsync(ILLMAPIEndpoint endpoint,
+    public async Task<NewApiUsageSnapshot> QueryAsync(IAPIEndpoint endpoint,
         CancellationToken cancellationToken = default)
     {
         if (endpoint is not APIEndPoint apiEndPoint)

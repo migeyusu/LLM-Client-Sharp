@@ -44,7 +44,7 @@
     </DataTemplate>
     <component:TypeBasedDataTemplateSelector x:Key="ModelsDataTemplateSelector">
         <component:DataTemplateTypePair>
-            <HierarchicalDataTemplate DataType="{x:Type abstraction:ILLMAPIEndpoint}"
+            <HierarchicalDataTemplate DataType="{x:Type abstraction:IAPIEndpoint}"
                                       ItemsSource="{Binding AvailableModels,Mode=OneWay}">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="{Binding Icon.CurrentSource,Mode=OneWay}"

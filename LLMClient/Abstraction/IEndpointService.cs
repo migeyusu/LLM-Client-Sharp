@@ -16,12 +16,12 @@ public interface IEndpointService
     /// <summary>
     /// All registered endpoints (unfiltered, including disabled ones).
     /// </summary>
-    IReadOnlyList<ILLMAPIEndpoint> AllEndpoints { get; }
+    IReadOnlyList<IAPIEndpoint> AllEndpoints { get; }
 
     /// <summary>
     /// For UI, including history models, suggested endpoints and enabled real endpoints (disabled ones excluded).
     /// </summary>
-    IReadOnlyList<ILLMAPIEndpoint> CandidateEndpoints { get; }
+    IReadOnlyList<IAPIEndpoint> CandidateEndpoints { get; }
 
     /// <summary>
     /// models used in history
@@ -39,7 +39,7 @@ public interface IEndpointService
 
     Task Initialize();
 
-    ILLMAPIEndpoint? GetEndpoint(string name)
+    IAPIEndpoint? GetEndpoint(string name)
     {
         return AllEndpoints.FirstOrDefault((endpoint) => endpoint.Name == name);
     }

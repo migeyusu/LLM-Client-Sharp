@@ -115,7 +115,7 @@ public class ClientResponseViewItemTests
 
         public string Name => "NeverInvokedChatClient";
 
-        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+        public IAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
         public IEndpointModel Model { get; }
 
@@ -124,6 +124,7 @@ public class ClientResponseViewItemTests
         public bool IsResponding { get; set; }
 
         public IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            Predicate<ReactStep>? exit = null,
             CancellationToken cancellationToken = default)
         {
             throw new InvalidOperationException(

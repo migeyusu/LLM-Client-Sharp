@@ -23,7 +23,7 @@ public class EmptyLLMChatModel : IEndpointModel
 
     public int MaxContextSize { get; set; }
 
-    public ILLMAPIEndpoint Endpoint
+    public IAPIEndpoint Endpoint
     {
         get => EmptyLLMEndpoint.Instance;
     }

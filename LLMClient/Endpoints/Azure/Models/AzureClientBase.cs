@@ -11,7 +11,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 namespace LLMClient.Endpoints.Azure.Models;
 
 #pragma warning disable SKEXP0001
-public class AzureClientBase : LlmClientBase, ILLMChatClient
+public class AzureClientBase : ReactClientBase, ILLMChatClient
 {
     private static readonly Mapper Mapper = new(new MapperConfiguration(
         expression => { expression.CreateMap<AzureModelInfo, IModelParams>(); }, new NullLoggerFactory()));
@@ -24,7 +24,7 @@ public class AzureClientBase : LlmClientBase, ILLMChatClient
         get { return ModelInfo.FriendlyName; }
     }
 
-    public override ILLMAPIEndpoint Endpoint { get; }
+    public override IAPIEndpoint Endpoint { get; }
 
     [JsonIgnore]
     public string Id

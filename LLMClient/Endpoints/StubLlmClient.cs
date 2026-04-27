@@ -110,6 +110,7 @@ public class StubLlmClient : ILLMChatClient
     ];
 
     public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+        Predicate<ReactStep>? exit = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         IsResponding = true;
@@ -117,6 +118,9 @@ public class StubLlmClient : ILLMChatClient
         {
             var random = new Random();
             var streaming = Parameters.Streaming;
+
+            // 使用退出回调决定是否继续，若未指定则使用默认条件
+            var effectiveExit = exit ?? (s => s.Result is { IsCompleted: true } or { Exception: not null });
 
             for (int loopIndex = 0; loopIndex < SimulatedLoops.Length; loopIndex++)
             {
@@ -218,7 +222,7 @@ public class StubLlmClient : ILLMChatClient
                 yield return step;
                 await producerTask;
 
-                if (step.Result is { IsCompleted: true } or { Exception: not null })
+                if (effectiveExit(step))
                     break;
             }
         }
@@ -246,7 +250,7 @@ public class StubLlmClient : ILLMChatClient
         }
     }
 
-    public ILLMAPIEndpoint Endpoint { get; } = new EmptyLLMEndpoint();
+    public IAPIEndpoint Endpoint { get; } = new EmptyLLMEndpoint();
 
     // ── 内部模拟数据结构 ──
 

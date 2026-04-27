@@ -20,7 +20,7 @@ public interface IThinkingConfig
 
     public bool ShowThinking { get; set; }
 
-    public static IThinkingConfig? CreateFrom(ILLMAPIEndpoint endpoint, ThinkingConfigViewModel? configViewModel)
+    public static IThinkingConfig? CreateFrom(IAPIEndpoint endpoint, ThinkingConfigViewModel? configViewModel)
     {
         if (configViewModel == null)
         {
@@ -43,7 +43,7 @@ public interface IThinkingConfig
         return baseConfig;
     }
 
-    private static IThinkingConfig? Create(ILLMAPIEndpoint endpoint)
+    private static IThinkingConfig? Create(IAPIEndpoint endpoint)
     {
         if (endpoint is APIEndPoint apiEndPoint)
         {

@@ -42,7 +42,7 @@
                     </Style>
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type abstraction:ILLMAPIEndpoint}">
+                    <DataTemplate DataType="{x:Type abstraction:IAPIEndpoint}">
                         <StackPanel Orientation="Horizontal">
                             <Image Width="24" Height="24"
                                    RenderOptions.BitmapScalingMode="HighQuality"

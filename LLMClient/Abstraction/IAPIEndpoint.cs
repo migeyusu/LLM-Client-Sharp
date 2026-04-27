@@ -2,7 +2,7 @@
 
 namespace LLMClient.Abstraction;
 
-public interface ILLMAPIEndpoint
+public interface IAPIEndpoint
 {
     string DisplayName { get; }
 

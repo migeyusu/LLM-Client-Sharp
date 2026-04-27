@@ -124,13 +124,14 @@ public static class ChatClientExtension
         if (message.Contents.Any(content => content is TextReasoningContent))
         {
             return new ChatMessage(message.Role,
-                message.Contents.Where((content => content is not TextReasoningContent)).ToArray())
+                message.Contents.Where(content => content is not TextReasoningContent).ToArray())
             {
                 AdditionalProperties = message.AdditionalProperties,
                 MessageId = message.MessageId,
                 RawRepresentation = message.RawRepresentation,
                 CreatedAt = message.CreatedAt,
                 AuthorName = message.AuthorName,
+                
             };
         }
 
@@ -140,7 +141,7 @@ public static class ChatClientExtension
     public static ChatResponse MergeResponse(this IEnumerable<ChatResponseUpdate> updates)
     {
         var chatResponse = updates.ToChatResponse();
-        foreach (var message in chatResponse.Messages)
+        foreach (var message in chatResponse.Messages)  
         {
             var oriContents = message.Contents
                 .ToArray();

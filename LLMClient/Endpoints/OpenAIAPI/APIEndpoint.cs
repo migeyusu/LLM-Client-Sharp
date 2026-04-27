@@ -11,7 +11,7 @@ using Microsoft.Xaml.Behaviors.Core;
 
 namespace LLMClient.Endpoints.OpenAIAPI;
 
-public class APIEndPoint : NotifyDataErrorInfoViewModelBase, ILLMAPIEndpoint
+public class APIEndPoint : NotifyDataErrorInfoViewModelBase, IAPIEndpoint
 {
     public const string KeyName = "OpenAIAPICompatible";
 

@@ -1,6 +1,6 @@
 ﻿namespace LLMClient.Abstraction;
 
-public interface ILLMChatClient : IParameterizedLLMModel, IChatEndpoint
+public interface ILLMChatClient : IParameterizedLLMModel, IReactClient
 {
-    ILLMAPIEndpoint Endpoint { get; }
+    IAPIEndpoint Endpoint { get; }
 }

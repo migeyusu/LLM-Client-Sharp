@@ -7,7 +7,7 @@ using LLMClient.Persistence;
 
 namespace LLMClient.Endpoints.Azure;
 
-public abstract class AzureEndPointBase : BaseViewModel, ILLMAPIEndpoint
+public abstract class AzureEndPointBase : BaseViewModel, IAPIEndpoint
 {
     private AzureOption _option = new AzureOption();
 

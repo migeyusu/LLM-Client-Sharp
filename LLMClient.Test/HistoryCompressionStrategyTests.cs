@@ -684,7 +684,7 @@ public class HistoryCompressionStrategyTests
             => Task.FromResult<IResponse>(new RawResponseViewItem());
     }
 
-    private sealed class CompressionAwareLlmClient : LlmClientBase
+    private sealed class CompressionAwareLlmClient : ReactClientBase
     {
         private readonly IChatClient _chatClient;
 
@@ -718,7 +718,7 @@ public class HistoryCompressionStrategyTests
 
         public override string Name => "CompressionAwareLlmClient";
 
-        public override ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+        public override IAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
         public override IEndpointModel Model => ModelInfo;
 
@@ -739,7 +739,7 @@ public class HistoryCompressionStrategyTests
 
         public string Name => "SummaryOnlyLlmClient";
 
-        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+        public IAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
         public IEndpointModel Model { get; } = new APIModelInfo
         {
@@ -760,6 +760,7 @@ public class HistoryCompressionStrategyTests
         public bool IsResponding { get; set; }
 
         public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext requestContext,
+            Predicate<ReactStep>? exit = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var step = new ReactStep();

@@ -23,7 +23,7 @@ public interface IEndpointModel : IModel
 
     int MaxContextSize { get; }
 
-    ILLMAPIEndpoint Endpoint { get; }
+    IAPIEndpoint Endpoint { get; }
 
     /// <summary>
     /// thinking include between tasks

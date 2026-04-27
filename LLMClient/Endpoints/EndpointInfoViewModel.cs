@@ -10,7 +10,7 @@ public class EndpointInfoViewModel : BaseViewModel
 {
     private readonly NewApiUsageQueryService _newApiUsageQueryService;
     private CancellationTokenSource? _refreshCancellationTokenSource;
-    private ILLMAPIEndpoint? _selectedEndpoint;
+    private IAPIEndpoint? _selectedEndpoint;
     private NewApiUsageSnapshot? _usageSnapshot;
     private string? _unsupportedReason;
     private string? _errorMessage;
@@ -18,11 +18,11 @@ public class EndpointInfoViewModel : BaseViewModel
     private bool _isLoading;
     private DateTimeOffset? _lastRefreshAt;
 
-    public IReadOnlyList<ILLMAPIEndpoint> Endpoints { get; }
+    public IReadOnlyList<IAPIEndpoint> Endpoints { get; }
 
     public ICommand RefreshCommand { get; }
 
-    public ILLMAPIEndpoint? SelectedEndpoint
+    public IAPIEndpoint? SelectedEndpoint
     {
         get => _selectedEndpoint;
         set

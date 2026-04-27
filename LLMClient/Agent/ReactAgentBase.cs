@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using LLMClient.Abstraction;
 using LLMClient.Agent.MiniSWE;
 using LLMClient.Dialog;
@@ -76,33 +76,37 @@ public abstract class ReactAgentBase : ISingleClientAgent
         // 注入 AgentId，确保该 Agent 的 ReAct 轮次与其他 Agent 隔离
         _previousAssistantText = null;
 
-        while (!cancellationToken.IsCancellationRequested)
+        // 通过 exit 回调将 IsExitMessage 逻辑下推到 IReactClient 的 ReAct 循环中，
+        // 避免外部循环调用 SendRequestAsync 导致上下文异常
+        Predicate<ReactStep> exit = step =>
         {
+            var result = step.Result;
+
+            // 默认退出条件：IsCompleted || Exception != null
+            if (result != null && (result.IsCompleted || result.Exception != null))
+                return true;
+
+            // Agent 级自定义退出条件：IsExitMessage 检测任务完成标志
+            var lastAssistant = result?.Messages
+                .LastOrDefault(m => m.Role == ChatRole.Assistant);
+            if (IsExitMessage(lastAssistant))
+                return true;
+
+            // 步数限制检查
+            CallCount++;
             if (Config.StepLimit > 0 && CallCount >= Config.StepLimit)
                 throw new StepOverflowException();
 
-            StepResult? lastResult = null;
-            await foreach (var step in ChatClient.SendRequestAsync(requestContext, cancellationToken))
-            {
-                yield return step;
-                if (step.Result != null)
-                {
-                    requestContext.ChatMessages.AddRange(step.Result.Messages);
-                    lastResult = step.Result;
-                }
-            }
+            return false;
+        };
 
-            CallCount++;
-            if (lastResult?.IsInterrupt == true) break;
-
-            var lastAssistant = requestContext.ReadonlyHistory
-                .LastOrDefault(m => m.Role == ChatRole.Assistant);
-            if (IsExitMessage(lastAssistant))
-                break;
+        await foreach (var step in ChatClient.SendRequestAsync(requestContext, exit, cancellationToken))
+        {
+            yield return step;
         }
     }
 
-    protected bool IsExitMessage(ChatMessage? message)
+    protected virtual bool IsExitMessage(ChatMessage? message)
     {
         var text = message?.Text;
         if (!string.IsNullOrEmpty(text))

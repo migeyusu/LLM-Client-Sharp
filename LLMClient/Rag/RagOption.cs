@@ -21,7 +21,7 @@ namespace LLMClient.Rag;
 public class RagOption : BaseViewModel
 {
     [JsonIgnore]
-    public ILLMAPIEndpoint? EmbeddingEndpoint
+    public IAPIEndpoint? EmbeddingEndpoint
     {
         get
         {

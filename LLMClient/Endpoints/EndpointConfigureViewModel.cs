@@ -34,7 +34,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
     private readonly ITokensCounter _tokensCounter;
 
 
-    public ILLMAPIEndpoint? SelectedEndpoint
+    public IAPIEndpoint? SelectedEndpoint
     {
         get => _selectedEndpoint;
         set
@@ -50,7 +50,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         Endpoints.Add(new APIEndPoint(new APIEndPointOption(), _loggerFactory, _tokensCounter));
     });
 
-    public ICommand RemoveEndPointCommand => new RelayCommand<ILLMAPIEndpoint?>((o =>
+    public ICommand RemoveEndPointCommand => new RelayCommand<IAPIEndpoint?>((o =>
     {
         if (o is APIEndPoint endpoint)
         {
@@ -63,7 +63,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
     }));
 
-    public ICommand ToggleEndpointDisabledCommand => new RelayCommand<ILLMAPIEndpoint?>((o =>
+    public ICommand ToggleEndpointDisabledCommand => new RelayCommand<IAPIEndpoint?>((o =>
     {
         if (o != null)
         {
@@ -133,15 +133,15 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         await this.Initialize();
     }));
 
-    public ObservableCollection<ILLMAPIEndpoint> Endpoints { get; set; } = [];
+    public ObservableCollection<IAPIEndpoint> Endpoints { get; set; } = [];
 
-    public IReadOnlyList<ILLMAPIEndpoint> AllEndpoints => Endpoints;
+    public IReadOnlyList<IAPIEndpoint> AllEndpoints => Endpoints;
 
-    public IReadOnlyList<ILLMAPIEndpoint> CandidateEndpoints
+    public IReadOnlyList<IAPIEndpoint> CandidateEndpoints
     {
         get
         {
-            var list = new List<ILLMAPIEndpoint>(Endpoints.Count + 2)
+            var list = new List<IAPIEndpoint>(Endpoints.Count + 2)
             {
                 _historyEndPoint,
                 _suggestedEndPoint,
@@ -205,7 +205,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
         }
     }));
 
-    private ILLMAPIEndpoint? _selectedEndpoint;
+    private IAPIEndpoint? _selectedEndpoint;
 
     public EndpointConfigureViewModel(ILoggerFactory loggerFactory, IMapper mapper, ITokensCounter tokensCounter)
     {
@@ -252,7 +252,7 @@ public class EndpointConfigureViewModel : BaseViewModel, IEndpointService
 
     private void OnEndpointPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(ILLMAPIEndpoint.IsDisabled))
+        if (e.PropertyName == nameof(IAPIEndpoint.IsDisabled))
         {
             OnPropertyChanged(nameof(CandidateEndpoints));
         }

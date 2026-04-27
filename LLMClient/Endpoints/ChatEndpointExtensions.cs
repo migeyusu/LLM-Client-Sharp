@@ -12,12 +12,12 @@ public static class ChatEndpointExtensions
     /// 用于所有仍需 ChatCallResult 的消费者。
     /// </summary>
     public static async Task<AgentTaskResult> SendRequestCompatAsync(
-        this IChatEndpoint endpoint,
+        this IReactClient endpoint,
         RequestContext context,
         CancellationToken cancellationToken = default)
     {
         var totalResult = new AgentTaskResult();
-        await foreach (var step in endpoint.SendRequestAsync(context, cancellationToken))
+        await foreach (var step in endpoint.SendRequestAsync(context, exit: null, cancellationToken))
         {
             // 必须消费完内层事件流，否则 step.Result 不可用
             await foreach (var _ in step.WithCancellation(cancellationToken))

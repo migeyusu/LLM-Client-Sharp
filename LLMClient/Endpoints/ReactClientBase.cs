@@ -26,11 +26,11 @@ using TextContent = Microsoft.Extensions.AI.TextContent;
 
 namespace LLMClient.Endpoints;
 
-public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
+public abstract class ReactClientBase : BaseViewModel, ILLMChatClient
 {
     public abstract string Name { get; }
 
-    public abstract ILLMAPIEndpoint Endpoint { get; }
+    public abstract IAPIEndpoint Endpoint { get; }
 
     [JsonIgnore] public abstract IEndpointModel Model { get; }
 
@@ -108,7 +108,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
 
     private readonly Stopwatch _latencyStopwatch = new();
 
-    protected LlmClientBase(ITokensCounter tokensCounter)
+    protected ReactClientBase(ITokensCounter tokensCounter)
     {
         _tokensCounter = tokensCounter;
     }
@@ -166,8 +166,18 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
         return responseText[..maxLength] + "...";
     }
 
+    /// <summary>
+    /// 默认退出回调：当 <see cref="StepResult.IsCompleted"/> 为 true 或出现异常时终止 ReAct 循环。
+    /// </summary>
+    private static bool DefaultExit(ReactStep step)
+    {
+        var result = step.Result;
+        return result != null && (result.IsCompleted || result.Exception != null);
+    }
+
     [Experimental("SKEXP0001")]
     public virtual async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext requestContext,
+        Predicate<ReactStep>? exit = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         try
@@ -180,36 +190,6 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             {
                 throw new NotSupportedException(
                     "This model does not support function calls, but tools were provided.");
-            }
-
-            List<ChatMessage> chatMessages;
-            var chatHistory = requestContext.ReadonlyHistory;
-            switch (Model.ThinkingIncludeMode)
-            {
-                case ThinkingIncludeMode.None:
-                    //remove all thinking content from chat history except the last user message
-                    chatMessages = chatHistory.Select(message =>
-                        message.Role == ChatRole.Assistant ? message.GetReasoningTrimmedMessage() : message).ToList();
-                    break;
-                case ThinkingIncludeMode.All:
-                    //do nothing, keep all thinking content
-                    chatMessages = chatHistory.ToList();
-                    break;
-                case ThinkingIncludeMode.KeepLast:
-                    //remove all thinking content except the last user message
-                    chatMessages = chatHistory.ToList();
-                    var lastAssistantIndex =
-                        chatMessages.FindLastIndex(message => message.Role == ChatRole.Assistant) - 1;
-                    for (int i = lastAssistantIndex; i >= 0; i--)
-                    {
-                        var chatMessage = chatMessages[i];
-                        if (chatMessage.Role != ChatRole.Assistant) continue;
-                        chatMessages[i] = chatMessage.GetReasoningTrimmedMessage();
-                    }
-
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
 
             var tempAdditionalProperties = requestContext.TempAdditionalProperties;
@@ -248,7 +228,9 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 AutoApproveAllInvocations = requestContext.AutoApproveAllInvocations ||
                                             parentContext?.AutoApproveAllInvocations == true
             };
-            var historyCompressionOptions = Model.HistoryCompression ?? ServiceLocator.GetService<GlobalOptions>()?.HistoryCompression ?? new ReactHistoryCompressionOptions();
+            var historyCompressionOptions = Model.HistoryCompression ??
+                                            ServiceLocator.GetService<GlobalOptions>()?.HistoryCompression ??
+                                            new ReactHistoryCompressionOptions();
             var historyCompressionStrategy = HistoryCompressionFactory?.Create(historyCompressionOptions.Mode);
             var dialogId = requestContext.DialogId;
             if (requestContext.ContextProviders != null)
@@ -257,6 +239,36 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
             }
 
             var segmentedReactHistory = requestContext.ReadonlyHistory.SegmentReactLevel(dialogId);
+            var chatHistory = segmentedReactHistory.PreambleMessages;
+            switch (Model.ThinkingIncludeMode)
+            {
+                case ThinkingIncludeMode.None:
+                    //remove all thinking content from chat history except the last user message
+                    segmentedReactHistory.PreambleMessages = chatHistory.Select(message =>
+                        message.Role == ChatRole.Assistant ? message.GetReasoningTrimmedMessage() : message).ToArray();
+                    break;
+                case ThinkingIncludeMode.All:
+                    //do nothing, keep all thinking content
+                    segmentedReactHistory.PreambleMessages = chatHistory.ToList();
+                    break;
+                case ThinkingIncludeMode.KeepLast:
+                    //remove all thinking content except the last user message
+                    var chatMessages = chatHistory.ToList();
+                    var lastAssistantIndex =
+                        chatMessages.FindLastIndex(message => message.Role == ChatRole.Assistant) - 1;
+                    for (int i = lastAssistantIndex; i >= 0; i--)
+                    {
+                        var chatMessage = chatMessages[i];
+                        if (chatMessage.Role != ChatRole.Assistant) continue;
+                        chatMessages[i] = chatMessage.GetReasoningTrimmedMessage();
+                    }
+
+                    segmentedReactHistory.PreambleMessages = chatMessages.ToArray();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
             // 基于历史中已有的该 agent 最大 round number 初始化，避免同一 Agent 多次调用时编号冲突
             var reactRoundNumber = segmentedReactHistory.MaxRoundNumber;
             using (AsyncContextStore<ChatStackContext>.CreateInstance(chatContext))
@@ -284,6 +296,8 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                 Debug.Write($"request tokens:{estimateTokens}");
 #endif*/
 
+                // 若未指定退出回调，使用默认条件：IsCompleted || Exception != null
+                var effectiveExit = exit ?? DefaultExit;
                 while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -319,7 +333,7 @@ public abstract class LlmClientBase : BaseViewModel, ILLMChatClient
                         modelTelemetry.Add(result);
                     }
 
-                    if (result.IsCompleted || result.Exception != null)
+                    if (effectiveExit(step))
                         break;
                     step = new ReactStep();
                 }

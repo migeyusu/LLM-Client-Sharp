@@ -169,103 +169,116 @@
                         <ContentControl Content="{Binding ProxyOption,Mode=OneTime}"
                                         ContentTemplate="{StaticResource ProxyOptionDataTemplate}" />
                         <GroupBox Margin="0,10,0,0"
-                                  Header="History Compression"
-                                  DataContext="{Binding HistoryCompression}">
-                            <StackPanel>
-                                <TextBlock Text="Prompt Preamble Threshold:" />
-                                <Slider Value="{Binding PromptPreambleThreshold,Mode=TwoWay}"
-                                        Minimum="0"
-                                        Maximum="1"
-                                        LargeChange="0.1"
-                                        SmallChange="0.1"
-                                        TickFrequency="0.1"
-                                        TickPlacement="None"
-                                        ToolTip="Estimated token threshold above which preamble (previous task context) is compressed"
-                                        VerticalAlignment="Center" />
-                                <WrapPanel Margin="0,10,0,0">
-                                    <TextBlock Text="Compression Mode:" />
-                                    <ComboBox Margin="8,0"
-                                              Width="180"
-                                              Padding="12,8"
-                                              ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type abstraction:ReactHistoryCompressionMode}}}"
-                                              SelectedValue="{Binding Mode,Mode=TwoWay}"
-                                              Style="{StaticResource MaterialDesignOutlinedComboBox}" />
-                                    <CheckBox Content="Remove Error ToolCall"
-                                              IsChecked="{Binding SummaryErrorLoop,Mode=TwoWay}" />
-                                    <TextBlock Margin="0,0,0,0"
-                                               Text="{Binding ReactTokenThresholdPercent,Mode=OneWay,StringFormat=Trigger Threshold {0}:,Converter={x:Static converters:SnapConverters.DoubleToPercentageConverter}}" />
-                                    <Slider Width="120"
-                                            Value="{Binding ReactTokenThresholdPercent,Mode=TwoWay}"
-                                            Margin="8,0,0,0"
-                                            Minimum="0"
-                                            Maximum="1"
-                                            LargeChange="0.1"
-                                            SmallChange="0.1"
-                                            TickFrequency="0.1"
-                                            TickPlacement="None"
-                                            ToolTip="Estimated token threshold above which react loop is compressed"
-                                            VerticalAlignment="Center">
-                                        <Slider.Style>
-                                            <Style TargetType="{x:Type Slider}"
-                                                   BasedOn="{StaticResource MaterialDesignDiscreteSlider}">
-                                                <Setter Property="IsEnabled"
-                                                        Value="True" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Mode}"
-                                                                 Value="{x:Static abstraction:ReactHistoryCompressionMode.None}">
-                                                        <Setter Property="IsEnabled"
-                                                                Value="False" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Slider.Style>
-                                    </Slider>
-                                    <TextBlock VerticalAlignment="Center"
-                                               Margin="10,0,0,0"
-                                               Text="Preserve Recent Rounds:" />
-                                    <TextBox VerticalAlignment="Center"
-                                             Width="60"
-                                             Margin="8,0,0,0"
-                                             Text="{Binding PreserveRecentRounds,Mode=TwoWay}">
-                                        <TextBox.Style>
-                                            <Style TargetType="{x:Type TextBox}"
-                                                   BasedOn="{StaticResource {x:Type TextBox}}">
-                                                <Setter Property="IsEnabled"
-                                                        Value="True" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Mode}"
-                                                                 Value="{x:Static abstraction:ReactHistoryCompressionMode.None}">
-                                                        <Setter Property="IsEnabled"
-                                                                Value="False" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBox.Style>
-                                    </TextBox>
-                                    <TextBlock Margin="8,0,0,0"
-                                               Text="Observation Placeholder:" />
-                                    <TextBox VerticalAlignment="Center"
-                                             Margin="10,0,0,0"
-                                             AcceptsReturn="True"
-                                             Text="{Binding ObservationPlaceholder,Mode=TwoWay}">
-                                        <TextBox.Style>
-                                            <Style TargetType="{x:Type TextBox}"
-                                                   BasedOn="{StaticResource {x:Type TextBox}}">
-                                                <Setter Property="IsEnabled"
-                                                        Value="False" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Mode}"
-                                                                 Value="{x:Static abstraction:ReactHistoryCompressionMode.ObservationMasking}">
-                                                        <Setter Property="IsEnabled"
-                                                                Value="True" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBox.Style>
-                                    </TextBox>
-                                </WrapPanel>
-                            </StackPanel>
-                        </GroupBox>
+                  Header="ReAct History Compression">
+            <StackPanel DataContext="{Binding HistoryCompression}">
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox VerticalAlignment="Center"
+                              Margin="0,0,0,0"
+                              Padding="6,0"
+                              Content="Preamble Compression (cross-task)"
+                              IsChecked="{Binding PreambleCompression,Mode=TwoWay}"
+                              ToolTip="Summarize previous task context before starting the ReAct loop when it exceeds the token threshold" />
+                    <TextBlock Margin="0,0,0,0"
+                               Text="{Binding PreambleTokenThresholdPercent,Mode=OneWay,StringFormat=Trigger Threshold {0}:,Converter={x:Static converters:SnapConverters.DoubleToPercentageConverter}}" />
+                    <Slider Width="120"
+                            IsEnabled="{Binding PreambleCompression,Mode=OneWay}"
+                            Value="{Binding PreambleTokenThresholdPercent,Mode=TwoWay}"
+                            Margin="8,0,0,0"
+                            Minimum="0"
+                            Maximum="1"
+                            LargeChange="0.1"
+                            SmallChange="0.1"
+                            Style="{StaticResource MaterialDesignDiscreteSlider}"
+                            TickFrequency="0.1"
+                            TickPlacement="None"
+                            ToolTip="Estimated token threshold above which preamble (previous task context) is compressed"
+                            VerticalAlignment="Center" />
+                </StackPanel>
+                <WrapPanel Margin="0,10,0,0">
+                    <TextBlock Text="Compression Mode:" />
+                    <ComboBox Margin="8,0"
+                              Width="180"
+                              Padding="12,8"
+                              ItemsSource="{Binding Source={extension:EnumBindingSource {x:Type abstraction:ReactHistoryCompressionMode}}}"
+                              SelectedValue="{Binding Mode,Mode=TwoWay}"
+                              Style="{StaticResource MaterialDesignOutlinedComboBox}" />
+                    <CheckBox Content="Remove Error ToolCall"
+                              IsChecked="{Binding SummaryErrorLoop,Mode=TwoWay}" />
+                    <TextBlock Margin="0,0,0,0"
+                               Text="{Binding ReactTokenThresholdPercent,Mode=OneWay,StringFormat=Trigger Threshold {0}:,Converter={x:Static converters:SnapConverters.DoubleToPercentageConverter}}" />
+                    <Slider Width="120"
+                            Value="{Binding ReactTokenThresholdPercent,Mode=TwoWay}"
+                            Margin="8,0,0,0"
+                            Minimum="0"
+                            Maximum="1"
+                            LargeChange="0.1"
+                            SmallChange="0.1"
+                            TickFrequency="0.1"
+                            TickPlacement="None"
+                            ToolTip="Estimated token threshold above which react loop is compressed"
+                            VerticalAlignment="Center">
+                        <Slider.Style>
+                            <Style TargetType="{x:Type Slider}"
+                                   BasedOn="{StaticResource MaterialDesignDiscreteSlider}">
+                                <Setter Property="IsEnabled"
+                                        Value="True" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Mode}"
+                                                 Value="{x:Static abstraction:ReactHistoryCompressionMode.None}">
+                                        <Setter Property="IsEnabled"
+                                                Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Slider.Style>
+                    </Slider>
+                    <TextBlock VerticalAlignment="Center"
+                               Margin="10,0,0,0"
+                               Text="Preserve Recent Rounds:" />
+                    <TextBox VerticalAlignment="Center"
+                             Width="60"
+                             Margin="8,0,0,0"
+                             Text="{Binding PreserveRecentRounds,Mode=TwoWay}">
+                        <TextBox.Style>
+                            <Style TargetType="{x:Type TextBox}"
+                                   BasedOn="{StaticResource {x:Type TextBox}}">
+                                <Setter Property="IsEnabled"
+                                        Value="True" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Mode}"
+                                                 Value="{x:Static abstraction:ReactHistoryCompressionMode.None}">
+                                        <Setter Property="IsEnabled"
+                                                Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                    <TextBlock
+                        Margin="8,0,0,0"
+                        Text="Observation Placeholder:" />
+                    <TextBox VerticalAlignment="Center"
+                             Margin="10,0,0,0"
+                             AcceptsReturn="True"
+                             Text="{Binding ObservationPlaceholder,Mode=TwoWay}">
+                        <TextBox.Style>
+                            <Style TargetType="{x:Type TextBox}"
+                                   BasedOn="{StaticResource {x:Type TextBox}}">
+                                <Setter Property="IsEnabled"
+                                        Value="False" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Mode}"
+                                                 Value="{x:Static abstraction:ReactHistoryCompressionMode.ObservationMasking}">
+                                        <Setter Property="IsEnabled"
+                                                Value="True" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </WrapPanel>
+            </StackPanel>
+        </GroupBox>
                     </StackPanel>
                     <WrapPanel Grid.Row="1"
                                Margin="0,10,0,0">

@@ -10,7 +10,7 @@ public sealed class SegmentedHistory
     /// <summary>
     /// 表示跨AgentID的消息
     /// </summary>
-    public IReadOnlyList<ChatMessage> PreambleMessages { get; init; } = [];
+    public IReadOnlyList<ChatMessage> PreambleMessages { get; set; } = [];
 
     /// <summary>
     /// <remarks>對rounds的更改都應該考慮該chatmessage可能會影響主消息的情況，使用副本</remarks>

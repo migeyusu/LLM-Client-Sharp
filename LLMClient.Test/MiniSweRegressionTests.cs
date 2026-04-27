@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using LLMClient.Abstraction;
 using LLMClient.Agent;
 using LLMClient.Agent.Inspector;
@@ -710,7 +710,7 @@ public class MiniSweRegressionTests
 
         public string Name => "RetryRecordingChatClient";
 
-        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+        public IAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
         public IEndpointModel Model { get; } = new APIModelInfo
         {
@@ -737,6 +737,7 @@ public class MiniSweRegressionTests
         public bool IsResponding { get; set; }
 
         public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            Predicate<ReactStep>? exit = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             ChatHistoryCounts.Add(context.ReadonlyHistory.Count);
@@ -775,7 +776,7 @@ public class MiniSweRegressionTests
 
         public string Name => "DuplicateTextChatClient";
 
-        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+        public IAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
         public IEndpointModel Model { get; } = new APIModelInfo
         {
@@ -802,6 +803,7 @@ public class MiniSweRegressionTests
         public bool IsResponding { get; set; }
 
         public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            Predicate<ReactStep>? exit = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _callCount++;
@@ -828,7 +830,7 @@ public class MiniSweRegressionTests
 
         public string Name => "InspectRecordingChatClient";
 
-        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+        public IAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
         public IEndpointModel Model { get; } = new APIModelInfo
         {
@@ -855,6 +857,7 @@ public class MiniSweRegressionTests
         public bool IsResponding { get; set; }
 
         public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            Predicate<ReactStep>? exit = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var lastPrompt = context.ReadonlyHistory.LastOrDefault()?.Text ?? string.Empty;
@@ -906,7 +909,7 @@ public class MiniSweRegressionTests
 
         public string Name => "CompactingInspectChatClient";
 
-        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+        public IAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
         public IEndpointModel Model { get; } = new APIModelInfo
         {
@@ -933,6 +936,7 @@ public class MiniSweRegressionTests
         public bool IsResponding { get; set; }
 
         public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            Predicate<ReactStep>? exit = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var lastPrompt = context.ReadonlyHistory.LastOrDefault()?.Text ?? string.Empty;
@@ -992,7 +996,7 @@ public class MiniSweRegressionTests
 
         public string Name => "CompactingPlannerChatClient";
 
-        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+        public IAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
         public IEndpointModel Model { get; } = new APIModelInfo
         {
@@ -1019,6 +1023,7 @@ public class MiniSweRegressionTests
         public bool IsResponding { get; set; }
 
         public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            Predicate<ReactStep>? exit = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var lastPrompt = context.ReadonlyHistory.LastOrDefault()?.Text ?? string.Empty;
@@ -1073,7 +1078,7 @@ public class MiniSweRegressionTests
 
         public string Name => "PlannerHistoryAwareChatClient";
 
-        public ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+        public IAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
         public IEndpointModel Model { get; } = new APIModelInfo
         {
@@ -1100,6 +1105,7 @@ public class MiniSweRegressionTests
         public bool IsResponding { get; set; }
 
         public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+            Predicate<ReactStep>? exit = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var lastPrompt = context.ReadonlyHistory.LastOrDefault()?.Text ?? string.Empty;
@@ -1170,7 +1176,7 @@ public class MiniSweRegressionTests
         }
     }
 
-    private sealed class AgentFlowLlmClient : LlmClientBase
+    private sealed class AgentFlowLlmClient : ReactClientBase
     {
         private readonly IChatClient _chatClient;
         private readonly IEndpointModel _model;
@@ -1203,7 +1209,7 @@ public class MiniSweRegressionTests
 
         public override string Name => "AgentFlowLlmClient";
 
-        public override ILLMAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
+        public override IAPIEndpoint Endpoint => EmptyLLMEndpoint.Instance;
 
         public override IEndpointModel Model => _model;
 

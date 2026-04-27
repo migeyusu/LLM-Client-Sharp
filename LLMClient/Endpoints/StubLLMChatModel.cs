@@ -27,7 +27,7 @@ public class StubLLMChatModel : IEndpointModel
 
     public int MaxContextSize { get; set; } = int.MaxValue;
 
-    public ILLMAPIEndpoint Endpoint
+    public IAPIEndpoint Endpoint
     {
         get { return StubEndPoint.Instance; }
     }

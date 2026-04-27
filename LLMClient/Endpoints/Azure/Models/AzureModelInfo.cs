@@ -92,7 +92,7 @@ public class AzureModelInfo : IEndpointModel
 
     [JsonPropertyName("description")] public string? DescriptionRaw { get; set; }
 
-    [JsonIgnore] public ILLMAPIEndpoint Endpoint { get; set; } = EmptyLLMEndpoint.Instance;
+    [JsonIgnore] public IAPIEndpoint Endpoint { get; set; } = EmptyLLMEndpoint.Instance;
 
     [JsonIgnore] public ThinkingIncludeMode ThinkingIncludeMode { get; } = ThinkingIncludeMode.KeepLast;
 

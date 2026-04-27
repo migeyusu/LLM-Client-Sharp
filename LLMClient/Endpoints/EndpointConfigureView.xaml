@@ -67,7 +67,7 @@
                      BorderBrush="DarkGray"
                      BorderThickness="0,0,0,1">
                 <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type abstraction:ILLMAPIEndpoint}">
+                    <DataTemplate DataType="{x:Type abstraction:IAPIEndpoint}">
                         <StackPanel Orientation="Horizontal">
                             <Image Width="20"
                                    Height="20"

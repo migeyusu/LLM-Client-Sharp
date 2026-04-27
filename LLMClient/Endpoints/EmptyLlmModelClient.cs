@@ -13,7 +13,7 @@ public class EmptyLlmModelClient : ILLMChatClient
 
     public string Name { get; } = "NullLlmModelClient";
 
-    public ILLMAPIEndpoint Endpoint
+    public IAPIEndpoint Endpoint
     {
         get
         {
@@ -96,6 +96,7 @@ public class EmptyLlmModelClient : ILLMChatClient
     }
 
     public async IAsyncEnumerable<ReactStep> SendRequestAsync(IRequestContext context,
+        Predicate<ReactStep>? exit = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var step = new ReactStep();

@@ -6,7 +6,7 @@ using LLMClient.Persistence;
 
 namespace LLMClient.Endpoints
 {
-    public class EmptyLLMEndpoint : ILLMAPIEndpoint
+    public class EmptyLLMEndpoint : IAPIEndpoint
     {
         public static EmptyLLMEndpoint Instance { get; } = new EmptyLLMEndpoint();
         public string DisplayName => "Empty Endpoint";

@@ -4,7 +4,7 @@ using MaterialDesignThemes.Wpf;
 
 namespace LLMClient.Endpoints;
 
-public class StubEndPoint: ILLMAPIEndpoint
+public class StubEndPoint: IAPIEndpoint
 {
     public static StubEndPoint Instance { get; } = new("Stub Endpoint");
 

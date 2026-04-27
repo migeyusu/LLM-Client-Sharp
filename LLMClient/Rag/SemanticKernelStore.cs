@@ -64,7 +64,7 @@ public class SemanticKernelStore
     }
 
     [Experimental("SKEXP0010")]
-    public SemanticKernelStore(ILLMAPIEndpoint endpoint, string modelId = "text-embedding-3-small",
+    public SemanticKernelStore(IAPIEndpoint endpoint, string modelId = "text-embedding-3-small",
         string dbConnectionString = "Data Source=file_embedding.db")
     {
         OpenAIClient? openAiClient;
