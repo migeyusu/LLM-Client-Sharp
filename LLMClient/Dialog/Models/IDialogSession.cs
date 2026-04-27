@@ -9,7 +9,7 @@ public interface ISession
     /// session id
     /// </summary>
     Guid ID { get; }
-
+    
     IResponseItem WorkingResponse { get; }
 
     IEnumerable<IDialogItem> GetChatHistory()

@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.AI;
+﻿using LLMClient.Abstraction;
+using LLMClient.Endpoints;
+using LLMClient.ToolCall;
+using Microsoft.Extensions.AI;
 
 namespace LLMClient.Dialog.Models;
 
@@ -9,7 +12,7 @@ namespace LLMClient.Dialog.Models;
 /// - 总结完成后：作为截断边界，阻止继续向前遍历
 /// - 总结失败时：跳过该项，继续向前遍历
 /// </summary>
-public class SummaryRequestViewItem : BaseDialogItem, IContextBoundaryItem
+public class SummaryRequestViewItem : BaseDialogItem, IContextBoundaryItem, IRequestItem
 {
     private readonly ChatMessage _chatMessage;
 
@@ -41,17 +44,22 @@ public class SummaryRequestViewItem : BaseDialogItem, IContextBoundaryItem
             field = value;
             OnPropertyChanged();
         }
-    } = SummaryRequestState.Summarizing;
+    }
 
     public Guid InteractionId { get; set; }
 
     public override long Tokens => 0;
 
-    public override DialogRole Role { get; } = DialogRole.Summary;
+    public override DialogRole Role => DialogRole.Summary;
 
-    public override IDialogSession? Session { get; } = null;
+    public override IDialogSession? Session { get; }
 
     public override bool IsAvailableInContext => State == SummaryRequestState.Summarizing;
+
+    public void TriggerTextContentUpdate()
+    {
+        throw new NotSupportedException();
+    }
 
     public override IEnumerable<ChatMessage> Messages
     {
@@ -68,6 +76,23 @@ public class SummaryRequestViewItem : BaseDialogItem, IContextBoundaryItem
             _ => ContextBoundaryEvaluation.Stop(interactionId)
         };
     }
+
+    public string? UserPrompt => null;
+
+    public ISearchOption? SearchOption => null;
+    public List<CheckableFunctionGroupTree>? FunctionGroups => null;
+
+    public IRagSource[]? RagSources => null;
+
+    public ChatResponseFormat? ResponseFormat => null;
+
+    public FunctionCallEngineType CallEngineType => FunctionCallEngineType.Prompt;
+
+    public AdditionalPropertiesDictionary? TempAdditionalProperties => null;
+
+    public bool IsDebugMode => false;
+
+    public bool AutoApproveAllInvocations => true;
 }
 
 public enum SummaryRequestState

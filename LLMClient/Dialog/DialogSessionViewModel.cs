@@ -1,4 +1,4 @@
-﻿﻿using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Text;
@@ -412,12 +412,6 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
         var oriPreviousItem = item.PreviousItem;
         switch (item)
         {
-            case IRequestItem requestItem:
-                DeleteChain(requestItem);
-                break;
-            case EraseViewItem eraseViewItem:
-                eraseViewItem.Delete();
-                break;
             case SummaryRequestViewItem summaryRequestViewItem:
             {
                 var previousItem = summaryRequestViewItem.PreviousItem;
@@ -433,6 +427,12 @@ public abstract class DialogSessionViewModel : NotifyDataErrorInfoViewModelBase,
 
                 break;
             }
+            case IRequestItem requestItem:
+                DeleteChain(requestItem);
+                break;
+            case EraseViewItem eraseViewItem:
+                eraseViewItem.Delete();
+                break;
         }
 
         if (this.VisualDialogItems.Contains(item))
