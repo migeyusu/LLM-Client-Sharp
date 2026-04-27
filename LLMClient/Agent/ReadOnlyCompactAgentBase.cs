@@ -25,9 +25,10 @@ public abstract class ReadOnlyCompactAgentBase : ReactAgentBase
     }
 
     protected override async Task<RequestContext?> BuildRequestContextAsync(ISession dialogSession,
+        AgentRunOption option,
         CancellationToken cancellationToken)
     {
-        var contextBuilder = AgentRequestContextBuilder.CreateFromSession(dialogSession, Config);
+        var contextBuilder = AgentRequestContextBuilder.CreateFromSession(dialogSession, option, Config);
         contextBuilder.FunctionGroups = FilterReadOnlyFunctionGroups(contextBuilder.FunctionGroups);
 
         string? workingDirectory;

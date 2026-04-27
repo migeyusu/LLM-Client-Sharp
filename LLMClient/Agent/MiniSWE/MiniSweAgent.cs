@@ -26,9 +26,10 @@ public class MiniSweAgent : ReactAgentBase, IInbuiltAgent
     }
 
     protected override async Task<RequestContext?> BuildRequestContextAsync(ISession dialogSession,
+        AgentRunOption option,
         CancellationToken cancellationToken)
     {
-        var contextBuilder = AgentRequestContextBuilder.CreateFromSession(dialogSession, Config);
+        var contextBuilder = AgentRequestContextBuilder.CreateFromSession(dialogSession, option, Config);
         string? workingDirectory;
 
         if (dialogSession is IProjectSession projectSession)

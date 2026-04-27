@@ -643,6 +643,7 @@ public class HistoryCompressionStrategyTests
         public RequestContext? LastRequestContext { get; private set; }
 
         protected override Task<RequestContext?> BuildRequestContextAsync(ISession dialogSession,
+            AgentRunOption option,
             CancellationToken cancellationToken)
         {
             var context = new RequestContext

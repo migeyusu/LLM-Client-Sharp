@@ -19,7 +19,7 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
     {
     }
 
-    public static AgentRequestContextBuilder CreateFromSession(ISession session,
+    public static AgentRequestContextBuilder CreateFromSession(ISession session, AgentRunOption runOption,
         MiniSweAgentConfig config)
     {
         var history = session.GetChatHistory().ToArray();
@@ -43,6 +43,9 @@ public class AgentRequestContextBuilder : DefaultRequestContextBuilder
             WorkingDirectory = session is IProjectSession ps
                 ? ps.WorkingDirectory
                 : null,
+            ContinuesHistory = runOption.ReactStepConsumeMode == ReactStepConsumeMode.Append
+                ? session.WorkingResponse
+                : null
         };
         dialogContext.MapFromRequest(requestViewItem);
         return dialogContext;

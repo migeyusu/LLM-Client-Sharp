@@ -43,7 +43,7 @@ public abstract class ReactAgentBase : ISingleClientAgent
     /// Return <c>null</c> when there is no actionable request.
     /// </summary>
     protected abstract Task<RequestContext?> BuildRequestContextAsync(
-        ISession dialogSession,
+        ISession dialogSession, AgentRunOption option,
         CancellationToken cancellationToken);
 
     public async IAsyncEnumerable<ReactStep> Execute(ISession dialogSession,
@@ -55,7 +55,7 @@ public abstract class ReactAgentBase : ISingleClientAgent
         Exception? setupError = null;
         try
         {
-            requestContext = await BuildRequestContextAsync(dialogSession, cancellationToken);
+            requestContext = await BuildRequestContextAsync(dialogSession, option, cancellationToken);
         }
         catch (Exception ex)
         {

@@ -20,6 +20,7 @@ public class LinearResponseViewItem : BaseDialogItem, IResponseItem
 
     public override IDialogSession? Session => ParentSession;
 
+    
     [Bindable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]

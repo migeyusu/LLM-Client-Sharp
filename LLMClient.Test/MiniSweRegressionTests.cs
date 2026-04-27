@@ -697,6 +697,7 @@ public class MiniSweRegressionTests
         public override string Name => "DummyReactAgent";
 
         protected override Task<RequestContext?> BuildRequestContextAsync(ISession dialogSession,
+            AgentRunOption option,
             CancellationToken cancellationToken)
             => Task.FromResult<RequestContext?>(null);
     }
