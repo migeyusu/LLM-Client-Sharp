@@ -444,14 +444,14 @@ public abstract class ReactClientBase : BaseViewModel, ILLMChatClient
             currentRound.AssistantMessage = preResponseMessage;
             context.History.Rounds.Add(currentRound);
             loopUsageDetails ??= preResponse.GetUsageDetailsFromAdditional();
-            if (loopUsageDetails != null)
+            /*if (loopUsageDetails != null)
             {
                 if (loopUsageDetails.AdditionalCounts?.TryGetValue("PromptTokensDetails.CachedTokens",
                         out var cachedTokens) == true)
                 {
                     loopUsageDetails.InputTokenCount += cachedTokens;
                 }
-            }
+            }*/
 
             finishReason = preResponse.FinishReason ?? preResponse.GetFinishReasonFromAdditional();
             var finishReasonValue = finishReason?.Value;
@@ -527,7 +527,7 @@ public abstract class ReactClientBase : BaseViewModel, ILLMChatClient
                 preFunctionCalls, step, cancellationToken);
             if (strategy != null)
             {
-                context.CurrentTokens = loopUsageDetails?.InputTokenCount + loopUsageDetails?.OutputTokenCount;
+                context.CurrentTokens = loopUsageDetails?.TotalTokenCount;
                 context.CurrentRoundNumber = reactRoundNumber;
                 await InTaskCompressIfNeedAsync(strategy, context, cancellationToken);
             }
