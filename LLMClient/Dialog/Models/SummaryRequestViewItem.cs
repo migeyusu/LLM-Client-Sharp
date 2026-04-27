@@ -54,6 +54,8 @@ public class SummaryRequestViewItem : BaseDialogItem, IContextBoundaryItem, IReq
 
     public override IDialogSession? Session { get; }
 
+    public string TextMessage => _chatMessage.Text ?? string.Empty;
+
     public override bool IsAvailableInContext => State == SummaryRequestState.Summarizing;
 
     public void TriggerTextContentUpdate()

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -676,7 +676,7 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
 
     #region Private Helper Methods
 
-    private string ExpandAndNormalizePath(string path)
+    private string ExpandAndNormalizePath(string path, string? baseDirectory = null)
     {
         if (string.IsNullOrWhiteSpace(path)) return string.Empty;
 
@@ -684,6 +684,15 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
         if (path == "~" || path.StartsWith("~/"))
         {
             path = Path.Combine(_userHomeDirectory, path.Length > 1 ? path.Substring(2) : "");
+        }
+
+        // If the path is relative and a base directory is provided, resolve against it
+        if (!Path.IsPathRooted(path) && !string.IsNullOrWhiteSpace(baseDirectory))
+        {
+            string fullBasePath = Path.IsPathRooted(baseDirectory)
+                ? baseDirectory
+                : Path.GetFullPath(baseDirectory);
+            path = Path.Combine(fullBasePath, path);
         }
 
         // Return the fully qualified, normalized path.
@@ -697,7 +706,10 @@ public class FileSystemPlugin : KernelFunctionGroup, IBuiltInFunctionGroup
             throw new ArgumentException("Path cannot be null or empty.", nameof(requestedPath));
         }
 
-        string absolutePath = ExpandAndNormalizePath(requestedPath);
+        var stackContext = AsyncContextStore<ChatStackContext>.Current;
+        var workingDirectory = stackContext?.WorkingDirectory;
+
+        string absolutePath = ExpandAndNormalizePath(requestedPath, workingDirectory);
         // Return the original, non-resolved absolute path if validation passes.
         // This is crucial for creating new files in directories that might themselves be symlinks.
         return await Task.FromResult(absolutePath);
